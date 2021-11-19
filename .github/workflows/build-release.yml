@@ -61,11 +61,6 @@ jobs:
       run: dotnet nuget add source https://nuget.pkg.github.com/microsoft/index.json --password $GITHUB_TOKEN --username notused --store-password-in-clear-text --name cgwriter
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Add NuGet publication source for Azure Artifacts Packaging feed
-      run: dotnet nuget add source https://1essharedassets.pkgs.visualstudio.com/1esPkgs/_packaging/ComponentDetection/nuget/v3/index.json --password $AZART_TOKEN --username az --store-password-in-clear-text --name Packaging
-      env:
-        AZART_TOKEN: ${{ secrets.AZART_TOKEN }}
 
     - name: Generate NuGet packages
       run: dotnet pack -o dist-nuget -c Release
@@ -76,6 +71,5 @@ jobs:
            for f in ./dist-nuget/*.nupkg
            do
              curl -vX PUT -u "[user]:${{ secrets.GITHUB_TOKEN }}" -F package=@$f https://nuget.pkg.github.com/microsoft/
-             dotnet nuget push --source "Packaging" --api-key az $f
            done
       shell: bash
