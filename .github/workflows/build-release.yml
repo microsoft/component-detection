@@ -48,6 +48,7 @@ jobs:
 
     - name: Upload Extension Release Asset
       id: upload-component-detection-release-asset 
+      if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-release-asset@v1.0.2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -58,15 +59,18 @@ jobs:
         asset_content_type: application/zip
 
     - name: Add NuGet publication source for Github packages
+      if: startsWith(github.ref, 'refs/tags/')
       run: dotnet nuget add source https://nuget.pkg.github.com/microsoft/index.json --password $GITHUB_TOKEN --username notused --store-password-in-clear-text --name cgwriter
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Generate NuGet packages
+      if: startsWith(github.ref, 'refs/tags/')
       run: dotnet pack -o dist-nuget -c Release
 
       # dotnet nuget push seems to have some probs, use curl for GH
     - name: Publish nuget
+      if: startsWith(github.ref, 'refs/tags/')
       run: |
            for f in ./dist-nuget/*.nupkg
            do
