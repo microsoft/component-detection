@@ -13,10 +13,10 @@
         <Copyright>Copyright © Microsoft Corporation. All rights reserved.</Copyright>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/microsoft/componentdetection-bcde</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/microsoft/componentdetection-bcde.git</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/microsoft/component-detection</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/microsoft/component-detection.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <PackageReleaseNotes>https://github.com/microsoft/componentdetection-bcde/releases</PackageReleaseNotes>
+        <PackageReleaseNotes>https://github.com/microsoft/component-detection/releases</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup Label="Package References">

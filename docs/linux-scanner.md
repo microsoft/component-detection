@@ -13,7 +13,7 @@ There are 2 options for working on the Linux scanner:
 **NOTE**: Docker + WSL2 is not a shortcut for this :( The bind mount is still not support even if it's created in WSL2. (See the Windows way to udnerstand why it's necessary)
 
 1. [Using Hyper-V Quick Create](https://blogs.windows.com/windowsdeveloper/2018/09/17/run-ubuntu-virtual-machines-made-even-easier-with-hyper-v-quick-create/), create a Ubuntu virtual machine. Make sure you give it at least 30gb of storage, docker and the images use a lot of space.
-2. Clone BCDE in your VM
+2. Clone Component Detection in your VM
 3. Install docker
 4. Start developing!
 

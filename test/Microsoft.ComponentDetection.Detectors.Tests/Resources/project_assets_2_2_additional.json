@@ -4133,11 +4133,11 @@
 	"project": {
 	  "version": "1.0.0",
 	  "restore": {
-		"projectUniqueName": "D:\\Source\\componentdetection-bcde\\src\\Detectors\\MS.VS.Services.Governance.ComponentDetection.Detectors.csproj",
+		"projectUniqueName": "D:\\Source\\component-detection\\src\\Detectors\\MS.VS.Services.Governance.ComponentDetection.Detectors.csproj",
 		"projectName": "Microsoft.VisualStudio.Services.Governance.ComponentDetection.Detectors",
-		"projectPath": "D:\\Source\\componentdetection-bcde\\src\\Detectors\\MS.VS.Services.Governance.ComponentDetection.Detectors.csproj",
+		"projectPath": "D:\\Source\\component-detection\\src\\Detectors\\MS.VS.Services.Governance.ComponentDetection.Detectors.csproj",
 		"packagesPath": "C:\\Users\\brphelps\\.nuget\\packages\\",
-		"outputPath": "D:\\Source\\componentdetection-bcde\\src\\Detectors\\obj\\",
+		"outputPath": "D:\\Source\\component-detection\\src\\Detectors\\obj\\",
 		"projectStyle": "PackageReference",
 		"fallbackFolders": [
 		  "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -4156,11 +4156,11 @@
 		"frameworks": {
 		  "netcoreapp2.2": {
 			"projectReferences": {
-			  "D:\\Source\\componentdetection-bcde\\src\\Common\\MS.VS.Services.Governance.ComponentDetection.Common.csproj": {
-				"projectPath": "D:\\Source\\componentdetection-bcde\\src\\Common\\MS.VS.Services.Governance.ComponentDetection.Common.csproj"
+			  "D:\\Source\\component-detection\\src\\Common\\MS.VS.Services.Governance.ComponentDetection.Common.csproj": {
+				"projectPath": "D:\\Source\\component-detection\\src\\Common\\MS.VS.Services.Governance.ComponentDetection.Common.csproj"
 			  },
-			  "D:\\Source\\componentdetection-bcde\\src\\Contracts\\MS.VS.Services.Governance.ComponentDetection.Contracts.csproj": {
-				"projectPath": "D:\\Source\\componentdetection-bcde\\src\\Contracts\\MS.VS.Services.Governance.ComponentDetection.Contracts.csproj"
+			  "D:\\Source\\component-detection\\src\\Contracts\\MS.VS.Services.Governance.ComponentDetection.Contracts.csproj": {
+				"projectPath": "D:\\Source\\component-detection\\src\\Contracts\\MS.VS.Services.Governance.ComponentDetection.Contracts.csproj"
 			  }
 			}
 		  }

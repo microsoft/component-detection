@@ -1,18 +1,18 @@
 
 # Component Detection
-![Component Detection CI](https://github.com/microsoft/componentdetection-bcde/workflows/Component%20Detection%20CI/badge.svg)
+![Component Detection CI](https://github.com/microsoft/component-detection/workflows/Component%20Detection%20CI/badge.svg)
 
 **For bugs, issues, and support please create an issue.**
 
 # Introduction
 
-ComponentDetection (BCDE) is a package scanning tool intended to be used at build time. BCDE produces a graph-based output of all detected components and supports a variety of open source package ecosystems.
+ComponentDetection is a package scanning tool intended to be used at build time. CD produces a graph-based output of all detected components and supports a variety of open source package ecosystems.
 
 # Table of Contents
 
 * [Feature Overview](#Feature-Overview)
 * [My favorite language/ecosystem isn't supported!](#My-favorite-language/ecosystem-isn't-supported!)
-* [Building and running BCDE](#Building-and-running-BCDE)
+* [Building and running Component Detection](#Building-and-running-Component-Detection)
     * [Running in Visual Studio (2019+)](#Running-in-Visual-Studio-(2019+))
 	* [Running from command line](#Running-from-command-line)
 	* [After building](#After-building)
@@ -38,10 +38,10 @@ For a complete feature overview refer to [feature-overview.md](docs/feature-over
 
 # My favorite language/ecosystem isn't supported!
 
-BCDE is built with extensibility in mind! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) to get started where you can find additional docs on adding your own detector.
+Component Detection is built with extensibility in mind! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) to get started where you can find additional docs on adding your own detector.
 
 
-# Building and running BCDE
+# Building and running Component Detection
 DotNet Core SDK 6.0.0-rc2 is currently in use, you can install it from https://dotnet.microsoft.com/download/dotnet/6.0
 We also use node and npm, you can install them from https://nodejs.org/en/download/
 
@@ -59,14 +59,14 @@ From the base folder:
 
 ## Using Codespaces
 
-If you have access to [GitHub Codespaces](https://docs.github.com/en/free-pro-team@latest/github/developing-online-with-codespaces/about-codespaces), select the `Code` button from the [repository homepage](https://github.com/microsoft/componentdetection-bcde) then select `Open with Codespaces`. That's it! You have a full developer environment that supports debugging, testing, auto complete, jump to definition, everything you would expect.
+If you have access to [GitHub Codespaces](https://docs.github.com/en/free-pro-team@latest/github/developing-online-with-codespaces/about-codespaces), select the `Code` button from the [repository homepage](https://github.com/microsoft/component-detection) then select `Open with Codespaces`. That's it! You have a full developer environment that supports debugging, testing, auto complete, jump to definition, everything you would expect.
 
 ## Using VS Code DevContainer
 
 This is similar to Codespaces:
 
 1. Make sure you meet [the requirements](https://code.visualstudio.com/docs/remote/containers#_getting-started) and follow the installation steps for DevContainers in VS Code
-1. `git clone https://github.com/microsoft/componentdetection-bcde`
+1. `git clone https://github.com/microsoft/component-detection`
 1. Open this repo in VS Code
 1. A notification should popup to reopen the workspace in the container. If it doesn't, open the [`Command Palette`](https://code.visualstudio.com/docs/getstarted/tips-and-tricks#_command-palette) and type `Remote-Containers: Reopen in Container`.
 
