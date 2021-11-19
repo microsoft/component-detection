@@ -1,0 +1,14 @@
+﻿{
+  "Registrations": [
+    {
+      "Component": {
+        "Type": "git",
+        "git": {
+          "RepositoryUrl": "https://github.com/adamreeve/semver.net/",
+          "CommitHash": "efe3e2e87276ba6b231fc73898ed1651e584f354"
+        }
+      },
+      "DevelopmentDependency": false
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+name: Bug report
+about: Create a report to help us improve
+title: "[Bug]: "
+labels: ['triage', 'bug']
+assignees: ''
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 
+  - type: input
+    id: summary
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps To Reproduce
+      description: Contents of folder being scanned - minimal data to reproduce the issue is preferred. Alternatively, you can provide a link to a public github repo or gist. You can also attach files to this issue.
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Which version of the tool was used?
+      description: The version of the binaries or package, or a git commit hash from the branch if you're using the sources in this repo.
+  - type: input
+    id: cli
+    attributes:
+      label: Provide the full command line input that you used to invoke the tool.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Steps To Reproduce
+      description: 'These files are created by the tool and will provide valuable information: GovCompDisc_Log_{timestamp}.log, ScanManifest_{timestamp}.json, ScanTelemetry_{timestamp}.json You can usually find these in the %TEMP% location, or redirect them with the --Output parameter.'
+      placeholder: Tell us what you see!

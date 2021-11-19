@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="System.Composition.AttributedModel"/>
+        <PackageReference Include="Newtonsoft.Json"/>
+        <PackageReference Include="System.Reactive"/>
+        <PackageReference Include="PackageUrl"/>
+    </ItemGroup>
+
+</Project>

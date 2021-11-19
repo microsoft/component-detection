@@ -1,0 +1,19 @@
+<!--
+This is an Ant build file that runs Ivy to resolve the dependency tree, then runs a custom
+Ant task to write out the flattened dependency tree for Component Detection.
+
+This file is copied to a temporary directory, along with ivysettings.xml and ivy.xml,
+then run via Apache Ant command line tool, which must be installed.
+-->
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="ivy-component-detection" default="run">
+    <target name="initialise-ivy" >
+        <mkdir dir="target/classes" />
+        <javac srcdir="java-src" destdir="target/classes" includeantruntime="true" />
+        <taskdef name="ivy-component-detect" classname="IvyComponentDetectionAntTask" classpath="target/classes" />
+    </target>
+
+    <target name="resolve-dependencies" depends="initialise-ivy" description="Resolve dependencies with ivy and write out the results for Component Detection" >
+        <ivy:resolve transitive="true" haltonfailure="false" />
+        <ivy-component-detect out="${basedir}/target/RegisterUsage.json" />
+    </target>
+</project>

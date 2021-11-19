@@ -1,0 +1,7 @@
+# Relevant documentation for CODEOWNERS file: https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+
+# All files in this repo are owned by ose-component-detection-maintainers team.
+
+# Reviewers are then assigned round-robin style: https://docs.github.com/en/github/setting-up-and-managing-organizations-and-teams/managing-code-review-assignment-for-your-team
+
+* @microsoft/ose-component-detection-maintainers

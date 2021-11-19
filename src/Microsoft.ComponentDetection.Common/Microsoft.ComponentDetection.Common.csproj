@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    
+    <ItemGroup>
+        <PackageReference Include="Docker.DotNet" />
+        <PackageReference Include="Microsoft.AspNet.WebApi.Client" />
+        <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="Semver" />
+        <PackageReference Include="System.Composition.AttributedModel" />
+        <PackageReference Include="System.Composition.Convention" />
+        <PackageReference Include="System.Composition.Hosting" />
+        <PackageReference Include="System.Composition.Runtime" />
+        <PackageReference Include="System.Composition.TypedParts" />
+        <PackageReference Include="System.Reactive" />
+    </ItemGroup>
+
+    <ItemGroup Label="Package References">
+        <ProjectReference Include="..\Microsoft.ComponentDetection.Contracts\Microsoft.ComponentDetection.Contracts.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="Resources.Designer.cs">
+            <DependentUpon>Resources.resx</DependentUpon>
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+        </Compile>
+        <EmbeddedResource Update="Resources.resx">
+            <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+            <Generator>ResXFileCodeGenerator</Generator>
+        </EmbeddedResource>
+    </ItemGroup>
+
+</Project>

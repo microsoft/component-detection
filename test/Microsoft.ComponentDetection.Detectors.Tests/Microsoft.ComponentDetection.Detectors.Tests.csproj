@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup Label="Project References">
+        <ProjectReference Include="..\Microsoft.ComponentDetection.TestsUtilities\Microsoft.ComponentDetection.TestsUtilities.csproj" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+      <PlatformTarget>AnyCPU</PlatformTarget>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+      <PlatformTarget>AnyCPU</PlatformTarget>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="NuGet.Versioning"/>
+        <PackageReference Include="System.Reactive"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Update="Mocks\TestResources.Designer.cs">
+            <DesignTime>True</DesignTime>
+            <AutoGen>True</AutoGen>
+            <DependentUpon>TestResources.resx</DependentUpon>
+        </Compile>
+        <EmbeddedResource Update="Mocks\TestResources.resx">
+            <Generator>ResXFileCodeGenerator</Generator>
+            <LastGenOutput>TestResources.Designer.cs</LastGenOutput>
+        </EmbeddedResource>
+        <None Update="Mocks\GradlewDependencyOutput.txt">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\MvnCliDependencyOutput.txt">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,33 @@
+name: Component Detection PR
+
+on: [pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    env:
+      OFFICIAL_BUILD: 'True'
+      # Set the build number in MinVer.
+      MINVERBUILDMETADATA: build.${{github.run_number}}
+
+    steps:
+    - uses: actions/checkout@v2.3.2
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+        include-prerelease: true
+
+    - name: dotnet restore
+      run: dotnet restore
+
+    - name: Build and publish
+      run: dotnet publish -o dist --no-self-contained -c Release ./src/Microsoft.ComponentDetection
+
+    - name: Run tests
+      run: dotnet test

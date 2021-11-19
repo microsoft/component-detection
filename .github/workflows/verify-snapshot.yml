@@ -1,0 +1,110 @@
+name: Verify snapshot of test scan
+
+on: [pull_request]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    env:
+      OFFICIAL_BUILD: 'True'
+
+    steps:
+    - uses: actions/checkout@v2.3.2
+      with:
+          fetch-depth: 0
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+        include-prerelease: true
+
+    - name: dotnet restore
+      run: dotnet restore
+
+    - name: Make release snapshot output directory
+      run: mkdir ${{ github.workspace }}/release-output
+
+    - name: Get latest release snapshot download url
+      id: download-latest-release-snapshot
+      uses: actions/github-script@v3
+      with:
+        result-encoding: string
+        github-token: ${{ secrets.GH_Private_Repo_Pat }}
+        script: |
+            const res = await github.paginate(
+              github.actions.listArtifactsForRepo.endpoint.merge({
+                owner: 'microsoft',
+                repo: 'componentdetection-bcde',
+              })
+            );
+
+            return res
+              .filter(
+                (artifact) => artifact.name === 'release-snapshot-output-${{ matrix.os }}'
+              )
+              .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0]
+              .archive_download_url;
+
+    - name: Download latest release snapshot
+      working-directory: ${{ github.workspace }}/release-output
+      run: curl -v -L -u octocat:${{ secrets.GH_Private_Repo_Pat }} -o output.zip "${{ steps.download-latest-release-snapshot.outputs.result }}"
+
+    - name: Unzip latest release snapshot
+      run: unzip output.zip
+      working-directory: ${{ github.workspace }}/release-output
+
+    - name: Remove zip
+      run: rm output.zip
+      working-directory: ${{ github.workspace }}/release-output
+
+    - name: Verify we have the correct files
+      run: ls
+      working-directory: ${{ github.workspace }}/release-output
+
+# Need fetch depth : 0 because https://github.com/dotnet/Nerdbank.GitVersioning/issues/174#issuecomment-384961489
+    - name: Clone verification repo
+      uses: actions/checkout@v2.3.2
+      with:
+        repository: microsoft/componentdetection-verification
+        path: componentdetection-verification
+        token: ${{ secrets.GH_Private_Repo_Pat }}
+        fetch-depth: 0
+    
+    - name: Bootstrap the verification repo
+      run: node ./bootstrap.js
+      working-directory: ./componentdetection-verification
+
+    - name: Install Apache Ivy on Windows to support Ivy detector
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: Choco-Install -PackageName ivy
+      shell: powershell
+
+    - name: Install Apache Ivy on Ubuntu to support Ivy detector
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      run: curl https://archive.apache.org/dist/ant/ivy/2.5.0/apache-ivy-2.5.0-bin.tar.gz | tar xOz apache-ivy-2.5.0/ivy-2.5.0.jar > /usr/share/ant/lib/ivy.jar
+
+    - name: Make output directory
+      run: mkdir ${{ github.workspace }}/output
+
+    - name: Scan verification repo
+      working-directory: src/Microsoft.ComponentDetection
+      run: dotnet run scan --Verbosity Verbose --SourceDirectory ../../componentdetection-verification --Output ${{ github.workspace }}/output
+
+    - name: Build Verification Tests
+      run: dotnet build test/Microsoft.ComponentDetection.VerificationTests
+      env:
+        OFFICIAL_BUILD: 'True'
+
+    - name: Run Verification Tests
+      run: dotnet test --no-restore test/Microsoft.ComponentDetection.VerificationTests
+      env:
+        GITHUB_OLD_ARTIFACTS_DIR: ${{ github.workspace }}/release-output
+        GITHUB_NEW_ARTIFACTS_DIR: ${{ github.workspace }}/output
+        ALLOWED_TIME_DRIFT_RATIO: '.75'

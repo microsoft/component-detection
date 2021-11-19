@@ -1,0 +1,21 @@
+name: "Detector version bump reminder"
+on:
+  push:
+    paths:
+      - 'src/Microsoft.ComponentDetection.Detectors/**'
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mshick/add-pr-comment@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          message: |
+            👋 Hi! It looks like you modified some files in the `Detectors` folder.
+            You may need to bump the detector versions if any of the following scenarios apply:
+            * The detector detects more or fewer components than before
+            * The detector generates different parent/child graph relationships than before
+            * The detector generates different `devDependencies` values than before
+            
+            If none of the above scenarios apply, feel free to ignore this comment 🙂

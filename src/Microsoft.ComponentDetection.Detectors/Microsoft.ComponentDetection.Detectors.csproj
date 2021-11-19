@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="DotNet.Glob" />
+        <PackageReference Include="Nett" />
+        <PackageReference Include="NuGet.ProjectModel" />
+        <PackageReference Include="NuGet.Versioning" />
+        <PackageReference Include="Polly" />
+        <PackageReference Include="Semver" />
+        <PackageReference Include="yamldotnet" />
+        <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="System.Composition.AttributedModel" />
+        <PackageReference Include="System.Composition.Convention" />
+        <PackageReference Include="System.Composition.Hosting" />
+        <PackageReference Include="System.Composition.Runtime" />
+        <PackageReference Include="System.Composition.TypedParts" />
+        <PackageReference Include="System.Reactive" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" />
+    </ItemGroup>
+
+    <ItemGroup Label="Package References">
+        <ProjectReference Include="..\Microsoft.ComponentDetection.Common\Microsoft.ComponentDetection.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="ivy\Resources\build.xml">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </EmbeddedResource>
+        <EmbeddedResource Include="ivy\Resources\java-src\IvyComponentDetectionAntTask.java">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </EmbeddedResource>
+    </ItemGroup>
+
+</Project>

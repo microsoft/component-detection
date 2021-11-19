@@ -1,0 +1,56 @@
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+
+# FAKE Build
+.paket
+.fake
+.patcache
+LegacyPackage.nuspec
+
+# Visual Studio Code
+**/.vscode/*
+!launch.json
+!tasks.json
+**/.ionide/*
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+ComponentDetection/src/Microsoft.ComponentDetection.Loader/Properties/launchSettings.json
+
+# Diff work files
+*.orig
+
+# Node excludes
+node_modules/
+dist/
+dist-nuget/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+msbuild.log
+msbuild.err
+msbuild.wrn
+*.vsix
+TestResults/
+coverage.cobertura.xml
+
+# Visual Studio
+.vs/
+launchSettings.json
+
+# Dev nupkgs
+dev-source

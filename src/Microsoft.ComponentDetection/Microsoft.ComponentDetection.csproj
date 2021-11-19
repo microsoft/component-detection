@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
+        <RootProjectDirectory>$(MSBuildThisFileDirectory)..\..\</RootProjectDirectory>
+    </PropertyGroup>
+
+    <ItemGroup Label="Package References">
+        <ProjectReference Include="..\Microsoft.ComponentDetection.Common\Microsoft.ComponentDetection.Common.csproj" />
+        <ProjectReference Include="..\Microsoft.ComponentDetection.Contracts\Microsoft.ComponentDetection.Contracts.csproj" />
+        <ProjectReference Include="..\Microsoft.ComponentDetection.Detectors\Microsoft.ComponentDetection.Detectors.csproj" />
+        <ProjectReference Include="..\Microsoft.ComponentDetection.Orchestrator\Microsoft.ComponentDetection.Orchestrator.csproj" PrivateAssets="All" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <RuntimeHostConfigurationOption Include="System.Globalization.Invariant" Value="true" />
+    </ItemGroup>
+
+</Project>

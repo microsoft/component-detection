@@ -1,0 +1,47 @@
+name: 'Generate docs'
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/Microsoft.ComponentDetection.Orchestrator/ArgumentSets/*.cs'
+
+jobs:
+  gen-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+          include-prerelease: true
+
+      - name: Generate docs
+        run: |
+          touch version.json
+          touch version_dev.json
+          
+          # Run CLI
+          dotnet run -p src/Microsoft.ComponentDetection help scan 2> help.txt || true
+          cat <<EOF > docs/detector-arguments.md
+          # Detector arguments
+          
+          \`\`\`shell
+          dotnet run -p './src/Microsoft.ComponentDetection' help scan
+          \`\`\`
+
+          \`\`\`
+          $(tail --lines=+4 help.txt)
+          \`\`\`
+          EOF
+
+      - name: Commit
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'Update docs'
+          file_pattern: '*.md'

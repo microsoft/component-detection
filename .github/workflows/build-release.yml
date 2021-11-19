@@ -1,0 +1,81 @@
+name: Component Detection CI
+
+on: 
+  push:
+    branches: 
+      - main
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    env:
+      OFFICIAL_BUILD: 'True'
+      # Set the build number in MinVer.
+      MINVERBUILDMETADATA: build.${{github.run_number}}
+
+    steps:
+    - uses: actions/checkout@v2.3.2
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+        include-prerelease: true
+
+    - name: dotnet restore
+      run: dotnet restore
+
+    - name: Build and publish
+      run: dotnet publish -o dist --no-self-contained -c Release ./src/Microsoft.ComponentDetection
+
+    - name: Create temporary folder for release
+      run: mkdir ./dist-release
+
+    - name: Tar the output
+      run: tar -C ./dist -cvf ./dist-release/component-detection.tar.gz .
+
+    - name: Create a release draft
+      id: create_release_draft
+      uses: release-drafter/release-drafter@v5
+      with:
+          disable-autolabeler: true
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Extension Release Asset
+      id: upload-component-detection-release-asset 
+      uses: actions/upload-release-asset@v1.0.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release_draft.outputs.upload_url }} 
+        asset_path: ./dist-release/component-detection.tar.gz 
+        asset_name: component-detection.tar.gz
+        asset_content_type: application/zip
+
+    - name: Add NuGet publication source for Github packages
+      run: dotnet nuget add source https://nuget.pkg.github.com/microsoft/index.json --password $GITHUB_TOKEN --username notused --store-password-in-clear-text --name cgwriter
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Add NuGet publication source for Azure Artifacts Packaging feed
+      run: dotnet nuget add source https://1essharedassets.pkgs.visualstudio.com/1esPkgs/_packaging/ComponentDetection/nuget/v3/index.json --password $AZART_TOKEN --username az --store-password-in-clear-text --name Packaging
+      env:
+        AZART_TOKEN: ${{ secrets.AZART_TOKEN }}
+
+    - name: Generate NuGet packages
+      run: dotnet pack -o dist-nuget -c Release
+
+      # dotnet nuget push seems to have some probs, use curl for GH
+    - name: Publish nuget
+      run: |
+           for f in ./dist-nuget/*.nupkg
+           do
+             curl -vX PUT -u "[user]:${{ secrets.GITHUB_TOKEN }}" -F package=@$f https://nuget.pkg.github.com/microsoft/
+             dotnet nuget push --source "Packaging" --api-key az $f
+           done
+      shell: bash

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Add and using a telemetry record",
+  "steps": [
+    {
+      "directory": "src/Common/Telemetry/Records",
+      "description": "Create a new file `MyTelemetryRecord.cs` in `./src/Common/Telemetry/Records/`",
+      "title": "Creating the file"
+    },
+    {
+      "file": "src/Common/Telemetry/Records/LoadComponentDetectorsTelemetryRecord.cs",
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 5
+        },
+        "end": {
+          "line": 3,
+          "character": 11
+        }
+      },
+      "description": "Make sure it's a public class.",
+      "title": "Configuring the class"
+    },
+    {
+      "file": "src/Common/Telemetry/Records/LoadComponentDetectorsTelemetryRecord.cs",
+      "selection": {
+        "start": {
+          "line": 3,
+          "character": 55
+        },
+        "end": {
+          "line": 3,
+          "character": 86
+        }
+      },
+      "description": "Derive `BaseDetectionTelemetryRecord`",
+      "title": "Inheritance"
+    },
+    {
+      "file": "src/Common/Telemetry/Records/LoadComponentDetectorsTelemetryRecord.cs",
+      "description": "Every telemetry record must have a unique `RecordName`",
+      "line": 5,
+      "title": "Record Name"
+    },
+    {
+      "file": "src/Common/Telemetry/Records/LoadComponentDetectorsTelemetryRecord.cs",
+      "description": "Add any additional properties you wish your record to track",
+      "line": 7,
+      "title": "Setting the properties"
+    },
+    {
+      "file": "src/Detectors/linux/LinuxScanner.cs",
+      "description": "Here is an example of how you would use a telemetry record",
+      "line": 30,
+      "title": "Using your record"
+    }
+  ]
+}

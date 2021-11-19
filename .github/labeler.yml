@@ -1,0 +1,22 @@
+repo-configuration:
+    - .github/**/*
+    - /*
+    - .vscode/**/*
+    - .devcontainer/**/*
+
+documentation:
+    - docs/**/*
+    - README.md
+    - SECURITY.md
+    - CONTRIBUTING.md
+    - .tours/**/*
+
+component-detection:
+    - src/**/*
+    - test/**/*
+
+scripts:
+    - Scripts/**/*
+
+build:
+    - Build/**/*

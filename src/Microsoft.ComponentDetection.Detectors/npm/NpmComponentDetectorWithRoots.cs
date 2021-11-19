@@ -1,0 +1,339 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Composition;
+using System.IO;
+using System.Linq;
+using System.Reactive.Linq;
+using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.Internal;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace Microsoft.ComponentDetection.Detectors.Npm
+{
+    [Export(typeof(IComponentDetector))]
+    public class NpmComponentDetectorWithRoots : FileComponentDetector
+    {
+        /// <summary>Gets or sets the logger for writing basic logging message to both console and file. Injected automatically by MEF composition.</summary>
+        [Import]
+        public IPathUtilityService PathUtilityService { get; set; }
+
+        public override string Id { get; } = "NpmWithRoots";
+
+        public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
+
+        public override IList<string> SearchPatterns { get; } = new List<string> { "package-lock.json", "npm-shrinkwrap.json", LernaSearchPattern };
+
+        public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
+
+        public override int Version { get; } = 2;
+
+        private const string NpmRegistryHost = "registry.npmjs.org";
+
+        private readonly object lernaFilesLock = new object();
+
+        /// <summary>Common delegate for Package.json JToken processing.</summary>
+        /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
+        /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
+        protected delegate bool JTokenProcessingDelegate(JToken token);
+
+        public const string LernaSearchPattern = "lerna.json";
+
+        public List<ProcessRequest> LernaFiles { get; set; } = new List<ProcessRequest>();
+
+        /// <inheritdoc />
+        protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
+
+        protected override Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+        {
+            return Task.FromResult(RemoveNodeModuleNestedFiles(processRequests)
+                .Where(pr =>
+                {
+                    if (pr.ComponentStream.Pattern.Equals(LernaSearchPattern))
+                    {
+                        // Lock LernaFiles so we don't add while we are enumerating in processFiles
+                        lock (lernaFilesLock)
+                        {
+                            LernaFiles.Add(pr);
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }));
+        }
+
+        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+        {
+            IEnumerable<string> packageJsonPattern = new List<string> { "package.json" };
+            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+            var file = processRequest.ComponentStream;
+
+            IEnumerable<IComponentStream> packageJsonComponentStream = ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(file.Location).Directory, packageJsonPattern, (name, directoryName) => false, false);
+
+            bool foundUnderLerna = false;
+            IList<ProcessRequest> lernaFilesClone;
+
+            // ToList LernaFiles to generate a copy we can act on without holding the lock for a long time
+            lock (lernaFilesLock)
+            {
+                lernaFilesClone = LernaFiles.ToList();
+            }
+
+            foreach (var lernaProcessRequest in lernaFilesClone)
+            {
+                var lernaFile = lernaProcessRequest.ComponentStream;
+
+                // We have extra validation on lock files not found below a lerna.json
+                if (PathUtilityService.IsFileBelowAnother(lernaFile.Location, file.Location))
+                {
+                    foundUnderLerna = true;
+                    break;
+                }
+            }
+
+            await SafeProcessAllPackageJTokens(file, (token) =>
+            {
+                if (!foundUnderLerna && (token["name"] == null || token["version"] == null || string.IsNullOrWhiteSpace(token["name"].Value<string>()) || string.IsNullOrWhiteSpace(token["version"].Value<string>())))
+                {
+                    Logger.LogInfo($"{file.Location} does not contain a valid name and/or version. These are required fields for a valid package-lock.json file." +
+                                   $"It and its dependencies will not be registered.");
+                    return false;
+                }
+
+                ProcessIndividualPackageJTokens(singleFileComponentRecorder, token, packageJsonComponentStream, skipValidation: foundUnderLerna);
+                return true;
+            });
+        }
+
+        private IObservable<ProcessRequest> RemoveNodeModuleNestedFiles(IObservable<ProcessRequest> componentStreams)
+        {
+            List<DirectoryItemFacade> directoryItemFacades = new List<DirectoryItemFacade>();
+            Dictionary<string, DirectoryItemFacade> directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
+
+            return Observable.Create<ProcessRequest>(s =>
+            {
+                return componentStreams.Subscribe(
+                    processRequest =>
+                {
+                    var item = processRequest.ComponentStream;
+                    string currentDir = item.Location;
+                    DirectoryItemFacade last = null;
+                    do
+                    {
+                        currentDir = PathUtilityService.GetParentDirectory(currentDir);
+
+                        // We've reached the top / root
+                        if (currentDir == null)
+                        {
+                            // If our last directory isn't in our list of top level nodes, it should be added. This happens for the first processed item and then subsequent times we have a new root (edge cases with multiple hard drives, for example)
+                            if (!directoryItemFacades.Contains(last))
+                            {
+                                directoryItemFacades.Add(last);
+                            }
+
+                            string skippedFolder = SkippedFolders.FirstOrDefault(folder => item.Location.Contains(folder));
+
+                            // When node_modules is part of the path down to a given item, we skip the item. Otherwise, we yield the item.
+                            if (string.IsNullOrEmpty(skippedFolder))
+                            {
+                                s.OnNext(processRequest);
+                            }
+                            else
+                            {
+                                Logger.LogVerbose($"Ignoring package-lock.json at {item.Location}, as it is inside a {skippedFolder} folder.");
+                            }
+
+                            break;
+                        }
+
+                        var directoryExisted = directoryItemFacadesByPath.TryGetValue(currentDir, out var current);
+                        if (!directoryExisted)
+                        {
+                            directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
+                            {
+                                Name = currentDir,
+                                Files = new List<IComponentStream>(),
+                                Directories = new List<DirectoryItemFacade>(),
+                            };
+                        }
+
+                        // If we came from a directory, we add it to our graph.
+                        if (last != null)
+                        {
+                            current.Directories.Add(last);
+                        }
+
+                        // If we didn't come from a directory, it's because we're just getting started. Our current directory should include the file that led to it showing up in the graph.
+                        else
+                        {
+                            current.Files.Add(item);
+                        }
+
+                        last = current;
+                    }
+
+                    // Go all the way up
+                    while (currentDir != null);
+                }, s.OnCompleted);
+            });
+        }
+
+        private async Task SafeProcessAllPackageJTokens(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
+        {
+            try
+            {
+                await ProcessAllPackageJTokensAsync(componentStream, jtokenProcessor);
+            }
+            catch (Exception e)
+            {
+                // If something went wrong, just ignore the component
+                Logger.LogBuildWarning($"Could not parse Jtokens from {componentStream.Location} file.");
+                Logger.LogFailedReadingFile(componentStream.Location, e);
+                return;
+            }
+        }
+
+        protected Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
+        {
+            try
+            {
+                if (!componentStream.Stream.CanRead)
+                {
+                    componentStream.Stream.ReadByte();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogBuildWarning($"Could not read {componentStream.Location} file.");
+                Logger.LogFailedReadingFile(componentStream.Location, ex);
+                return Task.CompletedTask;
+            }
+
+            using StreamReader file = new StreamReader(componentStream.Stream);
+            using JsonTextReader reader = new JsonTextReader(file);
+
+            var o = JToken.ReadFrom(reader);
+            jtokenProcessor(o);
+            return Task.CompletedTask;
+        }
+
+        protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
+        {
+            JToken dependencies = packageLockJToken["dependencies"];
+            Queue<(JProperty, TypedComponent)> topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
+
+            var dependencyLookup = dependencies.Children<JProperty>().ToDictionary(dependency => dependency.Name);
+
+            foreach (var stream in packageJsonComponentStream)
+            {
+                using StreamReader file = new StreamReader(stream.Stream);
+                using JsonTextReader reader = new JsonTextReader(file);
+
+                var packageJsonToken = JToken.ReadFrom(reader);
+                bool enqueued = TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
+                enqueued = enqueued && TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, skipValidation: skipValidation);
+                if (!enqueued)
+                {
+                    // This represents a mismatch between lock file and package.json, break out and do not register anything for these files
+                    throw new InvalidOperationException(string.Format("InvalidPackageJson -- There was a mismatch between the components in the package.json and the lock file at '{0}'", singleFileComponentRecorder.ManifestFileLocation));
+                }
+            }
+
+            if (!packageJsonComponentStream.Any())
+            {
+                throw new InvalidOperationException(string.Format("InvalidPackageJson -- There must be a package.json file at '{0}' for components to be registered", singleFileComponentRecorder.ManifestFileLocation));
+            }
+
+            TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, singleFileComponentRecorder);
+        }
+
+        private void TraverseRequirementAndDependencyTree(IEnumerable<(JProperty, TypedComponent)> topLevelDependencies, IDictionary<string, JProperty> dependencyLookup, ISingleFileComponentRecorder singleFileComponentRecorder)
+        {
+            // iterate through everything for a top level dependency with a single explicitReferencedDependency value
+            foreach (var (currentDependency, _) in topLevelDependencies)
+            {
+                var typedComponent = NpmComponentUtilities.GetTypedComponent(currentDependency, NpmRegistryHost, Logger);
+                if (typedComponent == null)
+                {
+                    continue;
+                }
+
+                HashSet<string> previouslyAddedComponents = new HashSet<string> { typedComponent.Id };
+                Queue<(JProperty, TypedComponent)> subQueue = new Queue<(JProperty, TypedComponent)>();
+
+                NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder, typedComponent, explicitReferencedDependency: typedComponent);
+                EnqueueDependencies(subQueue, currentDependency.Value["dependencies"], parentComponent: typedComponent);
+                TryEnqueueFirstLevelDependencies(subQueue, currentDependency.Value["requires"], dependencyLookup, parentComponent: typedComponent);
+
+                while (subQueue.Count != 0)
+                {
+                    var (currentSubDependency, parentComponent) = subQueue.Dequeue();
+
+                    var typedSubComponent = NpmComponentUtilities.GetTypedComponent(currentSubDependency, NpmRegistryHost, Logger);
+
+                    // only process components that we haven't seen before that have been brought in by the same explicitReferencedDependency, resolves circular npm 'requires' loop
+                    if (typedSubComponent == null || previouslyAddedComponents.Contains(typedSubComponent.Id))
+                    {
+                        continue;
+                    }
+
+                    previouslyAddedComponents.Add(typedSubComponent.Id);
+
+                    NpmComponentUtilities.TraverseAndRecordComponents(currentSubDependency, singleFileComponentRecorder, typedSubComponent, explicitReferencedDependency: typedComponent, parentComponent.Id);
+
+                    EnqueueDependencies(subQueue, currentSubDependency.Value["dependencies"], parentComponent: typedSubComponent);
+                    TryEnqueueFirstLevelDependencies(subQueue, currentSubDependency.Value["requires"], dependencyLookup, parentComponent: typedSubComponent);
+                }
+            }
+        }
+
+        private void EnqueueDependencies(Queue<(JProperty, TypedComponent)> queue, JToken dependencies, TypedComponent parentComponent)
+        {
+            if (dependencies != null)
+            {
+                foreach (JProperty dependency in dependencies)
+                {
+                    if (dependency != null)
+                    {
+                        queue.Enqueue((dependency, parentComponent));
+                    }
+                }
+            }
+        }
+
+        private bool TryEnqueueFirstLevelDependencies(Queue<(JProperty, TypedComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, Queue<TypedComponent> parentComponentQueue = null, TypedComponent parentComponent = null, bool skipValidation = false)
+        {
+            bool isValid = true;
+            if (dependencies != null)
+            {
+                foreach (JProperty dependency in dependencies)
+                {
+                    if (dependency == null || dependency.Name == null)
+                    {
+                        continue;
+                    }
+
+                    bool inLock = dependencyLookup.TryGetValue(dependency.Name, out JProperty dependencyProperty);
+                    if (inLock)
+                    {
+                        queue.Enqueue((dependencyProperty, parentComponent));
+                    }
+                    else if (skipValidation)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        isValid = false;
+                    }
+                }
+            }
+
+            return isValid;
+        }
+    }
+}

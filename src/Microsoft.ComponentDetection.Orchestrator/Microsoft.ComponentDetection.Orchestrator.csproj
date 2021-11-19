@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="CommandLineParser" />
+        <PackageReference Include="DotNet.Glob" />
+        <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="Polly" />
+        <PackageReference Include="System.Runtime.Loader" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" />
+        <PackageReference Include="System.Composition.AttributedModel" />
+        <PackageReference Include="System.Composition.Convention" />
+        <PackageReference Include="System.Composition.Hosting" />
+        <PackageReference Include="System.Composition.Runtime" />
+        <PackageReference Include="System.Composition.TypedParts" />
+        <PackageReference Include="System.Reactive" />
+    </ItemGroup>
+
+    <ItemGroup Label="Package References">
+        <ProjectReference Include="..\Microsoft.ComponentDetection.Detectors\Microsoft.ComponentDetection.Detectors.csproj" />
+    </ItemGroup>
+
+</Project>
