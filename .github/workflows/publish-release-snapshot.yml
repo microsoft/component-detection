@@ -37,6 +37,10 @@ jobs:
         token: ${{ secrets.GH_Private_Repo_Pat }}
         fetch-depth: 0
         
+    - name: Bootstrap the verification repo
+      run: node ./bootstrap.js
+      working-directory: ./componentdetection-verification
+
     - name: Install Apache Ivy on Windows to support Ivy detector
       if: ${{ matrix.os == 'windows-latest' }}
       run: Choco-Install -PackageName ivy
