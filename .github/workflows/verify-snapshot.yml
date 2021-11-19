@@ -41,7 +41,7 @@ jobs:
             const res = await github.paginate(
               github.actions.listArtifactsForRepo.endpoint.merge({
                 owner: 'microsoft',
-                repo: 'componentdetection-bcde',
+                repo: 'component-detection',
               })
             );
 
