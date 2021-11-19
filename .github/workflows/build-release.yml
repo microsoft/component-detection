@@ -40,6 +40,24 @@ jobs:
 
     - name: Tar the output
       run: tar -C ./dist -cvf ./dist-release/component-detection.tar.gz .
+  
+    - name: Get release
+      id: get_release
+      uses: bruceadams/get-release@v1.2.3
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+  
+    - name: Upload Extension Release Asset
+      id: upload-component-detection-release-asset 
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1.0.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_release.outputs.upload_url }} 
+        asset_path: ./dist-release/component-detection.tar.gz 
+        asset_name: component-detection.tar.gz
+        asset_content_type: application/zip
 
     - name: Add NuGet publication source for Github packages
       if: github.event_name == 'release'
