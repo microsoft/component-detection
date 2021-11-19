@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-  pull_request:
   release:
     types:
       - published
-  workflow_dispatch:
 
 jobs:
   build:
@@ -42,7 +40,14 @@ jobs:
 
     - name: Tar the output
       run: tar -C ./dist -cvf ./dist-release/component-detection.tar.gz .
-
+  
+    - name: Get release
+      if: github.event_name == 'release'
+      id: get_release
+      uses: bruceadams/get-release@v1.2.3
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+  
     - name: Upload Extension Release Asset
       id: upload-component-detection-release-asset 
       if: github.event_name == 'release'
@@ -50,7 +55,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release_draft.outputs.upload_url }} 
+        upload_url: ${{ steps.get_release.outputs.upload_url }} 
         asset_path: ./dist-release/component-detection.tar.gz 
         asset_name: component-detection.tar.gz
         asset_content_type: application/zip
