@@ -67,6 +67,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Add NuGet publication source for Azure Artifacts Packaging feed
+      if: github.event_name == 'release'
       run: dotnet nuget add source https://1essharedassets.pkgs.visualstudio.com/1esPkgs/_packaging/ComponentDetection/nuget/v3/index.json --password $AZART_TOKEN --username az --store-password-in-clear-text --name Packaging
       env:
         AZART_TOKEN: ${{ secrets.AZART_TOKEN }}
