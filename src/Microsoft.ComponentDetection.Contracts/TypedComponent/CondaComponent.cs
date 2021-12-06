@@ -19,21 +19,21 @@
             MD5 = md5;
         }
 
-        public string Build { get; }
+        public string Build { get; set; }
 
-        public string Channel { get; }
+        public string Channel { get; set; }
 
-        public string Name { get; }
+        public string Name { get; set; }
 
-        public string Namespace { get; }
+        public string Namespace { get; set; }
 
-        public string Subdir { get; }
+        public string Subdir { get; set; }
 
-        public string Version { get; }
+        public string Version { get; set; }
 
-        public string Url { get; }
+        public string Url { get; set; }
 
-        public string MD5 { get; }
+        public string MD5 { get; set; }
 
         public override ComponentType Type => ComponentType.Conda;
 
