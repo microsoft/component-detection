@@ -40,7 +40,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 CommandLineInvocationService = commandLineMock.Object,
                 Logger = loggerMock.Object,
-                EnvVarService = envVarService.Object
+                EnvVarService = envVarService.Object,
             };
 
             var tempPath = Path.GetTempPath();
