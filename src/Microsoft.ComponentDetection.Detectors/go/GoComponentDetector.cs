@@ -42,7 +42,6 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
-
             
             var projectRootDirectory = Directory.GetParent(file.Location);
             if (projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
