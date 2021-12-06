@@ -22,10 +22,7 @@ jobs:
           include-prerelease: true
 
       - name: Generate docs
-        run: |
-          touch version.json
-          touch version_dev.json
-          
+        run: |          
           # Run CLI
           dotnet run -p src/Microsoft.ComponentDetection help scan 2> help.txt || true
           cat <<EOF > docs/detector-arguments.md

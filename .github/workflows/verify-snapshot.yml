@@ -36,7 +36,6 @@ jobs:
       uses: actions/github-script@v3
       with:
         result-encoding: string
-        github-token: ${{ secrets.GH_Private_Repo_Pat }}
         script: |
             const res = await github.paginate(
               github.actions.listArtifactsForRepo.endpoint.merge({
@@ -54,7 +53,7 @@ jobs:
 
     - name: Download latest release snapshot
       working-directory: ${{ github.workspace }}/release-output
-      run: curl -v -L -u octocat:${{ secrets.GH_Private_Repo_Pat }} -o output.zip "${{ steps.download-latest-release-snapshot.outputs.result }}"
+      run: curl -v -L -o output.zip "${{ steps.download-latest-release-snapshot.outputs.result }}"
 
     - name: Unzip latest release snapshot
       run: unzip output.zip
