@@ -339,9 +339,9 @@ replace (
         [TestMethod]
         public async Task TestGoDetector_GoCliRequiresEnvVarToRun()
         {
-            commandLineMock.Verify(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()), Times.Never);
-            
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
+
+            commandLineMock.Verify(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()), Times.Never);
         }
     }
 }
