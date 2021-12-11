@@ -13,6 +13,7 @@
 | Pnpm | <ul><li>shrinkwrap.yaml</li><li>pnpm-lock.yaml</li></ul> | - | ✔ (packages/{package}/dev flag) | ✔ |
 | NuGet | <ul><li>project.assets.json</li><li>*.nupkg</li><li>*.nuspec</li><li>nuget.config</li></ul> | - | - | ✔ (required project.assets.json) |
 | Pip (Python) | <ul><li>setup.py</li><li>requirements.txt</li><li>*setup=distutils.core.run_setup({setup.py}); setup.install_requires*</li><li>dist package METADATA file</li></ul> | <ul><li>Python 2 or Python 3</li><li>Internet connection</li></ul> | ❌ | ✔ |
+| Poetry (Python) | <ul><li>poetry.lock</li><ul> | - | ✔ | ❌ |
 | Ruby | <ul><li>gemfile.lock</li></ul> | - | ❌ | ✔ |
 | Cargo | <ul><li>cargo.lock (v1, v2)</li><li>cargo.toml</li></ul> | - | ✔ (dev-dependencies in cargo.toml) | ✔ | 
 
