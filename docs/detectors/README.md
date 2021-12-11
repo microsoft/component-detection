@@ -8,5 +8,6 @@
 - NPM
 - NuGet
 - [Pip](pip.md)
+- [Poetry](poetry.md)
 - Ruby
 - Rust
