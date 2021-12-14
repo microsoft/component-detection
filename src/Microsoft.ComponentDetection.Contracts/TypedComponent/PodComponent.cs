@@ -37,7 +37,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
                     qualifiers.Add("repository_url", SpecRepo);
                 }
 
-                return new ("cocoapods", null, Name, Version, qualifiers, null);
+                return new PackageURL("cocoapods", null, Name, Version, qualifiers, null);
             }
         }
     }
