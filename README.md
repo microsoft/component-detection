@@ -31,6 +31,7 @@ ComponentDetection is a package scanning tool intended to be used at build time.
 | NPM (including Yarn, Pnpm) | ✔ | ✔ |
 | NuGet | ✔ | ✔ |
 | Pip (Python) | ✔ | ✔ |
+| Poetry (Python, lockfiles only) | ✔ | ❌ |
 | Ruby | ✔ | ✔ |
 | Rust | ✔ | ✔ |
 
