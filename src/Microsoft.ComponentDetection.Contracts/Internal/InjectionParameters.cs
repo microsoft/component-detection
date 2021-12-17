@@ -35,6 +35,8 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
         private static IObservableDirectoryWalkerFactory observableDirectoryWalkerFactoryServiceStatic;
         private static IDockerService dockerServiceStatic;
 
+        private static IEnvironmentVariableService environmentVariableServiceStatic;
+
         [Export(typeof(ILogger))]
         public ILogger Logger => loggerStatic;
 
@@ -55,5 +57,8 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
 
         [Export(typeof(IDockerService))]
         public IDockerService DockerService => dockerServiceStatic;
+
+        [Export(typeof(IEnvironmentVariableService))]
+        public IEnvironmentVariableService EnvironmentVariableService => environmentVariableServiceStatic;
     }
 }

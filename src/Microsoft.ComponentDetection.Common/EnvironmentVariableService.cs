@@ -1,5 +1,6 @@
 using System;
 using System.Composition;
+using Microsoft.ComponentDetection.Contracts;
 
 namespace Microsoft.ComponentDetection.Common
 {

@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Common
+namespace Microsoft.ComponentDetection.Contracts
 {
     public interface IEnvironmentVariableService
     {
