@@ -31,6 +31,7 @@ ComponentDetection is a package scanning tool intended to be used at build time.
 | NPM (including Yarn, Pnpm) | ✔ | ✔ |
 | NuGet | ✔ | ✔ |
 | Pip (Python) | ✔ | ✔ |
+| Poetry (Python, lockfiles only) | ✔ | ❌ |
 | Ruby | ✔ | ✔ |
 | Rust | ✔ | ✔ |
 
@@ -42,8 +43,7 @@ Component Detection is built with extensibility in mind! Please see our [CONTRIB
 
 
 # Building and running Component Detection
-DotNet Core SDK 6.0.0-rc2 is currently in use, you can install it from https://dotnet.microsoft.com/download/dotnet/6.0
-We also use node and npm, you can install them from https://nodejs.org/en/download/
+.NET Core 3.1 is currently in use, you can install it from https://dotnet.microsoft.com/download/dotnet/3.1
 
 The below commands mirror what we do to setup our CI environments:
 
