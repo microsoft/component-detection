@@ -129,7 +129,7 @@ From the example above you can see each test is initialized with a new `Detector
 ## How to run/debug your detector
 
 ```
-dotnet run -p "[YOUR REPO PATH]\src\Microsoft.ComponentDetection\Microsoft.ComponentDetection.csproj" scan
+dotnet run --project "[YOUR REPO PATH]\src\Microsoft.ComponentDetection\Microsoft.ComponentDetection.csproj" scan
 --Verbosity Verbose
 --SourceDirectory [PATH TO THE REPO TO SCAN]
 --DetectorArgs [YOUR DETECTOR ID]=EnableIfDefaultOff
