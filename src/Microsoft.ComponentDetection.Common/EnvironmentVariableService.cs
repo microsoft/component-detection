@@ -9,7 +9,7 @@ namespace Microsoft.ComponentDetection.Common
     {
         public bool DoesEnvironmentVariableExist(string name)
         {
-            var enabledVar = Environment.GetEnvironmentVariable("EnableGoCliScanning");
+            var enabledVar = Environment.GetEnvironmentVariable(name);
             return !string.IsNullOrEmpty(enabledVar);
         }
     }
