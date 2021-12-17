@@ -11,6 +11,7 @@ using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.ComponentDetection.Common;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -21,18 +22,25 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     {
         private DetectorTestUtility<GoComponentDetector> detectorTestUtility;
         private Mock<ICommandLineInvocationService> commandLineMock;
+
+        private Mock<IEnvironmentVariableService> envVarService;
         private ScanRequest scanRequest;
 
         [TestInitialize]
         public void TestInitialize()
         {
             commandLineMock = new Mock<ICommandLineInvocationService>();
+            envVarService = new Mock<IEnvironmentVariableService>();
+
             var loggerMock = new Mock<ILogger>();
+
+            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(false);
 
             var detector = new GoComponentDetector
             {
                 CommandLineInvocationService = commandLineMock.Object,
                 Logger = loggerMock.Object,
+                EnvVarService = envVarService.Object,
             };
 
             var tempPath = Path.GetTempPath();
@@ -254,6 +262,8 @@ replace (
             commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
                 .ReturnsAsync(false);
 
+            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
 
@@ -262,6 +272,8 @@ replace (
         {
             commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
                 .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
+
+            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -278,6 +290,8 @@ replace (
                     ExitCode = 1,
                 });
 
+            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
 
@@ -289,6 +303,8 @@ replace (
 
             commandLineMock.Setup(x => x.ExecuteCommand("go mod graph", null, It.IsAny<DirectoryInfo>(), It.IsAny<string>()))
                 .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
+
+            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -308,6 +324,8 @@ replace (
                     StdOut = goGraph,
                 });
 
+            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithFile("go.mod", string.Empty)
                                                     .ExecuteDetector();
@@ -315,7 +333,15 @@ replace (
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
             var detectedComponents = componentRecorder.GetDetectedComponents();
-            Assert.AreEqual(0, detectedComponents.Count());
+            Assert.AreEqual(4, detectedComponents.Count());
+        }
+
+        [TestMethod]
+        public async Task TestGoDetector_GoCliRequiresEnvVarToRun()
+        {
+            await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
+
+            commandLineMock.Verify(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()), Times.Never);
         }
     }
 }

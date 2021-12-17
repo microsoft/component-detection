@@ -25,6 +25,7 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
             fileUtilityServiceStatic = detectorDependencies.FileUtilityService;
             observableDirectoryWalkerFactoryServiceStatic = detectorDependencies.DirectoryWalkerFactory;
             dockerServiceStatic = detectorDependencies.DockerService;
+            environmentVariableServiceStatic = detectorDependencies.EnvironmentVariableService;
         }
 
         private static ILogger loggerStatic;
@@ -34,6 +35,8 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
         private static IFileUtilityService fileUtilityServiceStatic;
         private static IObservableDirectoryWalkerFactory observableDirectoryWalkerFactoryServiceStatic;
         private static IDockerService dockerServiceStatic;
+
+        private static IEnvironmentVariableService environmentVariableServiceStatic;
 
         [Export(typeof(ILogger))]
         public ILogger Logger => loggerStatic;
@@ -55,5 +58,8 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
 
         [Export(typeof(IDockerService))]
         public IDockerService DockerService => dockerServiceStatic;
+
+        [Export(typeof(IEnvironmentVariableService))]
+        public IEnvironmentVariableService EnvironmentVariableService => environmentVariableServiceStatic;
     }
 }

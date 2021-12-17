@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -17,6 +18,9 @@ namespace Microsoft.ComponentDetection.Detectors.Go
     {
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
+
+        [Import]
+        public IEnvironmentVariableService EnvVarService { get; set; }
 
         private static readonly Regex GoSumRegex = new Regex(
             @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
@@ -34,35 +38,62 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
         private HashSet<string> projectRoots = new HashSet<string>();
 
-        protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
-
-            var fileExtension = Path.GetExtension(file.Location).ToLowerInvariant();
-            switch (fileExtension)
-            {
-                case ".mod":
-                    {
-                        Logger.LogVerbose("Found Go.mod: " + file.Location);
-                        ParseGoModFile(singleFileComponentRecorder, file);
-                        break;
-                    }
-
-                case ".sum":
-                    {
-                        Logger.LogVerbose("Found Go.sum: " + file.Location);
-                        ParseGoSumFile(singleFileComponentRecorder, file);
-                        break;
-                    }
-
-                default:
-                    {
-                        throw new Exception("Unexpected file type detected in go detector");
-                    }
-            }
             
-            return Task.CompletedTask;
+            var projectRootDirectory = Directory.GetParent(file.Location);
+            if (projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
+            {
+                return;
+            }
+
+            var wasGoCliScanSuccessful = false;
+            try
+            {
+                if (IsGoCliManuallyEnabled())
+                {
+                    Logger.LogInfo("Go cli scan was manually enabled");
+                    wasGoCliScanSuccessful = await UseGoCliToScan(file.Location, singleFileComponentRecorder);
+                }
+            }
+            catch
+            {
+                Logger.LogInfo("Failed to detect components using go cli.");
+            }
+            finally
+            {
+                if (wasGoCliScanSuccessful)
+                {
+                    projectRoots.Add(projectRootDirectory.FullName);
+                }
+                else
+                {
+                    var fileExtension = Path.GetExtension(file.Location).ToLowerInvariant();
+                    switch (fileExtension)
+                    {
+                        case ".mod":
+                            {
+                                Logger.LogVerbose("Found Go.mod: " + file.Location);
+                                ParseGoModFile(singleFileComponentRecorder, file);
+                                break;
+                            }
+
+                        case ".sum":
+                            {
+                                Logger.LogVerbose("Found Go.sum: " + file.Location);
+                                ParseGoSumFile(singleFileComponentRecorder, file);
+                                break;
+                            }
+
+                        default:
+                            {
+                                throw new Exception("Unexpected file type detected in go detector");
+                            }
+                    }
+                }
+            }
         }
 
         private async Task<bool> UseGoCliToScan(string location, ISingleFileComponentRecorder singleFileComponentRecorder)
@@ -222,6 +253,11 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
             goComponent = new GoComponent(componentParts[0], componentParts[1]);
             return true;
+        }
+
+        private bool IsGoCliManuallyEnabled()
+        {
+            return EnvVarService.DoesEnvironmentVariableExist("EnableGoCliScan");
         }
     }
 }
