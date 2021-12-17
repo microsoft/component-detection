@@ -25,6 +25,7 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
             fileUtilityServiceStatic = detectorDependencies.FileUtilityService;
             observableDirectoryWalkerFactoryServiceStatic = detectorDependencies.DirectoryWalkerFactory;
             dockerServiceStatic = detectorDependencies.DockerService;
+            environmentVariableServiceStatic = detectorDependencies.EnvironmentVariableService;
         }
 
         private static ILogger loggerStatic;

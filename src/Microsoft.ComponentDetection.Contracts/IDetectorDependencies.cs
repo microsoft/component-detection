@@ -15,5 +15,7 @@
         IObservableDirectoryWalkerFactory DirectoryWalkerFactory { get; set; }
         
         IDockerService DockerService { get; set; }
+
+        IEnvironmentVariableService EnvironmentVariableService { get; set; }
     }
 }

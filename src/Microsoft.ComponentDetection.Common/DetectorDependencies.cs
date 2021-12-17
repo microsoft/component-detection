@@ -28,6 +28,6 @@ namespace Microsoft.ComponentDetection.Common
         public IDockerService DockerService { get; set; }
 
         [Import]
-        public IEnvironmentVariableService EnvironmentVariableService {get; set;}
+        public IEnvironmentVariableService EnvironmentVariableService { get; set; }
     }
 }
