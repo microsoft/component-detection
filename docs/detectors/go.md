@@ -24,7 +24,7 @@ Improved go detection depends on the following to successfully run:
 
 Go detection is performed by parsing output from executing `go mod graph`.
 Full dependency graph generation is supported if Go v1.11+ is present on the build agent.
-If no Go v1.11+ is present, to the default detection strategy.
+If no Go v1.11+ is present, fallback detection strategy is performed.
 
 As we validate this opt-in behavior, we will eventually graduate it to the default detection strategy.
 
