@@ -293,7 +293,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         public static DependencySpecification GenerateDependencySpecifications(TomlTable cargoToml, IEnumerable<string> tomlDependencyKeys)
         {
             var dependencySpecifications = new DependencySpecification();
-            foreach (var tomlDependencyKey in tomlDependencyKeys)
+            var matchingDependencyKeys = GetMatchingKeys(cargoToml, tomlDependencyKeys);
+            foreach (var tomlDependencyKey in matchingDependencyKeys)
             {
                 if (cargoToml.ContainsKey(tomlDependencyKey))
                 {
@@ -435,6 +436,14 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         private static TypedComponent CargoPackageToCargoComponent(CargoPackage cargoPackage)
         {
             return new CargoComponent(cargoPackage.name, cargoPackage.version);
+        }
+
+        private static IEnumerable<string> GetMatchingKeys(TomlTable cargoToml, IEnumerable<string> tomlDependencyKeys)
+        {
+            return cargoToml.Keys
+                .Where(key => tomlDependencyKeys.Any(dependencyKey =>
+                    string.Equals(key, dependencyKey, StringComparison.InvariantCultureIgnoreCase)
+                    || key.StartsWith("target.") && key.EndsWith($".{dependencyKey}")));
         }
     }
 }
