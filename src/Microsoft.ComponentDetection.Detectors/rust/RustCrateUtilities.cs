@@ -443,7 +443,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             return cargoToml.Keys
                 .Where(key => tomlDependencyKeys.Any(dependencyKey =>
                     string.Equals(key, dependencyKey, StringComparison.InvariantCultureIgnoreCase)
-                    || key.StartsWith("target.") && key.EndsWith($".{dependencyKey}")));
+                    || (key.StartsWith("target.") && key.EndsWith($".{dependencyKey}"))));
         }
     }
 }
