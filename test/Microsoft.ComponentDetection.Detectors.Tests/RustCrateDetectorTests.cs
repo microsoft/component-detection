@@ -729,6 +729,24 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             componentRecorder.ForAllComponents(x => x.AllFileLocations.Count().Should().Be(4));
         }
 
+        public async Task TestRustDetector_TargetSpecificDependencies()
+        {
+            var (result, componentRecorder) = await detectorTestUtility
+                                                    .WithFile("Cargo.lock", testTargetSpecificDependenciesLockString)
+                                                    .WithFile("Cargo.toml", testTargetSpecificDependenciesTomlString, new List<string> { "Cargo.toml" })
+                                                    .ExecuteDetector();
+
+            Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+            Assert.AreEqual(3, componentRecorder.GetDetectedComponents().Count());
+
+            componentRecorder.GetComponent("my_dependency 1.0.0 - Cargo").Should().NotBeNull();
+            componentRecorder.GetComponent("winhttp 0.4.0 - Cargo").Should().NotBeNull();
+
+            var openssl = componentRecorder.GetComponent("openssl 1.0.1 - Cargo");
+            openssl.Should().NotBeNull();
+            componentRecorder.GetEffectiveDevDependencyValue(openssl.Id).Value.Should().BeTrue();
+        }
+
         /// <summary>
         /// (my_dependency, 1.0, root)
         /// (my_other_dependency, 0.1.0, root)
@@ -992,6 +1010,39 @@ dev_dependency_dependency = ""0.2.23""
         private readonly string testWorkspace2TomlString = @"
 [dependencies]
 other_dependency = ""0.4.0""
+";
+
+        private readonly string testTargetSpecificDependenciesTomlString = @"
+[package]
+name = ""my_test_package""
+version = ""1.2.3""
+authors = [""example@example.com>""]
+
+[dependencies]
+my_dependency = ""1.0""
+
+[target.'cfg(windows)'.dependencies]
+winhttp = ""0.4.0""
+
+[target.'cfg(unix)'.dev-dependencies]
+openssl = ""1.0.1""
+";
+
+        private readonly string testTargetSpecificDependenciesLockString = @"
+[[package]]
+name = ""my_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+
+name = ""winhttp""
+version = ""0.4.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+
+name = ""openssl""
+version = ""1.0.1""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
     }
 }
