@@ -293,37 +293,33 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         public static DependencySpecification GenerateDependencySpecifications(TomlTable cargoToml, IEnumerable<string> tomlDependencyKeys)
         {
             var dependencySpecifications = new DependencySpecification();
-            var matchingDependencyKeys = GetMatchingKeys(cargoToml, tomlDependencyKeys);
-            foreach (var tomlDependencyKey in matchingDependencyKeys)
+            var dependencyLocations = GetDependencies(cargoToml, tomlDependencyKeys);
+            foreach (var dependencies in dependencyLocations)
             {
-                if (cargoToml.ContainsKey(tomlDependencyKey))
+                foreach (var dependency in dependencies.Keys)
                 {
-                    var dependencies = cargoToml.Get<TomlTable>(tomlDependencyKey);
-                    foreach (var dependency in dependencies.Keys)
+                    string versionSpecifier;
+                    if (dependencies[dependency].TomlType == TomlObjectType.String)
                     {
-                        string versionSpecifier;
-                        if (dependencies[dependency].TomlType == TomlObjectType.String)
-                        {
-                            versionSpecifier = dependencies.Get<string>(dependency);
-                        }
-                        else if (dependencies.Get<TomlTable>(dependency).ContainsKey("version") && dependencies.Get<TomlTable>(dependency).Get<string>("version") != "0.0.0")
-                        {
-                            // We have a valid version that doesn't indicate 'internal' like 0.0.0 does.
-                            versionSpecifier = dependencies.Get<TomlTable>(dependency).Get<string>("version");
-                        }
-                        else if (dependencies.Get<TomlTable>(dependency).ContainsKey("path"))
-                        {
-                            // If this is a workspace dependency specification that specifies a component by path reference, skip adding it directly here.
-                            // Example: kubos-app = { path = "../../apis/app-api/rust" }
-                            continue;
-                        }
-                        else
-                        {
-                            return null;
-                        }
-
-                        dependencySpecifications.Add(dependency, versionSpecifier);
+                        versionSpecifier = dependencies.Get<string>(dependency);
                     }
+                    else if (dependencies.Get<TomlTable>(dependency).ContainsKey("version") && dependencies.Get<TomlTable>(dependency).Get<string>("version") != "0.0.0")
+                    {
+                        // We have a valid version that doesn't indicate 'internal' like 0.0.0 does.
+                        versionSpecifier = dependencies.Get<TomlTable>(dependency).Get<string>("version");
+                    }
+                    else if (dependencies.Get<TomlTable>(dependency).ContainsKey("path"))
+                    {
+                        // If this is a workspace dependency specification that specifies a component by path reference, skip adding it directly here.
+                        // Example: kubos-app = { path = "../../apis/app-api/rust" }
+                        continue;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+
+                    dependencySpecifications.Add(dependency, versionSpecifier);
                 }
             }
 
@@ -438,12 +434,39 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             return new CargoComponent(cargoPackage.name, cargoPackage.version);
         }
 
-        private static IEnumerable<string> GetMatchingKeys(TomlTable cargoToml, IEnumerable<string> tomlDependencyKeys)
+        private static IEnumerable<TomlTable> GetDependencies(TomlTable cargoToml, IEnumerable<string> tomlDependencyKeys)
         {
-            return cargoToml.Keys
-                .Where(key => tomlDependencyKeys.Any(dependencyKey =>
-                    string.Equals(key, dependencyKey, StringComparison.InvariantCultureIgnoreCase)
-                    || (key.StartsWith("target.") && key.EndsWith($".{dependencyKey}"))));
+            const string targetKey = "target";
+            var dependencies = new List<TomlTable>();
+
+            foreach (var tomlDependencyKey in tomlDependencyKeys)
+            {
+                if (cargoToml.ContainsKey(tomlDependencyKey))
+                {
+                    dependencies.Add(cargoToml.Get<TomlTable>(tomlDependencyKey));
+                }
+            }
+
+            if (cargoToml.ContainsKey(targetKey))
+            {
+                var configs = cargoToml.Get<TomlTable>(targetKey);
+                foreach (var config in configs)
+                {
+                    var properties = configs.Get<TomlTable>(config.Key);
+                    foreach (var propertyKey in properties.Keys)
+                    {
+                        var isRelevantKey = tomlDependencyKeys.Any(dependencyKey => 
+                            string.Equals(propertyKey, dependencyKey, StringComparison.InvariantCultureIgnoreCase));
+
+                        if (isRelevantKey)
+                        {
+                            dependencies.Add(properties.Get<TomlTable>(propertyKey));
+                        }
+                    }
+                }
+            }
+
+            return dependencies;
         }
     }
 }

@@ -729,9 +729,10 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             componentRecorder.ForAllComponents(x => x.AllFileLocations.Count().Should().Be(4));
         }
 
+        [TestMethod]
         public async Task TestRustDetector_TargetSpecificDependencies()
         {
-            var (result, componentRecorder) = await detectorTestUtility
+            var (result, componentRecorder) = await detectorV2TestUtility
                                                     .WithFile("Cargo.lock", testTargetSpecificDependenciesLockString)
                                                     .WithFile("Cargo.toml", testTargetSpecificDependenciesTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
@@ -1034,12 +1035,12 @@ name = ""my_dependency""
 version = ""1.0.0""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
 
-
+[[package]]
 name = ""winhttp""
 version = ""0.4.0""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
 
-
+[[package]]
 name = ""openssl""
 version = ""1.0.1""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
