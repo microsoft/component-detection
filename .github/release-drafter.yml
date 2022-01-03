@@ -10,20 +10,19 @@ change-template: '- $TITLE by @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
 no-changes-template: '- No changes'
 categories:
-  - title: '📚 Documentation'
+  - title: '📝 Documentation'
     labels:
-      - 'documentation'
+      - 'type:docs'
   - title: '🚀 New Features'
     labels:
-      - 'enhancement'
+      - 'type:feature'
   - title: '🐛 Bug Fixes'
     labels:
-      - 'bug'
+      - 'type:bug'
   - title: '🧰 Maintenance'
     labels:
-      - 'repo-configuration'
-      - 'scripts'
-      - 'build'
+      - 'type:ci'
+      - 'type:refactor'
 version-resolver:
   major:
     labels:
@@ -38,6 +37,3 @@ version-resolver:
 template: |
   ## ⚙️ Changes
   $CHANGES
-
-  ## 👨🏼‍💻 Contributors
-  $CONTRIBUTORS
