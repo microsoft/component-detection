@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [win-x64, linux-x64, osx-x64]
+
+    env:
+      OFFICIAL_BUILD: 'True'
+      # Set the build number in MinVer.
+      MINVERBUILDMETADATA: build.${{github.run_number}}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1.9.0
+        with:
+          dotnet-version: 3.1.x
+
+      - name: Restore packages
+        run: dotnet restore
+
+      - name: Build CLI tool
+        run: dotnet publish --configuration Release --output ./bin --self-contained --runtime ${{ matrix.rid }} -p:PublishSingleFile=true -p:DebugType=None -p:PublishTrimmed=true ./src/Microsoft.ComponentDetection
+
+      - name: Publish CLI tool
+        uses: shogo82148/actions-upload-release-asset@v1.4.0
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/*
+          asset_name: component-detection-${{ matrix.rid }}${{ matrix.rid == 'win-x64' && '.exe' || '' }}
+
+      - name: Build NuGet packages
+        run: dotnet pack --configuration Release --output ./out
+
+      - name: Publish NuGet packages to GitHub Packages
+        run: dotnet nuget push ./out/*.nupkg --skip-duplicate --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}
+
+      - name: Publish NuGet packages to Azure Artifacts
+        run: dotnet nuget push ./out/*.nupkg --skip-duplicate --api-key ${{ secrets.AZART_TOKEN }} --source https://1essharedassets.pkgs.visualstudio.com/1esPkgs/_packaging/ComponentDetection/nuget/v3/index.json
