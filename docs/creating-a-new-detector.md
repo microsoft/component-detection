@@ -63,7 +63,7 @@ To add a new type, go to the Contracts project and create a new class inside the
 
 ## Create the detector class
 
-Go inside the project MS.VS.Services.Governance.ComponentDetection.Detectors, and create a new folder for your detector. Inside this folder is where all the classes that your detector need are going to live. After you create the folder you can proceed and create a new class for your detector, and you can choose other detectors as a template to start yours. Since all detectors should implement the same properties and methods, for this guide we are going to use the RubyComponentDetector class as an example to explain the different properties that comprise a detector and how to implement the main methods.
+Go inside the project `Microsoft.ComponentDetection.Detectors`, and create a new folder for your detector. Inside this folder is where all the classes that your detector need are going to live. After you create the folder you can proceed and create a new class for your detector, and you can choose other detectors as a template to start yours. Since all detectors should implement the same properties and methods, for this guide we are going to use the `RubyComponentDetector` class as an example to explain the different properties that comprise a detector and how to implement the main methods.
 
 ![ruby-component-detector.png](./images/creating-a-new-detector/ruby-component-detector.png)
 
@@ -119,7 +119,7 @@ It is expected that once `OnFileFound` completes, the `SingleFileComponentRecord
 
 We have two kind of tests for our detectors, unit tests and pre-production tests that verify complete graph outputs across 2 scan runs over an identical set of files (this set of files can be found over at https://github.com/microsoft/componentdetection-verification). In this section we are going to discuss how to add a unit test for your detector.
 
-Detectors' unit tests are in the project _MS.VS.Services.Governance.CD.Detectors.L0.Tests_, to create a new test for your detector you just need to create a new test class inside this project.
+Detectors' unit tests are in the project _Microsoft.ComponentDetection.Detectors.Tests_, to create a new test for your detector you just need to create a new test class inside this project.
 We recommend to test just one unique scenario in each test, avoid creating dependent tests. Since a detector depends on the content of the file to extract the components, we recommend using the minimum amount of file's sections that are needed to test your scenario. In order to reduce boilerplate, typically around configuring file locations, in our testing code we created a `DetectorTestUtility`.
 
 ![go-detector-test-utility.png](./images/creating-a-new-detector/go-detector-test-utility.png)
