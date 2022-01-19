@@ -729,6 +729,64 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             componentRecorder.ForAllComponents(x => x.AllFileLocations.Count().Should().Be(4));
         }
 
+        [TestMethod]
+        public async Task TestRustDetector_UnequalButSemverCompatibleRoot()
+        {
+            var testTomlString = @"
+[package]
+name = ""test""
+version = ""0.1.0""
+edition = ""2021""
+
+[dependencies]
+c-ares = ""7.1.0""
+";
+            var testLockString = @"
+[[package]]
+name = ""c-ares""
+version = ""7.5.2""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+checksum = ""a8554820e0b20a1b58b4626a3477fa4bccb1f8ee75c61ef547d50523a517126f""
+dependencies = [
+ ""c-ares-sys"",
+]
+
+[[package]]
+name = ""c-ares-sys""
+version = ""5.3.3""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+checksum = ""067403b940b1320de22c347323f2cfd20b7c64b5709ab47928f5eb000e585fe0""
+
+[[package]]
+name = ""test""
+version = ""0.1.0""
+dependencies = [
+ ""c-ares"",
+]
+";
+            var (result, componentRecorder) = await detectorV2TestUtility
+                                                    .WithFile("Cargo.lock", testLockString)
+                                                    .WithFile("Cargo.toml", testTomlString, new List<string> { "Cargo.toml" })
+                                                    .ExecuteDetector();
+
+            Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+            Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
+
+            var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
+
+            // Verify explicitly referenced roots
+            var rootComponents = new List<string>
+            {
+                "c-ares 7.5.2 - Cargo",
+            };
+
+            rootComponents.ForEach(rootComponentId => graph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue());
+
+            // Verify dependencies for other_dependency
+            var cAresDependencies = new List<string> { "c-ares-sys 5.3.3 - Cargo" };
+            graph.GetDependenciesForComponent("c-ares 7.5.2 - Cargo").Should().BeEquivalentTo(cAresDependencies);
+        }
+
         /// <summary>
         /// (my_dependency, 1.0, root)
         /// (my_other_dependency, 0.1.0, root)

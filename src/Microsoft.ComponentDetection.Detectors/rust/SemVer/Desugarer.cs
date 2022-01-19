@@ -21,8 +21,10 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             $@"^\s*~\s*({VersionChars}+)\s*",
             RegexOptions.Compiled);
 
+        // The caret is optional, as Cargo treats "x.y.z" like "^x.y.z":
+        // https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#specifying-dependencies-from-cratesio
         private static readonly Regex CaretPatternRegex = new Regex(
-           $@"^\s*\^\s*({VersionChars}+)\s*",
+           $@"^\s*\^?\s*({VersionChars}+)\s*",
            RegexOptions.Compiled);
 
         private static readonly Regex HyphenPatternRegex = new Regex(
