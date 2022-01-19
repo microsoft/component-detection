@@ -1,0 +1,3 @@
+target 'component-detection' do
+  pod 'Alamofire', '~> 5.4.4'
+end
