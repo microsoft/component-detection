@@ -1,0 +1,115 @@
+{
+    "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
+    "spdxVersion": "SPDX-2.2",
+    "dataLicense": "CC0-1.0",
+    "SPDXID": "SPDXRef-DOCUMENT",
+    "documentNamespace": "https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84",
+    "name": "nlohmann-json:x64-linux@3.10.4 69dcfc6886529ad2d210f71f132d743672a7e65d2c39f53456f17fc5fc08b278",
+    "creationInfo": {
+        "creators": [
+            "Tool: vcpkg-unknownhash"
+        ],
+        "created": "2022-01-18T21:12:48Z"
+    },
+    "relationships": [
+        {
+            "spdxElementId": "SPDXRef-port",
+            "relationshipType": "GENERATES",
+            "relatedSpdxElement": "SPDXRef-binary"
+        },
+        {
+            "spdxElementId": "SPDXRef-port",
+            "relationshipType": "CONTAINS",
+            "relatedSpdxElement": "SPDXRef-file-0"
+        },
+        {
+            "spdxElementId": "SPDXRef-port",
+            "relationshipType": "CONTAINS",
+            "relatedSpdxElement": "SPDXRef-file-1"
+        },
+        {
+            "spdxElementId": "SPDXRef-binary",
+            "relationshipType": "GENERATED_FROM",
+            "relatedSpdxElement": "SPDXRef-port"
+        },
+        {
+            "spdxElementId": "SPDXRef-file-0",
+            "relationshipType": "CONTAINED_BY",
+            "relatedSpdxElement": "SPDXRef-port"
+        },
+        {
+            "spdxElementId": "SPDXRef-file-1",
+            "relationshipType": "CONTAINED_BY",
+            "relatedSpdxElement": "SPDXRef-port"
+        },
+        {
+            "spdxElementId": "SPDXRef-file-1",
+            "relationshipType": "DEPENDENCY_MANIFEST_OF",
+            "relatedSpdxElement": "SPDXRef-port"
+        }
+    ],
+    "packages": [
+        {
+            "name": "nlohmann-json",
+            "SPDXID": "SPDXRef-port",
+            "versionInfo": "3.10.4",
+            "downloadLocation": "git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json",
+            "homepage": "https://github.com/nlohmann/json",
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "NOASSERTION",
+            "copyrightText": "NOASSERTION",
+            "description": "JSON for Modern C++",
+            "comment": "This is the port (recipe) consumed by vcpkg."
+        },
+        {
+            "name": "nlohmann-json:x64-linux",
+            "SPDXID": "SPDXRef-binary",
+            "versionInfo": "69dcfc6886529ad2d210f71f132d743672a7e65d2c39f53456f17fc5fc08b278",
+            "downloadLocation": "NONE",
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "NOASSERTION",
+            "copyrightText": "NOASSERTION",
+            "comment": "This is a binary package built by vcpkg."
+        },
+        {
+            "SPDXID": "SPDXRef-resource-1",
+            "name": "nlohmann/json",
+            "downloadLocation": "git+https://github.com/nlohmann/json@v3.10.4",
+            "licenseConcluded": "NOASSERTION",
+            "licenseDeclared": "NOASSERTION",
+            "copyrightText": "NOASSERTION",
+            "checksums": [
+                {
+                    "algorithm": "SHA512",
+                    "checksumValue": "f78592db6218165cbc74c10bcba40366f1bfea84405b7ee25fe97a056d5b7a15aeeb956d93296673928dcbd6e26ffcfb152f885b4a44d5d55751396ccf090835"
+                }
+            ]
+        }
+    ],
+    "files": [
+        {
+            "fileName": "./portfile.cmake",
+            "SPDXID": "SPDXRef-file-0",
+            "checksums": [
+                {
+                    "algorithm": "SHA256",
+                    "checksumValue": "49b4f9e11cdd0ef697a2750187fa5fa42e7e833dbf411d299ca4d1e9f147773a"
+                }
+            ],
+            "licenseConcluded": "NOASSERTION",
+            "copyrightText": "NOASSERTION"
+        },
+        {
+            "fileName": "./vcpkg.json",
+            "SPDXID": "SPDXRef-file-1",
+            "checksums": [
+                {
+                    "algorithm": "SHA256",
+                    "checksumValue": "b97c75815135eb812a88ee92d50170928d4c69517bfb332e181070cbce2c081b"
+                }
+            ],
+            "licenseConcluded": "NOASSERTION",
+            "copyrightText": "NOASSERTION"
+        }
+    ]
+}
