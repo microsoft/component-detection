@@ -80,8 +80,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 return null;
             }
 
-            var foo = CaretPatternRegex.Match("1.2.*");
-
             SemVersion minVersion = null;
             SemVersion maxVersion = null;
 
