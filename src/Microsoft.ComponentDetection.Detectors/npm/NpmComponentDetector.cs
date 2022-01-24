@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json.Linq;
+using NuGet.Packaging.Signing;
 using NuGet.Versioning;
 
 namespace Microsoft.ComponentDetection.Detectors.Npm
@@ -81,16 +84,80 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
         {
             var name = packageJToken["name"].ToString();
             var version = packageJToken["version"].ToString();
-
+            var authorToken = packageJToken["author"];
+            
             if (!SemanticVersion.TryParse(version, out _))
             {
                 Logger.LogWarning($"Unable to parse version \"{version}\" for package \"{name}\" found at path \"{filePath}\". This may indicate an invalid npm package component and it will not be registered.");
                 return false;
             }
 
-            var detectedComponent = new DetectedComponent(new NpmComponent(name, version));
+            var npmComponent = new NpmComponent(name, version);
+            npmComponent.Author = GetAuthor(authorToken, name, filePath);
+
+            var detectedComponent = new DetectedComponent(npmComponent);
+            
             singleFileComponentRecorder.RegisterUsage(detectedComponent);
             return true;
+        }
+
+        private NpmAuthor GetAuthor(JToken authorToken, string packageName, string filePath)
+        {
+            var authorString = authorToken?.ToString();
+            if (string.IsNullOrEmpty(authorString))
+            {
+                return null;
+            }
+
+            string authorName = null;
+            string authorEmail = null;
+
+            //for parsing author in Json Format
+            // for e.g. 
+            // "author": {
+            //     "name": "John Doe",
+            //     "email": "johndoe@outlook.com",
+            //     "name": "https://jd.com",
+            // }
+            if (authorString.StartsWith("{"))
+            {
+                authorName = authorToken["name"]?.ToString();
+                authorEmail = authorToken["email"]?.ToString();
+            }
+
+            // for parsing single line author.
+            // for e.g. "author": "John Doe <johnDoe@outlook.com> (https://jd.com)"
+            else
+            {
+                bool isEmailPresent = authorString.Contains("<");
+                bool isUrlPresent = authorString.Contains("(");
+                if (!isEmailPresent)
+                {
+                    if (isUrlPresent)
+                    {
+                        authorName = authorString.Substring(0, authorString.IndexOf("(")).Trim();
+                    }
+                    else
+                    {
+                        authorName = authorString.Trim();
+                    }
+                }
+                else
+                {
+                    authorName = authorString.Substring(0, authorString.IndexOf("<")).Trim();
+                    authorEmail = authorString.Substring(authorString.IndexOf("<") + 1, authorString.IndexOf(">") - authorString.IndexOf("<") - 1);
+                }
+            }
+
+            if (string.IsNullOrEmpty(authorName))
+            {
+                Logger.LogWarning(string.Format(
+                    "Unable to parse author: {0} for package: {1} found at path {2}. " +
+                    "This may indicate an invalid npm package author, and it will not be registered.", authorString, packageName, filePath));
+                return null;
+            }
+
+            return new NpmAuthor(authorName, authorEmail);
         }
     }
 }

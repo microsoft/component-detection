@@ -1,4 +1,5 @@
-﻿using PackageUrl;
+﻿using Microsoft.ComponentDetection.Contracts.Internal;
+using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
@@ -21,6 +22,8 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public string Version { get; set; }
 
         public string Hash { get; set; }
+
+        public NpmAuthor Author { get; set; }
 
         public override ComponentType Type => ComponentType.Npm;
 

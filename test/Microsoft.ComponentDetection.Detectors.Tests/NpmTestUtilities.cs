@@ -92,6 +92,73 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
         }
 
+        public static (string, string, string) GetPackageJsonNoDependenciesForNameAndVersion(string packageName, string packageVersion)
+        {
+            string packagejson = @"{{
+                ""name"": ""{0}"",
+                ""version"": ""{1}""
+            }}";
+            var packageJsonTemplate = string.Format(packagejson, packageName, packageVersion);
+            return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
+        }
+
+        public static (string, string, string) GetPackageJsonNoDependenciesForAuthorAndEmailInJsonFormat(
+            string authorName, string authorEmail = null)
+        {
+            string packagejson;
+            if (authorEmail != null)
+            {
+                packagejson = @"{{
+                    ""name"": ""test"",
+                    ""version"": ""0.0.0"",
+                    ""author"": {{
+                        ""name"": ""{0}"",
+                        ""email"": ""{1}""
+                    }}
+                }}";
+            } else
+            {
+                packagejson = @"{{
+                    ""name"": ""test"",
+                    ""version"": ""0.0.0"",
+                    ""author"": {{
+                        ""name"": ""{0}"",
+                    }}
+                }}";
+            }
+            
+            var packageJsonTemplate = string.Format(packagejson, authorName, authorEmail);
+            return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
+        }
+
+        public static (string, string, string) GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(
+            string authorName, string authorEmail = null, string authorUrl = null)
+        {
+            string packagejson = @"{{{{
+                    ""name"": ""test"",
+                    ""version"": ""0.0.0"",
+                    ""author"": {0}
+                }}}}";
+            string author;
+
+            if (authorEmail != null && authorUrl != null)
+            {
+                author = @"""{0} <{1}> ({2})""";
+            } else if (authorEmail == null && authorUrl != null)
+            {
+                author = @"""{0} ({2})""";
+            } else if (authorEmail != null && authorUrl == null)
+            {
+                author = @"""{0} <{1}>""";
+            } else
+            {
+                author = @"""{0}""";
+            }
+
+            var packageJsonTemplate = string.Format(string.Format(packagejson, author), authorName, authorEmail, authorUrl);
+            return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
+        }
+
         public static (string, string, string) GetWellFormedPackageLock2(string lockFileName, string rootName0 = null, string rootVersion0 = null, string rootName2 = null, string rootVersion2 = null, string packageName0 = "test", string packageName1 = null, string packageName3 = null)
         {
             string packageLockJson = @"{{
