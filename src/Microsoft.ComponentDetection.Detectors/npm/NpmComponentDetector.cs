@@ -2,15 +2,13 @@
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json.Linq;
-using NuGet.Packaging.Signing;
 using NuGet.Versioning;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.ComponentDetection.Detectors.Npm
 {
@@ -92,12 +90,9 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                 return false;
             }
 
-            var npmComponent = new NpmComponent(name, version);
-            npmComponent.Author = GetAuthor(authorToken, name, filePath);
-
-            var detectedComponent = new DetectedComponent(npmComponent);
+            NpmComponent npmComponent = new NpmComponent(name, version, author: GetAuthor(authorToken, name, filePath));
             
-            singleFileComponentRecorder.RegisterUsage(detectedComponent);
+            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(npmComponent));
             return true;
         }
 
@@ -109,51 +104,42 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                 return null;
             }
 
-            string authorName = null;
-            string authorEmail = null;
+            string authorName;
+            string authorEmail;
+            string authorSingleStringPattern = @"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)";
+            Match authorMatch = new Regex(authorSingleStringPattern).Match(authorString);
 
-            //for parsing author in Json Format
-            // for e.g. 
-            // "author": {
-            //     "name": "John Doe",
-            //     "email": "johndoe@outlook.com",
-            //     "name": "https://jd.com",
-            // }
-            if (authorString.StartsWith("{"))
+            /*
+             * for parsing author in Json Format
+             * for e.g. 
+             * "author": {
+             *     "name": "John Doe",
+             *     "email": "johndoe@outlook.com",
+             *     "name": "https://jd.com",
+            */
+            if (authorToken.HasValues)
             {
                 authorName = authorToken["name"]?.ToString();
                 authorEmail = authorToken["email"]?.ToString();
-            }
 
-            // for parsing single line author.
-            // for e.g. "author": "John Doe <johnDoe@outlook.com> (https://jd.com)"
-            else
+            /*
+             *  for parsing author in single string format.
+             *  for e.g.
+             *  "author": "John Doe <johdoe@outlook.com> https://jd.com"
+             */
+            } else if (authorMatch.Success)
             {
-                bool isEmailPresent = authorString.Contains("<");
-                bool isUrlPresent = authorString.Contains("(");
-                if (!isEmailPresent)
-                {
-                    if (isUrlPresent)
-                    {
-                        authorName = authorString.Substring(0, authorString.IndexOf("(")).Trim();
-                    }
-                    else
-                    {
-                        authorName = authorString.Trim();
-                    }
-                }
-                else
-                {
-                    authorName = authorString.Substring(0, authorString.IndexOf("<")).Trim();
-                    authorEmail = authorString.Substring(authorString.IndexOf("<") + 1, authorString.IndexOf(">") - authorString.IndexOf("<") - 1);
-                }
+                authorName = authorMatch.Groups["name"].ToString().Trim();
+                authorEmail = authorMatch.Groups["email"].ToString().Trim();
+            } else
+            {
+                Logger.LogWarning("Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
+                return null;
             }
 
             if (string.IsNullOrEmpty(authorName))
             {
-                Logger.LogWarning(string.Format(
-                    "Unable to parse author: {0} for package: {1} found at path {2}. " +
-                    "This may indicate an invalid npm package author, and it will not be registered.", authorString, packageName, filePath));
+                Logger.LogWarning("Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
                 return null;
             }
 

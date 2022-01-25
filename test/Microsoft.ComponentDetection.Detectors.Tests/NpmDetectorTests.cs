@@ -140,6 +140,27 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         }
 
         [TestMethod]
+        public async Task TestNpmDetector_AuthorNull_WhenAuthorMalformed_AuthorAsSingleString()
+        {
+            string authorName = GetRandomString();
+            string authroUrl = GetRandomString();
+            string authorEmail = GetRandomString();
+            var (packageJsonName, packageJsonContents, packageJsonPath) =
+                NpmTestUtilities.GetPackageJsonNoDependenciesMalformedAuthorAsSingleString(authorName, authorEmail, authroUrl);
+            var detector = new NpmComponentDetector();
+
+            var (scanResult, componentRecorder) = await detectorTestUtility
+                .WithDetector(detector)
+                .WithFile(packageJsonName, packageJsonContents, packageJsonSearchPattern, fileLocation: packageJsonPath)
+                .ExecuteDetector();
+            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+            var detectedComponents = componentRecorder.GetDetectedComponents();
+            AssertDetectedComponentCount(detectedComponents, 1);
+            AssertNpmComponent(detectedComponents);
+            Assert.IsNull(((NpmComponent)detectedComponents.First().Component).Author);
+        }
+
+        [TestMethod]
         public async Task TestNpmDetector_AuthorNameDetected_WhenEmailNotPresentAndUrlNotPresent_AuthorAsSingleString()
         {
             string authorName = GetRandomString();

@@ -10,11 +10,12 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             /* Reserved for deserialization */
         }
 
-        public NpmComponent(string name, string version, string hash = null)
+        public NpmComponent(string name, string version, string hash = null, NpmAuthor author = null)
         {
             Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Npm));
             Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.Npm));
             Hash = hash; // Not required; only found in package-lock.json, not package.json
+            Author = author;
         }
 
         public string Name { get; set; }

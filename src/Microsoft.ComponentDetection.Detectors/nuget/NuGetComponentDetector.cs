@@ -106,7 +106,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
                 string name = metadataNode["id"].InnerText;
                 string version = metadataNode["version"].InnerText;
-                string[] authors = metadataNode["authors"]?.InnerText.Split(",").Select(email => email.Trim()).ToArray();                
+
+                string[] authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();                
 
                 if (!NuGetVersion.TryParse(version, out NuGetVersion parsedVer))
                 {

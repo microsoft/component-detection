@@ -7,7 +7,7 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
         public NpmAuthor(string name, string email = null)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            Email = email;
+            Email = string.IsNullOrEmpty(email) ? null : email;
         }
 
         public string Name { get; set; }

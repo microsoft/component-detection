@@ -159,6 +159,37 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
         }
 
+        public static (string, string, string) GetPackageJsonNoDependenciesMalformedAuthorAsSingleString(
+            string authorName, string authorEmail = null, string authorUrl = null)
+        {
+            string packagejson = @"{{{{
+                    ""name"": ""test"",
+                    ""version"": ""0.0.0"",
+                    ""author"": {0}
+                }}}}";
+            string author;
+
+            if (authorEmail != null && authorUrl != null)
+            {
+                author = @"""{0} <{1} ({2})""";
+            }
+            else if (authorEmail == null && authorUrl != null)
+            {
+                author = @"""{0} ({2}""";
+            }
+            else if (authorEmail != null && authorUrl == null)
+            {
+                author = @"""{0} <{1}""";
+            }
+            else
+            {
+                author = @"""{0}""";
+            }
+
+            var packageJsonTemplate = string.Format(string.Format(packagejson, author), authorName, authorEmail, authorUrl);
+            return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
+        }
+
         public static (string, string, string) GetWellFormedPackageLock2(string lockFileName, string rootName0 = null, string rootVersion0 = null, string rootName2 = null, string rootVersion2 = null, string packageName0 = "test", string packageName1 = null, string packageName3 = null)
         {
             string packageLockJson = @"{{
