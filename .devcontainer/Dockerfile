@@ -1,9 +1,8 @@
 # See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.202.1/containers/dotnet/.devcontainer/base.Dockerfile
 
 # [Choice] .NET version: 6.0, 5.0, 3.1, 2.1
-ARG VARIANT="6.0"
-#FROM mcr.microsoft.com/vscode/devcontainers/dotnet:0-${VARIANT}
-FROM mcr.microsoft.com/vscode/devcontainers/dotnet:dev-6.0
+ARG VARIANT="3.1"
+FROM mcr.microsoft.com/vscode/devcontainers/dotnet:dev-${VARIANT}
 
 # [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
 ARG NODE_VERSION="none"
