@@ -10,6 +10,7 @@ using System.Xml.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using MoreLinq;
 using NuGet.Versioning;
 
 namespace Microsoft.ComponentDetection.Detectors.NuGet
@@ -105,6 +106,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
                 string name = metadataNode["id"].InnerText;
                 string version = metadataNode["version"].InnerText;
+                string[] authors = metadataNode["authors"]?.InnerText.Split(",").Select(email => email.Trim()).ToArray();                
 
                 if (!NuGetVersion.TryParse(version, out NuGetVersion parsedVer))
                 {
@@ -113,7 +115,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                     return;
                 }
 
-                TypedComponent component = new NuGetComponent(name, version);
+                NuGetComponent component = new NuGetComponent(name, version, authors);
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
             }
             catch (Exception e)

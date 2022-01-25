@@ -9,15 +9,18 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             /* Reserved for deserialization */
         }
 
-        public NuGetComponent(string name, string version)
+        public NuGetComponent(string name, string version, string[] authors = null)
         {
             Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.NuGet));
             Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.NuGet));
+            Authors = authors;
         }
 
         public string Name { get; set; }
 
         public string Version { get; set; }
+
+        public string[] Authors { get; set; }
 
         public override ComponentType Type => ComponentType.NuGet;
 
