@@ -53,6 +53,8 @@ COCOAPODS: 1.4.0.beta.1";
     - AzureData (= 0.5.0)
   - KeychainAccess (3.2.1)
   - Willow (5.2.1)
+  - Auth (1.44.1):
+    - MissingDep (= 5.0.0)
 
 DEPENDENCIES:
   - AzureMobile (~> 0.5.0)
@@ -73,13 +75,14 @@ COCOAPODS: 0.39.0";
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
             var detectedComponents = componentRecorder.GetDetectedComponents();
-            Assert.AreEqual(5, detectedComponents.Count());
+            Assert.AreEqual(6, detectedComponents.Count());
 
             AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
             AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
             AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
             AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
             AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
+            AssertPodComponentNameAndVersion(detectedComponents, "Auth", "1.44.1");
         }
 
         [TestMethod]
