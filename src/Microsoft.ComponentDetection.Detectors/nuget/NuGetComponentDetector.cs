@@ -10,6 +10,7 @@ using System.Xml.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using MoreLinq;
 using NuGet.Versioning;
 
 namespace Microsoft.ComponentDetection.Detectors.NuGet
@@ -106,6 +107,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 string name = metadataNode["id"].InnerText;
                 string version = metadataNode["version"].InnerText;
 
+                string[] authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();                
+
                 if (!NuGetVersion.TryParse(version, out NuGetVersion parsedVer))
                 {
                     Logger.LogInfo($"Version '{version}' from {stream.Location} could not be parsed as a NuGet version");
@@ -113,7 +116,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                     return;
                 }
 
-                TypedComponent component = new NuGetComponent(name, version);
+                NuGetComponent component = new NuGetComponent(name, version, authors);
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
             }
             catch (Exception e)
