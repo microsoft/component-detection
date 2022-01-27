@@ -49,19 +49,23 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
                 return;
             }
 
-            ParseSpdxFile(singleFileComponentRecorder, file);
+            await ParseSpdxFile(singleFileComponentRecorder, file);
         }
 
-        private void ParseSpdxFile(
+        private async Task ParseSpdxFile(
             ISingleFileComponentRecorder singleFileComponentRecorder,
             IComponentStream file)
         {
             using var reader = new StreamReader(file.Stream);
-            var sbom = JsonConvert.DeserializeObject<VcpkgSBOM>(reader.ReadToEnd());
+            var sbom = JsonConvert.DeserializeObject<VcpkgSBOM>(await reader.ReadToEndAsync());
 
             foreach (var item in sbom.Packages)
             {
-                if (item.Name == null || item.Name.Length == 0) { continue; }
+                if (item.Name == null || item.Name.Length == 0)
+                {
+                    continue;
+                }
+
                 try
                 {
                     Logger.LogWarning($"parsed package {item.Name}");

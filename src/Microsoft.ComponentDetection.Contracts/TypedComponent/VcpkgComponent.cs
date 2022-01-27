@@ -41,9 +41,13 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             get
             {
                 if (PortVersion != null)
+                {
                     return $"{Name} {Version}#{PortVersion} - {Type}";
+                }
                 else
+                {
                     return $"{Name} {Version} - {Type}";
+                }
             }
         }
 
@@ -52,11 +56,17 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             get
             {
                 if (PortVersion != null)
+                {
                     return new PackageURL($"pkg:vcpkg/{Name}@{Version}?port_version={PortVersion}");
+                }
                 else if (Version != null)
+                {
                     return new PackageURL($"pkg:vcpkg/{Name}@{Version}");
+                }
                 else
+                {
                     return new PackageURL($"pkg:vcpkg/{Name}");
+                }
             }
         }
     }
