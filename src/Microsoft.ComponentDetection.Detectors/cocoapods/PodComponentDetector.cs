@@ -25,7 +25,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pod, ComponentType.Git };
 
-        public override int Version { get; } = 1;
+        public override int Version { get; } = 2;
 
         private class Pod : IYamlConvertible
         {
@@ -300,10 +300,17 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
                 foreach (var dependency in pod.Value)
                 {
-                    var dependencyKey = podSpecs[dependency.Podspec];
-                    if (dependencyKey != pod.Key)
+                    if (podSpecs.TryGetValue(dependency.Podspec, out string dependencyKey))
                     {
-                        dependenciesMap[pod.Key].Add(podSpecs[dependency.Podspec]);
+                        if (dependencyKey != pod.Key)
+                        {
+                            var temp = podSpecs[dependency.Podspec];
+                            dependenciesMap[pod.Key].Add(podSpecs[dependency.Podspec]);
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
                     }
                 }
             }

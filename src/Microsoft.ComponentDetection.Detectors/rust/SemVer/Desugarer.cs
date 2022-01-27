@@ -17,12 +17,17 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
     {
         private const string VersionChars = @"[0-9a-zA-Z\-\+\.\*]";
 
+        // tilde and caret requirements can't also have wildcards in them 
+        private const string VersionCharsNoWildcard = @"[0-9a-zA-Z\-\+\.]";
+
         private static readonly Regex TildePatternRegex = new Regex(
-            $@"^\s*~\s*({VersionChars}+)\s*",
+            $@"^\s*~\s*({VersionCharsNoWildcard}+)\s*$",
             RegexOptions.Compiled);
 
+        // The caret is optional, as Cargo treats "x.y.z" like "^x.y.z":
+        // https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#specifying-dependencies-from-cratesio
         private static readonly Regex CaretPatternRegex = new Regex(
-           $@"^\s*\^\s*({VersionChars}+)\s*",
+           $@"^\s*\^?\s*({VersionCharsNoWildcard}+)\s*$",
            RegexOptions.Compiled);
 
         private static readonly Regex HyphenPatternRegex = new Regex(
