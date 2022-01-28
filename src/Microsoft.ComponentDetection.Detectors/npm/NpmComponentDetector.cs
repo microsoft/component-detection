@@ -127,19 +127,21 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
              *  for e.g.
              *  "author": "John Doe <johdoe@outlook.com> https://jd.com"
              */
-            } else if (authorMatch.Success)
+            } 
+            else if (authorMatch.Success)
             {
                 authorName = authorMatch.Groups["name"].ToString().Trim();
                 authorEmail = authorMatch.Groups["email"].ToString().Trim();
-            } else
+            } 
+            else
             {
-                Logger.LogWarning("Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
+                Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
                 return null;
             }
 
             if (string.IsNullOrEmpty(authorName))
             {
-                Logger.LogWarning("Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
+                Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
                 return null;
             }
 
