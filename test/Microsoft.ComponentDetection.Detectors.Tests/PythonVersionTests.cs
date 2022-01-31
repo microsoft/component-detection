@@ -55,9 +55,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             for (int i = 1; i < versions.Count; i++)
             {
-                var verA = versions[i - 1];
-                var verB = versions[i];
-                var temp = verA < verB;
                 Assert.IsTrue(versions[i - 1] < versions[i]);
             }
         }
