@@ -32,6 +32,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             // This is a list of versions supplied by PEP440 for testing (minus local versions)
             var versions = new List<string>
             {
+                "1.0.dev",
                 "1.0.dev456",
                 "1.0a1",
                 "1.0a2.dev456",
@@ -41,12 +42,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 "1.0b2",
                 "1.0b2.post345.dev456",
                 "1.0b2.post345",
+                "1.0rc1.dev",
                 "1.0rc1.dev456",
                 "1.0rc1",
                 "1.0",
                 "1.0.post456.dev34",
                 "1.0.post456",
+                "1.1.dev",
                 "1.1.dev1",
+                "1.1",
             }.Select(x => new PythonVersion(x)).ToList();
 
             for (int i = 1; i < versions.Count; i++)

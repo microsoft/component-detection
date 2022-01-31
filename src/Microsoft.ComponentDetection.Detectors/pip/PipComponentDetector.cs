@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-        public override int Version { get; } = 4;
+        public override int Version { get; } = 5;
 
         [Import]
         public IPythonCommandService PythonCommandService { get; set; }
@@ -68,7 +68,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                                 .Select(tuple => new DetectedComponent(tuple.Item2))
                                 .ToList()
                                 .ForEach(gitComponent => singleFileComponentRecorder.RegisterUsage(gitComponent, isExplicitReferencedDependency: true));
-}
+            }
             catch (Exception e)
             {
                 Logger.LogFailedReadingFile(file.Location, e);
