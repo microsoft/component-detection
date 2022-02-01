@@ -27,7 +27,7 @@ scipy==1.4.1
 six==1.15.0
 tensorboard==2.3.0
 tensorboard-plugin-wit==1.7.0
-tensorflow==2.3.0
+tensorflow==2.5.2
 tensorflow-estimator==2.3.0
 termcolor==1.1.0
 urllib3==1.25.10
