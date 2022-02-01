@@ -117,7 +117,7 @@ It is expected that once `OnFileFound` completes, the `SingleFileComponentRecord
 
 ## Create Detector Tests
 
-We have two kind of tests for our detectors, unit tests and pre-production tests that verify complete graph outputs across 2 scan runs over an identical set of files (this set of files can be found over at https://github.com/microsoft/componentdetection-verification). In this section we are going to discuss how to add a unit test for your detector.
+We have two kind of tests for our detectors, unit tests and pre-production tests that verify complete graph outputs across 2 scan runs over an identical set of files (this set of files can be found over in `test/Microsoft.ComponentDetection.VerificationTests/resources/`). In this section we are going to discuss how to add a unit test for your detector.
 
 Detectors' unit tests are in the project _MS.VS.Services.Governance.CD.Detectors.L0.Tests_, to create a new test for your detector you just need to create a new test class inside this project.
 We recommend to test just one unique scenario in each test, avoid creating dependent tests. Since a detector depends on the content of the file to extract the components, we recommend using the minimum amount of file's sections that are needed to test your scenario. In order to reduce boilerplate, typically around configuring file locations, in our testing code we created a `DetectorTestUtility`.
@@ -128,7 +128,7 @@ From the example above you can see each test is initialized with a new `Detector
 
 ## How to run/debug your detector
 
-```
+```sh
 dotnet run --project "[YOUR REPO PATH]\src\Microsoft.ComponentDetection\Microsoft.ComponentDetection.csproj" scan
 --Verbosity Verbose
 --SourceDirectory [PATH TO THE REPO TO SCAN]
@@ -139,4 +139,6 @@ dotnet run --project "[YOUR REPO PATH]\src\Microsoft.ComponentDetection\Microsof
 
 ## How to setup E2E Verification Test
 
-The final step of the contribution to detectors is to setup its end to end verification tests. Please follow [these contributing guidelines](https://github.com/microsoft/componentdetection-verification/blob/main/CONTRIBUTING.md#contributing-a-new-project) from componentdetection-verification. As a good practice you should include the link to the verification test PR in the description of the pull request that contains the detector code.
+The final step of the contribution to detectors is to setup its end to end verification tests. These are located under the `test/Microsoft.ComponentDetection.VerificationTests/resources` directory.
+
+Each directory under the `resources` directory is related to an ecosystem that Component Detection can scan. Inside each ecosystem directory there are one or more projects, each in their own directory. Each project should fully exercise the detector's capabilities.

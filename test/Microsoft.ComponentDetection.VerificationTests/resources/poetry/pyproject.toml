@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "component-detection"
+version = "0.0.0"
+description = "A test project"
+authors = []
+
+[tool.poetry.dependencies]
+python = ">=3.6.2,<4.0"
+colorama = {version = "^0.4.3", optional = true}
+setuptools = {version = "*", optional = true}
+
+[tool.poetry.dev-dependencies]
+black = {version = "^21.10b0", allow-prereleases = true}
+coverage = {version = "^6.0b1", allow-prereleases = true}
+mypy = "^0.902"
+ipython = "^7.7"
+pytest = "^6.0"
+pytest-cov = "^2.7"
+pytest-mock = "^1.10"
+pep8-naming = "^0.8.2"
+examples = { version = "^1.0.0" }
+pylama = "^7.7"
+pip = "^21.1.1"
+pip-shims = "^0.5.2"
+flake8 = "^3.8.4"
+toml = "^0.10.2"
+types-colorama = "^0.4.2"
+types-toml = "^0.1.3"

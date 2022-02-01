@@ -210,7 +210,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 }
                 catch (ArgumentException ae)
                 {
-                    Logger.LogError($"Component {release.Key} : {JsonConvert.SerializeObject(release.Value)} could not be added to the sorted list of pip components. Error details follow:");
+                    Logger.LogError($"Component {release.Key} : {JsonConvert.SerializeObject(release.Value)} could not be added to the sorted list of pip components for spec={spec.Name}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions). Error details follow:");
                     Logger.LogException(ae, true);
                     continue;
                 }
