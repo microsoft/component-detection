@@ -25,7 +25,7 @@ jobs:
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: sudo apt install -y ivy
+        run: curl https://archive.apache.org/dist/ant/ivy/2.5.0/apache-ivy-2.5.0-bin.tar.gz | tar xOz apache-ivy-2.5.0/ivy-2.5.0.jar > /usr/share/ant/lib/ivy.jar
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'windows-latest' }}
