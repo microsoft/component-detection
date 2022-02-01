@@ -55,15 +55,15 @@ jobs:
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: sudo apt install -y ant ivy
+        run: sudo apt install -y ivy
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'windows-latest' }}
-        run: choco install ant
+        run: choco install ivy
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'macos-latest' }}
-        run: brew install ant ivy
+        run: brew install ivy
 
       - name: Make output directory
         run: mkdir ${{ github.workspace }}/output
