@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata minClientVersion="2.5">
+    <id>Microsoft.Azure.Management.Intune</id>
+    <version>1.0.0</version>
+    <authors>Microsoft</authors>
+    <description/>
+    <dependencies>
+      <group targetFramework="portable-net45+win8+wpa81">
+        <dependency id="Microsoft.Rest.ClientRuntime.Azure" version="[2.1,3.0)" />
+      </group>
+      <group targetFramework="dotnet">
+        <dependency id="System.Runtime.Serialization.Primitives" version="4.0.10" />
+        <dependency id="Microsoft.Rest.ClientRuntime.Azure" version="[2.1,3.0)" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>
