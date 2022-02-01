@@ -8,7 +8,6 @@
   <url>https://microsoft.com</url>
   <modules>
     <module>lib</module>
-    <module>app</module>
   </modules>
   <properties>
     <jenkins-ci.url>https://repo.jenkins-ci.org/releases</jenkins-ci.url>
