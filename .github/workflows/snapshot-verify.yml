@@ -73,7 +73,8 @@ jobs:
         run: dotnet run scan --Verbosity Verbose --SourceDirectory ${{ github.workspace }}/test/Microsoft.ComponentDetection.VerificationTests/resources --Output ${{ github.workspace }}/output
 
       - name: Run Verification Tests
-        run: dotnet test --no-restore test/Microsoft.ComponentDetection.VerificationTests
+        working-directory: test/Microsoft.ComponentDetection.VerificationTests
+        run: dotnet test
         env:
           OFFICIAL_BUILD: 'True'
           GITHUB_OLD_ARTIFACTS_DIR: ${{ github.workspace }}/release-output
