@@ -55,7 +55,7 @@ jobs:
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: apt install -y ant ivy
+        run: sudo apt install -y ant ivy
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'windows-latest' }}
