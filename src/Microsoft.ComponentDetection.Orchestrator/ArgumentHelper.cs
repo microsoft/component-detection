@@ -43,7 +43,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
             {
                 var keyValue = arg.Split('=');
 
-                if (keyValue.Count() != 2)
+                if (keyValue.Length != 2)
                 {
                     continue;
                 }

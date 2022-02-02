@@ -834,9 +834,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             builder.Append(@"""dependencies"": {");
 
             var prodComponents = components.Where(c => !c.IsDevDependency).ToList();
-            for (var i = 0; i < prodComponents.Count(); i++)
+            for (var i = 0; i < prodComponents.Count; i++)
             {
-                if (i == prodComponents.Count() - 1)
+                if (i == prodComponents.Count - 1)
                 {
                     builder.Append($@"  ""{prodComponents[i].Name}"": ""{prodComponents[i].RequestedVersion}""");
                 }
@@ -855,9 +855,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
                 var dependencyComponents = components.Where(c => c.IsDevDependency).ToList();
 
-                for (var i = 0; i < dependencyComponents.Count(); i++)
+                for (var i = 0; i < dependencyComponents.Count; i++)
                 {
-                    if (i == dependencyComponents.Count() - 1)
+                    if (i == dependencyComponents.Count - 1)
                     {
                         builder.Append($@"  ""{dependencyComponents[i].Name}"": ""{dependencyComponents[i].RequestedVersion}""");
                     }
