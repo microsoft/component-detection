@@ -76,7 +76,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
                 },
             }, loggerMock.Object).ToList();
 
-            enumerable.Count()
+            enumerable.Count
                 .Should().Be(1);
 
             loggerMock.VerifyAll();
