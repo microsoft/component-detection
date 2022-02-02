@@ -1,6 +1,4 @@
-﻿using Microsoft.ComponentDetection.Orchestrator;
-
-namespace Microsoft.ComponentDetection.Loader
+﻿namespace Microsoft.ComponentDetection.Loader
 {
     public static class LoaderInteropConstants
     {

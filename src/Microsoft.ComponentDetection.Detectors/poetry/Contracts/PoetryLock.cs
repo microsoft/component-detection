@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Nett;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
 {
