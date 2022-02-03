@@ -321,7 +321,20 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                             return null;
                         }
 
-                        dependencySpecifications.Add(dependency, versionSpecifier);
+                        // If the dependency is renamed, use the actual name of the package:
+                        // https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#renaming-dependencies-in-cargotoml
+                        string dependencyName;
+                        if (dependencies[dependency].TomlType == TomlObjectType.Table &&
+                        dependencies.Get<TomlTable>(dependency).ContainsKey("package"))
+                        {
+                            dependencyName = dependencies.Get<TomlTable>(dependency).Get<string>("package");
+                        }
+                        else
+                        {
+                            dependencyName = dependency;
+                        }
+
+                        dependencySpecifications.Add(dependencyName, versionSpecifier);
                     }
                 }
             }

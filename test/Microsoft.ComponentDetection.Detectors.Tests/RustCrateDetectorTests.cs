@@ -787,6 +787,45 @@ dependencies = [
             graph.GetDependenciesForComponent("c-ares 7.5.2 - Cargo").Should().BeEquivalentTo(cAresDependencies);
         }
 
+        [TestMethod]
+        public async Task TestRustDetector_RenamedDependency()
+        {
+            var testTomlString = @"
+[package]
+name = ""my_test_package""
+version = ""1.2.3""
+authors = [""example@example.com>""]
+
+[dependencies]
+foo_dependency = { package = ""my_dependency"", version = ""1.0.0""}
+";
+            var testLockString = @"
+[[package]]
+name = ""my_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+";
+            var (result, componentRecorder) = await detectorV2TestUtility
+                                                    .WithFile("Cargo.lock", testLockString)
+                                                    .WithFile("Cargo.toml", testTomlString, new List<string> { "Cargo.toml" })
+                                                    .ExecuteDetector();
+
+            result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+            var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
+            dependencyGraphs.Count.Should().Be(1);
+
+            var dependencyGraph = dependencyGraphs.Single().Value;
+            var foundComponents = dependencyGraph.GetComponents();
+            foundComponents.Count().Should().Be(1);
+
+            var rootComponents = new List<string>
+            {
+                "my_dependency 1.0.0 - Cargo",
+            };
+            rootComponents.ForEach(rootComponentId => dependencyGraph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue());
+        }
+
         /// <summary>
         /// (my_dependency, 1.0, root)
         /// (my_other_dependency, 0.1.0, root)
