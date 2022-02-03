@@ -10,7 +10,6 @@ using System.Xml.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using MoreLinq;
 using NuGet.Versioning;
 
 namespace Microsoft.ComponentDetection.Detectors.NuGet
