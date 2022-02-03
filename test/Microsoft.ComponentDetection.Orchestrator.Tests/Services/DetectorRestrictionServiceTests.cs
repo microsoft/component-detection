@@ -88,8 +88,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         [TestMethod]
         public void WithRestrictions_FiltersBasedOnDetectorId()
         {
-            DetectorRestrictions r = new DetectorRestrictions();
-            r.AllowedDetectorIds = new[] { "FirstDetector", "SecondDetector" };
+            var r = new DetectorRestrictions
+            {
+                AllowedDetectorIds = new[] { "FirstDetector", "SecondDetector" },
+            };
             var restrictedDetectors = serviceUnderTest.ApplyRestrictions(r, detectors);
             restrictedDetectors
                 .Should().Contain(firstDetectorMock.Object).And.Contain(secondDetectorMock.Object)
@@ -103,8 +105,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         [TestMethod]
         public void WithRestrictions_CorrectsRetiredDetector()
         {
-            DetectorRestrictions r = new DetectorRestrictions();
-            r.AllowedDetectorIds = new[] { "MSLicenseDevNpm" };
+            var r = new DetectorRestrictions
+            {
+                AllowedDetectorIds = new[] { "MSLicenseDevNpm" },
+            };
             var restrictedDetectors = serviceUnderTest.ApplyRestrictions(r, detectors);
             restrictedDetectors
                 .Should().Contain(newNpmDetector.Object);
@@ -123,8 +127,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         [TestMethod]
         public void WithRestrictions_FiltersBasedOnCategory()
         {
-            DetectorRestrictions r = new DetectorRestrictions();
-            r.AllowedDetectorCategories = new[] { "FirstDetectorCategory", "ThirdDetectorCategory" };
+            var r = new DetectorRestrictions
+            {
+                AllowedDetectorCategories = new[] { "FirstDetectorCategory", "ThirdDetectorCategory" },
+            };
             var restrictedDetectors = serviceUnderTest.ApplyRestrictions(r, detectors);
             restrictedDetectors
                 .Should().Contain(firstDetectorMock.Object).And.Contain(thirdDetectorMock.Object)
@@ -152,8 +158,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 GenerateDetector("3", new[] { nameof(DetectorClass.All) }).Object,
             };
 
-            DetectorRestrictions r = new DetectorRestrictions();
-            r.AllowedDetectorCategories = new[] { "ACategoryWhichDoesntMatch" };
+            var r = new DetectorRestrictions
+            {
+                AllowedDetectorCategories = new[] { "ACategoryWhichDoesntMatch" },
+            };
             var restrictedDetectors = serviceUnderTest.ApplyRestrictions(r, detectors);
             restrictedDetectors
                 .Should().Contain(detectors[2])

@@ -48,8 +48,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName, componentName0, version0);
             var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -78,8 +80,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName);
             var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -96,8 +100,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -131,8 +137,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -191,8 +199,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -259,8 +269,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -316,8 +328,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -441,8 +455,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -476,8 +492,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(lockFileName, componentName0, version0);
             var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -525,8 +543,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageJsonTemplate2 = string.Format(packagejson, componentName2, version2, "test2");
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)
@@ -604,8 +624,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageJsonTemplate = string.Format(packagejson, componentA.Name, componentA.Version, componentB.Name, componentB.Version);
 
-            var detector = new NpmComponentDetectorWithRoots();
-            detector.PathUtilityService = pathUtilityService.Object;
+            var detector = new NpmComponentDetectorWithRoots
+            {
+                PathUtilityService = pathUtilityService.Object,
+            };
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithDetector(detector)

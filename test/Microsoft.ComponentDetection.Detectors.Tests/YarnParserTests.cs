@@ -148,9 +148,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private YarnBlock CreateBlock(string title, string version, string resolved, IEnumerable<YarnBlock> dependencies)
         {
-            var block = new YarnBlock { Title = title };
-            block.Values["version"] = version;
-            block.Values["resolved"] = resolved;
+            var block = new YarnBlock 
+            {
+                Title = title,
+                Values =
+                {
+                    ["version"] = version,
+                    ["resolved"] = resolved,
+                },
+            };
 
             foreach (var dependency in dependencies)
             {

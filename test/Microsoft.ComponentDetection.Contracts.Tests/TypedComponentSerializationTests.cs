@@ -46,8 +46,10 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         public void TypedComponent_Serialization_Npm()
         {
             NpmAuthor npmAuthor = new Internal.NpmAuthor("someAuthorName", "someAuthorEmail");
-            NpmComponent npmCompObj = new NpmComponent("SomeNpmComponent", "1.2.3");
-            npmCompObj.Author = npmAuthor;
+            var npmCompObj = new NpmComponent("SomeNpmComponent", "1.2.3")
+            {
+                Author = npmAuthor,
+            };
             var result = JsonConvert.SerializeObject(npmCompObj);
             var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
             deserializedTC.Should().BeOfType(typeof(NpmComponent));

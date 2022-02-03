@@ -425,10 +425,12 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             {
                 if (SemVersion.TryParse(regexMatch.Groups[2].Value, out SemVersion sv))
                 {
-                    CargoPackage dependencyPackage = new CargoPackage();
-                    dependencyPackage.name = regexMatch.Groups[1].Value;
-                    dependencyPackage.version = sv.ToString();
-                    dependencyPackage.source = regexMatch.Groups[3].Value;
+                    var dependencyPackage = new CargoPackage
+                    {
+                        name = regexMatch.Groups[1].Value,
+                        version = sv.ToString(),
+                        source = regexMatch.Groups[3].Value,
+                    };
                     return dependencyPackage;
                 }
 
