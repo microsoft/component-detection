@@ -10,7 +10,7 @@ path = "main.rs"
 name = "component-detection"
 
 [dependencies]
-serde = "1.0.136"
+renamed_dependency = { package = "serde", version = "1.0.136"}
 
 [dev-dependencies]
 rand = "0.8.4"
