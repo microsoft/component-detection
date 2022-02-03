@@ -243,7 +243,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
         private bool ValidateBaseImageLayers(ContainerDetails scannedImageDetails, ContainerDetails baseImageDetails)
         {
             var scannedImageLayers = scannedImageDetails.Layers.ToArray();
-            return !(baseImageDetails.Layers.Count() > scannedImageLayers.Count() || baseImageDetails.Layers.Where((layer, index) => scannedImageLayers[index].DiffId != layer.DiffId).Any());
+            return !(baseImageDetails.Layers.Count() > scannedImageLayers.Length || baseImageDetails.Layers.Where((layer, index) => scannedImageLayers[index].DiffId != layer.DiffId).Any());
         }
     }
 }
