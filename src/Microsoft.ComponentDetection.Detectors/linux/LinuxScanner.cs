@@ -90,10 +90,12 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                     $"Scan failed with exit info: {stdout}{Environment.NewLine}{stderr}");
             }
 
-            var layerDictionary = dockerLayers.ToDictionary(
-                layer => layer.DiffId,
-                layer => new List<LinuxComponent>());
-           
+            var layerDictionary = dockerLayers
+                .DistinctBy(layer => layer.DiffId)
+                .ToDictionary(
+                    layer => layer.DiffId,
+                    _ => new List<LinuxComponent>());
+
             try
             {
                 var syftOutput = JsonConvert.DeserializeObject<SyftOutput>(stdout);
