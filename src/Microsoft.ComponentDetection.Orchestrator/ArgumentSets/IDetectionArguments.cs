@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using Microsoft.ComponentDetection.Contracts.ArgumentSets;
 
 namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
 {
@@ -18,6 +19,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
         IEnumerable<string> DetectorCategories { get; set; }
 
         IEnumerable<string> DetectorsFilter { get; set; }
+        
+        ManifestFileFormat ManifestFileFormat { get; set; }
 
         FileInfo ManifestFile { get; set; }
 

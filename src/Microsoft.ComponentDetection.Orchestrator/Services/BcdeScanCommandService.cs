@@ -2,7 +2,9 @@
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts.ArgumentSets;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Contracts.Mappers;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Newtonsoft.Json;
 
@@ -46,13 +48,21 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 this.Logger.LogInfo($"Scan Manifest file: {this.FileWritingService.ResolveFilePath(ManifestRelativePath)}");
             }
 
+            var outputText = detectionArguments.ManifestFileFormat switch
+            {
+                ManifestFileFormat.ComponentDetection => JsonConvert.SerializeObject(scanResult, Formatting.Indented),
+                ManifestFileFormat.CycloneDx => scanResult.ToCycloneDxString(),
+                ManifestFileFormat.Spdx => scanResult.ToSpdxString(),
+                _ => null
+            };
+
             if (userRequestedManifestPath == null)
             {
-                this.FileWritingService.AppendToFile(ManifestRelativePath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
+                this.FileWritingService.WriteFile(ManifestRelativePath, outputText);
             }
             else
             {
-                this.FileWritingService.WriteFile(userRequestedManifestPath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
+                this.FileWritingService.WriteFile(userRequestedManifestPath, outputText);
             }
         }
     }
