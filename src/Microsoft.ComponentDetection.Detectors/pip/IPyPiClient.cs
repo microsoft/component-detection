@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
 
-[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Detectors.Tests")]
+[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Detectors.Tests" + StrongNamePublicKeys.ComponentDetectionPublicKey)]
 
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
