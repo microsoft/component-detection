@@ -4,6 +4,8 @@
         <OutputType>Exe</OutputType>
         <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
         <RootProjectDirectory>$(MSBuildThisFileDirectory)..\..\</RootProjectDirectory>
+        <!-- Avoid strong-naming the exe since not all dependencies are strong-named -->
+        <SignAssembly>false</SignAssembly>
     </PropertyGroup>
 
     <ItemGroup>
