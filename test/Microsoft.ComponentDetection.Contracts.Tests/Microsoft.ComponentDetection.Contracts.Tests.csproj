@@ -14,7 +14,7 @@
 
     <ItemGroup>
         <PackageReference Include="System.Reactive"/>
-        <PackageReference Include="PackageUrl"/>
+        <PackageReference Include="packageurl-dotnet"/>
     </ItemGroup>
 
 </Project>
