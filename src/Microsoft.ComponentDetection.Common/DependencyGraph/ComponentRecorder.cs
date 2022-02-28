@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Common.Tests")]
+[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Common.Tests" + StrongNamePublicKeys.ComponentDetectionPublicKey)]
 
 namespace Microsoft.ComponentDetection.Common.DependencyGraph;
 

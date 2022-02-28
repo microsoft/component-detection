@@ -30,4 +30,14 @@
     <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all"/>
   </ItemGroup>
 
+  <!-- Strong-naming  -->
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)\StrongName.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Defines the StrongNamePublicKeys class with constant which contains the repo identity public key formatted for use in InternalsVisibleTo attributes. -->
+    <Compile Include="$(MSBuildThisFileDirectory)\StrongNamePublicKeys.cs" Visible="false" />
+  </ItemGroup>
+
 </Project>
