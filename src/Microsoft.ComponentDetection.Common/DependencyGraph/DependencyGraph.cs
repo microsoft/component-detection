@@ -6,7 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.ComponentDetection.Contracts;
 
-[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Common.Tests")]
+[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Common.Tests" + StrongNamePublicKeys.ComponentDetectionPublicKey)]
 
 namespace Microsoft.ComponentDetection.Common.DependencyGraph
 {
