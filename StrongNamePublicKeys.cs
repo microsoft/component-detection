@@ -1,3 +1,5 @@
+// Adding a comment here to appease StyleCop
+
 /// <summary>
 /// Contains the repo identity public key when strong naming the assembly.
 /// </summary>
