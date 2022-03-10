@@ -30,7 +30,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
 
         public override IList<string> SearchPatterns { get; } = new List<string> { "vcpkg.spdx.json" };
 
-        public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
+        public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Vcpkg };
 
         public override int Version => 1;
 
