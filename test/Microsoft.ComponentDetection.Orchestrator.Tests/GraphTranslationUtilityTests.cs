@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
@@ -29,7 +28,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests
 
             var convertedGraphContract = GraphTranslationUtility.AccumulateAndConvertToContract(dependencyGraphs);
 
-            convertedGraphContract.Count().Should().Be(2);
+            convertedGraphContract.Count.Should().Be(2);
             convertedGraphContract.Keys.Should().BeEquivalentTo(new List<string>() { "file1.json", "file2.json" });
 
             var graph1 = convertedGraphContract["file1.json"];

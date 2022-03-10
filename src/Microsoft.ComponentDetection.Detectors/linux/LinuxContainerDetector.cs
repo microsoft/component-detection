@@ -111,6 +111,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                     }
                     catch (Exception e)
                     {
+                        Logger.LogWarning($"Processing of image {image} failed with exception: {e.Message}");
                         using var record = new LinuxContainerDetectorImageDetectionFailed
                         {
                             ExceptionType = e.GetType().ToString(),
@@ -153,6 +154,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                 }
                 catch (Exception e)
                 {
+                    Logger.LogWarning($"Scanning of image {kvp.Key} failed with exception: {e.Message}");
                     using var record = new LinuxContainerDetectorImageDetectionFailed
                     {
                         ExceptionType = e.GetType().ToString(),
@@ -243,7 +245,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
         private bool ValidateBaseImageLayers(ContainerDetails scannedImageDetails, ContainerDetails baseImageDetails)
         {
             var scannedImageLayers = scannedImageDetails.Layers.ToArray();
-            return !(baseImageDetails.Layers.Count() > scannedImageLayers.Count() || baseImageDetails.Layers.Where((layer, index) => scannedImageLayers[index].DiffId != layer.DiffId).Any());
+            return !(baseImageDetails.Layers.Count() > scannedImageLayers.Length || baseImageDetails.Layers.Where((layer, index) => scannedImageLayers[index].DiffId != layer.DiffId).Any());
         }
     }
 }

@@ -1,10 +1,14 @@
-name: Component Detection PR
+name: Build
 
-on: [pull_request]
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     env:
@@ -13,20 +17,21 @@ jobs:
       MINVERBUILDMETADATA: build.${{github.run_number}}
 
     steps:
-    - uses: actions/checkout@v2.3.2
-      with:
-        fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v2.3.2
+        with:
+          fetch-depth: 0
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.x
 
-    - name: dotnet restore
-      run: dotnet restore
+      - name: Restore packages
+        run: dotnet restore
 
-    - name: Build and publish
-      run: dotnet publish -o dist --no-self-contained -c Release ./src/Microsoft.ComponentDetection
+      - name: Build
+        run: dotnet build --no-restore --configuration Debug
 
-    - name: Run tests
-      run: dotnet test
+      - name: Run tests
+        run: dotnet test --no-build --configuration Debug

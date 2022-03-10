@@ -11,7 +11,6 @@ using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.ComponentDetection.Common;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {

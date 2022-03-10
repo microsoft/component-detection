@@ -51,7 +51,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             var loadedDetectors = LoadComponentDetectorsFromAssemblies(new List<Assembly> { assemblyToSearch }, extraDetectorAssemblies);
 
             var pluralPhrase = loadedDetectors.Count == 1 ? "detector was" : "detectors were";
-            Logger.LogInfo($"{loadedDetectors.Count()} {pluralPhrase} found in {assemblyToSearch.FullName}\n");
+            Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {assemblyToSearch.FullName}\n");
 
             return loadedDetectors;
         }
@@ -69,7 +69,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 var loadedDetectors = LoadComponentDetectorsFromAssemblies(new[] { assembly }, extraDetectorAssemblies);
 
                 var pluralPhrase = loadedDetectors.Count == 1 ? "detector was" : "detectors were";
-                Logger.LogInfo($"{loadedDetectors.Count()} {pluralPhrase} found in {assembly.GetName().Name}\n");
+                Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {assembly.GetName().Name}\n");
 
                 detectors.AddRange(loadedDetectors);
 
@@ -93,7 +93,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 var loadedDetectors = LoadComponentDetectorsFromAssemblies(assemblies, extraDetectorAssemblies);
 
                 var pluralPhrase = loadedDetectors.Count == 1 ? "detector was" : "detectors were";
-                Logger.LogInfo($"{loadedDetectors.Count()} {pluralPhrase} found in {searchPath}\n");
+                Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {searchPath}\n");
 
                 detectors.AddRange(loadedDetectors);
 

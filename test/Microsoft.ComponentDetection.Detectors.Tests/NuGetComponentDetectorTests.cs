@@ -11,6 +11,7 @@ using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -41,20 +42,51 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNugetDetector_ReturnsValidNuspecComponent()
         {
-            var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
+            var testComponentName = "TestComponentName";
+            var testVersion = "1.2.3";
+            var testAuthors = new string[] { "author 1", "author 2" };
+            var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors);
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithFile("*.nuspec", nuspec)
                                                     .ExecuteDetector();
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-            Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
+            Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
+            var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
+            Assert.AreEqual(Contracts.TypedComponent.ComponentType.NuGet, detectedComponent.Type);
+            var nuGetComponent = (NuGetComponent)detectedComponent;
+            Assert.AreEqual(testComponentName, nuGetComponent.Name, "Component name does not match.");
+            Assert.AreEqual(testVersion, nuGetComponent.Version, "Component version does not match.");
+            CollectionAssert.AreEqual(testAuthors, nuGetComponent.Authors, "Authors does not match.");
+        }
+
+        [TestMethod]
+        public async Task TestNugetDetector_ReturnsValidNuspecComponent_SingleAuthor()
+        {
+            var testComponentName = "TestComponentName";
+            var testVersion = "1.2.3";
+            var testAuthors = new string[] { "author 1" };
+            var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors);
+
+            var (scanResult, componentRecorder) = await detectorTestUtility
+                                                    .WithFile("*.nuspec", nuspec)
+                                                    .ExecuteDetector();
+
+            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
+            Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
+            var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
+            Assert.AreEqual(Contracts.TypedComponent.ComponentType.NuGet, detectedComponent.Type);
+            var nuGetComponent = (NuGetComponent)detectedComponent;
+            Assert.AreEqual(testComponentName, nuGetComponent.Name, "Component name does not match.");
+            Assert.AreEqual(testVersion, nuGetComponent.Version, "Component version does not match.");
+            CollectionAssert.AreEqual(testAuthors, nuGetComponent.Authors, "Authors does not match.");
         }
 
         [TestMethod]
         public async Task TestNugetDetector_ReturnsValidNupkgComponent()
         {
-            var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuPkgComponent());
+            var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithFile("test.nupkg", nupkg)
@@ -68,7 +100,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public async Task TestNugetDetector_ReturnsValidMixedComponent()
         {
             var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
-            var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuPkgComponent());
+            var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithFile("test.nuspec", nuspec)
@@ -82,7 +114,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNugetDetector_HandlesMalformedComponentsInComponentList()
         {
-            var validNupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuPkgComponent());
+            var validNupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
             var malformedNupkg = await NugetTestUtilities.ZipNupkgComponent("malformed.nupkg", NugetTestUtilities.GetRandomMalformedNuPkgComponent());
             var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
 

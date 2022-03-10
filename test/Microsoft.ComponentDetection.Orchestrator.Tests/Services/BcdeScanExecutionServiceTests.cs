@@ -246,7 +246,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var result = DetectComponentsHappyPath(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
             result.Result.Should().Be(ProcessingResultCode.Success);
-            result.DependencyGraphs.Count().Should().Be(1);
+            result.DependencyGraphs.Count.Should().Be(1);
             var matchingGraph = result.DependencyGraphs.First();
             matchingGraph.Key.Should().Be(mockGraphLocation);
             var explicitlyReferencedComponents = matchingGraph.Value.ExplicitlyReferencedComponentIds;
@@ -255,7 +255,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             var actualGraph = matchingGraph.Value.Graph;
             actualGraph.Keys.Count.Should().Be(2);
-            actualGraph[detectedComponents[0].Component.Id].Count().Should().Be(1);
+            actualGraph[detectedComponents[0].Component.Id].Count.Should().Be(1);
             actualGraph[detectedComponents[0].Component.Id].Should().Contain(detectedComponents[1].Component.Id);
             actualGraph[detectedComponents[1].Component.Id].Should().BeNull();
 
@@ -302,7 +302,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var result = DetectComponentsHappyPath(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
             result.Result.Should().Be(ProcessingResultCode.Success);
-            result.DependencyGraphs.Count().Should().Be(1);
+            result.DependencyGraphs.Count.Should().Be(1);
             var matchingGraph = result.DependencyGraphs.First();
             matchingGraph.Key.Should().Be(mockGraphLocation);
             var explicitlyReferencedComponents = matchingGraph.Value.ExplicitlyReferencedComponentIds;
@@ -312,9 +312,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             var actualGraph = matchingGraph.Value.Graph;
             actualGraph.Keys.Count.Should().Be(2);
-            actualGraph[detectedComponents[0].Component.Id].Count().Should().Be(1);
+            actualGraph[detectedComponents[0].Component.Id].Count.Should().Be(1);
             actualGraph[detectedComponents[0].Component.Id].Should().Contain(detectedComponents[1].Component.Id);
-            actualGraph[detectedComponents[1].Component.Id].Count().Should().Be(1);
+            actualGraph[detectedComponents[1].Component.Id].Count.Should().Be(1);
             actualGraph[detectedComponents[1].Component.Id].Should().Contain(detectedComponents[0].Component.Id);
         }
 
@@ -589,7 +589,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             detectorRestrictionServiceMock.Setup(
                 x => x.ApplyRestrictions(
                     It.IsAny<DetectorRestrictions>(),
-                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => registeredDetectors.Intersect(inputDetectors).Count() == registeredDetectors.Count())))
+                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => registeredDetectors.Intersect(inputDetectors).Count() == registeredDetectors.Length)))
                 .Returns(restrictedDetectors)
                 .Callback<DetectorRestrictions, IEnumerable<IComponentDetector>>(
                     (restrictions, detectors) => restrictionAsserter?.Invoke(restrictions));
@@ -611,7 +611,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             detectorProcessingServiceMock.Setup(x =>
                 x.ProcessDetectorsAsync(
                    args,
-                   It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Count()),
+                   It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Length),
                    Match.Create<DetectorRestrictions>(restriction => true)))
                 .ReturnsAsync(processingResult);
 
@@ -634,7 +634,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             detectorRestrictionServiceMock.Setup(
                 x => x.ApplyRestrictions(
                     It.IsAny<DetectorRestrictions>(),
-                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => registeredDetectors.Intersect(inputDetectors).Count() == registeredDetectors.Count())))
+                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => registeredDetectors.Intersect(inputDetectors).Count() == registeredDetectors.Length)))
                 .Returns(restrictedDetectors);
 
             // We initialize detected component's DetectedBy here because of a Moq constraint -- certain operations (Adding interfaces) have to happen before .Object
@@ -654,7 +654,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             detectorProcessingServiceMock.Setup(x =>
                 x.ProcessDetectorsAsync(
                    args,
-                   It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Count()),
+                   It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Length),
                    Match.Create<DetectorRestrictions>(restriction => true)))
                 .ReturnsAsync(processingResult);
 
