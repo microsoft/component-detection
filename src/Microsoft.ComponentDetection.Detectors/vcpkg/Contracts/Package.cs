@@ -15,5 +15,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts
         public string Description { get; set; }
 
         public string Name { get; set; }
+
+        public Annotation[] Annotations { get; set; }
     }
 }

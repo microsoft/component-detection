@@ -61,7 +61,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
 
             foreach (var item in sbom.Packages)
             {
-                if (item.Name == null || item.Name.Length == 0)
+                if (string.IsNullOrEmpty(item.Name))
                 {
                     continue;
                 }
