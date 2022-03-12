@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -45,7 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             }
             else
             {
-                await this.ProcessFile(processRequest);
+                this.ProcessFile(processRequest);
             }
         }
 
@@ -70,28 +69,31 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                         this.Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
 
                         await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
-                            .ForEachAsync(async fi => await this.ProcessFile(fi));
+                            .ForEachAsync(this.ProcessFile);
                     }
                 }
             }
         }
 
-        private async Task ProcessFile(ProcessRequest processRequest)
+        private void ProcessFile(ProcessRequest processRequest)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var stream = processRequest.ComponentStream;
 
             try
             {
-                byte[] nuspecBytes = null;
+                string name = default;
+                string version = default;
+                string[] authors = default;
+                HashSet<string> targetFrameworks = default;
 
                 if ("*.nupkg".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
                 {
-                    nuspecBytes = await NuGetNuspecUtilities.GetNuspecBytesAsync(stream.Stream);
+                    (name, version, authors, targetFrameworks) = NuGetNuspecUtilities.GetNuGetPackageDataFromNupkg(stream);
                 }
                 else if ("*.nuspec".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
                 {
-                    nuspecBytes = await NuGetNuspecUtilities.GetNuspecBytesFromNuspecStream(stream.Stream, stream.Stream.Length);
+                    (name, version, authors, targetFrameworks) = NuGetNuspecUtilities.GetNuGetPackageDataFromNuspec(stream);
                 }
                 else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
                 {
@@ -102,27 +104,14 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                     return;
                 }
 
-                using var nuspecStream = new MemoryStream(nuspecBytes, false);
-
-                var doc = new XmlDocument();
-                doc.Load(nuspecStream);
-
-                XmlNode packageNode = doc["package"];
-                XmlNode metadataNode = packageNode["metadata"];
-
-                var name = metadataNode["id"].InnerText;
-                var version = metadataNode["version"].InnerText;
-
-                var authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();
-
-                if (!NuGetVersion.TryParse(version, out var parsedVer))
+                if (version != null && !NuGetVersion.TryParse(version, out var parsedVer))
                 {
                     this.Logger.LogInfo($"Version '{version}' from {stream.Location} could not be parsed as a NuGet version");
 
                     return;
                 }
 
-                var component = new NuGetComponent(name, version, authors);
+                var component = new NuGetComponent(name, version, authors, targetFrameworks.ToArray());
                 if (!LowConfidencePackages.Contains(name, StringComparer.OrdinalIgnoreCase))
                 {
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));

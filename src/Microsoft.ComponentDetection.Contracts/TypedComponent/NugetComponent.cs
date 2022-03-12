@@ -1,4 +1,4 @@
-using PackageUrl;
+﻿using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
@@ -9,11 +9,12 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             /* Reserved for deserialization */
         }
 
-        public NuGetComponent(string name, string version, string[] authors = null)
+        public NuGetComponent(string name, string version, string[] authors = null, string[] targetFrameworks = null)
         {
             this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.NuGet));
             this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.NuGet));
             this.Authors = authors;
+            this.TargetFrameworks = targetFrameworks;
         }
 
         public string Name { get; set; }
@@ -21,6 +22,8 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public string Version { get; set; }
 
         public string[] Authors { get; set; }
+
+        public string[] TargetFrameworks { get; set; }
 
         public override ComponentType Type => ComponentType.NuGet;
 
