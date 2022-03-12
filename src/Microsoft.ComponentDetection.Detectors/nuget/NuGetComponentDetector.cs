@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.Internal;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using NuGet.Versioning;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -7,10 +11,6 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using NuGet.Versioning;
 
 namespace Microsoft.ComponentDetection.Detectors.NuGet
 {
@@ -42,7 +42,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             }
             else
             {
-                await ProcessFile(processRequest);
+                ProcessFile(processRequest);
             }
         }
 
@@ -67,46 +67,36 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                         Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
 
                         await Scanner.GetFilteredComponentStreamObservable(additionalPath, SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
-                            .ForEachAsync(async fi => await ProcessFile(fi));
+                            .ForEachAsync(fi => ProcessFile(fi));
                     }
                 }
             }
         }
 
-        private async Task ProcessFile(ProcessRequest processRequest)
+        private void ProcessFile(ProcessRequest processRequest)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var stream = processRequest.ComponentStream;
 
             try
             {
-                byte[] nuspecBytes = null;
+                string name;
+                string version;
+                string[] authors;
+                HashSet<string> targetFrameworks;
 
                 if ("*.nupkg".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
                 {
-                    nuspecBytes = await NuGetNuspecUtilities.GetNuspecBytesAsync(stream.Stream);
+                    (name, version, authors, targetFrameworks) = NuGetNuspecUtilities.GetNuGetPackageDataFromNupkg(stream);
                 }
                 else if ("*.nuspec".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
                 {
-                    nuspecBytes = await NuGetNuspecUtilities.GetNuspecBytesFromNuspecStream(stream.Stream, stream.Stream.Length);
+                    (name, version, authors, targetFrameworks) = NuGetNuspecUtilities.GetNuGetPackageDataFromNuspec(stream);
                 }
                 else
                 {
                     return;
                 }
-
-                using MemoryStream nuspecStream = new MemoryStream(nuspecBytes, false);
-
-                XmlDocument doc = new XmlDocument();
-                doc.Load(nuspecStream);
-
-                XmlNode packageNode = doc["package"];
-                XmlNode metadataNode = packageNode["metadata"];
-
-                string name = metadataNode["id"].InnerText;
-                string version = metadataNode["version"].InnerText;
-
-                string[] authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();                
 
                 if (!NuGetVersion.TryParse(version, out NuGetVersion parsedVer))
                 {
@@ -115,7 +105,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                     return;
                 }
 
-                NuGetComponent component = new NuGetComponent(name, version, authors);
+                NuGetComponent component = new NuGetComponent(name, version, authors, targetFrameworks.ToArray());
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
             }
             catch (Exception e)
