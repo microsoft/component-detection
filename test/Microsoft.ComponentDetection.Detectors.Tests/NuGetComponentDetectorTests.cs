@@ -45,7 +45,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var testComponentName = "TestComponentName";
             var testVersion = "1.2.3";
             var testAuthors = new string[] { "author 1", "author 2" };
-            var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors);
+            var testTargetFrameworks = new string[] { "net48", "net472", "netstandard2.1" };
+            var testTargetFrameworksConverted = new string[] { ".NETFramework,Version=v4.8", ".NETFramework,Version=v4.7.2", ".NETStandard,Version=v2.1" };
+            var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors, testTargetFrameworks);
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithFile("*.nuspec", nuspec)
@@ -59,6 +61,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.AreEqual(testComponentName, nuGetComponent.Name, "Component name does not match.");
             Assert.AreEqual(testVersion, nuGetComponent.Version, "Component version does not match.");
             CollectionAssert.AreEqual(testAuthors, nuGetComponent.Authors, "Authors does not match.");
+            CollectionAssert.AreEqual(testTargetFrameworksConverted, nuGetComponent.TargetFrameworks, "TargetFrameworks does not match.");
         }
 
         [TestMethod]
