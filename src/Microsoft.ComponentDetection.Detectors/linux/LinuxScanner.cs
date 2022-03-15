@@ -9,7 +9,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
-using MoreLinq.Extensions;
 using Newtonsoft.Json;
 
 namespace Microsoft.ComponentDetection.Detectors.Linux
