@@ -69,7 +69,12 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
             {
                 foreach (var satisfiedVersion in entry.Satisfied)
                 {
-                    yarnPackages.Add($"{entry.Name}@{satisfiedVersion}", entry);
+                    var key = $"{entry.Name}@{satisfiedVersion}";
+                    var addSuccessful = yarnPackages.TryAdd(key, entry);
+                    if (!addSuccessful)
+                    {
+                        Logger.LogWarning($"Found duplicate entry {key} in {location}");
+                    }
                 }
             }
 
