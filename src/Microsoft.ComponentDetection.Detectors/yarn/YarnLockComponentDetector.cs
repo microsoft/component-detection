@@ -22,7 +22,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
-        public override int Version { get; } = 5;
+        public override int Version => 6;
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
 
