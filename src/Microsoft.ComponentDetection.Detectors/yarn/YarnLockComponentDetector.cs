@@ -22,7 +22,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
-        public override int Version { get; } = 5;
+        public override int Version => 6;
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
 
@@ -69,7 +69,12 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
             {
                 foreach (var satisfiedVersion in entry.Satisfied)
                 {
-                    yarnPackages.Add($"{entry.Name}@{satisfiedVersion}", entry);
+                    var key = $"{entry.Name}@{satisfiedVersion}";
+                    var addSuccessful = yarnPackages.TryAdd(key, entry);
+                    if (!addSuccessful)
+                    {
+                        Logger.LogWarning($"Found duplicate entry {key} in {location}");
+                    }
                 }
             }
 
