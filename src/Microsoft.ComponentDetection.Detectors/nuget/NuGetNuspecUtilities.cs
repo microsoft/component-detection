@@ -50,7 +50,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
                         //this is the nuspec file, process it to get the data we need
                         var nuSpecStream = entry.Open();
-                        (packageName, packageVersion, authors, var nuspecFrameworks) = GetNuspecDataFromNuspecStream(nuSpecStream);
+                        HashSet<string> nuspecFrameworks;
+                        (packageName, packageVersion, authors, nuspecFrameworks) = GetNuspecDataFromNuspecStream(nuSpecStream);
 
                         //add any frameworks found in the nuspec
                         if (targetFrameworks is null)
