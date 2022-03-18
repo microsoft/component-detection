@@ -246,6 +246,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     && checkoutOptions.TryGetValue(":commit", out string commitOption))
                 {
                     // Create the Git component
+                    gitOption = NormalizePodfileGitUri(gitOption);
                     typedComponent = new GitComponent(new Uri(gitOption), commitOption);
                     key = $"{commitOption}@{gitOption}";
                 }
@@ -389,6 +390,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     && checkoutOptions.TryGetValue(":commit", out string commitOption))
                 {
                     // Create the Git component
+                    gitOption = NormalizePodfileGitUri(gitOption);
                     typedComponent = new GitComponent(new Uri(gitOption), commitOption);
                     key = $"{commitOption}@{gitOption}";
                 }
@@ -404,6 +406,18 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 return (pod, key, detectedComponent);
             })
             .ToArray();
+        }
+
+        private static string NormalizePodfileGitUri(string gitOption)
+        {
+            // Podfiles can be built using git@ references to .git files, but this is not a valid Uri
+            // schema. Normalize to https:// so Uri creation doesn't fail
+            if (gitOption.StartsWith("git@", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"https://{gitOption[4..]}";
+            }
+
+            return gitOption;
         }
     }
 }
