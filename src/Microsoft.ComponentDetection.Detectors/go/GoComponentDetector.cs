@@ -33,7 +33,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
-        public override int Version => 2;
+        public override int Version => 3;
 
         private HashSet<string> projectRoots = new HashSet<string>();
 
