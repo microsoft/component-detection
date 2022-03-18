@@ -69,7 +69,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                     {
                         //process any other entries to get framework names according to the rules of NuGet
                         FrameworkName frameworkName = FrameworkNameUtility.ParseFrameworkNameFromFilePath(entry.FullName, out _);
-                        if (frameworkName is not null)
+                        if (frameworkName is object)
                         {
                             if (targetFrameworks is null)
                             {
@@ -122,7 +122,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
             foreach (var dependencyGroup in reader.GetDependencyGroups())
             {
-                if (dependencyGroup.TargetFramework is not null)
+                if (dependencyGroup.TargetFramework is object)
                 {
                     targetFrameworks.Add(dependencyGroup.TargetFramework.DotNetFrameworkName);
                 }
@@ -151,7 +151,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
                 //process this according to the rules of packages
                 FrameworkName frameworkName = FrameworkNameUtility.ParseFrameworkNameFromFilePath(relativePath, out _);
-                if (frameworkName is not null)
+                if (frameworkName is object)
                 {
                     targetFrameworks.Add(frameworkName.FullName);
                 }
