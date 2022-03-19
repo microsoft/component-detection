@@ -35,5 +35,8 @@
 
         /// <summary>Indicates a detector applies to Conda packages.</summary>
         Conda,
+        
+        /// <summary>Indicates a detector applies to SPDX files.</summary>
+        Spdx,
     }
 }
