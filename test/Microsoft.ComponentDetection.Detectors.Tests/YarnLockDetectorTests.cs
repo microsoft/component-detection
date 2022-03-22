@@ -825,6 +825,38 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             dependencyGraph.GetDependenciesForComponent(componentCId).Should().HaveCount(0);
         }
 
+        [TestMethod]
+        public async Task MalformedYarnLockV1_Duplicate()
+        {
+            const string componentNameA = "lodash-shim";
+            const string requestedVersionA = "file:lodash-shim";
+            const string componentNameB = "lodash";
+            const string requestedVersionB = "file:lodash-shim";
+            const string actualVersion = "2.4.2";
+            
+            var builder = new StringBuilder();
+
+            builder.AppendLine(CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition>()));
+            builder.AppendLine($"\"{componentNameA}@{requestedVersionA}\", \"{componentNameB}@{requestedVersionB}\":");
+            builder.AppendLine($"  version: {actualVersion}");
+            builder.AppendLine();
+
+            var yarnLockFileContent = builder.ToString();
+            var packageJsonFileContent = CreatePackageJsonFileContent(new List<YarnTestComponentDefinition>());
+            
+            var (scanResult, componentRecorder) = await detectorTestUtility
+                .WithFile("yarn.lock", yarnLockFileContent)
+                .WithFile("package.json", packageJsonFileContent, new List<string> { "package.json" })
+                .ExecuteDetector();
+            
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            
+            var detectedComponents = componentRecorder.GetDetectedComponents();
+
+            detectedComponents.Should().HaveCount(1);
+            var detectedComponent = detectedComponents.First();
+        }
+
         private string CreatePackageJsonFileContent(IList<YarnTestComponentDefinition> components)
         {
             var builder = new StringBuilder();
