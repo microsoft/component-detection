@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -11,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Polly;
 
@@ -31,9 +31,17 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         [Import]
         public ILogger Logger { get; set; }
 
+        [Import]
+        public IEnvironmentVariableService EnvironmentVariableService { get; set; }
+
         private static HttpClientHandler httpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
 
         internal static HttpClient HttpClient = new HttpClient(httpClientHandler);
+
+        // Values used for cache creation
+        private const long CACHEINTERVALSECONDS = 60;
+        private const long DEFAULTCACHEENTRIES = 128;
+        private bool checkedMaxEntriesVariable = false;
 
         // time to wait before retrying a failed call to pypi.org
         private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
@@ -45,21 +53,23 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         private long retries = 0;
 
         /// <summary>
-        /// This cache is used mostly for consistency, to create a unified view of Pypi response.
+        /// A thread safe cache implementation which contains a mapping of URI -> HttpResponseMessage
+        /// and has a limited number of entries which will expire after the cache fills or a specified interval.
         /// </summary>
-        private readonly ConcurrentDictionary<string, Task<HttpResponseMessage>> cachedResponses = new ConcurrentDictionary<string, Task<HttpResponseMessage>>();
+        private MemoryCache cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
 
         /// <summary>
-        /// Returns a cached response if it exists, otherwise returns the response from Pypi REST call.
-        /// The response from Pypi is not automatically added to the cache, to allow caller to make that decision.
+        /// Returns a cached response if it exists, otherwise returns the response from PyPi REST call.
+        /// The response from PyPi is not automatically added to the cache, to allow caller to make that decision.
         /// </summary>
         /// <param name="uri">The REST Uri to call.</param>
-        /// <returns>The cached response or a new result from Pypi.</returns>
-        private async Task<HttpResponseMessage> GetPypiResponse(string uri)
+        /// <returns>The cached response or a new result from PyPi.</returns>
+        private async Task<HttpResponseMessage> GetPyPiResponse(string uri)
         {
-            if (cachedResponses.TryGetValue(uri, out var value))
+            if (cachedResponses.TryGetValue(uri, out HttpResponseMessage result))
             {
-                return await value;
+                Logger.LogVerbose("Retrieved cached Python data from " + uri);
+                return result;
             }
 
             Logger.LogInfo("Getting Python data from " + uri);
@@ -67,20 +77,34 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         }
 
         /// <summary>
-        /// Used to update the consistency cache, decision has to be made by the caller to allow for retries!.
+        /// Used to update the in-memory LRU cache, decision has to be made by the caller to allow for retries.
         /// </summary>
         /// <param name="uri">The REST Uri to call.</param>
         /// <param name="message">The proposed response by the caller to store for this Uri.</param>
         /// <returns>The `first-wins` response accepted into the cache.
-        /// This might be different from the input if another caller wins the race!.</returns>
-        private async Task<HttpResponseMessage> CachePypiResponse(string uri, HttpResponseMessage message)
+        /// This might be different from the input if another caller wins the race.</returns>
+        private async Task<HttpResponseMessage> CachePyPiResponseMemory(string uri, HttpResponseMessage message)
         {
-            if (!cachedResponses.TryAdd(uri, Task.FromResult(message)))
+            // On the initial caching attempt, see if the user specified an override
+            // for PyPiMaxCacheEntries and recreate the cache if needed
+            if (!checkedMaxEntriesVariable)
             {
-                return await cachedResponses[uri];
+                var maxEntriesVariable = EnvironmentVariableService.GetEnvironmentVariable("PyPiMaxCacheEntries");
+                if (!string.IsNullOrEmpty(maxEntriesVariable) && long.TryParse(maxEntriesVariable, out var maxEntries))
+                {
+                    Logger.LogInfo($"Setting IPyPiClient max cache entries to {maxEntries}");
+                    cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = maxEntries });
+                }
+
+                checkedMaxEntriesVariable = true;
             }
 
-            return message;
+            return await cachedResponses.GetOrCreateAsync(uri, cacheEntry =>
+            {
+                cacheEntry.SlidingExpiration = TimeSpan.FromSeconds(CACHEINTERVALSECONDS); // This entry will expire after CACHEINTERVALSECONDS seconds from last use
+                cacheEntry.Size = 1; // Specify a size of 1 so a set number of entries can always be in the cache
+                return Task.FromResult(message);
+            });
         }
 
         public async Task<IList<PipDependencySpecification>> FetchPackageDependencies(string name, string version, PythonProjectRelease release)
@@ -88,9 +112,9 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             var dependencies = new List<PipDependencySpecification>();
 
             var uri = release.Url.ToString();
-            var response = await GetPypiResponse(uri);
+            var response = await GetPyPiResponse(uri);
 
-            response = await CachePypiResponse(uri, response);
+            response = await CachePyPiResponseMemory(uri, response);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -169,10 +193,10 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                         return Task.FromResult<HttpResponseMessage>(null);
                     }
 
-                    return GetPypiResponse(requestUri);
+                    return GetPyPiResponse(requestUri);
                 });
 
-            request = await CachePypiResponse(requestUri, request);
+            request = await CachePyPiResponseMemory(requestUri, request);
 
             if (request == null)
             {
