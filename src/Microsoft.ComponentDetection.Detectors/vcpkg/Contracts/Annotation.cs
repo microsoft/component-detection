@@ -1,8 +1,10 @@
+using System;
+
 namespace Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts
 {
     public class Annotation
     {
-        public string Date { get; set; }
+        public DateTime Date { get; set; }
 
         public string Comment { get; set; }
 
