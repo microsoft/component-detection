@@ -58,53 +58,70 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         /// </summary>
         private MemoryCache cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
 
+        // Keep telemetry on how the cache is being used for future refinements
+        private PypiCacheTelemetryRecord cacheTelemetry;
+
+        public PyPiClient()
+        {
+            cacheTelemetry = new PypiCacheTelemetryRecord()
+            {
+                NumCacheHits = 0,
+                FinalCacheSize = 0,
+            };
+        }
+
+        ~PyPiClient()
+        {
+            cacheTelemetry.FinalCacheSize = cachedResponses.Count;
+            cacheTelemetry.Dispose();
+        }
+
         /// <summary>
         /// Returns a cached response if it exists, otherwise returns the response from PyPi REST call.
-        /// The response from PyPi is not automatically added to the cache, to allow caller to make that decision.
+        /// The response from PyPi is automatically added to the cache.
         /// </summary>
         /// <param name="uri">The REST Uri to call.</param>
         /// <returns>The cached response or a new result from PyPi.</returns>
-        private async Task<HttpResponseMessage> GetPyPiResponse(string uri)
+        private async Task<HttpResponseMessage> GetAndCachePyPiResponse(string uri)
         {
+            if (!checkedMaxEntriesVariable)
+            {
+                InitializeNonDefaultMemoryCache();
+            }
+
             if (cachedResponses.TryGetValue(uri, out HttpResponseMessage result))
             {
+                cacheTelemetry.NumCacheHits++;
                 Logger.LogVerbose("Retrieved cached Python data from " + uri);
                 return result;
             }
 
             Logger.LogInfo("Getting Python data from " + uri);
-            return await HttpClient.GetAsync(uri);
-        }
-
-        /// <summary>
-        /// Used to update the in-memory LRU cache, decision has to be made by the caller to allow for retries.
-        /// </summary>
-        /// <param name="uri">The REST Uri to call.</param>
-        /// <param name="message">The proposed response by the caller to store for this Uri.</param>
-        /// <returns>The `first-wins` response accepted into the cache.
-        /// This might be different from the input if another caller wins the race.</returns>
-        private async Task<HttpResponseMessage> CachePyPiResponseMemory(string uri, HttpResponseMessage message)
-        {
-            // On the initial caching attempt, see if the user specified an override
-            // for PyPiMaxCacheEntries and recreate the cache if needed
-            if (!checkedMaxEntriesVariable)
-            {
-                var maxEntriesVariable = EnvironmentVariableService.GetEnvironmentVariable("PyPiMaxCacheEntries");
-                if (!string.IsNullOrEmpty(maxEntriesVariable) && long.TryParse(maxEntriesVariable, out var maxEntries))
-                {
-                    Logger.LogInfo($"Setting IPyPiClient max cache entries to {maxEntries}");
-                    cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = maxEntries });
-                }
-
-                checkedMaxEntriesVariable = true;
-            }
-
+            var response = await HttpClient.GetAsync(uri);
+            
+            // The `first - wins` response accepted into the cache. This might be different from the input if another caller wins the race.
             return await cachedResponses.GetOrCreateAsync(uri, cacheEntry =>
             {
                 cacheEntry.SlidingExpiration = TimeSpan.FromSeconds(CACHEINTERVALSECONDS); // This entry will expire after CACHEINTERVALSECONDS seconds from last use
                 cacheEntry.Size = 1; // Specify a size of 1 so a set number of entries can always be in the cache
-                return Task.FromResult(message);
+                return Task.FromResult(response);
             });
+        }
+
+        /// <summary>
+        /// On the initial caching attempt, see if the user specified an override for 
+        /// PyPiMaxCacheEntries and recreate the cache if needed.
+        /// </summary>
+        private void InitializeNonDefaultMemoryCache()
+        {
+            var maxEntriesVariable = EnvironmentVariableService.GetEnvironmentVariable("PyPiMaxCacheEntries");
+            if (!string.IsNullOrEmpty(maxEntriesVariable) && long.TryParse(maxEntriesVariable, out var maxEntries))
+            {
+                Logger.LogInfo($"Setting IPyPiClient max cache entries to {maxEntries}");
+                cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = maxEntries });
+            }
+
+            checkedMaxEntriesVariable = true;
         }
 
         public async Task<IList<PipDependencySpecification>> FetchPackageDependencies(string name, string version, PythonProjectRelease release)
@@ -112,9 +129,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             var dependencies = new List<PipDependencySpecification>();
 
             var uri = release.Url.ToString();
-            var response = await GetPyPiResponse(uri);
-
-            response = await CachePyPiResponseMemory(uri, response);
+            var response = await GetAndCachePyPiResponse(uri);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -193,10 +208,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                         return Task.FromResult<HttpResponseMessage>(null);
                     }
 
-                    return GetPyPiResponse(requestUri);
+                    return GetAndCachePyPiResponse(requestUri);
                 });
-
-            request = await CachePyPiResponseMemory(requestUri, request);
 
             if (request == null)
             {
