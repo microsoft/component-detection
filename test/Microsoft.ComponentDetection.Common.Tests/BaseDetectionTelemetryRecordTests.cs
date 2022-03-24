@@ -59,6 +59,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
                 typeof(string),
                 typeof(string[]),
                 typeof(bool),
+                typeof(int),
                 typeof(int?),
                 typeof(TimeSpan?),
                 typeof(HttpStatusCode),
