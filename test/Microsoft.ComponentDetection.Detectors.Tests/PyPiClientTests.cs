@@ -77,8 +77,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                "SendAsync",
                Times.Once(),
                ItExpr.IsAny<HttpRequestMessage>(),
-               ItExpr.IsAny<CancellationToken>()
-            );
+               ItExpr.IsAny<CancellationToken>());
         }
 
         [TestMethod]
@@ -110,8 +109,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                "SendAsync",
                Times.Exactly(2),
                ItExpr.IsAny<HttpRequestMessage>(),
-               ItExpr.IsAny<CancellationToken>()
-            );
+               ItExpr.IsAny<CancellationToken>());
         }
 
         [TestMethod]
@@ -130,8 +128,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                "SendAsync",
                Times.Once(),
                ItExpr.IsAny<HttpRequestMessage>(),
-               ItExpr.IsAny<CancellationToken>()
-            );
+               ItExpr.IsAny<CancellationToken>());
         }
 
         [TestMethod]
@@ -150,8 +147,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                "SendAsync",
                Times.Exactly(2),
                ItExpr.IsAny<HttpRequestMessage>(),
-               ItExpr.IsAny<CancellationToken>()
-            );
+               ItExpr.IsAny<CancellationToken>());
         }
 
         [TestMethod]
