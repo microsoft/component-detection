@@ -36,3 +36,10 @@ Go detection will fallback if no Go v1.11+ is present.
 
 Due to the nature of `go.sum` containing references for all dependencies, including historical, no-longer-needed dependencies; the fallback strategy can result in over detection.
 Executing `go mod tidy` before detection via fallback is encouraged.
+
+## Environment Variables
+
+If the environment variable `EnableGoCliScan` is set, to any value, the Go detector uses [`go mod graph`][1] to discover Go dependencies.
+If the environment variable is not present, we fall back to parsing `go.mod` and `go.sum` ourselves.
+
+[1]: https://go.dev/ref/mod#go-mod-graph
