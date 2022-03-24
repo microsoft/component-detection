@@ -35,3 +35,8 @@ Pip detection will not run if `python` is unavailable.
 If no `bdist_wheel` or `bdist_egg` are available for a given component, dependencies will not be fetched.
 
 If no internet connection or a component cannot be found in Pypi, said component and its dependencies will be skipped.
+
+## Environment Variables
+
+The environment variable `PyPiMaxCacheEntries` is used to control the size of the in-memory LRU cache that caches responses from PyPi.
+The default value is 128.
