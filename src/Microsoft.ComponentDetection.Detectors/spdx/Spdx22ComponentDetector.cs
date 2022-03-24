@@ -115,6 +115,5 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
             return BitConverter.ToString(SHA1.Create().ComputeHash(stream)).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350
         }
-
     }
 }

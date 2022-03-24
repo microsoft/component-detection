@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]
-    public class SPDX22ComponentDetectorTests
+    public class Spdx22ComponentDetectorTests
     {
         private DetectorTestUtility<Spdx22ComponentDetector> detectorTestUtility;
 
@@ -111,8 +111,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 throw new AssertFailedException($"{nameof(sbomComponent)} is null");
             }
 
+#pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
             var checksum = BitConverter.ToString(SHA1.Create().ComputeHash(
                 Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
+#pragma warning restore CA5350
 
             Assert.AreEqual(1, components.Count());
             Assert.AreEqual(sbomComponent.Name, "Test 1.0.0");

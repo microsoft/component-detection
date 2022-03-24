@@ -26,8 +26,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public string Name { get; }
 
-        public string Version { get; }
-
         public string SpdxVersion { get; }
 
         public Uri DocumentNamespace { get; }
