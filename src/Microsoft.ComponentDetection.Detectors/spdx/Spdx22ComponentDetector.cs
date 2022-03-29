@@ -14,7 +14,7 @@ using Newtonsoft.Json.Linq;
 namespace Microsoft.ComponentDetection.Detectors.Spdx
 {
     /// <summary>
-    /// Spdx22ComponentDetector discover SPDX SBOM files and create components with the information about
+    /// Spdx22ComponentDetector discover SPDX SBOM files in JSON format and create components with the information about
     /// what SPDX document describes. 
     /// </summary>
     [Export(typeof(IComponentDetector))]
@@ -45,35 +45,33 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
                 // Reset buffer to starting position after hash generation.
                 file.Stream.Seek(0, SeekOrigin.Begin);
 
-                using (StreamReader sr = new StreamReader(file.Stream))
-                using (JsonReader reader = new JsonTextReader(sr))
-                {
-                    JsonSerializer serializer = new JsonSerializer();
+                using var sr = new StreamReader(file.Stream);
+                using var reader = new JsonTextReader(sr);
+                var serializer = new JsonSerializer();
 
-                    try
+                try
+                {
+                    var document = serializer.Deserialize<JObject>(reader);
+                    if (document != null)
                     {
-                        JObject document = (JObject)serializer.Deserialize(reader);
-                        if (document != null)
+                        if (IsSPDXVersionSupported(document))
                         {
-                            if (IsSPDXVersionSupported(document))
-                            {
-                                var sbomComponent = ConvertJObjectToSbomComponent(processRequest, document, hash);
-                                processRequest.SingleFileComponentRecorder.RegisterUsage(new DetectedComponent(sbomComponent));
-                            }
-                            else
-                            {
-                                Logger.LogWarning($"Discovered SPDX at {processRequest.ComponentStream.Location} is not SPDX-2.2 document, skipping");
-                            }
+                            var sbomComponent = ConvertJObjectToSbomComponent(processRequest, document, hash);
+                            processRequest.SingleFileComponentRecorder.RegisterUsage(new DetectedComponent(sbomComponent));
                         }
                         else
                         {
-                            Logger.LogWarning($"Discovered SPDX file at {processRequest.ComponentStream.Location} is not a valid document, skipping");
+                            Logger.LogWarning($"Discovered SPDX at {processRequest.ComponentStream.Location} is not SPDX-2.2 document, skipping");
                         }
                     }
-                    catch (JsonReaderException)
+                    else
                     {
-                        Logger.LogWarning($"Unable to parse file at {processRequest.ComponentStream.Location}, skipping");
+                        Logger.LogWarning($"Discovered SPDX file at {processRequest.ComponentStream.Location} is not a valid document, skipping");
                     }
+                }
+                catch (JsonReaderException)
+                {
+                    Logger.LogWarning($"Unable to parse file at {processRequest.ComponentStream.Location}, skipping");
                 }
             }
             catch (Exception e)
