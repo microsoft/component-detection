@@ -66,7 +66,11 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
             {
                 return;
             }
-            if (sbom == null || sbom.Packages == null) { return; }
+
+            if (sbom == null || sbom.Packages == null)
+            {
+                return;
+            }
 
             foreach (var item in sbom.Packages)
             {
