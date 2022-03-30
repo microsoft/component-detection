@@ -10,12 +10,19 @@ namespace Microsoft.ComponentDetection.Common
     {
         public bool DoesEnvironmentVariableExist(string name)
         {
+            return GetEnvironmentVariable(name) != null;
+        }
+
+        public string GetEnvironmentVariable(string name)
+        {
             // Environment variables are case-insensitive on Windows, and case-sensitive on
             // Linux and MacOS.
             // https://docs.microsoft.com/en-us/dotnet/api/system.environment.getenvironmentvariable
-            return Environment.GetEnvironmentVariables().Keys
+            var caseInsensitiveName = Environment.GetEnvironmentVariables().Keys
                 .OfType<string>()
-                .FirstOrDefault(x => string.Compare(x, name, true) == 0) != null;
+                .FirstOrDefault(x => string.Compare(x, name, true) == 0);
+
+            return caseInsensitiveName != null ? Environment.GetEnvironmentVariable(caseInsensitiveName) : null;
         }
     }
 }

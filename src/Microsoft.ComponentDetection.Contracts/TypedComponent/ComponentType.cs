@@ -46,6 +46,9 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         Conda = 13,
 
         [EnumMember]
-        Vcpkg = 14,
+        Spdx = 14,
+
+        [EnumMember]
+        Vcpkg = 15,
     }
 }
