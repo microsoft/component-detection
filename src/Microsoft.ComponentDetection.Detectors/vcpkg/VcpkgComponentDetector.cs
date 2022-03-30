@@ -67,7 +67,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
                 return;
             }
 
-            if (sbom == null || sbom.Packages == null)
+            if (sbom?.Packages == null)
             {
                 return;
             }
