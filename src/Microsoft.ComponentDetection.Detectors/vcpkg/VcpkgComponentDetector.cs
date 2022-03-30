@@ -57,17 +57,26 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
             IComponentStream file)
         {
             using var reader = new StreamReader(file.Stream);
-            var sbom = JsonConvert.DeserializeObject<VcpkgSBOM>(await reader.ReadToEndAsync());
+            VcpkgSBOM sbom;
+            try
+            {
+                sbom = JsonConvert.DeserializeObject<VcpkgSBOM>(await reader.ReadToEndAsync());
+            }
+            catch (Exception)
+            {
+                return;
+            }
+            if (sbom == null || sbom.Packages == null) { return; }
 
             foreach (var item in sbom.Packages)
             {
-                if (string.IsNullOrEmpty(item.Name))
-                {
-                    continue;
-                }
-
                 try
                 {
+                    if (string.IsNullOrEmpty(item.Name))
+                    {
+                        continue;
+                    }
+
                     Logger.LogWarning($"parsed package {item.Name}");
                     if (item.SPDXID == "SPDXRef-port")
                     {
