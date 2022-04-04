@@ -1,27 +1,29 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 namespace Microsoft.ComponentDetection.Detectors.Maven
 {
     public static class MavenParsingUtilities
     {
-        public static (DetectedComponent Component, bool? IsDevelopmentDependency) GenerateDetectedComponentFromMavenString(string key)
+        public static (DetectedComponent Component, bool? IsDevelopmentDependency, DependencyScope? dependencyScope) GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope(string key)
         {
-            var component = GetMavenComponentFromComponentString(key);
+            var componentAndMetaData = GetMavenComponentAndIsDevDependencyAndScope(key);
 
-            var detectedComponent = new DetectedComponent(component.component);
+            var detectedComponent = new DetectedComponent(componentAndMetaData.component);
 
-            return (detectedComponent, component.isDevDependency);
+            return (detectedComponent, componentAndMetaData.isDevDependency, componentAndMetaData.dependencyScope);
         }
 
-        private static (MavenComponent component, bool? isDevDependency) GetMavenComponentFromComponentString(string componentString)
+        private static (MavenComponent component, bool? isDevDependency, DependencyScope? dependencyScope) GetMavenComponentAndIsDevDependencyAndScope(string componentString)
         {
             var info = GetMavenComponentStringInfo(componentString);
-            return (new MavenComponent(info.groupId, info.artifactId, info.version), info.isDevelopmentDependency);
+            return (new MavenComponent(info.groupId, info.artifactId, info.version), info.isDevelopmentDependency, info.dependencyScope);
         }
 
-        private static (string groupId, string artifactId, string version, bool? isDevelopmentDependency)
+        private static (string groupId, string artifactId, string version, bool? isDevelopmentDependency, DependencyScope dependencyScope)
             GetMavenComponentStringInfo(string mavenComponentString)
         {
             var results = mavenComponentString.Split(':');
@@ -37,6 +39,8 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 results = new[] { results[0], results[1], results[2], results[4], results[5] };
             }
 
+            // 'Compile' is a default scope for maven dependencies.
+            DependencyScope dependencyScope = DependencyScope.Compile;
             var groupId = results[0];
             var artifactId = results[1];
             var version = results[3];
@@ -44,9 +48,11 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             if (results.Length == 5)
             {
                 isDevDependency = string.Equals(results[4], "test", StringComparison.OrdinalIgnoreCase);
+                dependencyScope = Enum.TryParse<DependencyScope>(results[4], true, out dependencyScope) ? dependencyScope : 
+                    throw new InvalidOperationException($"Invalid scope ('{results[4]}') found for '{mavenComponentString}' found in generated dependency graph.");
             }
 
-            return (groupId, artifactId, version, isDevDependency);
+            return (groupId, artifactId, version, isDevDependency, dependencyScope);
         }
     }
 }

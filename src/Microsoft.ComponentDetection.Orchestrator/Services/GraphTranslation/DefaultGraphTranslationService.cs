@@ -46,7 +46,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                 var detectedComponents = componentRecorder.GetDetectedComponents();
                 var dependencyGraphsByLocation = componentRecorder.GetDependencyGraphsByLocation();
 
-                // Note that it looks like we are building up detected components functionally, but they are not immutable -- the code is just written 
+                // Note that it looks like we are building up detected components functionally, but they are not immutable -- the code is just written
                 //  to look like a pipeline.
                 foreach (var component in detectedComponents)
                 {
@@ -62,6 +62,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                         // Calculate roots of the component
                         AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
                         component.DevelopmentDependency = MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
+                        component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
                         component.DetectedBy = detector;
 
                         // Return in a format that allows us to add the additional files for the components
@@ -130,6 +131,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                 }
 
                 firstComponent.DevelopmentDependency = MergeDevDependency(firstComponent.DevelopmentDependency, nextComponent.DevelopmentDependency);
+                firstComponent.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(firstComponent.DependencyScope, nextComponent.DependencyScope);
 
                 if (nextComponent.ContainerDetailIds.Count > 0)
                 {
@@ -203,6 +205,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
             {
                 DetectorId = component.DetectedBy.Id,
                 IsDevelopmentDependency = component.DevelopmentDependency,
+                DependencyScope = component.DependencyScope,
                 LocationsFoundAt = component.FilePaths,
                 Component = component.Component,
                 TopLevelReferrers = component.DependencyRoots,

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -61,6 +62,20 @@ namespace Microsoft.ComponentDetection.Common.Tests
             Action action = () => singleFileComponentRecorder.RegisterUsage(null);
 
             action.Should().Throw<ArgumentNullException>();
+        }
+
+        [TestMethod]
+        public void RegisterUsage_DevelopmentDependencyHasValue_componentNodeHasDependencyScope()
+        {
+            var location = "location";
+            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(location);
+            var detectedComponent = new DetectedComponent(new MavenComponent("org.apache.maven", "maven-artifact", "3.6.1"));
+
+            singleFileComponentRecorder.RegisterUsage(detectedComponent, dependencyScope: DependencyScope.Provided);
+            var dependencyGraph = componentRecorder.GetDependencyGraphForLocation(location);
+
+            dependencyGraph.GetDependencyScope(detectedComponent.Component.Id).Should().NotBeNull();
+            dependencyGraph.GetDependencyScope(detectedComponent.Component.Id).Should().Be(DependencyScope.Provided);
         }
 
         [TestMethod]
