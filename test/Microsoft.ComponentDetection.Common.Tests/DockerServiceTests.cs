@@ -62,16 +62,16 @@ namespace Microsoft.ComponentDetection.Common.Tests
 
             details.Should().NotBeNull();
             details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag");
-            var expectedImageId = "sha256:8a311790d0b3414e97ed7b31c6ddf1711f980f4fca83b6ecb6becfa8c1867bfe";
-            var expectedCreatedAt = DateTime.Parse("2021-07-28 19:25:20.3307716");
+            var expectedImageId = "sha256:5edc12e9a797b59b9209354ff99d8550e7a1f90ca924c103fa3358e1a9ce15fe";
+            var expectedCreatedAt = DateTime.Parse("2021-09-24T06:47:57.442225064Z");
 
             details.Should().NotBeNull();
             details.Id.Should().BeGreaterThan(0);
             details.ImageId.Should().BeEquivalentTo(expectedImageId);
             details.CreatedAt.ToUniversalTime().Should().Be(expectedCreatedAt);
-            details.BaseImageDigest.Should().Be("sha256:5c8908bc326c0b7c4f0f8059bbde31a92826446a88e6d7c7f6024b4d33fec545");
-            details.BaseImageRef.Should().Be("ubuntu:precise-20151020");
-            details.Layers.Should().HaveCount(4);
+            details.BaseImageDigest.Should().Be("sha256:feb5d9fea6a5e9606aa995e879d862b825965ba48de054caab5ef356dc6b3412");
+            details.BaseImageRef.Should().Be("docker.io/library/hello-world:latest");
+            details.Layers.Should().HaveCount(1);
         }
         
         [SkipTestOnWindows]
