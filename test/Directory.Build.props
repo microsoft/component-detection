@@ -11,9 +11,14 @@
 		<PackageReference Include="Faker.net" />
     </ItemGroup>
 
-	<PropertyGroup>
-		<CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)../analyzers.ruleset</CodeAnalysisRuleSet>
-		<TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-		<NoWarn>NU1608,NU5119,NU5100</NoWarn>
-	</PropertyGroup>
+    <PropertyGroup>
+        <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)../analyzers.ruleset</CodeAnalysisRuleSet>
+        <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+        <NoWarn>NU1608,NU5119,NU5100</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="Resources\**"
+              CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
 </Project>
