@@ -103,7 +103,12 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                     .DistinctBy(artifact => (artifact.Name, artifact.Version))
                     .Where(artifact => AllowedArtifactTypes.Contains(artifact.Type))
                     .Select(artifact =>
-                        (Component: new LinuxComponent(syftOutput.Distro.Name, syftOutput.Distro.Version, artifact.Name, artifact.Version), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
+                        (Component: new LinuxComponent(
+                            syftOutput.Distro.Name, 
+                            syftOutput.Distro.Version,
+                            ExtractPackageSourceName(artifact),
+                            artifact.Version),
+                        layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
 
                 foreach (var (component, layers) in linuxComponentsWithLayers)
                 {
@@ -134,6 +139,34 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                 record.FailedDeserializingScannerOutput = e.ToString();
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Extracts a package's upstream source name.
+        /// For example some distributions package openssl as openssl-dev, libssl, openssl1.0, etc.
+        /// </summary>
+        private string ExtractPackageSourceName(Package package)
+        {
+            var name = package.Name;
+            switch (package.MetadataType)
+            {
+                case "ApkMetadata":
+                    name = package.Metadata.OriginPackage ?? package.Metadata.Package;
+                    break;
+                case "DpkgMetadata":
+                    name = string.IsNullOrWhiteSpace(package.Metadata.Source)
+                        ? package.Metadata.Package 
+                        : package.Metadata.Source;
+                    break;
+                case "RpmdbMetadata":
+                    name = package.Metadata.Name;
+                    break;
+                default:
+                    Logger.LogWarning($"Unknown metadata type: {package.MetadataType}");
+                    break;
+            }
+
+            return name;
         }
     }
 }
