@@ -63,7 +63,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
             details.Should().NotBeNull();
             details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag");
             var expectedImageId = "sha256:5edc12e9a797b59b9209354ff99d8550e7a1f90ca924c103fa3358e1a9ce15fe";
-            var expectedCreatedAt = DateTime.Parse("2021-09-24T06:47:57.442225064Z");
+            var expectedCreatedAt = DateTime.Parse("2021-09-23T23:47:57.442225064Z");
 
             details.Should().NotBeNull();
             details.Id.Should().BeGreaterThan(0);
