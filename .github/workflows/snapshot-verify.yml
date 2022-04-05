@@ -21,7 +21,7 @@ jobs:
 
       - name: Get latest release snapshot download url
         id: download-latest-release-snapshot
-        uses: actions/github-script@v5.0.0
+        uses: actions/github-script@v6
         with:
           result-encoding: string
           script: |
