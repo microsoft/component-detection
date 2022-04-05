@@ -8,7 +8,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 {
     public static class MavenParsingUtilities
     {
-        public static (DetectedComponent Component, bool? IsDevelopmentDependency, DependencyScope? dependencyScope) GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope(string key)
+        public static (DetectedComponent Component, bool? IsDevelopmentDependency, DependencyScope? dependencyScope) GenerateDetectedComponentAndMetadataFromMavenString(string key)
         {
             var componentAndMetaData = GetMavenComponentAndIsDevDependencyAndScope(key);
 

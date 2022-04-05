@@ -58,7 +58,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 var localLine = line.Trim(TrimCharacters);
                 if (!string.IsNullOrWhiteSpace(localLine) && topLevelComponent == null)
                 {
-                    var topLevelMavenStringInfo = MavenParsingUtilities.GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope(localLine);
+                    var topLevelMavenStringInfo = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(localLine);
                     topLevelComponent = topLevelMavenStringInfo.Component;
                     singleFileComponentRecorder.RegisterUsage(
                         topLevelMavenStringInfo.Component, 
@@ -107,7 +107,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 tupleStack.Pop();
             }
 
-            var componentAndDevDependencyTuple = MavenParsingUtilities.GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope(versionedComponent);
+            var componentAndDevDependencyTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(versionedComponent);
             var newTuple = (ParseLevel: position, componentAndDevDependencyTuple.Component);
 
             if (tupleStack.Count > 0)

@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_HappyPath()
         {
             var componentAndMetaData =
-                GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided");
+                GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided");
 
             Assert.IsNotNull(componentAndMetaData);
             Assert.IsNotNull(componentAndMetaData.Component);
@@ -44,7 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DefaultScopeCompile()
         {
             var componentAndMetaData =
-                GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT");
+                GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT");
 
             Assert.IsNotNull(componentAndMetaData);
             Assert.IsNotNull(componentAndMetaData.dependencyScope);
@@ -58,7 +58,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DevelopmentDependencyTrue()
         {
             var componentAndMetaData =
-                GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:test");
+                GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:test");
 
             Assert.IsNotNull(componentAndMetaData);
             Assert.IsNotNull(componentAndMetaData.IsDevelopmentDependency);
@@ -72,7 +72,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_InvalidScope()
         {
             var ex = Assert.ThrowsException<InvalidOperationException>(
-                () => GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:invalidScope"));
+                () => GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:invalidScope"));
             Assert.IsTrue(ex.Message.Contains("invalid scope", StringComparison.OrdinalIgnoreCase));
         }
     }
