@@ -37,7 +37,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.AreEqual(expectedComponent.Version, actualComponent.Version);
 
             Assert.IsFalse(componentAndMetaData.IsDevelopmentDependency);
-            Assert.AreEqual(DependencyScope.Provided, componentAndMetaData.dependencyScope);
+            Assert.AreEqual(DependencyScope.MavenProvided, componentAndMetaData.dependencyScope);
         }
 
         [TestMethod]
@@ -51,7 +51,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
             Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
-            Assert.AreEqual(DependencyScope.Compile, componentAndMetaData.dependencyScope);
+            Assert.AreEqual(DependencyScope.MavenCompile, componentAndMetaData.dependencyScope);
         }
 
         [TestMethod]

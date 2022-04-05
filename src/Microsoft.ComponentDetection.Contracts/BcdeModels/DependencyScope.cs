@@ -11,18 +11,18 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
     public enum DependencyScope
     {
         /// <summary>default scope. dependencies are available in the project during all build tasks. propogated to dependent projects. </summary>
-        Compile = 0,
+        MavenCompile = 0,
 
         /// <summary> Required at Runtime, but not at compile time.</summary>
-        Runtime = 1,
+        MavenRuntime = 1,
 
         /// <summary>Dependencies are available only at compile time and in the test classpath of the project. These dependencies are also not transitive.</summary>
-        Provided = 2,
+        MavenProvided = 2,
 
         /// <summary>Similar to provided scope. Requires explicit reference to Jar. </summary>
-        System = 3,
+        MavenSystem = 3,
 
         /// <summary>Used only at runtime.</summary>
-        Test = 4,
+        MavenTest = 4,
     }
 }

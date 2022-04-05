@@ -138,7 +138,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         private void RecordTelemetryIfProvidedScope(DependencyScope? dependencyScope)
         {
-            if (dependencyScope.HasValue && (dependencyScope == DependencyScope.Provided || dependencyScope == DependencyScope.System))
+            if (dependencyScope.HasValue && (dependencyScope == DependencyScope.MavenProvided || dependencyScope == DependencyScope.MavenSystem))
             {
                 using var record = new MavenDetectorProvidedScopeRecord();
             }

@@ -71,11 +71,11 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(location);
             var detectedComponent = new DetectedComponent(new MavenComponent("org.apache.maven", "maven-artifact", "3.6.1"));
 
-            singleFileComponentRecorder.RegisterUsage(detectedComponent, dependencyScope: DependencyScope.Provided);
+            singleFileComponentRecorder.RegisterUsage(detectedComponent, dependencyScope: DependencyScope.MavenProvided);
             var dependencyGraph = componentRecorder.GetDependencyGraphForLocation(location);
 
             dependencyGraph.GetDependencyScope(detectedComponent.Component.Id).Should().NotBeNull();
-            dependencyGraph.GetDependencyScope(detectedComponent.Component.Id).Should().Be(DependencyScope.Provided);
+            dependencyGraph.GetDependencyScope(detectedComponent.Component.Id).Should().Be(DependencyScope.MavenProvided);
         }
 
         [TestMethod]

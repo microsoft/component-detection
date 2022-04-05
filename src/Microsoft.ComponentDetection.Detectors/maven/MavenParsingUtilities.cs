@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Net;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -7,6 +9,15 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 {
     public static class MavenParsingUtilities
     {
+        private static readonly Dictionary<string, DependencyScope> MavenScopeToDependencyScopeMapping = new () 
+        {
+            { "compile", DependencyScope.MavenCompile },
+            { "provided", DependencyScope.MavenProvided },
+            { "system", DependencyScope.MavenSystem },
+            { "test", DependencyScope.MavenTest },
+            { "runtime", DependencyScope.MavenRuntime },
+        };
+
         public static (DetectedComponent Component, bool? IsDevelopmentDependency, DependencyScope? dependencyScope) GenerateDetectedComponentAndMetadataFromMavenString(string key)
         {
             var componentAndMetaData = GetMavenComponentAndIsDevDependencyAndScope(key);
@@ -38,17 +49,18 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 results = new[] { results[0], results[1], results[2], results[4], results[5] };
             }
 
-            // 'Compile' is a default scope for maven dependencies.
-            DependencyScope dependencyScope = DependencyScope.Compile;
+            // 'MavenCompile' is a default scope for maven dependencies.
+            DependencyScope dependencyScope = DependencyScope.MavenCompile;
             var groupId = results[0];
             var artifactId = results[1];
             var version = results[3];
             bool? isDevDependency = null;
             if (results.Length == 5)
             {
-                isDevDependency = string.Equals(results[4], "test", StringComparison.OrdinalIgnoreCase);
-                dependencyScope = Enum.TryParse<DependencyScope>(results[4], true, out dependencyScope) ? dependencyScope : 
-                    throw new InvalidOperationException($"Invalid scope ('{results[4]}') found for '{mavenComponentString}' found in generated dependency graph."); 
+                dependencyScope = MavenScopeToDependencyScopeMapping.TryGetValue(results[4], out dependencyScope) 
+                    ? dependencyScope 
+                    : throw new InvalidOperationException($"Invalid scope ('{results[4]}') found for '{mavenComponentString}' found in generated dependency graph.");
+                isDevDependency = dependencyScope == DependencyScope.MavenTest;
             }
 
             return (groupId, artifactId, version, isDevDependency, dependencyScope);
