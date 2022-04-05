@@ -1,17 +1,13 @@
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Vcpkg;
-using System.Reflection;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -122,21 +118,18 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var components = detectedComponents.ToList();
 
             Assert.AreEqual(2, components.Count());
-            {
-                var sbomComponent = (VcpkgComponent)components[0].Component;
-                Assert.AreEqual("tinyxml2:x64-linux", sbomComponent.Name);
-                Assert.AreEqual("5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0", sbomComponent.Version);
-                Assert.AreEqual("SPDXRef-binary", sbomComponent.SPDXID);
-                Assert.AreEqual("NONE", sbomComponent.DownloadLocation);
-            }
+            var sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c?.Component).SPDXID.Equals("SPDXRef-binary")).Component;
+            Assert.IsNotNull(sbomComponent);
+            Assert.AreEqual("tinyxml2:x64-linux", sbomComponent.Name);
+            Assert.AreEqual("5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0", sbomComponent.Version);
+            Assert.AreEqual("SPDXRef-binary", sbomComponent.SPDXID);
+            Assert.AreEqual("NONE", sbomComponent.DownloadLocation);
 
-            {
-                var sbomComponent = (VcpkgComponent)components[1].Component;
-                Assert.AreEqual("leethomason/tinyxml2", sbomComponent.Name);
-                Assert.AreEqual("9.0.0", sbomComponent.Version);
-                Assert.AreEqual("SPDXRef-resource-1", sbomComponent.SPDXID);
-                Assert.AreEqual("git+https://github.com/leethomason/tinyxml2", sbomComponent.DownloadLocation);
-            }
+            sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c.Component).SPDXID.Equals("SPDXRef-resource-1")).Component;
+            Assert.AreEqual("leethomason/tinyxml2", sbomComponent.Name);
+            Assert.AreEqual("9.0.0", sbomComponent.Version);
+            Assert.AreEqual("SPDXRef-resource-1", sbomComponent.SPDXID);
+            Assert.AreEqual("git+https://github.com/leethomason/tinyxml2", sbomComponent.DownloadLocation);
         }
 
         [TestMethod]
