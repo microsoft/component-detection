@@ -9,7 +9,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 {
     public static class MavenParsingUtilities
     {
-        private static readonly Dictionary<string, DependencyScope> MavenScopeToDependencyScopeMapping = new () 
+        private static readonly Dictionary<string, DependencyScope> MavenScopeToDependencyScopeMapping = new Dictionary<string, DependencyScope>() 
         {
             { "compile", DependencyScope.MavenCompile },
             { "provided", DependencyScope.MavenProvided },
