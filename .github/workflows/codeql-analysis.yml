@@ -40,7 +40,7 @@ jobs:
         # https://docs.github.com/en/free-pro-team@latest/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#changing-the-languages-that-are-analyzed
 
     steps:
-    - uses: actions/checkout@v2.3.2
+    - uses: actions/checkout@v3
       with:
           fetch-depth: 0
 
@@ -60,7 +60,7 @@ jobs:
 #       uses: github/codeql-action/autobuild@v1
 
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 3.1.x
 
