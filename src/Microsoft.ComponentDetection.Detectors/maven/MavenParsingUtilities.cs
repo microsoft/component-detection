@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -49,7 +48,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             {
                 isDevDependency = string.Equals(results[4], "test", StringComparison.OrdinalIgnoreCase);
                 dependencyScope = Enum.TryParse<DependencyScope>(results[4], true, out dependencyScope) ? dependencyScope : 
-                    throw new InvalidOperationException($"Invalid scope ('{results[4]}') found for '{mavenComponentString}' found in generated dependency graph.");
+                    throw new InvalidOperationException($"Invalid scope ('{results[4]}') found for '{mavenComponentString}' found in generated dependency graph."); 
             }
 
             return (groupId, artifactId, version, isDevDependency, dependencyScope);
