@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
 namespace Microsoft.ComponentDetection.Contracts.BcdeModels
@@ -14,6 +15,9 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
         public string DetectorId { get; set; }
 
         public bool? IsDevelopmentDependency { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DependencyScope? DependencyScope { get; set; }
 
         public IEnumerable<TypedComponent.TypedComponent> TopLevelReferrers { get; set; }
 
