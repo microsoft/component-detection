@@ -55,6 +55,20 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         }
 
         [TestMethod]
+        public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DiscardLeftoverStringWhileParsingScope()
+        {
+            var componentAndMetaData =
+                GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided (optional)");
+
+            Assert.IsNotNull(componentAndMetaData);
+            Assert.IsNotNull(componentAndMetaData.dependencyScope);
+
+            var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
+            Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
+            Assert.AreEqual(DependencyScope.MavenProvided, componentAndMetaData.dependencyScope);
+        }
+
+        [TestMethod]
         public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DevelopmentDependencyTrue()
         {
             var componentAndMetaData =
