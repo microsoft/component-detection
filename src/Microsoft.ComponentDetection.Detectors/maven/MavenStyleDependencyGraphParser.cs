@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 namespace Microsoft.ComponentDetection.Detectors.Maven
 {
@@ -62,10 +60,9 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 {
                     var topLevelMavenStringInfo = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(localLine);
                     topLevelComponent = topLevelMavenStringInfo.Component;
-                    RecordTelemetryIfProvidedScope(topLevelMavenStringInfo.dependencyScope);
                     singleFileComponentRecorder.RegisterUsage(
-                        topLevelMavenStringInfo.Component, 
-                        isDevelopmentDependency: topLevelMavenStringInfo.IsDevelopmentDependency, 
+                        topLevelMavenStringInfo.Component,
+                        isDevelopmentDependency: topLevelMavenStringInfo.IsDevelopmentDependency,
                         dependencyScope: topLevelMavenStringInfo.dependencyScope);
                 }
                 else
@@ -112,7 +109,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
             var componentAndDevDependencyTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(versionedComponent);
             var newTuple = (ParseLevel: position, componentAndDevDependencyTuple.Component);
-            RecordTelemetryIfProvidedScope(componentAndDevDependencyTuple.dependencyScope);
+
             if (tupleStack.Count > 0)
             {
                 var parent = tupleStack.Peek().Component;
@@ -134,14 +131,6 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             }
 
             tupleStack.Push(newTuple);
-        }
-
-        private void RecordTelemetryIfProvidedScope(DependencyScope? dependencyScope)
-        {
-            if (dependencyScope.HasValue && (dependencyScope == DependencyScope.MavenProvided || dependencyScope == DependencyScope.MavenSystem))
-            {
-                using var record = new MavenDetectorProvidedScopeRecord();
-            }
         }
 
         private class GraphNodeAtLevel<T> : GraphNode<T>

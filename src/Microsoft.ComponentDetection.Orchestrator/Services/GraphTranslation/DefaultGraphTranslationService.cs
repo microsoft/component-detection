@@ -5,10 +5,12 @@ using System.IO;
 using System.Linq;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using System.Threading.Tasks;
 
 namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 {
@@ -24,6 +26,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 
             var mergedComponents = FlattenAndMergeComponents(unmergedComponents);
 
+            LogComponentScopeTelemetry(mergedComponents);
+
             return new DefaultGraphScanResult
             {
                 ComponentsFound = mergedComponents.Select(x => ConvertToContract(x)).ToList(),
@@ -33,6 +37,20 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                                                                     .Where(x => x != null)
                                                                     .Select(x => x.GetDependencyGraphsByLocation())),
             };
+        }
+
+        private void LogComponentScopeTelemetry(List<DetectedComponent> components)
+        {
+            using var record = new DetectedComponentScopeRecord();
+            Parallel.ForEach(components, x =>
+            {
+                if (x.Component.Type.Equals(ComponentType.Maven)
+                    && x.DependencyScope.HasValue
+                    && (x.DependencyScope.Equals(DependencyScope.MavenProvided) || x.DependencyScope.Equals(DependencyScope.MavenSystem)))
+                {
+                    record.IncrementProvidedScopeCount();
+                }
+            });
         }
 
         private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector detector, ComponentRecorder recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory)
