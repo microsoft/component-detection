@@ -59,7 +59,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             if (results.Length == 5)
             {
                 dependencyScope = MavenScopeToDependencyScopeMapping.TryGetValue(
-                    Regex.Match(results[4], @"^([\w\-]+)").Value,
+                    Regex.Match(results[4], @"^([\w]+)").Value,
                     out dependencyScope) 
                     ? dependencyScope 
                     : throw new InvalidOperationException($"Invalid scope ('{results[4]}') found for '{mavenComponentString}' found in generated dependency graph.");
