@@ -43,7 +43,7 @@ jobs:
         run: dotnet run scan --Verbosity Verbose --SourceDirectory ${{ github.workspace }}/test/Microsoft.ComponentDetection.VerificationTests/resources --Output ${{ github.workspace }}/output
 
       - name: Upload output folder
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: release-snapshot-output-${{ matrix.os }}
           path: ${{ github.workspace }}/output
