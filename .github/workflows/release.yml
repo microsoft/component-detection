@@ -39,7 +39,7 @@ jobs:
         run: dotnet publish --configuration Release --output ./bin --self-contained --runtime ${{ matrix.rid }} -p:PublishSingleFile=true -p:DebugType=None -p:PublishTrimmed=true ./src/Microsoft.ComponentDetection
 
       - name: Publish CLI tool
-        uses: shogo82148/actions-upload-release-asset@v1.6.1
+        uses: shogo82148/actions-upload-release-asset@v1.6.2
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/*
