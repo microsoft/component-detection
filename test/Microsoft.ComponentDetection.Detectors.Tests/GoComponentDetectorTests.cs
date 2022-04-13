@@ -336,7 +336,7 @@ replace (
         }
 
         [TestMethod]
-        public async Task TestGoDetector_GoGraphCyclicDepndencies()
+        public async Task TestGoDetector_GoGraphCyclicDependencies()
         {
             var goGraph = @"
 github.com/prometheus/common@v0.32.1 github.com/prometheus/client_golang@v1.11.0
