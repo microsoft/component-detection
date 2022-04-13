@@ -336,6 +336,34 @@ replace (
         }
 
         [TestMethod]
+        public async Task TestGoDetector_GoGraphCyclicDependencies()
+        {
+            var goGraph = @"
+github.com/prometheus/common@v0.32.1 github.com/prometheus/client_golang@v1.11.0
+github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1";
+            commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+                .ReturnsAsync(true);
+
+            commandLineMock.Setup(x => x.ExecuteCommand("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+                .ReturnsAsync(new CommandLineExecutionResult
+                {
+                    ExitCode = 0,
+                    StdOut = goGraph,
+                });
+
+            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+
+            var (scanResult, componentRecorder) = await detectorTestUtility
+                                                    .WithFile("go.mod", string.Empty)
+                                                    .ExecuteDetector();
+
+            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+
+            var detectedComponents = componentRecorder.GetDetectedComponents();
+            Assert.AreEqual(3, detectedComponents.Count());
+        }
+
+        [TestMethod]
         public async Task TestGoDetector_GoCliRequiresEnvVarToRun()
         {
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();

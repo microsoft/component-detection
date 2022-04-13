@@ -33,7 +33,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
-        public override int Version => 3;
+        public override int Version => 4;
 
         private HashSet<string> projectRoots = new HashSet<string>();
 
@@ -41,7 +41,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
-            
+
             var projectRootDirectory = Directory.GetParent(file.Location);
             if (projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
             {
@@ -57,9 +57,10 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                     wasGoCliScanSuccessful = await UseGoCliToScan(file.Location, singleFileComponentRecorder);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                Logger.LogInfo("Failed to detect components using go cli.");
+                Logger.LogError($"Failed to detect components using go cli. Location: {file.Location}");
+                Logger.LogException(ex, isError: true, printException: true);
             }
             finally
             {
@@ -231,7 +232,12 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 }
                 else if (isParentParsed && isChildParsed)
                 {
-                    // Go output guarantees that all parents will be output before children
+                    // Go can have a cyclic dependency between modules, which could cause child components to be listed first than parents. Reproducible with Go 1.16
+                    if (singleFileComponentRecorder.GetComponent(parentComponent.Id) == null)
+                    {
+                        singleFileComponentRecorder.RegisterUsage(new DetectedComponent(parentComponent));
+                    }
+
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(childComponent), parentComponentId: parentComponent.Id);
                 }
                 else
