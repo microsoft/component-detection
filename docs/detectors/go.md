@@ -22,9 +22,10 @@ Improved go detection depends on the following to successfully run:
 
 - Go v1.11+.
 
-Go detection is performed by parsing output from executing `go mod graph`.
 Full dependency graph generation is supported if Go v1.11+ is present on the build agent.
 If no Go v1.11+ is present, fallback detection strategy is performed.
+
+Go detection is performed by parsing output from executing [go list -m -json all](1). To generate the graph, the command [go mod graph](2) is executed, this only adds edges between the components that were already registered by `go list`.
 
 As we validate this opt-in behavior, we will eventually graduate it to the default detection strategy.
 
@@ -35,11 +36,13 @@ Dev dependency tagging is not supported.
 Go detection will fallback if no Go v1.11+ is present.
 
 Due to the nature of `go.sum` containing references for all dependencies, including historical, no-longer-needed dependencies; the fallback strategy can result in over detection.
-Executing `go mod tidy` before detection via fallback is encouraged.
+Executing [go mod tidy](https://go.dev/ref/mod#go-mod-tidy) before detection via fallback is encouraged.
+Some legacy dependencies may report stale transitive dependencies in their manifests, in this case you can exclude them safely from your binaries by using [exclude directive](https://go.dev/doc/modules/gomod-ref#exclude).
 
 ## Environment Variables
 
-If the environment variable `EnableGoCliScan` is set, to any value, the Go detector uses [`go mod graph`][1] to discover Go dependencies.
+If the environment variable `EnableGoCliScan` is set, to any value, the Go detector uses [`go list -m -json all`][1] to discover Go dependencies.
 If the environment variable is not present, we fall back to parsing `go.mod` and `go.sum` ourselves.
 
-[1]: https://go.dev/ref/mod#go-mod-graph
+[1]: https://go.dev/ref/mod#go-list-m
+[2]: https://go.dev/ref/mod#go-mod-graph
