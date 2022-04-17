@@ -11,15 +11,15 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public PubComponent(string name, string version)
         {
-            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Pip));
-            Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.Pip));
+            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Pub));
+            Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.Pub));
         }
 
         public string Name { get; set; }
 
         public string Version { get; set; }
 
-        public override ComponentType Type => ComponentType.Pip;
+        public override ComponentType Type => ComponentType.Pub;
 
         public override string Id => $"{Name} {Version} - {Type}".ToLowerInvariant();
 

@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
     {
         public override string Id { get; } = "Pub";
 
-        public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems) };
+        public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Pub) };
 
         public override IList<string> SearchPatterns { get; } = new List<string> { "pubspec.lock" };
 
@@ -63,11 +63,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
                 var component = new DetectedComponent(new PubComponent(package.Key, package.Value["version"]));
                 singleFileComponentRecorder.RegisterUsage(component, package.Value["dependency"] != "transitive");
             }
-        }
-        
-        private bool IsVersionRelative(string version)
-        {
-            return version.StartsWith("~") || version.StartsWith("=");
         }
     }
 }
