@@ -42,7 +42,7 @@
         /// <summary>Indicates a detector applies to Vcpkg packages.</summary>
         Vcpkg,
 
-        ///<summary>Indicates a detector applies to Pub packages.</summary>
+        /// <summary>Indicates a detector applies to Pub packages.</summary>
         Pub,
     }
 }
