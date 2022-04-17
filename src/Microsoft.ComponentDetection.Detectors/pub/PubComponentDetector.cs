@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems) };
 
-        public override IList<string> SearchPatterns { get; } = new List<string> { "Pubspec.yaml" };
+        public override IList<string> SearchPatterns { get; } = new List<string> { "pubspec.lock" };
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pub };
 
@@ -61,7 +61,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
             public Dictionary<string, string> environment; 
             public Dictionary<string, string> dependencies;
             public Dictionary<string, string> dev_dependencies;
-
         }
 
         public PubComponentDetector()
@@ -74,7 +73,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            Logger.LogVerbose("Found Pubspec.yaml: " + file.Location);
+            Logger.LogVerbose("Found Pubspec.lock: " + file.Location);
             ParsePubspecYamlFile(singleFileComponentRecorder, file);
 
             return Task.CompletedTask;
@@ -95,23 +94,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
                 .WithNamingConvention(UnderscoredNamingConvention.Instance)
                 .Build();
 
-            var pubspec = deserializer.Deserialize<Pubspec>(text);
+            dynamic pubspec = deserializer.Deserialize<System.Dynamic.ExpandoObject>(text);
+            Console.WriteLine(pubspec.packages);
 
-            foreach (string key in pubspec.dependencies.Keys)
+            foreach (dynamic package in pubspec.packages)
             {
-                foreach (Dependency dependency in dependencies[key])
-                {
-                    // there are cases that we ommit the dependency
-                    // because its version is not valid like for example 
-                    // is a relative version instead of an absolute one
-                    // because of that there are children elements 
-                    // that does not contains a entry in the dictionary
-                    // those elements should be removed
-                    if (components.ContainsKey(dependency.Id))
-                    {
-                        singleFileComponentRecorder.RegisterUsage(components[dependency.Id], parentComponentId: components[key].Component.Id);
-                    }
-                }
+                var component = new DetectedComponent(new PubComponent(package.Key, package.Value["version"]));
+                singleFileComponentRecorder.RegisterUsage(component, package.Value["dependency"] != "transitive");
             }
         }
         
