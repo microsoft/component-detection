@@ -14,12 +14,9 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Microsoft.ComponentDetection.Detectors.Pub
 {
-    
-
     [Export(typeof(IComponentDetector))]
     public class PubComponentDetector : FileComponentDetector
     {
-
         public override string Id { get; } = "Pub";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems) };
@@ -29,39 +26,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pub };
 
         public override int Version { get; } = 1;
-
-        private enum SectionType
-        {
-            GEM,
-            GIT,
-            PATH,
-        }
-
-        private class Dependency
-        {
-            public string Name { get; }
-
-            public string Location { get; }
-
-            public string Id => $"{Name}:{Location}";
-
-            public Dependency(string name, string location)
-            {
-                Name = name;
-                Location = location;
-            }
-        }
-
-        private class Pubspec {
-            public string name;
-            public string description;
-            public string version;
-            public string homepage;
-            public string documentation; 
-            public Dictionary<string, string> environment; 
-            public Dictionary<string, string> dependencies;
-            public Dictionary<string, string> dev_dependencies;
-        }
 
         public PubComponentDetector()
         {
@@ -82,7 +46,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
         private void ParsePubspecYamlFile(ISingleFileComponentRecorder singleFileComponentRecorder, IComponentStream file)
         {
             var components = new Dictionary<string, DetectedComponent>();
-            var dependencies = new Dictionary<string, List<Dependency>>();
 
             var text = string.Empty;
             using (var reader = new StreamReader(file.Stream))
