@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]
-    public class PubDetectorTest
+    public class PubDetectorTests
     {
         private Mock<ILogger> loggerMock;
         private PubComponentDetector pubDetector;
