@@ -4,6 +4,7 @@ using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -21,7 +22,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
 
-        public override IList<string> SearchPatterns { get; } = new List<string> { "*.nupkg", "*.nuspec", NugetConfigFileName };
+        public override IList<string> SearchPatterns { get; } = new List<string> { "*.nupkg", "*.nuspec", NugetConfigFileName, "paket.lock" };
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.NuGet };
 
@@ -90,6 +91,10 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 {
                     nuspecBytes = await NuGetNuspecUtilities.GetNuspecBytesFromNuspecStream(stream.Stream, stream.Stream.Length);
                 }
+                else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
+                {
+                    ParsePaketLock(processRequest);
+                }
                 else
                 {
                     return;
@@ -122,6 +127,26 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             {
                 // If something went wrong, just ignore the component
                 Logger.LogFailedReadingFile(stream.Location, e);
+            }
+        }
+
+        private void ParsePaketLock(ProcessRequest processRequest) { 
+            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+            var stream = processRequest.ComponentStream;
+
+            using StreamReader reader = new StreamReader(stream.Stream);
+
+            string line;
+            while ((line = reader.ReadLine()) != null) 
+            {
+                var matches = Regex.Matches(line, @"\s*([a-zA-Z0-9-.]*) \([<>=]*[ ]*([0-9a-zA-Z-.]*)\)", RegexOptions.Singleline);
+                foreach (Match match in matches) 
+                {
+                    string name = match.Groups[1].Value;
+                    string version = match.Groups[2].Value;
+                    NuGetComponent component = new NuGetComponent(name, version);
+                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
+                }
             }
         }
 
