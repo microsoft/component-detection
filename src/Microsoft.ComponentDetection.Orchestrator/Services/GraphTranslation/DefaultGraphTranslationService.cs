@@ -5,10 +5,12 @@ using System.IO;
 using System.Linq;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using System.Threading.Tasks;
 
 namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 {
@@ -24,6 +26,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 
             var mergedComponents = FlattenAndMergeComponents(unmergedComponents);
 
+            LogComponentScopeTelemetry(mergedComponents);
+
             return new DefaultGraphScanResult
             {
                 ComponentsFound = mergedComponents.Select(x => ConvertToContract(x)).ToList(),
@@ -33,6 +37,20 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                                                                     .Where(x => x != null)
                                                                     .Select(x => x.GetDependencyGraphsByLocation())),
             };
+        }
+
+        private void LogComponentScopeTelemetry(List<DetectedComponent> components)
+        {
+            using var record = new DetectedComponentScopeRecord();
+            Parallel.ForEach(components, x =>
+            {
+                if (x.Component.Type.Equals(ComponentType.Maven)
+                    && x.DependencyScope.HasValue
+                    && (x.DependencyScope.Equals(DependencyScope.MavenProvided) || x.DependencyScope.Equals(DependencyScope.MavenSystem)))
+                {
+                    record.IncrementProvidedScopeCount();
+                }
+            });
         }
 
         private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector detector, ComponentRecorder recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory)
@@ -46,7 +64,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                 var detectedComponents = componentRecorder.GetDetectedComponents();
                 var dependencyGraphsByLocation = componentRecorder.GetDependencyGraphsByLocation();
 
-                // Note that it looks like we are building up detected components functionally, but they are not immutable -- the code is just written 
+                // Note that it looks like we are building up detected components functionally, but they are not immutable -- the code is just written
                 //  to look like a pipeline.
                 foreach (var component in detectedComponents)
                 {
@@ -62,6 +80,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                         // Calculate roots of the component
                         AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
                         component.DevelopmentDependency = MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
+                        component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
                         component.DetectedBy = detector;
 
                         // Return in a format that allows us to add the additional files for the components
@@ -130,6 +149,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                 }
 
                 firstComponent.DevelopmentDependency = MergeDevDependency(firstComponent.DevelopmentDependency, nextComponent.DevelopmentDependency);
+                firstComponent.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(firstComponent.DependencyScope, nextComponent.DependencyScope);
 
                 if (nextComponent.ContainerDetailIds.Count > 0)
                 {
@@ -203,6 +223,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
             {
                 DetectorId = component.DetectedBy.Id,
                 IsDevelopmentDependency = component.DevelopmentDependency,
+                DependencyScope = component.DependencyScope,
                 LocationsFoundAt = component.FilePaths,
                 Component = component.Component,
                 TopLevelReferrers = component.DependencyRoots,

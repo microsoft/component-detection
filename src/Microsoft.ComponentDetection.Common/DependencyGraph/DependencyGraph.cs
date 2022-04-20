@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 [assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Common.Tests")]
 
@@ -44,6 +45,11 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 if (componentNode.IsDevelopmentDependency.HasValue)
                 {
                     currentNode.IsDevelopmentDependency = currentNode.IsDevelopmentDependency.GetValueOrDefault(true) && componentNode.IsDevelopmentDependency.Value;
+                }
+
+                if (componentNode.DependencyScope.HasValue)
+                {
+                    currentNode.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(currentNode.DependencyScope, componentNode.DependencyScope);
                 }
 
                 return currentNode;
@@ -99,6 +105,11 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
         public bool? IsDevelopmentDependency(string componentId)
         {
             return componentNodes[componentId].IsDevelopmentDependency;
+        }
+
+        public DependencyScope? GetDependencyScope(string componentId)
+        {
+            return componentNodes[componentId].DependencyScope;
         }
 
         public IEnumerable<string> GetAllExplicitlyReferencedComponents()
@@ -174,6 +185,8 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
             internal ISet<string> DependedOnByIds { get; private set; }
 
             internal bool? IsDevelopmentDependency { get; set; }
+
+            internal DependencyScope? DependencyScope { get; set; }
 
             internal ComponentRefNode()
             {

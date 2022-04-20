@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.ComponentDetection.Detectors.Ivy
@@ -33,7 +34,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
     /// in the project's build.xml, or if they use any file inclusion mechanism, it will fail.
     ///
     /// The file written out by the custom Ant task is a simple JSON file representing a series of calls to be made to
-    /// the <see cref="ISingleFileComponentRecorder.RegisterUsage(DetectedComponent, bool, string, bool?)"/> method.
+    /// the <see cref="ISingleFileComponentRecorder.RegisterUsage(DetectedComponent, bool, string, bool?, DependencyScope?)"/> method.
     /// </remarks>
     [Export(typeof(IComponentDetector))]
     public class IvyDetector : FileComponentDetector, IExperimentalDetector

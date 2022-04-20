@@ -8,6 +8,7 @@
         <PackageReference Include="Polly" />
         <PackageReference Include="Semver" />
         <PackageReference Include="yamldotnet" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Composition.AttributedModel" />
         <PackageReference Include="System.Composition.Convention" />
