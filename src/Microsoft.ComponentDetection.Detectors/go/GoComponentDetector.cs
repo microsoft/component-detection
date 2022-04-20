@@ -261,14 +261,17 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
         private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
-            // Yes, go always returns \n even on Windows
-            var goListObjects = goListOutput.Split("}\n{").Where(x => !string.IsNullOrWhiteSpace(x));
+            var goBuildModules = new List<GoBuildModule>();
+            var reader = new JsonTextReader(new StringReader(goListOutput));
+            reader.SupportMultipleContent = true;
 
-            // The json output has multiple roots. We need to update it to make it a valid string
-            // Namely do the following conversion { "propA": 1}{"propA": 2} => [{ "propA": 1},{"propA": 2}]
-            // Yes, go always returns \n even on Windows
-            var validJsonList = $"[{string.Join("},{", goListObjects)}]";
-            var goBuildModules = JsonConvert.DeserializeObject<List<GoBuildModule>>(validJsonList);
+            while (reader.Read())
+            {
+                var serializer = new JsonSerializer();
+                var buildModule = serializer.Deserialize<GoBuildModule>(reader);
+
+                goBuildModules.Add(buildModule);
+            }
 
             foreach (var dependency in goBuildModules)
             {
