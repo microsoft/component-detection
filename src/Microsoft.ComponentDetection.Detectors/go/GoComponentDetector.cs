@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Composition;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -52,10 +53,12 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             var wasGoCliScanSuccessful = false;
             try
             {
-                if (IsGoCliManuallyEnabled())
+                if (!IsGoCliManuallyDisabled())
                 {
-                    Logger.LogInfo("Go cli scan was manually enabled");
                     wasGoCliScanSuccessful = await UseGoCliToScan(file.Location, singleFileComponentRecorder);
+                } else
+                {
+                    Logger.LogInfo("Go cli scan was manually disabled.");
                 }
             }
             catch (Exception ex)
@@ -307,9 +310,9 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             return true;
         }
 
-        private bool IsGoCliManuallyEnabled()
+        private bool IsGoCliManuallyDisabled()
         {
-            return EnvVarService.DoesEnvironmentVariableExist("EnableGoCliScan");
+            return EnvVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
         }
 
         private class GoBuildModule

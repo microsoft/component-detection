@@ -33,7 +33,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var loggerMock = new Mock<ILogger>();
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(false);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
 
             var detector = new GoComponentDetector
             {
@@ -261,7 +261,7 @@ replace (
             commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
                 .ReturnsAsync(false);
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -272,7 +272,7 @@ replace (
             commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
                 .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -289,7 +289,7 @@ replace (
                     ExitCode = 1,
                 });
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -303,7 +303,7 @@ replace (
             commandLineMock.Setup(x => x.ExecuteCommand("go mod graph", null, It.IsAny<DirectoryInfo>(), It.IsAny<string>()))
                 .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -359,7 +359,7 @@ replace (
                     StdOut = goGraph,
                 });
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithFile("go.mod", string.Empty)
@@ -421,7 +421,7 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
                     StdOut = goGraph,
                 });
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithFile("go.mod", string.Empty)

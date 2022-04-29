@@ -5,5 +5,7 @@ namespace Microsoft.ComponentDetection.Contracts
         bool DoesEnvironmentVariableExist(string name);
 
         string GetEnvironmentVariable(string name);
+
+        bool IsEnvironmentVariableValueTrue(string name);
     }
 }
