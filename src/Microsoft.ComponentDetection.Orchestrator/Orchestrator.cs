@@ -247,6 +247,9 @@ namespace Microsoft.ComponentDetection.Orchestrator
                     catch (TimeoutException timeoutException)
                     {
                         Logger.LogError(timeoutException.Message);
+
+                        // TODO: remove the below message after go cli detector improvement has been stabilized.  
+                        Logger.LogWarning("If your repository contains Go packages, your build time may be improved by activating fallback strategy: https://aka.ms/go-detection-fallback-strategy");
                         scanResult.ResultCode = ProcessingResultCode.TimeoutError;
                     }
 
