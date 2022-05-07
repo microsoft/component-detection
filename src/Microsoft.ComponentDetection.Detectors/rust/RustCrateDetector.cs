@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Composition;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -15,13 +17,41 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
     [Export(typeof(IComponentDetector))]
     public class RustCrateDetector : FileComponentDetector
     {
+        private const string CargoLockSearchPattern = "Cargo.lock";
+
+        ////  PkgName[ Version][ (Source)]
+        private static readonly Regex DependencyFormatRegex = new Regex(
+           @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
+           RegexOptions.Compiled);
+
+        private static bool ParseDependency(string dependency, out string packageName, out string version, out string source)
+        {
+            var match = DependencyFormatRegex.Match(dependency);
+            var packageNameMatch = match.Groups["packageName"];
+            var versionMatch = match.Groups["version"];
+            var sourceMatch = match.Groups["source"];
+
+            packageName = packageNameMatch.Success ? packageNameMatch.Value : null;
+            version = versionMatch.Success ? versionMatch.Value : null;
+            source = sourceMatch.Success ? sourceMatch.Value : null;
+
+            if (source == string.Empty)
+            {
+                source = null;
+            }
+
+            return match.Success;
+        }
+
+        private static bool IsLocalPackage(CargoPackage package) => package.source == null;
+
         public override string Id => "RustCrateDetector";
 
-        public override IList<string> SearchPatterns => new List<string> { RustCrateUtilities.CargoLockSearchPattern };
+        public override IList<string> SearchPatterns => new List<string> { CargoLockSearchPattern };
 
         public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
 
-        public override int Version { get; } = 7;
+        public override int Version { get; } = 8;
 
         public override IEnumerable<string> Categories => new List<string> { "Rust" };
 
@@ -39,53 +69,73 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 };
                 var cargoLock = Toml.ToModel<CargoLock>(reader.ReadToEnd(), options: options);
 
-                // This makes sure we're only trying to parse Cargo.lock v1 formats
-                if (cargoLock.Metadata == null)
+                var seenAsDependency = new HashSet<CargoPackage>();
+
+                // Pass 1: Create typed components and allow lookup by name.
+                var packagesByName = new Dictionary<string, List<(CargoPackage package, CargoComponent component)>>();
+                if (cargoLock.Package != null)
                 {
-                    this.Logger.LogInfo($"Cargo.lock file at {cargoLockFile.Location} contains no metadata section so we're parsing it as the v2 format. The v1 detector will not process it.");
-                    return Task.CompletedTask;
+                    foreach (var cargoPackage in cargoLock.Package)
+                    {
+                        // Get or create the list of packages with this name
+                        if (!packagesByName.TryGetValue(cargoPackage.name, out var packageList))
+                        {
+                            // First package with this name
+                            packageList = new List<(CargoPackage, CargoComponent)>();
+                            packagesByName.Add(cargoPackage.name, packageList);
+                        }
+                        else if (packageList.Any(p => p.package.Equals(cargoPackage)))
+                        {
+                            // Ignore duplicate packages
+                            continue;
+                        }
+
+                        // Create a node for each non-local package to allow adding dependencies later.
+                        CargoComponent cargoComponent = null;
+                        if (!IsLocalPackage(cargoPackage))
+                        {
+                            cargoComponent = new CargoComponent(cargoPackage.name, cargoPackage.version);
+                            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(cargoComponent));
+                        }
+
+                        // Add the package/component pair to the list
+                        packageList.Add((cargoPackage, cargoComponent));
+                    }
+
+                    // Pass 2: Register dependencies.
+                    foreach (var packageList in packagesByName.Values)
+                    {
+                        // Get the parent package and component
+                        foreach (var (parentPackage, parentComponent) in packageList)
+                        {
+                            if (parentPackage.dependencies == null)
+                            {
+                                // This package has no dependency edges to contribute.
+                                continue;
+                            }
+
+                            // Process each dependency
+                            foreach (var dependency in parentPackage.dependencies)
+                            {
+                                ProcessDependency(cargoLockFile, singleFileComponentRecorder, seenAsDependency, packagesByName, parentPackage, parentComponent, dependency);
+                            }
+                        }
+                    }
+
+                    // Pass 3: Conservatively mark packages we found no dependency to as roots
+                    foreach (var packageList in packagesByName.Values)
+                    {
+                        // Get the package and component.
+                        foreach (var (package, component) in packageList)
+                        {
+                            if (!IsLocalPackage(package) && !seenAsDependency.Contains(package))
+                            {
+                                var detectedComponent = new DetectedComponent(component);
+                                singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency: true);
+                            }
+                        }
+                    }
                 }
-
-                var lockFileInfo = new FileInfo(cargoLockFile.Location);
-                var cargoTomlComponentStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(lockFileInfo.Directory, new List<string> { RustCrateUtilities.CargoTomlSearchPattern }, (name, directoryName) => false, recursivelyScanDirectories: false);
-
-                var cargoDependencyData = RustCrateUtilities.ExtractRootDependencyAndWorkspaceSpecifications(cargoTomlComponentStream, singleFileComponentRecorder);
-
-                // If workspaces have been defined in the root cargo.toml file, scan for specified cargo.toml manifests
-                var numWorkspaceComponentStreams = 0;
-                var expectedWorkspaceTomlCount = cargoDependencyData.CargoWorkspaces.Count;
-                if (expectedWorkspaceTomlCount > 0)
-                {
-                    var rootCargoTomlLocation = Path.Combine(lockFileInfo.DirectoryName, "Cargo.toml");
-
-                    var cargoTomlWorkspaceComponentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
-                        lockFileInfo.Directory,
-                        new List<string> { RustCrateUtilities.CargoTomlSearchPattern },
-                        RustCrateUtilities.BuildExcludeDirectoryPredicateFromWorkspaces(lockFileInfo, cargoDependencyData.CargoWorkspaces, cargoDependencyData.CargoWorkspaceExclusions),
-                        recursivelyScanDirectories: true)
-                        .Where(x => !x.Location.Equals(rootCargoTomlLocation)); // The root directory needs to be included in directoriesToScan, but should not be reprocessed
-                    numWorkspaceComponentStreams = cargoTomlWorkspaceComponentStreams.Count();
-
-                    // Now that the non-root files have been located, add their dependencies
-                    RustCrateUtilities.ExtractDependencySpecifications(cargoTomlWorkspaceComponentStreams, singleFileComponentRecorder, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies);
-                }
-
-                // Even though we can't read the file streams, we still have the enumerable!
-                if (!cargoTomlComponentStream.Any() || cargoTomlComponentStream.Count() > 1)
-                {
-                    this.Logger.LogWarning($"We are expecting exactly 1 accompanying Cargo.toml file next to the cargo.lock file found at {cargoLockFile.Location}");
-                    return Task.CompletedTask;
-                }
-
-                // If there is a mismatch between the number of expected and found workspaces, exit
-                if (expectedWorkspaceTomlCount > numWorkspaceComponentStreams)
-                {
-                    this.Logger.LogWarning($"We are expecting at least {expectedWorkspaceTomlCount} accompanying Cargo.toml file(s) from workspaces outside of the root directory {lockFileInfo.DirectoryName}, but found {numWorkspaceComponentStreams}");
-                    return Task.CompletedTask;
-                }
-
-                var cargoPackages = cargoLock.Package.ToHashSet();
-                RustCrateUtilities.BuildGraph(cargoPackages, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies, singleFileComponentRecorder);
             }
             catch (Exception e)
             {
@@ -94,6 +144,97 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             }
 
             return Task.CompletedTask;
+        }
+
+        private void ProcessDependency(
+            IComponentStream cargoLockFile,
+            ISingleFileComponentRecorder singleFileComponentRecorder,
+            HashSet<CargoPackage> seenAsDependency,
+            Dictionary<string, List<(CargoPackage package, CargoComponent component)>> packagesByName,
+            CargoPackage parentPackage,
+            CargoComponent parentComponent,
+            string dependency)
+        {
+            try
+            {
+                // Extract the information from the dependency (name with optional version and source)
+                if (!ParseDependency(dependency, out var childName, out var childVersion, out var childSource))
+                {
+                    // Could not parse the dependency string
+                    throw new FormatException($"Failed to parse dependency '{dependency}'");
+                }
+
+                if (!packagesByName.TryGetValue(childName, out var candidatePackages))
+                {
+                    throw new FormatException($"Could not find any package named '{childName}' for depenency string '{dependency}'");
+                }
+
+                // Search through the list of candidates to find a match (note that version and source are optional).
+                CargoPackage childPackage = null;
+                CargoComponent childComponent = null;
+                foreach (var (candidatePackage, candidateComponent) in candidatePackages)
+                {
+                    if (childVersion != null && candidatePackage.version != childVersion)
+                    {
+                        // This does not have the requested version
+                        continue;
+                    }
+
+                    if (childSource != null && candidatePackage.source != childSource)
+                    {
+                        // This does not have the requested source
+                        continue;
+                    }
+
+                    if (childPackage != null)
+                    {
+                        throw new FormatException($"Found multiple matching packages for dependency string '{dependency}'");
+                    }
+
+                    // We have found the requested package.
+                    childPackage = candidatePackage;
+                    childComponent = candidateComponent;
+                }
+
+                if (childPackage == null)
+                {
+                    throw new FormatException($"Could not find matching package for dependency string '{dependency}'");
+                }
+
+                if (IsLocalPackage(childPackage))
+                {
+                    if (!IsLocalPackage(parentPackage))
+                    {
+                        throw new FormatException($"In package with source '{parentComponent.Id}' found non-source dependency string: '{dependency}'");
+                    }
+
+                    // This is a dependency between packages without source
+                    return;
+                }
+
+                var detectedComponent = new DetectedComponent(childComponent);
+                seenAsDependency.Add(childPackage);
+
+                if (IsLocalPackage(parentPackage))
+                {
+                    // We are adding a root edge (from a local package)
+                    singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency: true);
+                }
+                else
+                {
+                    // we are adding an edge within the graph
+                    singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency: false, parentComponentId: parentComponent.Id);
+                }
+            }
+            catch (Exception e)
+            {
+                using var record = new RustCrateDetectorTelemetryRecord();
+
+                record.PackageInfo = $"{parentPackage.name}, {parentPackage.version}, {parentPackage.source}";
+                record.Dependencies = dependency;
+
+                this.Logger.LogFailedReadingFile(cargoLockFile.Location, e);
+            }
         }
     }
 }
