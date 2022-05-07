@@ -30,8 +30,10 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
         {
             var package = obj as CargoPackage;
             return package != null &&
-                   name.Equals(package.name) &&
-                   version.Equals(package.version, StringComparison.OrdinalIgnoreCase);
+                   string.Equals(name, package.name) &&
+                   string.Equals(version, package.version, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(source, package.source) &&
+                   string.Equals(checksum, package.checksum);
         }
 
         public override int GetHashCode()
