@@ -58,7 +58,8 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                     wasGoCliScanSuccessful = await UseGoCliToScan(file.Location, singleFileComponentRecorder);
                 } else
                 {
-                    Logger.LogInfo("Go cli scan was manually disabled.");
+                    Logger.LogInfo("Go cli scan was manually disabled, fallback strategy performed." +
+                        " More info: https://docs.opensource.microsoft.com/tools/cg/reference/feature-coverage/#go");
                 }
             }
             catch (Exception ex)
@@ -116,6 +117,9 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 return false;
             }
 
+            Logger.LogInfo("Go CLI was found in system and will be used to generate dependency graph. " +
+                "Detection time may be improved by activating fallback strategy (https://docs.opensource.microsoft.com/tools/cg/reference/feature-coverage/#go). " +
+                "But, it will introduce noise into the detected components.");
             var goDependenciesProcess = await CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-m", "-json", "all" });
             if (goDependenciesProcess.ExitCode != 0)
             {
