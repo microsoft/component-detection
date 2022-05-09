@@ -56,7 +56,8 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 if (!IsGoCliManuallyDisabled())
                 {
                     wasGoCliScanSuccessful = await UseGoCliToScan(file.Location, singleFileComponentRecorder);
-                } else
+                }
+                else
                 {
                     Logger.LogInfo("Go cli scan was manually disabled, fallback strategy performed." +
                         " More info: https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy");
