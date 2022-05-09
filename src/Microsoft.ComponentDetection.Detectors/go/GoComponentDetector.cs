@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Composition;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -34,7 +35,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
-        public override int Version => 5;
+        public override int Version => 6;
 
         private HashSet<string> projectRoots = new HashSet<string>();
 
@@ -52,10 +53,14 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             var wasGoCliScanSuccessful = false;
             try
             {
-                if (IsGoCliManuallyEnabled())
+                if (!IsGoCliManuallyDisabled())
                 {
-                    Logger.LogInfo("Go cli scan was manually enabled");
                     wasGoCliScanSuccessful = await UseGoCliToScan(file.Location, singleFileComponentRecorder);
+                }
+                else
+                {
+                    Logger.LogInfo("Go cli scan was manually disabled, fallback strategy performed." +
+                        " More info: https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy");
                 }
             }
             catch (Exception ex)
@@ -113,6 +118,9 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 return false;
             }
 
+            Logger.LogInfo("Go CLI was found in system and will be used to generate dependency graph. " +
+                "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
+                "But, it will introduce noise into the detected components.");
             var goDependenciesProcess = await CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-m", "-json", "all" });
             if (goDependenciesProcess.ExitCode != 0)
             {
@@ -307,9 +315,9 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             return true;
         }
 
-        private bool IsGoCliManuallyEnabled()
+        private bool IsGoCliManuallyDisabled()
         {
-            return EnvVarService.DoesEnvironmentVariableExist("EnableGoCliScan");
+            return EnvVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
         }
 
         private class GoBuildModule
