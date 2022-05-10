@@ -13,9 +13,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NuGet.Versioning"/>
-        <PackageReference Include="System.Reactive"/>
-        <PackageReference Include="packageurl-dotnet"/>
+        <PackageReference Include="NuGet.Versioning" />
+        <PackageReference Include="System.Reactive" />
+        <PackageReference Include="packageurl-dotnet" />
     </ItemGroup>
 
     <ItemGroup>
