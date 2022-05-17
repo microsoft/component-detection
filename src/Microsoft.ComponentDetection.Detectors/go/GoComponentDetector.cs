@@ -124,6 +124,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             var goDependenciesProcess = await CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-m", "-json", "all" });
             if (goDependenciesProcess.ExitCode != 0)
             {
+                Logger.LogError($"Go CLI command \"go list -m -json all\" failed with error:\n {goDependenciesProcess.StdErr}");
                 Logger.LogError($"Go CLI could not get dependency build list at location: {location}. Fallback go.sum/go.mod parsing will be used.");
                 return false;
             }
