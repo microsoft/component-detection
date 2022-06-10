@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
     [Export(typeof(ILinuxScanner))]
     public class LinuxScanner : ILinuxScanner
     {
-        private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:0.24.1@sha256:3cc99325855732073ae403a3fa010c3d2fadf27bf7b0a58d4eeaf8454a034ce0";
+        private const string ScannerImage = "docker.io/anchore/syft:v0.47.0";
 
         private static readonly IList<string> CmdParameters = new List<string>
         {
@@ -91,10 +91,10 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
             }
 
             var layerDictionary = dockerLayers
-                .DistinctBy(layer => layer.DiffId)
-                .ToDictionary(
-                    layer => layer.DiffId,
-                    _ => new List<LinuxComponent>());
+            .DistinctBy(layer => layer.DiffId)
+            .ToDictionary(
+                layer => layer.DiffId,
+                _ => new List<LinuxComponent>());
 
             try
             {
@@ -103,7 +103,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                     .DistinctBy(artifact => (artifact.Name, artifact.Version))
                     .Where(artifact => AllowedArtifactTypes.Contains(artifact.Type))
                     .Select(artifact =>
-                        (Component: new LinuxComponent(syftOutput.Distro.Name, syftOutput.Distro.Version, artifact.Name, artifact.Version), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
+                        (Component: new LinuxComponent(syftOutput.Distro.Id, syftOutput.Distro.VersionId, artifact.Name, artifact.Version), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
 
                 foreach (var (component, layers) in linuxComponentsWithLayers)
                 {
