@@ -18,8 +18,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     {
         private const string SyftOutput = @"{
                 ""distro"": {
-                    ""name"":""test-distribution"",
-                    ""version"":""1.0.0""
+                    ""id"":""test-distribution"",
+                    ""versionId"":""1.0.0""
                 },
                 ""artifacts"": [
                     {
