@@ -103,7 +103,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                     .DistinctBy(artifact => (artifact.Name, artifact.Version))
                     .Where(artifact => AllowedArtifactTypes.Contains(artifact.Type))
                     .Select(artifact =>
-                        (Component: new LinuxComponent(syftOutput.Distro.Id, syftOutput.Distro.VersionId, artifact.Name, artifact.Version), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
+                        (Component: new LinuxComponent(syftOutput.Distro.Id, syftOutput.Distro.VersionId, artifact.Name, artifact.Version, ExtractPackageSourceName(artifact)), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
 
                 foreach (var (component, layers) in linuxComponentsWithLayers)
                 {
@@ -137,24 +137,34 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
         }
 
         /// <summary>
-        /// Extracts a package's upstream source name.
+        /// Extracts a package's upstream source name
         /// For example some distributions package openssl as openssl-dev, libssl, openssl1.0, etc.
         /// </summary>
         private string ExtractPackageSourceName(Package package)
         {
-            var name = package.Name;
+            string name = null;
             switch (package.MetadataType)
             {
                 case "ApkMetadata":
-                    name = package.Metadata.OriginPackage ?? package.Metadata.Package;
+                    name = package.Metadata.OriginPackage;
                     break;
                 case "DpkgMetadata":
-                    name = string.IsNullOrWhiteSpace(package.Metadata.Source)
-                        ? package.Metadata.Package 
-                        : package.Metadata.Source;
+                    if (package.Metadata.Source.HasValue) {
+                        name = package.Metadata.Source.Value.String;
+                    }
+
                     break;
                 case "RpmdbMetadata":
-                    name = package.Metadata.Name;
+                    if (!string.IsNullOrWhiteSpace(package.Metadata.SourceRpm)) {
+                        // source rpm is name-[epoch:]version-release.src.rpm
+                        // where name can contain hyphens but version and release can't,
+                        // so extract up to second last hyphen.
+                        var parts = package.Metadata.SourceRpm.Split("-");
+                        if (parts.Length > 1) {
+                            name = string.Join("-", parts[.. (parts.Length - 2)]);
+                        }
+                    }
+
                     break;
                 default:
                     Logger.LogWarning($"Unknown metadata type: {package.MetadataType}");

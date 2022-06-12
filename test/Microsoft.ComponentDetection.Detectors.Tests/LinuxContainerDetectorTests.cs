@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 new LayerMappedLinuxComponents {
                     DockerLayer = new DockerLayer { },
-                    LinuxComponents = new List<LinuxComponent> { new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1") },
+                    LinuxComponents = new List<LinuxComponent> { new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1", "bash") },
                 },
             };
 

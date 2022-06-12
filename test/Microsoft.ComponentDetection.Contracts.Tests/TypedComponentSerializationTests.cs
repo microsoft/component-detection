@@ -176,7 +176,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestMethod]
         public void TypedComponent_Serialization_LinuxComponent()
         {
-            TypedComponent.TypedComponent tc = new LinuxComponent("SomeLinuxDistribution", "SomeLinuxRelease", "SomeLinuxComponentName", "SomeLinuxComponentVersion");
+            TypedComponent.TypedComponent tc = new LinuxComponent("SomeLinuxDistribution", "SomeLinuxRelease", "SomeLinuxComponentName", "SomeLinuxComponentVersion", "SomeLinuxComponentSourceName");
             var result = JsonConvert.SerializeObject(tc);
             var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
             deserializedTC.Should().BeOfType(typeof(LinuxComponent));
@@ -185,6 +185,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
             linuxComponent.Release.Should().Be("SomeLinuxRelease");
             linuxComponent.Name.Should().Be("SomeLinuxComponentName");
             linuxComponent.Version.Should().Be("SomeLinuxComponentVersion");
+            linuxComponent.SourceName.Should().Be("SomeLinuxComponentSourceName");
         }
     }
 }

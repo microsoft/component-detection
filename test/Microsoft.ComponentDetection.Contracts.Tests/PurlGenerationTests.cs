@@ -41,25 +41,27 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         {
             // Ubuntu and debian are "deb" component types
             // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L537
-            var ubuntuComponent = new LinuxComponent("Ubuntu", "18.04", "bash", "1");
-            var debianComponent = new LinuxComponent("Debian", "buster", "bash", "1");
+            var ubuntuComponent = new LinuxComponent("Ubuntu", "18.04", "bash", "1", "bash");
+            var debianComponent = new LinuxComponent("Debian", "buster", "bash", "1", "bash");
 
             ubuntuComponent.PackageUrl.Type.Should().Be("deb");
             debianComponent.PackageUrl.Type.Should().Be("deb");
         }
 
         [TestMethod]
-        public void CentOsFedoraAndRHELAreRpmType()
+        public void CentOsFedoraRHELAndMarinerAreRpmType()
         {
-            // CentOS, Fedora and RHEL use "rpm" component types
+            // CentOS, Fedora, RHEL and Mariner use "rpm" component types
             // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L693
-            var centosComponent = new LinuxComponent("CentOS", "18.04", "bash", "1");
-            var fedoraComponent = new LinuxComponent("Fedora", "18.04", "bash", "1");
-            var rhelComponent = new LinuxComponent("Red Hat Enterprise Linux", "18.04", "bash", "1");
+            var centosComponent = new LinuxComponent("CentOS", "18.04", "bash", "1", "bash");
+            var fedoraComponent = new LinuxComponent("Fedora", "18.04", "bash", "1", "bash");
+            var rhelComponent = new LinuxComponent("Red Hat Enterprise Linux", "18.04", "bash", "1", "bash");
+            var marinerComponent = new LinuxComponent("Mariner", "2.0", "bash", "1", "bash");
 
             centosComponent.PackageUrl.Type.Should().Be("rpm");
             fedoraComponent.PackageUrl.Type.Should().Be("rpm");
             rhelComponent.PackageUrl.Type.Should().Be("rpm");
+            marinerComponent.PackageUrl.Type.Should().Be("rpm");
         }
 
         [TestMethod]
@@ -67,8 +69,8 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         {
             // Alpine is not yet defined
             // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L711
-            var alpineComponent = new LinuxComponent("Alpine", "3.13", "bash", "1");
-            var unknownLinuxComponent = new LinuxComponent("Linux", "0", "bash", "1'");
+            var alpineComponent = new LinuxComponent("Alpine", "3.13", "bash", "1", "bash");
+            var unknownLinuxComponent = new LinuxComponent("Linux", "0", "bash", "1", "bash");
 
             alpineComponent.PackageUrl.Should().BeNull();
             unknownLinuxComponent.PackageUrl.Should().BeNull();
@@ -80,8 +82,8 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
             // Distros must be lower cased for both deb and rpm
             // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L537
             // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L694
-            var ubuntuComponent = new LinuxComponent("UbUnTu", "18.04", "bash", "1");
-            var fedoraComponent = new LinuxComponent("FeDoRa", "22", "bash", "1");
+            var ubuntuComponent = new LinuxComponent("UbUnTu", "18.04", "bash", "1", "bash");
+            var fedoraComponent = new LinuxComponent("FeDoRa", "22", "bash", "1", "bash");
 
             ubuntuComponent.PackageUrl.Namespace.Should().Be("ubuntu");
             fedoraComponent.PackageUrl.Namespace.Should().Be("fedora");
