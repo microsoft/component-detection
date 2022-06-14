@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 [assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Common.Tests")]
@@ -133,7 +134,8 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 DetectedComponent detectedComponent,
                 bool isExplicitReferencedDependency = false,
                 string parentComponentId = null,
-                bool? isDevelopmentDependency = null)
+                bool? isDevelopmentDependency = null,
+                DependencyScope? dependencyScope = null)
             {
                 if (detectedComponent == null)
                 {
@@ -167,7 +169,7 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 lock (registerUsageLock)
                 {
                     storedComponent = detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
-                    AddComponentToGraph(ManifestFileLocation, detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency);
+                    AddComponentToGraph(ManifestFileLocation, detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, dependencyScope);
                 }
             }
 
@@ -186,13 +188,20 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 return recorder;
             }
 
-            private void AddComponentToGraph(string location, DetectedComponent detectedComponent, bool isExplicitReferencedDependency, string parentComponentId, bool? isDevelopmentDependency)
+            private void AddComponentToGraph(
+                string location,
+                DetectedComponent detectedComponent,
+                bool isExplicitReferencedDependency,
+                string parentComponentId,
+                bool? isDevelopmentDependency,
+                DependencyScope? dependencyScope)
             {
                 var componentNode = new DependencyGraph.ComponentRefNode
                 {
                     Id = detectedComponent.Component.Id,
                     IsExplicitReferencedDependency = isExplicitReferencedDependency,
                     IsDevelopmentDependency = isDevelopmentDependency,
+                    DependencyScope = dependencyScope,
                 };
 
                 DependencyGraph.AddComponent(componentNode, parentComponentId);

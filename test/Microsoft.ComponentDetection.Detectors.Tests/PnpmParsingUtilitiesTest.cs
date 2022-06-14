@@ -80,9 +80,11 @@ shrinkwrapVersion: 3";
         [TestMethod]
         public void IsPnpmPackageDevDependency()
         {
-            var pnpmPackage = new Package();
+            var pnpmPackage = new Package
+            {
+                dev = "true",
+            };
 
-            pnpmPackage.dev = "true";
             PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeTrue();
 
             pnpmPackage.dev = "TRUE";

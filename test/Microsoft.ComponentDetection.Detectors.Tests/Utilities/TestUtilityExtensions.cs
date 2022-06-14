@@ -13,5 +13,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
                 RandomNumberGenerator.GetInt32(0, 1000))
                 .ToString();
         }
+
+        public static string GetRandomString()
+        {
+            return Guid.NewGuid().ToString("N");
+        }
     }
 }

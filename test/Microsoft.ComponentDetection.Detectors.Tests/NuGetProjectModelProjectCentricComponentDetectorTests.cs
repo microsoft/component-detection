@@ -107,7 +107,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var ommittedComponentInformationJson = scanResult.AdditionalTelemetryDetails[NuGetProjectModelProjectCentricComponentDetector.OmittedFrameworkComponentsTelemetryKey];
             var omittedComponentsWithCount = JsonConvert.DeserializeObject<Dictionary<string, int>>(ommittedComponentInformationJson);
 
-            Assert.IsTrue(omittedComponentsWithCount.Keys.Count() > 5, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
+            Assert.IsTrue(omittedComponentsWithCount.Keys.Count > 5, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
             Assert.AreEqual(omittedComponentsWithCount["Microsoft.NETCore.App"], 4, "There should be four cases of the NETCore.App library being omitted in the test data.");
         }
 
@@ -134,7 +134,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 Assert.IsTrue(dependencies.Contains(expectedId));
             }
 
-            Assert.AreEqual(dependencies.Count(), expectedDependencyIdsForCompositionTypedParts.Count());
+            Assert.AreEqual(dependencies.Count(), expectedDependencyIdsForCompositionTypedParts.Length);
 
             Assert.AreEqual(graph.GetComponents().Count(), detectedComponents.Count());
 
@@ -225,7 +225,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var omittedComponentsWithCount = JsonConvert.DeserializeObject<Dictionary<string, int>>(ommittedComponentInformationJson);
 
             // With 3.X, we don't expect there to be a lot of these, but there are still netstandard libraries present which can bring things into the graph
-            Assert.AreEqual(omittedComponentsWithCount.Keys.Count(), 4, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
+            Assert.AreEqual(omittedComponentsWithCount.Keys.Count, 4, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
             Assert.AreEqual(omittedComponentsWithCount["System.Reflection"], 1, "There should be one case of the System.Reflection library being omitted in the test data.");
         }
 
@@ -294,7 +294,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             
             var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
 
-            dependencyGraphs.Count().Should().Be(0);
+            dependencyGraphs.Count.Should().Be(0);
         }
 
         private string Convert22SampleToOSAgnostic(string project_assets)

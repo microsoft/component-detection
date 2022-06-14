@@ -59,8 +59,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         public void TestInit()
         {
             loggerMock = new Mock<ILogger>();
-            serviceUnderTest = new DetectorProcessingService();
-            serviceUnderTest.Logger = loggerMock.Object;
+            serviceUnderTest = new DetectorProcessingService
+            {
+                Logger = loggerMock.Object,
+            };
 
             directoryWalkerFactory = new FastDirectoryWalkerFactory()
             {

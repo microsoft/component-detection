@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Orchestrator;
 
 namespace Microsoft.ComponentDetection.Loader
 {

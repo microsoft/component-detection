@@ -1,0 +1,49 @@
+name: Publish snapshot of test scan
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: 3.1.x
+
+      - run: dotnet restore
+
+      - name: Install Apache Ivy
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: curl https://archive.apache.org/dist/ant/ivy/2.5.0/apache-ivy-2.5.0-bin.tar.gz | tar xOz apache-ivy-2.5.0/ivy-2.5.0.jar > /usr/share/ant/lib/ivy.jar
+
+      - name: Install Apache Ivy
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: choco install ivy
+
+      - name: Install Apache Ivy
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: brew install ivy
+
+      - name: Make output directory
+        run: mkdir ${{ github.workspace }}/output
+
+      - name: Scan verification repo
+        working-directory: src/Microsoft.ComponentDetection
+        run: dotnet run scan --Verbosity Verbose --SourceDirectory ${{ github.workspace }}/test/Microsoft.ComponentDetection.VerificationTests/resources --Output ${{ github.workspace }}/output
+
+      - name: Upload output folder
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-snapshot-output-${{ matrix.os }}
+          path: ${{ github.workspace }}/output

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 namespace Microsoft.ComponentDetection.Contracts
 {
@@ -25,12 +26,14 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="isExplicitReferencedDependency">The value define if the component was referenced manually by the user in the location where the scanning is taking place.</param>
         /// <param name="parentComponentId">Id of the parent component.</param>
         /// <param name="isDevelopmentDependency">Boolean value indicating whether or not a component is a development-time dependency. Null implies that the value is unknown.</param>
+        /// <param name="dependencyScope">Enum value indicating scope of the component. </param>
         /// <returns>DetectedComponent added or updated.</returns>
         void RegisterUsage(
             DetectedComponent detectedComponent,
             bool isExplicitReferencedDependency = false,
             string parentComponentId = null,
-            bool? isDevelopmentDependency = null);
+            bool? isDevelopmentDependency = null,
+            DependencyScope? dependencyScope = null);
 
         DetectedComponent GetComponent(string componentId);
 
@@ -81,6 +84,13 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="componentId">The componentId to check.</param>
         /// <returns>True if a development dependency, false if not. Null when unknown.</returns>
         bool? IsDevelopmentDependency(string componentId);
+
+        /// <summary>
+        /// Returns DepedencyScope for the given componentId.
+        /// Null can be returned if a detector doesn't have the scope infromation.
+        /// </summary>
+        /// <param name="componentId">The componentId to check.</param>
+        DependencyScope? GetDependencyScope(string componentId);
 
         /// <summary>
         /// Gets the component IDs of all explicitly referenced components.

@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Composition;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Newtonsoft.Json;
 
 namespace Microsoft.ComponentDetection.Detectors.Go
 {
@@ -34,7 +35,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
-        public override int Version => 2;
+        public override int Version => 6;
 
         private HashSet<string> projectRoots = new HashSet<string>();
 
@@ -42,7 +43,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
-            
+
             var projectRootDirectory = Directory.GetParent(file.Location);
             if (projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
             {
@@ -52,15 +53,20 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             var wasGoCliScanSuccessful = false;
             try
             {
-                if (IsGoCliManuallyEnabled())
+                if (!IsGoCliManuallyDisabled())
                 {
-                    Logger.LogInfo("Go cli scan was manually enabled");
                     wasGoCliScanSuccessful = await UseGoCliToScan(file.Location, singleFileComponentRecorder);
                 }
+                else
+                {
+                    Logger.LogInfo("Go cli scan was manually disabled, fallback strategy performed." +
+                        " More info: https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy");
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                Logger.LogInfo("Failed to detect components using go cli.");
+                Logger.LogError($"Failed to detect components using go cli. Location: {file.Location}");
+                Logger.LogException(ex, isError: true, printException: true);
             }
             finally
             {
@@ -104,13 +110,26 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             var projectRootDirectory = Directory.GetParent(location);
             record.ProjectRoot = projectRootDirectory.FullName;
 
-            var isGoAvailable = await CommandLineInvocationService.CanCommandBeLocated("go", null, workingDirectory: projectRootDirectory, new List<string> { "version" }.ToArray());
+            var isGoAvailable = await CommandLineInvocationService.CanCommandBeLocated("go", null, workingDirectory: projectRootDirectory, new[] { "version" });
             record.IsGoAvailable = isGoAvailable;
 
             if (!isGoAvailable)
             {
                 return false;
             }
+
+            Logger.LogInfo("Go CLI was found in system and will be used to generate dependency graph. " +
+                "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
+                "But, it will introduce noise into the detected components.");
+            var goDependenciesProcess = await CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-m", "-json", "all" });
+            if (goDependenciesProcess.ExitCode != 0)
+            {
+                Logger.LogError($"Go CLI command \"go list -m -json all\" failed with error:\n {goDependenciesProcess.StdErr}");
+                Logger.LogError($"Go CLI could not get dependency build list at location: {location}. Fallback go.sum/go.mod parsing will be used.");
+                return false;
+            }
+
+            RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
 
             var generateGraphProcess = await CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new List<string> { "mod", "graph" }.ToArray());
             if (generateGraphProcess.ExitCode == 0)
@@ -119,7 +138,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 record.WasGraphSuccessful = true;
             }
 
-            return record.WasGraphSuccessful;
+            return true;
         }
 
         private void ParseGoModFile(
@@ -200,7 +219,10 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             return false;
         }
 
-        private void PopulateDependencyGraph(string goGraphOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
+        /// <summary>
+        /// This command only adds edges between parent and child components, it does not add nor remove any entries from the existing build list.
+        /// </summary>
+        private void PopulateDependencyGraph(string goGraphOutput, ISingleFileComponentRecorder componentRecorder)
         {
             // Yes, go always returns \n even on Windows
             var graphRelationships = goGraphOutput.Split('\n');
@@ -210,7 +232,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 var components = relationship.Split(' ');
                 if (components.Length != 2)
                 {
-                    Logger.LogWarning("Unexpected output from go mod graph:");
+                    Logger.LogWarning("Unexpected relationship output from go mod graph:");
                     Logger.LogWarning(relationship);
                     continue;
                 }
@@ -218,26 +240,65 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 GoComponent parentComponent;
                 GoComponent childComponent;
 
-                var parentPart = components[0];
-                var childPart = components[1];
+                var isParentParsed = TryCreateGoComponentFromRelationshipPart(components[0], out parentComponent);
+                var isChildParsed = TryCreateGoComponentFromRelationshipPart(components[1], out childComponent);
 
-                var isParentParsed = TryCreateGoComponentFromRelationshipPart(parentPart, out parentComponent);
-                var isChildParsed = TryCreateGoComponentFromRelationshipPart(childPart, out childComponent);
-
-                // If the parent component doesn't have a version, it means it's one of the 'main' modules
-                // The imports of the main modules are explicitly referenced
-                if (!isParentParsed && isChildParsed)
+                if (!isParentParsed)
                 {
-                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(childComponent), isExplicitReferencedDependency: true);
+                    // These are explicit dependencies, we already have those recorded
+                    continue;
                 }
-                else if (isParentParsed && isChildParsed)
+
+                if (isChildParsed)
                 {
-                    // Go output guarantees that all parents will be output before children
-                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(childComponent), parentComponentId: parentComponent.Id);
+                    if (IsModuleInBuildList(componentRecorder, parentComponent) && IsModuleInBuildList(componentRecorder, childComponent))
+                    {
+                        componentRecorder.RegisterUsage(new DetectedComponent(childComponent), parentComponentId: parentComponent.Id);
+                    }
                 }
                 else
                 {
                     Logger.LogWarning($"Failed to parse components from relationship string {relationship}");
+                }
+            }
+        }
+
+        private bool IsModuleInBuildList(ISingleFileComponentRecorder singleFileComponentRecorder, GoComponent component)
+        {
+            return singleFileComponentRecorder.GetComponent(component.Id) != null;
+        }
+
+        private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
+        {
+            var goBuildModules = new List<GoBuildModule>();
+            var reader = new JsonTextReader(new StringReader(goListOutput));
+            reader.SupportMultipleContent = true;
+
+            while (reader.Read())
+            {
+                var serializer = new JsonSerializer();
+                var buildModule = serializer.Deserialize<GoBuildModule>(reader);
+
+                goBuildModules.Add(buildModule);
+            }
+
+            foreach (var dependency in goBuildModules)
+            {
+                if (dependency.Main)
+                {
+                    // main is the entry point module (superfluous as we already have the file location)
+                    continue;
+                }
+
+                var goComponent = new GoComponent(dependency.Path, dependency.Version);
+
+                if (dependency.Indirect)
+                {
+                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
+                }
+                else
+                {
+                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent), isExplicitReferencedDependency: true);
                 }
             }
         }
@@ -255,9 +316,20 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             return true;
         }
 
-        private bool IsGoCliManuallyEnabled()
+        private bool IsGoCliManuallyDisabled()
         {
-            return EnvVarService.DoesEnvironmentVariableExist("EnableGoCliScan");
+            return EnvVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
+        }
+
+        private class GoBuildModule
+        {
+            public string Path { get; set; }
+
+            public bool Main { get; set; }
+
+            public string Version { get; set; }
+
+            public bool Indirect { get; set; }
         }
     }
 }

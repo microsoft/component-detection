@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -17,20 +16,20 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     {
         public static string GetRandomValidNuSpecComponent()
         {
-            string componentName = Guid.NewGuid().ToString("N");
+            string componentName = GetRandomString();
             string componentSpecFileName = $"{componentName}.nuspec";
             string componentSpecPath = Path.Combine(Path.GetTempPath(), componentSpecFileName);
-            var template = GetTemplatedNuspec(componentName, NewRandomVersion());
+            var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
 
             return template;
         }
 
         public static IComponentStream GetRandomValidNuSpecComponentStream()
         {
-            string componentName = Guid.NewGuid().ToString("N");
+            string componentName = GetRandomString();
             string componentSpecFileName = $"{componentName}.nuspec";
             string componentSpecPath = Path.Combine(Path.GetTempPath(), componentSpecFileName);
-            var template = GetTemplatedNuspec(componentName, NewRandomVersion());
+            var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
 
             var mock = new Mock<IComponentStream>();
             mock.SetupGet(x => x.Stream).Returns(template.ToStream());
@@ -52,11 +51,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             return mock.Object;
         }
 
-        public static string GetRandomValidNuPkgComponent()
+        public static string GetRandomValidNuspec()
         {
-            string componentName = Guid.NewGuid().ToString("N");
-            var template = GetTemplatedNuspec(componentName, NewRandomVersion());
+            string componentName = GetRandomString();
+            var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
             return template;
+        }
+
+        public static string GetValidNuspec(string componentName, string version, string[] authors)
+        {
+            return GetTemplatedNuspec(componentName, version, authors);
         }
 
         public static async Task<Stream> ZipNupkgComponent(string filename, string content)
@@ -79,13 +83,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static string GetRandomMalformedNuPkgComponent()
         {
-            string componentName = Guid.NewGuid().ToString("N");
-            var template = GetTemplatedNuspec(componentName, NewRandomVersion());
+            string componentName = GetRandomString();
+            var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
             template = template.Replace("<id>", "<?malformed>");
             return template;
         }
 
-        private static string GetTemplatedNuspec(string id, string version)
+        private static string GetTemplatedNuspec(string id, string version, string[] authors)
         {
             string nuspec = @"<?xml version=""1.0"" encoding=""utf-8""?>
                             <package xmlns=""http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd"">
@@ -94,7 +98,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                                     <id>{0}</id>
                                     <version>{1}</version>
                                     <description></description>
-                                    <authors></authors>
+                                    <authors>{2}</authors>
 
                                     <!-- Optional elements -->
                                     <!-- ... -->
@@ -102,7 +106,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                                 <!-- Optional 'files' node -->
                             </package>";
 
-            return string.Format(nuspec, id, version);
+            return string.Format(nuspec, id, version, string.Join(",", authors));
         }
 
         private static string GetTemplatedNuGetConfig(string repositoryPath)

@@ -25,7 +25,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pod, ComponentType.Git };
 
-        public override int Version { get; } = 1;
+        public override int Version { get; } = 2;
 
         private class Pod : IYamlConvertible
         {
@@ -246,6 +246,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     && checkoutOptions.TryGetValue(":commit", out string commitOption))
                 {
                     // Create the Git component
+                    gitOption = NormalizePodfileGitUri(gitOption);
                     typedComponent = new GitComponent(new Uri(gitOption), commitOption);
                     key = $"{commitOption}@{gitOption}";
                 }
@@ -300,10 +301,17 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
                 foreach (var dependency in pod.Value)
                 {
-                    var dependencyKey = podSpecs[dependency.Podspec];
-                    if (dependencyKey != pod.Key)
+                    if (podSpecs.TryGetValue(dependency.Podspec, out string dependencyKey))
                     {
-                        dependenciesMap[pod.Key].Add(podSpecs[dependency.Podspec]);
+                        if (dependencyKey != pod.Key)
+                        {
+                            var temp = podSpecs[dependency.Podspec];
+                            dependenciesMap[pod.Key].Add(podSpecs[dependency.Podspec]);
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
                     }
                 }
             }
@@ -382,6 +390,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     && checkoutOptions.TryGetValue(":commit", out string commitOption))
                 {
                     // Create the Git component
+                    gitOption = NormalizePodfileGitUri(gitOption);
                     typedComponent = new GitComponent(new Uri(gitOption), commitOption);
                     key = $"{commitOption}@{gitOption}";
                 }
@@ -397,6 +406,18 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 return (pod, key, detectedComponent);
             })
             .ToArray();
+        }
+
+        private static string NormalizePodfileGitUri(string gitOption)
+        {
+            // Podfiles can be built using git@ references to .git files, but this is not a valid Uri
+            // schema. Normalize to https:// so Uri creation doesn't fail
+            if (gitOption.StartsWith("git@", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"https://{gitOption[4..]}";
+            }
+
+            return gitOption;
         }
     }
 }

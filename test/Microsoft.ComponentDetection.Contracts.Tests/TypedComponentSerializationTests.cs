@@ -1,5 +1,6 @@
 ﻿using System;
 using FluentAssertions;
+using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -28,25 +29,34 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestMethod]
         public void TypedComponent_Serialization_NuGet()
         {
-            TypedComponent.TypedComponent tc = new NuGetComponent("SomeNuGetComponent", "1.2.3");
+            string testComponentName = "SomeNuGetComponent";
+            string testVersion = "1.2.3";
+            string[] testAuthors = { "John Doe", "Jane Doe" };
+            TypedComponent.TypedComponent tc = new NuGetComponent(testComponentName, testVersion, testAuthors);
             var result = JsonConvert.SerializeObject(tc);
             var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
             deserializedTC.Should().BeOfType(typeof(NuGetComponent));
             var nugetComponent = (NuGetComponent)deserializedTC;
-            nugetComponent.Name.Should().Be("SomeNuGetComponent");
-            nugetComponent.Version.Should().Be("1.2.3");
+            nugetComponent.Name.Should().Be(testComponentName);
+            nugetComponent.Version.Should().Be(testVersion);
+            nugetComponent.Authors.Should().BeEquivalentTo(testAuthors);
         }
 
         [TestMethod]
         public void TypedComponent_Serialization_Npm()
         {
-            TypedComponent.TypedComponent tc = new NpmComponent("SomeNpmComponent", "1.2.3");
-            var result = JsonConvert.SerializeObject(tc);
+            NpmAuthor npmAuthor = new Internal.NpmAuthor("someAuthorName", "someAuthorEmail");
+            var npmCompObj = new NpmComponent("SomeNpmComponent", "1.2.3")
+            {
+                Author = npmAuthor,
+            };
+            var result = JsonConvert.SerializeObject(npmCompObj);
             var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
             deserializedTC.Should().BeOfType(typeof(NpmComponent));
             var npmComponent = (NpmComponent)deserializedTC;
             npmComponent.Name.Should().Be("SomeNpmComponent");
             npmComponent.Version.Should().Be("1.2.3");
+            npmComponent.Author.Should().BeEquivalentTo(npmAuthor);
         }
 
         [TestMethod]

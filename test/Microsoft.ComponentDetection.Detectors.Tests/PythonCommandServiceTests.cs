@@ -162,7 +162,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 var result = await service.ParseFile(testPath);
                 (string, GitComponent) expected = ("knack==0.4.1", null);
 
-                Assert.AreEqual(1, result.Count());
+                Assert.AreEqual(1, result.Count);
                 Assert.AreEqual(expected, result.First());
             }
             finally

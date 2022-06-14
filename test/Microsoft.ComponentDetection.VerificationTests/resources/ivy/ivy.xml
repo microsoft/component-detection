@@ -1,0 +1,13 @@
+<ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
+  <info organisation="com.microsoft" module="component-detection"></info>
+  <configurations>
+    <conf name="default" />
+    <conf name="test" extends="default" />
+  </configurations>
+  <dependencies>
+    <dependency org="com.google.guava" name="guava" rev="31.0.1-jre" />
+    <dependency org="org.scala-lang" name="scala3-library" rev="3.1.1" />
+
+    <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="5.8.2" conf="test" />
+  </dependencies>
+</ivy-module>

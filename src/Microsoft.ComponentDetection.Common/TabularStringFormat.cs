@@ -48,7 +48,7 @@ namespace Microsoft.ComponentDetection.Common
             foreach (var row in rows)
             {
                 sb.Append(verticalLineChar);
-                if (row.Count() != columns.Count)
+                if (row.Count != columns.Count)
                 {
                     throw new InvalidOperationException("All rows must have length equal to the number of columns present.");
                 }
@@ -71,7 +71,7 @@ namespace Microsoft.ComponentDetection.Common
             WriteFlatLine(sb, false);
             var tableWidth = columns.Sum(column => column.Width);
             sb.Append(verticalLineChar);
-            sb.Append(tableTitle.PadRight(tableWidth + columns.Count() - 1));
+            sb.Append(tableTitle.PadRight(tableWidth + columns.Count - 1));
             sb.Append(verticalLineChar);
 
             sb.AppendLine();

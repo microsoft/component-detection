@@ -53,6 +53,8 @@ COCOAPODS: 1.4.0.beta.1";
     - AzureData (= 0.5.0)
   - KeychainAccess (3.2.1)
   - Willow (5.2.1)
+  - Auth (1.44.1):
+    - MissingDep (= 5.0.0)
 
 DEPENDENCIES:
   - AzureMobile (~> 0.5.0)
@@ -73,13 +75,14 @@ COCOAPODS: 0.39.0";
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
             var detectedComponents = componentRecorder.GetDetectedComponents();
-            Assert.AreEqual(5, detectedComponents.Count());
+            Assert.AreEqual(6, detectedComponents.Count());
 
             AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
             AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
             AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
             AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
             AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
+            AssertPodComponentNameAndVersion(detectedComponents, "Auth", "1.44.1");
         }
 
         [TestMethod]
@@ -185,6 +188,49 @@ EXTERNAL SOURCES:
 CHECKOUT OPTIONS:
   MSGraphClientSDK:
     :git: https://github.com/microsoftgraph/msgraph-sdk-objc.git
+    :tag: 1.0.0
+
+SPEC CHECKSUMS:
+  MSGraphClientSDK: ffc07a58a838e0702c7bf2a856367035d4a335d7
+
+PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
+
+COCOAPODS: 1.8.4";
+
+            var (scanResult, componentRecorder) = await detectorTestUtility
+                                                    .WithFile("Podfile.lock", podfileLockContent)
+                                                    .ExecuteDetector();
+
+            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+
+            var detectedComponents = componentRecorder.GetDetectedComponents();
+            Assert.AreEqual(1, detectedComponents.Count());
+
+            AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
+        }
+
+        [TestMethod]
+        public async Task TestPodDetector_DetectorRecognizeGitComponentsWithTagsAsPodComponents_GitUri()
+        {
+            var podfileLockContent = @"PODS:
+  - MSGraphClientSDK (1.0.0):
+    - MSGraphClientSDK/Authentication (= 1.0.0)
+    - MSGraphClientSDK/Common (= 1.0.0)
+  - MSGraphClientSDK/Authentication (1.0.0)
+  - MSGraphClientSDK/Common (1.0.0):
+    - MSGraphClientSDK/Authentication
+
+DEPENDENCIES:
+  - MSGraphClientSDK (from `git@github.com/microsoftgraph/msgraph-sdk-objc.git`, tag `1.0.0`)
+
+EXTERNAL SOURCES:
+  MSGraphClientSDK:
+    :branch: main
+    :git: git@github.com/microsoftgraph/msgraph-sdk-objc.git
+
+CHECKOUT OPTIONS:
+  MSGraphClientSDK:
+    :git: git@github.com/microsoftgraph/msgraph-sdk-objc.git
     :tag: 1.0.0
 
 SPEC CHECKSUMS:
@@ -401,6 +447,103 @@ CHECKOUT OPTIONS:
   SVGKit:
     :commit: 0d4db53890c664fb8605666e6fbccd14912ff821
     :git: https://github.com/SVGKit/SVGKit.git
+
+SPEC CHECKSUMS:
+  AzureCore: 9f6c42e03d59a13b508bff356a85cd9438b654fc
+  CocoaLumberjack: 78b0c238666f4f58db069738ec176f4519557516
+  KeychainAccess: d5470352939ced6d6f7fb51cb2e67aae51fc294f
+  SVGKit: 8a2fc74258bdb2abb54d3b65f3dd68b0277a9c4d
+  Willow: a6310f9aedcb6f4de8c35b94fd3416a660ae9280
+
+PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
+
+COCOAPODS: 1.8.4";
+
+            var (scanResult, componentRecorder) = await detectorTestUtility
+                                                    .WithFile("Podfile.lock", podfileLockContent)
+                                                    .WithFile("Podfile.lock", podfileLockContent2)
+                                                    .ExecuteDetector();
+
+            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+
+            var detectedComponents = componentRecorder.GetDetectedComponents();
+            Assert.AreEqual(8, detectedComponents.Count());
+
+            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
+            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
+            AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
+            AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
+            AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
+            AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
+            AssertGitComponentHashAndUrl(detectedComponents, "0d4db53890c664fb8605666e6fbccd14912ff821", "https://github.com/SVGKit/SVGKit.git");
+            AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
+
+            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.1"), root: (name: "AzureCore", version: "0.5.1"));
+            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
+            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureMobile", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
+            AssertGitComponentHasGitComponentDependencyRoot(componentRecorder, component: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
+
+            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
+            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
+            AssertPodComponentHasGitComponentDependencyRoot(componentRecorder, component: (name: "CocoaLumberjack", version: "3.6.0"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
+            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureCore", version: "0.5.1"));
+            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureData", version: "0.5.0"));
+            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureCore", version: "0.5.1"));
+            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureData", version: "0.5.0"));
+        }
+
+        [TestMethod]
+        public async Task TestPodDetector_DetectorSupportsDependencyRoots_GitUri()
+        {
+            var podfileLockContent = @"PODS:
+  - AzureCore (0.5.0):
+    - KeychainAccess (~> 3.2)
+    - Willow (~> 5.2)
+  - AzureData (0.5.0):
+    - AzureCore (= 0.5.0)
+  - AzureMobile (0.5.0):
+    - AzureData (= 0.5.0)
+  - KeychainAccess (3.2.1)
+  - Willow (5.2.1)
+
+DEPENDENCIES:
+  - AzureData (= 0.5.0)
+  - AzureMobile (= 0.5.0)
+
+SPEC CHECKSUMS:
+  AzureCore: 9f6c42e03d59a13b508bff356a85cd9438b654fb
+  AzureData: f423992bd28e1006e3c358d3e3ce60d71f8ba090
+  AzureMobile: 4fd580aa2f73f4a8ac463971b4a5483afd586f2a
+  KeychainAccess: d5470352939ced6d6f7fb51cb2e67aae51fc294f
+  Willow: a6310f9aedcb6f4de8c35b94fd3416a660ae9280
+
+COCOAPODS: 0.39.0";
+
+            var podfileLockContent2 = @"PODS:
+  - AzureCore (0.5.1):
+    - KeychainAccess (~> 3.2)
+    - Willow (~> 5.2)
+  - CocoaLumberjack (3.6.0):
+    - CocoaLumberjack/Core (= 3.6.0)
+  - CocoaLumberjack/Core (3.6.0)
+  - KeychainAccess (3.2.1)
+  - SVGKit (2.1.0):
+    - CocoaLumberjack (~> 3.0)
+  - Willow (5.2.1)
+
+DEPENDENCIES:
+  - SVGKit (from `git@github.com/SVGKit/SVGKit.git`, branch `2.x`)
+  - AzureCore (= 0.5.1)
+
+EXTERNAL SOURCES:
+  SVGKit:
+    :branch: 2.x
+    :git: git@github.com/SVGKit/SVGKit.git
+
+CHECKOUT OPTIONS:
+  SVGKit:
+    :commit: 0d4db53890c664fb8605666e6fbccd14912ff821
+    :git: git@github.com/SVGKit/SVGKit.git
 
 SPEC CHECKSUMS:
   AzureCore: 9f6c42e03d59a13b508bff356a85cd9438b654fc

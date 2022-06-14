@@ -15,15 +15,28 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void TestBasicVersionConstruction()
         {
-            PythonVersion pythonVersion = new PythonVersion("4!3.2.1.1rc2.post99.dev2");
+            var pythonVersion = new PythonVersion("4!3.2.1.1rc2.post99.dev2");
 
-            Assert.AreEqual(pythonVersion.Epoch, 4);
-            Assert.AreEqual(pythonVersion.Release, "3.2.1.1");
-            Assert.AreEqual(pythonVersion.PreReleaseLabel, "rc");
-            Assert.AreEqual(pythonVersion.PostNumber, 99);
-            Assert.AreEqual(pythonVersion.DevNumber, 2);
+            Assert.AreEqual(4, pythonVersion.Epoch);
+            Assert.AreEqual("3.2.1.1", pythonVersion.Release);
+            Assert.AreEqual("rc", pythonVersion.PreReleaseLabel);
+            Assert.AreEqual(99, pythonVersion.PostNumber);
+            Assert.AreEqual("dev", pythonVersion.DevLabel);
+            Assert.AreEqual(2, pythonVersion.DevNumber);
+        }
 
-            var newPythonVersion = new PythonVersion("0.3m1");
+        [TestMethod]
+        public void TestDefaultDevVersionConstruction()
+        {
+            var pythonVersion = new PythonVersion("4!3.2.1.1rc2.post90.dev");
+
+            Assert.AreEqual(4, pythonVersion.Epoch);
+            Assert.AreEqual("3.2.1.1", pythonVersion.Release);
+            Assert.AreEqual("rc", pythonVersion.PreReleaseLabel);
+            Assert.AreEqual(2, pythonVersion.PreReleaseNumber);
+            Assert.AreEqual(90, pythonVersion.PostNumber);
+            Assert.AreEqual("dev", pythonVersion.DevLabel);
+            Assert.AreEqual(0, pythonVersion.DevNumber);
         }
 
         [TestMethod]
@@ -32,6 +45,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             // This is a list of versions supplied by PEP440 for testing (minus local versions)
             var versions = new List<string>
             {
+                "1.0.dev",
                 "1.0.dev456",
                 "1.0a1",
                 "1.0a2.dev456",
@@ -41,12 +55,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 "1.0b2",
                 "1.0b2.post345.dev456",
                 "1.0b2.post345",
+                "1.0rc1.dev",
                 "1.0rc1.dev456",
                 "1.0rc1",
                 "1.0",
                 "1.0.post456.dev34",
                 "1.0.post456",
+                "1.1.dev",
                 "1.1.dev1",
+                "1.1",
             }.Select(x => new PythonVersion(x)).ToList();
 
             for (int i = 1; i < versions.Count; i++)

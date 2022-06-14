@@ -1,0 +1,19 @@
+[package]
+name = "component-detection"
+version = "0.1.0"
+authors = []
+edition = "2018"
+build = "build.rs"
+
+[[bin]]
+path = "main.rs"
+name = "component-detection"
+
+[dependencies]
+renamed_dependency = { package = "serde", version = "1.0.136"}
+
+[dev-dependencies]
+rand = "0.8.4"
+
+[build-dependencies]
+autocfg = "1.0.1"

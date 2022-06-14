@@ -28,6 +28,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         public int? PostNumber { get; set; }
 
+        public string DevLabel { get; set; }
+
         public int? DevNumber { get; set; }
 
         public bool Floating { get; set; } = false;
@@ -79,6 +81,12 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             if (groups["post_n2"].Success && int.TryParse(groups["post_n2"].Value, out int postRelease2))
             {
                 PostNumber = postRelease2;
+            }
+
+            if (groups["dev_l"].Success)
+            {
+                DevLabel = groups["dev_l"].Value;
+                DevNumber = 0;
             }
 
             if (groups["dev_n"].Success && int.TryParse(groups["dev_n"].Value, out int devNumber))
