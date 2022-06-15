@@ -115,6 +115,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
             if (!isGoAvailable)
             {
+                Logger.LogInfo("Go CLI was not found in the system");
                 return false;
             }
 
