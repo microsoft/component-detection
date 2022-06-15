@@ -19,6 +19,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
     {
         public override string Id => "RustCrateDetector";
 
+        private const string CargoLockSearchPattern = "Cargo.lock";
+
         public override IList<string> SearchPatterns => new List<string> { CargoLockSearchPattern };
 
         public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
@@ -63,7 +65,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                         CargoComponent cargoComponent = null;
                         if (!IsLocalPackage(cargoPackage))
                         {
-                            cargoComponent = new CargoComponent(cargoPackage.name, cargoPackage.version, cargoPackage.checksum, cargoPackage.source);
+                            cargoComponent = new CargoComponent(cargoPackage.name, cargoPackage.version, cargoPackage.source, cargoPackage.checksum);
                             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(cargoComponent));
                         }
                         
@@ -208,7 +210,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
         private static readonly Regex DependencyFormatRegex = new Regex(
            ////  PkgName[ Version][ (Source)]
-           @"([^ ]+)(?: ([^ ]+))?(?: \(([^()]*)\))?",
+           @"^([^ ]+)(?: ([^ ]+))?(?: \(([^()]*)\))?$",
            RegexOptions.Compiled);
 
         private const int PackageNameGroup = 1;
@@ -231,12 +233,5 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         }
 
         private static bool IsLocalPackage(CargoPackage package) => package.source == null;
-
-        private const string CargoLockSearchPattern = "Cargo.lock";
-
-        private static string MakeDependencyStringFromPackage(CargoPackage package)
-        {
-            return $"{package.name} {package.version} ({package.source})";
-        }
     }
 }

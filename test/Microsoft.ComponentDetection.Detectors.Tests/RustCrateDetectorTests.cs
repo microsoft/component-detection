@@ -42,30 +42,30 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             // Verify explicitly referenced roots
             var rootComponents = new List<string>
             {
-                "my_dependency 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo",
-                "other_dependency 0.4.0 registry+https://github.com/rust-lang/crates.io-index - Cargo",
-                "my_dev_dependency 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo",
+                "my_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
+                "other_dependency 0.4.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
+                "my_dev_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
             };
 
             rootComponents.ForEach(rootComponentId => graph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue());
 
             // Verify dependencies for my_dependency
-            graph.GetDependenciesForComponent("my_dependency 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo").Should().BeEmpty();
+            graph.GetDependenciesForComponent("my_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo").Should().BeEmpty();
 
             // Verify dependencies for other_dependency
             var other_dependencyDependencies = new List<string> {
-                "other_dependency_dependency 0.1.12-alpha.6 registry+https://github.com/rust-lang/crates.io-index - Cargo",
+                "other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
             };
 
-            graph.GetDependenciesForComponent("other_dependency 0.4.0 registry+https://github.com/rust-lang/crates.io-index - Cargo").Should().BeEquivalentTo(other_dependencyDependencies);
+            graph.GetDependenciesForComponent("other_dependency 0.4.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo").Should().BeEquivalentTo(other_dependencyDependencies);
 
             // Verify dependencies for my_dev_dependency
             var my_dev_dependencyDependencies = new List<string> {
-                "other_dependency_dependency 0.1.12-alpha.6 registry+https://github.com/rust-lang/crates.io-index - Cargo",
-                "dev_dependency_dependency 0.2.23 registry+https://github.com/rust-lang/crates.io-index - Cargo",
+                "other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
+                "dev_dependency_dependency 0.2.23 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
             };
 
-            graph.GetDependenciesForComponent("my_dev_dependency 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo").Should().BeEquivalentTo(my_dev_dependencyDependencies);
+            graph.GetDependenciesForComponent("my_dev_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo").Should().BeEquivalentTo(my_dev_dependencyDependencies);
         }
 
         [TestMethod]
@@ -332,32 +332,32 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             // Verify explicitly referenced roots
             var rootComponents = new List<string>
             {
-                "my_dependency 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo",
-                "my_dev_dependency 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo",
-                "other_dependency 0.4.0 registry+https://github.com/rust-lang/crates.io-index - Cargo",
+                "my_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
+                "my_dev_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
+                "other_dependency 0.4.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
             };
 
             rootComponents.ForEach(rootComponentId => graph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue());
 
             // Verify dependencies for my_dependency
             var my_dependencyDependencies = new List<string> {
-                "same_package 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo",
+                "same_package 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
             };
 
-            graph.GetDependenciesForComponent("my_dependency 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo").Should().BeEquivalentTo(my_dependencyDependencies);
+            graph.GetDependenciesForComponent("my_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo").Should().BeEquivalentTo(my_dependencyDependencies);
 
             // Verify dependencies for other_dependency
-            var other_dependencyDependencies = new List<string> { "other_dependency_dependency 0.1.12-alpha.6 registry+https://github.com/rust-lang/crates.io-index - Cargo" };
+            var other_dependencyDependencies = new List<string> { "other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index) - Cargo" };
 
-            graph.GetDependenciesForComponent("other_dependency 0.4.0 registry+https://github.com/rust-lang/crates.io-index - Cargo").Should().BeEquivalentTo(other_dependencyDependencies);
+            graph.GetDependenciesForComponent("other_dependency 0.4.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo").Should().BeEquivalentTo(other_dependencyDependencies);
 
             // Verify dependencies for my_dev_dependency
             var my_dev_dependencyDependencies = new List<string> {
-                "other_dependency_dependency 0.1.12-alpha.6 registry+https://github.com/rust-lang/crates.io-index - Cargo",
-                "dev_dependency_dependency 0.2.23 registry+https://github.com/rust-lang/crates.io-index - Cargo",
+                "other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
+                "dev_dependency_dependency 0.2.23 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
             };
 
-            graph.GetDependenciesForComponent("my_dev_dependency 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo").Should().BeEquivalentTo(my_dev_dependencyDependencies);
+            graph.GetDependenciesForComponent("my_dev_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo").Should().BeEquivalentTo(my_dev_dependencyDependencies);
         }
 
         [TestMethod]
@@ -397,9 +397,9 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             var foundComponents = dependencyGraph.GetComponents();
             foundComponents.Count().Should().Be(2);
 
-            componentRecorder.ForOneComponent("other_dependency_dependency 0.1.12-alpha.6 registry+https://github.com/rust-lang/crates.io-index - Cargo", (grouping) =>
+            componentRecorder.ForOneComponent("other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index) - Cargo", (grouping) =>
             {
-                grouping.ParentComponentIdsThatAreExplicitReferences.Should().BeEquivalentTo("my_dependency 1.0.0 registry+https://github.com/rust-lang/crates.io-index - Cargo");
+                grouping.ParentComponentIdsThatAreExplicitReferences.Should().BeEquivalentTo("my_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo");
             });
         }
 
@@ -559,14 +559,14 @@ dependencies = [
             // Verify explicitly referenced roots
             var rootComponents = new List<string>
             {
-                "c-ares 7.5.2 registry+https://github.com/rust-lang/crates.io-index - Cargo",
+                "c-ares 7.5.2 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
             };
 
             rootComponents.ForEach(rootComponentId => graph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue());
 
             // Verify dependencies for other_dependency
-            var cAresDependencies = new List<string> { "c-ares-sys 5.3.3 registry+https://github.com/rust-lang/crates.io-index - Cargo" };
-            graph.GetDependenciesForComponent("c-ares 7.5.2 registry+https://github.com/rust-lang/crates.io-index - Cargo").Should().BeEquivalentTo(cAresDependencies);
+            var cAresDependencies = new List<string> { "c-ares-sys 5.3.3 (registry+https://github.com/rust-lang/crates.io-index) - Cargo" };
+            graph.GetDependenciesForComponent("c-ares 7.5.2 (registry+https://github.com/rust-lang/crates.io-index) - Cargo").Should().BeEquivalentTo(cAresDependencies);
         }
 
         [TestMethod]
@@ -596,7 +596,7 @@ source = ""git+https://github.com/microsoft/component-detection/?branch=main#abc
             dependencyGraphs.Count.Should().Be(1);
 
             var dependencyGraph = dependencyGraphs.Single().Value;
-            dependencyGraph.Contains("my_git_dep 0.1.0 git+https://github.com/microsoft/component-detection/?branch=main#abcdabcdabcdabcdabcdbacdbacdbacdabcdabcd - Cargo").Should().BeTrue();
+            dependencyGraph.Contains("my_git_dep 0.1.0 (git+https://github.com/microsoft/component-detection/?branch=main#abcdabcdabcdabcdabcdbacdbacdbacdabcdabcd) - Cargo").Should().BeTrue();
         }
 
         [TestMethod]
@@ -635,8 +635,8 @@ source = ""registry+sparse+https://other.registry/index/""
 
             var componentIds = new List<string>
             {
-                "common_name 0.2.0 registry+https://github.com/rust-lang/crates.io-index - Cargo",
-                "common_name 0.2.0 registry+sparse+https://other.registry/index/ - Cargo",
+                "common_name 0.2.0 (registry+https://github.com/rust-lang/crates.io-index) - Cargo",
+                "common_name 0.2.0 (registry+sparse+https://other.registry/index/) - Cargo",
             };
 
             componentIds.ForEach(componentId => dependencyGraph.Contains(componentId).Should().BeTrue());

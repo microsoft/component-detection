@@ -113,7 +113,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestMethod]
         public void TypedComponent_Serialization_Cargo()
         {
-            TypedComponent.TypedComponent tc = new CargoComponent("SomeCargoPackage", "1.2.3");
+            TypedComponent.TypedComponent tc = new CargoComponent("SomeCargoPackage", "1.2.3", "registry+https://github.com/rust-lang/crates.io-index");
             var result = JsonConvert.SerializeObject(tc);
             var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
             deserializedTC.Should().BeOfType(typeof(CargoComponent));
