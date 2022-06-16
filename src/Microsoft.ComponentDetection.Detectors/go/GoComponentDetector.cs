@@ -233,6 +233,12 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 var components = relationship.Split(' ');
                 if (components.Length != 2)
                 {
+                    if (string.IsNullOrWhiteSpace(relationship))
+                    {
+                        // normally the last line is an empty string
+                        continue;
+                    }
+
                     Logger.LogWarning("Unexpected relationship output from go mod graph:");
                     Logger.LogWarning(relationship);
                     continue;
