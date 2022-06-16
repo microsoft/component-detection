@@ -38,7 +38,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
             finally
             {
                 record.Dispose();
-                if (terminalRecord && !record.Command.Equals("help", StringComparison.InvariantCultureIgnoreCase))
+                if (terminalRecord && !(record.Command?.Equals("help", StringComparison.InvariantCultureIgnoreCase) ?? false))
                 {
                     TelemetryRelay.Instance.Shutdown();
                 }
