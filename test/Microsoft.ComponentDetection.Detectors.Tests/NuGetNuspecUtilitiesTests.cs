@@ -2,8 +2,10 @@
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -13,20 +15,20 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     public class NuGetNuspecUtilitiesTests
     {
         [TestMethod]
-        public async Task GetNuspecBytes_FailsOnEmptyStream()
+        public void GetNuspecBytes_FailsOnEmptyStream()
         {
             using var stream = new MemoryStream();
 
-            async Task ShouldThrow() => await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
+            void ShouldThrow() => NuGetNuspecUtilities.GetNuspecDataFromNuspecStream(stream);
 
-            await Assert.ThrowsExceptionAsync<ArgumentException>(ShouldThrow);
+            Assert.ThrowsException<ArgumentException>(ShouldThrow);
 
             // The position should always be reset to 0
             Assert.AreEqual(0, stream.Position);
         }
 
         [TestMethod]
-        public async Task GetNuspecBytes_FailsOnTooSmallStream()
+        public void GetNuspecBytes_FailsOnTooSmallStream()
         {
             using var stream = new MemoryStream();
 
@@ -37,16 +39,21 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             stream.Seek(0, SeekOrigin.Begin);
 
-            async Task ShouldThrow() => await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
+            var getFileMock = new Mock<IComponentStream>();
+            getFileMock.SetupGet(x => x.Stream).Returns(stream);
+            getFileMock.SetupGet(x => x.Pattern).Returns(default(string));
+            getFileMock.SetupGet(x => x.Location).Returns("test.nupkg");
 
-            await Assert.ThrowsExceptionAsync<ArgumentException>(ShouldThrow);
+            void ShouldThrow() => NuGetNuspecUtilities.GetNuGetPackageDataFromNupkg(getFileMock.Object);
+
+            Assert.ThrowsException<ArgumentException>(ShouldThrow);
 
             // The position should always be reset to 0
             Assert.AreEqual(0, stream.Position);
         }
 
         [TestMethod]
-        public async Task GetNuspecBytes_FailsIfNuspecNotPresent()
+        public void GetNuspecBytes_FailsIfNuspecNotPresent()
         {
             using var stream = new MemoryStream();
 
@@ -57,10 +64,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             stream.Seek(0, SeekOrigin.Begin);
 
-            async Task ShouldThrow() => await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
+            var getFileMock = new Mock<IComponentStream>();
+            getFileMock.SetupGet(x => x.Stream).Returns(stream);
+            getFileMock.SetupGet(x => x.Pattern).Returns(default(string));
+            getFileMock.SetupGet(x => x.Location).Returns("test.nupkg");
+
+            void ShouldThrow() => NuGetNuspecUtilities.GetNuGetPackageDataFromNupkg(getFileMock.Object);
 
             // No Nuspec File is in the archive
-            await Assert.ThrowsExceptionAsync<FileNotFoundException>(ShouldThrow);
+            Assert.ThrowsException<FileNotFoundException>(ShouldThrow);
 
             // The position should always be reset to 0
             Assert.AreEqual(0, stream.Position);
@@ -69,7 +81,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task GetNuspecBytes_ReadsNuspecBytes()
         {
-            byte[] randomBytes = { 0xDE, 0xAD, 0xC0, 0xDE };
+            var nuspecContent = NugetTestUtilities.GetValidNuspec("Test", "1.2.3", new[] { "Test1", "Test2" });
+            var bytes = System.Text.Encoding.UTF8.GetBytes(nuspecContent);
 
             using var stream = new MemoryStream();
 
@@ -77,21 +90,37 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 var entry = archive.CreateEntry("test.nuspec");
 
-                using var entryStream = entry.Open();
+                using (var entryStream = entry.Open())
+                {
+                    await entryStream.WriteAsync(bytes, 0, bytes.Length);
+                }
 
-                await entryStream.WriteAsync(randomBytes, 0, randomBytes.Length);
+                var libEntry = archive.CreateEntry(@"lib\net48\test.dll");
             }
 
             stream.Seek(0, SeekOrigin.Begin);
 
-            var bytes = await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
+            var getFileMock = new Mock<IComponentStream>();
+            getFileMock.SetupGet(x => x.Stream).Returns(stream);
+            getFileMock.SetupGet(x => x.Pattern).Returns(default(string));
+            getFileMock.SetupGet(x => x.Location).Returns("test.nupkg");
 
-            Assert.AreEqual(randomBytes.Length, bytes.Length);
+            var packageData = NuGetNuspecUtilities.GetNuGetPackageDataFromNupkg(getFileMock.Object);
 
-            for (int i = 0; i < randomBytes.Length; i++)
+            Assert.AreEqual("Test", packageData.name);
+            Assert.AreEqual("1.2.3", packageData.version);
+            Assert.AreEqual(2, packageData.authors.Length);
+            Assert.AreEqual("Test1", packageData.authors[0]);
+            Assert.AreEqual("Test2", packageData.authors[1]);
+            bool set = false;
+            foreach (var framework in packageData.targetFrameworks)
             {
-                Assert.AreEqual(randomBytes[i], bytes[i]);
+                Assert.IsFalse(set, "We got more target frameworks than anticipated");
+                Assert.AreEqual(".NETFramework,Version=v4.8", framework);
+                set = true;
             }
+
+            Assert.IsTrue(set, "We didn't get the target framework");
 
             // The position should always be reset to 0
             Assert.AreEqual(0, stream.Position);
