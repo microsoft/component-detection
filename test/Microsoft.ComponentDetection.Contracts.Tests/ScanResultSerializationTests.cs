@@ -52,6 +52,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
                         Version = 2,
                     },
                 },
+                SourceDirectory = "D:\\test\\directory",
             };
         }
 
@@ -62,6 +63,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
             var actual = JsonConvert.DeserializeObject<ScanResult>(serializedResult);
 
             actual.ResultCode.Should().Be(ProcessingResultCode.PartialSuccess);
+            actual.SourceDirectory.Should().Be("D:\\test\\directory");
             actual.ComponentsFound.Count().Should().Be(1);
             var actualDetectedComponent = actual.ComponentsFound.First();
             actualDetectedComponent.DetectorId.Should().Be("NpmDetectorId");
@@ -93,6 +95,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
             JObject json = JObject.Parse(serializedResult);
 
             json.Value<string>("resultCode").Should().Be("PartialSuccess");
+            json.Value<string>("sourceDirectory").Should().Be("D:\\test\\directory");
             var foundComponent = json["componentsFound"].First();
 
             foundComponent.Value<string>("detectorId").Should().Be("NpmDetectorId");

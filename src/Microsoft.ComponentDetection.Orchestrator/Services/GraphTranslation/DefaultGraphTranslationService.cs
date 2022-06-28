@@ -36,6 +36,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                                                                     .Select(tuple => tuple.recorder)
                                                                     .Where(x => x != null)
                                                                     .Select(x => x.GetDependencyGraphsByLocation())),
+                SourceDirectory = detectionArguments.SourceDirectory.ToString(),
             };
         }
 
