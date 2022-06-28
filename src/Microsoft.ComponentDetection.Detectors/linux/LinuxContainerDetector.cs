@@ -34,7 +34,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
         public IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Linux };
 
-        public int Version => 4;
+        public int Version => 5;
 
         public bool NeedsAutomaticRootDependencyCalculation => false;
 
