@@ -5,7 +5,7 @@ namespace Microsoft.ComponentDetection.Contracts
     {
         public abstract string type { get; }
 
-        public abstract TypedComponent.DockerImageComponent ToTypedDockerImageComponent();
+        public abstract TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent();
     }
 
     public class Reference
@@ -27,9 +27,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.digest}";
         }
 
-        public override TypedComponent.DockerImageComponent ToTypedDockerImageComponent()
+        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerImageComponent(this)
+            return new TypedComponent.DockerReferenceComponent(this)
             {
                 Digest = this.digest,
             };
@@ -49,9 +49,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.repository}@${this.digest}";
         }
 
-        public override TypedComponent.DockerImageComponent ToTypedDockerImageComponent()
+        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerImageComponent(this)
+            return new TypedComponent.DockerReferenceComponent(this)
             {
                 Domain = this.domain,
                 Digest = this.digest,
@@ -71,9 +71,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.repository}";
         }
 
-        public override TypedComponent.DockerImageComponent ToTypedDockerImageComponent()
+        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerImageComponent(this)
+            return new TypedComponent.DockerReferenceComponent(this)
             {
                 Domain = this.domain,
                 Name = this.repository,
@@ -93,9 +93,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.repository}:${this.tag}";
         }
 
-        public override TypedComponent.DockerImageComponent ToTypedDockerImageComponent()
+        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerImageComponent(this)
+            return new TypedComponent.DockerReferenceComponent(this)
             {
                 Domain = this.domain,
                 Tag = this.tag,
@@ -118,9 +118,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.repository}:${this.tag}@${this.digest}";
         }
 
-        public override TypedComponent.DockerImageComponent ToTypedDockerImageComponent()
+        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerImageComponent(this)
+            return new TypedComponent.DockerReferenceComponent(this)
             {
                 Domain = this.domain,
                 Digest = this.digest,

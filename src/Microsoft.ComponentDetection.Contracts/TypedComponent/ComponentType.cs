@@ -52,6 +52,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         Vcpkg = 15,
 
         [EnumMember]
-        Dockerfile = 16,
+        DockerReference = 16,
     }
 }

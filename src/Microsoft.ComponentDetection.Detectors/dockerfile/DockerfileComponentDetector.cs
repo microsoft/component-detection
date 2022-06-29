@@ -22,13 +22,13 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
         [Import]
         public IEnvironmentVariableService EnvVarService { get; set; }
 
-        public override string Id { get; } = "dockerfile";
+        public override string Id { get; } = "Docker Reference";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod) };
 
         public override IList<string> SearchPatterns { get; } = new List<string> { "dockerfile", "dockerfile.*" };
 
-        public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Dockerfile };
+        public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.DockerReference };
 
         public override int Version => 5;
 
@@ -60,7 +60,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
                 var imageReference = ProcessDockerfileConstruct(instruction, dockerfileModel.EscapeChar, stageNameMap);
                 if (imageReference != null)
                 {
-                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(imageReference.ToTypedDockerImageComponent()));
+                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(imageReference.ToTypedDockerReferenceComponent()));
                 }
             }
             
