@@ -17,6 +17,7 @@
         <PackageReference Include="System.Composition.TypedParts" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
+        <PackageReference Include="Valleysoft.DockerfileModel " />
     </ItemGroup>
 
     <ItemGroup Label="Package References">

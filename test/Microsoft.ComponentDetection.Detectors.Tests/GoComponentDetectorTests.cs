@@ -33,7 +33,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var loggerMock = new Mock<ILogger>();
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(false);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
 
             var detector = new GoComponentDetector
             {
@@ -261,7 +261,7 @@ replace (
             commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
                 .ReturnsAsync(false);
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -272,7 +272,7 @@ replace (
             commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
                 .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -289,7 +289,7 @@ replace (
                     ExitCode = 1,
                 });
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -303,7 +303,7 @@ replace (
             commandLineMock.Setup(x => x.ExecuteCommand("go mod graph", null, It.IsAny<DirectoryInfo>(), It.IsAny<string>()))
                 .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             await TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
         }
@@ -311,10 +311,46 @@ replace (
         [TestMethod]
         public async Task TestGoDetector_GoGraphHappyPath()
         {
-            var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 test@v2.0.0\ntest@v2.0.0 a@v1.5.0";
+            var buildDependencies = @"{
+    ""Path"": ""some-package"",
+    ""Version"": ""v1.2.3"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}" + "\n" + @"{
+    ""Path"": ""test"",
+    ""Version"": ""v2.0.0"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}" + "\n" + @"{
+    ""Path"": ""other"",
+    ""Version"": ""v1.2.0"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}" + "\n" + @"{
+    ""Path"": ""a"",
+    ""Version"": ""v1.5.0"",
+    ""Time"": ""2020-05-19T17:02:07Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}";
+            var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 a@v1.5.0";
 
             commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
                 .ReturnsAsync(true);
+
+            commandLineMock.Setup(x => x.ExecuteCommand("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-m", "-json", "all" }))
+                .ReturnsAsync(new CommandLineExecutionResult
+                {
+                    ExitCode = 0,
+                    StdOut = buildDependencies,
+                });
 
             commandLineMock.Setup(x => x.ExecuteCommand("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
                 .ReturnsAsync(new CommandLineExecutionResult
@@ -323,7 +359,7 @@ replace (
                     StdOut = goGraph,
                 });
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithFile("go.mod", string.Empty)
@@ -333,16 +369,50 @@ replace (
 
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(4, detectedComponents.Count());
+            detectedComponents.Where(component => component.Component.Id == "other v1.0.0 - Go").Should().HaveCount(0);
+            detectedComponents.Where(component => component.Component.Id == "other v1.2.0 - Go").Should().HaveCount(1);
+            detectedComponents.Where(component => component.Component.Id == "some-package v1.2.3 - Go").Should().HaveCount(1);
+            detectedComponents.Where(component => component.Component.Id == "test v2.0.0 - Go").Should().HaveCount(1);
+            detectedComponents.Where(component => component.Component.Id == "a v1.5.0 - Go").Should().HaveCount(1);
         }
 
         [TestMethod]
         public async Task TestGoDetector_GoGraphCyclicDependencies()
         {
+            var buildDependencies = @"{
+    ""Path"": ""github.com/prometheus/common"",
+    ""Version"": ""v0.32.1"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}" + "\n" + @"{
+    ""Path"": ""github.com/prometheus/client_golang"",
+    ""Version"": ""v1.11.0"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}" + "\n" + @"{
+    ""Path"": ""github.com/prometheus/client_golang"",
+    ""Version"": ""v1.12.1"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}";
             var goGraph = @"
 github.com/prometheus/common@v0.32.1 github.com/prometheus/client_golang@v1.11.0
 github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1";
             commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
                 .ReturnsAsync(true);
+
+            commandLineMock.Setup(x => x.ExecuteCommand("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-m", "-json", "all" }))
+                .ReturnsAsync(new CommandLineExecutionResult
+                {
+                    ExitCode = 0,
+                    StdOut = buildDependencies,
+                });
 
             commandLineMock.Setup(x => x.ExecuteCommand("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
                 .ReturnsAsync(new CommandLineExecutionResult
@@ -351,7 +421,7 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
                     StdOut = goGraph,
                 });
 
-            envVarService.Setup(x => x.DoesEnvironmentVariableExist("EnableGoCliScan")).Returns(true);
+            envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
             var (scanResult, componentRecorder) = await detectorTestUtility
                                                     .WithFile("go.mod", string.Empty)

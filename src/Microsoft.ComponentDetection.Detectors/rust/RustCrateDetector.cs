@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
         public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
 
-        public override int Version { get; } = 6;
+        public override int Version { get; } = 7;
 
         public override IEnumerable<string> Categories => new List<string> { "Rust" };
 
