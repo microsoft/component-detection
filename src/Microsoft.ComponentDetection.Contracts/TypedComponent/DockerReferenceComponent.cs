@@ -14,7 +14,8 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             Tag = tag;
         }  
 
-        public DockerReferenceComponent(IDockerReference reference){
+        public DockerReferenceComponent(DockerReference reference)
+        {
             FullReference = reference;
         }      
 
@@ -28,7 +29,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.DockerReference;
 
-        public IDockerReference FullReference { get; set; }
+        public DockerReference FullReference { get; set; }
 
         public override string Id => $"{Name} {Tag} {Digest}";
     }

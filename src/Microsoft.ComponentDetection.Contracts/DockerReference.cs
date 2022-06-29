@@ -1,131 +1,158 @@
 namespace Microsoft.ComponentDetection.Contracts
 {
-    #pragma warning disable SA1402
-    public abstract class IDockerReference
+#pragma warning disable SA1402
+    public abstract class DockerReference
     {
-        public abstract string type { get; }
+        public abstract DockerReferenceKind Kind { get; }
 
         public abstract TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent();
+    }
+
+    public enum DockerReferenceKind
+    {
+        Canonical = 0,
+        Repository = 1,
+        Tagged = 2,
+        Dual = 3,
+        Digest = 4,
     }
 
     public class Reference
     {
         public string Tag { get; set; }
+        
         public string Digest { get; set; }
+        
         public string Repository { get; set; }
+        
         public string Domain { get; set; }
     }
 
     // sha256:abc123...
-    public class DigestReference : IDockerReference
+    public class DigestReference : DockerReference
     {
-        public override string type { get; } = "digest";
-        public string digest;
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Digest;
+        
+        public string Digest;
 
         public override string ToString()
         {
-            return $"{this.digest}";
+            return $"{Digest}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Digest = this.digest,
+                Digest = Digest,
             };
         }
     }
 
     // docker.io/library/ubuntu@sha256:abc123...
-    public class CanonicalReference : IDockerReference
+    public class CanonicalReference : DockerReference
     {
-        public override string type { get; } = "canonical";
-        public string domain;
-        public string repository;
-        public string digest;
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Canonical;
+        
+        public string Domain;
+        
+        public string Repository;
+        
+        public string Digest;
 
         public override string ToString()
         {
-            return $"{this.repository}@${this.digest}";
+            return $"{Domain}/{Repository}@${Digest}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Domain = this.domain,
-                Digest = this.digest,
-                Name = this.repository,
+                Domain = Domain,
+                Digest = Digest,
+                Name = Repository,
             };
         }
     }
 
     // docker.io/library/ubuntu
-    public class RepositoryReference : IDockerReference
+    public class RepositoryReference : DockerReference
     {
-        public override string type { get; } = "repository";
-        public string domain;
-        public string repository;
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Repository;
+        
+        public string Domain;
+        
+        public string Repository;
+        
         public override string ToString()
         {
-            return $"{this.repository}";
+            return $"{Repository}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Domain = this.domain,
-                Name = this.repository,
+                Domain = Domain,
+                Name = Repository,
             };
         }
     }
 
     // docker.io/library/ubuntu:latest
-    public class TaggedReference : IDockerReference
+    public class TaggedReference : DockerReference
     {
-        public override string type { get; } = "tagged";
-        public string domain;
-        public string repository;
-        public string tag;
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Tagged;
+        
+        public string Domain;
+        
+        public string Repository;
+        
+        public string Tag;
+        
         public override string ToString()
         {
-            return $"{this.repository}:${this.tag}";
+            return $"{Domain}/{Repository}:${Tag}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Domain = this.domain,
-                Tag = this.tag,
-                Name = this.repository,
+                Domain = Domain,
+                Tag = Tag,
+                Name = Repository,
             };
         }
     }
 
     // docker.io/library/ubuntu:latest@sha256:abc123...
-    public class DualReference : IDockerReference
+    public class DualReference : DockerReference
     {
-        public override string type { get; } = "dual";
-        public string domain;
-        public string repository;
-        public string tag;
-        public string digest;
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Dual;
+        
+        public string Domain;
+        
+        public string Repository;
+        
+        public string Tag;
+        
+        public string Digest;
 
         public override string ToString()
         {
-            return $"{this.repository}:${this.tag}@${this.digest}";
+            return $"{Domain}/{Repository}:${Tag}@${Digest}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Domain = this.domain,
-                Digest = this.digest,
-                Tag = this.tag,
-                Name = this.repository,
+                Domain = Domain,
+                Digest = Digest,
+                Tag = Tag,
+                Name = Repository,
             };
         }
     }

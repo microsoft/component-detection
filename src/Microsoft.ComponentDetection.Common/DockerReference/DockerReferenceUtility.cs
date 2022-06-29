@@ -40,7 +40,7 @@ namespace Microsoft.ComponentDetection.Common
         private const string LEGACYDEFAULTDOMAIN = "index.docker.io";
         private const string OFFICIALREPOSITORYNAME = "library";
 
-        public static IDockerReference ParseQualifiedName(string qualifiedName)
+        public static DockerReference ParseQualifiedName(string qualifiedName)
         {
             Regex regexp = DockerRegex.ReferenceRegexp;
             if (!regexp.IsMatch(qualifiedName))
@@ -124,7 +124,7 @@ namespace Microsoft.ComponentDetection.Common
             return (domain, reminder);
         }
 
-        public static IDockerReference ParseFamiliarName(string name)
+        public static DockerReference ParseFamiliarName(string name)
         {
             if (DockerRegex.AnchoredIdentifierRegexp.IsMatch(name))
             {
@@ -152,7 +152,7 @@ namespace Microsoft.ComponentDetection.Common
             return ParseQualifiedName($"{domain}/{remainder}");
         }
 
-        public static IDockerReference ParseAll(string name)
+        public static DockerReference ParseAll(string name)
         {
             if (DockerRegex.AnchoredIdentifierRegexp.IsMatch(name))
             {
@@ -167,7 +167,7 @@ namespace Microsoft.ComponentDetection.Common
             return ParseFamiliarName(name);
         }
 
-        private static IDockerReference CreateDockerReference(Reference options)
+        private static DockerReference CreateDockerReference(Reference options)
         {
             if (!string.IsNullOrEmpty(options.Repository) && string.IsNullOrEmpty(options.Domain))
             {
@@ -175,7 +175,7 @@ namespace Microsoft.ComponentDetection.Common
                 {
                     return new DigestReference
                     {
-                        digest = options.Digest,
+                        Digest = options.Digest,
                     };
                 }
                 else
@@ -189,17 +189,17 @@ namespace Microsoft.ComponentDetection.Common
                 {
                     return new CanonicalReference
                     {
-                        domain = options.Domain,
-                        repository = options.Repository,
-                        digest = options.Digest,
+                        Domain = options.Domain,
+                        Repository = options.Repository,
+                        Digest = options.Digest,
                     };
                 }
                 else
                 {
                     return new RepositoryReference
                     {
-                        domain = options.Domain,
-                        repository = options.Repository,
+                        Domain = options.Domain,
+                        Repository = options.Repository,
                     };
                 }
             }
@@ -207,19 +207,19 @@ namespace Microsoft.ComponentDetection.Common
             {
                 return new TaggedReference
                 {
-                    domain = options.Domain,
-                    repository = options.Repository,
-                    tag = options.Tag,
+                    Domain = options.Domain,
+                    Repository = options.Repository,
+                    Tag = options.Tag,
                 };
             }
             else
             {
                 return new DualReference
                 {
-                    domain = options.Domain,
-                    repository = options.Repository,
-                    tag = options.Tag,
-                    digest = options.Digest,
+                    Domain = options.Domain,
+                    Repository = options.Repository,
+                    Tag = options.Tag,
+                    Digest = options.Digest,
                 };
             }
         }

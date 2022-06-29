@@ -26,11 +26,11 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod) };
 
-        public override IList<string> SearchPatterns { get; } = new List<string> { "dockerfile", "dockerfile.*" };
+        public override IList<string> SearchPatterns { get; } = new List<string> { "dockerfile", "dockerfile.*", "*.dockerfile" };
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.DockerReference };
 
-        public override int Version => 5;
+        public override int Version => 1;
 
         private HashSet<string> projectRoots = new HashSet<string>();
 
@@ -63,23 +63,23 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(imageReference.ToTypedDockerReferenceComponent()));
                 }
             }
-            
+
             return Task.CompletedTask;
         }
 
-        private IDockerReference ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+        private DockerReference ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
         {
             var instructionKeyword = construct.Type;
-            IDockerReference baseImage = null;
+            DockerReference baseImage = null;
             if (instructionKeyword == ConstructType.Instruction)
-            {
-                var constructType = construct.GetType().ToString();
+            {   
+                var constructType = construct.GetType().Name;
                 switch (constructType)
                 {
-                    case "Valleysoft.DockerfileModel.FromInstruction":
+                    case "FromInstruction":
                         baseImage = ParseFromInstruction(construct, escapeChar, stageNameMap);
                         break;
-                    case "Valleysoft.DockerfileModel.CopyInstruction":
+                    case "CopyInstruction":
                         baseImage = ParseCopyInstruction(construct, escapeChar, stageNameMap);
                         break;
                     default:
@@ -90,7 +90,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             return baseImage;
         }
 
-        private IDockerReference ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+        private DockerReference ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
         {
             var tokens = construct.Tokens.ToArray();
             var resolvedFromStatement = construct.ResolveVariables(escapeChar).TrimEnd();
@@ -134,11 +134,30 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             return DockerReferenceUtility.ParseFamiliarName(reference);
         }
 
-        private IDockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+        private DockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
         {
-            string reference = string.Empty;
-            var resolvedFromStatement = construct.ResolveVariables(escapeChar).TrimEnd();
-            if (string.IsNullOrWhiteSpace(resolvedFromStatement))
+            var resolvedCopyStatement = construct.ResolveVariables(escapeChar).TrimEnd();
+            var copyInstruction = (Valleysoft.DockerfileModel.CopyInstruction)construct;
+            var reference = copyInstruction.FromStageName;
+            if (string.IsNullOrWhiteSpace(resolvedCopyStatement) || string.IsNullOrWhiteSpace(reference))
+            {
+                return null;
+            }
+
+            stageNameMap.TryGetValue(reference, out var stageNameReference);
+            if (!string.IsNullOrEmpty(stageNameReference))
+            {
+                if (HasUnresolvedVariables(stageNameReference))
+                {
+                    return null;
+                }
+                else
+                {
+                    return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
+                }
+            }
+
+            if (HasUnresolvedVariables(reference))
             {
                 return null;
             }

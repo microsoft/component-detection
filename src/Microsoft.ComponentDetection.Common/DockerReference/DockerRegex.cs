@@ -82,12 +82,12 @@ namespace Microsoft.ComponentDetection.Common
         public static Regex NameRegexp = Expression(
             Optional(
                 DomainRegexp,
-                new Regex(@"\/"),
-                NameComponentRegexp,
-                Optional(
-                    Repeated(
-                        new Regex(@"\/"),
-                        NameComponentRegexp))));
+                new Regex(@"\/")),
+            NameComponentRegexp,
+            Optional(
+                Repeated(
+                    new Regex(@"\/"),
+                    NameComponentRegexp)));
 
         public static Regex AnchoredNameRegexp = Anchored(
             Optional(
