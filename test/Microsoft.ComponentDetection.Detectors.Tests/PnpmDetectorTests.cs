@@ -350,5 +350,43 @@ packages:
             var testDependencies = dependencyGraph.GetDependenciesForComponent(testComponentId);
             Assert.AreEqual(0, testDependencies.Count());
         }
+
+        [TestMethod]
+        public async Task TestPnpmDetector_DependenciesRefeToLocalPaths_DependenciesAreIgnored()
+        {
+            var yamlFile = @"
+dependencies:
+  'query-string': 4.3.4,
+  '@rush-temp/file-annotation-bar': file:projects/file-annotation-bar.tgz_node-sass@4.14.1
+
+packages:
+  file:projects/file-annotation-bar.tgz_node-sass@4.14.1:
+     resolution: {integrity: sha1-G7T22scAcvwxPoyc0UF7UHTAoSU=} 
+  /query-string/4.3.4:
+    dependencies:
+      '@learningclient/common': link:../common
+      nth-check: 2.0.0
+  /nth-check/2.0.0:
+    resolution: {integrity: sha1-G7T22scAcvwxPoyc0UF7UHTAoSU=} ";
+
+            var (scanResult, componentRecorder) = await detectorTestUtility
+                                                    .WithFile("shrinkwrap1.yaml", yamlFile)
+                                                    .ExecuteDetector();
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            componentRecorder.GetDetectedComponents().Should().HaveCount(2, "Components that comes from a file (file:* or link:*) should be ignored.");
+
+            var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/query-string/4.3.4").Component.Id;
+            var nthcheck = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/nth-check/2.0.0").Component.Id;
+
+            var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+            var queryStringDependencies = dependencyGraph.GetDependenciesForComponent(queryStringComponentId);
+            queryStringDependencies.Should().HaveCount(1);
+            queryStringDependencies.Should().Contain(nthcheck);
+
+            var nthCheckDependencies = dependencyGraph.GetDependenciesForComponent(nthcheck);
+            nthCheckDependencies.Should().HaveCount(0);
+        }
     }
 }

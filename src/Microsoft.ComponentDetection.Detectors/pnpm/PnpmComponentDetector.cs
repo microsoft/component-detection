@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
-        public override int Version { get; } = 4;
+        public override int Version { get; } = 5;
 
         /// <inheritdoc />
         protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
@@ -72,8 +72,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
                 {
                     foreach (var dependency in packageKeyValue.Value.dependencies)
                     {
-                        // Ignore file: as these are local packages.
-                        if (dependency.Key.StartsWith("file:"))
+                        // Ignore local packages.
+                        if (IsLocalDependency(dependency))
                         {
                             continue;
                         }
@@ -96,6 +96,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
                     singleFileComponentRecorder.RegisterUsage(component.Value, isDevelopmentDependency: graph.IsDevelopmentDependency(explicitReference));
                 }
             }
+        }
+
+        private bool IsLocalDependency(KeyValuePair<string, string> dependency)
+        {
+            // Local dependencies are dependencies that live in the file system
+            // this requires an extra parsing that is not supported yet
+            return dependency.Key.StartsWith("file:") || dependency.Value.StartsWith("file:") || dependency.Value.StartsWith("link:");
         }
 
         private string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion)

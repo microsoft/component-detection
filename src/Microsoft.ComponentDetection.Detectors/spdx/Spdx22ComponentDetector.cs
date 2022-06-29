@@ -102,7 +102,8 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
             }
 
             var rootElementId = rootElements?.FirstOrDefault() ?? "SPDXRef-Document";
-            var component = new SpdxComponent(spdxVersion, new Uri(sbomNamespace), name, fileHash, rootElementId);
+            var path = processRequest.ComponentStream.Location;
+            var component = new SpdxComponent(spdxVersion, new Uri(sbomNamespace), name, fileHash, rootElementId, path);
 
             return component;
         }

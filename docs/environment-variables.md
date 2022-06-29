@@ -2,10 +2,10 @@
 
 Environment variables are sometimes used to control experimental features or advanced options
 
-## `EnableGoCliScan`
+## `DisableGoCliScan`
 
-If the environment variable `EnableGoCliScan` is set, to any value, the Go detector uses [`go mod graph`][1] to discover Go dependencies.
-If the environment variable is not set, we fall back to parsing `go.mod` and `go.sum` ourselves.
+If the environment variable `DisableGoCliScan` is set to "true", we fall back to parsing `go.mod` and `go.sum` ourselves. 
+Otherwise, the Go detector uses go-cli command: `go list -m all` to discover Go dependencies.
 
 ## `PyPiMaxCacheEntries`
 

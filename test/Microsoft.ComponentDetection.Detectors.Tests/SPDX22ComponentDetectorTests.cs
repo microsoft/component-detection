@@ -20,13 +20,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     public class Spdx22ComponentDetectorTests
     {
         private DetectorTestUtility<Spdx22ComponentDetector> detectorTestUtility;
+        private string tempPath = Path.GetTempPath();
 
         [TestInitialize]
         public void TestInitialize()
         {
             var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
             detectorTestUtility = DetectorTestUtilityCreator.Create<Spdx22ComponentDetector>()
-                                    .WithScanRequest(new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder));
+                                    .WithScanRequest(new ScanRequest(new DirectoryInfo(tempPath), null, null, new Dictionary<string, string>(), null, componentRecorder));
         }
 
         [TestMethod]
@@ -96,8 +97,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     ]
 }";
 
+            var spdxFileName = "manifest.spdx.json";
             var (scanResult, componentRecorder) = await detectorTestUtility
-                                                    .WithFile("manifest.spdx.json", spdxFile)
+                                                    .WithFile(spdxFileName, spdxFile)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -122,6 +124,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.AreEqual(sbomComponent.DocumentNamespace,  new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
             Assert.AreEqual(sbomComponent.SpdxVersion, "SPDX-2.2");
             Assert.AreEqual(sbomComponent.Checksum, checksum);
+            Assert.AreEqual(sbomComponent.Path, Path.Combine(tempPath, spdxFileName));
         }
 
         [TestMethod]

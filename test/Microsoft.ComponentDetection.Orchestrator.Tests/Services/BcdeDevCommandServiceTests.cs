@@ -42,6 +42,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 ComponentsFound = scannedComponents,
                 ContainerDetailsMap = new Dictionary<int, ContainerDetails>(),
                 ResultCode = ProcessingResultCode.Success,
+                SourceDirectory = "D:\\test\\directory",
             };
 
             scanExecutionServiceMock.Setup(x => x.ExecuteScanAsync(It.IsAny<IDetectionArguments>()))
@@ -60,6 +61,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             var result = serviceUnderTest.Handle(args);
             result.Result.ResultCode.Should().Be(ProcessingResultCode.Success);
+            result.Result.SourceDirectory.Should().Be("D:\\test\\directory");
         }
     }
 }

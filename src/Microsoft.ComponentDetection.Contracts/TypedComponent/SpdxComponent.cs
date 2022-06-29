@@ -10,7 +10,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         }
 
         public SpdxComponent(string spdxVersion, Uri documentNamespace, string name, string checksum,
-            string rootElementId)
+            string rootElementId, string path)
         {
             SpdxVersion = ValidateRequiredInput(spdxVersion, nameof(SpdxVersion), nameof(ComponentType.Spdx));
             DocumentNamespace =
@@ -18,6 +18,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Spdx));
             Checksum = ValidateRequiredInput(checksum, nameof(Checksum), nameof(ComponentType.Spdx));
             RootElementId = ValidateRequiredInput(rootElementId, nameof(RootElementId), nameof(ComponentType.Spdx));
+            Path = ValidateRequiredInput(path, nameof(Path), nameof(ComponentType.Spdx));
         }
 
         public override ComponentType Type => ComponentType.Spdx;
@@ -31,6 +32,8 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public Uri DocumentNamespace { get; }
 
         public string Checksum { get; }
+
+        public string Path { get; }
 
         public override string Id => $"{Name}-{SpdxVersion}-{Checksum}";
     }

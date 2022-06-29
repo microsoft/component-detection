@@ -4,9 +4,10 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
-    # Disable version updates for actions (doesn't impact security updates)
-    # https://docs.github.com/en/github/administering-a-repository/configuration-options-for-dependency-updates#open-pull-requests-limit
-    open-pull-requests-limit: 0
+    reviewers:
+      - "JamieMagee"
+    labels:
+      - "type:ci"
 
   - package-ecosystem: 'nuget'
     directory: '/'

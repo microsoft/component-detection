@@ -14,14 +14,14 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v2.4.0
+      - uses: actions/checkout@v3
 
       - name: Make release snapshot output directory
         run: mkdir ${{ github.workspace }}/release-output
 
       - name: Get latest release snapshot download url
         id: download-latest-release-snapshot
-        uses: actions/github-script@v5.0.0
+        uses: actions/github-script@v6
         with:
           result-encoding: string
           script: |
@@ -47,7 +47,7 @@ jobs:
           rm output.zip
 
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1.9.0
+        uses: actions/setup-dotnet@v2
         with:
           dotnet-version: 3.1.x
 

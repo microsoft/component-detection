@@ -56,15 +56,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation()[pomfileLocation];
 
-            var topLevelComponentTuple = MavenParsingUtilities.GenerateDetectedComponentFromMavenString("org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT");
-            var topLevelComponent = topLevelComponentTuple.Component;
-            var mavenCoreTuple = MavenParsingUtilities.GenerateDetectedComponentFromMavenString("org.apache.maven:maven-core:jar:3.6.1-SNAPSHOT:compile");
+            var topLevelComponentInfo = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT");
+            var topLevelComponent = topLevelComponentInfo.Component;
+            var mavenCoreTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-core:jar:3.6.1-SNAPSHOT:compile");
             var mavenCore = mavenCoreTuple.Component;
-            var guiceTuple = MavenParsingUtilities.GenerateDetectedComponentFromMavenString("com.google.inject:guice:jar:no_aop:4.2.1:compile");
+            var guiceTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("com.google.inject:guice:jar:no_aop:4.2.1:compile");
             var guice = guiceTuple.Component;
-            var guavaTuple = MavenParsingUtilities.GenerateDetectedComponentFromMavenString("com.google.guava:guava:jar:25.1-android:compile");
+            var guavaTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("com.google.guava:guava:jar:25.1-android:compile");
             var guava = guavaTuple.Component;
-            var animalSnifferAnnotationsTuple = MavenParsingUtilities.GenerateDetectedComponentFromMavenString("org.codehaus.mojo:animal-sniffer-annotations:jar:1.14:compile");
+            var animalSnifferAnnotationsTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.codehaus.mojo:animal-sniffer-annotations:jar:1.14:compile");
             var animalSnifferAnnotations = animalSnifferAnnotationsTuple.Component;
 
             var topLevelComponentDependencies = dependencyGraph.GetDependenciesForComponent(topLevelComponent.Component.Id);

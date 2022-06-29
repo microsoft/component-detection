@@ -28,6 +28,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
                         Component = new NpmComponent("SampleNpmComponent", "1.2.3"),
                         DetectorId = "NpmDetectorId",
                         IsDevelopmentDependency = true,
+                        DependencyScope = DependencyScope.MavenCompile,
                         LocationsFoundAt = new[]
                         {
                             "some/location",
@@ -51,6 +52,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
                         Version = 2,
                     },
                 },
+                SourceDirectory = "D:\\test\\directory",
             };
         }
 
@@ -61,10 +63,12 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
             var actual = JsonConvert.DeserializeObject<ScanResult>(serializedResult);
 
             actual.ResultCode.Should().Be(ProcessingResultCode.PartialSuccess);
+            actual.SourceDirectory.Should().Be("D:\\test\\directory");
             actual.ComponentsFound.Count().Should().Be(1);
             var actualDetectedComponent = actual.ComponentsFound.First();
             actualDetectedComponent.DetectorId.Should().Be("NpmDetectorId");
             actualDetectedComponent.IsDevelopmentDependency.Should().Be(true);
+            actualDetectedComponent.DependencyScope.Should().Be(DependencyScope.MavenCompile);
             actualDetectedComponent.LocationsFoundAt.Contains("some/location").Should().Be(true);
 
             var npmComponent = actualDetectedComponent.Component as NpmComponent;
@@ -91,10 +95,12 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
             JObject json = JObject.Parse(serializedResult);
 
             json.Value<string>("resultCode").Should().Be("PartialSuccess");
+            json.Value<string>("sourceDirectory").Should().Be("D:\\test\\directory");
             var foundComponent = json["componentsFound"].First();
 
             foundComponent.Value<string>("detectorId").Should().Be("NpmDetectorId");
             foundComponent.Value<bool>("isDevelopmentDependency").Should().Be(true);
+            foundComponent.Value<string>("dependencyScope").Should().Be("MavenCompile");
             foundComponent["locationsFoundAt"].First().Value<string>().Should().Be("some/location");
             foundComponent["component"].Value<string>("type").Should().Be("Npm");
             foundComponent["component"].Value<string>("name").Should().Be("SampleNpmComponent");

@@ -23,6 +23,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             { ComponentType.Pod, typeof(PodComponent) },
             { ComponentType.Linux, typeof(LinuxComponent) },
             { ComponentType.Conda, typeof(CondaComponent) },
+            { ComponentType.DockerReference, typeof(DockerReferenceComponent) },
         };
 
         public override bool CanConvert(Type objectType)

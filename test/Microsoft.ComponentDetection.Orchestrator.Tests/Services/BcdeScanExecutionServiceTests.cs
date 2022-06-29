@@ -245,6 +245,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             var result = DetectComponentsHappyPath(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
+            result.SourceDirectory.Should().NotBeNull();
+            result.SourceDirectory.Should().Be(sourceDirectory.ToString());
+
             result.Result.Should().Be(ProcessingResultCode.Success);
             result.DependencyGraphs.Count.Should().Be(1);
             var matchingGraph = result.DependencyGraphs.First();
@@ -300,6 +303,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorderB.RegisterUsage(detectedComponents[0], parentComponentId: detectedComponents[1].Component.Id);
 
             var result = DetectComponentsHappyPath(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
+
+            result.SourceDirectory.Should().NotBeNull();
+            result.SourceDirectory.Should().Be(sourceDirectory.ToString());
 
             result.Result.Should().Be(ProcessingResultCode.Success);
             result.DependencyGraphs.Count.Should().Be(1);
@@ -617,6 +623,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             var result = serviceUnderTest.ExecuteScanAsync(args).Result;
             result.ResultCode.Should().Be(ProcessingResultCode.Success);
+            result.SourceDirectory.Should().NotBeNull();
+            result.SourceDirectory.Should().Be(args.SourceDirectorySerialized);
 
             var testOutput = new TestOutput((DefaultGraphScanResult)result);
 
@@ -660,6 +668,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             var result = serviceUnderTest.ExecuteScanAsync(args).Result;
             result.ResultCode.Should().Be(ProcessingResultCode.Success);
+            result.SourceDirectory.Should().NotBeNull();
+            result.SourceDirectory.Should().Be(args.SourceDirectorySerialized);
 
             return result;
         }
@@ -682,6 +692,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 DetectedComponents = result.ComponentsFound;
                 DetectorsInRun = result.DetectorsInScan;
                 DependencyGraphs = result.DependencyGraphs;
+                SourceDirectory = result.SourceDirectory;
             }
 
             internal ProcessingResultCode Result { get; set; }
@@ -691,6 +702,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             internal IEnumerable<Detector> DetectorsInRun { get; set; }
 
             internal DependencyGraphCollection DependencyGraphs { get; set; }
+
+            internal string SourceDirectory { get; set; }
         }
     }
 }

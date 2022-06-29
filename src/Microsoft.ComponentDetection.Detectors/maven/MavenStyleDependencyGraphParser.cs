@@ -58,9 +58,12 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 var localLine = line.Trim(TrimCharacters);
                 if (!string.IsNullOrWhiteSpace(localLine) && topLevelComponent == null)
                 {
-                    var topLevelMavenStringTuple = MavenParsingUtilities.GenerateDetectedComponentFromMavenString(localLine);
-                    topLevelComponent = topLevelMavenStringTuple.Component;
-                    singleFileComponentRecorder.RegisterUsage(topLevelMavenStringTuple.Component, isDevelopmentDependency: topLevelMavenStringTuple.IsDevelopmentDependency);
+                    var topLevelMavenStringInfo = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(localLine);
+                    topLevelComponent = topLevelMavenStringInfo.Component;
+                    singleFileComponentRecorder.RegisterUsage(
+                        topLevelMavenStringInfo.Component,
+                        isDevelopmentDependency: topLevelMavenStringInfo.IsDevelopmentDependency,
+                        dependencyScope: topLevelMavenStringInfo.dependencyScope);
                 }
                 else
                 {
@@ -104,18 +107,27 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 tupleStack.Pop();
             }
 
-            var componentAndDevDependencyTuple = MavenParsingUtilities.GenerateDetectedComponentFromMavenString(versionedComponent);
+            var componentAndDevDependencyTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(versionedComponent);
             var newTuple = (ParseLevel: position, componentAndDevDependencyTuple.Component);
 
             if (tupleStack.Count > 0)
             {
                 var parent = tupleStack.Peek().Component;
                 componentRecorder.RegisterUsage(parent);
-                componentRecorder.RegisterUsage(newTuple.Component, parentComponentId: parent.Component.Id, isDevelopmentDependency: componentAndDevDependencyTuple.IsDevelopmentDependency);
+                componentRecorder.RegisterUsage(
+                    newTuple.Component,
+                    parentComponentId: parent.Component.Id,
+                    isDevelopmentDependency: componentAndDevDependencyTuple.IsDevelopmentDependency,
+                    dependencyScope: componentAndDevDependencyTuple.dependencyScope);
             }
             else
             {
-                componentRecorder.RegisterUsage(newTuple.Component, isExplicitReferencedDependency: true, parentComponentId: topLevelComponent.Component.Id, isDevelopmentDependency: componentAndDevDependencyTuple.IsDevelopmentDependency);
+                componentRecorder.RegisterUsage(
+                    newTuple.Component,
+                    isExplicitReferencedDependency: true,
+                    parentComponentId: topLevelComponent.Component.Id,
+                    isDevelopmentDependency: componentAndDevDependencyTuple.IsDevelopmentDependency,
+                    dependencyScope: componentAndDevDependencyTuple.dependencyScope);
             }
 
             tupleStack.Push(newTuple);

@@ -24,5 +24,11 @@ namespace Microsoft.ComponentDetection.Common
 
             return caseInsensitiveName != null ? Environment.GetEnvironmentVariable(caseInsensitiveName) : null;
         }
+
+        public bool IsEnvironmentVariableValueTrue(string name)
+        {
+            _ = bool.TryParse(GetEnvironmentVariable(name), out bool result);
+            return result;
+        }
     }
 }
