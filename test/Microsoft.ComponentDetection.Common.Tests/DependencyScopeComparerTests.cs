@@ -13,7 +13,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]
     public class DependencyScopeComparerTests
-    {   
+    {
         [TestMethod]
         public void GetMergedDependencyScope_returnNull_IfBothNull()
         {
@@ -26,7 +26,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
             DependencyScope randomDependencyScope = Faker.Enum.Random<DependencyScope>();
             GetMergedDependencyScope(null, randomDependencyScope)
                 .Should()
-                .Equals(randomDependencyScope);
+                .Be(randomDependencyScope);
         }
 
         [TestMethod]
@@ -35,29 +35,29 @@ namespace Microsoft.ComponentDetection.Common.Tests
             DependencyScope randomDependencyScope = Faker.Enum.Random<DependencyScope>();
             GetMergedDependencyScope(randomDependencyScope, null)
                 .Should()
-                .Equals(randomDependencyScope);
+                .Be(randomDependencyScope);
         }
 
         [TestMethod]
         public void GetMergedDependencyScope_WhenBothNonNull_higherPriorityEnumsReturned()
         {
             // compare with compile
-            GetMergedDependencyScope(DependencyScope.MavenRuntime, DependencyScope.MavenCompile).Should().Equals(DependencyScope.MavenCompile);
-            GetMergedDependencyScope(DependencyScope.MavenProvided, DependencyScope.MavenCompile).Should().Equals(DependencyScope.MavenCompile);
-            GetMergedDependencyScope(DependencyScope.MavenSystem, DependencyScope.MavenCompile).Should().Equals(DependencyScope.MavenCompile);
-            GetMergedDependencyScope(DependencyScope.MavenTest, DependencyScope.MavenCompile).Should().Equals(DependencyScope.MavenCompile);
+            GetMergedDependencyScope(DependencyScope.MavenRuntime, DependencyScope.MavenCompile).Should().Be(DependencyScope.MavenCompile);
+            GetMergedDependencyScope(DependencyScope.MavenProvided, DependencyScope.MavenCompile).Should().Be(DependencyScope.MavenCompile);
+            GetMergedDependencyScope(DependencyScope.MavenSystem, DependencyScope.MavenCompile).Should().Be(DependencyScope.MavenCompile);
+            GetMergedDependencyScope(DependencyScope.MavenTest, DependencyScope.MavenCompile).Should().Be(DependencyScope.MavenCompile);
 
             // compare with runtime
-            GetMergedDependencyScope(DependencyScope.MavenProvided, DependencyScope.MavenRuntime).Should().Equals(DependencyScope.MavenRuntime);
-            GetMergedDependencyScope(DependencyScope.MavenSystem, DependencyScope.MavenRuntime).Should().Equals(DependencyScope.MavenRuntime);
-            GetMergedDependencyScope(DependencyScope.MavenTest, DependencyScope.MavenRuntime).Should().Equals(DependencyScope.MavenRuntime);
+            GetMergedDependencyScope(DependencyScope.MavenProvided, DependencyScope.MavenRuntime).Should().Be(DependencyScope.MavenRuntime);
+            GetMergedDependencyScope(DependencyScope.MavenSystem, DependencyScope.MavenRuntime).Should().Be(DependencyScope.MavenRuntime);
+            GetMergedDependencyScope(DependencyScope.MavenTest, DependencyScope.MavenRuntime).Should().Be(DependencyScope.MavenRuntime);
 
             // compare with provided
-            GetMergedDependencyScope(DependencyScope.MavenSystem, DependencyScope.MavenProvided).Should().Equals(DependencyScope.MavenProvided);
-            GetMergedDependencyScope(DependencyScope.MavenTest, DependencyScope.MavenProvided).Should().Equals(DependencyScope.MavenProvided);
+            GetMergedDependencyScope(DependencyScope.MavenSystem, DependencyScope.MavenProvided).Should().Be(DependencyScope.MavenProvided);
+            GetMergedDependencyScope(DependencyScope.MavenTest, DependencyScope.MavenProvided).Should().Be(DependencyScope.MavenProvided);
 
             // compare with system
-            GetMergedDependencyScope(DependencyScope.MavenSystem, DependencyScope.MavenTest).Should().Equals(DependencyScope.MavenSystem);
+            GetMergedDependencyScope(DependencyScope.MavenSystem, DependencyScope.MavenTest).Should().Be(DependencyScope.MavenSystem);
         }
     }
 }
