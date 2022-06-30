@@ -26,8 +26,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public abstract string Id { get; }
 
         public virtual PackageURL PackageUrl { get; }
-        
-        public virtual DockerReference FullReference { get; }
 
         [JsonIgnore]
         internal string DebuggerDisplay => $"{Id}";

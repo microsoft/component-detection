@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.DockerReference;
 
-        public override DockerReference FullReference
+        public DockerReference FullReference
         {
             get
             {
