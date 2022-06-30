@@ -169,59 +169,7 @@ namespace Microsoft.ComponentDetection.Common
 
         private static DockerReference CreateDockerReference(Reference options)
         {
-            if (!string.IsNullOrEmpty(options.Repository) && string.IsNullOrEmpty(options.Domain))
-            {
-                if (!string.IsNullOrEmpty(options.Digest))
-                {
-                    return new DigestReference
-                    {
-                        Digest = options.Digest,
-                    };
-                }
-                else
-                {
-                    throw new ReferenceNameEmptyException(string.Empty);
-                }
-            }
-            else if (string.IsNullOrEmpty(options.Tag))
-            {
-                if (string.IsNullOrEmpty(options.Digest))
-                {
-                    return new CanonicalReference
-                    {
-                        Domain = options.Domain,
-                        Repository = options.Repository,
-                        Digest = options.Digest,
-                    };
-                }
-                else
-                {
-                    return new RepositoryReference
-                    {
-                        Domain = options.Domain,
-                        Repository = options.Repository,
-                    };
-                }
-            }
-            else if (string.IsNullOrEmpty(options.Digest))
-            {
-                return new TaggedReference
-                {
-                    Domain = options.Domain,
-                    Repository = options.Repository,
-                    Tag = options.Tag,
-                };
-            }
-            else
-            {
-                return new DualReference
-                {
-                    Domain = options.Domain,
-                    Repository = options.Repository,
-                    Tag = options.Tag,
-                    Digest = options.Digest,
-                };
-            }
+            return DockerReference.CreateDockerReference(options.Repository, options.Domain, options.Digest, options.Tag);
         }
     }
 }
