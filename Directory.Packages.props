@@ -15,7 +15,7 @@
         <PackageVersion Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.0"/>
         <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="3.1.26" />
-        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="16.9.4"/>
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="16.11.0"/>
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1"/>
         <PackageVersion Include="DotNet.Glob" Version="2.1.4"/>
         <PackageVersion Include="MinVer" Version="2.5.0"/>
