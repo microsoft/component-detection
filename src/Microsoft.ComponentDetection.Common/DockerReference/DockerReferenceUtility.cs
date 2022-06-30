@@ -116,7 +116,7 @@ namespace Microsoft.ComponentDetection.Common
                 domain = DEFAULTDOMAIN;
             }
 
-            if (domain == DEFAULTDOMAIN && reminder.IndexOf('/') != -1)
+            if (domain == DEFAULTDOMAIN && reminder.IndexOf('/') == -1)
             {
                 reminder = $"{OFFICIALREPOSITORYNAME}/{reminder}";
             }
