@@ -1,11 +1,19 @@
 namespace Microsoft.ComponentDetection.Contracts
 {
 #pragma warning disable SA1402
-    public abstract class DockerReference
+    public class DockerReference
     {
-        public abstract DockerReferenceKind Kind { get; }
+        public DockerReference()
+        {
+            /* Reserved for deserialization */
+        }
 
-        public abstract TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent();
+        public virtual DockerReferenceKind Kind { get; }
+
+        public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     public enum DockerReferenceKind
