@@ -3,16 +3,68 @@ namespace Microsoft.ComponentDetection.Contracts
 #pragma warning disable SA1402
     public class DockerReference
     {
-        public DockerReference()
-        {
-            /* Reserved for deserialization */
-        }
-
         public virtual DockerReferenceKind Kind { get; }
 
         public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             throw new System.NotImplementedException();
+        }
+
+        public static DockerReference CreateDockerReference(string repository, string domain, string digest, string tag)
+        {
+            if (!string.IsNullOrEmpty(repository) && string.IsNullOrEmpty(domain))
+            {
+                if (!string.IsNullOrEmpty(digest))
+                {
+                    return new DigestReference
+                    {
+                        Digest = digest,
+                    };
+                }
+                else
+                {
+                    throw new System.InvalidOperationException("Repository name must have at least one component");
+                }
+            }
+            else if (string.IsNullOrEmpty(tag))
+            {
+                if (string.IsNullOrEmpty(digest))
+                {
+                    return new CanonicalReference
+                    {
+                        Domain = domain,
+                        Repository = repository,
+                        Digest = digest,
+                    };
+                }
+                else
+                {
+                    return new RepositoryReference
+                    {
+                        Domain = domain,
+                        Repository = repository,
+                    };
+                }
+            }
+            else if (string.IsNullOrEmpty(digest))
+            {
+                return new TaggedReference
+                {
+                    Domain = domain,
+                    Repository = repository,
+                    Tag = tag,
+                };
+            }
+            else
+            {
+                return new DualReference
+                {
+                    Domain = domain,
+                    Repository = repository,
+                    Tag = tag,
+                    Digest = digest,
+                };
+            }
         }
     }
 
@@ -28,11 +80,11 @@ namespace Microsoft.ComponentDetection.Contracts
     public class Reference
     {
         public string Tag { get; set; }
-        
+
         public string Digest { get; set; }
-        
+
         public string Repository { get; set; }
-        
+
         public string Domain { get; set; }
     }
 
@@ -40,7 +92,7 @@ namespace Microsoft.ComponentDetection.Contracts
     public class DigestReference : DockerReference
     {
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Digest;
-        
+
         public string Digest;
 
         public override string ToString()
@@ -61,11 +113,11 @@ namespace Microsoft.ComponentDetection.Contracts
     public class CanonicalReference : DockerReference
     {
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Canonical;
-        
+
         public string Domain;
-        
+
         public string Repository;
-        
+
         public string Digest;
 
         public override string ToString()
@@ -88,11 +140,11 @@ namespace Microsoft.ComponentDetection.Contracts
     public class RepositoryReference : DockerReference
     {
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Repository;
-        
+
         public string Domain;
-        
+
         public string Repository;
-        
+
         public override string ToString()
         {
             return $"{Repository}";
@@ -112,13 +164,13 @@ namespace Microsoft.ComponentDetection.Contracts
     public class TaggedReference : DockerReference
     {
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Tagged;
-        
+
         public string Domain;
-        
+
         public string Repository;
-        
+
         public string Tag;
-        
+
         public override string ToString()
         {
             return $"{Domain}/{Repository}:${Tag}";
@@ -139,13 +191,13 @@ namespace Microsoft.ComponentDetection.Contracts
     public class DualReference : DockerReference
     {
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Dual;
-        
+
         public string Domain;
-        
+
         public string Repository;
-        
+
         public string Tag;
-        
+
         public string Digest;
 
         public override string ToString()

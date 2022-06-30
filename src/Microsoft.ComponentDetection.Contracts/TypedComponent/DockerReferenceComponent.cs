@@ -12,12 +12,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             Digest = ValidateRequiredInput(hash, nameof(Digest), nameof(ComponentType.DockerReference));
             Name = name;
             Tag = tag;
-        }  
+        }
 
         public DockerReferenceComponent(DockerReference reference)
         {
-            FullReference = reference;
-        }      
+        }
 
         public string Name { get; set; }
 
@@ -29,7 +28,13 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.DockerReference;
 
-        public DockerReference FullReference { get; set; }
+        public override DockerReference FullReference
+        {
+            get
+            {
+                return DockerReference.CreateDockerReference(Name, Domain, Digest, Tag);
+            }
+        }
 
         public override string Id => $"{Name} {Tag} {Digest}";
     }
