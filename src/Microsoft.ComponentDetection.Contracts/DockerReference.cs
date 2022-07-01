@@ -131,7 +131,7 @@ namespace Microsoft.ComponentDetection.Contracts
             {
                 Domain = Domain,
                 Digest = Digest,
-                Name = Repository,
+                Repository = Repository,
             };
         }
     }
@@ -155,7 +155,7 @@ namespace Microsoft.ComponentDetection.Contracts
             return new TypedComponent.DockerReferenceComponent(this)
             {
                 Domain = Domain,
-                Name = Repository,
+                Repository = Repository,
             };
         }
     }
@@ -182,7 +182,7 @@ namespace Microsoft.ComponentDetection.Contracts
             {
                 Domain = Domain,
                 Tag = Tag,
-                Name = Repository,
+                Repository = Repository,
             };
         }
     }
@@ -212,7 +212,7 @@ namespace Microsoft.ComponentDetection.Contracts
                 Domain = Domain,
                 Digest = Digest,
                 Tag = Tag,
-                Name = Repository,
+                Repository = Repository,
             };
         }
     }
