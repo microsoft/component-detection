@@ -14,7 +14,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 {
     [Export(typeof(IComponentDetector))]
-    public class DockerfileComponentDetector : FileComponentDetector
+    public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
     {
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
@@ -22,7 +22,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
         [Import]
         public IEnvironmentVariableService EnvVarService { get; set; }
 
-        public override string Id { get; } = "Docker Reference";
+        public override string Id { get; } = "DockerReference";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod) };
 
@@ -69,25 +69,33 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 
         private DockerReference ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
         {
-            var instructionKeyword = construct.Type;
-            DockerReference baseImage = null;
-            if (instructionKeyword == ConstructType.Instruction)
-            {   
-                var constructType = construct.GetType().Name;
-                switch (constructType)
+            try
+            {
+                var instructionKeyword = construct.Type;
+                DockerReference baseImage = null;
+                if (instructionKeyword == ConstructType.Instruction)
                 {
-                    case "FromInstruction":
-                        baseImage = ParseFromInstruction(construct, escapeChar, stageNameMap);
-                        break;
-                    case "CopyInstruction":
-                        baseImage = ParseCopyInstruction(construct, escapeChar, stageNameMap);
-                        break;
-                    default:
-                        break;
+                    var constructType = construct.GetType().Name;
+                    switch (constructType)
+                    {
+                        case "FromInstruction":
+                            baseImage = ParseFromInstruction(construct, escapeChar, stageNameMap);
+                            break;
+                        case "CopyInstruction":
+                            baseImage = ParseCopyInstruction(construct, escapeChar, stageNameMap);
+                            break;
+                        default:
+                            break;
+                    }
                 }
-            }
 
-            return baseImage;
+                return baseImage;
+            } catch (Exception e)
+            {
+                Logger.LogError($"Failed to detect a DockerReference component, the component will not be registered. \n Error Message: <{e.Message}>");
+                Logger.LogException(e, isError: true, printException: true);
+                return null;
+            }
         }
 
         private DockerReference ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
