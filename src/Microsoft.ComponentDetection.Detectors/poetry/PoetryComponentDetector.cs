@@ -12,7 +12,7 @@ using Nett;
 namespace Microsoft.ComponentDetection.Detectors.Poetry
 {
     [Export(typeof(IComponentDetector))]
-    public class PoetryComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+    public class PoetryComponentDetector : FileComponentDetector
     {
         public override string Id => "Poetry";
 
@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
 
         public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Pip };
 
-        public override int Version { get; } = 1;
+        public override int Version { get; } = 2;
 
         public override IEnumerable<string> Categories => new List<string> { "Python" };
 
