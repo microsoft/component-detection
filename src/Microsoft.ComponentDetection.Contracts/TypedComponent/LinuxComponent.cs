@@ -9,12 +9,13 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             /* Reserved for deserialization */
         }
 
-        public LinuxComponent(string distribution, string release, string name, string version)
+        public LinuxComponent(string distribution, string release, string name, string version, string sourceName)
         {
             Distribution = ValidateRequiredInput(distribution, nameof(Distribution), nameof(ComponentType.Linux));
             Release = ValidateRequiredInput(release, nameof(Release), nameof(ComponentType.Linux));
             Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Linux));
             Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.Linux));
+            SourceName = sourceName;
         }
 
         public string Distribution { get; set; }
@@ -24,6 +25,8 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public string Name { get; set; }
 
         public string Version { get; set; }
+
+        public string SourceName { get; set; }
 
         public override ComponentType Type => ComponentType.Linux;
 
@@ -39,7 +42,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
                 {
                     packageType = "deb";
                 }
-                else if (IsCentOS() || IsFedora() || IsRHEL())
+                else if (IsCentOS() || IsFedora() || IsRHEL() || IsMariner())
                 {
                     packageType = "rpm";
                 }
@@ -76,6 +79,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         private bool IsRHEL()
         {
             return Distribution.ToLowerInvariant() == "red hat enterprise linux";
+        }
+
+        private bool IsMariner()
+        {
+            return Distribution.ToLowerInvariant() == "mariner";
         }
     }
 }
