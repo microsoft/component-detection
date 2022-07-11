@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
     [Export(typeof(ILinuxScanner))]
     public class LinuxScanner : ILinuxScanner
     {
-        private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:0.47.0@sha256:964e0122c7a66a04a855772d0e1f1e2b8d2764baee8e61ca259817b6125129e1";
+        private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:0.49.0@sha256:6c2e6bdffa548140b71db87dba9353099cb58103fcd532ab3d68c495248e5adf";
 
         private static readonly IList<string> CmdParameters = new List<string>
         {
