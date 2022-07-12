@@ -1,7 +1,7 @@
 ﻿using System.Composition;
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Orchestrator")]
+[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Orchestrator" + StrongNamePublicKeys.ComponentDetectionPublicKey)]
 
 namespace Microsoft.ComponentDetection.Contracts.Internal
 {
