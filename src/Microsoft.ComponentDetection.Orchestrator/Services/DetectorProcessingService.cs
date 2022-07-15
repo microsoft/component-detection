@@ -164,7 +164,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
             try
             {
-                return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(2), CancellationToken.None);
+                return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(4), CancellationToken.None);
             }
             catch (TimeoutException)
             {

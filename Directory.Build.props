@@ -1,40 +1,33 @@
 <Project>
 
-    <PropertyGroup Label="Build">
-        <TargetFramework>net6</TargetFramework>
-        <LangVersion>latest</LangVersion>
-        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-        <TreatWarningsAsErrors Condition="'$(OFFICIAL_BUILD)' == 'True'">true</TreatWarningsAsErrors>
-    </PropertyGroup>
+  <PropertyGroup Label="Build">
+    <TargetFramework>net6</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+    <NoWarn>$(NoWarn);CS1591;NU1608,NU5119;SA1600</NoWarn>
+  </PropertyGroup>
 
-    <PropertyGroup Label="Package">
-        <Authors>Microsoft</Authors>
-        <Company>Microsoft</Company>
-        <Copyright>Copyright © Microsoft Corporation. All rights reserved.</Copyright>
-        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/microsoft/component-detection</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/microsoft/component-detection.git</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <PackageReleaseNotes>https://github.com/microsoft/component-detection/releases</PackageReleaseNotes>
-    </PropertyGroup>
+  <PropertyGroup Label="Package">
+    <Authors>Microsoft</Authors>
+    <Company>Microsoft</Company>
+    <Copyright>Copyright © Microsoft Corporation. All rights reserved.</Copyright>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/microsoft/component-detection</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/microsoft/component-detection.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>https://github.com/microsoft/component-detection/releases</PackageReleaseNotes>
+  </PropertyGroup>
 
-    <ItemGroup Label="Package References">
-        <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" PrivateAssets="all"/>
-        <PackageReference Include="MinVer" PrivateAssets="all"/>
-        <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all"/>
-    </ItemGroup>
+  <ItemGroup Label="Package References">
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all"/>
+    <PackageReference Include="MinVer" PrivateAssets="all"/>
+    <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all"/>
+  </ItemGroup>
 
-    <PropertyGroup>
-        <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)analyzers.ruleset</CodeAnalysisRuleSet>
-        <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-        <NoWarn>NU1608,NU5119</NoWarn>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(OFFICIAL_BUILD)'=='True'">
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    </PropertyGroup>
-
-    <ItemGroup Label="Package References">
-        <PackageReference Include="MinVer" PrivateAssets="all"/>
-    </ItemGroup>
 </Project>

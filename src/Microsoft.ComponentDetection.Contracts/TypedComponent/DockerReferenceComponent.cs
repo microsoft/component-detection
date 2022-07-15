@@ -7,19 +7,18 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             /* Reserved for deserialization */
         }
 
-        public DockerReferenceComponent(string hash, string name = null, string tag = null)
+        public DockerReferenceComponent(string hash, string repository = null, string tag = null)
         {
             Digest = ValidateRequiredInput(hash, nameof(Digest), nameof(ComponentType.DockerReference));
-            Name = name;
+            Repository = repository;
             Tag = tag;
-        }  
+        }
 
         public DockerReferenceComponent(DockerReference reference)
         {
-            FullReference = reference;
-        }      
+        }
 
-        public string Name { get; set; }
+        public string Repository { get; set; }
 
         public string Digest { get; set; }
 
@@ -29,8 +28,14 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.DockerReference;
 
-        public DockerReference FullReference { get; set; }
+        public DockerReference FullReference
+        {
+            get
+            {
+                return DockerReference.CreateDockerReference(Repository, Domain, Digest, Tag);
+            }
+        }
 
-        public override string Id => $"{Name} {Tag} {Digest}";
+        public override string Id => $"{Repository} {Tag} {Digest}";
     }
 }
