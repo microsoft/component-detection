@@ -205,5 +205,18 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Func<Task> action = async () => await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
             await action.Should().NotThrowAsync<OperationCanceledException>();
         }
+
+        [TestMethod]
+        public async Task TestLinuxContainerDetector_HandlesScratchBase() {
+            // Setup docker service to throw an exception on scratch
+            // then specify that the base image is scratch, to test this
+            // is coped with.
+            mockDockerService.Setup(service => service.TryPullImageAsync("scratch", It.IsAny<CancellationToken>()))
+                .Throws(new IOException());
+            mockDockerService.Setup(service => service.InspectImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                // Specify BaseImageRef = scratch to verify that cope 
+                .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = Enumerable.Empty<DockerLayer>() , BaseImageRef = "scratch"});
+            await TestLinuxContainerDetector();
+        }
     }
 }
