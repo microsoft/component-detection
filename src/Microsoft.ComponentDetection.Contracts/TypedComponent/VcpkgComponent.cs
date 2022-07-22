@@ -42,7 +42,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         {
             get
             {
-                if (PortVersion != null)
+                if (PortVersion > 0)
                 {
                     return $"{Name} {Version}#{PortVersion} - {Type}";
                 }
