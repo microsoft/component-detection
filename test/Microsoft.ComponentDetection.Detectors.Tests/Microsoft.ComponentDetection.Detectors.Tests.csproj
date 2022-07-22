@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup Label="Project References">
-        <ProjectReference Include="..\Microsoft.ComponentDetection.TestsUtilities\Microsoft.ComponentDetection.TestsUtilities.csproj"/>
+        <ProjectReference Include="..\Microsoft.ComponentDetection.TestsUtilities\Microsoft.ComponentDetection.TestsUtilities.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NuGet.Versioning"/>
-        <PackageReference Include="System.Reactive"/>
-        <PackageReference Include="packageurl-dotnet"/>
+        <PackageReference Include="NuGet.Versioning" />
+        <PackageReference Include="System.Reactive" />
+        <PackageReference Include="packageurl-dotnet" />
     </ItemGroup>
 
     <ItemGroup>
