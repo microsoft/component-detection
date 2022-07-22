@@ -1,4 +1,4 @@
-﻿using PackageUrl;
+using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
@@ -11,10 +11,12 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public VcpkgComponent(string spdxid, string name, string version, string triplet = null, string portVersion = null, string description = null, string downloadLocation = null)
         {
+            int.TryParse(portVersion, out var port);
+
             SPDXID = ValidateRequiredInput(spdxid, nameof(SPDXID), nameof(ComponentType.Vcpkg));
             Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Vcpkg));
             Version = version;
-            PortVersion = portVersion;
+            PortVersion = port;
             Triplet = triplet;
             Description = description;
             DownloadLocation = downloadLocation;
@@ -32,7 +34,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public string Description { get; set; }
 
-        public string PortVersion { get; set; }
+        public int PortVersion { get; set; }
 
         public override ComponentType Type => ComponentType.Vcpkg;
 
@@ -55,7 +57,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         {
             get
             {
-                if (PortVersion != null)
+                if (PortVersion > 0)
                 {
                     return new PackageURL($"pkg:vcpkg/{Name}@{Version}?port_version={PortVersion}");
                 }
