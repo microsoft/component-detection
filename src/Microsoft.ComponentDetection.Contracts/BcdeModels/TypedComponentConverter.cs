@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
@@ -24,6 +24,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             { ComponentType.Linux, typeof(LinuxComponent) },
             { ComponentType.Conda, typeof(CondaComponent) },
             { ComponentType.DockerReference, typeof(DockerReferenceComponent) },
+            { ComponentType.Vcpkg, typeof(VcpkgComponent) }
         };
 
         public override bool CanConvert(Type objectType)
