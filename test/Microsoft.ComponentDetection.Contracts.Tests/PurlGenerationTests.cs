@@ -96,9 +96,9 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
             var packageThree = new PodComponent("googleUtilities", "7.5.2");
 
             packageOne.PackageUrl.Type.Should().Be("cocoapods");
-            packageOne.PackageUrl.ToString().Should().Be("pkg:cocoapods/afnetworking@4.0.1");
-            packageTwo.PackageUrl.ToString().Should().Be("pkg:cocoapods/mapsindoors@3.24.0");
-            packageThree.PackageUrl.ToString().Should().Be("pkg:cocoapods/googleutilities@7.5.2");
+            packageOne.PackageUrl.ToString().Should().Be("pkg:cocoapods/AFNetworking@4.0.1");
+            packageTwo.PackageUrl.ToString().Should().Be("pkg:cocoapods/MapsIndoors@3.24.0");
+            packageThree.PackageUrl.ToString().Should().Be("pkg:cocoapods/googleUtilities@7.5.2");
         }
 
         [TestMethod]
@@ -107,7 +107,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
             // https://github.com/package-url/purl-spec/blob/b8ddd39a6d533b8895f3b741f2e62e2695d82aa4/PURL-TYPES.rst#cocoapods
             var packageOne = new PodComponent("AFNetworking", "4.0.1", "https://custom_repo.example.com/path/to/repo/specs.git");
 
-            packageOne.PackageUrl.ToString().Should().Be("pkg:cocoapods/afnetworking@4.0.1?repository_url=https://custom_repo.example.com/path/to/repo/specs.git");
+            packageOne.PackageUrl.ToString().Should().Be("pkg:cocoapods/AFNetworking@4.0.1?repository_url=https://custom_repo.example.com/path/to/repo/specs.git");
         }
     }
 }
