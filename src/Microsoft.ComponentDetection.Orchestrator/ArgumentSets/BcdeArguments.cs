@@ -2,6 +2,7 @@
 using System.Composition;
 using System.IO;
 using CommandLine;
+using Microsoft.ComponentDetection.Contracts.ArgumentSets;
 using Newtonsoft.Json;
 
 namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
@@ -38,6 +39,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
 
         [Option("DetectorsFilter", Separator = ',', Required = false, HelpText = "A comma separated list with the identifiers of the specific detectors to be used. This is meant to be used for testing purposes only.")]
         public IEnumerable<string> DetectorsFilter { get; set; }
+
+        [Option("ManifestFileFormat", Required = false)]
+        public ManifestFileFormat ManifestFileFormat { get; set; }
 
         [JsonIgnore]
         [Option("ManifestFile", Required = false, HelpText = "The file to write scan results to.")]
