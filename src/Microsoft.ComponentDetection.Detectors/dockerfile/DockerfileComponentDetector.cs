@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 
         public override string Id { get; } = "DockerReference";
 
-        public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod) };
+        public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference) };
 
         public override IList<string> SearchPatterns { get; } = new List<string> { "dockerfile", "dockerfile.*", "*.dockerfile" };
 
