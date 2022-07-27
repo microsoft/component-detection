@@ -4,7 +4,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
     {
         public override string RecordName => "LinuxScannerSyftTelemetry";
         
-        public string LinuxComponents { get; set; }
+        public string Components { get; set; }
 
         public string Exception { get; set; }
     }
