@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
             "--quiet", "--scope", "all-layers", "--output", "json",
         };
 
-        private static readonly IEnumerable<string> AllowedArtifactTypes = new[] { "apk", "deb", "rpm" };
+        private static readonly IEnumerable<string> AllowedArtifactTypes = new[] { "apk", "deb", "rpm", "python" };
 
         private static readonly SemaphoreSlim DockerSemaphore = new SemaphoreSlim(2);
 
@@ -35,6 +35,22 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
         [Import]
         public IDockerService DockerService { get; set; }
+
+        private static TypedComponent SyftArtifactToComponent(string distroId, string distroVersionId, Package artifact)
+        {
+            switch (artifact.Type)
+            {
+                case "apk":
+                case "deb":
+                case "rpm":
+                    return new LinuxComponent(distroId, distroVersionId, artifact.Name, artifact.Version);
+                case "python":
+                    return new PipComponent(artifact.Name, artifact.Version);
+                default:
+                    throw new InvalidOperationException(
+                        $"Unknown artifact type: `{artifact.Type}`");
+            }
+        }
 
         public async Task<IEnumerable<LayerMappedLinuxComponents>> ScanLinuxAsync(string imageHash, IEnumerable<DockerLayer> dockerLayers, int baseImageLayerCount, CancellationToken cancellationToken = default)
         {
@@ -94,46 +110,67 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
             .DistinctBy(layer => layer.DiffId)
             .ToDictionary(
                 layer => layer.DiffId,
-                _ => new List<LinuxComponent>());
+                _ => new List<TypedComponent>());
 
             try
             {
                 var syftOutput = JsonConvert.DeserializeObject<SyftOutput>(stdout);
-                var linuxComponentsWithLayers = syftOutput.Artifacts
+                var componentsWithLayers = syftOutput.Artifacts
                     .DistinctBy(artifact => (artifact.Name, artifact.Version))
                     .Where(artifact => AllowedArtifactTypes.Contains(artifact.Type))
                     .Select(artifact =>
-                        (Component: new LinuxComponent(syftOutput.Distro.Id, syftOutput.Distro.VersionId, artifact.Name, artifact.Version), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
+                        (Component: SyftArtifactToComponent(syftOutput.Distro.Id, syftOutput.Distro.VersionId, artifact), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
 
-                foreach (var (component, layers) in linuxComponentsWithLayers)
+                foreach (var (component, layers) in componentsWithLayers)
                 {
                     layers.ToList().ForEach(layer => layerDictionary[layer].Add(component));
                 }
 
-                var layerMappedLinuxComponents = layerDictionary.Select(kvp =>
+                var LayerMappedLinuxComponents = layerDictionary.Select(kvp =>
                 {
                     (var layerId, var components) = kvp;
                     return new LayerMappedLinuxComponents
                     {
-                        LinuxComponents = components,
+                        Components = components,
                         DockerLayer = dockerLayers.First(layer => layer.DiffId == layerId),
                     };
                 });
 
-                syftTelemetryRecord.LinuxComponents = JsonConvert.SerializeObject(linuxComponentsWithLayers.Select(linuxComponentWithLayer =>
-                    new
-                    {
-                        Name = linuxComponentWithLayer.Component.Name,
-                        Version = linuxComponentWithLayer.Component.Version,
-                    }));
+                syftTelemetryRecord.Components = JsonConvert.SerializeObject(componentsWithLayers.Select(linuxComponentWithLayer =>
+                    ComponentToTelemetryRecord(linuxComponentWithLayer.Component)));
 
-                return layerMappedLinuxComponents;
+                return LayerMappedLinuxComponents;
             }
             catch (Exception e)
             {
                 record.FailedDeserializingScannerOutput = e.ToString();
                 return null;
             }
+        }
+
+        private static Object ComponentToTelemetryRecord(TypedComponent component)
+        {
+            if (component is LinuxComponent)
+            {
+                var linuxComponent = (LinuxComponent) component;
+                return new
+                {
+                    Name = linuxComponent.Name,
+                    Version = linuxComponent.Version,
+                }; 
+            }
+            else if (component is PipComponent)
+            {
+                var pipComponent = (PipComponent) component;
+                return new
+                {
+                    Name = pipComponent.Name,
+                    Version = pipComponent.Version,
+                };
+            }
+            
+            throw new InvalidOperationException(
+                $"Unexpected component type: `{component.GetType()}`");
         }
     }
 }

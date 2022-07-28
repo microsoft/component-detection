@@ -23,12 +23,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         private const string NodeLatestImage = "node:latest";
         private const string NodeLatestDigest = "2a22e4a1a550";
         private const string BashPackageId = "Ubuntu 20.04 bash 5.0-6ubuntu1 - Linux";
+        private const string RequestsPackageId = "requests 2.18.4 - pip";
 
         private static readonly IEnumerable<LayerMappedLinuxComponents> LinuxComponents = new List<LayerMappedLinuxComponents>
             {
                 new LayerMappedLinuxComponents {
                     DockerLayer = new DockerLayer { },
-                    LinuxComponents = new List<LinuxComponent> { new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1") },
+                    Components = new List<TypedComponent> { new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1"), new PipComponent("requests", "2.18.4") },
                 },
             };
 
@@ -74,9 +75,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-            detectedComponents.Should().ContainSingle();
-            detectedComponents.First().Component.Id.Should().Be(BashPackageId);
-            scanResult.ContainerDetails.Should().ContainSingle();
+            detectedComponents.Should().HaveCount(2);
+            var bash = detectedComponents.Single(component => (component.Component is LinuxComponent));
+            bash.Component.Id.Should().Be(BashPackageId);
+            var requests = detectedComponents.Single(component => (component.Component is PipComponent));
+            requests.Component.Id.Should().Be(RequestsPackageId);
             detectedComponents.All(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id)).Should().BeTrue();
             componentRecorder.GetDetectedComponents().Select(detectedComponent => detectedComponent.Component.Id)
                 .Should().BeEquivalentTo(detectedComponents.Select(detectedComponent => detectedComponent.Component.Id));
@@ -155,8 +158,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-            detectedComponents.Should().ContainSingle();
-            detectedComponents.First().Component.Id.Should().Be(BashPackageId);
+            detectedComponents.Should().HaveCount(2);
+            var bash = detectedComponents.Single(component => (component.Component is LinuxComponent));
+            bash.Component.Id.Should().Be(BashPackageId);
+            var requests = detectedComponents.Single(component => (component.Component is PipComponent));
+            requests.Component.Id.Should().Be(RequestsPackageId);
             scanResult.ContainerDetails.Should().HaveCount(1);
             detectedComponents.All(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id)).Should().BeTrue();
         }
@@ -182,8 +188,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
             scanResult.ContainerDetails.Should().HaveCount(1);
-            detectedComponents.Should().HaveCount(1);
-            detectedComponents.First().Component.Id.Should().Be(BashPackageId);
+            detectedComponents.Should().HaveCount(2);
+            var bash = detectedComponents.Single(component => (component.Component is LinuxComponent));
+            bash.Component.Id.Should().Be(BashPackageId);
+            var requests = detectedComponents.Single(component => (component.Component is PipComponent));
+            requests.Component.Id.Should().Be(RequestsPackageId);
             detectedComponents.All(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id)).Should().BeTrue();
             mockSyftLinuxScanner.Verify(scanner => scanner.ScanLinuxAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DockerLayer>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }

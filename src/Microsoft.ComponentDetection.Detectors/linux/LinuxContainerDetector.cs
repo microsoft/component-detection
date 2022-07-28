@@ -32,9 +32,9 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
         public IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Linux) };
 
-        public IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Linux };
+        public IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Linux, ComponentType.Pip };
 
-        public int Version => 4;
+        public int Version => 5;
 
         public bool NeedsAutomaticRootDependencyCalculation => false;
 
@@ -142,7 +142,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
                     var layers = await LinuxScanner.ScanLinuxAsync(kvp.Value.ImageId, internalContainerDetails.Layers, baseImageLayerCount, cancellationToken);
 
-                    var components = layers.SelectMany(layer => layer.LinuxComponents.Select(linuxComponent => new DetectedComponent(linuxComponent,  null, internalContainerDetails.Id, layer.DockerLayer.LayerIndex)));
+                    var components = layers.SelectMany(layer => layer.Components.Select(component => new DetectedComponent(component,  null, internalContainerDetails.Id, layer.DockerLayer.LayerIndex)));
                     internalContainerDetails.Layers = layers.Select(layer => layer.DockerLayer);
                     var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(kvp.Value.ImageId);
                     components.ToList().ForEach(detectedComponent => singleFileComponentRecorder.RegisterUsage(detectedComponent, true));
