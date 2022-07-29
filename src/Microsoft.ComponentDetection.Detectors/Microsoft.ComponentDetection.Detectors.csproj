@@ -2,7 +2,6 @@
 
     <ItemGroup>
         <PackageReference Include="DotNet.Glob" />
-        <PackageReference Include="morelinq" />
         <PackageReference Include="Nett" />
         <PackageReference Include="NuGet.ProjectModel" />
         <PackageReference Include="NuGet.Versioning" />
