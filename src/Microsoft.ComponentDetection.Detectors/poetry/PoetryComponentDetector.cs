@@ -12,7 +12,7 @@ using Nett;
 namespace Microsoft.ComponentDetection.Detectors.Poetry
 {
     [Export(typeof(IComponentDetector))]
-    public class PoetryComponentDetector : FileComponentDetector
+    public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
     {
         public override string Id => "Poetry";
 
