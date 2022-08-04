@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void MavenFormat_ExpectedParse()
         {
-            var sampleMavenDependencyTree = File.ReadAllLines(sampleMavenDependencyTreePath);
+            var sampleMavenDependencyTree = File.ReadAllLines(this.sampleMavenDependencyTreePath);
 
             MavenStyleDependencyGraphParser parser = new MavenStyleDependencyGraphParser();
             var parsedGraph = parser.Parse(sampleMavenDependencyTree);
@@ -45,7 +45,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void MavenFormat_WithSingleFileComponentRecorder_ExpectedParse()
         {
-            var sampleMavenDependencyTree = File.ReadAllLines(sampleMavenDependencyTreePath);
+            var sampleMavenDependencyTree = File.ReadAllLines(this.sampleMavenDependencyTreePath);
 
             MavenStyleDependencyGraphParser parser = new MavenStyleDependencyGraphParser();
 

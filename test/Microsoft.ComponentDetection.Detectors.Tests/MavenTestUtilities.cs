@@ -21,7 +21,7 @@
 
                 <dependencies>
                 </dependencies>
-            </project>    
+            </project>
             ";
 
             return pomFile;
@@ -40,10 +40,10 @@
                     <dependency>
                         <groupId>{0}</groupId>
                         <artifactId>{1}</artifactId>
-                        <version>${{myproperty.version}}</version>            
+                        <version>${{myproperty.version}}</version>
                     </dependency>
                 </dependencies>
-            </project>    
+            </project>
             ";
             var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
             return pomFileTemplate;
@@ -58,10 +58,10 @@
                     <dependency>
                         <groupId>{0}</groupId>
                         <artifactId>{1}</artifactId>
-                        <version>${{myproperty.version}}</version>            
+                        <version>${{myproperty.version}}</version>
                     </dependency>
                 </dependencies>
-            </project>    
+            </project>
             ";
             var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
             return pomFileTemplate;
@@ -80,10 +80,10 @@
                     <dependency>
                         <groupId>{0}</groupId>
                         <artifactId>{1}</artifactId>
-                        <version>${{unknown.version}}</version>            
+                        <version>${{unknown.version}}</version>
                     </dependency>
                 </dependencies>
-            </project>    
+            </project>
             ";
             var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
 
@@ -100,10 +100,10 @@
                     <dependency>
                         <groupId>{0}</groupId>
                         <artifactId>{1}</artifactId>
-                        <version>{2}</version>            
+                        <version>{2}</version>
                     </dependency>
                 </dependencies>
-            </project>    
+            </project>
             ";
             var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
             return pomFileTemplate;
@@ -118,10 +118,10 @@
                 <dependencies>
                     <dependency>
                         <groupId>{0}</groupId>
-                        <artifactId>{1}</artifactId>          
+                        <artifactId>{1}</artifactId>
                     </dependency>
                 </dependencies>
-            </project>    
+            </project>
             ";
 
             var pomFileTemplate = string.Format(pomFile, groupId, artifactId);

@@ -25,15 +25,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void InitializeTests()
         {
-            commandLineMock = new Mock<ICommandLineInvocationService>();
+            this.commandLineMock = new Mock<ICommandLineInvocationService>();
             var loggerMock = new Mock<ILogger>();
 
-            parserServiceMock = new Mock<IMavenStyleDependencyGraphParserService>();
+            this.parserServiceMock = new Mock<IMavenStyleDependencyGraphParserService>();
 
-            mavenCommandService = new MavenCommandService
+            this.mavenCommandService = new MavenCommandService
             {
-                CommandLineInvocationService = commandLineMock.Object,
-                ParserService = parserServiceMock.Object,
+                CommandLineInvocationService = this.commandLineMock.Object,
+                ParserService = this.parserServiceMock.Object,
                 Logger = loggerMock.Object,
             };
         }
@@ -41,12 +41,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task MavenCLIExists_ExpectedArguments_ReturnTrue()
         {
-            commandLineMock.Setup(x => x.CanCommandBeLocated(
+            this.commandLineMock.Setup(x => x.CanCommandBeLocated(
                 MavenCommandService.PrimaryCommand,
                 MavenCommandService.AdditionalValidCommands,
                 MavenCommandService.MvnVersionArgument)).ReturnsAsync(true);
 
-            var result = await mavenCommandService.MavenCLIExists();
+            var result = await this.mavenCommandService.MavenCLIExists();
 
             result.Should().BeTrue();
         }
@@ -54,12 +54,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task MavenCLIExists_ExpectedArguments_ReturnFalse()
         {
-            commandLineMock.Setup(x => x.CanCommandBeLocated(
+            this.commandLineMock.Setup(x => x.CanCommandBeLocated(
                 MavenCommandService.PrimaryCommand,
                 MavenCommandService.AdditionalValidCommands,
                 MavenCommandService.MvnVersionArgument)).ReturnsAsync(false);
 
-            var result = await mavenCommandService.MavenCLIExists();
+            var result = await this.mavenCommandService.MavenCLIExists();
 
             result.Should().BeFalse();
         }
@@ -79,19 +79,19 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var bcdeMvnFileName = "bcde.mvndeps";
             var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
 
-            commandLineMock.Setup(x => x.ExecuteCommand(
+            this.commandLineMock.Setup(x => x.ExecuteCommand(
                                                         MavenCommandService.PrimaryCommand,
                                                         MavenCommandService.AdditionalValidCommands,
-                                                        It.Is<string[]>(y => ShouldBeEquivalentTo(y, cliParameters))))
+                                                        It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
                 .ReturnsAsync(new CommandLineExecutionResult
                 {
                     ExitCode = 0,
                 })
                 .Verifiable();
 
-            await mavenCommandService.GenerateDependenciesFile(processRequest);
+            await this.mavenCommandService.GenerateDependenciesFile(processRequest);
 
-            Mock.Verify(commandLineMock);
+            Mock.Verify(this.commandLineMock);
         }
 
         [TestMethod]
@@ -111,11 +111,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             };
 
             var lines = new[] { "com.bcde.test:top-level:jar:1.0.0", $"\\- {componentString}" };
-            parserServiceMock.Setup(x => x.Parse(lines, It.IsAny<ISingleFileComponentRecorder>())).Verifiable();
+            this.parserServiceMock.Setup(x => x.Parse(lines, It.IsAny<ISingleFileComponentRecorder>())).Verifiable();
 
-            mavenCommandService.ParseDependenciesFile(processRequest);
+            this.mavenCommandService.ParseDependenciesFile(processRequest);
 
-            Mock.Verify(parserServiceMock);
+            Mock.Verify(this.parserServiceMock);
         }
 
         protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)

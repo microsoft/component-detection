@@ -18,7 +18,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            scanResultUnderTest = new ScanResult
+            this.scanResultUnderTest = new ScanResult
             {
                 ResultCode = ProcessingResultCode.PartialSuccess,
                 ComponentsFound = new[]
@@ -59,7 +59,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestMethod]
         public void ScanResultSerialization_HappyPath()
         {
-            var serializedResult = JsonConvert.SerializeObject(scanResultUnderTest);
+            var serializedResult = JsonConvert.SerializeObject(this.scanResultUnderTest);
             var actual = JsonConvert.DeserializeObject<ScanResult>(serializedResult);
 
             actual.ResultCode.Should().Be(ProcessingResultCode.PartialSuccess);
@@ -91,7 +91,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestMethod]
         public void ScanResultSerialization_ExpectedJsonFormat()
         {
-            var serializedResult = JsonConvert.SerializeObject(scanResultUnderTest);
+            var serializedResult = JsonConvert.SerializeObject(this.scanResultUnderTest);
             JObject json = JObject.Parse(serializedResult);
 
             json.Value<string>("resultCode").Should().Be("PartialSuccess");

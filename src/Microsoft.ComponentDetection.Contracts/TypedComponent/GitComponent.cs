@@ -11,14 +11,14 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public GitComponent(Uri repositoryUrl, string commitHash)
         {
-            RepositoryUrl = ValidateRequiredInput(repositoryUrl, nameof(RepositoryUrl), nameof(ComponentType.Git));
-            CommitHash = ValidateRequiredInput(commitHash, nameof(CommitHash), nameof(ComponentType.Git));
+            this.RepositoryUrl = this.ValidateRequiredInput(repositoryUrl, nameof(this.RepositoryUrl), nameof(ComponentType.Git));
+            this.CommitHash = this.ValidateRequiredInput(commitHash, nameof(this.CommitHash), nameof(ComponentType.Git));
         }
 
         public GitComponent(Uri repositoryUrl, string commitHash, string tag)
             : this(repositoryUrl, commitHash)
         {
-            Tag = tag;
+            this.Tag = tag;
         }
 
         public Uri RepositoryUrl { get; set; }
@@ -29,6 +29,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.Git;
 
-        public override string Id => $"{RepositoryUrl} : {CommitHash} - {Type}";
+        public override string Id => $"{this.RepositoryUrl} : {this.CommitHash} - {this.Type}";
     }
 }

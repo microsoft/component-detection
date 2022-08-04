@@ -9,9 +9,9 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public DockerReferenceComponent(string hash, string repository = null, string tag = null)
         {
-            Digest = ValidateRequiredInput(hash, nameof(Digest), nameof(ComponentType.DockerReference));
-            Repository = repository;
-            Tag = tag;
+            this.Digest = this.ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.DockerReference));
+            this.Repository = repository;
+            this.Tag = tag;
         }
 
         public DockerReferenceComponent(DockerReference reference)
@@ -32,10 +32,10 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         {
             get
             {
-                return DockerReference.CreateDockerReference(Repository, Domain, Digest, Tag);
+                return DockerReference.CreateDockerReference(this.Repository, this.Domain, this.Digest, this.Tag);
             }
         }
 
-        public override string Id => $"{Repository} {Tag} {Digest}";
+        public override string Id => $"{this.Repository} {this.Tag} {this.Digest}";
     }
 }

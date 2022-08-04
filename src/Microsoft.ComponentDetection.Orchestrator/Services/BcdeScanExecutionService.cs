@@ -47,23 +47,23 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         public async Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments)
         {
-            Logger.LogCreateLoggingGroup();
-            var initialDetectors = DetectorRegistryService.GetDetectors(detectionArguments.AdditionalPluginDirectories, detectionArguments.AdditionalDITargets).ToImmutableList();
+            this.Logger.LogCreateLoggingGroup();
+            var initialDetectors = this.DetectorRegistryService.GetDetectors(detectionArguments.AdditionalPluginDirectories, detectionArguments.AdditionalDITargets).ToImmutableList();
 
             if (!initialDetectors.Any())
             {
                 throw new NoDetectorsFoundException();
             }
 
-            DetectorRestrictions detectorRestrictions = GetDetectorRestrictions(detectionArguments);
-            var detectors = DetectorRestrictionService.ApplyRestrictions(detectorRestrictions, initialDetectors).ToImmutableList();
+            DetectorRestrictions detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
+            var detectors = this.DetectorRestrictionService.ApplyRestrictions(detectorRestrictions, initialDetectors).ToImmutableList();
 
-            Logger.LogVerbose($"Finished applying restrictions to detectors.");
-            Logger.LogCreateLoggingGroup();
+            this.Logger.LogVerbose($"Finished applying restrictions to detectors.");
+            this.Logger.LogCreateLoggingGroup();
 
-            var processingResult = await DetectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
+            var processingResult = await this.DetectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
 
-            var graphTranslationService = GraphTranslationServices.OrderBy(gts => gts.Metadata.Priority).Last().Value;
+            var graphTranslationService = this.GraphTranslationServices.OrderBy(gts => gts.Metadata.Priority).Last().Value;
 
             var scanResult = graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, detectionArguments);
 

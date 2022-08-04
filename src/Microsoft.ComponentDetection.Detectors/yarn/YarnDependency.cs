@@ -2,7 +2,7 @@
 {
     public class YarnDependency
     {
-        public string LookupKey => $"{Name}@{Version}";
+        public string LookupKey => $"{this.Name}@{this.Version}";
 
         public string Name { get; set; }
 

@@ -35,7 +35,7 @@ namespace Microsoft.ComponentDetection.Loader
                 {
                     exitCode = -1;
                 }
-                
+
                 Console.WriteLine($"Execution finished, status: {exitCode}.");
 
                 // force an exit, not letting any lingering threads not responding.

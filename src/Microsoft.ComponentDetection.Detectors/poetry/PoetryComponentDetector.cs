@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var poetryLockFile = processRequest.ComponentStream;
-            Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
+            this.Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
 
             var poetryLock = StreamTomlSerializer.Deserialize(poetryLockFile.Stream, TomlSettings.Create()).Get<PoetryLock>();
             poetryLock.package.ToList().ForEach(package =>

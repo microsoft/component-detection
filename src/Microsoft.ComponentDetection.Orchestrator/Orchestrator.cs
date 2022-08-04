@@ -68,8 +68,8 @@ namespace Microsoft.ComponentDetection.Orchestrator
             var returnResult = BcdeExecutionTelemetryRecord.Track(
                 (record) =>
             {
-                var executionResult = HandleCommand(args, record);
-                if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)    
+                var executionResult = this.HandleCommand(args, record);
+                if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)
                 {
                     shouldFailureBeSuppressed = true;
                     record.HiddenExitCode = (int)executionResult.ResultCode;
@@ -127,7 +127,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
         public ScanResult HandleCommand(string[] args, BcdeExecutionTelemetryRecord telemetryRecord)
         {
-            var scanResult = new ScanResult() 
+            var scanResult = new ScanResult()
             {
                 ResultCode = ProcessingResultCode.Error,
             };
@@ -139,22 +139,22 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
                     // Don't set production telemetry if we are running the build task in DevFabric. 0.36.0 is set in the task.json for the build task in development, but is calculated during deployment for production.
                     TelemetryConstants.CorrelationId = argumentSet.CorrelationId;
-                    telemetryRecord.Command = GetVerb(argumentSet);
+                    telemetryRecord.Command = this.GetVerb(argumentSet);
 
-                    scanResult = SafelyExecute(telemetryRecord, () =>
+                    scanResult = this.SafelyExecute(telemetryRecord, () =>
                     {
-                        GenerateEnvironmentSpecificTelemetry(telemetryRecord);
+                        this.GenerateEnvironmentSpecificTelemetry(telemetryRecord);
 
                         telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
                         FileWritingService.Init(argumentSet.Output);
                         Logger.Init(argumentSet.Verbosity);
                         Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId.ToString()}");
 
-                        return Dispatch(argumentSet, CancellationToken.None).GetAwaiter().GetResult();
+                        return this.Dispatch(argumentSet, CancellationToken.None).GetAwaiter().GetResult();
                     });
                 })
-                .WithNotParsed(errors => 
-                { 
+                .WithNotParsed(errors =>
+                {
                     if (errors.Any(e => e is HelpVerbRequestedError))
                     {
                         telemetryRecord.Command = "help";
@@ -223,7 +223,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
         }
 
         private async Task<ScanResult> Dispatch(IScanArguments arguments, CancellationToken cancellation)
-        {   
+        {
             var scanResult = new ScanResult()
             {
                 ResultCode = ProcessingResultCode.Error,
@@ -266,7 +266,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
             }
             catch (Exception ae)
             {
-                var result = new ScanResult() 
+                var result = new ScanResult()
                 {
                     ResultCode = ProcessingResultCode.Error,
                 };

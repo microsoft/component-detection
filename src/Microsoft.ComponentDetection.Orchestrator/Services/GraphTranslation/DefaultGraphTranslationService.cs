@@ -22,15 +22,15 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
         {
             var recorderDetectorPairs = detectorProcessingResult.ComponentRecorders;
 
-            var unmergedComponents = GatherSetOfDetectedComponentsUnmerged(recorderDetectorPairs, detectionArguments.SourceDirectory);
+            var unmergedComponents = this.GatherSetOfDetectedComponentsUnmerged(recorderDetectorPairs, detectionArguments.SourceDirectory);
 
-            var mergedComponents = FlattenAndMergeComponents(unmergedComponents);
+            var mergedComponents = this.FlattenAndMergeComponents(unmergedComponents);
 
-            LogComponentScopeTelemetry(mergedComponents);
+            this.LogComponentScopeTelemetry(mergedComponents);
 
             return new DefaultGraphScanResult
             {
-                ComponentsFound = mergedComponents.Select(x => ConvertToContract(x)).ToList(),
+                ComponentsFound = mergedComponents.Select(x => this.ConvertToContract(x)).ToList(),
                 ContainerDetailsMap = detectorProcessingResult.ContainersDetailsMap,
                 DependencyGraphs = GraphTranslationUtility.AccumulateAndConvertToContract(recorderDetectorPairs
                                                                     .Select(tuple => tuple.recorder)
@@ -79,8 +79,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                         var dependencyGraph = graphKvp.Value;
 
                         // Calculate roots of the component
-                        AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
-                        component.DevelopmentDependency = MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
+                        this.AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        component.DevelopmentDependency = this.MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
                         component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
                         component.DetectedBy = detector;
 
@@ -88,7 +88,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                         var locations = dependencyGraph.GetAdditionalRelatedFiles();
                         locations.Add(location);
 
-                        var relativePaths = MakeFilePathsRelative(Logger, rootDirectory, locations);
+                        var relativePaths = this.MakeFilePathsRelative(this.Logger, rootDirectory, locations);
 
                         foreach (var additionalRelatedFile in relativePaths ?? Enumerable.Empty<string>())
                         {
@@ -106,7 +106,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
             List<DetectedComponent> flattenedAndMergedComponents = new List<DetectedComponent>();
             foreach (var grouping in components.GroupBy(x => x.Component.Id + x.DetectedBy.Id))
             {
-                flattenedAndMergedComponents.Add(MergeComponents(grouping));
+                flattenedAndMergedComponents.Add(this.MergeComponents(grouping));
             }
 
             return flattenedAndMergedComponents;
@@ -149,7 +149,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                     firstComponent.DependencyRoots.Add(root);
                 }
 
-                firstComponent.DevelopmentDependency = MergeDevDependency(firstComponent.DevelopmentDependency, nextComponent.DevelopmentDependency);
+                firstComponent.DevelopmentDependency = this.MergeDevDependency(firstComponent.DevelopmentDependency, nextComponent.DevelopmentDependency);
                 firstComponent.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(firstComponent.DependencyScope, nextComponent.DependencyScope);
 
                 if (nextComponent.ContainerDetailIds.Count > 0)

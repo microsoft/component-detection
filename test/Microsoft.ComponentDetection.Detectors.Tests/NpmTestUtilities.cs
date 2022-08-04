@@ -126,7 +126,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                     }}
                 }}";
             }
-            
+
             var packageJsonTemplate = string.Format(packagejson, authorName, authorEmail);
             return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
         }

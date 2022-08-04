@@ -33,10 +33,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            loggerMock = new Mock<ILogger>();
-            pathUtilityService = new Mock<IPathUtilityService>();
-            pathUtilityService.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns((string path) => Path.GetDirectoryName(path));
-            componentRecorder = new ComponentRecorder();
+            this.loggerMock = new Mock<ILogger>();
+            this.pathUtilityService = new Mock<IPathUtilityService>();
+            this.pathUtilityService.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns((string path) => Path.GetDirectoryName(path));
+            this.componentRecorder = new ComponentRecorder();
         }
 
         [TestMethod]
@@ -45,18 +45,18 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             string componentName0 = Guid.NewGuid().ToString("N");
             string version0 = NewRandomVersion();
 
-            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName, componentName0, version0);
+            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName0, version0);
             var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
                                                     .WithFile(packageLockName, packageLockContents, detector.SearchPatterns, fileLocation: packageLockPath)
-                                                    .WithFile(packageJsonName, packageJsonContents, packageJsonSearchPattern, fileLocation: packageJsonPath)
+                                                    .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -77,18 +77,18 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             string componentName0 = Guid.NewGuid().ToString("N");
             string version0 = NewRandomVersion();
 
-            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName);
+            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName);
             var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
                                                     .WithFile(packageLockName, packageLockContents, detector.SearchPatterns, fileLocation: packageLockPath)
-                                                    .WithFile(packageJsonName, packageJsonContents, packageJsonSearchPattern, fileLocation: packageJsonPath)
+                                                    .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -98,14 +98,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_MissingPackageJsonReturnsEmpty()
         {
-            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName);
+            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName);
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
                                                     .WithFile(packageLockName, packageLockContents, detector.SearchPatterns, fileLocation: packageLockPath)
                                                     .ExecuteDetector();
@@ -124,7 +124,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             string version2 = NewRandomVersion();
             string componentName3 = Guid.NewGuid().ToString("N");
 
-            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName, componentName0, version0, componentName2, version2, packageName1: componentName1, packageName3: componentName3);
+            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName0, version0, componentName2, version2, packageName1: componentName1, packageName3: componentName3);
 
             string packagejson = @"{{
                 ""name"": ""test"",
@@ -139,13 +139,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
                                                     .WithFile(packageLockName, packageLockContents, detector.SearchPatterns)
-                                                    .WithFile(packageJsonFileName, packageJsonTemplate, packageJsonSearchPattern)
+                                                    .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -186,7 +186,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             string componentName2 = Guid.NewGuid().ToString("N");
             string version2 = NewRandomVersion();
 
-            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName, componentName0, version0, componentName2, version2);
+            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName0, version0, componentName2, version2);
 
             string packagejson = @"{{
                 ""name"": ""test"",
@@ -201,13 +201,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
                                                     .WithFile(packageLockName, packageLockContents, detector.SearchPatterns, fileLocation: packageLockPath)
-                                                    .WithFile(packageJsonFileName, packageJsonTemplate, packageJsonSearchPattern)
+                                                    .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
                                                     .ExecuteDetector();
 
             var graphsByLocation = componentRecorder.GetDependencyGraphsByLocation();
@@ -271,13 +271,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
-                                                    .WithFile(packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns)
-                                                    .WithFile(packageJsonFileName, packageJsonTemplate, packageJsonSearchPattern)
+                                                    .WithFile(this.packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns)
+                                                    .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -330,13 +330,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
-                                                    .WithFile(packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns)
-                                                    .WithFile(packageJsonFileName, packageJsonTemplate, packageJsonSearchPattern)
+                                                    .WithFile(this.packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns)
+                                                    .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -346,8 +346,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_LernaDirectory()
         {
-            string lockFileLocation = Path.Combine(Path.GetTempPath(), Path.Combine("belowLerna", packageLockJsonFileName));
-            string packageJsonFileLocation = Path.Combine(Path.GetTempPath(), Path.Combine("belowLerna", packageJsonFileName));
+            string lockFileLocation = Path.Combine(Path.GetTempPath(), Path.Combine("belowLerna", this.packageLockJsonFileName));
+            string packageJsonFileLocation = Path.Combine(Path.GetTempPath(), Path.Combine("belowLerna", this.packageJsonFileName));
             string lernaFileLocation = Path.Combine(Path.GetTempPath(), "lerna.json");
 
             string componentName0 = Guid.NewGuid().ToString("N");
@@ -395,14 +395,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1, componentName2, version2);
 
             var detector = new NpmComponentDetectorWithRoots();
-            pathUtilityService.Setup(x => x.IsFileBelowAnother(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
-            detector.PathUtilityService = pathUtilityService.Object;
+            this.pathUtilityService.Setup(x => x.IsFileBelowAnother(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+            detector.PathUtilityService = this.pathUtilityService.Object;
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                         .WithDetector(detector)
                                         .WithFile("lerna.json", "unused string", detector.SearchPatterns, fileLocation: lernaFileLocation)
-                                        .WithFile(packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns, fileLocation: lockFileLocation)
-                                        .WithFile(packageJsonFileName, packageJsonTemplate, packageJsonSearchPattern, fileLocation: packageJsonFileLocation)
+                                        .WithFile(this.packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns, fileLocation: lockFileLocation)
+                                        .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern, fileLocation: packageJsonFileLocation)
                                         .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -412,7 +412,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_CircularRequirementsResolve()
         {
-            string packageJsonComponentPath = Path.Combine(Path.GetTempPath(), packageLockJsonFileName);
+            string packageJsonComponentPath = Path.Combine(Path.GetTempPath(), this.packageLockJsonFileName);
 
             string componentName0 = Guid.NewGuid().ToString("N");
             string version0 = NewRandomVersion();
@@ -457,13 +457,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
-                                                    .WithFile(packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns)
-                                                    .WithFile(packageJsonFileName, packageJsonTemplate, packageJsonSearchPattern)
+                                                    .WithFile(this.packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns)
+                                                    .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -484,7 +484,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public async Task TestNpmDetector_ShrinkwrapLockReturnsValid()
         {
             string lockFileName = "npm-shrinkwrap.json";
-            string packageJsonComponentPath = Path.Combine(Path.GetTempPath(), packageJsonFileName);
+            string packageJsonComponentPath = Path.Combine(Path.GetTempPath(), this.packageJsonFileName);
 
             string componentName0 = Guid.NewGuid().ToString("N");
             string version0 = NewRandomVersion();
@@ -494,13 +494,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
                                                     .WithFile(packageLockName, packageLockContents, detector.SearchPatterns, fileLocation: packageLockPath)
-                                                    .WithFile(packageJsonFileName, packageJsonContents, packageJsonSearchPattern)
+                                                    .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -520,16 +520,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             string pathRoot = Path.GetTempPath();
 
-            string packageLockUnderNodeModules = Path.Combine(pathRoot, Path.Combine("node_modules", packageLockJsonFileName));
-            string packageJsonUnderNodeModules = Path.Combine(pathRoot, Path.Combine("node_modules", packageJsonFileName));
+            string packageLockUnderNodeModules = Path.Combine(pathRoot, Path.Combine("node_modules", this.packageLockJsonFileName));
+            string packageJsonUnderNodeModules = Path.Combine(pathRoot, Path.Combine("node_modules", this.packageJsonFileName));
 
             string componentName0 = Guid.NewGuid().ToString("N");
             string version0 = NewRandomVersion();
             string componentName2 = Guid.NewGuid().ToString("N");
             string version2 = NewRandomVersion();
 
-            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName, componentName0, version0);
-            var (packageLockName2, packageLockContents2, packageLockPath2) = NpmTestUtilities.GetWellFormedPackageLock2(packageLockJsonFileName, componentName2, version2, packageName0: "test2");
+            var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName0, version0);
+            var (packageLockName2, packageLockContents2, packageLockPath2) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName2, version2, packageName0: "test2");
 
             string packagejson = @"{{
                 ""name"": ""{2}"",
@@ -545,17 +545,17 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
                                                     /* Top level */
                                                     .WithFile(packageLockName, packageLockContents, detector.SearchPatterns, fileLocation: packageLockPath)
-                                                    .WithFile(packageJsonFileName, packageJsonTemplate, packageJsonSearchPattern)
+                                                    .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
                                                     /* Under node_modules */
                                                     .WithFile(packageLockName2, packageLockContents2, detector.SearchPatterns, fileLocation: packageLockUnderNodeModules)
-                                                    .WithFile(packageJsonFileName, packageJsonTemplate2, packageJsonSearchPattern, fileLocation: packageJsonUnderNodeModules)
+                                                    .WithFile(this.packageJsonFileName, packageJsonTemplate2, this.packageJsonSearchPattern, fileLocation: packageJsonUnderNodeModules)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -573,7 +573,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_DependencyGraphIsCreated()
         {
-            string packageJsonComponentPath = Path.Combine(Path.GetTempPath(), packageLockJsonFileName);
+            string packageJsonComponentPath = Path.Combine(Path.GetTempPath(), this.packageLockJsonFileName);
 
             var componentA = (Name: "componentA", Version: "1.0.0");
             var componentB = (Name: "componentB", Version: "1.0.0");
@@ -626,13 +626,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new NpmComponentDetectorWithRoots
             {
-                PathUtilityService = pathUtilityService.Object,
+                PathUtilityService = this.pathUtilityService.Object,
             };
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithDetector(detector)
-                                                    .WithFile(packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns)
-                                                    .WithFile(packageJsonFileName, packageJsonTemplate, packageJsonSearchPattern)
+                                                    .WithFile(this.packageLockJsonFileName, packageLockTemplate, detector.SearchPatterns)
+                                                    .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
                                                     .ExecuteDetector();
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);

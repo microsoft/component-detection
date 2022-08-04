@@ -21,8 +21,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            loggerMock = new Mock<ILogger>();
-            pyPiClient = new Mock<IPyPiClient>();
+            this.loggerMock = new Mock<ILogger>();
+            this.pyPiClient = new Mock<IPyPiClient>();
         }
 
         [TestMethod]
@@ -34,21 +34,21 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var versions = new List<string> { "1.0" };
 
-            var aReleases = CreateReleasesDictionary(versions);
-            var bReleases = CreateReleasesDictionary(versions);
-            var cReleases = CreateReleasesDictionary(versions);
+            var aReleases = this.CreateReleasesDictionary(versions);
+            var bReleases = this.CreateReleasesDictionary(versions);
+            var cReleases = this.CreateReleasesDictionary(versions);
 
-            pyPiClient.Setup(x => x.GetReleases(a)).ReturnsAsync(aReleases);
-            pyPiClient.Setup(x => x.GetReleases(b)).ReturnsAsync(bReleases);
-            pyPiClient.Setup(x => x.GetReleases(c)).ReturnsAsync(cReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(a)).ReturnsAsync(aReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(b)).ReturnsAsync(bReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(c)).ReturnsAsync(cReleases);
 
-            pyPiClient.Setup(x => x.FetchPackageDependencies("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
-            pyPiClient.Setup(x => x.FetchPackageDependencies("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
-            pyPiClient.Setup(x => x.FetchPackageDependencies("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
 
             var dependencies = new List<PipDependencySpecification> { a };
 
-            var resolver = new PythonResolver() { PypiClient = pyPiClient.Object, Logger = loggerMock.Object, };
+            var resolver = new PythonResolver() { PypiClient = this.pyPiClient.Object, Logger = this.loggerMock.Object, };
 
             var resolveResult = await resolver.ResolveRoots(dependencies);
 
@@ -63,7 +63,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             expectedB.Children.Add(expectedC);
             expectedC.Parents.Add(expectedB);
 
-            Assert.IsTrue(CompareGraphs(resolveResult.First(), expectedA));
+            Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
         }
 
         [TestMethod]
@@ -76,22 +76,22 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var versions = new List<string> { "1.0" };
 
-            var aReleases = CreateReleasesDictionary(versions);
-            var bReleases = CreateReleasesDictionary(versions);
-            var cReleases = CreateReleasesDictionary(versions);
+            var aReleases = this.CreateReleasesDictionary(versions);
+            var bReleases = this.CreateReleasesDictionary(versions);
+            var cReleases = this.CreateReleasesDictionary(versions);
 
-            pyPiClient.Setup(x => x.GetReleases(a)).ReturnsAsync(aReleases);
-            pyPiClient.Setup(x => x.GetReleases(b)).ReturnsAsync(bReleases);
-            pyPiClient.Setup(x => x.GetReleases(c)).ReturnsAsync(cReleases);
-            pyPiClient.Setup(x => x.GetReleases(doesNotExist)).ReturnsAsync(CreateReleasesDictionary(new List<string>()));
+            this.pyPiClient.Setup(x => x.GetReleases(a)).ReturnsAsync(aReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(b)).ReturnsAsync(bReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(c)).ReturnsAsync(cReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(doesNotExist)).ReturnsAsync(this.CreateReleasesDictionary(new List<string>()));
 
-            pyPiClient.Setup(x => x.FetchPackageDependencies("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
-            pyPiClient.Setup(x => x.FetchPackageDependencies("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
-            pyPiClient.Setup(x => x.FetchPackageDependencies("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
 
             var dependencies = new List<PipDependencySpecification> { a, doesNotExist };
 
-            var resolver = new PythonResolver() { PypiClient = pyPiClient.Object, Logger = loggerMock.Object, };
+            var resolver = new PythonResolver() { PypiClient = this.pyPiClient.Object, Logger = this.loggerMock.Object, };
 
             var resolveResult = await resolver.ResolveRoots(dependencies);
 
@@ -106,7 +106,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             expectedB.Children.Add(expectedC);
             expectedC.Parents.Add(expectedB);
 
-            Assert.IsTrue(CompareGraphs(resolveResult.First(), expectedA));
+            Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
         }
 
         [TestMethod]
@@ -118,20 +118,20 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var versions = new List<string> { "1.0" };
 
-            var aReleases = CreateReleasesDictionary(versions);
-            var bReleases = CreateReleasesDictionary(versions);
-            var cReleases = CreateReleasesDictionary(versions);
+            var aReleases = this.CreateReleasesDictionary(versions);
+            var bReleases = this.CreateReleasesDictionary(versions);
+            var cReleases = this.CreateReleasesDictionary(versions);
 
-            pyPiClient.Setup(x => x.GetReleases(a)).ReturnsAsync(aReleases);
-            pyPiClient.Setup(x => x.GetReleases(b)).ReturnsAsync(bReleases);
-            pyPiClient.Setup(x => x.GetReleases(c)).ReturnsAsync(CreateReleasesDictionary(new List<string>()));
+            this.pyPiClient.Setup(x => x.GetReleases(a)).ReturnsAsync(aReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(b)).ReturnsAsync(bReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(c)).ReturnsAsync(this.CreateReleasesDictionary(new List<string>()));
 
-            pyPiClient.Setup(x => x.FetchPackageDependencies("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
-            pyPiClient.Setup(x => x.FetchPackageDependencies("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
 
             var dependencies = new List<PipDependencySpecification> { a };
 
-            var resolver = new PythonResolver() { PypiClient = pyPiClient.Object, Logger = loggerMock.Object, };
+            var resolver = new PythonResolver() { PypiClient = this.pyPiClient.Object, Logger = this.loggerMock.Object, };
 
             var resolveResult = await resolver.ResolveRoots(dependencies);
 
@@ -143,8 +143,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             expectedA.Children.Add(expectedB);
             expectedB.Parents.Add(expectedA);
 
-            Assert.IsTrue(CompareGraphs(resolveResult.First(), expectedA));
-            pyPiClient.Verify(x => x.FetchPackageDependencies(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PythonProjectRelease>()), Times.Exactly(2));
+            Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+            this.pyPiClient.Verify(x => x.FetchPackageDependencies(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PythonProjectRelease>()), Times.Exactly(2));
         }
 
         [TestMethod]
@@ -159,22 +159,22 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var otherVersions = new List<string> { "1.0", "1.1" };
 
-            var aReleases = CreateReleasesDictionary(versions);
-            var bReleases = CreateReleasesDictionary(versions);
-            var cReleases = CreateReleasesDictionary(otherVersions);
+            var aReleases = this.CreateReleasesDictionary(versions);
+            var bReleases = this.CreateReleasesDictionary(versions);
+            var cReleases = this.CreateReleasesDictionary(otherVersions);
 
-            pyPiClient.Setup(x => x.GetReleases(a)).ReturnsAsync(aReleases);
-            pyPiClient.Setup(x => x.GetReleases(b)).ReturnsAsync(bReleases);
-            pyPiClient.Setup(x => x.GetReleases(c)).ReturnsAsync(cReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(a)).ReturnsAsync(aReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(b)).ReturnsAsync(bReleases);
+            this.pyPiClient.Setup(x => x.GetReleases(c)).ReturnsAsync(cReleases);
 
-            pyPiClient.Setup(x => x.FetchPackageDependencies("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b, c });
-            pyPiClient.Setup(x => x.FetchPackageDependencies("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { cAlt });
-            pyPiClient.Setup(x => x.FetchPackageDependencies("c", "1.1", cReleases["1.1"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
-            pyPiClient.Setup(x => x.FetchPackageDependencies("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b, c });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { cAlt });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("c", "1.1", cReleases["1.1"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+            this.pyPiClient.Setup(x => x.FetchPackageDependencies("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
 
             var dependencies = new List<PipDependencySpecification> { a };
 
-            var resolver = new PythonResolver() { PypiClient = pyPiClient.Object, Logger = loggerMock.Object, };
+            var resolver = new PythonResolver() { PypiClient = this.pyPiClient.Object, Logger = this.loggerMock.Object, };
 
             var resolveResult = await resolver.ResolveRoots(dependencies);
 
@@ -191,8 +191,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             expectedC.Parents.Add(expectedA);
             expectedC.Parents.Add(expectedB);
 
-            Assert.IsTrue(CompareGraphs(resolveResult.First(), expectedA));
-            pyPiClient.Verify(x => x.FetchPackageDependencies(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PythonProjectRelease>()), Times.Exactly(4));
+            Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+            this.pyPiClient.Verify(x => x.FetchPackageDependencies(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PythonProjectRelease>()), Times.Exactly(4));
         }
 
         private bool CompareGraphs(PipGraphNode a, PipGraphNode b)
@@ -215,7 +215,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             for (int i = 0; i < a.Children.Count; i++)
             {
-                valid = CompareGraphs(a.Children[i], b.Children[i]);
+                valid = this.CompareGraphs(a.Children[i], b.Children[i]);
             }
 
             return valid;
@@ -227,7 +227,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             foreach (var version in versions)
             {
-                toReturn.Add(version, new List<PythonProjectRelease> { CreatePythonProjectRelease() });
+                toReturn.Add(version, new List<PythonProjectRelease> {
+                    this.CreatePythonProjectRelease() });
             }
 
             return toReturn;

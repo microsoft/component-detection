@@ -16,7 +16,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         public bool Valid { get; set; }
 
-        public bool IsReleasedPackage => string.IsNullOrEmpty(PreReleaseLabel) && !PreReleaseNumber.HasValue && !DevNumber.HasValue;
+        public bool IsReleasedPackage => string.IsNullOrEmpty(this.PreReleaseLabel) && !this.PreReleaseNumber.HasValue && !this.DevNumber.HasValue;
 
         public int Epoch { get; set; }
 
@@ -41,60 +41,60 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             var toOperate = version;
             if (version.EndsWith(".*"))
             {
-                Floating = true;
+                this.Floating = true;
                 toOperate = toOperate.Replace(".*", string.Empty);
             }
 
-            match = PythonVersionRegex.Match(version);
+            this.match = PythonVersionRegex.Match(version);
 
-            if (!match.Success || !string.Equals(match.Value, toOperate, StringComparison.OrdinalIgnoreCase))
+            if (!this.match.Success || !string.Equals(this.match.Value, toOperate, StringComparison.OrdinalIgnoreCase))
             {
-                Valid = false;
+                this.Valid = false;
                 return;
             }
 
-            var groups = match.Groups;
+            var groups = this.match.Groups;
 
             // Epoch is optional, implicitly 0 if not present
             if (groups["epoch"].Success && int.TryParse(groups["epoch"].Value, out int epoch))
             {
-                Epoch = epoch;
+                this.Epoch = epoch;
             }
             else
             {
-                Epoch = 0;
+                this.Epoch = 0;
             }
 
-            Release = groups["release"].Success ? groups["release"].Value : string.Empty;
-            PreReleaseLabel = groups["pre_l"].Success ? groups["pre_l"].Value : string.Empty;
+            this.Release = groups["release"].Success ? groups["release"].Value : string.Empty;
+            this.PreReleaseLabel = groups["pre_l"].Success ? groups["pre_l"].Value : string.Empty;
 
             if (groups["pre_n"].Success && int.TryParse(groups["pre_n"].Value, out int preReleaseNumber))
             {
-                PreReleaseNumber = preReleaseNumber;
+                this.PreReleaseNumber = preReleaseNumber;
             }
 
             if (groups["post_n1"].Success && int.TryParse(groups["post_n1"].Value, out int postRelease1))
             {
-                PostNumber = postRelease1;
+                this.PostNumber = postRelease1;
             }
 
             if (groups["post_n2"].Success && int.TryParse(groups["post_n2"].Value, out int postRelease2))
             {
-                PostNumber = postRelease2;
+                this.PostNumber = postRelease2;
             }
 
             if (groups["dev_l"].Success)
             {
-                DevLabel = groups["dev_l"].Value;
-                DevNumber = 0;
+                this.DevLabel = groups["dev_l"].Value;
+                this.DevNumber = 0;
             }
 
             if (groups["dev_n"].Success && int.TryParse(groups["dev_n"].Value, out int devNumber))
             {
-                DevNumber = devNumber;
+                this.DevNumber = devNumber;
             }
 
-            Valid = true;
+            this.Valid = true;
         }
 
         public static bool operator >(PythonVersion operand1, PythonVersion operand2)
@@ -124,16 +124,16 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 return 1;
             }
 
-            if (Epoch > other.Epoch)
+            if (this.Epoch > other.Epoch)
             {
                 return 1;
             }
-            else if (Epoch < other.Epoch)
+            else if (this.Epoch < other.Epoch)
             {
                 return -1;
             }
 
-            if (!string.Equals(Release, other.Release, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(this.Release, other.Release, StringComparison.OrdinalIgnoreCase))
             {
                 int result = CompareReleaseVersions(this, other);
                 if (result != 0)

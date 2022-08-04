@@ -11,8 +11,8 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public PipComponent(string name, string version)
         {
-            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Pip));
-            Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.Pip));
+            this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Pip));
+            this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Pip));
         }
 
         public string Name { get; set; }
@@ -21,8 +21,8 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.Pip;
 
-        public override string Id => $"{Name} {Version} - {Type}".ToLowerInvariant();
+        public override string Id => $"{this.Name} {this.Version} - {this.Type}".ToLowerInvariant();
 
-        public override PackageURL PackageUrl => new PackageURL("pypi", null, Name, Version, null, null);
+        public override PackageURL PackageUrl => new PackageURL("pypi", null, this.Name, this.Version, null, null);
     }
 }

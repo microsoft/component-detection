@@ -1,9 +1,9 @@
 ﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
-// 
+//
 // This is a temporary solution, so avoid using this functionality outside of the Rust detector. The following
-// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning. 
+// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning.
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
@@ -33,13 +33,13 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         {
             this.rangeSpec = rangeSpec;
             var comparatorSetSpecs = rangeSpec.Split(new[] { "||" }, StringSplitOptions.None);
-            comparatorSets = comparatorSetSpecs.Select(s => new ComparatorSet(s)).ToArray();
+            this.comparatorSets = comparatorSetSpecs.Select(s => new ComparatorSet(s)).ToArray();
         }
 
         private Range(IEnumerable<ComparatorSet> comparatorSets)
         {
             this.comparatorSets = comparatorSets.ToArray();
-            rangeSpec = string.Join(" || ", comparatorSets.Select(cs => cs.ToString()).ToArray());
+            this.rangeSpec = string.Join(" || ", comparatorSets.Select(cs => cs.ToString()).ToArray());
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         /// <returns>true if the range is satisfied by the version.</returns>
         public bool IsSatisfied(SemVersion version)
         {
-            return comparatorSets.Any(s => s.IsSatisfied(version));
+            return this.comparatorSets.Any(s => s.IsSatisfied(version));
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             try
             {
                 SemVersion.TryParse(versionString, out SemVersion version, loose);
-                return IsSatisfied(version);
+                return this.IsSatisfied(version);
             }
             catch (ArgumentException)
             {
@@ -79,7 +79,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         /// <returns>An IEnumerable of satisfying versions.</returns>
         public IEnumerable<SemVersion> Satisfying(IEnumerable<SemVersion> versions)
         {
-            return versions.Where(IsSatisfied);
+            return versions.Where(this.IsSatisfied);
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         /// <returns>An IEnumerable of satisfying version strings.</returns>
         public IEnumerable<string> Satisfying(IEnumerable<string> versions, bool loose = false)
         {
-            return versions.Where(v => IsSatisfied(v, loose));
+            return versions.Where(v => this.IsSatisfied(v, loose));
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         /// <returns>The maximum satisfying version, or null if no versions satisfied this range.</returns>
         public SemVersion MaxSatisfying(IEnumerable<SemVersion> versions)
         {
-            return Satisfying(versions).Max();
+            return this.Satisfying(versions).Max();
         }
 
         /// <summary>
@@ -112,8 +112,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         /// <returns>The maximum satisfying version string, or null if no versions satisfied this range.</returns>
         public string MaxSatisfying(IEnumerable<string> versionStrings, bool loose = false)
         {
-            var versions = ValidVersions(versionStrings, loose);
-            var maxVersion = MaxSatisfying(versions);
+            var versions = this.ValidVersions(versionStrings, loose);
+            var maxVersion = this.MaxSatisfying(versions);
             return maxVersion == null ? null : maxVersion.ToString();
         }
 
@@ -124,7 +124,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         /// <returns>The Range intersection.</returns>
         public Range Intersect(Range other)
         {
-            var allIntersections = comparatorSets.SelectMany(
+            var allIntersections = this.comparatorSets.SelectMany(
                 thisCs => other.comparatorSets.Select(thisCs.Intersect))
                 .Where(cs => cs != null).ToList();
 
@@ -142,7 +142,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         /// <returns>The range string.</returns>
         public override string ToString()
         {
-            return rangeSpec;
+            return this.rangeSpec;
         }
 
         public bool Equals(Range other)
@@ -152,13 +152,13 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 return false;
             }
 
-            var thisSet = new HashSet<ComparatorSet>(comparatorSets);
+            var thisSet = new HashSet<ComparatorSet>(this.comparatorSets);
             return thisSet.SetEquals(other.comparatorSets);
         }
 
         public override bool Equals(object other)
         {
-            return Equals(other as Range);
+            return this.Equals(other as Range);
         }
 
         public static bool operator ==(Range a, Range b)
@@ -180,7 +180,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         {
             // XOR is commutative, so this hash code is independent
             // of the order of comparators.
-            return comparatorSets.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());
+            return this.comparatorSets.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());
         }
 
         // Static convenience methods

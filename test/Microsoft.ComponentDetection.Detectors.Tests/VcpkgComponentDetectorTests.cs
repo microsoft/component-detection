@@ -22,7 +22,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void TestInitialize()
         {
             var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-            detectorTestUtility = DetectorTestUtilityCreator.Create<VcpkgComponentDetector>()
+            this.detectorTestUtility = DetectorTestUtilityCreator.Create<VcpkgComponentDetector>()
                                     .WithScanRequest(new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder));
         }
 
@@ -49,7 +49,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         }
     ]
 }";
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                    .WithFile("vcpkg.spdx.json", spdxFile)
                                                     .ExecuteDetector();
 
@@ -108,7 +108,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         }
     ]
 }";
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                   .WithFile("vcpkg.spdx.json", spdxFile)
                                                     .ExecuteDetector();
 
@@ -137,7 +137,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var spdxFile = "{}";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                 .WithFile("vcpkg.spdx.json", spdxFile)
                 .ExecuteDetector();
 
@@ -153,7 +153,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var spdxFile = "invalidspdxfile";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                 .WithFile("vcpkg.spdx.json", spdxFile)
                 .ExecuteDetector();
 

@@ -36,7 +36,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 (true, "Matches_-", "some-cargo-package", "1.2.0 - 1.2.5"),
                 (false, "DoesntMatch_-", "some-cargo-package", "1.1.0 - 1.1.5"),
             };
-            DoAllTheTests(testCases);
+            this.DoAllTheTests(testCases);
         }
 
         public void DoAllTheTests(IEnumerable<(bool shouldMatch, string caseName, string specifierName, string specifierRange)> testCases)

@@ -10,7 +10,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
     {
         public GraphNode(T value)
         {
-            Value = value;
+            this.Value = value;
         }
 
         public T Value { get; set; }

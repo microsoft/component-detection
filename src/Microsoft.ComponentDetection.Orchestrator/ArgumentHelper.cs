@@ -14,12 +14,12 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
         public ArgumentHelper()
         {
-            ArgumentSets = Enumerable.Empty<IScanArguments>();
+            this.ArgumentSets = Enumerable.Empty<IScanArguments>();
         }
 
         public ParserResult<object> ParseArguments(string[] args)
         {
-            return Parser.Default.ParseArguments(args, ArgumentSets.Select(x => x.GetType()).ToArray());
+            return Parser.Default.ParseArguments(args, this.ArgumentSets.Select(x => x.GetType()).ToArray());
         }
 
         public ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)

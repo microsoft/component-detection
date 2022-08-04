@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
+﻿using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 namespace Microsoft.ComponentDetection.Common
 {
     /// <summary>
-    /// Merges dependnecy Scope in their order of Priority. 
-    /// Higher priority scope, as indicated by its lower enum value is given precendence. 
+    /// Merges dependnecy Scope in their order of Priority.
+    /// Higher priority scope, as indicated by its lower enum value is given precendence.
     /// </summary>
     public class DependencyScopeComparer
     {

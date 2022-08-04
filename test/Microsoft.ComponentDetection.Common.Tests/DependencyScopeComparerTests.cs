@@ -1,11 +1,7 @@
 ﻿using FluentAssertions;
-using FluentAssertions.Primitives;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using Faker;
 using static Microsoft.ComponentDetection.Common.DependencyScopeComparer;
-using System.Linq;
 
 namespace Microsoft.ComponentDetection.Common.Tests
 {

@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Common
 
         public IEnumerable<MatchedFile> CreateSafeFileEnumerable(DirectoryInfo directory, IEnumerable<string> searchPatterns, ExcludeDirectoryPredicate directoryExclusionPredicate)
         {
-            return new SafeFileEnumerable(directory, searchPatterns, Logger, PathUtilityService, directoryExclusionPredicate);
+            return new SafeFileEnumerable(directory, searchPatterns, this.Logger, this.PathUtilityService, directoryExclusionPredicate);
         }
     }
 }

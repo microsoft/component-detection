@@ -39,7 +39,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             JToken jo = JToken.Load(reader);
 
             var value = (ComponentType)Enum.Parse(typeof(ComponentType), (string)jo["type"]);
-            var targetType = componentTypesToTypes[value];
+            var targetType = this.componentTypesToTypes[value];
             var instanceOfTypedComponent = Activator.CreateInstance(targetType, true);
             serializer.Populate(jo.CreateReader(), instanceOfTypedComponent);
 

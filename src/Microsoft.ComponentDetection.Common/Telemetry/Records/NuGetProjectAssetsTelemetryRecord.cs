@@ -16,20 +16,20 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!this.disposedValue)
             {
                 if (disposing)
                 {
                     TelemetryRelay.Instance.PostTelemetryRecord(this);
                 }
 
-                disposedValue = true;
+                this.disposedValue = true;
             }
         }
 
         public void Dispose()
         {
-            Dispose(true);
+            this.Dispose(true);
         }
     }
 }

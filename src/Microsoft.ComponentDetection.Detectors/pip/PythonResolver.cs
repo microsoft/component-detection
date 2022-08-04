@@ -32,7 +32,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 // If we have it, we probably just want to skip at this phase as this indicates duplicates
                 if (!state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
                 {
-                    var result = await PypiClient.GetReleases(rootPackage);
+                    var result = await this.PypiClient.GetReleases(rootPackage);
 
                     if (result.Keys.Any())
                     {
@@ -52,13 +52,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                     }
                     else
                     {
-                        Logger.LogWarning($"Root dependency {rootPackage.Name} not found on pypi. Skipping package.");
+                        this.Logger.LogWarning($"Root dependency {rootPackage.Name} not found on pypi. Skipping package.");
                     }
                 }
             }
 
             // Now queue packages for processing
-            return await ProcessQueue(state) ?? new List<PipGraphNode>();
+            return await this.ProcessQueue(state) ?? new List<PipGraphNode>();
         }
 
         private async Task<IList<PipGraphNode>> ProcessQueue(PythonResolverState state)
@@ -68,7 +68,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 var (root, currentNode) = state.ProcessingQueue.Dequeue();
 
                 // gather all dependencies for the current node
-                var dependencies = (await FetchPackageDependencies(state, currentNode)).Where(x => !x.PackageIsUnsafe());
+                var dependencies = (await this.FetchPackageDependencies(state, currentNode)).Where(x => !x.PackageIsUnsafe());
 
                 foreach (var dependencyNode in dependencies)
                 {
@@ -81,13 +81,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                     }
                     else if (node != null)
                     {
-                        Logger.LogWarning($"Candidate version ({node.Value.Id}) for {dependencyNode.Name} already exists in map and the version is NOT valid.");
-                        Logger.LogWarning($"Specifiers: {string.Join(',', dependencyNode.DependencySpecifiers)} for package {currentNode.Name} caused this.");
+                        this.Logger.LogWarning($"Candidate version ({node.Value.Id}) for {dependencyNode.Name} already exists in map and the version is NOT valid.");
+                        this.Logger.LogWarning($"Specifiers: {string.Join(',', dependencyNode.DependencySpecifiers)} for package {currentNode.Name} caused this.");
 
                         // The currently selected version is invalid, try to see if there is another valid version available
-                        if (!await InvalidateAndReprocessAsync(state, node, dependencyNode))
+                        if (!await this.InvalidateAndReprocessAsync(state, node, dependencyNode))
                         {
-                            Logger.LogWarning($"Version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
+                            this.Logger.LogWarning($"Version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
 
                             // there is no valid version available for the node, dependencies are incompatible,
                         }
@@ -95,7 +95,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                     else
                     {
                         // We haven't encountered this package before, so let's fetch it and find a candidate
-                        var result = await PypiClient.GetReleases(dependencyNode);
+                        var result = await this.PypiClient.GetReleases(dependencyNode);
 
                         if (result.Keys.Any())
                         {
@@ -103,13 +103,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                             var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
                                 ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
 
-                            AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
+                            this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
 
                             state.ProcessingQueue.Enqueue((root, dependencyNode));
                         }
                         else
                         {
-                            Logger.LogWarning($"Dependency Package {dependencyNode.Name} not found in Pypi. Skipping package");
+                            this.Logger.LogWarning($"Dependency Package {dependencyNode.Name} not found in Pypi. Skipping package");
                         }
                     }
                 }
@@ -146,7 +146,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
             node.Value = new PipComponent(pipComponent.Name, candidateVersion);
 
-            var dependencies = (await FetchPackageDependencies(state, newSpec)).ToDictionary(x => x.Name, x => x);
+            var dependencies = (await this.FetchPackageDependencies(state, newSpec)).ToDictionary(x => x.Name, x => x);
 
             var toRemove = new List<PipGraphNode>();
             foreach (var child in node.Children)
@@ -159,7 +159,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 }
                 else if (!PythonVersionUtilities.VersionValidForSpec(pipChild.Version, newDependency.DependencySpecifiers))
                 {
-                    if (!await InvalidateAndReprocessAsync(state, child, newDependency))
+                    if (!await this.InvalidateAndReprocessAsync(state, child, newDependency))
                     {
                         return false;
                     }
@@ -187,7 +187,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 return new List<PipDependencySpecification>();
             }
 
-            return await PypiClient.FetchPackageDependencies(spec.Name, candidateVersion, packageToFetch);
+            return await this.PypiClient.FetchPackageDependencies(spec.Name, candidateVersion, packageToFetch);
         }
 
         private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
