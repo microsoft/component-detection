@@ -29,7 +29,7 @@
         <PackageVersion Include="NuGet.Versioning" Version="5.11.2"/>
         <PackageVersion Include="packageurl-dotnet" Version="1.0.0"/>
         <PackageVersion Include="Polly" Version="7.2.3"/>
-        <PackageVersion Include="Semver" Version="2.0.6"/>
+        <PackageVersion Include="Semver" Version="2.2.0"/>
         <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.435"/>
         <PackageVersion Include="System.Composition.AttributedModel" Version="1.4.1"/>
         <PackageVersion Include="System.Composition.Convention" Version="1.4.1"/>
