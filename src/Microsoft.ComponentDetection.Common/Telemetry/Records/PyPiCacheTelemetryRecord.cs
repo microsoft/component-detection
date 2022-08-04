@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace Microsoft.ComponentDetection.Common.Telemetry.Records
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 {
     public class PypiCacheTelemetryRecord : BaseDetectionTelemetryRecord
     {
