@@ -31,11 +31,13 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
         private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
 
+        private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
+
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var stream = processRequest.ComponentStream;
             bool ignoreNugetConfig = detectorArgs.TryGetValue("NuGet.IncludeRepositoryPaths", out string includeRepositoryPathsValue) && includeRepositoryPathsValue.Equals(bool.FalseString, StringComparison.OrdinalIgnoreCase);
-            
+
             if (NugetConfigFileName.Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
                 await ProcessAdditionalDirectory(processRequest, ignoreNugetConfig);
@@ -50,7 +52,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var stream = processRequest.ComponentStream;
-           
+
             if (!ignoreNugetConfig)
             {
                 var additionalPaths = GetRepositoryPathsFromNugetConfig(stream);
@@ -106,7 +108,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 string name = metadataNode["id"].InnerText;
                 string version = metadataNode["version"].InnerText;
 
-                string[] authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();                
+                string[] authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();
 
                 if (!NuGetVersion.TryParse(version, out NuGetVersion parsedVer))
                 {
@@ -116,7 +118,10 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 }
 
                 NuGetComponent component = new NuGetComponent(name, version, authors);
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
+                if (!LowConfidencePackages.Contains(name, StringComparer.OrdinalIgnoreCase))
+                {
+                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
+                }
             }
             catch (Exception e)
             {

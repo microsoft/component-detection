@@ -15,6 +15,8 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using FluentAssertions;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]
@@ -205,6 +207,20 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             directoryWalkerMock.VerifyAll();
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
             Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+        }
+
+        [TestMethod]
+        public async Task TestNugetDetector_LowConfidencePackages()
+        {
+            var nupkg = await NugetTestUtilities.ZipNupkgComponent("Newtonsoft.Json.nupkg", NugetTestUtilities.GetValidNuspec("Newtonsoft.Json", "9.0.1", new []{ "JamesNK"}));
+
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
+                .WithFile("Newtonsoft.Json.nupkg", nupkg)
+                .ExecuteDetector();
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            componentRecorder.GetDetectedComponents().Should().BeEmpty()
+                .And.HaveCount(0);
         }
 
         private string CreateTemporaryDirectory()
