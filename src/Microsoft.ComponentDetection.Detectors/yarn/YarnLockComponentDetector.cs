@@ -91,7 +91,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 
             // It's important that all of the root dependencies get registered *before* we start processing any non-root
             // dependencies; otherwise, we would miss root dependency links for root dependencies that are also indirect
-            // transitive dependencies. 
+            // transitive dependencies.
             foreach (var dependency in yarnRoots)
             {
                 ParseTreeWithAssignedRoot(dependency, yarnPackages, singleFileComponentRecorder);

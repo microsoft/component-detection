@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
         public async Task<ScanResult> Handle(IScanArguments arguments)
         {
             await ListDetectorsAsync(arguments as IListDetectionArgs);
-            return new ScanResult() 
+            return new ScanResult()
             {
                 ResultCode = ProcessingResultCode.Success,
             };

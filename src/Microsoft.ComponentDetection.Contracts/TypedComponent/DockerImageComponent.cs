@@ -6,7 +6,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         {
             /* Reserved for deserialization */
         }
-        
+
         public DockerImageComponent(string hash, string name = null, string tag = null)
         {
             Digest = ValidateRequiredInput(hash, nameof(Digest), nameof(ComponentType.DockerImage));

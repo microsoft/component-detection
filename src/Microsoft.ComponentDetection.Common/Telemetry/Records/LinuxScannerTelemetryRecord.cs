@@ -11,7 +11,7 @@
         public string ScanStdErr { get; set; }
 
         public string FailedDeserializingScannerOutput { get; set; }
-        
+
         public bool SemaphoreFailure { get; set; }
 
         public string ScannerVersion { get; set; }

@@ -15,15 +15,15 @@ namespace Microsoft.ComponentDetection.Common.Tests
         private DockerService dockerService;
 
         private const string TestImage = "governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest";
-        
+
         private const string TestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
-        
+
         [TestInitialize]
         public void TestInitialize()
         {
             dockerService = new DockerService();
         }
-        
+
         [TestMethod]
         public async Task DockerService_CanPingDocker()
         {
@@ -37,14 +37,14 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var isLinuxContainerModeEnabled = await dockerService.CanRunLinuxContainersAsync();
             Assert.IsTrue(isLinuxContainerModeEnabled);
         }
-        
+
         [SkipTestOnWindows]
         public async Task DockerService_CanPullImage()
         {
             Func<Task> action = async () => await dockerService.TryPullImageAsync(TestImage);
             await action.Should().NotThrowAsync();
         }
-        
+
         [SkipTestOnWindows]
         public async Task DockerService_CanInspectImage()
         {
@@ -73,7 +73,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
             details.BaseImageRef.Should().Be("docker.io/library/hello-world:latest");
             details.Layers.Should().HaveCount(1);
         }
-        
+
         [SkipTestOnWindows]
         public async Task DockerService_CanCreateAndRunImage()
         {

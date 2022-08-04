@@ -35,7 +35,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                     }
                 ]
             }";
-        
+
         private LinuxScanner linuxScanner;
         private Mock<IDockerService> mockDockerService;
 

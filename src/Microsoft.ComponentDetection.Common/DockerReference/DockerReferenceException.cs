@@ -16,7 +16,7 @@ namespace Microsoft.ComponentDetection.Common
     {
         private const string ErrorMessage = "invalid reference format";
 
-        public ReferenceInvalidFormatException(string reference) 
+        public ReferenceInvalidFormatException(string reference)
             : base(reference, ErrorMessage)
         {
         }

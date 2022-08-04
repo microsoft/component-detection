@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 {
-    public class DockerLayer 
+    public class DockerLayer
     {
         // Summary:
         //     the command/script that was executed in order to create the layer.

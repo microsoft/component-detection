@@ -57,7 +57,7 @@ namespace Microsoft.ComponentDetection.Contracts
 
         /// <summary> Gets or sets the layer within a container where this component was found.</summary>
         public IDictionary<int, IEnumerable<int>> ContainerLayerIds { get; set; }
-        
+
         /// <summary> Gets or sets Dependency Scope of the component.</summary>
         public DependencyScope? DependencyScope { get; set; }
 

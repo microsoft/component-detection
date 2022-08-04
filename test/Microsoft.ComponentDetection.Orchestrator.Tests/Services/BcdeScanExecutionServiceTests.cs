@@ -457,7 +457,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             // The hint for reading this test is to know that each "column" you see visually is what's being merged, so componentAWithNoDevDep is being merged "down" into componentAWithDevDepTrue.
 #pragma warning disable format
-            foreach ((DetectedComponent component, bool? isDevDep) component in new[] 
+            foreach ((DetectedComponent component, bool? isDevDep) component in new[]
             {
                 (componentAWithNoDevDep, (bool?)null), (componentAWithDevDepTrue, true),
                 (componentBWithNoDevDep, (bool?)null), (componentBWithDevDepFalse, false),

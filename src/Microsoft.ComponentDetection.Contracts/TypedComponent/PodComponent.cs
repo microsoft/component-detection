@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override PackageURL PackageUrl
         {
-            get 
+            get
             {
                 var qualifiers = new SortedDictionary<string, string>();
                 if (!string.IsNullOrWhiteSpace(SpecRepo))

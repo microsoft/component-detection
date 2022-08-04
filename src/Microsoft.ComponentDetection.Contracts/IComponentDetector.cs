@@ -14,7 +14,7 @@ namespace Microsoft.ComponentDetection.Contracts
         string Id { get; }
 
         /// <summary>
-        /// Gets the set of categories this detector is a member of. 
+        /// Gets the set of categories this detector is a member of.
         /// Names of the <see cref="DetectorClass"/> enumeration comprise some of the built in categories.
         /// If the category "All" is specified, the detector will always run.
         /// </summary>
@@ -44,7 +44,7 @@ namespace Microsoft.ComponentDetection.Contracts
 
     /// <summary>
     /// Component detectors implementing this interface are, by default, off. This is used during composition to opt detectors out of being on by default.
-    /// If opted in, they should behave like a normal detector.    
+    /// If opted in, they should behave like a normal detector.
     /// </summary>
     public interface IDefaultOffComponentDetector : IComponentDetector
     {

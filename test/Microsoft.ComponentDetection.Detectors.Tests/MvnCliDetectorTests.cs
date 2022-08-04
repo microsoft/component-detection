@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void InitializeTests()
         {
             commandLineMock = new Mock<ICommandLineInvocationService>();
-            mavenCommandService = new MavenCommandService 
+            mavenCommandService = new MavenCommandService
             {
                 CommandLineInvocationService = commandLineMock.Object,
                 ParserService = new MavenStyleDependencyGraphParserService(),

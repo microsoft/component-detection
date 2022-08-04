@@ -131,7 +131,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public async Task TestSbomDetector_BlankJson()
         {
             var spdxFile = "{}";
-            
+
             var (scanResult, componentRecorder) = await detectorTestUtility
                 .WithFile("manifest.spdx.json", spdxFile)
                 .ExecuteDetector();
@@ -147,7 +147,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public async Task TestSbomDetector_InvalidFile()
         {
             var spdxFile = "invalidspdxfile";
-            
+
             var (scanResult, componentRecorder) = await detectorTestUtility
                 .WithFile("manifest.spdx.json", spdxFile)
                 .ExecuteDetector();
@@ -156,7 +156,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detectedComponents = componentRecorder.GetDetectedComponents();
             var components = detectedComponents.ToList();
-            Assert.IsFalse(components.Any()); 
+            Assert.IsFalse(components.Any());
         }
     }
 }

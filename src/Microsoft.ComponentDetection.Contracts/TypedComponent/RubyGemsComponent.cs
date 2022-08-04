@@ -26,6 +26,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override string Id => $"{Name} {Version} - {Type}";
 
-        public override PackageURL PackageUrl => new PackageURL("gem", null, Name, Version, null, null);        
+        public override PackageURL PackageUrl => new PackageURL("gem", null, Name, Version, null, null);
     }
 }

@@ -180,7 +180,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             await SetupAndParseReqsTxt(requirementstxtBasicGitComponent, parseResult =>
             {
                 parseResult.Count.Should().Be(1);
-                
+
                 var tuple = parseResult.Single();
                 tuple.Item1.Should().BeNull();
                 tuple.Item2.Should().NotBeNull();

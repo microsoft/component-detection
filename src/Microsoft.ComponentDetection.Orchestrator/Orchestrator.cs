@@ -69,7 +69,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
                 (record) =>
             {
                 var executionResult = HandleCommand(args, record);
-                if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)    
+                if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)
                 {
                     shouldFailureBeSuppressed = true;
                     record.HiddenExitCode = (int)executionResult.ResultCode;
@@ -127,7 +127,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
         public ScanResult HandleCommand(string[] args, BcdeExecutionTelemetryRecord telemetryRecord)
         {
-            var scanResult = new ScanResult() 
+            var scanResult = new ScanResult()
             {
                 ResultCode = ProcessingResultCode.Error,
             };
@@ -153,8 +153,8 @@ namespace Microsoft.ComponentDetection.Orchestrator
                         return Dispatch(argumentSet, CancellationToken.None).GetAwaiter().GetResult();
                     });
                 })
-                .WithNotParsed(errors => 
-                { 
+                .WithNotParsed(errors =>
+                {
                     if (errors.Any(e => e is HelpVerbRequestedError))
                     {
                         telemetryRecord.Command = "help";
@@ -223,7 +223,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
         }
 
         private async Task<ScanResult> Dispatch(IScanArguments arguments, CancellationToken cancellation)
-        {   
+        {
             var scanResult = new ScanResult()
             {
                 ResultCode = ProcessingResultCode.Error,
@@ -266,7 +266,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
             }
             catch (Exception ae)
             {
-                var result = new ScanResult() 
+                var result = new ScanResult()
                 {
                     ResultCode = ProcessingResultCode.Error,
                 };

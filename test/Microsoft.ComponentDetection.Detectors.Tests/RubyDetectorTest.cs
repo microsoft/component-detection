@@ -97,7 +97,7 @@ BUNDLED WITH
   remote: https://rubygems.org/
   specs:
     CFPropertyList (3.0.4)
-      rexml 
+      rexml
 
 BUNDLED WITH
     2.2.28";
