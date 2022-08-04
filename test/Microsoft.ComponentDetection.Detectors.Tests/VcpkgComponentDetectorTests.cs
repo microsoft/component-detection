@@ -38,7 +38,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             ""name"": ""nlohmann-json"",
             ""SPDXID"": ""SPDXRef-port"",
-            ""versionInfo"": ""3.10.4"",
+            ""versionInfo"": ""3.10.4#5"",
             ""downloadLocation"": ""git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"",
             ""homepage"": ""https://github.com/nlohmann/json"",
             ""licenseConcluded"": ""NOASSERTION"",
@@ -67,10 +67,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.AreEqual(1, components.Count());
             Assert.AreEqual("nlohmann-json", sbomComponent.Name);
             Assert.AreEqual("3.10.4", sbomComponent.Version);
-            Assert.AreEqual("0", sbomComponent.PortVersion);
+            Assert.AreEqual(5, sbomComponent.PortVersion);
             Assert.AreEqual("SPDXRef-port", sbomComponent.SPDXID);
             Assert.AreEqual("git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json", sbomComponent.DownloadLocation);
-            Assert.AreEqual("pkg:vcpkg/nlohmann-json@3.10.4?port_version=0", sbomComponent.PackageUrl.ToString());
+            Assert.AreEqual("pkg:vcpkg/nlohmann-json@3.10.4?port_version=5", sbomComponent.PackageUrl.ToString());
         }
 
         [TestMethod]
