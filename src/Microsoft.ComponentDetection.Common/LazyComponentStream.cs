@@ -14,21 +14,21 @@ namespace Microsoft.ComponentDetection.Common
         {
             try
             {
-                using var fs = fileInfo.OpenRead();
+                using var fs = this.fileInfo.OpenRead();
 
-                var buffer = new byte[fileInfo.Length];
-                fs.Read(buffer, 0, (int)fileInfo.Length);
+                var buffer = new byte[this.fileInfo.Length];
+                fs.Read(buffer, 0, (int)this.fileInfo.Length);
 
                 return buffer;
             }
             catch (UnauthorizedAccessException)
             {
-                logger?.LogWarning($"Unauthorized access exception caught when trying to open {fileInfo.FullName}");
+                this.logger?.LogWarning($"Unauthorized access exception caught when trying to open {this.fileInfo.FullName}");
             }
             catch (Exception e)
             {
-                logger?.LogWarning($"Unhandled exception caught when trying to open {fileInfo.FullName}");
-                logger?.LogException(e, isError: false);
+                this.logger?.LogWarning($"Unhandled exception caught when trying to open {this.fileInfo.FullName}");
+                this.logger?.LogException(e, isError: false);
             }
 
             return new byte[0];
@@ -36,14 +36,14 @@ namespace Microsoft.ComponentDetection.Common
 
         public LazyComponentStream(FileInfo fileInfo, string pattern, ILogger logger)
         {
-            Pattern = pattern;
-            Location = fileInfo.FullName;
+            this.Pattern = pattern;
+            this.Location = fileInfo.FullName;
             this.fileInfo = fileInfo;
             this.logger = logger;
-            fileBuffer = new Lazy<byte[]>(SafeOpenFile);
+            this.fileBuffer = new Lazy<byte[]>(this.SafeOpenFile);
         }
 
-        public Stream Stream => new MemoryStream(fileBuffer.Value);
+        public Stream Stream => new MemoryStream(this.fileBuffer.Value);
 
         public string Pattern { get; set; }
 

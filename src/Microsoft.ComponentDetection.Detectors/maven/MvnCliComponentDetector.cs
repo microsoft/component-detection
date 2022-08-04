@@ -32,15 +32,15 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         protected override async Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
         {
-            if (!await MavenCommandService.MavenCLIExists())
+            if (!await this.MavenCommandService.MavenCLIExists())
             {
-                Logger.LogVerbose("Skipping maven detection as maven is not available in the local PATH.");
+                this.Logger.LogVerbose("Skipping maven detection as maven is not available in the local PATH.");
                 return Enumerable.Empty<ProcessRequest>().ToObservable();
             }
 
-            var processPomFile = new ActionBlock<ProcessRequest>(MavenCommandService.GenerateDependenciesFile);
+            var processPomFile = new ActionBlock<ProcessRequest>(this.MavenCommandService.GenerateDependenciesFile);
 
-            await RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest =>
+            await this.RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest =>
             {
                 processPomFile.Post(processRequest);
             });
@@ -49,7 +49,8 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
             await processPomFile.Completion;
 
-            return ComponentStreamEnumerableFactory.GetComponentStreams(CurrentScanRequest.SourceDirectory, new[] { MavenCommandService.BcdeMvnDependencyFileName }, CurrentScanRequest.DirectoryExclusionPredicate)
+            return this.ComponentStreamEnumerableFactory.GetComponentStreams(this.CurrentScanRequest.SourceDirectory, new[] {
+                    this.MavenCommandService.BcdeMvnDependencyFileName }, this.CurrentScanRequest.DirectoryExclusionPredicate)
                 .Select(componentStream =>
                     {
                         // The file stream is going to be disposed after the iteration is finished
@@ -64,7 +65,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                                 Location = componentStream.Location,
                                 Pattern = componentStream.Pattern,
                             },
-                            SingleFileComponentRecorder = ComponentRecorder.CreateSingleFileComponentRecorder(
+                            SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(
                                 Path.Combine(Path.GetDirectoryName(componentStream.Location), "pom.xml")),
                         };
                     })
@@ -73,7 +74,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
-            MavenCommandService.ParseDependenciesFile(processRequest);
+            this.MavenCommandService.ParseDependenciesFile(processRequest);
 
             File.Delete(processRequest.ComponentStream.Location);
 
@@ -135,7 +136,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
                         if (last != null && current.Files.FirstOrDefault(x => string.Equals(Path.GetFileName(x.Location), "pom.xml", StringComparison.OrdinalIgnoreCase)) != null)
                         {
-                            Logger.LogVerbose($"Ignoring pom.xml at {item.Location}, as it has a parent pom.xml that will be processed at {current.Name}\\pom.xml .");
+                            this.Logger.LogVerbose($"Ignoring pom.xml at {item.Location}, as it has a parent pom.xml that will be processed at {current.Name}\\pom.xml .");
                             break;
                         }
 

@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
         public DependencyGraph(bool enableManualTrackingOfExplicitReferences)
         {
-            componentNodes = new ConcurrentDictionary<string, ComponentRefNode>();
+            this.componentNodes = new ConcurrentDictionary<string, ComponentRefNode>();
             this.enableManualTrackingOfExplicitReferences = enableManualTrackingOfExplicitReferences;
         }
 
@@ -37,7 +37,7 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 throw new ArgumentNullException(nameof(componentNode.Id));
             }
 
-            componentNodes.AddOrUpdate(componentNode.Id, componentNode, (key, currentNode) =>
+            this.componentNodes.AddOrUpdate(componentNode.Id, componentNode, (key, currentNode) =>
             {
                 currentNode.IsExplicitReferencedDependency |= componentNode.IsExplicitReferencedDependency;
 
@@ -55,17 +55,17 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 return currentNode;
             });
 
-            AddDependency(componentNode.Id, parentComponentId);
+            this.AddDependency(componentNode.Id, parentComponentId);
         }
 
         public bool Contains(string componentId)
         {
-            return componentNodes.ContainsKey(componentId);
+            return this.componentNodes.ContainsKey(componentId);
         }
 
         public ICollection<string> GetDependenciesForComponent(string componentId)
         {
-            return componentNodes[componentId].DependencyIds;
+            return this.componentNodes[componentId].DependencyIds;
         }
 
         public ICollection<string> GetExplicitReferencedDependencyIds(string componentId)
@@ -75,53 +75,53 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 throw new ArgumentNullException(nameof(componentId));
             }
 
-            if (!componentNodes.TryGetValue(componentId, out var componentRef))
+            if (!this.componentNodes.TryGetValue(componentId, out var componentRef))
             {
                 throw new ArgumentException(string.Format(Resources.MissingNodeInDependencyGraph, componentId), paramName: nameof(componentId));
             }
 
             IList<string> explicitReferencedDependencyIds = new List<string>();
 
-            GetExplicitReferencedDependencies(componentRef, explicitReferencedDependencyIds, new HashSet<string>());
+            this.GetExplicitReferencedDependencies(componentRef, explicitReferencedDependencyIds, new HashSet<string>());
 
             return explicitReferencedDependencyIds;
         }
 
         public void AddAdditionalRelatedFile(string additionalRelatedFile)
         {
-            AdditionalRelatedFiles.AddOrUpdate(additionalRelatedFile, 0, (notUsed, notUsed2) => 0);
+            this.AdditionalRelatedFiles.AddOrUpdate(additionalRelatedFile, 0, (notUsed, notUsed2) => 0);
         }
 
         public HashSet<string> GetAdditionalRelatedFiles()
         {
-            return AdditionalRelatedFiles.Keys.ToImmutableHashSet().ToHashSet();
+            return this.AdditionalRelatedFiles.Keys.ToImmutableHashSet().ToHashSet();
         }
 
         public bool HasComponents()
         {
-            return componentNodes.Count > 0;
+            return this.componentNodes.Count > 0;
         }
 
         public bool? IsDevelopmentDependency(string componentId)
         {
-            return componentNodes[componentId].IsDevelopmentDependency;
+            return this.componentNodes[componentId].IsDevelopmentDependency;
         }
 
         public DependencyScope? GetDependencyScope(string componentId)
         {
-            return componentNodes[componentId].DependencyScope;
+            return this.componentNodes[componentId].DependencyScope;
         }
 
         public IEnumerable<string> GetAllExplicitlyReferencedComponents()
         {
-            return componentNodes.Values
-                        .Where(componentRefNode => IsExplicitReferencedDependency(componentRefNode))
+            return this.componentNodes.Values
+                        .Where(componentRefNode => this.IsExplicitReferencedDependency(componentRefNode))
                         .Select(componentRefNode => componentRefNode.Id);
         }
 
         private void GetExplicitReferencedDependencies(ComponentRefNode component, IList<string> explicitReferencedDependencyIds, ISet<string> visited)
         {
-            if (IsExplicitReferencedDependency(component))
+            if (this.IsExplicitReferencedDependency(component))
             {
                 explicitReferencedDependencyIds.Add(component.Id);
             }
@@ -132,15 +132,15 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
             {
                 if (!visited.Contains(parentId))
                 {
-                    GetExplicitReferencedDependencies(componentNodes[parentId], explicitReferencedDependencyIds, visited);
+                    this.GetExplicitReferencedDependencies(this.componentNodes[parentId], explicitReferencedDependencyIds, visited);
                 }
             }
         }
 
         private bool IsExplicitReferencedDependency(ComponentRefNode component)
         {
-            return (enableManualTrackingOfExplicitReferences && component.IsExplicitReferencedDependency) ||
-                (!enableManualTrackingOfExplicitReferences && !component.DependedOnByIds.Any());
+            return (this.enableManualTrackingOfExplicitReferences && component.IsExplicitReferencedDependency) ||
+                (!this.enableManualTrackingOfExplicitReferences && !component.DependedOnByIds.Any());
         }
 
         private void AddDependency(string componentId, string parentComponentId)
@@ -150,28 +150,28 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 return;
             }
 
-            if (!componentNodes.TryGetValue(parentComponentId, out var parentComponentRefNode))
+            if (!this.componentNodes.TryGetValue(parentComponentId, out var parentComponentRefNode))
             {
                 throw new ArgumentException(string.Format(Resources.MissingNodeInDependencyGraph, parentComponentId), nameof(parentComponentId));
             }
 
             parentComponentRefNode.DependencyIds.Add(componentId);
-            componentNodes[componentId].DependedOnByIds.Add(parentComponentId);
+            this.componentNodes[componentId].DependedOnByIds.Add(parentComponentId);
         }
 
         IEnumerable<string> IDependencyGraph.GetDependenciesForComponent(string componentId)
         {
-            return GetDependenciesForComponent(componentId).ToImmutableList();
+            return this.GetDependenciesForComponent(componentId).ToImmutableList();
         }
 
         IEnumerable<string> IDependencyGraph.GetComponents()
         {
-            return componentNodes.Keys.ToImmutableList();
+            return this.componentNodes.Keys.ToImmutableList();
         }
 
         bool IDependencyGraph.IsComponentExplicitlyReferenced(string componentId)
         {
-            return IsExplicitReferencedDependency(componentNodes[componentId]);
+            return this.IsExplicitReferencedDependency(this.componentNodes[componentId]);
         }
 
         internal class ComponentRefNode
@@ -190,8 +190,8 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
             internal ComponentRefNode()
             {
-                DependencyIds = new HashSet<string>();
-                DependedOnByIds = new HashSet<string>();
+                this.DependencyIds = new HashSet<string>();
+                this.DependedOnByIds = new HashSet<string>();
             }
         }
     }

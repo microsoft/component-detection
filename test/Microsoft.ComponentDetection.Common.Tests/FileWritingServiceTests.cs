@@ -18,31 +18,31 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            serviceUnderTest = new FileWritingService();
+            this.serviceUnderTest = new FileWritingService();
 
             // Get a temp file and repurpose it as a temp folder
             var tempFile = Path.GetTempFileName();
             File.Delete(tempFile);
             Directory.CreateDirectory(tempFile);
-            tempFolder = tempFile;
+            this.tempFolder = tempFile;
 
-            serviceUnderTest.Init(tempFolder);
+            this.serviceUnderTest.Init(this.tempFolder);
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
-            Directory.Delete(tempFolder, true);
+            Directory.Delete(this.tempFolder, true);
         }
 
         [TestMethod]
         public void AppendToFile_AppendsToFiles()
         {
             var relativeDir = "someOtherFileName.txt";
-            var fileLocation = Path.Combine(tempFolder, relativeDir);
+            var fileLocation = Path.Combine(this.tempFolder, relativeDir);
             File.Create(fileLocation).Dispose();
-            serviceUnderTest.AppendToFile(relativeDir, "someSampleText");
-            var text = File.ReadAllText(Path.Combine(tempFolder, relativeDir));
+            this.serviceUnderTest.AppendToFile(relativeDir, "someSampleText");
+            var text = File.ReadAllText(Path.Combine(this.tempFolder, relativeDir));
             text
                 .Should().Be("someSampleText");
         }
@@ -51,8 +51,8 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void WriteFile_CreatesAFile()
         {
             var relativeDir = "someFileName.txt";
-            serviceUnderTest.WriteFile(relativeDir, "sampleText");
-            var text = File.ReadAllText(Path.Combine(tempFolder, relativeDir));
+            this.serviceUnderTest.WriteFile(relativeDir, "sampleText");
+            var text = File.ReadAllText(Path.Combine(this.tempFolder, relativeDir));
             text
                 .Should().Be("sampleText");
         }
@@ -61,23 +61,23 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void WriteFile_AppendToFile_WorkWithTemplatizedPaths()
         {
             var relativeDir = "somefile_{timestamp}.txt";
-            serviceUnderTest.WriteFile(relativeDir, "sampleText");
-            serviceUnderTest.AppendToFile(relativeDir, "sampleText2");
-            var files = Directory.GetFiles(tempFolder);
+            this.serviceUnderTest.WriteFile(relativeDir, "sampleText");
+            this.serviceUnderTest.AppendToFile(relativeDir, "sampleText2");
+            var files = Directory.GetFiles(this.tempFolder);
             files
                 .Should().NotBeEmpty();
             File.ReadAllText(files[0])
                 .Should().Contain($"sampleTextsampleText2");
-            VerifyTimestamp(files[0], "somefile_", ".txt");
+            this.VerifyTimestamp(files[0], "somefile_", ".txt");
         }
 
         [TestMethod]
         public void ResolveFilePath_ResolvedTemplatizedPaths()
         {
             var relativeDir = "someOtherFile_{timestamp}.txt";
-            serviceUnderTest.WriteFile(relativeDir, string.Empty);
-            var fullPath = serviceUnderTest.ResolveFilePath(relativeDir);
-            VerifyTimestamp(fullPath, "someOtherFile_", ".txt");
+            this.serviceUnderTest.WriteFile(relativeDir, string.Empty);
+            var fullPath = this.serviceUnderTest.ResolveFilePath(relativeDir);
+            this.VerifyTimestamp(fullPath, "someOtherFile_", ".txt");
         }
 
         [TestMethod]
@@ -85,7 +85,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             var relativeDir = Guid.NewGuid();
             var actualServiceUnderTest = new FileWritingService();
-            Action action = () => actualServiceUnderTest.Init(Path.Combine(serviceUnderTest.BasePath, relativeDir.ToString()));
+            Action action = () => actualServiceUnderTest.Init(Path.Combine(this.serviceUnderTest.BasePath, relativeDir.ToString()));
 
             action.Should().Throw<InvalidUserInputException>();
         }

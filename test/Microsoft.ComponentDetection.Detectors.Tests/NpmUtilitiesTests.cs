@@ -22,7 +22,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            loggerMock = new Mock<ILogger>();
+            this.loggerMock = new Mock<ILogger>();
         }
 
         [TestMethod]
@@ -38,7 +38,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             JObject j = JObject.Parse(json);
 
-            var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", loggerMock.Object);
+            var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
 
             Assert.IsNotNull(componentFromJProperty);
             Assert.AreEqual(componentFromJProperty.Type, ComponentType.Npm);
@@ -61,7 +61,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             JObject j = JObject.Parse(json);
 
-            var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", loggerMock.Object);
+            var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
 
             Assert.IsNull(componentFromJProperty);
         }
@@ -78,7 +78,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             }";
 
             JObject j = JObject.Parse(jsonInvalidCharacter);
-            var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", loggerMock.Object);
+            var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
             Assert.IsNull(componentFromJProperty);
 
             string jsonUrlName = @"{
@@ -90,7 +90,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             }";
 
             j = JObject.Parse(jsonUrlName);
-            componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", loggerMock.Object);
+            componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
             Assert.IsNull(componentFromJProperty);
 
             string jsonInvalidInitialCharacter1 = @"{
@@ -102,7 +102,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             }";
 
             j = JObject.Parse(jsonInvalidInitialCharacter1);
-            componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", loggerMock.Object);
+            componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
             Assert.IsNull(componentFromJProperty);
 
             string jsonInvalidInitialCharacter2 = @"{
@@ -114,7 +114,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             }";
 
             j = JObject.Parse(jsonInvalidInitialCharacter2);
-            componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", loggerMock.Object);
+            componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
             Assert.IsNull(componentFromJProperty);
 
             var longPackageName = new string('a', 214);
@@ -127,7 +127,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             }}";
 
             j = JObject.Parse(jsonLongName);
-            componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", loggerMock.Object);
+            componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
             Assert.IsNull(componentFromJProperty);
         }
 
@@ -164,7 +164,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var currentDependency = jsonChildren.Single();
             var dependencyLookup = jsonChildren.ToDictionary(dependency => dependency.Name);
 
-            var typedComponent = NpmComponentUtilities.GetTypedComponent(currentDependency, "registry.npmjs.org", loggerMock.Object);
+            var typedComponent = NpmComponentUtilities.GetTypedComponent(currentDependency, "registry.npmjs.org", this.loggerMock.Object);
             ComponentRecorder componentRecorder = new ComponentRecorder();
 
             var singleFileComponentRecorder1 = componentRecorder.CreateSingleFileComponentRecorder("/this/is/a/test/path/");
@@ -196,7 +196,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var currentDependency1 = jsonChildren1.Single();
             var dependencyLookup1 = jsonChildren1.ToDictionary(dependency => dependency.Name);
 
-            var typedComponent1 = NpmComponentUtilities.GetTypedComponent(currentDependency1, "registry.npmjs.org", loggerMock.Object);
+            var typedComponent1 = NpmComponentUtilities.GetTypedComponent(currentDependency1, "registry.npmjs.org", this.loggerMock.Object);
 
             NpmComponentUtilities.TraverseAndRecordComponents(currentDependency1, singleFileComponentRecorder2, typedComponent1, typedComponent1);
 

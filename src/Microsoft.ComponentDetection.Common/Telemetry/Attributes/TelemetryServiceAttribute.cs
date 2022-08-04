@@ -8,7 +8,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Attributes
 
         public TelemetryServiceAttribute(string serviceType)
         {
-            ServiceType = serviceType;
+            this.ServiceType = serviceType;
         }
     }
 }

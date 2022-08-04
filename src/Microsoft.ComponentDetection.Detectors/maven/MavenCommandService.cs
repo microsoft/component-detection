@@ -29,18 +29,18 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         public async Task<bool> MavenCLIExists()
         {
-            return await CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
+            return await this.CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
         }
 
         public async Task GenerateDependenciesFile(ProcessRequest processRequest)
         {
             var pomFile = processRequest.ComponentStream;
-            var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={BcdeMvnDependencyFileName}", "-DoutputType=text", $"-f{pomFile.Location}" };
-            var result = await CommandLineInvocationService.ExecuteCommand(PrimaryCommand, AdditionalValidCommands, cliParameters);
+            var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={this.BcdeMvnDependencyFileName}", "-DoutputType=text", $"-f{pomFile.Location}" };
+            var result = await this.CommandLineInvocationService.ExecuteCommand(PrimaryCommand, AdditionalValidCommands, cliParameters);
             if (result.ExitCode != 0)
             {
-                Logger.LogVerbose($"Mvn execution failed for pom file: {pomFile.Location}");
-                Logger.LogError(string.IsNullOrEmpty(result.StdErr) ? result.StdOut : result.StdErr);
+                this.Logger.LogVerbose($"Mvn execution failed for pom file: {pomFile.Location}");
+                this.Logger.LogError(string.IsNullOrEmpty(result.StdErr) ? result.StdOut : result.StdErr);
             }
         }
 
@@ -49,7 +49,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             using StreamReader sr = new StreamReader(processRequest.ComponentStream.Stream);
 
             var lines = sr.ReadToEnd().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-            ParserService.Parse(lines, processRequest.SingleFileComponentRecorder);
+            this.ParserService.Parse(lines, processRequest.SingleFileComponentRecorder);
         }
     }
 }

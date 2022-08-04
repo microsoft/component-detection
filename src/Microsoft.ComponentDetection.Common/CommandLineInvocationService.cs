@@ -22,7 +22,7 @@ namespace Microsoft.ComponentDetection.Common
             additionalCandidateCommands = additionalCandidateCommands ?? Enumerable.Empty<string>();
             parameters = parameters ?? new string[0];
             var allCommands = new[] { command }.Concat(additionalCandidateCommands);
-            if (!commandLocatableCache.TryGetValue(command, out string validCommand))
+            if (!this.commandLocatableCache.TryGetValue(command, out string validCommand))
             {
                 foreach (var commandToTry in allCommands)
                 {
@@ -36,7 +36,7 @@ namespace Microsoft.ComponentDetection.Common
 
                         if (result.ExitCode == 0)
                         {
-                            commandLocatableCache[command] = validCommand = commandToTry;
+                            this.commandLocatableCache[command] = validCommand = commandToTry;
                             break;
                         }
                     }
@@ -53,7 +53,7 @@ namespace Microsoft.ComponentDetection.Common
 
         public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
         {
-            var isCommandLocatable = await CanCommandBeLocated(command, additionalCandidateCommands);
+            var isCommandLocatable = await this.CanCommandBeLocated(command, additionalCandidateCommands);
             if (!isCommandLocatable)
             {
                 throw new InvalidOperationException(
@@ -68,7 +68,7 @@ namespace Microsoft.ComponentDetection.Common
 
             using var record = new CommandLineInvocationTelemetryRecord();
 
-            var pathToRun = commandLocatableCache[command];
+            var pathToRun = this.commandLocatableCache[command];
             var joinedParameters = string.Join(" ", parameters);
             try
             {
@@ -147,12 +147,12 @@ namespace Microsoft.ComponentDetection.Common
 
         public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
         {
-            return await CanCommandBeLocated(command, additionalCandidateCommands, workingDirectory: null, parameters);
+            return await this.CanCommandBeLocated(command, additionalCandidateCommands, workingDirectory: null, parameters);
         }
 
         public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
         {
-            return await ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters);
+            return await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters);
         }
     }
 }

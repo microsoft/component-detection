@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
 
         public override string ToString()
         {
-            return name;
+            return this.name;
         }
     }
 #pragma warning restore SA1300

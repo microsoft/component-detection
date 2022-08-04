@@ -60,12 +60,12 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
 
         protected override async Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
         {
-            if (await IsAntLocallyAvailableAsync())
+            if (await this.IsAntLocallyAvailableAsync())
             {
                 return processRequests;
             }
 
-            Logger.LogVerbose("Skipping Ivy detection as ant is not available in the local PATH.");
+            this.Logger.LogVerbose("Skipping Ivy detection as ant is not available in the local PATH.");
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
 
@@ -80,18 +80,18 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
             {
                 if (File.Exists(ivySettingsFilePath))
                 {
-                    Logger.LogInfo($"Processing {ivyXmlFile.Location} and ivysettings.xml.");
-                    await ProcessIvyAndIvySettingsFilesAsync(singleFileComponentRecorder, ivyXmlFile.Location, ivySettingsFilePath);
+                    this.Logger.LogInfo($"Processing {ivyXmlFile.Location} and ivysettings.xml.");
+                    await this.ProcessIvyAndIvySettingsFilesAsync(singleFileComponentRecorder, ivyXmlFile.Location, ivySettingsFilePath);
                 }
                 else
                 {
-                    Logger.LogInfo($"Processing {ivyXmlFile.Location}.");
-                    await ProcessIvyAndIvySettingsFilesAsync(singleFileComponentRecorder, ivyXmlFile.Location, null);
+                    this.Logger.LogInfo($"Processing {ivyXmlFile.Location}.");
+                    await this.ProcessIvyAndIvySettingsFilesAsync(singleFileComponentRecorder, ivyXmlFile.Location, null);
                 }
             }
             else
             {
-                Logger.LogError($"File {ivyXmlFile.Location} passed to OnFileFound, but does not exist!");
+                this.Logger.LogError($"File {ivyXmlFile.Location} passed to OnFileFound, but does not exist!");
             }
         }
 
@@ -103,27 +103,27 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
             try
             {
                 string workingDirectory = Path.Combine(Path.GetTempPath(), "ComponentDetection_Ivy");
-                Logger.LogVerbose($"Preparing temporary Ivy project in {workingDirectory}");
+                this.Logger.LogVerbose($"Preparing temporary Ivy project in {workingDirectory}");
                 if (Directory.Exists(workingDirectory))
                 {
                     Directory.Delete(workingDirectory, recursive: true);
                 }
 
-                InitTemporaryAntProject(workingDirectory, ivyXmlFile, ivySettingsXmlFile);
-                if (await RunAntToDetectDependenciesAsync(workingDirectory))
+                this.InitTemporaryAntProject(workingDirectory, ivyXmlFile, ivySettingsXmlFile);
+                if (await this.RunAntToDetectDependenciesAsync(workingDirectory))
                 {
                     string instructionsFile = Path.Combine(workingDirectory, "target", "RegisterUsage.json");
-                    RegisterUsagesFromFile(singleFileComponentRecorder, instructionsFile);
+                    this.RegisterUsagesFromFile(singleFileComponentRecorder, instructionsFile);
                 }
 
                 Directory.Delete(workingDirectory, recursive: true);
             }
             catch (Exception e)
             {
-                Logger.LogError("Exception occurred during Ivy file processing: " + e);
+                this.Logger.LogError("Exception occurred during Ivy file processing: " + e);
 
                 // If something went wrong, just ignore the file
-                Logger.LogFailedReadingFile(ivyXmlFile, e);
+                this.Logger.LogFailedReadingFile(ivyXmlFile, e);
             }
         }
 
@@ -156,40 +156,40 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
         {
             // Note: calling CanCommandBeLocated populates a cache of valid commands.  If it is not called before ExecuteCommand,
             // ExecuteCommand calls CanCommandBeLocated with no arguments, which fails.
-            return await CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, AntVersionArgument);
+            return await this.CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, AntVersionArgument);
         }
 
         private async Task<bool> RunAntToDetectDependenciesAsync(string workingDirectory)
         {
             bool ret = false;
-            Logger.LogVerbose($"Executing command `ant resolve-dependencies` in directory {workingDirectory}");
-            CommandLineExecutionResult result = await CommandLineInvocationService.ExecuteCommand(PrimaryCommand, additionalCandidateCommands: AdditionalValidCommands, "-buildfile", workingDirectory, "resolve-dependencies");
+            this.Logger.LogVerbose($"Executing command `ant resolve-dependencies` in directory {workingDirectory}");
+            CommandLineExecutionResult result = await this.CommandLineInvocationService.ExecuteCommand(PrimaryCommand, additionalCandidateCommands: AdditionalValidCommands, "-buildfile", workingDirectory, "resolve-dependencies");
             if (result.ExitCode == 0)
             {
-                Logger.LogVerbose("Ant command succeeded");
+                this.Logger.LogVerbose("Ant command succeeded");
                 ret = true;
             }
             else
             {
-                Logger.LogError($"Ant command failed with return code {result.ExitCode}");
+                this.Logger.LogError($"Ant command failed with return code {result.ExitCode}");
             }
 
             if (string.IsNullOrWhiteSpace(result.StdOut))
             {
-                Logger.LogVerbose("Ant command wrote nothing to stdout.");
+                this.Logger.LogVerbose("Ant command wrote nothing to stdout.");
             }
             else
             {
-                Logger.LogVerbose("Ant command stdout:\n" + result.StdOut);
+                this.Logger.LogVerbose("Ant command stdout:\n" + result.StdOut);
             }
 
             if (string.IsNullOrWhiteSpace(result.StdErr))
             {
-                Logger.LogVerbose("Ant command wrote nothing to stderr.");
+                this.Logger.LogVerbose("Ant command wrote nothing to stderr.");
             }
             else
             {
-                Logger.LogWarning("Ant command stderr:\n" + result.StdErr);
+                this.Logger.LogWarning("Ant command stderr:\n" + result.StdErr);
             }
 
             return ret;
@@ -228,7 +228,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
                 }
                 else
                 {
-                    Logger.LogWarning($"Dependency \"{component.Id}\" could not be resolved by Ivy, and so has not been recorded by Component Detection.");
+                    this.Logger.LogWarning($"Dependency \"{component.Id}\" could not be resolved by Ivy, and so has not been recorded by Component Detection.");
                 }
             }
         }

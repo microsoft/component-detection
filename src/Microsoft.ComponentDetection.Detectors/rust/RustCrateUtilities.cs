@@ -56,18 +56,18 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
 
                 // Extract the workspaces present, if any
-                if (cargoToml.ContainsKey(RustCrateUtilities.WorkspaceKey))
+                if (cargoToml.ContainsKey(WorkspaceKey))
                 {
-                    TomlTable workspaces = cargoToml.Get<TomlTable>(RustCrateUtilities.WorkspaceKey);
+                    TomlTable workspaces = cargoToml.Get<TomlTable>(WorkspaceKey);
 
-                    TomlObject workspaceMembers = workspaces.ContainsKey(RustCrateUtilities.WorkspaceMemberKey) ? workspaces[RustCrateUtilities.WorkspaceMemberKey] : null;
-                    TomlObject workspaceExclusions = workspaces.ContainsKey(RustCrateUtilities.WorkspaceExcludeKey) ? workspaces[RustCrateUtilities.WorkspaceExcludeKey] : null;
+                    TomlObject workspaceMembers = workspaces.ContainsKey(WorkspaceMemberKey) ? workspaces[WorkspaceMemberKey] : null;
+                    TomlObject workspaceExclusions = workspaces.ContainsKey(WorkspaceExcludeKey) ? workspaces[WorkspaceExcludeKey] : null;
 
                     if (workspaceMembers != null)
                     {
                         if (workspaceMembers.TomlType != TomlObjectType.Array)
                         {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {RustCrateUtilities.WorkspaceMemberKey} within {RustCrateUtilities.WorkspaceKey} to be of type Array, but found {workspaceMembers.TomlType}");
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceMemberKey} within {WorkspaceKey} to be of type Array, but found {workspaceMembers.TomlType}");
                         }
 
                         // TomlObject arrays do not natively implement a HashSet get, so add from a list
@@ -78,14 +78,14 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     {
                         if (workspaceExclusions.TomlType != TomlObjectType.Array)
                         {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {RustCrateUtilities.WorkspaceExcludeKey} within {RustCrateUtilities.WorkspaceKey} to be of type Array, but found {workspaceExclusions.TomlType}");
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceExcludeKey} within {WorkspaceKey} to be of type Array, but found {workspaceExclusions.TomlType}");
                         }
 
                         cargoDependencyData.CargoWorkspaceExclusions.UnionWith(workspaceExclusions.Get<List<string>>());
                     }
                 }
 
-                RustCrateUtilities.GenerateDependencies(cargoToml, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies);
+                GenerateDependencies(cargoToml, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies);
 
                 break;
             }
@@ -110,7 +110,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
                 singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
 
-                RustCrateUtilities.GenerateDependencies(cargoToml, nonDevDependencySpecifications, devDependencySpecifications);
+                GenerateDependencies(cargoToml, nonDevDependencySpecifications, devDependencySpecifications);
             }
         }
 
@@ -122,8 +122,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// <param name="devDependencySpecifications">Current list of development dependencies.</param>
         private static void GenerateDependencies(TomlTable cargoToml, IList<DependencySpecification> nonDevDependencySpecifications, IList<DependencySpecification> devDependencySpecifications)
         {
-            var dependencySpecification = RustCrateUtilities.GenerateDependencySpecifications(cargoToml, RustCrateUtilities.NonDevDependencyKeys);
-            var devDependencySpecification = RustCrateUtilities.GenerateDependencySpecifications(cargoToml, RustCrateUtilities.DevDependencyKeys);
+            var dependencySpecification = GenerateDependencySpecifications(cargoToml, NonDevDependencyKeys);
+            var devDependencySpecification = GenerateDependencySpecifications(cargoToml, DevDependencyKeys);
 
             // If null, this indicates the toml is an internal file that should not be tracked as a component.
             if (dependencySpecification != null)

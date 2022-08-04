@@ -15,11 +15,11 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="componentRecorder">Detector component recorder.</param>
         public ScanRequest(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate directoryExclusionPredicate, ILogger logger, IDictionary<string, string> detectorArgs, IEnumerable<string> imagesToScan, IComponentRecorder componentRecorder)
         {
-            SourceDirectory = sourceDirectory;
-            DirectoryExclusionPredicate = directoryExclusionPredicate;
-            DetectorArgs = detectorArgs;
-            ImagesToScan = imagesToScan;
-            ComponentRecorder = componentRecorder;
+            this.SourceDirectory = sourceDirectory;
+            this.DirectoryExclusionPredicate = directoryExclusionPredicate;
+            this.DetectorArgs = detectorArgs;
+            this.ImagesToScan = imagesToScan;
+            this.ComponentRecorder = componentRecorder;
         }
 
         /// <summary> Gets the source directory to consider the working directory for the detection operation.</summary>

@@ -43,16 +43,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 .Returns(true);
             detector.FileUtilityService = fileUtilityServiceMock.Object;
 
-            detectorTestUtility = DetectorTestUtilityCreator.Create<NuGetProjectModelProjectCentricComponentDetector>()
+            this.detectorTestUtility = DetectorTestUtilityCreator.Create<NuGetProjectModelProjectCentricComponentDetector>()
                                                             .WithDetector(detector);
         }
 
         [TestMethod]
         public async Task ScanDirectoryAsync_Base_2_2_Verification()
         {
-            string osAgnostic = Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
-            var (scanResult, componentRecorder) = await detectorTestUtility
-                                                    .WithFile(projectAssetsJsonFileName, osAgnostic)
+            string osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
 
             var detectedComponents = componentRecorder.GetDetectedComponents();
@@ -73,9 +73,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_Base_2_2_additional_Verification()
         {
-            string osAgnostic = Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
-            var (scanResult, componentRecorder) = await detectorTestUtility
-                                                    .WithFile(projectAssetsJsonFileName, osAgnostic)
+            string osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
 
             var detectedComponents = componentRecorder.GetDetectedComponents();
@@ -99,9 +99,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_2_2_Verification()
         {
-            string osAgnostic = Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
-            var (scanResult, componentRecorder) = await detectorTestUtility
-                                                    .WithFile(projectAssetsJsonFileName, osAgnostic)
+            string osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
 
             var ommittedComponentInformationJson = scanResult.AdditionalTelemetryDetails[NuGetProjectModelProjectCentricComponentDetector.OmittedFrameworkComponentsTelemetryKey];
@@ -114,9 +114,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_DependencyGraph_2_2_additional_Verification()
         {
-            string osAgnostic = Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
-            var (scanResult, componentRecorder) = await detectorTestUtility
-                                                    .WithFile(projectAssetsJsonFileName, osAgnostic)
+            string osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
             var graphsByLocation = componentRecorder.GetDependencyGraphsByLocation();
             var graph = graphsByLocation.Values.First();
@@ -194,9 +194,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_Base_3_1_Verification()
         {
-            string osAgnostic = Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
-            var (scanResult, componentRecorder) = await detectorTestUtility
-                                                    .WithFile(projectAssetsJsonFileName, osAgnostic)
+            string osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
 
             // Number of unique nodes in ProjectAssetsJson
@@ -216,9 +216,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_3_1_Verification()
         {
-            string osAgnostic = Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
-            var (scanResult, componentRecorder) = await detectorTestUtility
-                                                    .WithFile(projectAssetsJsonFileName, osAgnostic)
+            string osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
 
             var ommittedComponentInformationJson = scanResult.AdditionalTelemetryDetails[NuGetProjectModelProjectCentricComponentDetector.OmittedFrameworkComponentsTelemetryKey];
@@ -232,9 +232,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_DependencyGraph_3_1_Verification()
         {
-            string osAgnostic = Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
-            var (scanResult, componentRecorder) = await detectorTestUtility
-                                                    .WithFile(projectAssetsJsonFileName, osAgnostic)
+            string osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
 
             var graphsByLocation = componentRecorder.GetDependencyGraphsByLocation();
@@ -286,8 +286,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
   },
  ""packageFolders"": {}
 }";
-            var (scanResult, componentRecorder) = await detectorTestUtility
-                                                    .WithFile(projectAssetsJsonFileName, osAgnostic)
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);

@@ -31,8 +31,8 @@ namespace Microsoft.ComponentDetection.Detectors.Gradle
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            Logger.LogVerbose("Found Gradle lockfile: " + file.Location);
-            ParseLockfile(singleFileComponentRecorder, file);
+            this.Logger.LogVerbose("Found Gradle lockfile: " + file.Location);
+            this.ParseLockfile(singleFileComponentRecorder, file);
 
             return Task.CompletedTask;
         }
@@ -52,14 +52,14 @@ namespace Microsoft.ComponentDetection.Detectors.Gradle
                 var line = lines[0].Trim();
                 lines.RemoveAt(0);
 
-                if (!StartsWithLetter(line))
+                if (!this.StartsWithLetter(line))
                 {
                     continue;
                 }
 
                 if (line.Split(":").Length == 3)
                 {
-                    var detectedMavenComponent = new DetectedComponent(CreateMavenComponentFromFileLine(line));
+                    var detectedMavenComponent = new DetectedComponent(this.CreateMavenComponentFromFileLine(line));
                     singleFileComponentRecorder.RegisterUsage(detectedMavenComponent);
                 }
             }

@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         public async Task<ScanResult> Handle(IScanArguments arguments)
         {
-            await ListDetectorsAsync(arguments as IListDetectionArgs);
+            await this.ListDetectorsAsync(arguments as IListDetectionArgs);
             return new ScanResult()
             {
                 ResultCode = ProcessingResultCode.Success,
@@ -29,12 +29,12 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         private async Task<ProcessingResultCode> ListDetectorsAsync(IScanArguments listArguments)
         {
-            var detectors = DetectorRegistryService.GetDetectors(listArguments.AdditionalPluginDirectories, listArguments.AdditionalDITargets);
+            var detectors = this.DetectorRegistryService.GetDetectors(listArguments.AdditionalPluginDirectories, listArguments.AdditionalDITargets);
             if (detectors.Any())
             {
                 foreach (var detector in detectors)
                 {
-                    Logger.LogInfo($"{detector.Id}");
+                    this.Logger.LogInfo($"{detector.Id}");
                 }
             }
 

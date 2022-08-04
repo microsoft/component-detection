@@ -40,11 +40,11 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
             if (NugetConfigFileName.Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
-                await ProcessAdditionalDirectory(processRequest, ignoreNugetConfig);
+                await this.ProcessAdditionalDirectory(processRequest, ignoreNugetConfig);
             }
             else
             {
-                await ProcessFile(processRequest);
+                await this.ProcessFile(processRequest);
             }
         }
 
@@ -55,21 +55,21 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
             if (!ignoreNugetConfig)
             {
-                var additionalPaths = GetRepositoryPathsFromNugetConfig(stream);
-                Uri rootPath = new Uri(CurrentScanRequest.SourceDirectory.FullName + Path.DirectorySeparatorChar);
+                var additionalPaths = this.GetRepositoryPathsFromNugetConfig(stream);
+                Uri rootPath = new Uri(this.CurrentScanRequest.SourceDirectory.FullName + Path.DirectorySeparatorChar);
 
                 foreach (var additionalPath in additionalPaths)
                 {
                     // Only paths outside of our sourceDirectory need to be added
                     if (!rootPath.IsBaseOf(new Uri(additionalPath.FullName + Path.DirectorySeparatorChar)))
                     {
-                        Logger.LogInfo($"Found path override in nuget configuration file. Adding {additionalPath} to the package search path.");
-                        Logger.LogWarning($"Path {additionalPath} is not rooted in the source tree. More components may be detected than expected if this path is shared across code projects.");
+                        this.Logger.LogInfo($"Found path override in nuget configuration file. Adding {additionalPath} to the package search path.");
+                        this.Logger.LogWarning($"Path {additionalPath} is not rooted in the source tree. More components may be detected than expected if this path is shared across code projects.");
 
-                        Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
+                        this.Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
 
-                        await Scanner.GetFilteredComponentStreamObservable(additionalPath, SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
-                            .ForEachAsync(async fi => await ProcessFile(fi));
+                        await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
+                            .ForEachAsync(async fi => await this.ProcessFile(fi));
                     }
                 }
             }
@@ -112,7 +112,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
                 if (!NuGetVersion.TryParse(version, out NuGetVersion parsedVer))
                 {
-                    Logger.LogInfo($"Version '{version}' from {stream.Location} could not be parsed as a NuGet version");
+                    this.Logger.LogInfo($"Version '{version}' from {stream.Location} could not be parsed as a NuGet version");
 
                     return;
                 }
@@ -126,7 +126,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             catch (Exception e)
             {
                 // If something went wrong, just ignore the component
-                Logger.LogFailedReadingFile(stream.Location, e);
+                this.Logger.LogFailedReadingFile(stream.Location, e);
             }
         }
 
@@ -149,7 +149,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
                 foreach (var entry in config.Elements())
                 {
-                    if (entry.Attributes().Any(x => repositoryPathKeyNames.Contains(x.Value.ToLower())))
+                    if (entry.Attributes().Any(x => this.repositoryPathKeyNames.Contains(x.Value.ToLower())))
                     {
                         string value = entry.Attributes().SingleOrDefault(x => string.Equals(x.Name.LocalName, "value", StringComparison.OrdinalIgnoreCase))?.Value;
 
@@ -174,13 +174,13 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 {
                     path = new DirectoryInfo(Path.GetFullPath(potentialPath));
                 }
-                else if (IsValidPath(componentStream.Location))
+                else if (this.IsValidPath(componentStream.Location))
                 {
                     path = new DirectoryInfo(Path.GetFullPath(Path.Combine(Path.GetDirectoryName(componentStream.Location), potentialPath)));
                 }
                 else
                 {
-                    Logger.LogWarning($"Excluding discovered path {potentialPath} from location {componentStream.Location} as it could not be determined to be valid.");
+                    this.Logger.LogWarning($"Excluding discovered path {potentialPath} from location {componentStream.Location} as it could not be determined to be valid.");
                     continue;
                 }
 

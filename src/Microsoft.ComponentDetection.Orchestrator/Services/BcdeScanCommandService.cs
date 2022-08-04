@@ -27,8 +27,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
         public async Task<ScanResult> Handle(IScanArguments arguments)
         {
             BcdeArguments bcdeArguments = (BcdeArguments)arguments;
-            var result = await BcdeScanExecutionService.ExecuteScanAsync(bcdeArguments);
-            WriteComponentManifest(bcdeArguments, result);
+            var result = await this.BcdeScanExecutionService.ExecuteScanAsync(bcdeArguments);
+            this.WriteComponentManifest(bcdeArguments, result);
             return result;
         }
 
@@ -38,21 +38,21 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
             if (detectionArguments.ManifestFile != null)
             {
-                Logger.LogInfo($"Scan Manifest file: {detectionArguments.ManifestFile.FullName}");
+                this.Logger.LogInfo($"Scan Manifest file: {detectionArguments.ManifestFile.FullName}");
                 userRequestedManifestPath = detectionArguments.ManifestFile;
             }
             else
             {
-                Logger.LogInfo($"Scan Manifest file: {FileWritingService.ResolveFilePath(ManifestRelativePath)}");
+                this.Logger.LogInfo($"Scan Manifest file: {this.FileWritingService.ResolveFilePath(ManifestRelativePath)}");
             }
 
             if (userRequestedManifestPath == null)
             {
-                FileWritingService.AppendToFile(ManifestRelativePath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
+                this.FileWritingService.AppendToFile(ManifestRelativePath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
             }
             else
             {
-                FileWritingService.WriteFile(userRequestedManifestPath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
+                this.FileWritingService.WriteFile(userRequestedManifestPath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
             }
         }
     }

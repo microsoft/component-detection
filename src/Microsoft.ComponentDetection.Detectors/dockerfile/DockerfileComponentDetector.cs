@@ -39,7 +39,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
             var filePath = file.Location;
-            Logger.LogInfo($"Discovered dockerfile: {file.Location}");
+            this.Logger.LogInfo($"Discovered dockerfile: {file.Location}");
 
             string contents;
             using (var reader = new StreamReader(file.Stream))
@@ -48,7 +48,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             }
 
             var stageNameMap = new Dictionary<string, string>();
-            var dockerFileComponent = ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
+            var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
         }
 
         private Task ParseDockerFile(string fileContents, string fileLocation, ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, string> stageNameMap)
@@ -57,7 +57,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             var instructions = dockerfileModel.Items;
             foreach (var instruction in instructions)
             {
-                var imageReference = ProcessDockerfileConstruct(instruction, dockerfileModel.EscapeChar, stageNameMap);
+                var imageReference = this.ProcessDockerfileConstruct(instruction, dockerfileModel.EscapeChar, stageNameMap);
                 if (imageReference != null)
                 {
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(imageReference.ToTypedDockerReferenceComponent()));
@@ -79,10 +79,10 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
                     switch (constructType)
                     {
                         case "FromInstruction":
-                            baseImage = ParseFromInstruction(construct, escapeChar, stageNameMap);
+                            baseImage = this.ParseFromInstruction(construct, escapeChar, stageNameMap);
                             break;
                         case "CopyInstruction":
-                            baseImage = ParseCopyInstruction(construct, escapeChar, stageNameMap);
+                            baseImage = this.ParseCopyInstruction(construct, escapeChar, stageNameMap);
                             break;
                         default:
                             break;
@@ -92,8 +92,8 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
                 return baseImage;
             } catch (Exception e)
             {
-                Logger.LogError($"Failed to detect a DockerReference component, the component will not be registered. \n Error Message: <{e.Message}>");
-                Logger.LogException(e, isError: true, printException: true);
+                this.Logger.LogError($"Failed to detect a DockerReference component, the component will not be registered. \n Error Message: <{e.Message}>");
+                this.Logger.LogException(e, isError: true, printException: true);
                 return null;
             }
         }
@@ -102,7 +102,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
         {
             var tokens = construct.Tokens.ToArray();
             var resolvedFromStatement = construct.ResolveVariables(escapeChar).TrimEnd();
-            var fromInstruction = (Valleysoft.DockerfileModel.FromInstruction)construct;
+            var fromInstruction = (FromInstruction)construct;
             string reference = fromInstruction.ImageName;
             if (string.IsNullOrWhiteSpace(resolvedFromStatement) || string.IsNullOrEmpty(reference))
             {
@@ -126,7 +126,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 
             if (!string.IsNullOrEmpty(stageNameReference))
             {
-                if (HasUnresolvedVariables(stageNameReference))
+                if (this.HasUnresolvedVariables(stageNameReference))
                 {
                     return null;
                 }
@@ -134,7 +134,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
                 return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
             }
 
-            if (HasUnresolvedVariables(reference))
+            if (this.HasUnresolvedVariables(reference))
             {
                 return null;
             }
@@ -145,7 +145,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
         private DockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
         {
             var resolvedCopyStatement = construct.ResolveVariables(escapeChar).TrimEnd();
-            var copyInstruction = (Valleysoft.DockerfileModel.CopyInstruction)construct;
+            var copyInstruction = (CopyInstruction)construct;
             var reference = copyInstruction.FromStageName;
             if (string.IsNullOrWhiteSpace(resolvedCopyStatement) || string.IsNullOrWhiteSpace(reference))
             {
@@ -155,7 +155,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             stageNameMap.TryGetValue(reference, out var stageNameReference);
             if (!string.IsNullOrEmpty(stageNameReference))
             {
-                if (HasUnresolvedVariables(stageNameReference))
+                if (this.HasUnresolvedVariables(stageNameReference))
                 {
                     return null;
                 }
@@ -165,7 +165,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
                 }
             }
 
-            if (HasUnresolvedVariables(reference))
+            if (this.HasUnresolvedVariables(reference))
             {
                 return null;
             }

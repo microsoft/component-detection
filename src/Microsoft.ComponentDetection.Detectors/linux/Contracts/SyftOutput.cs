@@ -313,7 +313,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux.Contracts
         public static implicit operator ConfigurationUnion(double Double) => new ConfigurationUnion { Double = Double };
         public static implicit operator ConfigurationUnion(long Integer) => new ConfigurationUnion { Integer = Integer };
         public static implicit operator ConfigurationUnion(string String) => new ConfigurationUnion { String = String };
-        public bool IsNull => AnythingArray == null && Bool == null && Double == null && Integer == null && AnythingMap == null && String == null;
+        public bool IsNull => this.AnythingArray == null && this.Bool == null && this.Double == null && this.Integer == null && this.AnythingMap == null && this.String == null;
     }
 
     public partial struct Author

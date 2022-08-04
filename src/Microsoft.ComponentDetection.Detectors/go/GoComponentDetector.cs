@@ -44,7 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             var file = processRequest.ComponentStream;
 
             var projectRootDirectory = Directory.GetParent(file.Location);
-            if (projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
+            if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
             {
                 return;
             }
@@ -52,26 +52,26 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             var wasGoCliScanSuccessful = false;
             try
             {
-                if (!IsGoCliManuallyDisabled())
+                if (!this.IsGoCliManuallyDisabled())
                 {
-                    wasGoCliScanSuccessful = await UseGoCliToScan(file.Location, singleFileComponentRecorder);
+                    wasGoCliScanSuccessful = await this.UseGoCliToScan(file.Location, singleFileComponentRecorder);
                 }
                 else
                 {
-                    Logger.LogInfo("Go cli scan was manually disabled, fallback strategy performed." +
-                        " More info: https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy");
+                    this.Logger.LogInfo("Go cli scan was manually disabled, fallback strategy performed." +
+                                        " More info: https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy");
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Failed to detect components using go cli. Location: {file.Location}");
-                Logger.LogException(ex, isError: true, printException: true);
+                this.Logger.LogError($"Failed to detect components using go cli. Location: {file.Location}");
+                this.Logger.LogException(ex, isError: true, printException: true);
             }
             finally
             {
                 if (wasGoCliScanSuccessful)
                 {
-                    projectRoots.Add(projectRootDirectory.FullName);
+                    this.projectRoots.Add(projectRootDirectory.FullName);
                 }
                 else
                 {
@@ -80,15 +80,15 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                     {
                         case ".mod":
                             {
-                                Logger.LogVerbose("Found Go.mod: " + file.Location);
-                                ParseGoModFile(singleFileComponentRecorder, file);
+                                this.Logger.LogVerbose("Found Go.mod: " + file.Location);
+                                this.ParseGoModFile(singleFileComponentRecorder, file);
                                 break;
                             }
 
                         case ".sum":
                             {
-                                Logger.LogVerbose("Found Go.sum: " + file.Location);
-                                ParseGoSumFile(singleFileComponentRecorder, file);
+                                this.Logger.LogVerbose("Found Go.sum: " + file.Location);
+                                this.ParseGoSumFile(singleFileComponentRecorder, file);
                                 break;
                             }
 
@@ -109,32 +109,32 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             var projectRootDirectory = Directory.GetParent(location);
             record.ProjectRoot = projectRootDirectory.FullName;
 
-            var isGoAvailable = await CommandLineInvocationService.CanCommandBeLocated("go", null, workingDirectory: projectRootDirectory, new[] { "version" });
+            var isGoAvailable = await this.CommandLineInvocationService.CanCommandBeLocated("go", null, workingDirectory: projectRootDirectory, new[] { "version" });
             record.IsGoAvailable = isGoAvailable;
 
             if (!isGoAvailable)
             {
-                Logger.LogInfo("Go CLI was not found in the system");
+                this.Logger.LogInfo("Go CLI was not found in the system");
                 return false;
             }
 
-            Logger.LogInfo("Go CLI was found in system and will be used to generate dependency graph. " +
-                "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
-                "But, it will introduce noise into the detected components.");
-            var goDependenciesProcess = await CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-m", "-json", "all" });
+            this.Logger.LogInfo("Go CLI was found in system and will be used to generate dependency graph. " +
+                                "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
+                                "But, it will introduce noise into the detected components.");
+            var goDependenciesProcess = await this.CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-m", "-json", "all" });
             if (goDependenciesProcess.ExitCode != 0)
             {
-                Logger.LogError($"Go CLI command \"go list -m -json all\" failed with error:\n {goDependenciesProcess.StdErr}");
-                Logger.LogError($"Go CLI could not get dependency build list at location: {location}. Fallback go.sum/go.mod parsing will be used.");
+                this.Logger.LogError($"Go CLI command \"go list -m -json all\" failed with error:\n {goDependenciesProcess.StdErr}");
+                this.Logger.LogError($"Go CLI could not get dependency build list at location: {location}. Fallback go.sum/go.mod parsing will be used.");
                 return false;
             }
 
-            RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
+            this.RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
 
-            var generateGraphProcess = await CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new List<string> { "mod", "graph" }.ToArray());
+            var generateGraphProcess = await this.CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new List<string> { "mod", "graph" }.ToArray());
             if (generateGraphProcess.ExitCode == 0)
             {
-                PopulateDependencyGraph(generateGraphProcess.StdOut, singleFileComponentRecorder);
+                this.PopulateDependencyGraph(generateGraphProcess.StdOut, singleFileComponentRecorder);
                 record.WasGraphSuccessful = true;
             }
 
@@ -156,13 +156,13 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             // Stopping at the first ) restrict the detection to only the require section.
             while ((line = reader.ReadLine()) != null && !line.EndsWith(")"))
             {
-                if (TryToCreateGoComponentFromModLine(line, out var goComponent))
+                if (this.TryToCreateGoComponentFromModLine(line, out var goComponent))
                 {
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
                 }
                 else
                 {
-                    Logger.LogWarning($"Line could not be parsed for component [{line.Trim()}]");
+                    this.Logger.LogWarning($"Line could not be parsed for component [{line.Trim()}]");
                 }
             }
         }
@@ -195,13 +195,13 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             string line;
             while ((line = reader.ReadLine()) != null)
             {
-                if (TryToCreateGoComponentFromSumLine(line, out var goComponent))
+                if (this.TryToCreateGoComponentFromSumLine(line, out var goComponent))
                 {
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
                 }
                 else
                 {
-                    Logger.LogWarning($"Line could not be parsed for component [{line.Trim()}]");
+                    this.Logger.LogWarning($"Line could not be parsed for component [{line.Trim()}]");
                 }
             }
         }
@@ -238,16 +238,16 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                         continue;
                     }
 
-                    Logger.LogWarning("Unexpected relationship output from go mod graph:");
-                    Logger.LogWarning(relationship);
+                    this.Logger.LogWarning("Unexpected relationship output from go mod graph:");
+                    this.Logger.LogWarning(relationship);
                     continue;
                 }
 
                 GoComponent parentComponent;
                 GoComponent childComponent;
 
-                var isParentParsed = TryCreateGoComponentFromRelationshipPart(components[0], out parentComponent);
-                var isChildParsed = TryCreateGoComponentFromRelationshipPart(components[1], out childComponent);
+                var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out parentComponent);
+                var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out childComponent);
 
                 if (!isParentParsed)
                 {
@@ -257,14 +257,14 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
                 if (isChildParsed)
                 {
-                    if (IsModuleInBuildList(componentRecorder, parentComponent) && IsModuleInBuildList(componentRecorder, childComponent))
+                    if (this.IsModuleInBuildList(componentRecorder, parentComponent) && this.IsModuleInBuildList(componentRecorder, childComponent))
                     {
                         componentRecorder.RegisterUsage(new DetectedComponent(childComponent), parentComponentId: parentComponent.Id);
                     }
                 }
                 else
                 {
-                    Logger.LogWarning($"Failed to parse components from relationship string {relationship}");
+                    this.Logger.LogWarning($"Failed to parse components from relationship string {relationship}");
                 }
             }
         }
@@ -324,7 +324,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
         private bool IsGoCliManuallyDisabled()
         {
-            return EnvVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
+            return this.EnvVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
         }
 
         private class GoBuildModule

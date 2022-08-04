@@ -45,7 +45,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestMethod]
         public void TypedComponent_Serialization_Npm()
         {
-            NpmAuthor npmAuthor = new Internal.NpmAuthor("someAuthorName", "someAuthorEmail");
+            NpmAuthor npmAuthor = new NpmAuthor("someAuthorName", "someAuthorEmail");
             var npmCompObj = new NpmComponent("SomeNpmComponent", "1.2.3")
             {
                 Author = npmAuthor,

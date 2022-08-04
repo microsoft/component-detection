@@ -58,19 +58,19 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                     try
                     {
                         var command = new List<string> { imageHash }.Concat(CmdParameters).ToList();
-                        (stdout, stderr) = await DockerService.CreateAndRunContainerAsync(ScannerImage, command, cancellationToken);
+                        (stdout, stderr) = await this.DockerService.CreateAndRunContainerAsync(ScannerImage, command, cancellationToken);
                     }
                     catch (Exception e)
                     {
                         syftTelemetryRecord.Exception = JsonConvert.SerializeObject(e);
-                        Logger.LogException(e, false);
+                        this.Logger.LogException(e, false);
                         throw;
                     }
                 }
                 else
                 {
                     record.SemaphoreFailure = true;
-                    Logger.LogWarning($"Failed to enter the docker semaphore for image {imageHash}");
+                    this.Logger.LogWarning($"Failed to enter the docker semaphore for image {imageHash}");
                 }
             }
             finally
