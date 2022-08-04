@@ -1,26 +1,26 @@
 // Ruby detection highlights and todos:
-// 
+//
 // Dependencies are "fuzzy versions":
 // this in and of itself could be solved by deferring dependency resolution alone until after all components are registered.
 // Different sections of Ruby's lockfile can point into other sections, and the authoritative version is not replicated across
 // sections-- it's only stored in, say, the Gems section.
-// 
+//
 // Git components are even stranger in Ruby land:
-// they have an annotation for a git component that is a "name" that has no relationship to how we normally think of 
-// a GitComponent (remote / version). The mapping from git component name to a GitComponent can't really be handled 
-// in ComponentRecorder today, because "component name" for a Git component is a Ruby specific concept. 
+// they have an annotation for a git component that is a "name" that has no relationship to how we normally think of
+// a GitComponent (remote / version). The mapping from git component name to a GitComponent can't really be handled
+// in ComponentRecorder today, because "component name" for a Git component is a Ruby specific concept.
 // This could be pointing to a sideloaded storage in ComponentRecorder (e.g. a <TContext> style storage that detectors
 // could use to track related state as their execution goes on).
-// 
+//
 // The basic approach in ruby is to do two passes:
 // first, make sure you have all authoritative components, then, resolve and register all dependency relationships.
-// 
+//
 // If we had sideloaded state for nodes in the graph, I could see us at least being able to remove the "name" mapping from ruby.
 // Deferred dependencies is a lot more complicated, you would basically need a way to set up a pointer to a component based on a mapped value
 // (in this case, just component name sans version) that would be resolved in an arbitrary way after the graph writing was "done".
 // I don't think this is impossible (having a custom delegate for a detector to identify and map nodes to one another seems pretty easy),
 // but seems complicated.
-// 
+//
 // There is a possibility to use manual root detection instead of automatic:
 // Gemfile.lock comes with a section called "Dependencies", in the section are listed the dependencies that the user specified in the Gemfile,
 // is necessary to investigate if this section is a new adition or always has been there.
@@ -170,9 +170,9 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                 foreach (Dependency dependency in dependencies[key])
                 {
                     // there are cases that we ommit the dependency
-                    // because its version is not valid like for example 
+                    // because its version is not valid like for example
                     // is a relative version instead of an absolute one
-                    // because of that there are children elements 
+                    // because of that there are children elements
                     // that does not contains a entry in the dictionary
                     // those elements should be removed
                     if (components.ContainsKey(dependency.Id))

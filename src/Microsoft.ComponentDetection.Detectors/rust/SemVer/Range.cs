@@ -1,9 +1,9 @@
 ﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
-// 
+//
 // This is a temporary solution, so avoid using this functionality outside of the Rust detector. The following
-// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning. 
+// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning.
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 

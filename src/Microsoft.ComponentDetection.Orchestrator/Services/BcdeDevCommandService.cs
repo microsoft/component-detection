@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         public async Task<ScanResult> Handle(IScanArguments arguments)
         {
-            // Run BCDE with the given arguments 
+            // Run BCDE with the given arguments
             var detectionArguments = arguments as BcdeArguments;
 
             var result = await BcdeScanExecutionService.ExecuteScanAsync(detectionArguments);
@@ -30,7 +30,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 Console.WriteLine(detectedComponent.Component.Id);
             }
 
-            // TODO: Get vulnerabilities from GH Advisories 
+            // TODO: Get vulnerabilities from GH Advisories
             return result;
         }
     }

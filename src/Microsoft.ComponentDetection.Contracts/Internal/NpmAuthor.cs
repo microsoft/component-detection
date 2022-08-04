@@ -11,7 +11,7 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
         }
 
         public string Name { get; set; }
-        
+
         public string Email { get; set; }
     }
 }

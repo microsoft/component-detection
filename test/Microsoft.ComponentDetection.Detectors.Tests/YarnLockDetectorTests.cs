@@ -833,7 +833,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             const string componentNameB = "lodash";
             const string requestedVersionB = "file:lodash-shim";
             const string actualVersion = "2.4.2";
-            
+
             var builder = new StringBuilder();
 
             builder.AppendLine(CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition>()));
@@ -843,14 +843,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var yarnLockFileContent = builder.ToString();
             var packageJsonFileContent = CreatePackageJsonFileContent(new List<YarnTestComponentDefinition>());
-            
+
             var (scanResult, componentRecorder) = await detectorTestUtility
                 .WithFile("yarn.lock", yarnLockFileContent)
                 .WithFile("package.json", packageJsonFileContent, new List<string> { "package.json" })
                 .ExecuteDetector();
-            
+
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-            
+
             var detectedComponents = componentRecorder.GetDetectedComponents();
 
             detectedComponents.Should().HaveCount(1);

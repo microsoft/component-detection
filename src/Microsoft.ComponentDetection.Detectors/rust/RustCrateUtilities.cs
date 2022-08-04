@@ -470,7 +470,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     var properties = configs.Get<TomlTable>(config.Key);
                     foreach (var propertyKey in properties.Keys)
                     {
-                        var isRelevantKey = tomlDependencyKeys.Any(dependencyKey => 
+                        var isRelevantKey = tomlDependencyKeys.Any(dependencyKey =>
                             string.Equals(propertyKey, dependencyKey, StringComparison.InvariantCultureIgnoreCase));
 
                         if (isRelevantKey)

@@ -15,20 +15,20 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
 {
     /// <summary>
     /// Spdx22ComponentDetector discover SPDX SBOM files in JSON format and create components with the information about
-    /// what SPDX document describes. 
+    /// what SPDX document describes.
     /// </summary>
     [Export(typeof(IComponentDetector))]
-    public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector 
+    public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
     {
         public override string Id => "SPDX22SBOM";
-        
+
         public override IEnumerable<string> Categories =>
             new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Spdx) };
-        
+
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Spdx };
 
         public override int Version => 1;
-        
+
         public override IList<string> SearchPatterns { get; } = new List<string> { "*.spdx.json" };
 
         private readonly IEnumerable<string> supportedSPDXVersions = new List<string> { "SPDX-2.2" };
@@ -81,7 +81,7 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
 
             return Task.CompletedTask;
         }
-        
+
         private bool IsSPDXVersionSupported(JObject document) => supportedSPDXVersions.Contains(document["spdxVersion"]?.ToString(), StringComparer.OrdinalIgnoreCase);
 
         private SpdxComponent ConvertJObjectToSbomComponent(ProcessRequest processRequest, JObject document, string fileHash)
@@ -95,7 +95,7 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
             {
                 Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} has more than one element in documentDescribes, first will be selected as root element.");
             }
-            
+
             if (rootElements != null && rootElements.Any())
             {
                 Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} does not have root elements in documentDescribes section, considering SPDXRef-Document as a root element.");

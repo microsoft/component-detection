@@ -98,7 +98,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
             Logger.LogInfo("Getting Python data from " + uri);
             var response = await HttpClient.GetAsync(uri);
-            
+
             // The `first - wins` response accepted into the cache. This might be different from the input if another caller wins the race.
             return await cachedResponses.GetOrCreateAsync(uri, cacheEntry =>
             {
@@ -109,7 +109,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         }
 
         /// <summary>
-        /// On the initial caching attempt, see if the user specified an override for 
+        /// On the initial caching attempt, see if the user specified an override for
         /// PyPiMaxCacheEntries and recreate the cache if needed.
         /// </summary>
         private void InitializeNonDefaultMemoryCache()

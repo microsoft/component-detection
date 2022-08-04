@@ -67,7 +67,7 @@ namespace Microsoft.ComponentDetection.Common
             }
 
             Reference reference = new Reference();
-     
+
             var nameMatch = DockerRegex.AnchoredNameRegexp.Match(name).Groups;
             if (nameMatch.Count == 3)
             {

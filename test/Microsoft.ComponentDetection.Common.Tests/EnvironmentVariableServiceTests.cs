@@ -26,14 +26,14 @@ namespace Microsoft.ComponentDetection.Common.Tests
 
         [TestMethod]
         public void DoesEnvironmentVariableExist_ChecksAreCaseInsensitive()
-        { 
+        {
             Assert.IsFalse(testSubject.DoesEnvironmentVariableExist("THIS_ENVIRONMENT_VARIABLE_DOES_NOT_EXIST"));
 
             Assert.IsTrue(testSubject.DoesEnvironmentVariableExist(MyEnvVar));
             Assert.IsTrue(testSubject.DoesEnvironmentVariableExist(MyEnvVar.ToLower()));
             Assert.IsTrue(testSubject.DoesEnvironmentVariableExist(MyEnvVar.ToUpper()));
         }
-        
+
         [TestMethod]
         public void GetEnvironmentVariable_returnNullIfVariableDoesNotExist()
         {

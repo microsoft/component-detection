@@ -361,7 +361,7 @@ dependencies:
 
 packages:
   file:projects/file-annotation-bar.tgz_node-sass@4.14.1:
-     resolution: {integrity: sha1-G7T22scAcvwxPoyc0UF7UHTAoSU=} 
+     resolution: {integrity: sha1-G7T22scAcvwxPoyc0UF7UHTAoSU=}
   /query-string/4.3.4:
     dependencies:
       '@learningclient/common': link:../common

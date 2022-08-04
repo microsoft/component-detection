@@ -9,8 +9,8 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 {
     /// <summary>
     /// https://github.com/yarnpkg/yarn/issues/5629
-    /// 
-    /// Yarn uses something that is "Almost-YAML", and we haven't found a YAML parser 
+    ///
+    /// Yarn uses something that is "Almost-YAML", and we haven't found a YAML parser
     ///  that understands Almost-YAML yet, so here's ours...
     ///
     /// In V1, this represents a file of newline delimited blocks in the form:

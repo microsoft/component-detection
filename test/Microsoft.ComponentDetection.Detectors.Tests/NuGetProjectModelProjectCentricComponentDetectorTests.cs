@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void TestInitialize()
         {
             var detector = new NuGetProjectModelProjectCentricComponentDetector();
-            
+
             var loggerMock = new Mock<ILogger>();
             loggerMock.Setup(x => x.LogWarning(It.IsAny<string>())).Callback<string>(message => Console.WriteLine(message));
             loggerMock.Setup(x => x.LogFailedReadingFile(It.IsAny<string>(), It.IsAny<Exception>())).Callback<string, Exception>((message, exception) =>
@@ -140,7 +140,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             // Top level dependencies look like this:
             // (we expect all non-proj and non-framework to show up as explicit refs, so those will be absent from the check)
-            // 
+            //
             // "DotNet.Glob >= 2.1.1",
             // "Microsoft.NETCore.App >= 2.2.8",
             // "Microsoft.VisualStudio.Services.Governance.ComponentDetection.Common >= 1.0.0",
@@ -246,7 +246,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             };
 
             var detectedComponents = componentRecorder.GetDetectedComponents();
-            
+
             var componentDetectionCommon = detectedComponents.First(x => x.Component.Id.Contains("Microsoft.Extensions.DependencyModel"));
             var dependencies = graph.GetDependenciesForComponent(componentDetectionCommon.Component.Id);
             foreach (var expectedId in expectedDependencyIdsForExtensionsDependencyModel)
@@ -258,7 +258,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             // Top level dependencies look like this:
             // (we expect all non-proj and non-framework to show up as explicit refs, so those will be absent from the check)
-            // 
+            //
             // "ExtCore.Infrastructure >= 5.1.0",
             // "Microsoft.Extensions.DependencyModel >= 3.0.0",
             // "System.Runtime.Loader >= 4.3.0"
@@ -291,7 +291,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                                                     .ExecuteDetector();
 
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-            
+
             var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
 
             dependencyGraphs.Count.Should().Be(0);

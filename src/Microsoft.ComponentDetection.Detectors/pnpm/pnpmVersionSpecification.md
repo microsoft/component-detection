@@ -14,7 +14,7 @@ is going to be represented in the lock files of pnpm as:
 This nomenclature is known for the pnpm community as the package path, and is normally found as the package definition in the section Packages of the lock files (pnpm-lock.yml and shrinkwrap.yml).
 Normally most of the packages has this structure but there others situations like [peer dependencies](https://pnpm.js.org/en/how-peers-are-resolved), where the path format can change to represent the peer dependency combination, for example:
 
-First the regular case, suppose that we have in the package.json a dependency defined as 
+First the regular case, suppose that we have in the package.json a dependency defined as
 
 ```
 {
@@ -31,7 +31,7 @@ using the command pnpm install this is going to create a folder structure like
 |- foo (hardlink)
 |- abc (symlink)
 ```
-and the entry in the lock file is going to looks like 
+and the entry in the lock file is going to looks like
 ```
 /foo/1.0.0
 ```

@@ -189,7 +189,7 @@ namespace Microsoft.ComponentDetection.TestsUtilities
                                 return filesToSend
                                     .Where(fileToSend => Directory.GetParent(fileToSend.Location).FullName == directoryInfo.FullName)
                                     .Select(fileToSend => CreateProcessRequest(FindMatchingPattern(fileToSend.Name, searchPatterns), fileToSend.Location, fileToSend.Contents)).Select(pr => pr.ComponentStream);
-                            } 
+                            }
                         });
                 }
             }

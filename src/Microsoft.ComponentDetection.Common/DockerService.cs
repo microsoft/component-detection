@@ -78,7 +78,7 @@ namespace Microsoft.ComponentDetection.Common
             }
             catch (Exception e)
             {
-                record.ExceptionMessage = e.Message; 
+                record.ExceptionMessage = e.Message;
                 return false;
             }
         }
@@ -120,7 +120,7 @@ namespace Microsoft.ComponentDetection.Common
             {
                 var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
                 record.ImageInspectResponse = JsonConvert.SerializeObject(imageInspectResponse);
-                
+
                 var baseImageRef = string.Empty;
                 var baseImageDigest = string.Empty;
 
@@ -128,12 +128,12 @@ namespace Microsoft.ComponentDetection.Common
                 imageInspectResponse.Config.Labels?.TryGetValue(BaseImageDigestAnnotation, out baseImageDigest);
 
                 record.BaseImageRef = baseImageRef;
-                record.BaseImageDigest = baseImageDigest; 
+                record.BaseImageDigest = baseImageDigest;
 
                 var layers = imageInspectResponse.RootFS?.Layers
-                    .Select((diffId, index) => 
+                    .Select((diffId, index) =>
                         new DockerLayer
-                        { 
+                        {
                             DiffId = diffId,
                             LayerIndex = index,
                         });

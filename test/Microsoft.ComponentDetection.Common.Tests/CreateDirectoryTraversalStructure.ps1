@@ -54,16 +54,16 @@ if ([System.Environment]::OSVersion.Platform -eq "Win32NT") {
     New-Item -ItemType Directory -Path ./root/junctions
     New-Item -ItemType Junction -Path ./root/junctions/unknown-files-junction -Target ./outside-root-two
     New-Item -ItemType Junction -Path ./root/junctions/known-files-junction -Target ./outside-root
-    
+
     New-Item -ItemType Directory -Path ./outside-junction-cycles-a
     CreateValidFileTree ./outside-junction-cycles-a
-    
+
     New-Item -ItemType Directory -Path ./outside-junction-cycles-b
     CreateValidFileTree ./outside-junction-cycles-b
-    
+
     New-Item -ItemType Directory -Path ./root/junction-cycles
     CreateValidFileTree ./root/junction-cycles
-    
+
     New-Item -ItemType Junction -Path ./root/junction-cycles/a/b/c/d/e/f/junction-to-outside-q -Target ./outside-junction-cycles-a
     New-Item -ItemType Junction -Path ./root/junction-cycles/a/b/c/d/e/f/junction-to-outside-r -Target ./outside-junction-cycles-b
     New-Item -ItemType Junction -Path ./root/junction-cycles/a/b/c/d/e/f/junction-to-outside-s -Target ./outside-junction-cycles-a

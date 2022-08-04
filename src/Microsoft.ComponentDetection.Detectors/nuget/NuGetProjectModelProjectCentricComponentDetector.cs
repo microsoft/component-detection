@@ -166,7 +166,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 }
             }
 
-            // Next, we need to resolve project references -- This is a little funky, because project references are only stored via path in 
+            // Next, we need to resolve project references -- This is a little funky, because project references are only stored via path in
             //  project.assets.json, so we first build a list of all paths and then compare what is top level to them to resolve their
             //  associated library.
             var projectDirectory = Path.GetDirectoryName(lockFile.PackageSpec.RestoreMetadata.ProjectPath);
@@ -286,7 +286,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             return currentComponents;
         }
 
-        // This list is meant to encompass all net standard dependencies, but likely contains some net core app 1.x ones, too. 
+        // This list is meant to encompass all net standard dependencies, but likely contains some net core app 1.x ones, too.
         // The specific guidance we got around populating this list is to do so based on creating a dotnet core 1.x app to make sure we had the complete
         //  set of netstandard.library files that could show up in later sdk versions.
         private readonly string[] netStandardDependencies = new[]

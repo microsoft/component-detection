@@ -71,10 +71,10 @@ namespace Microsoft.ComponentDetection.Common
             DomainComponentRegexp,
             Optional(
                 Repeated(
-                    new Regex(@"\."), 
+                    new Regex(@"\."),
                     DomainComponentRegexp)),
             Optional(
-                new Regex(":"), 
+                new Regex(":"),
                 new Regex("[0-9]+")));
 
         public static Regex AnchoredDigestRegexp = Anchored(DigestRegexp);
