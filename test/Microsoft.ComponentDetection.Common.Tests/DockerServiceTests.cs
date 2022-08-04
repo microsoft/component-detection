@@ -21,35 +21,35 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            dockerService = new DockerService();
+            this.dockerService = new DockerService();
         }
 
         [TestMethod]
         public async Task DockerService_CanPingDocker()
         {
-            var canPingDocker = await dockerService.CanPingDockerAsync();
+            var canPingDocker = await this.dockerService.CanPingDockerAsync();
             Assert.IsTrue(canPingDocker);
         }
 
         [SkipTestOnWindows]
         public async Task DockerService_CanRunLinuxContainersAsync()
         {
-            var isLinuxContainerModeEnabled = await dockerService.CanRunLinuxContainersAsync();
+            var isLinuxContainerModeEnabled = await this.dockerService.CanRunLinuxContainersAsync();
             Assert.IsTrue(isLinuxContainerModeEnabled);
         }
 
         [SkipTestOnWindows]
         public async Task DockerService_CanPullImage()
         {
-            Func<Task> action = async () => await dockerService.TryPullImageAsync(TestImage);
+            Func<Task> action = async () => await this.dockerService.TryPullImageAsync(TestImage);
             await action.Should().NotThrowAsync();
         }
 
         [SkipTestOnWindows]
         public async Task DockerService_CanInspectImage()
         {
-            await dockerService.TryPullImageAsync(TestImage);
-            var details = await dockerService.InspectImageAsync(TestImage);
+            await this.dockerService.TryPullImageAsync(TestImage);
+            var details = await this.dockerService.InspectImageAsync(TestImage);
             details.Should().NotBeNull();
             details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest");
         }
@@ -57,8 +57,8 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [SkipTestOnWindows]
         public async Task DockerService_PopulatesBaseImageAndLayerDetails()
         {
-            await dockerService.TryPullImageAsync(TestImageWithBaseDetails);
-            var details = await dockerService.InspectImageAsync(TestImageWithBaseDetails);
+            await this.dockerService.TryPullImageAsync(TestImageWithBaseDetails);
+            var details = await this.dockerService.InspectImageAsync(TestImageWithBaseDetails);
 
             details.Should().NotBeNull();
             details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag");
@@ -77,7 +77,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [SkipTestOnWindows]
         public async Task DockerService_CanCreateAndRunImage()
         {
-            var (stdout, stderr) = await dockerService.CreateAndRunContainerAsync(TestImage, new List<string>());
+            var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, new List<string>());
             stdout.Should().StartWith("\nHello from Docker!");
             stderr.Should().BeEmpty();
         }

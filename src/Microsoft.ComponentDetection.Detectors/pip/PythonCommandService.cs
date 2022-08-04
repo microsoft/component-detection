@@ -18,7 +18,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         public async Task<bool> PythonExists(string pythonPath = null)
         {
-            return !string.IsNullOrEmpty(await ResolvePython(pythonPath));
+            return !string.IsNullOrEmpty(await this.ResolvePython(pythonPath));
         }
 
         public async Task<IList<(string, GitComponent)>> ParseFile(string filePath, string pythonPath = null)
@@ -30,13 +30,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
             if (filePath.EndsWith(".py"))
             {
-                return (await ParseSetupPyFile(filePath, pythonPath))
+                return (await this.ParseSetupPyFile(filePath, pythonPath))
                         .Select<string, (string, GitComponent)>(component => (component, null))
                         .ToList();
             }
             else if (filePath.EndsWith(".txt"))
             {
-                return ParseRequirementsTextFile(filePath);
+                return this.ParseRequirementsTextFile(filePath);
             }
             else
             {
@@ -46,7 +46,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private async Task<IList<string>> ParseSetupPyFile(string filePath, string pythonExePath = null)
         {
-            var pythonExecutable = await ResolvePython(pythonExePath);
+            var pythonExecutable = await this.ResolvePython(pythonExePath);
 
             if (string.IsNullOrEmpty(pythonExecutable))
             {
@@ -55,7 +55,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
             // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
             // We need to have python interpret this file because install_requires can be composed at runtime
-            var command = await CommandLineInvocationService.ExecuteCommand(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
+            var command = await this.CommandLineInvocationService.ExecuteCommand(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
 
             if (command.ExitCode != 0)
             {
@@ -130,7 +130,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         {
             string pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : pythonPath;
 
-            if (await CanCommandBeLocated(pythonCommand))
+            if (await this.CanCommandBeLocated(pythonCommand))
             {
                 return pythonCommand;
             }
@@ -140,7 +140,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private async Task<bool> CanCommandBeLocated(string pythonPath)
         {
-            return await CommandLineInvocationService.CanCommandBeLocated(pythonPath, new List<string> { "python3", "python2" }, "--version");
+            return await this.CommandLineInvocationService.CanCommandBeLocated(pythonPath, new List<string> { "python3", "python2" }, "--version");
         }
     }
 }

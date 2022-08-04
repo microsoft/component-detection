@@ -23,7 +23,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             // Run BCDE with the given arguments
             var detectionArguments = arguments as BcdeArguments;
 
-            var result = await BcdeScanExecutionService.ExecuteScanAsync(detectionArguments);
+            var result = await this.BcdeScanExecutionService.ExecuteScanAsync(detectionArguments);
             var detectedComponents = result.ComponentsFound.ToList();
             foreach (var detectedComponent in detectedComponents)
             {

@@ -40,11 +40,11 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             {
                 YarnEntry yarnEntry = new YarnEntry();
                 var satisfiedPackages = block.Title.Split(',').Select(x => x.Trim())
-                    .Select(GenerateBlockTitleNormalizer(block));
+                    .Select(this.GenerateBlockTitleNormalizer(block));
 
                 foreach (var package in satisfiedPackages)
                 {
-                    if (!TryReadNameAndSatisfiedVersion(package, out Tuple<string, string> parsed))
+                    if (!this.TryReadNameAndSatisfiedVersion(package, out Tuple<string, string> parsed))
                     {
                         continue;
                     }
@@ -117,10 +117,10 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                     return blockTitleMember;
                 }
 
-                var versionValue = block.Values.FirstOrDefault(x => string.Equals(x.Key, YarnLockParser.VersionString, StringComparison.OrdinalIgnoreCase));
+                var versionValue = block.Values.FirstOrDefault(x => string.Equals(x.Key, VersionString, StringComparison.OrdinalIgnoreCase));
                 if (default(KeyValuePair<string, string>).Equals(versionValue))
                 {
-                    Logger.LogWarning("Block without version detected");
+                    this.Logger.LogWarning("Block without version detected");
                     return blockTitleMember;
                 }
 

@@ -17,22 +17,22 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="containerLayerId">Id of the layer the component was found, this is only necessary if the component was found inside a container.</param>
         public DetectedComponent(TypedComponent.TypedComponent component, IComponentDetector detector = null, int? containerDetailsId = null, int? containerLayerId = null)
         {
-            Component = component;
-            FilePaths = new HashSet<string>();
-            DetectedBy = detector;
-            ContainerDetailIds = new HashSet<int>();
-            ContainerLayerIds = new Dictionary<int, IEnumerable<int>>();
+            this.Component = component;
+            this.FilePaths = new HashSet<string>();
+            this.DetectedBy = detector;
+            this.ContainerDetailIds = new HashSet<int>();
+            this.ContainerLayerIds = new Dictionary<int, IEnumerable<int>>();
             if (containerDetailsId.HasValue)
             {
-                ContainerDetailIds.Add(containerDetailsId.Value);
+                this.ContainerDetailIds.Add(containerDetailsId.Value);
                 if (containerLayerId.HasValue)
                 {
-                    ContainerLayerIds.Add(containerDetailsId.Value, new List<int>() { containerLayerId.Value });
+                    this.ContainerLayerIds.Add(containerDetailsId.Value, new List<int>() { containerLayerId.Value });
                 }
             }
         }
 
-        private string DebuggerDisplay => $"{Component.DebuggerDisplay}";
+        private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
 
         /// <summary>
         /// Gets or sets the detector that detected this component.
@@ -65,9 +65,9 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="filePath">The file path to add to the hashset.</param>
         public void AddComponentFilePath(string filePath)
         {
-            lock (hashLock)
+            lock (this.hashLock)
             {
-                FilePaths.Add(filePath);
+                this.FilePaths.Add(filePath);
             }
         }
     }

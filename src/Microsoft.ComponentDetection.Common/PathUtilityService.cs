@@ -34,18 +34,18 @@ namespace Microsoft.ComponentDetection.Common
         {
             get
             {
-                if (!isRunningOnWindowsContainer.HasValue)
+                if (!this.isRunningOnWindowsContainer.HasValue)
                 {
-                    lock (isRunningOnWindowsContainerLock)
+                    lock (this.isRunningOnWindowsContainerLock)
                     {
-                        if (!isRunningOnWindowsContainer.HasValue)
+                        if (!this.isRunningOnWindowsContainer.HasValue)
                         {
-                            isRunningOnWindowsContainer = CheckIfRunningOnWindowsContainer();
+                            this.isRunningOnWindowsContainer = this.CheckIfRunningOnWindowsContainer();
                         }
                     }
                 }
 
-                return isRunningOnWindowsContainer.Value;
+                return this.isRunningOnWindowsContainer.Value;
             }
         }
 
@@ -113,11 +113,11 @@ namespace Microsoft.ComponentDetection.Common
         {
             if (IsWindows)
             {
-                return ResolvePhysicalPathWindows(path);
+                return this.ResolvePhysicalPathWindows(path);
             }
             else if (IsLinux)
             {
-                return ResolvePhysicalPathLinux(path);
+                return this.ResolvePhysicalPathLinux(path);
             }
 
             return path;
@@ -130,12 +130,12 @@ namespace Microsoft.ComponentDetection.Common
                 throw new PlatformNotSupportedException("Attempted to call a function that makes windows-only SDK calls");
             }
 
-            if (IsRunningOnWindowsContainer)
+            if (this.IsRunningOnWindowsContainer)
             {
                 return path;
             }
 
-            if (resolvedPaths.TryGetValue(path, out string cachedPath))
+            if (this.resolvedPaths.TryGetValue(path, out string cachedPath))
             {
                 return cachedPath;
             }
@@ -168,7 +168,7 @@ namespace Microsoft.ComponentDetection.Common
 
             result = result.StartsWith(LongPathPrefix) ? result.Substring(LongPathPrefix.Length) : result;
 
-            resolvedPaths.TryAdd(path, result);
+            this.resolvedPaths.TryAdd(path, result);
 
             return result;
         }
@@ -197,7 +197,7 @@ namespace Microsoft.ComponentDetection.Common
             }
             catch (Exception ex)
             {
-                Logger.LogException(ex, isError: false, printException: true);
+                this.Logger.LogException(ex, isError: false, printException: true);
                 return path;
             }
             finally
@@ -244,7 +244,7 @@ namespace Microsoft.ComponentDetection.Common
 
             if (sb.ToString().Contains("Container Execution Agent"))
             {
-                Logger.LogWarning("Detected execution in a Windows container. Currently windows containers < 1809 do not support symlinks well, so disabling symlink resolution/dedupe behavior");
+                this.Logger.LogWarning("Detected execution in a Windows container. Currently windows containers < 1809 do not support symlinks well, so disabling symlink resolution/dedupe behavior");
                 return true;
             }
             else

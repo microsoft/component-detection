@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
         [Option("AdditionalPluginDirectories", Separator = ';', Required = false, Hidden = true, HelpText = "Semi-colon delimited list of directories to search for plugins")]
         public IEnumerable<DirectoryInfo> AdditionalPluginDirectories { get; set; }
 
-        public IEnumerable<string> AdditionalPluginDirectoriesSerialized => AdditionalPluginDirectories?.Select(x => x.ToString()) ?? new List<string>();
+        public IEnumerable<string> AdditionalPluginDirectoriesSerialized => this.AdditionalPluginDirectories?.Select(x => x.ToString()) ?? new List<string>();
 
         [Option("CorrelationId", Required = false, HelpText = "Identifier used to correlate all telemetry for a given execution. If not provided, a new GUID will be generated.")]
         public Guid CorrelationId { get; set; }

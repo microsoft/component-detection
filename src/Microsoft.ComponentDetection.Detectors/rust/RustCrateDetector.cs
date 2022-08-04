@@ -37,12 +37,12 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 // This makes sure we're only trying to parse Cargo.lock v1 formats
                 if (cargoLock.metadata == null)
                 {
-                    Logger.LogInfo($"Cargo.lock file at {cargoLockFile.Location} contains no metadata section so we're parsing it as the v2 format. The v1 detector will not process it.");
+                    this.Logger.LogInfo($"Cargo.lock file at {cargoLockFile.Location} contains no metadata section so we're parsing it as the v2 format. The v1 detector will not process it.");
                     return Task.CompletedTask;
                 }
 
                 FileInfo lockFileInfo = new FileInfo(cargoLockFile.Location);
-                IEnumerable<IComponentStream> cargoTomlComponentStream = ComponentStreamEnumerableFactory.GetComponentStreams(lockFileInfo.Directory, new List<string> { RustCrateUtilities.CargoTomlSearchPattern }, (name, directoryName) => false, recursivelyScanDirectories: false);
+                IEnumerable<IComponentStream> cargoTomlComponentStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(lockFileInfo.Directory, new List<string> { RustCrateUtilities.CargoTomlSearchPattern }, (name, directoryName) => false, recursivelyScanDirectories: false);
 
                 CargoDependencyData cargoDependencyData = RustCrateUtilities.ExtractRootDependencyAndWorkspaceSpecifications(cargoTomlComponentStream, singleFileComponentRecorder);
 
@@ -53,7 +53,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 {
                     string rootCargoTomlLocation = Path.Combine(lockFileInfo.DirectoryName, "Cargo.toml");
 
-                    IEnumerable<IComponentStream> cargoTomlWorkspaceComponentStreams = ComponentStreamEnumerableFactory.GetComponentStreams(
+                    IEnumerable<IComponentStream> cargoTomlWorkspaceComponentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
                         lockFileInfo.Directory,
                         new List<string> { RustCrateUtilities.CargoTomlSearchPattern },
                         RustCrateUtilities.BuildExcludeDirectoryPredicateFromWorkspaces(lockFileInfo, cargoDependencyData.CargoWorkspaces, cargoDependencyData.CargoWorkspaceExclusions),
@@ -68,14 +68,14 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 // Even though we can't read the file streams, we still have the enumerable!
                 if (!cargoTomlComponentStream.Any() || cargoTomlComponentStream.Count() > 1)
                 {
-                    Logger.LogWarning($"We are expecting exactly 1 accompanying Cargo.toml file next to the cargo.lock file found at {cargoLockFile.Location}");
+                    this.Logger.LogWarning($"We are expecting exactly 1 accompanying Cargo.toml file next to the cargo.lock file found at {cargoLockFile.Location}");
                     return Task.CompletedTask;
                 }
 
                 // If there is a mismatch between the number of expected and found workspaces, exit
                 if (expectedWorkspaceTomlCount > numWorkspaceComponentStreams)
                 {
-                    Logger.LogWarning($"We are expecting at least {expectedWorkspaceTomlCount} accompanying Cargo.toml file(s) from workspaces outside of the root directory {lockFileInfo.DirectoryName}, but found {numWorkspaceComponentStreams}");
+                    this.Logger.LogWarning($"We are expecting at least {expectedWorkspaceTomlCount} accompanying Cargo.toml file(s) from workspaces outside of the root directory {lockFileInfo.DirectoryName}, but found {numWorkspaceComponentStreams}");
                     return Task.CompletedTask;
                 }
 
@@ -85,7 +85,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             catch (Exception e)
             {
                 // If something went wrong, just ignore the file
-                Logger.LogFailedReadingFile(cargoLockFile.Location, e);
+                this.Logger.LogFailedReadingFile(cargoLockFile.Location, e);
             }
 
             return Task.CompletedTask;

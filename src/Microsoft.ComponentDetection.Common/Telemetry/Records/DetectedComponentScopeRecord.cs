@@ -11,7 +11,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void IncrementProvidedScopeCount()
         {
-            MavenProvidedScopeCount++;
+            this.MavenProvidedScopeCount++;
         }
     }
 }

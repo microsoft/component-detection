@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            loggerMock = new Mock<ILogger>();
+            this.loggerMock = new Mock<ILogger>();
         }
 
         [TestMethod]
@@ -38,7 +38,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
                     File = new FileInfo(tempFileTwo),
                     Pattern = "Some Pattern",
                 },
-            }, loggerMock.Object);
+            }, this.loggerMock.Object);
 
             enumerable.Count()
                 .Should().Be(2);
@@ -60,7 +60,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var tempFileTwo = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             var tempFileThree = Path.GetTempFileName();
             File.Delete(tempFileTwo);
-            loggerMock.Setup(x => x.LogWarning(Match.Create<string>(message => message.Contains("not exist"))));
+            this.loggerMock.Setup(x => x.LogWarning(Match.Create<string>(message => message.Contains("not exist"))));
             var enumerable = new ComponentStreamEnumerable(
                 new[]
             {
@@ -74,12 +74,12 @@ namespace Microsoft.ComponentDetection.Common.Tests
                     File = new FileInfo(tempFileTwo),
                     Pattern = "Some Pattern",
                 },
-            }, loggerMock.Object).ToList();
+            }, this.loggerMock.Object).ToList();
 
             enumerable.Count
                 .Should().Be(1);
 
-            loggerMock.VerifyAll();
+            this.loggerMock.VerifyAll();
         }
     }
 }

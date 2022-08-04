@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void Initialize()
         {
-            pypiClient = new PyPiClient()
+            this.pypiClient = new PyPiClient()
             {
                 EnvironmentVariableService = new EnvironmentVariableService(),
                 Logger = new Mock<ILogger>().Object,
@@ -44,10 +44,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 },
             };
 
-            var mockHandler = MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+            var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
             PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-            Func<Task> action = async () => await pypiClient.GetReleases(pythonSpecs);
+            Func<Task> action = async () => await this.pypiClient.GetReleases(pythonSpecs);
 
             await action.Should().NotThrowAsync();
         }
@@ -64,10 +64,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 },
             };
 
-            var mockHandler = MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+            var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
             PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-            Func<Task> action = async () => await pypiClient.GetReleases(pythonSpecs);
+            Func<Task> action = async () => await this.pypiClient.GetReleases(pythonSpecs);
 
             await action.Should().NotThrowAsync();
             await action.Should().NotThrowAsync();
@@ -92,13 +92,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 },
             };
 
-            var mockHandler = MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+            var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
             PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
             Func<Task> action = async () =>
             {
                 pythonSpecs.Name = Guid.NewGuid().ToString();
-                await pypiClient.GetReleases(pythonSpecs);
+                await this.pypiClient.GetReleases(pythonSpecs);
             };
 
             await action.Should().NotThrowAsync();
@@ -115,10 +115,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task FetchPackageDependencies_DuplicateEntries_CallsGetAsync_Once()
         {
-            var mockHandler = MockHttpMessageHandler("invalid ZIP");
+            var mockHandler = this.MockHttpMessageHandler("invalid ZIP");
             PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-            Func<Task> action = async () => await pypiClient.FetchPackageDependencies("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://testurl") });
+            Func<Task> action = async () => await this.pypiClient.FetchPackageDependencies("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://testurl") });
 
             await action.Should().ThrowAsync<InvalidDataException>();
             await action.Should().ThrowAsync<InvalidDataException>();
@@ -134,10 +134,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task FetchPackageDependencies_DifferentEntries_CallsGetAsync_Once()
         {
-            var mockHandler = MockHttpMessageHandler("invalid ZIP");
+            var mockHandler = this.MockHttpMessageHandler("invalid ZIP");
             PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-            Func<Task> action = async () => await pypiClient.FetchPackageDependencies("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") });
+            Func<Task> action = async () => await this.pypiClient.FetchPackageDependencies("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") });
 
             await action.Should().ThrowAsync<InvalidDataException>();
             await action.Should().ThrowAsync<InvalidDataException>();
@@ -162,7 +162,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 },
             };
 
-            var mockHandler = MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+            var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
             PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
             var mockLogger = new Mock<ILogger>();

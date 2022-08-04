@@ -26,8 +26,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void TestInitialize()
         {
             var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-            detectorTestUtility = DetectorTestUtilityCreator.Create<Spdx22ComponentDetector>()
-                                    .WithScanRequest(new ScanRequest(new DirectoryInfo(tempPath), null, null, new Dictionary<string, string>(), null, componentRecorder));
+            this.detectorTestUtility = DetectorTestUtilityCreator.Create<Spdx22ComponentDetector>()
+                                    .WithScanRequest(new ScanRequest(new DirectoryInfo(this.tempPath), null, null, new Dictionary<string, string>(), null, componentRecorder));
         }
 
         [TestMethod]
@@ -98,7 +98,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 }";
 
             var spdxFileName = "manifest.spdx.json";
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile(spdxFileName, spdxFile)
                                                     .ExecuteDetector();
 
@@ -124,7 +124,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.AreEqual(sbomComponent.DocumentNamespace,  new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
             Assert.AreEqual(sbomComponent.SpdxVersion, "SPDX-2.2");
             Assert.AreEqual(sbomComponent.Checksum, checksum);
-            Assert.AreEqual(sbomComponent.Path, Path.Combine(tempPath, spdxFileName));
+            Assert.AreEqual(sbomComponent.Path, Path.Combine(this.tempPath, spdxFileName));
         }
 
         [TestMethod]
@@ -132,7 +132,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var spdxFile = "{}";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                 .WithFile("manifest.spdx.json", spdxFile)
                 .ExecuteDetector();
 
@@ -148,7 +148,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var spdxFile = "invalidspdxfile";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                 .WithFile("manifest.spdx.json", spdxFile)
                 .ExecuteDetector();
 

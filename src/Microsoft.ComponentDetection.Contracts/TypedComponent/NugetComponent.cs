@@ -11,9 +11,9 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public NuGetComponent(string name, string version, string[] authors = null)
         {
-            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.NuGet));
-            Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.NuGet));
-            Authors = authors;
+            this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.NuGet));
+            this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.NuGet));
+            this.Authors = authors;
         }
 
         public string Name { get; set; }
@@ -24,8 +24,8 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.NuGet;
 
-        public override string Id => $"{Name} {Version} - {Type}";
+        public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
-        public override PackageURL PackageUrl => new PackageURL("nuget", null, Name, Version, null, null);
+        public override PackageURL PackageUrl => new PackageURL("nuget", null, this.Name, this.Version, null, null);
     }
 }

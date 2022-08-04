@@ -27,7 +27,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
 
         public PnpmComponentDetector()
         {
-            NeedsAutomaticRootDependencyCalculation = true;
+            this.NeedsAutomaticRootDependencyCalculation = true;
         }
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
@@ -35,21 +35,21 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            Logger.LogVerbose("Found yaml file: " + file.Location);
-            string skippedFolder = SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
+            this.Logger.LogVerbose("Found yaml file: " + file.Location);
+            string skippedFolder = this.SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
             if (!string.IsNullOrEmpty(skippedFolder))
             {
-                Logger.LogVerbose($"Skipping found file, it was detected as being within a {skippedFolder} folder.");
+                this.Logger.LogVerbose($"Skipping found file, it was detected as being within a {skippedFolder} folder.");
             }
 
             try
             {
                 var pnpmYaml = await PnpmParsingUtilities.DeserializePnpmYamlFile(file);
-                RecordDependencyGraphFromFile(pnpmYaml, singleFileComponentRecorder);
+                this.RecordDependencyGraphFromFile(pnpmYaml, singleFileComponentRecorder);
             }
             catch (Exception e)
             {
-                Logger.LogFailedReadingFile(file.Location, e);
+                this.Logger.LogFailedReadingFile(file.Location, e);
             }
         }
 
@@ -73,12 +73,12 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
                     foreach (var dependency in packageKeyValue.Value.dependencies)
                     {
                         // Ignore local packages.
-                        if (IsLocalDependency(dependency))
+                        if (this.IsLocalDependency(dependency))
                         {
                             continue;
                         }
 
-                        var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
+                        var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: this.CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
 
                         // Older code used the root's dev dependency value. We're leaving this null until we do a second pass to look at each components' top level referrers.
                         singleFileComponentRecorder.RegisterUsage(childDetectedComponent, parentComponentId: parentDetectedComponent.Component.Id, isDevelopmentDependency: null);

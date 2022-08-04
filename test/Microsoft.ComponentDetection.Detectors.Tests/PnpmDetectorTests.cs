@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void TestInitialize()
         {
             var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-            detectorTestUtility = DetectorTestUtilityCreator.Create<PnpmComponentDetector>()
+            this.detectorTestUtility = DetectorTestUtilityCreator.Create<PnpmComponentDetector>()
                                     .WithScanRequest(new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder));
         }
 
@@ -70,7 +70,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("shrinkwrap1.yaml", yamlFile)
                                                     .ExecuteDetector();
 
@@ -171,7 +171,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("shrinkwrap1.yaml", yamlFile1)
                                                     .WithFile("shrinkwrap2.yaml", yamlFile2)
                                                     .ExecuteDetector();
@@ -216,7 +216,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("shrinkwrap1.yaml", yamlFile1)
                                                     .ExecuteDetector();
 
@@ -245,7 +245,7 @@ shrinkwrapVersion: 3";
                   /strict-uri-encode/1.1.0:
                     dev: true";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("shrinkwrap1.yaml", yamlFile1)
                                                     .ExecuteDetector();
 
@@ -276,7 +276,7 @@ shrinkwrapVersion: 3";
                       shared-non-dev-dep: 0.1.2
                     dev: true";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("shrinkwrap1.yaml", yamlFile1)
                                                     .ExecuteDetector();
 
@@ -291,7 +291,7 @@ shrinkwrapVersion: 3";
             // This is a clearly malformed Yaml. We expect parsing it to "succeed" but find no components
             var yamlFile1 = @"dependencies";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("shrinkwrap1.yaml", yamlFile1)
                                                     .ExecuteDetector();
 
@@ -321,7 +321,7 @@ packages:
   /test/1.0.0:
     dev: true";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("shrinkwrap1.yaml", yamlFile)
                                                     .ExecuteDetector();
 
@@ -369,7 +369,7 @@ packages:
   /nth-check/2.0.0:
     resolution: {integrity: sha1-G7T22scAcvwxPoyc0UF7UHTAoSU=} ";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("shrinkwrap1.yaml", yamlFile)
                                                     .ExecuteDetector();
 

@@ -35,9 +35,9 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
             public IList<PodDependency> Dependencies { get; set; }
 
-            public string Podspec => Name.Split('/', 2)[0];
+            public string Podspec => this.Name.Split('/', 2)[0];
 
-            public bool IsSubspec => Name != Podspec;
+            public bool IsSubspec => this.Name != this.Podspec;
 
             public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
             {
@@ -49,18 +49,18 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
                 var podInfo = parser.Consume<Scalar>();
                 var components = podInfo.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
-                Name = components[0].Trim();
-                Version = components[1].Trim();
+                this.Name = components[0].Trim();
+                this.Version = components[1].Trim();
 
                 if (hasDependencies)
                 {
-                    Dependencies = (IList<PodDependency>)nestedObjectDeserializer(typeof(IList<PodDependency>));
+                    this.Dependencies = (IList<PodDependency>)nestedObjectDeserializer(typeof(IList<PodDependency>));
 
                     parser.Consume<MappingEnd>();
                 }
                 else
                 {
-                    Dependencies = Array.Empty<PodDependency>();
+                    this.Dependencies = Array.Empty<PodDependency>();
                 }
             }
 
@@ -76,16 +76,16 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
             public string PodVersion { get; set; }
 
-            public string Podspec => PodName.Split('/', 2)[0];
+            public string Podspec => this.PodName.Split('/', 2)[0];
 
-            public bool IsSubspec => PodName != Podspec;
+            public bool IsSubspec => this.PodName != this.Podspec;
 
             public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
             {
                 var scalar = parser.Consume<Scalar>();
                 var components = scalar.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
-                PodName = components[0].Trim();
-                PodVersion = components.Length > 1 ? components[1].Trim() : null;
+                this.PodName = components[0].Trim();
+                this.PodVersion = components.Length > 1 ? components[1].Trim() : null;
             }
 
             public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
@@ -122,17 +122,17 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
             public PodfileLock()
             {
-                Dependencies = Array.Empty<PodDependency>();
-                PodspecRepositories = new Dictionary<string, IList<string>>();
-                PodspecChecksums = new Dictionary<string, string>();
-                ExternalSources = new Dictionary<string, IDictionary<string, string>>();
-                CheckoutOptions = new Dictionary<string, IDictionary<string, string>>();
-                Pods = Array.Empty<Pod>();
+                this.Dependencies = Array.Empty<PodDependency>();
+                this.PodspecRepositories = new Dictionary<string, IList<string>>();
+                this.PodspecChecksums = new Dictionary<string, string>();
+                this.ExternalSources = new Dictionary<string, IDictionary<string, string>>();
+                this.CheckoutOptions = new Dictionary<string, IDictionary<string, string>>();
+                this.Pods = Array.Empty<Pod>();
             }
 
             public string GetSpecRepositoryOfSpec(string specName)
             {
-                foreach (var repository in PodspecRepositories)
+                foreach (var repository in this.PodspecRepositories)
                 {
                     if (repository.Value.Contains(specName))
                     {
@@ -159,17 +159,17 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
+            this.Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
 
             try
             {
                 var podfileLock = await ParsePodfileLock(file);
 
-                ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
+                this.ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
             }
             catch (Exception e)
             {
-                Logger.LogFailedReadingFile(file.Location, e);
+                this.Logger.LogFailedReadingFile(file.Location, e);
             }
         }
 
@@ -311,7 +311,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     }
                     else
                     {
-                        Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
+                        this.Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
                     }
                 }
             }

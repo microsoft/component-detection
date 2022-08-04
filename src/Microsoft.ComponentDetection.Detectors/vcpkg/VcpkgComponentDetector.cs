@@ -38,15 +38,15 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            Logger.LogWarning($"vcpkg detector found {file}");
+            this.Logger.LogWarning($"vcpkg detector found {file}");
 
             var projectRootDirectory = Directory.GetParent(file.Location);
-            if (projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
+            if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
             {
                 return;
             }
 
-            await ParseSpdxFile(singleFileComponentRecorder, file);
+            await this.ParseSpdxFile(singleFileComponentRecorder, file);
         }
 
         private async Task ParseSpdxFile(
@@ -78,7 +78,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
                         continue;
                     }
 
-                    Logger.LogWarning($"parsed package {item.Name}");
+                    this.Logger.LogWarning($"parsed package {item.Name}");
                     if (item.SPDXID == "SPDXRef-port")
                     {
                         var split = item.VersionInfo.Split('#');
@@ -107,7 +107,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
                 }
                 catch (Exception)
                 {
-                    Logger.LogWarning($"failed while handling {item.Name}");
+                    this.Logger.LogWarning($"failed while handling {item.Name}");
                 }
             }
         }

@@ -13,7 +13,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
         public DependencySpecification()
         {
-            dependencies = new Dictionary<string, ISet<ISet<Range>>>();
+            this.dependencies = new Dictionary<string, ISet<ISet<Range>>>();
         }
 
         public void Add(string name, string cargoVersionSpecifier)
@@ -25,22 +25,22 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 ranges.Add(new Range(specifier.Trim()));
             }
 
-            if (!dependencies.ContainsKey(name))
+            if (!this.dependencies.ContainsKey(name))
             {
-                dependencies.Add(name, new HashSet<ISet<Range>>());
+                this.dependencies.Add(name, new HashSet<ISet<Range>>());
             }
 
-            dependencies[name].Add(ranges);
+            this.dependencies[name].Add(ranges);
         }
 
         public bool MatchesPackage(CargoPackage package)
         {
-            if (!dependencies.ContainsKey(package.name))
+            if (!this.dependencies.ContainsKey(package.name))
             {
                 return false;
             }
 
-            foreach (var ranges in dependencies[package.name])
+            foreach (var ranges in this.dependencies[package.name])
             {
                 var allSatisfied = true;
                 foreach (var range in ranges)

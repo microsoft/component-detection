@@ -13,13 +13,13 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         {
             int.TryParse(portVersion, out var port);
 
-            SPDXID = ValidateRequiredInput(spdxid, nameof(SPDXID), nameof(ComponentType.Vcpkg));
-            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Vcpkg));
-            Version = version;
-            PortVersion = port;
-            Triplet = triplet;
-            Description = description;
-            DownloadLocation = downloadLocation;
+            this.SPDXID = this.ValidateRequiredInput(spdxid, nameof(this.SPDXID), nameof(ComponentType.Vcpkg));
+            this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Vcpkg));
+            this.Version = version;
+            this.PortVersion = port;
+            this.Triplet = triplet;
+            this.Description = description;
+            this.DownloadLocation = downloadLocation;
         }
 
         public string SPDXID { get; set; }
@@ -42,13 +42,13 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         {
             get
             {
-                if (PortVersion > 0)
+                if (this.PortVersion > 0)
                 {
-                    return $"{Name} {Version}#{PortVersion} - {Type}";
+                    return $"{this.Name} {this.Version}#{this.PortVersion} - {this.Type}";
                 }
                 else
                 {
-                    return $"{Name} {Version} - {Type}";
+                    return $"{this.Name} {this.Version} - {this.Type}";
                 }
             }
         }
@@ -57,17 +57,17 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         {
             get
             {
-                if (PortVersion > 0)
+                if (this.PortVersion > 0)
                 {
-                    return new PackageURL($"pkg:vcpkg/{Name}@{Version}?port_version={PortVersion}");
+                    return new PackageURL($"pkg:vcpkg/{this.Name}@{this.Version}?port_version={this.PortVersion}");
                 }
-                else if (Version != null)
+                else if (this.Version != null)
                 {
-                    return new PackageURL($"pkg:vcpkg/{Name}@{Version}");
+                    return new PackageURL($"pkg:vcpkg/{this.Name}@{this.Version}");
                 }
                 else
                 {
-                    return new PackageURL($"pkg:vcpkg/{Name}");
+                    return new PackageURL($"pkg:vcpkg/{this.Name}");
                 }
             }
         }

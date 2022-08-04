@@ -11,7 +11,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     {
         public PipGraphNode(PipComponent value)
         {
-            Value = value;
+            this.Value = value;
         }
 
         public PipComponent Value { get; set; }

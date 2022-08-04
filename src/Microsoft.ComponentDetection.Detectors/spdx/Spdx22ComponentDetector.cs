@@ -35,12 +35,12 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
 
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
-            Logger.LogVerbose($"Discovered SPDX2.2 manifest file at: {processRequest.ComponentStream.Location}");
+            this.Logger.LogVerbose($"Discovered SPDX2.2 manifest file at: {processRequest.ComponentStream.Location}");
             var file = processRequest.ComponentStream;
 
             try
             {
-                var hash = GetSHA1HashFromStream(file.Stream);
+                var hash = this.GetSHA1HashFromStream(file.Stream);
 
                 // Reset buffer to starting position after hash generation.
                 file.Stream.Seek(0, SeekOrigin.Begin);
@@ -54,35 +54,35 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
                     var document = serializer.Deserialize<JObject>(reader);
                     if (document != null)
                     {
-                        if (IsSPDXVersionSupported(document))
+                        if (this.IsSPDXVersionSupported(document))
                         {
-                            var sbomComponent = ConvertJObjectToSbomComponent(processRequest, document, hash);
+                            var sbomComponent = this.ConvertJObjectToSbomComponent(processRequest, document, hash);
                             processRequest.SingleFileComponentRecorder.RegisterUsage(new DetectedComponent(sbomComponent));
                         }
                         else
                         {
-                            Logger.LogWarning($"Discovered SPDX at {processRequest.ComponentStream.Location} is not SPDX-2.2 document, skipping");
+                            this.Logger.LogWarning($"Discovered SPDX at {processRequest.ComponentStream.Location} is not SPDX-2.2 document, skipping");
                         }
                     }
                     else
                     {
-                        Logger.LogWarning($"Discovered SPDX file at {processRequest.ComponentStream.Location} is not a valid document, skipping");
+                        this.Logger.LogWarning($"Discovered SPDX file at {processRequest.ComponentStream.Location} is not a valid document, skipping");
                     }
                 }
                 catch (JsonReaderException)
                 {
-                    Logger.LogWarning($"Unable to parse file at {processRequest.ComponentStream.Location}, skipping");
+                    this.Logger.LogWarning($"Unable to parse file at {processRequest.ComponentStream.Location}, skipping");
                 }
             }
             catch (Exception e)
             {
-                Logger.LogFailedReadingFile(file.Location, e);
+                this.Logger.LogFailedReadingFile(file.Location, e);
             }
 
             return Task.CompletedTask;
         }
 
-        private bool IsSPDXVersionSupported(JObject document) => supportedSPDXVersions.Contains(document["spdxVersion"]?.ToString(), StringComparer.OrdinalIgnoreCase);
+        private bool IsSPDXVersionSupported(JObject document) => this.supportedSPDXVersions.Contains(document["spdxVersion"]?.ToString(), StringComparer.OrdinalIgnoreCase);
 
         private SpdxComponent ConvertJObjectToSbomComponent(ProcessRequest processRequest, JObject document, string fileHash)
         {
@@ -93,12 +93,12 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
 
             if (rootElements != null && rootElements.Count() > 1)
             {
-                Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} has more than one element in documentDescribes, first will be selected as root element.");
+                this.Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} has more than one element in documentDescribes, first will be selected as root element.");
             }
 
             if (rootElements != null && rootElements.Any())
             {
-                Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} does not have root elements in documentDescribes section, considering SPDXRef-Document as a root element.");
+                this.Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} does not have root elements in documentDescribes section, considering SPDXRef-Document as a root element.");
             }
 
             var rootElementId = rootElements?.FirstOrDefault() ?? "SPDXRef-Document";
