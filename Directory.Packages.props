@@ -14,7 +14,7 @@
         <PackageVersion Include="FluentAssertions" Version="6.7.0"/>
         <PackageVersion Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9"/>
         <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="3.1.27" />
-        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.2.0"/>
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.3.0"/>
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1"/>
         <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.3.44"/>
         <PackageVersion Include="DotNet.Glob" Version="2.1.4"/>
