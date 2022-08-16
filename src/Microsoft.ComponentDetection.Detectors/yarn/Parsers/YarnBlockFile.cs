@@ -75,8 +75,8 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                 throw new ArgumentNullException(nameof(stream));
             }
 
-            List<string> fileLines = new List<string>();
-            using (StreamReader reader = new StreamReader(stream))
+            var fileLines = new List<string>();
+            using (var reader = new StreamReader(stream))
             {
                 while (!reader.EndOfStream)
                 {
@@ -122,7 +122,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                             this.VersionHeader = this.fileLines[this.fileLineIndex];
                             this.YarnLockVersion = YarnLockVersion.V2;
 
-                            YarnBlock metadataBlock = this.ParseBlock();
+                            var metadataBlock = this.ParseBlock();
 
                             if (metadataBlock.Values.ContainsKey("version") && metadataBlock.Values.ContainsKey("cacheKey"))
                             {
@@ -149,14 +149,14 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         /// <returns></returns>
         private YarnBlock ParseBlock(int level = 0)
         {
-            string currentLevelDelimiter = "  ";
-            for (int i = 0; i < level; i++)
+            var currentLevelDelimiter = "  ";
+            for (var i = 0; i < level; i++)
             {
                 currentLevelDelimiter = currentLevelDelimiter + "  ";
             }
 
             // Assuming the pointer has been set up to a block
-            YarnBlock block = new YarnBlock { Title = this.fileLines[this.fileLineIndex].TrimEnd(':').Trim('\"').Trim() };
+            var block = new YarnBlock { Title = this.fileLines[this.fileLineIndex].TrimEnd(':').Trim('\"').Trim() };
 
             while (this.IncrementIndex())
             {
@@ -172,7 +172,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                 }
                 else
                 {
-                    string toParse = this.fileLines[this.fileLineIndex].Trim();
+                    var toParse = this.fileLines[this.fileLineIndex].Trim();
 
                     // Yarn V1 and V2 have slightly different formats, where V2 adds a : between property name and value
                     // Match on the specified version

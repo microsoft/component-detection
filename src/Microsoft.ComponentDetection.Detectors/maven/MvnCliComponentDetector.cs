@@ -83,15 +83,15 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         private IObservable<ProcessRequest> RemoveNestedPomXmls(IObservable<ProcessRequest> componentStreams)
         {
-            List<DirectoryItemFacade> directoryItemFacades = new List<DirectoryItemFacade>();
-            Dictionary<string, DirectoryItemFacade> directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
+            var directoryItemFacades = new List<DirectoryItemFacade>();
+            var directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
             return Observable.Create<ProcessRequest>(s =>
             {
                 return componentStreams.Subscribe(
                     processRequest =>
                 {
                     var item = processRequest.ComponentStream;
-                    string currentDir = item.Location;
+                    var currentDir = item.Location;
                     DirectoryItemFacade last = null;
                     do
                     {

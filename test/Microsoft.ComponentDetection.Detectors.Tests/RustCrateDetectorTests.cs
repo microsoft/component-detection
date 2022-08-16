@@ -106,7 +106,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public async Task TestSupportsCargoV1AndV2DefinitionPairs()
         {
             var componentRecorder = new ComponentRecorder();
-            ScanRequest request = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder);
+            var request = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder);
 
             var (result1, _) = await this.detectorTestUtility
                                                     /* v1 files */
@@ -269,7 +269,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
             Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
 
-            List<string> packageVersions = new List<string>()
+            var packageVersions = new List<string>()
             {
                 "my_dependency 1.0.0",
                 "other_dependency 0.4.0",
@@ -356,7 +356,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestRustV2Detector_DuplicatePackage()
         {
-            string testCargoLock = @"
+            var testCargoLock = @"
 [[package]]
 name = ""my_dependency""
 version = ""1.0.0""
@@ -526,7 +526,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
             Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
 
-            List<string> packageVersions = new List<string>()
+            var packageVersions = new List<string>()
             {
                 "dev_dependency_dependency 0.2.23",
                 "one_more_dev_dep 1.0.0",
@@ -599,7 +599,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
             Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
 
-            List<string> packageVersions = new List<string>()
+            var packageVersions = new List<string>()
             {
                 "dev_dependency_dependency 0.2.23",
                 "one_more_dev_dep 1.0.0",

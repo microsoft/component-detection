@@ -72,9 +72,9 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            IEnumerable<IComponentStream> packageJsonComponentStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(file.Location).Directory, packageJsonPattern, (name, directoryName) => false, false);
+            var packageJsonComponentStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(file.Location).Directory, packageJsonPattern, (name, directoryName) => false, false);
 
-            bool foundUnderLerna = false;
+            var foundUnderLerna = false;
             IList<ProcessRequest> lernaFilesClone;
 
             // ToList LernaFiles to generate a copy we can act on without holding the lock for a long time
@@ -111,8 +111,8 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
         private IObservable<ProcessRequest> RemoveNodeModuleNestedFiles(IObservable<ProcessRequest> componentStreams)
         {
-            List<DirectoryItemFacade> directoryItemFacades = new List<DirectoryItemFacade>();
-            Dictionary<string, DirectoryItemFacade> directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
+            var directoryItemFacades = new List<DirectoryItemFacade>();
+            var directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
 
             return Observable.Create<ProcessRequest>(s =>
             {
@@ -120,7 +120,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                     processRequest =>
                 {
                     var item = processRequest.ComponentStream;
-                    string currentDir = item.Location;
+                    var currentDir = item.Location;
                     DirectoryItemFacade last = null;
                     do
                     {
@@ -135,7 +135,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                                 directoryItemFacades.Add(last);
                             }
 
-                            string skippedFolder = this.SkippedFolders.FirstOrDefault(folder => item.Location.Contains(folder));
+                            var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => item.Location.Contains(folder));
 
                             // When node_modules is part of the path down to a given item, we skip the item. Otherwise, we yield the item.
                             if (string.IsNullOrEmpty(skippedFolder))
@@ -213,8 +213,8 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                 return Task.CompletedTask;
             }
 
-            using StreamReader file = new StreamReader(componentStream.Stream);
-            using JsonTextReader reader = new JsonTextReader(file);
+            using var file = new StreamReader(componentStream.Stream);
+            using var reader = new JsonTextReader(file);
 
             var o = JToken.ReadFrom(reader);
             jtokenProcessor(o);
@@ -223,18 +223,18 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
         protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
         {
-            JToken dependencies = packageLockJToken["dependencies"];
-            Queue<(JProperty, TypedComponent)> topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
+            var dependencies = packageLockJToken["dependencies"];
+            var topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
 
             var dependencyLookup = dependencies.Children<JProperty>().ToDictionary(dependency => dependency.Name);
 
             foreach (var stream in packageJsonComponentStream)
             {
-                using StreamReader file = new StreamReader(stream.Stream);
-                using JsonTextReader reader = new JsonTextReader(file);
+                using var file = new StreamReader(stream.Stream);
+                using var reader = new JsonTextReader(file);
 
                 var packageJsonToken = JToken.ReadFrom(reader);
-                bool enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
+                var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
                 enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, skipValidation: skipValidation);
                 if (!enqueued)
                 {
@@ -262,8 +262,8 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                     continue;
                 }
 
-                HashSet<string> previouslyAddedComponents = new HashSet<string> { typedComponent.Id };
-                Queue<(JProperty, TypedComponent)> subQueue = new Queue<(JProperty, TypedComponent)>();
+                var previouslyAddedComponents = new HashSet<string> { typedComponent.Id };
+                var subQueue = new Queue<(JProperty, TypedComponent)>();
 
                 NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder, typedComponent, explicitReferencedDependency: typedComponent);
                 this.EnqueueDependencies(subQueue, currentDependency.Value["dependencies"], parentComponent: typedComponent);
@@ -307,7 +307,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
         private bool TryEnqueueFirstLevelDependencies(Queue<(JProperty, TypedComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, Queue<TypedComponent> parentComponentQueue = null, TypedComponent parentComponent = null, bool skipValidation = false)
         {
-            bool isValid = true;
+            var isValid = true;
             if (dependencies != null)
             {
                 foreach (JProperty dependency in dependencies)
@@ -317,7 +317,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                         continue;
                     }
 
-                    bool inLock = dependencyLookup.TryGetValue(dependency.Name, out JProperty dependencyProperty);
+                    var inLock = dependencyLookup.TryGetValue(dependency.Name, out var dependencyProperty);
                     if (inLock)
                     {
                         queue.Enqueue((dependencyProperty, parentComponent));

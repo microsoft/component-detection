@@ -63,7 +63,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         {
             try
             {
-                SemVersion.TryParse(versionString, out SemVersion version, loose);
+                SemVersion.TryParse(versionString, out var version, loose);
                 return this.IsSatisfied(version);
             }
             catch (ArgumentException)

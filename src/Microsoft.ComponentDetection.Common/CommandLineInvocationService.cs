@@ -22,7 +22,7 @@ namespace Microsoft.ComponentDetection.Common
             additionalCandidateCommands = additionalCandidateCommands ?? Enumerable.Empty<string>();
             parameters = parameters ?? new string[0];
             var allCommands = new[] { command }.Concat(additionalCandidateCommands);
-            if (!this.commandLocatableCache.TryGetValue(command, out string validCommand))
+            if (!this.commandLocatableCache.TryGetValue(command, out var validCommand))
             {
                 foreach (var commandToTry in allCommands)
                 {
@@ -119,8 +119,8 @@ namespace Microsoft.ComponentDetection.Common
                 process.StartInfo.WorkingDirectory = workingDirectory.FullName;
             }
 
-            string errorText = string.Empty;
-            string stdOutText = string.Empty;
+            var errorText = string.Empty;
+            var stdOutText = string.Empty;
 
             var t1 = new Task(() =>
             {

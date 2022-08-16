@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
         public ScanResult Load(string[] args)
         {
-            ArgumentHelper argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
+            var argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
             BaseArguments baseArguments = null;
             var parserResult = argumentHelper.ParseArguments<BaseArguments>(args, true);
             parserResult.WithParsed(x => baseArguments = x);
@@ -39,7 +39,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
                 baseArguments = new BaseArguments();
             }
 
-            IEnumerable<string> additionalDITargets = baseArguments.AdditionalDITargets ?? Enumerable.Empty<string>();
+            var additionalDITargets = baseArguments.AdditionalDITargets ?? Enumerable.Empty<string>();
 
             // Load all types from Common (where Logger lives) and our executing assembly.
             var configuration = new ContainerConfiguration()
@@ -62,7 +62,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
             TelemetryRelay.Instance.SetTelemetryMode(baseArguments.DebugTelemetry ? TelemetryMode.Debug : TelemetryMode.Production);
 
-            bool shouldFailureBeSuppressed = false;
+            var shouldFailureBeSuppressed = false;
 
             // Don't use the using pattern here so we can take care not to clobber the stack
             var returnResult = BcdeExecutionTelemetryRecord.Track(
@@ -188,7 +188,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
                     var getLibSslPackages = Task.Run(() =>
                     {
                         var startInfo = new ProcessStartInfo("apt", "list --installed") { RedirectStandardOutput = true };
-                        Process process = new Process { StartInfo = startInfo };
+                        var process = new Process { StartInfo = startInfo };
                         process.Start();
                         string aptListResult = null;
                         var task = Task.Run(() => aptListResult = process.StandardOutput.ReadToEnd());
@@ -288,7 +288,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
                     Logger.LogError($"There was an unexpected error: ");
                     Logger.LogException(e, isError: true);
 
-                    StringBuilder errorMessage = new StringBuilder();
+                    var errorMessage = new StringBuilder();
                     errorMessage.AppendLine(e.ToString());
                     if (e is ReflectionTypeLoadException refEx && refEx.LoaderExceptions != null)
                     {

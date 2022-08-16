@@ -128,7 +128,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private async Task<string> ResolvePython(string pythonPath = null)
         {
-            string pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : pythonPath;
+            var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : pythonPath;
 
             if (await this.CanCommandBeLocated(pythonCommand))
             {

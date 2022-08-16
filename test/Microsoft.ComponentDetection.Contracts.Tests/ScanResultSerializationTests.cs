@@ -92,7 +92,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         public void ScanResultSerialization_ExpectedJsonFormat()
         {
             var serializedResult = JsonConvert.SerializeObject(this.scanResultUnderTest);
-            JObject json = JObject.Parse(serializedResult);
+            var json = JObject.Parse(serializedResult);
 
             json.Value<string>("resultCode").Should().Be("PartialSuccess");
             json.Value<string>("sourceDirectory").Should().Be("D:\\test\\directory");

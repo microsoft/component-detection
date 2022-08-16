@@ -107,7 +107,7 @@ github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(6, detectedComponents.Count());
-            List<TypedComponent> typedComponents = detectedComponents.Select(d => d.Component).ToList();
+            var typedComponents = detectedComponents.Select(d => d.Component).ToList();
             Assert.IsTrue(typedComponents.Contains(
                 new GoComponent("github.com/golang/mock", "v1.1.1", "h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=")));
             Assert.IsTrue(typedComponents.Contains(
@@ -193,7 +193,7 @@ require (
         [TestMethod]
         public async Task TestGoModDetectorInvalidFiles_DoesNotFail()
         {
-            string invalidGoMod =
+            var invalidGoMod =
 @"     #/bin/sh
 lorem ipsum
 four score and seven bugs ago

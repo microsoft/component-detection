@@ -18,13 +18,13 @@ namespace Microsoft.ComponentDetection.Common
 
         public IEnumerable<IComponentStream> GetComponentStreams(DirectoryInfo directory, IEnumerable<string> searchPatterns, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true)
         {
-            SafeFileEnumerable enumerable = new SafeFileEnumerable(directory, searchPatterns, this.Logger, this.PathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories);
+            var enumerable = new SafeFileEnumerable(directory, searchPatterns, this.Logger, this.PathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories);
             return new ComponentStreamEnumerable(enumerable, this.Logger);
         }
 
         public IEnumerable<IComponentStream> GetComponentStreams(DirectoryInfo directory, Func<FileInfo, bool> fileMatchingPredicate, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true)
         {
-            SafeFileEnumerable enumerable = new SafeFileEnumerable(directory, fileMatchingPredicate, this.Logger, this.PathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories);
+            var enumerable = new SafeFileEnumerable(directory, fileMatchingPredicate, this.Logger, this.PathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories);
             return new ComponentStreamEnumerable(enumerable, this.Logger);
         }
     }

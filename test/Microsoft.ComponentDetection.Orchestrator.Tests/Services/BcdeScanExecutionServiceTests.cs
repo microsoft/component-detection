@@ -223,7 +223,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         [TestMethod]
         public void DetectComponents_Graph_Happy_Path()
         {
-            string mockGraphLocation = "/some/dependency/graph";
+            var mockGraphLocation = "/some/dependency/graph";
 
             var args = new BcdeArguments
             {
@@ -236,7 +236,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0], isExplicitReferencedDependency: true, isDevelopmentDependency: true);
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1], isDevelopmentDependency: false, parentComponentId: this.detectedComponents[0].Component.Id);
 
-            Mock<IDependencyGraph> mockDependencyGraphA = new Mock<IDependencyGraph>();
+            var mockDependencyGraphA = new Mock<IDependencyGraph>();
             mockDependencyGraphA.Setup(x => x.GetComponents()).Returns(new[] {
                 this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id });
             mockDependencyGraphA.Setup(x => x.GetDependenciesForComponent(this.detectedComponents[0].Component.Id))
@@ -275,7 +275,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         [TestMethod]
         public void DetectComponents_Graph_AccumulatesGraphsOnSameLocation()
         {
-            string mockGraphLocation = "/some/dependency/graph";
+            var mockGraphLocation = "/some/dependency/graph";
 
             var args = new BcdeArguments
             {
@@ -285,7 +285,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             var componentRecorder = new ComponentRecorder();
 
-            Mock<IDependencyGraph> mockDependencyGraphA = new Mock<IDependencyGraph>();
+            var mockDependencyGraphA = new Mock<IDependencyGraph>();
             mockDependencyGraphA.Setup(x => x.GetComponents()).Returns(new[] {
                 this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id });
             mockDependencyGraphA.Setup(x => x.GetDependenciesForComponent(this.detectedComponents[0].Component.Id))
@@ -297,7 +297,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorderA.RegisterUsage(this.detectedComponents[0], isExplicitReferencedDependency: true);
             singleFileComponentRecorderA.RegisterUsage(this.detectedComponents[1], parentComponentId: this.detectedComponents[0].Component.Id);
 
-            Mock<IDependencyGraph> mockDependencyGraphB = new Mock<IDependencyGraph>();
+            var mockDependencyGraphB = new Mock<IDependencyGraph>();
             mockDependencyGraphB.Setup(x => x.GetComponents()).Returns(new[] {
                 this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id });
             mockDependencyGraphB.Setup(x => x.GetDependenciesForComponent(this.detectedComponents[1].Component.Id))

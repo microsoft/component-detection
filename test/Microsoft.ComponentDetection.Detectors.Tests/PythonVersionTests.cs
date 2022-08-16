@@ -66,7 +66,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 "1.1",
             }.Select(x => new PythonVersion(x)).ToList();
 
-            for (int i = 1; i < versions.Count; i++)
+            for (var i = 1; i < versions.Count; i++)
             {
                 Assert.IsTrue(versions[i - 1] < versions[i]);
             }

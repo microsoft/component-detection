@@ -98,7 +98,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void ParseDependenciesFile_Success()
         {
             const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
-            string content = $@"com.bcde.test:top-level:jar:1.0.0{Environment.NewLine}\- {componentString}{Environment.NewLine}";
+            var content = $@"com.bcde.test:top-level:jar:1.0.0{Environment.NewLine}\- {componentString}{Environment.NewLine}";
 
             var pomLocation = "Test/location";
             var processRequest = new ProcessRequest

@@ -27,7 +27,7 @@ namespace Microsoft.ComponentDetection.Common
 
         public bool IsEnvironmentVariableValueTrue(string name)
         {
-            _ = bool.TryParse(this.GetEnvironmentVariable(name), out bool result);
+            _ = bool.TryParse(this.GetEnvironmentVariable(name), out var result);
             return result;
         }
     }

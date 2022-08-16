@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 using var archive = new ZipArchive(nupkgStream, ZipArchiveMode.Read, true);
 
                 // get the first entry ending in .nuspec at the root of the package
-                ZipArchiveEntry nuspecEntry =
+                var nuspecEntry =
                     archive.Entries.FirstOrDefault(x =>
                         x.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase)
                         && x.FullName.IndexOf('/') == -1);
@@ -51,8 +51,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
         public static async Task<byte[]> GetNuspecBytesFromNuspecStream(Stream nuspecStream, long nuspecLength)
         {
-            byte[] nuspecBytes = new byte[nuspecLength];
-            int bytesReadSoFar = 0;
+            var nuspecBytes = new byte[nuspecLength];
+            var bytesReadSoFar = 0;
             while (bytesReadSoFar < nuspecBytes.Length)
             {
                 bytesReadSoFar += await nuspecStream.ReadAsync(nuspecBytes, bytesReadSoFar, nuspecBytes.Length - bytesReadSoFar);

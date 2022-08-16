@@ -103,7 +103,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             var tokens = construct.Tokens.ToArray();
             var resolvedFromStatement = construct.ResolveVariables(escapeChar).TrimEnd();
             var fromInstruction = (FromInstruction)construct;
-            string reference = fromInstruction.ImageName;
+            var reference = fromInstruction.ImageName;
             if (string.IsNullOrWhiteSpace(resolvedFromStatement) || string.IsNullOrEmpty(reference))
             {
                 return null;

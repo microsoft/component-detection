@@ -79,7 +79,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             {
                 var distMatch = RequiresDistRegex.Match(packageString);
 
-                for (int i = 1; i < distMatch.Groups.Count; i++)
+                for (var i = 1; i < distMatch.Groups.Count; i++)
                 {
                     if (string.IsNullOrWhiteSpace(distMatch.Groups[i].Value))
                     {

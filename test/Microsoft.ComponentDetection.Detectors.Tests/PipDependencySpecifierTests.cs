@@ -10,7 +10,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void TestPipDependencySpecifierConstruction()
         {
-            List<(string, PipDependencySpecification)> specs = new List<(string, PipDependencySpecification)>
+            var specs = new List<(string, PipDependencySpecification)>
             {
                 ("TestPackage==1.0", new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { "==1.0" } }),
                 ("TestPackage>=1.0,!=1.1", new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=1.0", "!=1.1" } }),
@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
                 Assert.AreEqual(referenceDependencySpecification.Name, dependencySpecifier.Name);
 
-                for (int i = 0; i < referenceDependencySpecification.DependencySpecifiers.Count; i++)
+                for (var i = 0; i < referenceDependencySpecification.DependencySpecifiers.Count; i++)
                 {
                     Assert.AreEqual(referenceDependencySpecification.DependencySpecifiers[i], dependencySpecifier.DependencySpecifiers[i]);
                 }

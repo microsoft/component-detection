@@ -42,8 +42,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_PackageLockReturnsValid()
         {
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
 
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName0, version0);
             var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
@@ -74,8 +74,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_MismatchedFilesReturnsEmpty()
         {
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
 
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName);
             var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
@@ -117,16 +117,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_PackageLockMultiRoot()
         {
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
-            string componentName1 = Guid.NewGuid().ToString("N");
-            string componentName2 = Guid.NewGuid().ToString("N");
-            string version2 = NewRandomVersion();
-            string componentName3 = Guid.NewGuid().ToString("N");
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
+            var componentName1 = Guid.NewGuid().ToString("N");
+            var componentName2 = Guid.NewGuid().ToString("N");
+            var version2 = NewRandomVersion();
+            var componentName3 = Guid.NewGuid().ToString("N");
 
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName0, version0, componentName2, version2, packageName1: componentName1, packageName3: componentName3);
 
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -181,14 +181,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_VerifyMultiRoot_DependencyGraph()
         {
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
-            string componentName2 = Guid.NewGuid().ToString("N");
-            string version2 = NewRandomVersion();
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
+            var componentName2 = Guid.NewGuid().ToString("N");
+            var version2 = NewRandomVersion();
 
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName0, version0, componentName2, version2);
 
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -228,12 +228,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_EmptyVersionSkipped()
         {
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
-            string componentName2 = Guid.NewGuid().ToString("N");
-            string version2 = NewRandomVersion();
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
+            var componentName2 = Guid.NewGuid().ToString("N");
+            var version2 = NewRandomVersion();
 
-            string packageLockJson = @"{{
+            var packageLockJson = @"{{
                 ""name"": ""test"",
                 ""version"": """",
                 ""dependencies"": {{
@@ -258,7 +258,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageLockTemplate = string.Format(packageLockJson, componentName0, version0, componentName2, version2, componentName2, version2, componentName0, version0);
 
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -287,12 +287,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_InvalidNameSkipped()
         {
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
-            string componentName2 = Guid.NewGuid().ToString("N");
-            string version2 = NewRandomVersion();
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
+            var componentName2 = Guid.NewGuid().ToString("N");
+            var version2 = NewRandomVersion();
 
-            string packageLockJson = @"{{
+            var packageLockJson = @"{{
                 ""name"": """",
                 ""version"": ""1.0.0"",
                 ""dependencies"": {{
@@ -317,7 +317,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageLockTemplate = string.Format(packageLockJson, componentName0, version0, componentName2, version2, componentName2, version2, componentName0, version0);
 
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -346,18 +346,18 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_LernaDirectory()
         {
-            string lockFileLocation = Path.Combine(Path.GetTempPath(), Path.Combine("belowLerna", this.packageLockJsonFileName));
-            string packageJsonFileLocation = Path.Combine(Path.GetTempPath(), Path.Combine("belowLerna", this.packageJsonFileName));
-            string lernaFileLocation = Path.Combine(Path.GetTempPath(), "lerna.json");
+            var lockFileLocation = Path.Combine(Path.GetTempPath(), Path.Combine("belowLerna", this.packageLockJsonFileName));
+            var packageJsonFileLocation = Path.Combine(Path.GetTempPath(), Path.Combine("belowLerna", this.packageJsonFileName));
+            var lernaFileLocation = Path.Combine(Path.GetTempPath(), "lerna.json");
 
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
-            string componentName1 = Guid.NewGuid().ToString("N");
-            string version1 = NewRandomVersion();
-            string componentName2 = Guid.NewGuid().ToString("N");
-            string version2 = NewRandomVersion();
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
+            var componentName1 = Guid.NewGuid().ToString("N");
+            var version1 = NewRandomVersion();
+            var componentName2 = Guid.NewGuid().ToString("N");
+            var version2 = NewRandomVersion();
 
-            string packageLockJson = @"{{
+            var packageLockJson = @"{{
                 ""name"": """",
                 ""version"": """",
                 ""dependencies"": {{
@@ -382,7 +382,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageLockTemplate = string.Format(packageLockJson, componentName0, version0, componentName2, version2, componentName2, version2, componentName0, version0);
 
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -412,14 +412,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_CircularRequirementsResolve()
         {
-            string packageJsonComponentPath = Path.Combine(Path.GetTempPath(), this.packageLockJsonFileName);
+            var packageJsonComponentPath = Path.Combine(Path.GetTempPath(), this.packageLockJsonFileName);
 
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
-            string componentName2 = Guid.NewGuid().ToString("N");
-            string version2 = NewRandomVersion();
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
+            var componentName2 = Guid.NewGuid().ToString("N");
+            var version2 = NewRandomVersion();
 
-            string packageLockJson = @"{{
+            var packageLockJson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -444,7 +444,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageLockTemplate = string.Format(packageLockJson, componentName0, version0, componentName2, version2, componentName2, version2, componentName0, version0);
 
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -483,11 +483,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_ShrinkwrapLockReturnsValid()
         {
-            string lockFileName = "npm-shrinkwrap.json";
-            string packageJsonComponentPath = Path.Combine(Path.GetTempPath(), this.packageJsonFileName);
+            var lockFileName = "npm-shrinkwrap.json";
+            var packageJsonComponentPath = Path.Combine(Path.GetTempPath(), this.packageJsonFileName);
 
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
 
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(lockFileName, componentName0, version0);
             var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
@@ -518,20 +518,20 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_IgnoresPackageLocksInSubFolders()
         {
-            string pathRoot = Path.GetTempPath();
+            var pathRoot = Path.GetTempPath();
 
-            string packageLockUnderNodeModules = Path.Combine(pathRoot, Path.Combine("node_modules", this.packageLockJsonFileName));
-            string packageJsonUnderNodeModules = Path.Combine(pathRoot, Path.Combine("node_modules", this.packageJsonFileName));
+            var packageLockUnderNodeModules = Path.Combine(pathRoot, Path.Combine("node_modules", this.packageLockJsonFileName));
+            var packageJsonUnderNodeModules = Path.Combine(pathRoot, Path.Combine("node_modules", this.packageJsonFileName));
 
-            string componentName0 = Guid.NewGuid().ToString("N");
-            string version0 = NewRandomVersion();
-            string componentName2 = Guid.NewGuid().ToString("N");
-            string version2 = NewRandomVersion();
+            var componentName0 = Guid.NewGuid().ToString("N");
+            var version0 = NewRandomVersion();
+            var componentName2 = Guid.NewGuid().ToString("N");
+            var version2 = NewRandomVersion();
 
             var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName0, version0);
             var (packageLockName2, packageLockContents2, packageLockPath2) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName2, version2, packageName0: "test2");
 
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""{2}"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -573,13 +573,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNpmDetector_DependencyGraphIsCreated()
         {
-            string packageJsonComponentPath = Path.Combine(Path.GetTempPath(), this.packageLockJsonFileName);
+            var packageJsonComponentPath = Path.Combine(Path.GetTempPath(), this.packageLockJsonFileName);
 
             var componentA = (Name: "componentA", Version: "1.0.0");
             var componentB = (Name: "componentB", Version: "1.0.0");
             var componentC = (Name: "componentC", Version: "1.0.0");
 
-            string packageLockJson = @"{{
+            var packageLockJson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -613,7 +613,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 componentB.Name, componentB.Version,
                 componentC.Name, componentC.Version);
 
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
