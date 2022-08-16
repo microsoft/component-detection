@@ -55,7 +55,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             var isLocated = await this.commandLineService.CanCommandBeLocated("cmd.exe", default, "/C");
             Assert.IsTrue(isLocated);
-            StringBuilder largeStringBuilder = new StringBuilder();
+            var largeStringBuilder = new StringBuilder();
             while (largeStringBuilder.Length < 8100) // Cmd.exe command limit is in the 8100s
             {
                 largeStringBuilder.Append("Some sample text");
@@ -72,7 +72,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             var isLocated = await this.commandLineService.CanCommandBeLocated("cmd.exe", default, "/C");
             Assert.IsTrue(isLocated);
-            StringBuilder largeStringBuilder = new StringBuilder();
+            var largeStringBuilder = new StringBuilder();
             while (largeStringBuilder.Length < 9000) // Pick a command that is "too big" for cmd.
             {
                 largeStringBuilder.Append("Some sample text");
@@ -89,7 +89,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             var isLocated = await this.commandLineService.CanCommandBeLocated("cmd.exe", default, "/C");
             Assert.IsTrue(isLocated);
-            string tempDirectoryPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            var tempDirectoryPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             var tempDirectory = Directory.CreateDirectory(tempDirectoryPath);
 
             var taskResult = await this.commandLineService.ExecuteCommand("cmd.exe", default, workingDirectory: tempDirectory, "/C cd");

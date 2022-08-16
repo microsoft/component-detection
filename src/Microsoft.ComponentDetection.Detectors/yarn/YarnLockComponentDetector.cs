@@ -35,7 +35,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            string skippedFolder = this.SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
+            var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
             if (!string.IsNullOrEmpty(skippedFolder))
             {
                 this.Logger.LogInfo($"Yarn.Lock file {file.Location} was found in a {skippedFolder} folder and will be skipped.");
@@ -58,7 +58,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 
         private void DetectComponents(YarnLockFile file, string location, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
-            Dictionary<string, YarnEntry> yarnPackages = new Dictionary<string, YarnEntry>();
+            var yarnPackages = new Dictionary<string, YarnEntry>();
 
             // Iterate once and build our provider lookup for all possible yarn packages requests
             // Each entry can satisfy more than one request in a Yarn.Lock file
@@ -78,7 +78,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
                 }
             }
 
-            if (yarnPackages.Count == 0 || !this.TryReadPeerPackageJsonRequestsAsYarnEntries(location, yarnPackages, out List<YarnEntry> yarnRoots))
+            if (yarnPackages.Count == 0 || !this.TryReadPeerPackageJsonRequestsAsYarnEntries(location, yarnPackages, out var yarnRoots))
             {
                 return;
             }
@@ -116,16 +116,16 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
         /// <param name="singleFileComponentRecorder">The component recorder for file that is been processed.</param>
         private void ParseTreeWithAssignedRoot(YarnEntry root, Dictionary<string, YarnEntry> providerTable, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
-            Queue<(YarnEntry, YarnEntry)> queue = new Queue<(YarnEntry, YarnEntry)>();
+            var queue = new Queue<(YarnEntry, YarnEntry)>();
 
             queue.Enqueue((root, null));
-            HashSet<string> processed = new HashSet<string>();
+            var processed = new HashSet<string>();
 
             while (queue.Count > 0)
             {
                 var (currentEntry, parentEntry) = queue.Dequeue();
-                DetectedComponent currentComponent = singleFileComponentRecorder.GetComponent(this.YarnEntryToComponentId(currentEntry));
-                DetectedComponent parentComponent = parentEntry != null ? singleFileComponentRecorder.GetComponent(this.YarnEntryToComponentId(parentEntry)) : null;
+                var currentComponent = singleFileComponentRecorder.GetComponent(this.YarnEntryToComponentId(currentEntry));
+                var parentComponent = parentEntry != null ? singleFileComponentRecorder.GetComponent(this.YarnEntryToComponentId(parentEntry)) : null;
 
                 if (currentComponent != null)
                 {
@@ -179,7 +179,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 
             IDictionary<string, IDictionary<string, bool>> combinedDependencies = new Dictionary<string, IDictionary<string, bool>>();
 
-            int pkgJsonCount = 0;
+            var pkgJsonCount = 0;
 
             IList<string> yarnWorkspaces = new List<string>();
             foreach (var pkgJson in pkgJsons)
@@ -203,7 +203,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
             // into the appropriate yarn package
             foreach (var dependency in combinedDependencies)
             {
-                string name = dependency.Key;
+                var name = dependency.Key;
                 foreach (var version in dependency.Value)
                 {
                     var entryKey = $"{name}@npm:{version.Key}";
@@ -265,7 +265,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 
             foreach (var item in newDependency.Value)
             {
-                if (existingDependency.TryGetValue(item.Key, out bool wasDev))
+                if (existingDependency.TryGetValue(item.Key, out var wasDev))
                 {
                     existingDependency[item.Key] = wasDev && item.Value;
                 }

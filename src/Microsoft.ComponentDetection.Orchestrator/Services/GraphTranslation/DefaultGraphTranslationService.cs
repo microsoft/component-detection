@@ -103,7 +103,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 
         private List<DetectedComponent> FlattenAndMergeComponents(IEnumerable<DetectedComponent> components)
         {
-            List<DetectedComponent> flattenedAndMergedComponents = new List<DetectedComponent>();
+            var flattenedAndMergedComponents = new List<DetectedComponent>();
             foreach (var grouping in components.GroupBy(x => x.Component.Id + x.DetectedBy.Id))
             {
                 flattenedAndMergedComponents.Add(this.MergeComponents(grouping));
@@ -189,7 +189,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
             }
 
             // Make relative Uri needs a trailing separator to ensure that we turn "directory we are scanning" into "/"
-            string rootDirectoryFullName = rootDirectory.FullName;
+            var rootDirectoryFullName = rootDirectory.FullName;
             if (!rootDirectory.FullName.EndsWith(Path.DirectorySeparatorChar.ToString()) && !rootDirectory.FullName.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
             {
                 rootDirectoryFullName += Path.DirectorySeparatorChar;

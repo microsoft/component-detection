@@ -55,7 +55,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 throw new NoDetectorsFoundException();
             }
 
-            DetectorRestrictions detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
+            var detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
             var detectors = this.DetectorRestrictionService.ApplyRestrictions(detectorRestrictions, initialDetectors).ToImmutableList();
 
             this.Logger.LogVerbose($"Finished applying restrictions to detectors.");

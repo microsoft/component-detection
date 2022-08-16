@@ -56,7 +56,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             var groups = this.match.Groups;
 
             // Epoch is optional, implicitly 0 if not present
-            if (groups["epoch"].Success && int.TryParse(groups["epoch"].Value, out int epoch))
+            if (groups["epoch"].Success && int.TryParse(groups["epoch"].Value, out var epoch))
             {
                 this.Epoch = epoch;
             }
@@ -68,17 +68,17 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             this.Release = groups["release"].Success ? groups["release"].Value : string.Empty;
             this.PreReleaseLabel = groups["pre_l"].Success ? groups["pre_l"].Value : string.Empty;
 
-            if (groups["pre_n"].Success && int.TryParse(groups["pre_n"].Value, out int preReleaseNumber))
+            if (groups["pre_n"].Success && int.TryParse(groups["pre_n"].Value, out var preReleaseNumber))
             {
                 this.PreReleaseNumber = preReleaseNumber;
             }
 
-            if (groups["post_n1"].Success && int.TryParse(groups["post_n1"].Value, out int postRelease1))
+            if (groups["post_n1"].Success && int.TryParse(groups["post_n1"].Value, out var postRelease1))
             {
                 this.PostNumber = postRelease1;
             }
 
-            if (groups["post_n2"].Success && int.TryParse(groups["post_n2"].Value, out int postRelease2))
+            if (groups["post_n2"].Success && int.TryParse(groups["post_n2"].Value, out var postRelease2))
             {
                 this.PostNumber = postRelease2;
             }
@@ -89,7 +89,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 this.DevNumber = 0;
             }
 
-            if (groups["dev_n"].Success && int.TryParse(groups["dev_n"].Value, out int devNumber))
+            if (groups["dev_n"].Success && int.TryParse(groups["dev_n"].Value, out var devNumber))
             {
                 this.DevNumber = devNumber;
             }
@@ -135,28 +135,28 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
             if (!string.Equals(this.Release, other.Release, StringComparison.OrdinalIgnoreCase))
             {
-                int result = CompareReleaseVersions(this, other);
+                var result = CompareReleaseVersions(this, other);
                 if (result != 0)
                 {
                     return result;
                 }
             }
 
-            int preReleaseComparison = ComparePreRelease(this, other);
+            var preReleaseComparison = ComparePreRelease(this, other);
 
             if (preReleaseComparison != 0)
             {
                 return preReleaseComparison;
             }
 
-            int postNumberComparison = ComparePostNumbers(this, other);
+            var postNumberComparison = ComparePostNumbers(this, other);
 
             if (postNumberComparison != 0)
             {
                 return postNumberComparison;
             }
 
-            int devNumberComparison = CompareDevValues(this, other);
+            var devNumberComparison = CompareDevValues(this, other);
 
             return devNumberComparison;
         }
@@ -277,8 +277,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private static int CompareReleaseVersions(PythonVersion a, PythonVersion b)
         {
-            List<int> aSplit = a.Release.Split('.').Select(x => int.Parse(x)).ToList();
-            List<int> bSplit = b.Release.Split('.').Select(x => int.Parse(x)).ToList();
+            var aSplit = a.Release.Split('.').Select(x => int.Parse(x)).ToList();
+            var bSplit = b.Release.Split('.').Select(x => int.Parse(x)).ToList();
 
             int longer;
             int shorter;
@@ -307,7 +307,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 lengthCompare = 0;
             }
 
-            for (int i = 0; i < shorter; i++)
+            for (var i = 0; i < shorter; i++)
             {
                 if (aSplit[i] > bSplit[i])
                 {

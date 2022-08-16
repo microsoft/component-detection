@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
         public ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
         {
-            Parser p = new Parser(x =>
+            var p = new Parser(x =>
             {
                 x.IgnoreUnknownArguments = ignoreInvalidArgs;
 

@@ -137,7 +137,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 return dependencies;
             }
 
-            ZipArchive package = new ZipArchive(await response.Content.ReadAsStreamAsync());
+            var package = new ZipArchive(await response.Content.ReadAsStreamAsync());
 
             var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
 
@@ -147,7 +147,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 return dependencies;
             }
 
-            List<string> content = new List<string>();
+            var content = new List<string>();
             using (var stream = entry.Open())
             {
                 using var streamReader = new StreamReader(stream);

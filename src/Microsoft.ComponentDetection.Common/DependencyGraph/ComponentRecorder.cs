@@ -164,7 +164,7 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 }
 #endif
 
-                string componentId = detectedComponent.Component.Id;
+                var componentId = detectedComponent.Component.Id;
                 DetectedComponent storedComponent = null;
                 lock (this.registerUsageLock)
                 {

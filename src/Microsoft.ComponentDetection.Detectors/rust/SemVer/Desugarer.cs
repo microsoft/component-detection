@@ -147,7 +147,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             // Lower range has any non-supplied values replaced with zero
             var minVersion = minPartialVersion.ToZeroVersion();
 
-            Comparator.Operator maxOperator = maxPartialVersion.IsFull()
+            var maxOperator = maxPartialVersion.IsFull()
                 ? Comparator.Operator.LessThanOrEqual : Comparator.Operator.LessThan;
 
             SemVersion maxVersion = null;

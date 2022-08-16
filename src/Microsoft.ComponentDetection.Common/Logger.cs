@@ -97,7 +97,7 @@ namespace Microsoft.ComponentDetection.Common
             [CallerMemberName] string callerMemberName = "",
             [CallerLineNumber] int callerLineNumber = 0)
         {
-            string tag = isError ? "[ERROR]" : "[INFO]";
+            var tag = isError ? "[ERROR]" : "[INFO]";
 
             var fullExceptionText = $"{tag} Exception encountered." + NewLine +
                 $"CallerMember: [{callerMemberName} : {callerLineNumber}]" + NewLine +

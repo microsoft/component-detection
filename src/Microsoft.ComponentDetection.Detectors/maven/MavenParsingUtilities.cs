@@ -50,7 +50,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             }
 
             // 'MavenCompile' is a default scope for maven dependencies.
-            DependencyScope dependencyScope = DependencyScope.MavenCompile;
+            var dependencyScope = DependencyScope.MavenCompile;
             var groupId = results[0];
             var artifactId = results[1];
             var version = results[3];

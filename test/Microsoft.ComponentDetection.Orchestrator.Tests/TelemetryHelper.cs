@@ -13,8 +13,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests
         public static IEnumerable<T> ExecuteWhileCapturingTelemetry<T>(Action codeToExecute)
             where T : class, IDetectionTelemetryRecord
         {
-            Mock<ITelemetryService> telemetryServiceMock = new Mock<ITelemetryService>();
-            ConcurrentBag<T> records = new ConcurrentBag<T>();
+            var telemetryServiceMock = new Mock<ITelemetryService>();
+            var records = new ConcurrentBag<T>();
             telemetryServiceMock.Setup(x => x.PostRecord(It.IsAny<IDetectionTelemetryRecord>()))
                 .Callback<IDetectionTelemetryRecord>(record =>
                 {

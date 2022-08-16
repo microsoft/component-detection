@@ -25,7 +25,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             // If someone specifies an "allow list", use it, otherwise assume everything is allowed
             if (argSpecifiedRestrictions.AllowedDetectorIds != null && argSpecifiedRestrictions.AllowedDetectorIds.Any())
             {
-                IEnumerable<string> allowedIds = argSpecifiedRestrictions.AllowedDetectorIds;
+                var allowedIds = argSpecifiedRestrictions.AllowedDetectorIds;
 
                 // If we have retired detectors in the arg specified list and don't have the new detector, add the new detector
                 if (allowedIds.Where(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)).Any() && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))

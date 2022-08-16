@@ -27,7 +27,7 @@ namespace Microsoft.ComponentDetection.Common
 
         public string GenerateString(IEnumerable<IList<object>> rows)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             if (!string.IsNullOrWhiteSpace(this.tableTitle))
             {
                 this.PrintTitleSection(sb);

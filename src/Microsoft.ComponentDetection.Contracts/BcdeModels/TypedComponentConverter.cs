@@ -36,7 +36,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             JsonReader reader,
             Type objectType, object existingValue, JsonSerializer serializer)
         {
-            JToken jo = JToken.Load(reader);
+            var jo = JToken.Load(reader);
 
             var value = (ComponentType)Enum.Parse(typeof(ComponentType), (string)jo["type"]);
             var targetType = this.componentTypesToTypes[value];

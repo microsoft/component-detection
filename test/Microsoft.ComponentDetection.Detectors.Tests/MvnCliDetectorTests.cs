@@ -114,7 +114,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
             const string childComponentString = "org.apache.maven:maven-compat-child:jar:3.6.1-SNAPSHOT";
 
-            string content = $@"com.bcde.test:top-level:jar:1.0.0{Environment.NewLine}\- {componentString}{Environment.NewLine} \- {childComponentString}";
+            var content = $@"com.bcde.test:top-level:jar:1.0.0{Environment.NewLine}\- {componentString}{Environment.NewLine} \- {childComponentString}";
 
             this.MvnCliHappyPath(content);
 
@@ -145,7 +145,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             const string leafComponentString = "org.apache.maven:maven-compat-child:jar:3.6.1-SNAPSHOT";
 
-            string content = $@"com.bcde.test:top-level:jar:1.0.0
+            var content = $@"com.bcde.test:top-level:jar:1.0.0
 \- {explicitReferencedComponent}
     \- {intermediateParentComponent}
         \-{leafComponentString}";

@@ -205,7 +205,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 // Check if the pod is a root component and add it to the list of discovered components
                 if (rootPodspecs.Contains(pod.Podspec))
                 {
-                    if (nonRootComponents.TryGetValue(key, out DetectedComponent existingComponent))
+                    if (nonRootComponents.TryGetValue(key, out var existingComponent))
                     {
                         rootComponents.TryAdd(key, existingComponent);
                         nonRootComponents.Remove(key);
@@ -241,9 +241,9 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 // Check if the Podspec comes from a git repository or not
                 TypedComponent typedComponent;
                 string key;
-                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out IDictionary<string, string> checkoutOptions)
-                    && checkoutOptions.TryGetValue(":git", out string gitOption)
-                    && checkoutOptions.TryGetValue(":commit", out string commitOption))
+                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
+                    && checkoutOptions.TryGetValue(":git", out var gitOption)
+                    && checkoutOptions.TryGetValue(":commit", out var commitOption))
                 {
                     // Create the Git component
                     gitOption = NormalizePodfileGitUri(gitOption);
@@ -265,7 +265,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 // Check if the pod is a root component and add it to the list of discovered components
                 if (rootPodspecs.Contains(pod.Podspec))
                 {
-                    if (nonRootComponents.TryGetValue(key, out DetectedComponent existingComponent))
+                    if (nonRootComponents.TryGetValue(key, out var existingComponent))
                     {
                         rootComponents.TryAdd(key, existingComponent);
                         nonRootComponents.Remove(key);
@@ -284,7 +284,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 podSpecs.TryAdd(pod.Podspec, key);
 
                 // Update the pod dependencies map
-                if (podDependencies.TryGetValue(key, out List<PodDependency> dependencies))
+                if (podDependencies.TryGetValue(key, out var dependencies))
                 {
                     dependencies.AddRange(pod.Dependencies);
                 }
@@ -301,7 +301,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
                 foreach (var dependency in pod.Value)
                 {
-                    if (podSpecs.TryGetValue(dependency.Podspec, out string dependencyKey))
+                    if (podSpecs.TryGetValue(dependency.Podspec, out var dependencyKey))
                     {
                         if (dependencyKey != pod.Key)
                         {
@@ -335,7 +335,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 {
                     var dependency = dependencies.Dequeue();
 
-                    if (rootComponents.TryGetValue(dependency, out DetectedComponent detectedRootComponent))
+                    if (rootComponents.TryGetValue(dependency, out var detectedRootComponent))
                     {
                         // Found another root component
                         singleFileComponentRecorder.RegisterUsage(
@@ -343,7 +343,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                             isExplicitReferencedDependency: true,
                             parentComponentId: rootComponent.Value.Component.Id);
                     }
-                    else if (nonRootComponents.TryGetValue(dependency, out DetectedComponent detectedComponent))
+                    else if (nonRootComponents.TryGetValue(dependency, out var detectedComponent))
                     {
                         singleFileComponentRecorder.RegisterUsage(
                             detectedComponent,
@@ -351,7 +351,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                             parentComponentId: rootComponent.Value.Component.Id);
 
                         // Add the new dependecies to the queue
-                        if (dependenciesMap.TryGetValue(dependency, out HashSet<string> newDependencies))
+                        if (dependenciesMap.TryGetValue(dependency, out var newDependencies))
                         {
                             newDependencies.ToList().ForEach(dependencies.Enqueue);
                         }
@@ -385,9 +385,9 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 // Check if the Podspec comes from a git repository or not
                 TypedComponent typedComponent;
                 string key;
-                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out IDictionary<string, string> checkoutOptions)
-                    && checkoutOptions.TryGetValue(":git", out string gitOption)
-                    && checkoutOptions.TryGetValue(":commit", out string commitOption))
+                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
+                    && checkoutOptions.TryGetValue(":git", out var gitOption)
+                    && checkoutOptions.TryGetValue(":commit", out var commitOption))
                 {
                     // Create the Git component
                     gitOption = NormalizePodfileGitUri(gitOption);

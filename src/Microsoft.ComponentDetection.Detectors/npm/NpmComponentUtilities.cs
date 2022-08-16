@@ -19,8 +19,8 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
         public static void TraverseAndRecordComponents(JProperty currentDependency, ISingleFileComponentRecorder singleFileComponentRecorder, TypedComponent component, TypedComponent explicitReferencedDependency, string parentComponentId = null)
         {
-            JValue devJValue = currentDependency.Value["dev"] as JValue;
-            bool isDevDependency = devJValue == null ? false : (bool)devJValue;
+            var devJValue = currentDependency.Value["dev"] as JValue;
+            var isDevDependency = devJValue == null ? false : (bool)devJValue;
             AddOrUpdateDetectedComponent(singleFileComponentRecorder, component, isDevDependency, parentComponentId, isExplicitReferencedDependency: string.Equals(component.Id, explicitReferencedDependency.Id));
         }
 
@@ -38,9 +38,9 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
         public static TypedComponent GetTypedComponent(JProperty currentDependency, string npmRegistryHost, ILogger logger)
         {
-            string name = currentDependency.Name;
-            string version = currentDependency.Value["version"].ToString();
-            string hash = currentDependency.Value["integrity"]?.ToString(); // https://docs.npmjs.com/configuring-npm/package-lock-json.html#integrity
+            var name = currentDependency.Name;
+            var version = currentDependency.Value["version"].ToString();
+            var hash = currentDependency.Value["integrity"]?.ToString(); // https://docs.npmjs.com/configuring-npm/package-lock-json.html#integrity
 
             if (!IsPackageNameValid(name))
             {
@@ -48,7 +48,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                 return null;
             }
 
-            if (!SemanticVersion.TryParse(version, out SemanticVersion result) && !TryParseNpmVersion(npmRegistryHost, name, version, out result))
+            if (!SemanticVersion.TryParse(version, out var result) && !TryParseNpmVersion(npmRegistryHost, name, version, out result))
             {
                 logger.LogInfo($"Version string {version} for component {name} is invalid or unsupported and a component will not be recorded.");
                 return null;
@@ -61,7 +61,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
         public static bool TryParseNpmVersion(string npmRegistryHost, string packageName, string versionString, out SemanticVersion version)
         {
-            if (Uri.TryCreate(versionString, UriKind.Absolute, out Uri parsedUri))
+            if (Uri.TryCreate(versionString, UriKind.Absolute, out var parsedUri))
             {
                 if (string.Equals(npmRegistryHost, parsedUri.Host, StringComparison.OrdinalIgnoreCase))
                 {
@@ -77,8 +77,8 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
         {
             try
             {
-                string file = Path.GetFileNameWithoutExtension(versionString.LocalPath);
-                string potentialVersion = file.Replace($"{packageName}-", string.Empty);
+                var file = Path.GetFileNameWithoutExtension(versionString.LocalPath);
+                var potentialVersion = file.Replace($"{packageName}-", string.Empty);
 
                 return SemanticVersion.TryParse(potentialVersion, out version);
             }
@@ -93,8 +93,8 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
         {
             yarnWorkspaces = new List<string>();
 
-            using StreamReader file = new StreamReader(stream);
-            using JsonTextReader reader = new JsonTextReader(file);
+            using var file = new StreamReader(stream);
+            using var reader = new JsonTextReader(file);
 
             IDictionary<string, string> dependencies = new Dictionary<string, string>();
             IDictionary<string, string> devDependencies = new Dictionary<string, string>();
@@ -132,7 +132,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                     returnedDependencies[item.Key] = new Dictionary<string, bool>();
                 }
 
-                if (returnedDependencies[item.Key].TryGetValue(item.Value, out bool wasDev))
+                if (returnedDependencies[item.Key].TryGetValue(item.Value, out var wasDev))
                 {
                     returnedDependencies[item.Key][item.Value] = wasDev && isDev;
                 }

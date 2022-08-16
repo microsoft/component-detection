@@ -37,7 +37,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void GetEnumerator_WorksOverExpectedFiles()
         {
             var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));
-            string name = string.Format("{0}.txt", Guid.NewGuid());
+            var name = string.Format("{0}.txt", Guid.NewGuid());
 
             var file0 = Path.Combine(this.temporaryDirectory, name);
             var subFile0 = Path.Combine(this.temporaryDirectory, "SubDir", name);
@@ -52,7 +52,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
 
             var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, true);
 
-            int filesFound = 0;
+            var filesFound = 0;
             foreach (var file in enumerable)
             {
                 file.File.FullName.Should().BeOneOf(file0, subFile0);
@@ -66,7 +66,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void GetEnumerator_IgnoresSubDirectories()
         {
             var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));
-            string name = string.Format("{0}.txt", Guid.NewGuid());
+            var name = string.Format("{0}.txt", Guid.NewGuid());
 
             var file0 = Path.Combine(this.temporaryDirectory, name);
 
@@ -79,7 +79,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
 
             var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, false);
 
-            int filesFound = 0;
+            var filesFound = 0;
             foreach (var file in enumerable)
             {
                 file.File.FullName.Should().BeOneOf(file0);
@@ -94,7 +94,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             Assert.Inconclusive("Need actual symlinks to accurately test this");
             var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));
-            string name = string.Format("{0}.txt", Guid.NewGuid());
+            var name = string.Format("{0}.txt", Guid.NewGuid());
             File.Create(Path.Combine(this.temporaryDirectory, name)).Close();
             File.Create(Path.Combine(this.temporaryDirectory, "SubDir", name)).Close();
 
@@ -117,8 +117,8 @@ namespace Microsoft.ComponentDetection.Common.Tests
 
             var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));
             var fakeSymlink = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "FakeSymlink"));
-            string name = string.Format("{0}.txt", Guid.NewGuid());
-            string canary = string.Format("{0}.txt", Guid.NewGuid());
+            var name = string.Format("{0}.txt", Guid.NewGuid());
+            var canary = string.Format("{0}.txt", Guid.NewGuid());
             File.Create(Path.Combine(this.temporaryDirectory, name)).Close();
             File.Create(Path.Combine(this.temporaryDirectory, "SubDir", name)).Close();
             File.Create(Path.Combine(this.temporaryDirectory, "FakeSymlink", canary)).Close();
@@ -141,7 +141,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
 
         private string GetTemporaryDirectory()
         {
-            string tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             Directory.CreateDirectory(tempDirectory);
             return tempDirectory;
         }

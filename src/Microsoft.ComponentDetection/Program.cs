@@ -30,7 +30,7 @@ namespace Microsoft.ComponentDetection.Loader
 
                 var result = orchestrator.Load(args);
 
-                int exitCode = (int)result.ResultCode;
+                var exitCode = (int)result.ResultCode;
                 if (result.ResultCode == ProcessingResultCode.Error || result.ResultCode == ProcessingResultCode.InputError)
                 {
                     exitCode = -1;

@@ -28,12 +28,12 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 spec = "*";
             }
 
-            int position = 0;
-            int end = spec.Length;
+            var position = 0;
+            var end = spec.Length;
 
             while (position < end)
             {
-                int iterStartPosition = position;
+                var iterStartPosition = position;
 
                 // A comparator set might be an advanced range specifier
                 // like ~1.2.3, ^1.2, or 1.*.
@@ -77,7 +77,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public bool IsSatisfied(SemVersion version)
         {
-            bool satisfied = this.comparators.All(c => c.IsSatisfied(version));
+            var satisfied = this.comparators.All(c => c.IsSatisfied(version));
             if (version.Prerelease != string.Empty)
             {
                 // If the version is a pre-release, then one of the
