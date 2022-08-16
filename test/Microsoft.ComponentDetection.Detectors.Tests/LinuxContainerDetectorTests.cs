@@ -215,7 +215,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 .Throws(new IOException());
             this.mockDockerService.Setup(service => service.InspectImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 // Specify BaseImageRef = scratch to verify that cope
-                .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = Enumerable.Empty<DockerLayer>() , BaseImageRef = "scratch"});
+                .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = Enumerable.Empty<DockerLayer>(), BaseImageRef = "scratch"});
             await this.TestLinuxContainerDetector();
         }
     }
