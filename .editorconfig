@@ -459,10 +459,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers
 ##########################################
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1005.md
-# Single line comment should begin with a space
-dotnet_diagnostic.SA1005.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1101.md
 # Prefix local calls with this
 dotnet_diagnostic.SA1101.severity = suggestion
