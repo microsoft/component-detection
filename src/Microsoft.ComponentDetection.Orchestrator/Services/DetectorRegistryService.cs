@@ -27,7 +27,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             var executableLocation = Assembly.GetEntryAssembly().Location;
             var searchPath = Path.Combine(Path.GetDirectoryName(executableLocation), "Plugins");
 
-            List<DirectoryInfo> directoriesToSearch = new List<DirectoryInfo> { new DirectoryInfo(searchPath) };
+            var directoriesToSearch = new List<DirectoryInfo> { new DirectoryInfo(searchPath) };
 
             if (additionalSearchDirectories != null)
             {
@@ -58,7 +58,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         private IList<IComponentDetector> GetComponentDetectors(IEnumerable<DirectoryInfo> searchPaths, IEnumerable<string> extraDetectorAssemblies)
         {
-            List<IComponentDetector> detectors = new List<IComponentDetector>();
+            var detectors = new List<IComponentDetector>();
 
             using (var record = new LoadComponentDetectorsTelemetryRecord())
             {
@@ -130,7 +130,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
         // Plugin producers may include files we have already loaded
         private IList<Assembly> SafeLoadAssemblies(IEnumerable<string> files)
         {
-            List<Assembly> assemblyList = new List<Assembly>();
+            var assemblyList = new List<Assembly>();
 
             foreach (var file in files)
             {

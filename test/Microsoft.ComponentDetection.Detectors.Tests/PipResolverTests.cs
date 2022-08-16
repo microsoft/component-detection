@@ -211,9 +211,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 return false;
             }
 
-            bool valid = true;
+            var valid = true;
 
-            for (int i = 0; i < a.Children.Count; i++)
+            for (var i = 0; i < a.Children.Count; i++)
             {
                 valid = this.CompareGraphs(a.Children[i], b.Children[i]);
             }

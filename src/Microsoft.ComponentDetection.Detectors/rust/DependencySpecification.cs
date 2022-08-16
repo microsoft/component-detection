@@ -45,7 +45,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 var allSatisfied = true;
                 foreach (var range in ranges)
                 {
-                    if (SemVersion.TryParse(package.version, out SemVersion sv))
+                    if (SemVersion.TryParse(package.version, out var sv))
                     {
                         if (!range.IsSatisfied(sv))
                         {

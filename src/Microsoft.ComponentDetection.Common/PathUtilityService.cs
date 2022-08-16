@@ -135,22 +135,22 @@ namespace Microsoft.ComponentDetection.Common
                 return path;
             }
 
-            if (this.resolvedPaths.TryGetValue(path, out string cachedPath))
+            if (this.resolvedPaths.TryGetValue(path, out var cachedPath))
             {
                 return cachedPath;
             }
 
-            DirectoryInfo symlink = new DirectoryInfo(path);
+            var symlink = new DirectoryInfo(path);
 
-            using SafeFileHandle directoryHandle = CreateFile(symlink.FullName, 0, 2, IntPtr.Zero, CreationDispositionRead, FileFlagBackupSemantics, IntPtr.Zero);
+            using var directoryHandle = CreateFile(symlink.FullName, 0, 2, IntPtr.Zero, CreationDispositionRead, FileFlagBackupSemantics, IntPtr.Zero);
 
             if (directoryHandle.IsInvalid)
             {
                 return path;
             }
 
-            StringBuilder resultBuilder = new StringBuilder(InitalPathBufferSize);
-            int mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuilder, resultBuilder.Capacity, 0);
+            var resultBuilder = new StringBuilder(InitalPathBufferSize);
+            var mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuilder, resultBuilder.Capacity, 0);
 
             // If GetFinalPathNameByHandle needs a bigger buffer, it will tell us the size it needs (including the null terminator) in finalPathNameResultCode
             if (mResult > InitalPathBufferSize)
@@ -164,7 +164,7 @@ namespace Microsoft.ComponentDetection.Common
                 return path;
             }
 
-            string result = resultBuilder.ToString();
+            var result = resultBuilder.ToString();
 
             result = result.StartsWith(LongPathPrefix) ? result.Substring(LongPathPrefix.Length) : result;
 
@@ -180,7 +180,7 @@ namespace Microsoft.ComponentDetection.Common
                 throw new PlatformNotSupportedException("Attempted to call a function that makes linux-only library calls");
             }
 
-            IntPtr pointer = IntPtr.Zero;
+            var pointer = IntPtr.Zero;
             try
             {
                 pointer = RealPathLinux(path, IntPtr.Zero);
@@ -218,7 +218,7 @@ namespace Microsoft.ComponentDetection.Common
 
             // This isn't the best way to do this in C#, but netstandard doesn't seem to support the service api calls
             // that we need to do this without shelling out
-            Process process = new Process()
+            var process = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -231,7 +231,7 @@ namespace Microsoft.ComponentDetection.Common
                 },
             };
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             process.Start();
 
             while (!process.HasExited)

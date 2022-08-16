@@ -37,7 +37,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestGradleDetectorWithValidFile_DetectsComponentsSuccessfully()
         {
-            string validFileOne =
+            var validFileOne =
 @"org.springframework:spring-beans:5.0.5.RELEASE
 org.springframework:spring-core:5.0.5.RELEASE
 org.springframework:spring-jcl:5.0.5.RELEASE";
@@ -68,7 +68,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
         [TestMethod]
         public async Task TestGradleDetectorWithValidSingleLockfilePerProject_DetectsComponentsSuccessfully()
         {
-            string validFileOne =
+            var validFileOne =
 @"org.springframework:spring-beans:5.0.5.RELEASE=lintClassPath
 org.springframework:spring-core:5.0.5.RELEASE=debugCompile,releaseCompile
 org.springframework:spring-jcl:5.0.5.RELEASE=lintClassPath,debugCompile,releaseCompile";
@@ -100,12 +100,12 @@ org.springframework:spring-jcl:5.0.5.RELEASE=lintClassPath,debugCompile,releaseC
         [TestMethod]
         public async Task TestGradleDetectorWithValidFiles_ReturnsSuccessfully()
         {
-            string validFileOne =
+            var validFileOne =
 @"org.springframework:spring-beans:5.0.5.RELEASE
 org.springframework:spring-core:5.0.5.RELEASE
 org.springframework:spring-jcl:5.0.5.RELEASE";
 
-            string validFileTwo =
+            var validFileTwo =
 @"com.fasterxml.jackson.core:jackson-annotations:2.8.0
 com.fasterxml.jackson.core:jackson-core:2.8.10
 com.fasterxml.jackson.core:jackson-databind:2.8.11.3
@@ -151,10 +151,10 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
         [TestMethod]
         public async Task TestGradleDetector_SameComponentDifferentLocations_DifferentLocationsAreSaved()
         {
-            string validFileOne =
+            var validFileOne =
 @"org.springframework:spring-beans:5.0.5.RELEASE";
 
-            string validFileTwo =
+            var validFileTwo =
 "org.springframework:spring-beans:5.0.5.RELEASE";
 
             var (scanResult, componentRecorder) = await this.detectorTestUtility
@@ -182,14 +182,14 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
         [TestMethod]
         public async Task TestGradleDetectorWithInvalidAndValidFiles_ReturnsSuccessfully()
         {
-            string validFileTwo =
+            var validFileTwo =
 @"com.fasterxml.jackson.core:jackson-annotations:2.8.0
 com.fasterxml.jackson.core:jackson-core:2.8.10
 com.fasterxml.jackson.core:jackson-databind:2.8.11.3
 org.msgpack:msgpack-core:0.8.16
 org.springframework:spring-jcl:5.0.5.RELEASE";
 
-            string invalidFileOne =
+            var invalidFileOne =
 @"     #/bin/sh
 lorem ipsum
 four score and seven bugs ago

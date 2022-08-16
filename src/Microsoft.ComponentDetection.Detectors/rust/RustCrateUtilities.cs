@@ -44,7 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// </returns>
         public static CargoDependencyData ExtractRootDependencyAndWorkspaceSpecifications(IEnumerable<IComponentStream> cargoTomlComponentStream, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
-            CargoDependencyData cargoDependencyData = new CargoDependencyData();
+            var cargoDependencyData = new CargoDependencyData();
 
             // The file handle is disposed if you call .First() on cargoTomlComponentStream
             // Since multiple Cargo.toml files for 1 Cargo.lock file obviously doesn't make sense
@@ -58,10 +58,10 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 // Extract the workspaces present, if any
                 if (cargoToml.ContainsKey(WorkspaceKey))
                 {
-                    TomlTable workspaces = cargoToml.Get<TomlTable>(WorkspaceKey);
+                    var workspaces = cargoToml.Get<TomlTable>(WorkspaceKey);
 
-                    TomlObject workspaceMembers = workspaces.ContainsKey(WorkspaceMemberKey) ? workspaces[WorkspaceMemberKey] : null;
-                    TomlObject workspaceExclusions = workspaces.ContainsKey(WorkspaceExcludeKey) ? workspaces[WorkspaceExcludeKey] : null;
+                    var workspaceMembers = workspaces.ContainsKey(WorkspaceMemberKey) ? workspaces[WorkspaceMemberKey] : null;
+                    var workspaceExclusions = workspaces.ContainsKey(WorkspaceExcludeKey) ? workspaces[WorkspaceExcludeKey] : null;
 
                     if (workspaceMembers != null)
                     {
@@ -146,15 +146,15 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// <returns></returns>
         public static ExcludeDirectoryPredicate BuildExcludeDirectoryPredicateFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces, HashSet<string> definedExclusions)
         {
-            Dictionary<string, Glob> workspaceGlobs = BuildGlobMatchingFromWorkspaces(rootLockFileInfo, definedWorkspaces);
+            var workspaceGlobs = BuildGlobMatchingFromWorkspaces(rootLockFileInfo, definedWorkspaces);
 
             // Since the paths come in as relative, make them fully qualified
-            HashSet<string> fullyQualifiedExclusions = definedExclusions.Select(x => Path.Combine(rootLockFileInfo.DirectoryName, x)).ToHashSet();
+            var fullyQualifiedExclusions = definedExclusions.Select(x => Path.Combine(rootLockFileInfo.DirectoryName, x)).ToHashSet();
 
             // The predicate will be evaluated with the current directory name to search and the full path of its parent. Return true when it should be excluded from search.
             return (ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider) =>
             {
-                string currentPath = Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString());
+                var currentPath = Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString());
 
                 return !workspaceGlobs.Values.Any(x => x.IsMatch(currentPath)) || fullyQualifiedExclusions.Contains(currentPath);
             };
@@ -168,22 +168,22 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// <returns></returns>
         private static Dictionary<string, Glob> BuildGlobMatchingFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces)
         {
-            Dictionary<string, Glob> directoryGlobs = new Dictionary<string, Glob>
+            var directoryGlobs = new Dictionary<string, Glob>
             {
                 { rootLockFileInfo.DirectoryName, Glob.Parse(rootLockFileInfo.DirectoryName) },
             };
 
             // For the given workspaces, add their paths to search list
-            foreach (string workspace in definedWorkspaces)
+            foreach (var workspace in definedWorkspaces)
             {
-                string currentPath = rootLockFileInfo.DirectoryName;
-                string[] directoryPathParts = workspace.Split('/');
+                var currentPath = rootLockFileInfo.DirectoryName;
+                var directoryPathParts = workspace.Split('/');
 
                 // When multiple levels of subdirectory are present, each directory parent must be added or the directory will not be reached
                 // For example, ROOT/test-space/first-test/src/Cargo.toml requires the following directories be matched:
                 // ROOT/test-space, ROOT/test-space/first-test, ROOT/test-space/first-test, ROOT/test-space/first-test/src
                 // Each directory is matched explicitly instead of performing a StartsWith due to the potential of Glob character matching
-                foreach (string pathPart in directoryPathParts)
+                foreach (var pathPart in directoryPathParts)
                 {
                     currentPath = Path.Combine(currentPath, pathPart);
                     directoryGlobs[currentPath] = Glob.Parse(currentPath);
@@ -251,7 +251,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                         var regexMatch = DependencyFormatRegex.Match(dependency);
                         if (regexMatch.Success)
                         {
-                            if (SemVersion.TryParse(regexMatch.Groups[2].Value, out SemVersion sv))
+                            if (SemVersion.TryParse(regexMatch.Groups[2].Value, out var sv))
                             {
                                 var name = regexMatch.Groups[1].Value;
                                 var version = sv.ToString();
@@ -420,7 +420,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             var regexMatch = DependencyFormatRegex.Match(depString);
             if (regexMatch.Success)
             {
-                if (SemVersion.TryParse(regexMatch.Groups[2].Value, out SemVersion sv))
+                if (SemVersion.TryParse(regexMatch.Groups[2].Value, out var sv))
                 {
                     var dependencyPackage = new CargoPackage
                     {

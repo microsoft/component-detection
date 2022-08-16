@@ -43,7 +43,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             foreach (var testCase in testCases)
             {
-                DependencySpecification di = new DependencySpecification();
+                var di = new DependencySpecification();
                 if (testCase.specifierName != null)
                 {
                     di.Add(testCase.specifierName, testCase.specifierRange);

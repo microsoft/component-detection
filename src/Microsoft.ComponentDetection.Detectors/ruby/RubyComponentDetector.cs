@@ -142,7 +142,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                             var name = "bundler";
 
                             // Nothing in the lockfile tells us where bundler came from
-                            DetectedComponent addComponent = new DetectedComponent(new RubyGemsComponent(name, line, "unknown"));
+                            var addComponent = new DetectedComponent(new RubyGemsComponent(name, line, "unknown"));
                             components.TryAdd<string, DetectedComponent>(string.Format("{0}:{1}", name, file.Location), addComponent);
                             dependencies.TryAdd(string.Format("{0}:{1}", name, file.Location), new List<Dependency>());
                             break;
@@ -165,9 +165,9 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                 singleFileComponentRecorder.RegisterUsage(detectedComponent);
             }
 
-            foreach (string key in dependencies.Keys)
+            foreach (var key in dependencies.Keys)
             {
-                foreach (Dependency dependency in dependencies[key])
+                foreach (var dependency in dependencies[key])
                 {
                     // there are cases that we ommit the dependency
                     // because its version is not valid like for example
@@ -188,7 +188,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
             string name, remote, revision;
             name = remote = revision = string.Empty;
 
-            bool wasParentDependencyExcluded = false;
+            var wasParentDependencyExcluded = false;
 
             while (lines.Count > 0)
             {
@@ -246,8 +246,8 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                                 newComponent = new GitComponent(new Uri(remote), revision);
                             }
 
-                            DetectedComponent addComponent = new DetectedComponent(newComponent);
-                            string lookupKey = string.Format("{0}:{1}", name, file.Location);
+                            var addComponent = new DetectedComponent(newComponent);
+                            var lookupKey = string.Format("{0}:{1}", name, file.Location);
 
                             if (components.ContainsKey(lookupKey))
                             {

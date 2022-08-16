@@ -19,7 +19,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void GetMergedDependencyScope_returnSecondIfFirstNulll()
         {
-            DependencyScope randomDependencyScope = Faker.Enum.Random<DependencyScope>();
+            var randomDependencyScope = Faker.Enum.Random<DependencyScope>();
             GetMergedDependencyScope(null, randomDependencyScope)
                 .Should()
                 .Be(randomDependencyScope);
@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void GetMergedDependencyScope_returnFirstIfSecondNulll()
         {
-            DependencyScope randomDependencyScope = Faker.Enum.Random<DependencyScope>();
+            var randomDependencyScope = Faker.Enum.Random<DependencyScope>();
             GetMergedDependencyScope(randomDependencyScope, null)
                 .Should()
                 .Be(randomDependencyScope);

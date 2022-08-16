@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 
         public static async Task<YarnLockFile> ParseYarnLockFileAsync(Stream file, ILogger logger)
         {
-            YarnBlockFile blockFile = await YarnBlockFile.CreateBlockFileAsync(file);
+            var blockFile = await YarnBlockFile.CreateBlockFileAsync(file);
 
             foreach (var parser in Parsers)
             {

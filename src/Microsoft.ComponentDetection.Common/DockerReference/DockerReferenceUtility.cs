@@ -39,7 +39,7 @@ namespace Microsoft.ComponentDetection.Common
 
         public static DockerReference ParseQualifiedName(string qualifiedName)
         {
-            Regex regexp = DockerRegex.ReferenceRegexp;
+            var regexp = DockerRegex.ReferenceRegexp;
             if (!regexp.IsMatch(qualifiedName))
             {
                 if (string.IsNullOrWhiteSpace(qualifiedName))
@@ -63,7 +63,7 @@ namespace Microsoft.ComponentDetection.Common
                 throw new ReferenceNameTooLongException(name);
             }
 
-            Reference reference = new Reference();
+            var reference = new Reference();
 
             var nameMatch = DockerRegex.AnchoredNameRegexp.Match(name).Groups;
             if (nameMatch.Count == 3)
@@ -93,7 +93,7 @@ namespace Microsoft.ComponentDetection.Common
             string domain;
             string reminder;
 
-            int indexOfSlash = name.IndexOf('/');
+            var indexOfSlash = name.IndexOf('/');
             if (indexOfSlash == -1 || !(
                 name.LastIndexOf('.', indexOfSlash) != -1 ||
                 name.LastIndexOf(':', indexOfSlash) != -1 ||
@@ -128,10 +128,10 @@ namespace Microsoft.ComponentDetection.Common
                 throw new ReferenceNameNotCanonicalException(name);
             }
 
-            (string domain, string remainder) = SplitDockerDomain(name);
+            (var domain, var remainder) = SplitDockerDomain(name);
 
             string remoteName;
-            int tagSeparatorIndex = remainder.IndexOf(':');
+            var tagSeparatorIndex = remainder.IndexOf(':');
             if (tagSeparatorIndex > -1)
             {
                 remoteName = remainder.Substring(0, tagSeparatorIndex);

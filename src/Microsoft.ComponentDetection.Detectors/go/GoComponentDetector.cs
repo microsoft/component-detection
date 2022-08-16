@@ -147,7 +147,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         {
             using var reader = new StreamReader(file.Stream);
 
-            string line = reader.ReadLine();
+            var line = reader.ReadLine();
             while (line != null && !line.StartsWith("require ("))
             {
                 line = reader.ReadLine();
@@ -208,7 +208,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
 
         private bool TryToCreateGoComponentFromSumLine(string line, out GoComponent goComponent)
         {
-            Match m = GoSumRegex.Match(line);
+            var m = GoSumRegex.Match(line);
             if (m.Success)
             {
                 goComponent = new GoComponent(m.Groups["name"].Value, m.Groups["version"].Value, m.Groups["hash"].Value);

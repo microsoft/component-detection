@@ -30,7 +30,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             Assert.IsTrue(await service.PythonExists());
         }
@@ -40,7 +40,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             Assert.IsFalse(await service.PythonExists());
         }
@@ -50,7 +50,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             Assert.IsTrue(await service.PythonExists("test"));
         }
@@ -60,7 +60,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             Assert.IsFalse(await service.PythonExists("test"));
         }
@@ -75,7 +75,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             this.commandLineInvokationService.Setup(x => x.ExecuteCommand("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
                                         .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "[]", StdErr = string.Empty });
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             var result = await service.ParseFile(fakePath);
 
@@ -92,14 +92,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             this.commandLineInvokationService.Setup(x => x.ExecuteCommand("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
                                         .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "['knack==0.4.1', 'setuptools>=1.0,!=1.1', 'vsts-cli-common==0.1.3', 'vsts-cli-admin==0.1.3', 'vsts-cli-build==0.1.3', 'vsts-cli-code==0.1.3', 'vsts-cli-team==0.1.3', 'vsts-cli-package==0.1.3', 'vsts-cli-work==0.1.3']", StdErr = string.Empty });
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             var result = await service.ParseFile(fakePath);
             var expected = new string[] { "knack==0.4.1", "setuptools>=1.0,!=1.1", "vsts-cli-common==0.1.3", "vsts-cli-admin==0.1.3", "vsts-cli-build==0.1.3", "vsts-cli-code==0.1.3", "vsts-cli-team==0.1.3", "vsts-cli-package==0.1.3", "vsts-cli-work==0.1.3" }.Select<string, (string, GitComponent)>(dep => (dep, null)).ToArray();
 
             Assert.AreEqual(9, result.Count);
 
-            for (int i = 0; i < 9; i++)
+            for (var i = 0; i < 9; i++)
             {
                 Assert.AreEqual(expected[i], result[i]);
             }
@@ -111,11 +111,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
             this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             try
             {
-                using (StreamWriter writer = File.CreateText(testPath))
+                using (var writer = File.CreateText(testPath))
                 {
                     writer.WriteLine("knack==0.4.1");
                     writer.WriteLine("vsts-cli-common==0.1.3    \\      ");
@@ -128,7 +128,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
                 Assert.AreEqual(expected.Length, result.Count);
 
-                for (int i = 0; i < expected.Length; i++)
+                for (var i = 0; i < expected.Length; i++)
                 {
                     Assert.AreEqual(expected[i], result[i]);
                 }
@@ -148,11 +148,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
             this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             try
             {
-                using (StreamWriter writer = File.CreateText(testPath))
+                using (var writer = File.CreateText(testPath))
                 {
                     writer.WriteLine("#this is a comment");
                     writer.WriteLine("knack==0.4.1 #this is another comment");
@@ -330,9 +330,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
             this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
-            using (StreamWriter writer = File.CreateText(testPath))
+            using (var writer = File.CreateText(testPath))
             {
                 writer.WriteLine(fileToParse);
                 writer.Flush();

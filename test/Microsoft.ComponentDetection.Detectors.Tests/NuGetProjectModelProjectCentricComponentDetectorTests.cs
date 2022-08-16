@@ -50,7 +50,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_Base_2_2_Verification()
         {
-            string osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
+            var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
             var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
@@ -73,7 +73,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_Base_2_2_additional_Verification()
         {
-            string osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
+            var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
             var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
@@ -99,7 +99,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_2_2_Verification()
         {
-            string osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
+            var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
             var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
@@ -114,7 +114,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_DependencyGraph_2_2_additional_Verification()
         {
-            string osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
+            var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
             var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
@@ -186,7 +186,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             foreach (var componentId in graph.GetComponents())
             {
                 var component = detectedComponents.First(x => x.Component.Id == componentId);
-                bool expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
+                var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
                 Assert.AreEqual(expectedExplicitRefValue, graph.IsComponentExplicitlyReferenced(componentId));
             }
         }
@@ -194,7 +194,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_Base_3_1_Verification()
         {
-            string osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
+            var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
             var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
@@ -216,7 +216,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_3_1_Verification()
         {
-            string osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
+            var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
             var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
@@ -232,7 +232,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectoryAsync_DependencyGraph_3_1_Verification()
         {
-            string osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
+            var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
             var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile(this.projectAssetsJsonFileName, osAgnostic)
                                                     .ExecuteDetector();
@@ -270,7 +270,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             foreach (var componentId in graph.GetComponents())
             {
                 var component = detectedComponents.First(x => x.Component.Id == componentId);
-                bool expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
+                var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
                 Assert.AreEqual(expectedExplicitRefValue, graph.IsComponentExplicitlyReferenced(componentId));
             }
         }
@@ -278,7 +278,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ScanDirectory_NoPackageSpec()
         {
-            string osAgnostic =
+            var osAgnostic =
 @"{
   ""version"": 3,
   ""targets"": {

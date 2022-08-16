@@ -102,7 +102,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
         {
             try
             {
-                string workingDirectory = Path.Combine(Path.GetTempPath(), "ComponentDetection_Ivy");
+                var workingDirectory = Path.Combine(Path.GetTempPath(), "ComponentDetection_Ivy");
                 this.Logger.LogVerbose($"Preparing temporary Ivy project in {workingDirectory}");
                 if (Directory.Exists(workingDirectory))
                 {
@@ -112,7 +112,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
                 this.InitTemporaryAntProject(workingDirectory, ivyXmlFile, ivySettingsXmlFile);
                 if (await this.RunAntToDetectDependenciesAsync(workingDirectory))
                 {
-                    string instructionsFile = Path.Combine(workingDirectory, "target", "RegisterUsage.json");
+                    var instructionsFile = Path.Combine(workingDirectory, "target", "RegisterUsage.json");
                     this.RegisterUsagesFromFile(singleFileComponentRecorder, instructionsFile);
                 }
 
@@ -138,15 +138,15 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
 
             var assembly = Assembly.GetExecutingAssembly();
 
-            using (Stream fileIn = assembly.GetManifestResourceStream("Microsoft.ComponentDetection.Detectors.ivy.Resources.build.xml"))
-            using (FileStream fileOut = File.Create(Path.Combine(workingDirectory, "build.xml")))
+            using (var fileIn = assembly.GetManifestResourceStream("Microsoft.ComponentDetection.Detectors.ivy.Resources.build.xml"))
+            using (var fileOut = File.Create(Path.Combine(workingDirectory, "build.xml")))
             {
                 fileIn.CopyTo(fileOut);
             }
 
             Directory.CreateDirectory(Path.Combine(workingDirectory, "java-src"));
-            using (Stream fileIn = assembly.GetManifestResourceStream("Microsoft.ComponentDetection.Detectors.ivy.Resources.java_src.IvyComponentDetectionAntTask.java"))
-            using (FileStream fileOut = File.Create(Path.Combine(workingDirectory, "java-src", "IvyComponentDetectionAntTask.java")))
+            using (var fileIn = assembly.GetManifestResourceStream("Microsoft.ComponentDetection.Detectors.ivy.Resources.java_src.IvyComponentDetectionAntTask.java"))
+            using (var fileOut = File.Create(Path.Combine(workingDirectory, "java-src", "IvyComponentDetectionAntTask.java")))
             {
                 fileIn.CopyTo(fileOut);
             }
@@ -161,9 +161,9 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
 
         private async Task<bool> RunAntToDetectDependenciesAsync(string workingDirectory)
         {
-            bool ret = false;
+            var ret = false;
             this.Logger.LogVerbose($"Executing command `ant resolve-dependencies` in directory {workingDirectory}");
-            CommandLineExecutionResult result = await this.CommandLineInvocationService.ExecuteCommand(PrimaryCommand, additionalCandidateCommands: AdditionalValidCommands, "-buildfile", workingDirectory, "resolve-dependencies");
+            var result = await this.CommandLineInvocationService.ExecuteCommand(PrimaryCommand, additionalCandidateCommands: AdditionalValidCommands, "-buildfile", workingDirectory, "resolve-dependencies");
             if (result.ExitCode == 0)
             {
                 this.Logger.LogVerbose("Ant command succeeded");
@@ -210,14 +210,14 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
 
         private void RegisterUsagesFromFile(ISingleFileComponentRecorder singleFileComponentRecorder, string instructionsFile)
         {
-            JObject instructionsJson = JObject.Parse(File.ReadAllText(instructionsFile));
-            JContainer instructionsList = (JContainer)instructionsJson["RegisterUsage"];
-            foreach (JToken dep in instructionsList)
+            var instructionsJson = JObject.Parse(File.ReadAllText(instructionsFile));
+            var instructionsList = (JContainer)instructionsJson["RegisterUsage"];
+            foreach (var dep in instructionsList)
             {
-                MavenComponent component = JsonGavToComponent(dep["gav"]);
-                bool isDevDependency = dep.Value<bool>("DevelopmentDependency");
-                MavenComponent parentComponent = JsonGavToComponent(dep["parent_gav"]);
-                bool isResolved = dep.Value<bool>("resolved");
+                var component = JsonGavToComponent(dep["gav"]);
+                var isDevDependency = dep.Value<bool>("DevelopmentDependency");
+                var parentComponent = JsonGavToComponent(dep["parent_gav"]);
+                var isResolved = dep.Value<bool>("resolved");
                 if (isResolved)
                 {
                     singleFileComponentRecorder.RegisterUsage(

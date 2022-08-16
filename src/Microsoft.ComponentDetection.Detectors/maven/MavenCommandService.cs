@@ -46,7 +46,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         public void ParseDependenciesFile(ProcessRequest processRequest)
         {
-            using StreamReader sr = new StreamReader(processRequest.ComponentStream.Stream);
+            using var sr = new StreamReader(processRequest.ComponentStream.Stream);
 
             var lines = sr.ReadToEnd().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             this.ParserService.Parse(lines, processRequest.SingleFileComponentRecorder);

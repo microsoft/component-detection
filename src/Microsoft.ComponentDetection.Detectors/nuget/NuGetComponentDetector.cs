@@ -36,7 +36,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var stream = processRequest.ComponentStream;
-            bool ignoreNugetConfig = detectorArgs.TryGetValue("NuGet.IncludeRepositoryPaths", out string includeRepositoryPathsValue) && includeRepositoryPathsValue.Equals(bool.FalseString, StringComparison.OrdinalIgnoreCase);
+            var ignoreNugetConfig = detectorArgs.TryGetValue("NuGet.IncludeRepositoryPaths", out var includeRepositoryPathsValue) && includeRepositoryPathsValue.Equals(bool.FalseString, StringComparison.OrdinalIgnoreCase);
 
             if (NugetConfigFileName.Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
@@ -56,7 +56,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             if (!ignoreNugetConfig)
             {
                 var additionalPaths = this.GetRepositoryPathsFromNugetConfig(stream);
-                Uri rootPath = new Uri(this.CurrentScanRequest.SourceDirectory.FullName + Path.DirectorySeparatorChar);
+                var rootPath = new Uri(this.CurrentScanRequest.SourceDirectory.FullName + Path.DirectorySeparatorChar);
 
                 foreach (var additionalPath in additionalPaths)
                 {
@@ -97,27 +97,27 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                     return;
                 }
 
-                using MemoryStream nuspecStream = new MemoryStream(nuspecBytes, false);
+                using var nuspecStream = new MemoryStream(nuspecBytes, false);
 
-                XmlDocument doc = new XmlDocument();
+                var doc = new XmlDocument();
                 doc.Load(nuspecStream);
 
                 XmlNode packageNode = doc["package"];
                 XmlNode metadataNode = packageNode["metadata"];
 
-                string name = metadataNode["id"].InnerText;
-                string version = metadataNode["version"].InnerText;
+                var name = metadataNode["id"].InnerText;
+                var version = metadataNode["version"].InnerText;
 
-                string[] authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();
+                var authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();
 
-                if (!NuGetVersion.TryParse(version, out NuGetVersion parsedVer))
+                if (!NuGetVersion.TryParse(version, out var parsedVer))
                 {
                     this.Logger.LogInfo($"Version '{version}' from {stream.Location} could not be parsed as a NuGet version");
 
                     return;
                 }
 
-                NuGetComponent component = new NuGetComponent(name, version, authors);
+                var component = new NuGetComponent(name, version, authors);
                 if (!LowConfidencePackages.Contains(name, StringComparer.OrdinalIgnoreCase))
                 {
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
@@ -132,13 +132,13 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
         private IList<DirectoryInfo> GetRepositoryPathsFromNugetConfig(IComponentStream componentStream)
         {
-            List<string> potentialPaths = new List<string>();
-            List<DirectoryInfo> paths = new List<DirectoryInfo>();
+            var potentialPaths = new List<string>();
+            var paths = new List<DirectoryInfo>();
 
             try
             {
                 // Can be made async in later versions of .net standard.
-                XElement root = XElement.Load(componentStream.Stream);
+                var root = XElement.Load(componentStream.Stream);
 
                 var config = root.Elements().SingleOrDefault(x => x.Name == "config");
 
@@ -151,7 +151,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 {
                     if (entry.Attributes().Any(x => this.repositoryPathKeyNames.Contains(x.Value.ToLower())))
                     {
-                        string value = entry.Attributes().SingleOrDefault(x => string.Equals(x.Name.LocalName, "value", StringComparison.OrdinalIgnoreCase))?.Value;
+                        var value = entry.Attributes().SingleOrDefault(x => string.Equals(x.Name.LocalName, "value", StringComparison.OrdinalIgnoreCase))?.Value;
 
                         if (!string.IsNullOrEmpty(value))
                         {

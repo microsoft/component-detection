@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void TestGetTypedComponent()
         {
-            string json = @"{
+            var json = @"{
                 ""async"": {
                     ""version"": ""2.3.0"",
                     ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/async/-/async-2.3.0.tgz"",
@@ -36,14 +36,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 },
             }";
 
-            JObject j = JObject.Parse(json);
+            var j = JObject.Parse(json);
 
             var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
 
             Assert.IsNotNull(componentFromJProperty);
             Assert.AreEqual(componentFromJProperty.Type, ComponentType.Npm);
 
-            NpmComponent npmComponent = (NpmComponent)componentFromJProperty;
+            var npmComponent = (NpmComponent)componentFromJProperty;
             Assert.AreEqual(npmComponent.Name, "async");
             Assert.AreEqual(npmComponent.Version, "2.3.0");
         }
@@ -51,7 +51,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void TestGetTypedComponent_FailsOnMalformed()
         {
-            string json = @"{
+            var json = @"{
                 ""async"": {
                     ""version"": ""NOTAVERSION"",
                     ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/async/-/async-2.3.0.tgz"",
@@ -59,7 +59,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 },
             }";
 
-            JObject j = JObject.Parse(json);
+            var j = JObject.Parse(json);
 
             var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
 
@@ -69,7 +69,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void TestGetTypedComponent_FailsOnInvalidPackageName()
         {
-            string jsonInvalidCharacter = @"{
+            var jsonInvalidCharacter = @"{
                 ""async<"": {
                     ""version"": ""1.0.0"",
                     ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/async/-/async-2.3.0.tgz"",
@@ -77,11 +77,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 },
             }";
 
-            JObject j = JObject.Parse(jsonInvalidCharacter);
+            var j = JObject.Parse(jsonInvalidCharacter);
             var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
             Assert.IsNull(componentFromJProperty);
 
-            string jsonUrlName = @"{
+            var jsonUrlName = @"{
                 ""http://thisis/my/packagename"": {
                     ""version"": ""1.0.0"",
                     ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/async/-/async-2.3.0.tgz"",
@@ -93,7 +93,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
             Assert.IsNull(componentFromJProperty);
 
-            string jsonInvalidInitialCharacter1 = @"{
+            var jsonInvalidInitialCharacter1 = @"{
                 ""_async"": {
                     ""version"": ""1.0.0"",
                     ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/async/-/async-2.3.0.tgz"",
@@ -105,7 +105,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
             Assert.IsNull(componentFromJProperty);
 
-            string jsonInvalidInitialCharacter2 = @"{
+            var jsonInvalidInitialCharacter2 = @"{
                 "".async"": {
                     ""version"": ""1.0.0"",
                     ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/async/-/async-2.3.0.tgz"",
@@ -118,7 +118,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.IsNull(componentFromJProperty);
 
             var longPackageName = new string('a', 214);
-            string jsonLongName = $@"{{
+            var jsonLongName = $@"{{
                 ""{longPackageName}"": {{
                     ""version"": ""1.0.0"",
                     ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/async/-/async-2.3.0.tgz"",
@@ -134,7 +134,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void TestTryParseNpmVersion()
         {
-            var parsed = NpmComponentUtilities.TryParseNpmVersion("registry.npmjs.org", "archiver", "https://registry.npmjs.org/archiver-2.1.1.tgz", out SemanticVersion parsedVersion);
+            var parsed = NpmComponentUtilities.TryParseNpmVersion("registry.npmjs.org", "archiver", "https://registry.npmjs.org/archiver-2.1.1.tgz", out var parsedVersion);
             Assert.IsTrue(parsed);
             Assert.AreEqual(parsedVersion.ToString(), "2.1.1");
 
@@ -145,7 +145,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void TestTraverseAndGetRequirementsAndDependencies()
         {
-            string json = @"{
+            var json = @"{
                 ""archiver"": {
                     ""version"": ""2.3.0"",
                     ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/async/-/async-2.3.0.tgz"",
@@ -165,7 +165,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var dependencyLookup = jsonChildren.ToDictionary(dependency => dependency.Name);
 
             var typedComponent = NpmComponentUtilities.GetTypedComponent(currentDependency, "registry.npmjs.org", this.loggerMock.Object);
-            ComponentRecorder componentRecorder = new ComponentRecorder();
+            var componentRecorder = new ComponentRecorder();
 
             var singleFileComponentRecorder1 = componentRecorder.CreateSingleFileComponentRecorder("/this/is/a/test/path/");
             var singleFileComponentRecorder2 = componentRecorder.CreateSingleFileComponentRecorder("/this/is/a/different/path/");
@@ -183,7 +183,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.IsTrue(graph2.GetExplicitReferencedDependencyIds(typedComponent.Id).Contains(typedComponent.Id));
             Assert.IsFalse(componentRecorder.GetEffectiveDevDependencyValue(typedComponent.Id).GetValueOrDefault(true));
 
-            string json1 = @"{
+            var json1 = @"{
                 ""test"": {
                     ""version"": ""2.0.0"",
                     ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/async/-/async-2.3.0.tgz"",
@@ -220,7 +220,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var expectedDetectedComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"));
             var expectedDetectedDevComponent = new DetectedComponent(new NpmComponent("test2", "1.0.0"));
 
-            ComponentRecorder componentRecorder = new ComponentRecorder();
+            var componentRecorder = new ComponentRecorder();
 
             var addedComponent1 = NpmComponentUtilities.AddOrUpdateDetectedComponent(
                 componentRecorder.CreateSingleFileComponentRecorder("path1"),

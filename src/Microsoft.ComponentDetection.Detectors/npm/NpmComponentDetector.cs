@@ -90,7 +90,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                 return false;
             }
 
-            NpmComponent npmComponent = new NpmComponent(name, version, author: this.GetAuthor(authorToken, name, filePath));
+            var npmComponent = new NpmComponent(name, version, author: this.GetAuthor(authorToken, name, filePath));
 
             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(npmComponent));
             return true;
@@ -106,8 +106,8 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
             string authorName;
             string authorEmail;
-            string authorSingleStringPattern = @"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)";
-            Match authorMatch = new Regex(authorSingleStringPattern).Match(authorString);
+            var authorSingleStringPattern = @"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)";
+            var authorMatch = new Regex(authorSingleStringPattern).Match(authorString);
 
             /*
              * for parsing author in Json Format

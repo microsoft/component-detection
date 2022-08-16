@@ -41,19 +41,19 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     return Task.CompletedTask;
                 }
 
-                FileInfo lockFileInfo = new FileInfo(cargoLockFile.Location);
-                IEnumerable<IComponentStream> cargoTomlComponentStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(lockFileInfo.Directory, new List<string> { RustCrateUtilities.CargoTomlSearchPattern }, (name, directoryName) => false, recursivelyScanDirectories: false);
+                var lockFileInfo = new FileInfo(cargoLockFile.Location);
+                var cargoTomlComponentStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(lockFileInfo.Directory, new List<string> { RustCrateUtilities.CargoTomlSearchPattern }, (name, directoryName) => false, recursivelyScanDirectories: false);
 
-                CargoDependencyData cargoDependencyData = RustCrateUtilities.ExtractRootDependencyAndWorkspaceSpecifications(cargoTomlComponentStream, singleFileComponentRecorder);
+                var cargoDependencyData = RustCrateUtilities.ExtractRootDependencyAndWorkspaceSpecifications(cargoTomlComponentStream, singleFileComponentRecorder);
 
                 // If workspaces have been defined in the root cargo.toml file, scan for specified cargo.toml manifests
-                int numWorkspaceComponentStreams = 0;
-                int expectedWorkspaceTomlCount = cargoDependencyData.CargoWorkspaces.Count;
+                var numWorkspaceComponentStreams = 0;
+                var expectedWorkspaceTomlCount = cargoDependencyData.CargoWorkspaces.Count;
                 if (expectedWorkspaceTomlCount > 0)
                 {
-                    string rootCargoTomlLocation = Path.Combine(lockFileInfo.DirectoryName, "Cargo.toml");
+                    var rootCargoTomlLocation = Path.Combine(lockFileInfo.DirectoryName, "Cargo.toml");
 
-                    IEnumerable<IComponentStream> cargoTomlWorkspaceComponentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
+                    var cargoTomlWorkspaceComponentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
                         lockFileInfo.Directory,
                         new List<string> { RustCrateUtilities.CargoTomlSearchPattern },
                         RustCrateUtilities.BuildExcludeDirectoryPredicateFromWorkspaces(lockFileInfo, cargoDependencyData.CargoWorkspaces, cargoDependencyData.CargoWorkspaceExclusions),
