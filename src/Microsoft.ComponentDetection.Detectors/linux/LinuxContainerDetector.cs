@@ -132,7 +132,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                     var image = kvp.Key;
                     var baseImageLayerCount = await this.GetBaseImageLayerCount(internalContainerDetails, image, cancellationToken);
 
-                    //Update the layer information to specify if a layer was fond in the specified baseImage
+                    // Update the layer information to specify if a layer was fond in the specified baseImage
                     internalContainerDetails.Layers = internalContainerDetails.Layers.Select(layer => new DockerLayer
                     {
                         DiffId = layer.DiffId,

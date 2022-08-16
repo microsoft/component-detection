@@ -184,8 +184,8 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             return true;
         }
 
-        //For more information about the format of the go.sum file
-        //visit https://golang.org/cmd/go/#hdr-Module_authentication_using_go_sum
+        // For more information about the format of the go.sum file
+        // visit https://golang.org/cmd/go/#hdr-Module_authentication_using_go_sum
         private void ParseGoSumFile(
             ISingleFileComponentRecorder singleFileComponentRecorder,
             IComponentStream file)
