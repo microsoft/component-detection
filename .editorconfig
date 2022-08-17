@@ -579,10 +579,6 @@ dotnet_diagnostic.SA1500.severity = suggestion
 # Single-line comment should be preceded by blank line
 dotnet_diagnostic.SA1515.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1518.md
-# File is required to end with a single newline character
-dotnet_diagnostic.SA1518.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented
 dotnet_diagnostic.SA1600.severity = suggestion
