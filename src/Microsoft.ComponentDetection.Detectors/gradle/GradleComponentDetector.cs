@@ -23,7 +23,6 @@ namespace Microsoft.ComponentDetection.Detectors.Gradle
 
         public override int Version { get; } = 2;
 
-        /// <inheritdoc />
         private static readonly Regex StartsWithLetterRegex = new Regex("^[A-Za-z]", RegexOptions.Compiled);
 
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
