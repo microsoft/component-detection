@@ -68,7 +68,6 @@ namespace Microsoft.ComponentDetection.Contracts
             return await this.ScanDirectoryAsync(request);
         }
 
-        /// <inheritdoc />
         private Task<IndividualDetectorScanResult> ScanDirectoryAsync(ScanRequest request)
         {
             this.CurrentScanRequest = request;
