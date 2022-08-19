@@ -468,9 +468,6 @@ dotnet_diagnostic.SA1101.severity = suggestion
 dotnet_diagnostic.SA1008.severity = suggestion
 
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1011.md
-# Closing square bracket should be followed by a space
-dotnet_diagnostic.SA1011.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1012.md
 # Opening brace should be preceded by a space
