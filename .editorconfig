@@ -1,4 +1,4 @@
-﻿# Version: 4.1.1 (Using https://semver.org/)
+# Version: 4.1.1 (Using https://semver.org/)
 # Updated: 2022-05-23
 # See https://github.com/RehanSaeed/EditorConfig/releases for release notes.
 # See https://github.com/RehanSaeed/EditorConfig for updates to this file.
@@ -467,9 +467,6 @@ dotnet_diagnostic.SA1101.severity = suggestion
 # Opening parenthesis should not be followed by a space.
 dotnet_diagnostic.SA1008.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1009.md
-# Closing parenthesis should not be followed by a space
-dotnet_diagnostic.SA1009.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1011.md
 # Closing square bracket should be followed by a space
