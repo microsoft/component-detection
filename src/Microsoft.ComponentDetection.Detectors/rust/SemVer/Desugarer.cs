@@ -1,4 +1,4 @@
-﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
+// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
 //
@@ -228,8 +228,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                     MinMaxComparators(minVersion, maxVersion));
         }
 
-        private static Comparator[] MinMaxComparators(SemVersion minVersion, SemVersion maxVersion,
-                Comparator.Operator maxOperator = Comparator.Operator.LessThan)
+        private static Comparator[] MinMaxComparators(SemVersion minVersion, SemVersion maxVersion, Comparator.Operator maxOperator = Comparator.Operator.LessThan)
         {
             var minComparator = new Comparator(
                     Comparator.Operator.GreaterThanOrEqual,

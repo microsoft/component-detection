@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -122,11 +122,14 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
                 SourceDirectory = this.sourceDirectory,
             };
-            var result = this.DetectComponentsHappyPath(args, restrictions =>
+            var result = this.DetectComponentsHappyPath(
+                args,
+                restrictions =>
             {
                 restrictions.AllowedDetectorCategories.Should().BeNull();
                 restrictions.AllowedDetectorIds.Should().BeNull();
-            }, new List<ComponentRecorder> { componentRecorder });
+            },
+                new List<ComponentRecorder> { componentRecorder });
 
             result.Result.Should().Be(ProcessingResultCode.Success);
             this.ValidateDetectedComponents(result.DetectedComponents);
@@ -164,11 +167,14 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0]);
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1]);
 
-            var result = this.DetectComponentsHappyPath(args, restrictions =>
+            var result = this.DetectComponentsHappyPath(
+                args,
+                restrictions =>
             {
                 restrictions.AllowedDetectorCategories.Should().Contain(args.DetectorCategories);
                 restrictions.AllowedDetectorIds.Should().Contain(args.DetectorsFilter);
-            }, new List<ComponentRecorder> { componentRecorder });
+            },
+                new List<ComponentRecorder> { componentRecorder });
 
             result.Result.Should().Be(ProcessingResultCode.Success);
             this.ValidateDetectedComponents(result.DetectedComponents);
@@ -188,9 +194,12 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0]);
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1]);
 
-            var result = this.DetectComponentsHappyPath(args, restrictions =>
+            var result = this.DetectComponentsHappyPath(
+                args,
+                restrictions =>
             {
-            }, new List<ComponentRecorder> { componentRecorder });
+            },
+                new List<ComponentRecorder> { componentRecorder });
 
             result.Result.Should().Be(ProcessingResultCode.Success);
             this.ValidateDetectedComponents(result.DetectedComponents);

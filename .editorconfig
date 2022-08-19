@@ -463,8 +463,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Prefix local calls with this
 dotnet_diagnostic.SA1101.severity = suggestion
 
-
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1108.md
 # Block statements should not contain embedded comments
 dotnet_diagnostic.SA1108.severity = suggestion
@@ -472,11 +470,6 @@ dotnet_diagnostic.SA1108.severity = suggestion
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1114.md
 # Parameter list should follow declaration
 dotnet_diagnostic.SA1114.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1117.md
-# The parameters should all be placed on the same line or each parameter should be placed on its own line
-dotnet_diagnostic.SA1117.severity = suggestion
-
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1135.md
 # Using directive for namespace '...' should be qualified

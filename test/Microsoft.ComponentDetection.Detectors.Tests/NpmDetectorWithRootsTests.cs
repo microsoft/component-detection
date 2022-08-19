@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -608,10 +608,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageLockTemplate = string.Format(
                 packageLockJson,
-                componentA.Name, componentA.Version,
-                componentB.Name, componentB.Version,
-                componentB.Name, componentB.Version,
-                componentC.Name, componentC.Version);
+                componentA.Name,
+                componentA.Version,
+                componentB.Name,
+                componentB.Version,
+                componentB.Name,
+                componentB.Version,
+                componentC.Name,
+                componentC.Version);
 
             var packagejson = @"{{
                 ""name"": ""test"",

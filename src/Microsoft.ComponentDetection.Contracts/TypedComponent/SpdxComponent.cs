@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
@@ -9,8 +9,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             /* Reserved for deserialization */
         }
 
-        public SpdxComponent(string spdxVersion, Uri documentNamespace, string name, string checksum,
-            string rootElementId, string path)
+        public SpdxComponent(string spdxVersion, Uri documentNamespace, string name, string checksum, string rootElementId, string path)
         {
             this.SpdxVersion = this.ValidateRequiredInput(spdxVersion, nameof(this.SpdxVersion), nameof(ComponentType.Spdx));
             this.DocumentNamespace = this.ValidateRequiredInput(documentNamespace, nameof(this.DocumentNamespace), nameof(ComponentType.Spdx));

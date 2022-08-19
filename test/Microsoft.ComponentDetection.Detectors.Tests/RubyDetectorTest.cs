@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,7 +33,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             };
             this.detectorTestUtility = DetectorTestUtilityCreator.Create<RubyComponentDetector>()
                                     .WithScanRequest(new ScanRequest(
-                                        new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null,
+                                        new DirectoryInfo(Path.GetTempPath()),
+                                        null,
+                                        null,
+                                        new Dictionary<string,
+                                        string>(),
+                                        null,
                                         new ComponentRecorder(enableManualTrackingOfExplicitReferences: !this.rubyDetector.NeedsAutomaticRootDependencyCalculation)));
         }
 
@@ -414,7 +419,8 @@ PATH
                 detectedComponents.SingleOrDefault(c =>
             c.Component is RubyGemsComponent component &&
             component.Name.Equals(name) &&
-            component.Version.Equals(version)), $"Component with name {name} and version {version} was not found");
+            component.Version.Equals(version)),
+                $"Component with name {name} and version {version} was not found");
         }
 
         private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)

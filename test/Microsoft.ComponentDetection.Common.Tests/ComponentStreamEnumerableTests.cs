@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -38,7 +38,8 @@ namespace Microsoft.ComponentDetection.Common.Tests
                     File = new FileInfo(tempFileTwo),
                     Pattern = "Some Pattern",
                 },
-            }, this.loggerMock.Object);
+            },
+                this.loggerMock.Object);
 
             enumerable.Count()
                 .Should().Be(2);
@@ -74,7 +75,8 @@ namespace Microsoft.ComponentDetection.Common.Tests
                     File = new FileInfo(tempFileTwo),
                     Pattern = "Some Pattern",
                 },
-            }, this.loggerMock.Object).ToList();
+            },
+                this.loggerMock.Object).ToList();
 
             enumerable.Count
                 .Should().Be(1);

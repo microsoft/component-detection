@@ -33,8 +33,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
         }
 
         public override object ReadJson(
-            JsonReader reader,
-            Type objectType, object existingValue, JsonSerializer serializer)
+            JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             var jo = JToken.Load(reader);
 
@@ -53,7 +52,8 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 
         public override void WriteJson(
             JsonWriter writer,
-            object value, JsonSerializer serializer)
+            object value,
+            JsonSerializer serializer)
         {
             throw new NotImplementedException();
         }
