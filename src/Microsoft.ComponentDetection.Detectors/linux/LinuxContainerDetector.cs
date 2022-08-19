@@ -81,7 +81,8 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
         private async Task<IEnumerable<ImageScanningResult>> ProcessImagesAsync(
             IEnumerable<string> imagesToProcess,
-            IComponentRecorder componentRecorder, CancellationToken cancellationToken = default)
+            IComponentRecorder componentRecorder,
+            CancellationToken cancellationToken = default)
         {
             var processedImages = new ConcurrentDictionary<string, ContainerDetails>();
 

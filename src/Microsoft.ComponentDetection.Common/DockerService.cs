@@ -157,8 +157,7 @@ namespace Microsoft.ComponentDetection.Common
             }
         }
 
-        public async Task<(string stdout, string stderr)> CreateAndRunContainerAsync(string image, IList<string> command,
-            CancellationToken cancellationToken = default)
+        public async Task<(string stdout, string stderr)> CreateAndRunContainerAsync(string image, IList<string> command, CancellationToken cancellationToken = default)
         {
             using var record = new DockerServiceTelemetryRecord
             {
@@ -177,7 +176,9 @@ namespace Microsoft.ComponentDetection.Common
             return (stdout, stderr);
         }
 
-        private static async Task<CreateContainerResponse> CreateContainerAsync(string image, IList<string> command,
+        private static async Task<CreateContainerResponse> CreateContainerAsync(
+            string image,
+            IList<string> command,
             CancellationToken cancellationToken = default)
         {
             var parameters = new CreateContainerParameters

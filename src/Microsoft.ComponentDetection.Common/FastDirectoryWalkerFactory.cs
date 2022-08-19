@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Composition;
@@ -159,7 +159,8 @@ namespace Microsoft.ComponentDetection.Common
                             {
                                 observer.OnNext(fileSystemInfo);
                             }
-                        }, new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount });
+                        },
+                            new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount });
 
                         foreach (var directoryInfo in initialDirectories)
                         {
@@ -185,7 +186,8 @@ namespace Microsoft.ComponentDetection.Common
                     }
 
                     s.OnNext(info);
-                }, () =>
+                },
+                    () =>
                 {
                     sw.Stop();
                     this.Logger?.LogInfo($"Enumerated {fileCount} files and {directoryCount} directories in {sw.Elapsed}");

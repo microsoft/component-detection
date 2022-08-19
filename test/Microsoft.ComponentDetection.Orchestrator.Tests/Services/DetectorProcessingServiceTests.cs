@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -467,8 +467,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             // Now exercise the exclusion code
             args.DirectoryExclusionListObsolete = new[] { Path.Combine("Child"), Path.Combine("..", "bin") };
-            this.serviceUnderTest.ProcessDetectorsAsync(args, new[] {
-                this.firstFileComponentDetectorMock.Object }, new DetectorRestrictions()).Wait();
+            this.serviceUnderTest.ProcessDetectorsAsync(
+                args,
+                new[] { this.firstFileComponentDetectorMock.Object },
+                new DetectorRestrictions()).Wait();
 
             this.directoryWalkerFactory.Reset();
 
@@ -546,8 +548,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var args = defaultArgs;
             args.DetectorArgs = new string[] { "arg1=val1", "arg2", "arg3=val3" };
 
-            this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, new[] {
-                this.firstFileComponentDetectorMock.Object }, new DetectorRestrictions()).Wait();
+            this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, new[] { this.firstFileComponentDetectorMock.Object }, new DetectorRestrictions()).Wait();
 
             capturedRequest.DetectorArgs
                 .Should().Contain("arg1", "val1")

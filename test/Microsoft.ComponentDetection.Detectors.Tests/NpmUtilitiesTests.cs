@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
@@ -223,12 +223,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var componentRecorder = new ComponentRecorder();
 
             var addedComponent1 = NpmComponentUtilities.AddOrUpdateDetectedComponent(
-                componentRecorder.CreateSingleFileComponentRecorder("path1"),
-                expectedDetectedComponent.Component, isDevDependency: false);
+                componentRecorder.CreateSingleFileComponentRecorder("path1"), expectedDetectedComponent.Component, isDevDependency: false);
 
             var addedComponent2 = NpmComponentUtilities.AddOrUpdateDetectedComponent(
-                componentRecorder.CreateSingleFileComponentRecorder("path2"),
-                expectedDetectedDevComponent.Component, isDevDependency: true);
+                componentRecorder.CreateSingleFileComponentRecorder("path2"), expectedDetectedDevComponent.Component, isDevDependency: true);
 
             addedComponent1.Should().BeEquivalentTo(expectedDetectedComponent, options => options.Excluding(obj => obj.DependencyRoots));
             addedComponent2.Should().BeEquivalentTo(expectedDetectedDevComponent, options => options.Excluding(obj => obj.DependencyRoots));
@@ -260,8 +258,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             singleFileComponentRecorder.RegisterUsage(detectedComponent);
 
             var updatedDetectedComponent = NpmComponentUtilities.AddOrUpdateDetectedComponent(
-                componentRecorder.CreateSingleFileComponentRecorder("path"), detectedComponent.Component,
-                isDevDependency: false);
+                componentRecorder.CreateSingleFileComponentRecorder("path"), detectedComponent.Component, isDevDependency: false);
 
             componentRecorder.GetEffectiveDevDependencyValue(detectedComponent.Component.Id).Should().BeFalse();
             componentRecorder.GetEffectiveDevDependencyValue(updatedDetectedComponent.Component.Id).Should().BeFalse();

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -186,7 +186,8 @@ shrinkwrapVersion: 3";
 
             componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
                 strictUriEncodeComponent.Component.Id,
-                parentComponent => parentComponent.Name == "some-other-root", parentComponent => parentComponent.Name == "query-string");
+                parentComponent => parentComponent.Name == "some-other-root",
+                parentComponent => parentComponent.Name == "query-string");
 
             componentRecorder.ForOneComponent(strictUriEncodeComponent.Component.Id, grouping => Assert.AreEqual(2, grouping.AllFileLocations.Count()));
         }

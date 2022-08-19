@@ -59,8 +59,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object,
-                null, new List<string> { NodeLatestImage }, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage }, componentRecorder);
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
@@ -87,8 +86,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null,
-                new List<string> { NodeLatestImage }, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage }, componentRecorder);
 
             this.mockDockerService.Setup(service => service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
@@ -115,8 +113,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null,
-                null, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, null, componentRecorder);
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
@@ -140,8 +137,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null,
-                new List<string> { "UPPERCASE" }, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { "UPPERCASE" }, componentRecorder);
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
@@ -166,8 +162,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null,
-                new List<string> { NodeLatestImage, NodeLatestDigest }, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage, NodeLatestDigest }, componentRecorder);
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
@@ -192,8 +187,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public async Task TestLinuxContainerDetector_TimeoutParameterSpecified()
         {
             var detectorArgs = new Dictionary<string, string> { { "Linux.ScanningTimeoutSec", "2" } };
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object,
-                detectorArgs, new List<string> { NodeLatestImage }, new ComponentRecorder());
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, detectorArgs, new List<string> { NodeLatestImage }, new ComponentRecorder());
 
             var linuxContainerDetector = new LinuxContainerDetector
             {

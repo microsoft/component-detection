@@ -135,7 +135,8 @@ resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
                 detectedComponents.SingleOrDefault(c =>
             c.Component is PipComponent component &&
             component.Name.Equals(name) &&
-            component.Version.Equals(version)), $"Component with name {name} and version {version} was not found");
+            component.Version.Equals(version)),
+                $"Component with name {name} and version {version} was not found");
         }
 
         private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
