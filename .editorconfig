@@ -515,10 +515,6 @@ dotnet_diagnostic.SA1118.severity = suggestion
 # Using directive for namespace '...' should be qualified
 dotnet_diagnostic.SA1135.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1137.md
-# Elements should have the same indentation
-dotnet_diagnostic.SA1137.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1142.md
 # Refer to tuple fields by name
 dotnet_diagnostic.SA1142.severity = suggestion
