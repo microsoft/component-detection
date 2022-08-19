@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Nett;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
 {
+    using Tomlyn.Model;
+
     // Represents Cargo.Lock file structure.
     public class CargoLock
     {

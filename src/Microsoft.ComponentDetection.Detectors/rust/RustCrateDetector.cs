@@ -8,7 +8,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
-using Nett;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust
 {
