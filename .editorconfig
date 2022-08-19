@@ -463,10 +463,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Prefix local calls with this
 dotnet_diagnostic.SA1101.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1105.md
-# Single line comment should begin with a space
-dotnet_diagnostic.SA1105.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1008.md
 # Opening parenthesis should not be followed by a space.
 dotnet_diagnostic.SA1008.severity = suggestion
