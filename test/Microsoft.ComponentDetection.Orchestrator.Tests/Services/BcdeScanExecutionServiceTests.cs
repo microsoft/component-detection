@@ -620,7 +620,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 ContainersDetailsMap = new Dictionary<int, ContainerDetails>
                 {
                     {
-                        this.sampleContainerDetails.Id, this.sampleContainerDetails },
+                        this.sampleContainerDetails.Id, this.sampleContainerDetails
+                    },
                 },
                 ComponentRecorders = componentRecorders.Select(componentRecorder => (this.componentDetector2Mock.Object, componentRecorder)),
             };
@@ -669,7 +670,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 ContainersDetailsMap = new Dictionary<int, ContainerDetails>
                 {
                     {
-                        this.sampleContainerDetails.Id, this.sampleContainerDetails },
+                        this.sampleContainerDetails.Id, this.sampleContainerDetails
+                    },
                 },
                 ComponentRecorders = componentRecorders.Select(componentRecorder => (this.componentDetector2Mock.Object, componentRecorder)),
             };
