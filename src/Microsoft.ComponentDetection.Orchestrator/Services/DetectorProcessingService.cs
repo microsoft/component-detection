@@ -1,4 +1,4 @@
-﻿using DotNet.Globbing;
+using DotNet.Globbing;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -262,7 +262,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                         nameOfExcludedDirectory = exclusionDirectoryInfo.Name,
                         pathOfParentOfDirectoryToExclude = exclusionDirectoryInfo.Parent.FullName,
                         rootedLinuxSymlinkCompatibleRelativePathToExclude =
-                            Path.GetDirectoryName( // Get the parent of
+                            Path.GetDirectoryName(// Get the parent of
                                 Path.IsPathRooted(exclusionDirectoryInfo.ToString())
                                 ? exclusionDirectoryInfo.ToString() // If rooted, just use the natural path
                                 : Path.Join(originalSourceDirectory, exclusionDirectoryInfo.ToString())), // If not rooted, join to sourceDir
