@@ -1,5 +1,4 @@
-﻿using Moq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -8,6 +7,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
+using Moq;
 
 namespace Microsoft.ComponentDetection.TestsUtilities
 {

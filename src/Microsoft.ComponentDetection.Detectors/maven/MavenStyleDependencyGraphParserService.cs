@@ -1,5 +1,5 @@
-﻿using Microsoft.ComponentDetection.Contracts;
-using System.Composition;
+﻿using System.Composition;
+using Microsoft.ComponentDetection.Contracts;
 
 namespace Microsoft.ComponentDetection.Detectors.Maven
 {
