@@ -54,7 +54,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             } catch (Exception e)
             {
                 this.Logger.LogError($"The file doesn't appear to be a Dockerfile: '{file.Location}'");
-                this.Logger.LogException(e);
+                this.Logger.LogException(e, false);
             }
         }
 
