@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 namespace Microsoft.ComponentDetection.Detectors.Vcpkg
 {
     [Export(typeof(IComponentDetector))]
-    public class VcpkgComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+    public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
     {
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Vcpkg };
 
-        public override int Version => 1;
+        public override int Version => 2;
 
         private HashSet<string> projectRoots = new HashSet<string>();
 
