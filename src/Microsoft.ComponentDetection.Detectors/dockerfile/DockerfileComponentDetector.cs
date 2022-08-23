@@ -36,11 +36,11 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
+        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+        file = processRequest.ComponentStream;
+        var filePath = file.Location;
             try
             {
-                var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-                var file = processRequest.ComponentStream;
-                var filePath = file.Location;
                 this.Logger.LogInfo($"Discovered dockerfile: {file.Location}");
 
                 string contents;
