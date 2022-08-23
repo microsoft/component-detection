@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -36,19 +36,26 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
-            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-            var file = processRequest.ComponentStream;
-            var filePath = file.Location;
-            this.Logger.LogInfo($"Discovered dockerfile: {file.Location}");
-
-            string contents;
-            using (var reader = new StreamReader(file.Stream))
+            try
             {
-                contents = await reader.ReadToEndAsync();
-            }
+                var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+                var file = processRequest.ComponentStream;
+                var filePath = file.Location;
+                this.Logger.LogInfo($"Discovered dockerfile: {file.Location}");
 
-            var stageNameMap = new Dictionary<string, string>();
-            var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
+                string contents;
+                using (var reader = new StreamReader(file.Stream))
+                {
+                    contents = await reader.ReadToEndAsync();
+                }
+
+                var stageNameMap = new Dictionary<string, string>();
+                var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
+            } catch (Exception e)
+            {
+                this.Logger.LogError($"The file is not a Dockerfile it just has 'Docker' in the name. \n Error Message: <{e.Message}>");
+                this.Logger.LogException(e, isError: true, printException: true);
+            }
         }
 
         private Task ParseDockerFile(string fileContents, string fileLocation, ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, string> stageNameMap)
