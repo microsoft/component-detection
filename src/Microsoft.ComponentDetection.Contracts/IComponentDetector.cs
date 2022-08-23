@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
@@ -53,7 +53,7 @@ namespace Microsoft.ComponentDetection.Contracts
     /// <summary>
     /// Component detectors implementing this interface are in an experimental state.
     /// The detector processing service guarantees that:
-    ///     They should NOT return their components as part of the scan result or be allowed to run too long (e.g. 2 min or less).
+    ///     They should NOT return their components as part of the scan result or be allowed to run too long (e.g. 4 min or less).
     ///     They SHOULD submit telemetry about how they ran.
     /// If opted in, they should behave like a normal detector.
     /// </summary>
