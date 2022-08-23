@@ -53,7 +53,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
                 var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
             } catch (Exception e)
             {
-                this.Logger.LogError($"The file doesn't appear to be a Dockerfile: '{file.Location}'");
+                this.Logger.LogError($"The file doesn't appear to be a Dockerfile: '{filePath}'");
                 this.Logger.LogException(e, false);
             }
         }
