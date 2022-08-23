@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Vcpkg };
 
-        public override int Version => 1;
+        public override int Version => 2;
 
         private HashSet<string> projectRoots = new HashSet<string>();
 
