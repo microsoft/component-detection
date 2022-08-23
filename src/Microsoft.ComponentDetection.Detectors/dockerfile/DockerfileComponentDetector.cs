@@ -36,26 +36,26 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
-        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-        file = processRequest.ComponentStream;
-        var filePath = file.Location;
-            try
-            {
-                this.Logger.LogInfo($"Discovered dockerfile: {file.Location}");
-
-                string contents;
-                using (var reader = new StreamReader(file.Stream))
+            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+            file = processRequest.ComponentStream;
+            var filePath = file.Location;
+                try
                 {
-                    contents = await reader.ReadToEndAsync();
-                }
+                    this.Logger.LogInfo($"Discovered dockerfile: {file.Location}");
 
-                var stageNameMap = new Dictionary<string, string>();
-                var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
-            } catch (Exception e)
-            {
-                this.Logger.LogError($"The file doesn't appear to be a Dockerfile: '{filePath}'");
-                this.Logger.LogException(e, false);
-            }
+                    string contents;
+                    using (var reader = new StreamReader(file.Stream))
+                    {
+                        contents = await reader.ReadToEndAsync();
+                    }
+
+                    var stageNameMap = new Dictionary<string, string>();
+                    var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
+                } catch (Exception e)
+                {
+                    this.Logger.LogError($"The file doesn't appear to be a Dockerfile: '{file.location}'");
+                    this.Logger.LogException(e, false);
+                }
         }
 
         private Task ParseDockerFile(string fileContents, string fileLocation, ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, string> stageNameMap)
