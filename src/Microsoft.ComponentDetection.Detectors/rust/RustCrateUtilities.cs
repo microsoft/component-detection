@@ -8,8 +8,10 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
-using Nett;
+using Tomlyn;
 using Semver;
+using System.Threading.Tasks;
+using Tomlyn.Model;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust
 {
@@ -42,7 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// A CargoDependencyData containing populated lists of CargoWorkspaces that will be included from search, CargoWorkspaceExclusions that will be excluded from search,
         /// a list of non-development dependencies, and a list of development dependencies.
         /// </returns>
-        public static CargoDependencyData ExtractRootDependencyAndWorkspaceSpecifications(IEnumerable<IComponentStream> cargoTomlComponentStream, ISingleFileComponentRecorder singleFileComponentRecorder)
+        public static async Task<CargoDependencyData> ExtractRootDependencyAndWorkspaceSpecificationsAsync(IEnumerable<IComponentStream> cargoTomlComponentStream, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
             var cargoDependencyData = new CargoDependencyData();
 
@@ -51,23 +53,25 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             // We break at the end of this loop
             foreach (var cargoTomlFile in cargoTomlComponentStream)
             {
-                var cargoToml = StreamTomlSerializer.Deserialize(cargoTomlFile.Stream, TomlSettings.Create());
+                var reader = new StreamReader(cargoTomlFile.Stream);
+                var cargoToml = Toml.ToModel(await reader.ReadToEndAsync());
+                //var cargoToml = StreamTomlSerializer.Deserialize(cargoTomlFile.Stream, TomlSettings.Create());
 
                 singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
 
                 // Extract the workspaces present, if any
                 if (cargoToml.ContainsKey(WorkspaceKey))
                 {
-                    var workspaces = cargoToml.Get<TomlTable>(WorkspaceKey);
+                    var workspaces = cargoToml["WorkspaceKey"] as TomlTable;
 
-                    var workspaceMembers = workspaces.ContainsKey(WorkspaceMemberKey) ? workspaces[WorkspaceMemberKey] : null;
-                    var workspaceExclusions = workspaces.ContainsKey(WorkspaceExcludeKey) ? workspaces[WorkspaceExcludeKey] : null;
+                    var workspaceMembers = workspaces.ContainsKey(WorkspaceMemberKey) ? workspaces[WorkspaceMemberKey] as TomlObject : null;
+                    var workspaceExclusions = workspaces.ContainsKey(WorkspaceExcludeKey) ? workspaces[WorkspaceExcludeKey] as TomlObject : null;
 
                     if (workspaceMembers != null)
                     {
                         if (workspaceMembers.TomlType != TomlObjectType.Array)
                         {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceMemberKey} within {WorkspaceKey} to be of type Array, but found {workspaceMembers.TomlType}");
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceMemberKey} within {WorkspaceKey} to be of type Array, but found {workspaceMembers.GetType}");
                         }
 
                         // TomlObject arrays do not natively implement a HashSet get, so add from a list
@@ -78,7 +82,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     {
                         if (workspaceExclusions.TomlType != TomlObjectType.Array)
                         {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceExcludeKey} within {WorkspaceKey} to be of type Array, but found {workspaceExclusions.TomlType}");
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceExcludeKey} within {WorkspaceKey} to be of type Array, but found {workspaceExclusions.GetType}");
                         }
 
                         cargoDependencyData.CargoWorkspaceExclusions.UnionWith(workspaceExclusions.Get<List<string>>());

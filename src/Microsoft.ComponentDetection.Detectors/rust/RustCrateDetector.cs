@@ -43,7 +43,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 var lockFileInfo = new FileInfo(cargoLockFile.Location);
                 var cargoTomlComponentStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(lockFileInfo.Directory, new List<string> { RustCrateUtilities.CargoTomlSearchPattern }, (name, directoryName) => false, recursivelyScanDirectories: false);
 
-                var cargoDependencyData = RustCrateUtilities.ExtractRootDependencyAndWorkspaceSpecifications(cargoTomlComponentStream, singleFileComponentRecorder);
+                var cargoDependencyData = RustCrateUtilities.ExtractRootDependencyAndWorkspaceSpecificationsAsync(cargoTomlComponentStream, singleFileComponentRecorder);
 
                 // If workspaces have been defined in the root cargo.toml file, scan for specified cargo.toml manifests
                 var numWorkspaceComponentStreams = 0;
