@@ -54,7 +54,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             } catch (Exception e)
             {
                 this.Logger.LogError($"The file is not a Dockerfile it just has 'Docker' in the name. \n Error Message: <{e.Message}>");
-                this.Logger.LogException(e, isError: true, printException: true);
+                this.Logger.LogException(e);
             }
         }
 
