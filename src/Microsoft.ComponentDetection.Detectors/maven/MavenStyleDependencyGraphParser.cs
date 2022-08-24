@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
@@ -7,6 +7,10 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 {
     public class MavenStyleDependencyGraphParser
     {
+        private static readonly char[] TrimCharacters = new char[] { '|', ' ' };
+
+        private static readonly string[] ComponentSplitters = new[] { "+-", "\\-" };
+
         public GraphNode<string> DependencyCategory { get; private set; }
 
         private Stack<GraphNodeAtLevel<string>> stack = new Stack<GraphNodeAtLevel<string>>();
@@ -14,10 +18,6 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
         private Stack<(int ParseLevel, DetectedComponent Component)> tupleStack = new Stack<(int, DetectedComponent)>();
 
         private DetectedComponent topLevelComponent = null;
-
-        private static readonly char[] TrimCharacters = new char[] { '|', ' ' };
-
-        private static readonly string[] ComponentSplitters = new[] { "+-", "\\-" };
 
         private void StartDependencyCategory(string categoryName)
         {

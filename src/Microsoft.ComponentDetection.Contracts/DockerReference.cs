@@ -3,13 +3,6 @@ namespace Microsoft.ComponentDetection.Contracts
 #pragma warning disable SA1402
     public class DockerReference
     {
-        public virtual DockerReferenceKind Kind { get; }
-
-        public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
-        {
-            throw new System.NotImplementedException();
-        }
-
         public static DockerReference CreateDockerReference(string repository, string domain, string digest, string tag)
         {
             if (!string.IsNullOrEmpty(repository) && string.IsNullOrEmpty(domain))
@@ -65,6 +58,13 @@ namespace Microsoft.ComponentDetection.Contracts
                     Digest = digest,
                 };
             }
+        }
+
+        public virtual DockerReferenceKind Kind { get; }
+
+        public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+        {
+            throw new System.NotImplementedException();
         }
     }
 

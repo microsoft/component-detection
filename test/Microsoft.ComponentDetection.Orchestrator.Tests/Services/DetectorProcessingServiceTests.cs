@@ -51,9 +51,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             };
         }
 
-        private bool isWin;
         private static DirectoryInfo defaultSourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
         private static BcdeArguments defaultArgs = new BcdeArguments { SourceDirectory = defaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
+
+        private bool isWin;
 
         [TestInitialize]
         public void TestInit()
