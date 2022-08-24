@@ -1,11 +1,3 @@
-using DotNet.Globbing;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,7 +7,14 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
+using DotNet.Globbing;
+using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Common.DependencyGraph;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Newtonsoft.Json;
 using static System.Environment;
 
 namespace Microsoft.ComponentDetection.Orchestrator.Services

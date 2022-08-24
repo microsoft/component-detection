@@ -1,9 +1,9 @@
-﻿using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using System;
+﻿using System;
 using System.Composition;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.Internal;
 
 namespace Microsoft.ComponentDetection.Detectors.Maven
 {
