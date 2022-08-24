@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -39,16 +39,23 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
             var filePath = file.Location;
-            this.Logger.LogInfo($"Discovered dockerfile: {file.Location}");
-
-            string contents;
-            using (var reader = new StreamReader(file.Stream))
+            try
             {
-                contents = await reader.ReadToEndAsync();
-            }
+                this.Logger.LogInfo($"Discovered dockerfile: {file.Location}");
 
-            var stageNameMap = new Dictionary<string, string>();
-            var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
+                string contents;
+                using (var reader = new StreamReader(file.Stream))
+                {
+                    contents = await reader.ReadToEndAsync();
+                }
+
+                var stageNameMap = new Dictionary<string, string>();
+                var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
+            } catch (Exception e)
+            {
+                this.Logger.LogError($"The file doesn't appear to be a Dockerfile: '{file.Location}'");
+                this.Logger.LogException(e, false);
+            }
         }
 
         private Task ParseDockerFile(string fileContents, string fileLocation, ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, string> stageNameMap)
