@@ -28,16 +28,16 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private static bool VersionValidForSpec(string version, string spec)
         {
-            char[] opChars = new char[] { '=', '<', '>', '~', '!' };
+            var opChars = new char[] { '=', '<', '>', '~', '!' };
             var specArray = spec.ToCharArray();
 
-            int i = 0;
+            var i = 0;
             while (i < spec.Length && i < 3 && opChars.Contains(specArray[i]))
             {
                 i++;
             }
 
-            string op = spec.Substring(0, i);
+            var op = spec.Substring(0, i);
 
             var targetVer = new PythonVersion(version);
             var specVer = new PythonVersion(spec.Substring(i));
@@ -84,7 +84,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 return true;
             }
 
-            int i = 0;
+            var i = 0;
             var splitVersion = version.Split('.');
             var splitSpecVer = specVer.Split('.');
 
@@ -93,7 +93,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 if (fuzzy && i == (splitSpecVer.Length - 1))
                 {
                     // Fuzzy matching excludes everything after first two
-                    if (splitVersion.Length > i && int.TryParse(splitVersion[i], out int lVer) && int.TryParse(splitSpecVer[i], out int rVer) && lVer >= rVer)
+                    if (splitVersion.Length > i && int.TryParse(splitVersion[i], out var lVer) && int.TryParse(splitSpecVer[i], out var rVer) && lVer >= rVer)
                     {
                         return true;
                     }

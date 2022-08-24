@@ -25,12 +25,13 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             // If someone specifies an "allow list", use it, otherwise assume everything is allowed
             if (argSpecifiedRestrictions.AllowedDetectorIds != null && argSpecifiedRestrictions.AllowedDetectorIds.Any())
             {
-                IEnumerable<string> allowedIds = argSpecifiedRestrictions.AllowedDetectorIds;
+                var allowedIds = argSpecifiedRestrictions.AllowedDetectorIds;
 
                 // If we have retired detectors in the arg specified list and don't have the new detector, add the new detector
-                if (allowedIds.Where(a => oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)).Any() && !allowedIds.Contains(newDetectorId, StringComparer.OrdinalIgnoreCase))
+                if (allowedIds.Where(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)).Any() && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
                 {
-                    allowedIds = allowedIds.Concat(new string[] { newDetectorId });
+                    allowedIds = allowedIds.Concat(new string[] {
+                        this.newDetectorId });
                 }
 
                 detectors = detectors.Where(d => allowedIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase)).ToList();
@@ -39,13 +40,13 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 {
                     if (!detectors.Select(d => d.Id).Contains(id, StringComparer.OrdinalIgnoreCase))
                     {
-                        if (!oldDetectorIds.Contains(id, StringComparer.OrdinalIgnoreCase))
+                        if (!this.oldDetectorIds.Contains(id, StringComparer.OrdinalIgnoreCase))
                         {
                             throw new InvalidDetectorFilterException($"Detector '{id}' was not found");
                         }
                         else
                         {
-                            Logger.LogWarning($"The detector '{id}' has been phased out, we will run the '{newDetectorId}' detector which replaced its functionality.");
+                            this.Logger.LogWarning($"The detector '{id}' has been phased out, we will run the '{this.newDetectorId}' detector which replaced its functionality.");
                         }
                     }
                 }

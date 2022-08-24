@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -10,7 +9,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 {
     public static class MavenParsingUtilities
     {
-        private static readonly Dictionary<string, DependencyScope> MavenScopeToDependencyScopeMapping = new Dictionary<string, DependencyScope>() 
+        private static readonly Dictionary<string, DependencyScope> MavenScopeToDependencyScopeMapping = new Dictionary<string, DependencyScope>()
         {
             { "compile", DependencyScope.MavenCompile },
             { "provided", DependencyScope.MavenProvided },
@@ -51,7 +50,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             }
 
             // 'MavenCompile' is a default scope for maven dependencies.
-            DependencyScope dependencyScope = DependencyScope.MavenCompile;
+            var dependencyScope = DependencyScope.MavenCompile;
             var groupId = results[0];
             var artifactId = results[1];
             var version = results[3];
@@ -60,8 +59,8 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             {
                 dependencyScope = MavenScopeToDependencyScopeMapping.TryGetValue(
                     Regex.Match(results[4], @"^([\w]+)").Value,
-                    out dependencyScope) 
-                    ? dependencyScope 
+                    out dependencyScope)
+                    ? dependencyScope
                     : throw new InvalidOperationException($"Invalid scope ('{results[4]}') found for '{mavenComponentString}' found in generated dependency graph.");
                 isDevDependency = dependencyScope == DependencyScope.MavenTest;
             }

@@ -63,20 +63,19 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <inheritdoc />
         public async virtual Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
         {
-            ComponentRecorder = request.ComponentRecorder;
-            Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
-            return await ScanDirectoryAsync(request);
+            this.ComponentRecorder = request.ComponentRecorder;
+            this.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
+            return await this.ScanDirectoryAsync(request);
         }
 
-        /// <inheritdoc />
         private Task<IndividualDetectorScanResult> ScanDirectoryAsync(ScanRequest request)
         {
-            CurrentScanRequest = request;
+            this.CurrentScanRequest = request;
 
-            var filteredObservable = Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, SearchPatterns, request.ComponentRecorder);
+            var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
-            Logger?.LogVerbose($"Registered {GetType().FullName}");
-            return ProcessAsync(filteredObservable, request.DetectorArgs);
+            this.Logger?.LogVerbose($"Registered {this.GetType().FullName}");
+            return this.ProcessAsync(filteredObservable, request.DetectorArgs);
         }
 
         /// <summary>
@@ -87,14 +86,14 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <returns></returns>
         protected Task<IEnumerable<IComponentStream>> GetFileStreamsAsync(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate exclusionPredicate)
         {
-            return Task.FromResult(ComponentStreamEnumerableFactory.GetComponentStreams(sourceDirectory, SearchPatterns, exclusionPredicate));
+            return Task.FromResult(this.ComponentStreamEnumerableFactory.GetComponentStreams(sourceDirectory, this.SearchPatterns, exclusionPredicate));
         }
 
         private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
         {
-            var processor = new ActionBlock<ProcessRequest>(async processRequest => await OnFileFound(processRequest, detectorArgs));
+            var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFound(processRequest, detectorArgs));
 
-            var preprocessedObserbable = await OnPrepareDetection(processRequests, detectorArgs);
+            var preprocessedObserbable = await this.OnPrepareDetection(processRequests, detectorArgs);
 
             await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
 
@@ -102,12 +101,12 @@ namespace Microsoft.ComponentDetection.Contracts
 
             await processor.Completion;
 
-            await OnDetectionFinished();
+            await this.OnDetectionFinished();
 
             return new IndividualDetectorScanResult
             {
                 ResultCode = ProcessingResultCode.Success,
-                AdditionalTelemetryDetails = Telemetry,
+                AdditionalTelemetryDetails = this.Telemetry,
             };
         }
 

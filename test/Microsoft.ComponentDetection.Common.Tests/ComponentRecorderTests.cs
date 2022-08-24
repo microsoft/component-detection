@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            componentRecorder = new ComponentRecorder();
+            this.componentRecorder = new ComponentRecorder();
         }
 
         [TestMethod]
@@ -25,13 +25,13 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             var location = "location";
 
-            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(location);
+            var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(location);
 
             var detectedComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"));
             singleFileComponentRecorder.RegisterUsage(detectedComponent);
             singleFileComponentRecorder.GetComponent(detectedComponent.Component.Id).Should().NotBeNull();
 
-            var dependencyGraph = componentRecorder.GetDependencyGraphForLocation(location);
+            var dependencyGraph = this.componentRecorder.GetDependencyGraphForLocation(location);
 
             dependencyGraph.GetDependenciesForComponent(detectedComponent.Component.Id).Should().NotBeNull();
         }
@@ -41,7 +41,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             var location = "location";
 
-            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(location);
+            var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(location);
 
             var detectedComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"));
             var parentComponent = new DetectedComponent(new NpmComponent("test2", "2.0.0"));
@@ -49,7 +49,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
             singleFileComponentRecorder.RegisterUsage(parentComponent);
             singleFileComponentRecorder.RegisterUsage(detectedComponent, parentComponentId: parentComponent.Component.Id);
 
-            var dependencyGraph = componentRecorder.GetDependencyGraphForLocation(location);
+            var dependencyGraph = this.componentRecorder.GetDependencyGraphForLocation(location);
 
             dependencyGraph.GetDependenciesForComponent(parentComponent.Component.Id).Should().Contain(detectedComponent.Component.Id);
         }
@@ -57,7 +57,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void RegisterUsage_DetectedComponentIsNull_ArgumentNullExceptionIsThrown()
         {
-            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location");
+            var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder("location");
 
             Action action = () => singleFileComponentRecorder.RegisterUsage(null);
 
@@ -68,11 +68,11 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void RegisterUsage_DevelopmentDependencyHasValue_componentNodeHasDependencyScope()
         {
             var location = "location";
-            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(location);
+            var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(location);
             var detectedComponent = new DetectedComponent(new MavenComponent("org.apache.maven", "maven-artifact", "3.6.1"));
 
             singleFileComponentRecorder.RegisterUsage(detectedComponent, dependencyScope: DependencyScope.MavenProvided);
-            var dependencyGraph = componentRecorder.GetDependencyGraphForLocation(location);
+            var dependencyGraph = this.componentRecorder.GetDependencyGraphForLocation(location);
 
             dependencyGraph.GetDependencyScope(detectedComponent.Component.Id).Should().NotBeNull();
             dependencyGraph.GetDependencyScope(detectedComponent.Component.Id).Should().Be(DependencyScope.MavenProvided);
@@ -81,7 +81,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void RegisterUsage_DetectedComponentWithNullComponent_ArgumentExceptionIsThrown()
         {
-            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location");
+            var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder("location");
             var detectedComponent = new DetectedComponent(null);
 
             Action action = () => singleFileComponentRecorder.RegisterUsage(detectedComponent);
@@ -92,7 +92,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void RegisterUsage_DetectedComponentExistAndUpdateFunctionIsNull_NotExceptionIsThrown()
         {
-            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location");
+            var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder("location");
             var detectedComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"));
             singleFileComponentRecorder.RegisterUsage(detectedComponent);
 
@@ -104,33 +104,33 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void CreateComponentsingleFileComponentRecorderForLocation_LocationIsNull_ArgumentNullExceptionIsThrown()
         {
-            Action action = () => componentRecorder.CreateSingleFileComponentRecorder(null);
+            Action action = () => this.componentRecorder.CreateSingleFileComponentRecorder(null);
             action.Should().Throw<ArgumentNullException>();
 
-            action = () => componentRecorder.CreateSingleFileComponentRecorder(string.Empty);
+            action = () => this.componentRecorder.CreateSingleFileComponentRecorder(string.Empty);
             action.Should().Throw<ArgumentNullException>();
 
-            action = () => componentRecorder.CreateSingleFileComponentRecorder("  ");
+            action = () => this.componentRecorder.CreateSingleFileComponentRecorder("  ");
             action.Should().Throw<ArgumentNullException>();
         }
 
         [TestMethod]
         public void GetComponent_ComponentNotExist_NullIsReturned()
         {
-            componentRecorder.CreateSingleFileComponentRecorder("someMockLocation").GetComponent("nonexistedcomponentId").Should().BeNull();
+            this.componentRecorder.CreateSingleFileComponentRecorder("someMockLocation").GetComponent("nonexistedcomponentId").Should().BeNull();
         }
 
         [TestMethod]
         public void GetDetectedComponents_AreComponentsRegistered_ComponentsAreReturned()
         {
-            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location");
+            var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder("location");
             var detectedComponent1 = new DetectedComponent(new NpmComponent("test", "1.0.0"));
             var detectedComponent2 = new DetectedComponent(new NpmComponent("test", "2.0.0"));
 
             singleFileComponentRecorder.RegisterUsage(detectedComponent1);
             singleFileComponentRecorder.RegisterUsage(detectedComponent2);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
+            var detectedComponents = this.componentRecorder.GetDetectedComponents();
 
             detectedComponents.Should().HaveCount(2);
             detectedComponents.Should().Contain(detectedComponent1);
@@ -140,7 +140,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void GetDetectedComponents_NoComponentsAreRegistered_EmptyCollectionIsReturned()
         {
-            var detectedComponents = componentRecorder.GetDetectedComponents();
+            var detectedComponents = this.componentRecorder.GetDetectedComponents();
 
             detectedComponents.Should().NotBeNull();
             detectedComponents.Should().BeEmpty();
@@ -150,7 +150,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void GetAllDependencyGraphs_ReturnsImmutableDictionaryWithContents()
         {
             // Setup an initial, simple graph.
-            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("/some/location");
+            var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder("/some/location");
 
             // We want to take a look at how the class is used by it's friends
             var internalsView = (ComponentRecorder.SingleFileComponentRecorder)singleFileComponentRecorder;
@@ -164,7 +164,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
             component1.DependencyIds.Add(component2.Id);
 
             // Get readonly content from graph
-            var allGraphs = componentRecorder.GetDependencyGraphsByLocation();
+            var allGraphs = this.componentRecorder.GetDependencyGraphsByLocation();
             var expectedGraph = allGraphs["/some/location"];
 
             // Verify content looks correct
@@ -193,7 +193,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void GetAllDependencyGraphs_ReturnedGraphsAreImmutable()
         {
             // Setup an initial, simple graph.
-            var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("/some/location");
+            var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder("/some/location");
 
             // We want to take a look at how the class is used by it's friends
             var internalsView = (ComponentRecorder.SingleFileComponentRecorder)singleFileComponentRecorder;
@@ -208,7 +208,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
             component1.DependencyIds.Add(component2.Id);
 
             // Get readonly content from graph
-            var allGraphs = componentRecorder.GetDependencyGraphsByLocation();
+            var allGraphs = this.componentRecorder.GetDependencyGraphsByLocation();
             var expectedGraph = allGraphs["/some/location"];
 
             // Verify content looks correct

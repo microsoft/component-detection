@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void ConstructorTest_NameVersion()
         {
-            GoComponent goComponent = new GoComponent(TestName, TestVersion);
+            var goComponent = new GoComponent(TestName, TestVersion);
             Assert.AreEqual(TestName, goComponent.Name);
             Assert.AreEqual(TestVersion, goComponent.Version);
             Assert.AreEqual(string.Empty, goComponent.Hash);
@@ -32,20 +32,20 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [ExpectedException(typeof(ArgumentNullException))]
         public void ConstructorTest_NameVersion_NullVersion()
         {
-            GoComponent goComponent = new GoComponent(TestName, null);
+            var goComponent = new GoComponent(TestName, null);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ConstructorTest_NameVersion_NullName()
         {
-            GoComponent goComponent = new GoComponent(null, TestVersion);
+            var goComponent = new GoComponent(null, TestVersion);
         }
 
         [TestMethod]
         public void ConstructorTest_NameVersionHash()
         {
-            GoComponent goComponent = new GoComponent(TestName, TestVersion, TestHash);
+            var goComponent = new GoComponent(TestName, TestVersion, TestHash);
             Assert.AreEqual(TestName, goComponent.Name);
             Assert.AreEqual(TestVersion, goComponent.Version);
             Assert.AreEqual(TestHash, goComponent.Hash);
@@ -56,29 +56,29 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [ExpectedException(typeof(ArgumentNullException))]
         public void ConstructorTest_NameVersionHash_NullVersion()
         {
-            GoComponent goComponent = new GoComponent(TestName, null, TestHash);
+            var goComponent = new GoComponent(TestName, null, TestHash);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ConstructorTest_NameVersionHash_NullName()
         {
-            GoComponent goComponent = new GoComponent(null, TestVersion, TestHash);
+            var goComponent = new GoComponent(null, TestVersion, TestHash);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ConstructorTest_NameVersionHash_NullHash()
         {
-            GoComponent goComponent = new GoComponent(TestName, TestVersion, null);
+            var goComponent = new GoComponent(TestName, TestVersion, null);
         }
 
         [TestMethod]
         public void TestEquals()
         {
-            GoComponent goComponent1 = new GoComponent(TestName, TestVersion, TestHash);
-            GoComponent goComponent2 = new GoComponent(TestName, TestVersion, TestHash);
-            GoComponent goComponent3 = new GoComponent(TestName, TestVersion, Guid.NewGuid().ToString());
+            var goComponent1 = new GoComponent(TestName, TestVersion, TestHash);
+            var goComponent2 = new GoComponent(TestName, TestVersion, TestHash);
+            var goComponent3 = new GoComponent(TestName, TestVersion, Guid.NewGuid().ToString());
             Assert.IsTrue(goComponent1.Equals(goComponent2));
             Assert.IsTrue(((object)goComponent1).Equals(goComponent2));
 
@@ -89,8 +89,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void TestGetHashCode()
         {
-            GoComponent goComponent1 = new GoComponent(TestName, TestVersion, TestHash);
-            GoComponent goComponent2 = new GoComponent(TestName, TestVersion, TestHash);
+            var goComponent1 = new GoComponent(TestName, TestVersion, TestHash);
+            var goComponent2 = new GoComponent(TestName, TestVersion, TestHash);
             Assert.IsTrue(goComponent1.GetHashCode() == goComponent2.GetHashCode());
         }
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
@@ -9,16 +9,14 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             /* Reserved for deserialization */
         }
 
-        public SpdxComponent(string spdxVersion, Uri documentNamespace, string name, string checksum,
-            string rootElementId, string path)
+        public SpdxComponent(string spdxVersion, Uri documentNamespace, string name, string checksum, string rootElementId, string path)
         {
-            SpdxVersion = ValidateRequiredInput(spdxVersion, nameof(SpdxVersion), nameof(ComponentType.Spdx));
-            DocumentNamespace =
-                ValidateRequiredInput(documentNamespace, nameof(DocumentNamespace), nameof(ComponentType.Spdx));
-            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Spdx));
-            Checksum = ValidateRequiredInput(checksum, nameof(Checksum), nameof(ComponentType.Spdx));
-            RootElementId = ValidateRequiredInput(rootElementId, nameof(RootElementId), nameof(ComponentType.Spdx));
-            Path = ValidateRequiredInput(path, nameof(Path), nameof(ComponentType.Spdx));
+            this.SpdxVersion = this.ValidateRequiredInput(spdxVersion, nameof(this.SpdxVersion), nameof(ComponentType.Spdx));
+            this.DocumentNamespace = this.ValidateRequiredInput(documentNamespace, nameof(this.DocumentNamespace), nameof(ComponentType.Spdx));
+            this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Spdx));
+            this.Checksum = this.ValidateRequiredInput(checksum, nameof(this.Checksum), nameof(ComponentType.Spdx));
+            this.RootElementId = this.ValidateRequiredInput(rootElementId, nameof(this.RootElementId), nameof(ComponentType.Spdx));
+            this.Path = this.ValidateRequiredInput(path, nameof(this.Path), nameof(ComponentType.Spdx));
         }
 
         public override ComponentType Type => ComponentType.Spdx;
@@ -35,6 +33,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public string Path { get; }
 
-        public override string Id => $"{Name}-{SpdxVersion}-{Checksum}";
+        public override string Id => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
     }
 }

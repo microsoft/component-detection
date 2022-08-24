@@ -16,9 +16,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     {
         public static string GetRandomValidNuSpecComponent()
         {
-            string componentName = GetRandomString();
-            string componentSpecFileName = $"{componentName}.nuspec";
-            string componentSpecPath = Path.Combine(Path.GetTempPath(), componentSpecFileName);
+            var componentName = GetRandomString();
+            var componentSpecFileName = $"{componentName}.nuspec";
+            var componentSpecPath = Path.Combine(Path.GetTempPath(), componentSpecFileName);
             var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
 
             return template;
@@ -26,9 +26,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static IComponentStream GetRandomValidNuSpecComponentStream()
         {
-            string componentName = GetRandomString();
-            string componentSpecFileName = $"{componentName}.nuspec";
-            string componentSpecPath = Path.Combine(Path.GetTempPath(), componentSpecFileName);
+            var componentName = GetRandomString();
+            var componentSpecFileName = $"{componentName}.nuspec";
+            var componentSpecPath = Path.Combine(Path.GetTempPath(), componentSpecFileName);
             var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
 
             var mock = new Mock<IComponentStream>();
@@ -53,7 +53,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static string GetRandomValidNuspec()
         {
-            string componentName = GetRandomString();
+            var componentName = GetRandomString();
             var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
             return template;
         }
@@ -67,7 +67,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var stream = new MemoryStream();
 
-            using (ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
             {
                 var entry = archive.CreateEntry($"{filename}.nuspec");
 
@@ -83,7 +83,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static string GetRandomMalformedNuPkgComponent()
         {
-            string componentName = GetRandomString();
+            var componentName = GetRandomString();
             var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
             template = template.Replace("<id>", "<?malformed>");
             return template;
@@ -91,7 +91,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private static string GetTemplatedNuspec(string id, string version, string[] authors)
         {
-            string nuspec = @"<?xml version=""1.0"" encoding=""utf-8""?>
+            var nuspec = @"<?xml version=""1.0"" encoding=""utf-8""?>
                             <package xmlns=""http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd"">
                                 <metadata>
                                     <!-- Required elements-->
@@ -111,7 +111,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private static string GetTemplatedNuGetConfig(string repositoryPath)
         {
-            string nugetConfig =
+            var nugetConfig =
                 @"<?xml version=""1.0"" encoding=""utf-8""?>
                 <configuration>
                     <config>
@@ -123,7 +123,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private static string GetTemplatedProjectAsset(IDictionary<string, IEnumerable<KeyValuePair<string, string>>> packages)
         {
-            string individualPackageJson =
+            var individualPackageJson =
                 @"""{packageName}"": {
                       ""type"": ""package"",
                       ""dependencies"": {
@@ -140,7 +140,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             }
 
             var allPackageJson = string.Join(",", packageJsons);
-            string pojectAssetsJson =
+            var pojectAssetsJson =
                 @"{
                       ""version"": 2,
                       ""targets"": {

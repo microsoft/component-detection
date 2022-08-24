@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Composition;
 using System.Diagnostics;
@@ -17,6 +17,39 @@ namespace Microsoft.ComponentDetection.Common
     [Shared]
     public class PathUtilityService : IPathUtilityService
     {
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern SafeFileHandle CreateFile(
+            [In] string lpFileName,
+            [In] uint dwDesiredAccess,
+            [In] uint dwShareMode,
+            [In] IntPtr lpSecurityAttributes,
+            [In] uint dwCreationDisposition,
+            [In] uint dwFlagsAndAttributes,
+            [In] IntPtr hTemplateFile);
+
+        [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
+
+        /// <summary>
+        /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
+        /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
+        /// using FreeMemoryLinux otherwise things will get very leaky.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="output"></param>
+        /// <returns></returns>
+        [DllImport("libc", EntryPoint = "realpath")]
+        public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
+
+        /// <summary>
+        /// Use this function to free memory and prevent memory leaks.
+        /// However, beware.... Improper usage of this function will cause segfaults and other nasty double-free errors.
+        /// THIS WILL CRASH THE CLR IF YOU USE IT WRONG.
+        /// </summary>
+        /// <param name="toFree"></param>
+        [DllImport("libc", EntryPoint = "free")]
+        public static extern void FreeMemoryLinux([In] IntPtr toFree);
+
         [Import]
         public ILogger Logger { get; set; }
 
@@ -34,26 +67,46 @@ namespace Microsoft.ComponentDetection.Common
         {
             get
             {
-                if (!isRunningOnWindowsContainer.HasValue)
+                if (!this.isRunningOnWindowsContainer.HasValue)
                 {
-                    lock (isRunningOnWindowsContainerLock)
+                    lock (this.isRunningOnWindowsContainerLock)
                     {
-                        if (!isRunningOnWindowsContainer.HasValue)
+                        if (!this.isRunningOnWindowsContainer.HasValue)
                         {
-                            isRunningOnWindowsContainer = CheckIfRunningOnWindowsContainer();
+                            this.isRunningOnWindowsContainer = this.CheckIfRunningOnWindowsContainer();
                         }
                     }
                 }
 
-                return isRunningOnWindowsContainer.Value;
+                return this.isRunningOnWindowsContainer.Value;
             }
         }
+
+        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
         private object isRunningOnWindowsContainerLock = new object();
         private bool? isRunningOnWindowsContainer = null;
 
-        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
+        {
+            if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern.Substring(1), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            else if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern.Substring(0, searchPattern.Length - 1), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            else if (fse.FileName.Equals(searchPattern.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         public string GetParentDirectory(string path)
         {
@@ -89,35 +142,15 @@ namespace Microsoft.ComponentDetection.Common
             }
         }
 
-        public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
-        {
-            if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern.Substring(1), StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-            else if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern.Substring(0, searchPattern.Length - 1), StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-            else if (fse.FileName.Equals(searchPattern.AsSpan(), StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         public string ResolvePhysicalPath(string path)
         {
             if (IsWindows)
             {
-                return ResolvePhysicalPathWindows(path);
+                return this.ResolvePhysicalPathWindows(path);
             }
             else if (IsLinux)
             {
-                return ResolvePhysicalPathLinux(path);
+                return this.ResolvePhysicalPathLinux(path);
             }
 
             return path;
@@ -130,27 +163,27 @@ namespace Microsoft.ComponentDetection.Common
                 throw new PlatformNotSupportedException("Attempted to call a function that makes windows-only SDK calls");
             }
 
-            if (IsRunningOnWindowsContainer)
+            if (this.IsRunningOnWindowsContainer)
             {
                 return path;
             }
 
-            if (resolvedPaths.TryGetValue(path, out string cachedPath))
+            if (this.resolvedPaths.TryGetValue(path, out var cachedPath))
             {
                 return cachedPath;
             }
 
-            DirectoryInfo symlink = new DirectoryInfo(path);
+            var symlink = new DirectoryInfo(path);
 
-            using SafeFileHandle directoryHandle = CreateFile(symlink.FullName, 0, 2, IntPtr.Zero, CreationDispositionRead, FileFlagBackupSemantics, IntPtr.Zero);
+            using var directoryHandle = CreateFile(symlink.FullName, 0, 2, IntPtr.Zero, CreationDispositionRead, FileFlagBackupSemantics, IntPtr.Zero);
 
             if (directoryHandle.IsInvalid)
             {
                 return path;
             }
 
-            StringBuilder resultBuilder = new StringBuilder(InitalPathBufferSize);
-            int mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuilder, resultBuilder.Capacity, 0);
+            var resultBuilder = new StringBuilder(InitalPathBufferSize);
+            var mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuilder, resultBuilder.Capacity, 0);
 
             // If GetFinalPathNameByHandle needs a bigger buffer, it will tell us the size it needs (including the null terminator) in finalPathNameResultCode
             if (mResult > InitalPathBufferSize)
@@ -164,11 +197,11 @@ namespace Microsoft.ComponentDetection.Common
                 return path;
             }
 
-            string result = resultBuilder.ToString();
+            var result = resultBuilder.ToString();
 
             result = result.StartsWith(LongPathPrefix) ? result.Substring(LongPathPrefix.Length) : result;
 
-            resolvedPaths.TryAdd(path, result);
+            this.resolvedPaths.TryAdd(path, result);
 
             return result;
         }
@@ -180,7 +213,7 @@ namespace Microsoft.ComponentDetection.Common
                 throw new PlatformNotSupportedException("Attempted to call a function that makes linux-only library calls");
             }
 
-            IntPtr pointer = IntPtr.Zero;
+            var pointer = IntPtr.Zero;
             try
             {
                 pointer = RealPathLinux(path, IntPtr.Zero);
@@ -197,7 +230,7 @@ namespace Microsoft.ComponentDetection.Common
             }
             catch (Exception ex)
             {
-                Logger.LogException(ex, isError: false, printException: true);
+                this.Logger.LogException(ex, isError: false, printException: true);
                 return path;
             }
             finally
@@ -218,7 +251,7 @@ namespace Microsoft.ComponentDetection.Common
 
             // This isn't the best way to do this in C#, but netstandard doesn't seem to support the service api calls
             // that we need to do this without shelling out
-            Process process = new Process()
+            var process = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -231,7 +264,7 @@ namespace Microsoft.ComponentDetection.Common
                 },
             };
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             process.Start();
 
             while (!process.HasExited)
@@ -244,7 +277,7 @@ namespace Microsoft.ComponentDetection.Common
 
             if (sb.ToString().Contains("Container Execution Agent"))
             {
-                Logger.LogWarning("Detected execution in a Windows container. Currently windows containers < 1809 do not support symlinks well, so disabling symlink resolution/dedupe behavior");
+                this.Logger.LogWarning("Detected execution in a Windows container. Currently windows containers < 1809 do not support symlinks well, so disabling symlink resolution/dedupe behavior");
                 return true;
             }
             else
@@ -252,38 +285,5 @@ namespace Microsoft.ComponentDetection.Common
                 return false;
             }
         }
-
-        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern SafeFileHandle CreateFile(
-            [In] string lpFileName,
-            [In] uint dwDesiredAccess,
-            [In] uint dwShareMode,
-            [In] IntPtr lpSecurityAttributes,
-            [In] uint dwCreationDisposition,
-            [In] uint dwFlagsAndAttributes,
-            [In] IntPtr hTemplateFile);
-
-        [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
-
-        /// <summary>
-        /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
-        /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
-        /// using FreeMemoryLinux otherwise things will get very leaky.
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="output"></param>
-        /// <returns></returns>
-        [DllImport("libc", EntryPoint = "realpath")]
-        public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
-
-        /// <summary>
-        /// Use this function to free memory and prevent memory leaks.
-        /// However, beware.... Improper usage of this function will cause segfaults and other nasty double-free errors.
-        /// THIS WILL CRASH THE CLR IF YOU USE IT WRONG.
-        /// </summary>
-        /// <param name="toFree"></param>
-        [DllImport("libc", EntryPoint = "free")]
-        public static extern void FreeMemoryLinux([In] IntPtr toFree);
     }
 }

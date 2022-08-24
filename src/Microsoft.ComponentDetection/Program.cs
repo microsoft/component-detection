@@ -30,12 +30,12 @@ namespace Microsoft.ComponentDetection.Loader
 
                 var result = orchestrator.Load(args);
 
-                int exitCode = (int)result.ResultCode;
+                var exitCode = (int)result.ResultCode;
                 if (result.ResultCode == ProcessingResultCode.Error || result.ResultCode == ProcessingResultCode.InputError)
                 {
                     exitCode = -1;
                 }
-                
+
                 Console.WriteLine($"Execution finished, status: {exitCode}.");
 
                 // force an exit, not letting any lingering threads not responding.

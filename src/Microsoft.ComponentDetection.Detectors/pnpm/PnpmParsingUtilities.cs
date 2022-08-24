@@ -39,7 +39,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
         private static (string Name, string Version) ExtractNameAndVersionFromPnpmPackagePath(string pnpmPackagePath)
         {
             var pnpmComponentDefSections = pnpmPackagePath.Trim('/').Split('/');
-            (string packageVersion, int indexVersionIsAt) = GetPackageVersion(pnpmComponentDefSections);
+            (var packageVersion, var indexVersionIsAt) = GetPackageVersion(pnpmComponentDefSections);
             if (indexVersionIsAt == -1)
             {
                 // No version = not expected input

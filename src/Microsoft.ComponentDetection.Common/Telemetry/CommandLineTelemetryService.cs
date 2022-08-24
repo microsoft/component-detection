@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Composition;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
@@ -13,6 +13,8 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
     [TelemetryService(nameof(CommandLineTelemetryService))]
     internal class CommandLineTelemetryService : ITelemetryService
     {
+        private static ConcurrentQueue<JObject> records = new ConcurrentQueue<JObject>();
+
         [Import]
         public ILogger Logger { get; set; }
 
@@ -23,16 +25,14 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
 
         private TelemetryMode telemetryMode = TelemetryMode.Production;
 
-        private static ConcurrentQueue<JObject> records = new ConcurrentQueue<JObject>();
-
         public void Flush()
         {
-            FileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(records));
+            this.FileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(records));
         }
 
         public void PostRecord(IDetectionTelemetryRecord record)
         {
-            if (telemetryMode != TelemetryMode.Disabled)
+            if (this.telemetryMode != TelemetryMode.Disabled)
             {
                 var jsonRecord = JObject.FromObject(record);
                 jsonRecord.Add("Timestamp", DateTime.UtcNow);
@@ -40,16 +40,16 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
 
                 records.Enqueue(jsonRecord);
 
-                if (telemetryMode == TelemetryMode.Debug)
+                if (this.telemetryMode == TelemetryMode.Debug)
                 {
-                    Logger.LogInfo(jsonRecord.ToString());
+                    this.Logger.LogInfo(jsonRecord.ToString());
                 }
             }
         }
 
         public void SetMode(TelemetryMode mode)
         {
-            telemetryMode = mode;
+            this.telemetryMode = mode;
         }
     }
 }

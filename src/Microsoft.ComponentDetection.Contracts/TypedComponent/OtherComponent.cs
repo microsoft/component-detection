@@ -11,10 +11,10 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public OtherComponent(string name, string version, Uri downloadUrl, string hash)
         {
-            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Other));
-            Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.Other));
-            DownloadUrl = ValidateRequiredInput(downloadUrl, nameof(DownloadUrl), nameof(ComponentType.Other));
-            Hash = hash;
+            this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Other));
+            this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Other));
+            this.DownloadUrl = this.ValidateRequiredInput(downloadUrl, nameof(this.DownloadUrl), nameof(ComponentType.Other));
+            this.Hash = hash;
         }
 
         public string Name { get; set; }
@@ -27,6 +27,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.Other;
 
-        public override string Id => $"{Name} {Version} {DownloadUrl} - {Type}";
+        public override string Id => $"{this.Name} {this.Version} {this.DownloadUrl} - {this.Type}";
     }
 }

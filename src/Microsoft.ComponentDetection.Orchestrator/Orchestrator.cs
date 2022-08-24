@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Composition.Hosting;
@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
         public ScanResult Load(string[] args)
         {
-            ArgumentHelper argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
+            var argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
             BaseArguments baseArguments = null;
             var parserResult = argumentHelper.ParseArguments<BaseArguments>(args, true);
             parserResult.WithParsed(x => baseArguments = x);
@@ -39,7 +39,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
                 baseArguments = new BaseArguments();
             }
 
-            IEnumerable<string> additionalDITargets = baseArguments.AdditionalDITargets ?? Enumerable.Empty<string>();
+            var additionalDITargets = baseArguments.AdditionalDITargets ?? Enumerable.Empty<string>();
 
             // Load all types from Common (where Logger lives) and our executing assembly.
             var configuration = new ContainerConfiguration()
@@ -62,21 +62,22 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
             TelemetryRelay.Instance.SetTelemetryMode(baseArguments.DebugTelemetry ? TelemetryMode.Debug : TelemetryMode.Production);
 
-            bool shouldFailureBeSuppressed = false;
+            var shouldFailureBeSuppressed = false;
 
             // Don't use the using pattern here so we can take care not to clobber the stack
             var returnResult = BcdeExecutionTelemetryRecord.Track(
                 (record) =>
             {
-                var executionResult = HandleCommand(args, record);
-                if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)    
+                var executionResult = this.HandleCommand(args, record);
+                if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)
                 {
                     shouldFailureBeSuppressed = true;
                     record.HiddenExitCode = (int)executionResult.ResultCode;
                 }
 
                 return executionResult;
-            }, true);
+            },
+                true);
 
             // The order of these things is a little weird, but done this way mostly to prevent any of the logic inside if blocks from being duplicated
             if (shouldFailureBeSuppressed)
@@ -127,7 +128,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
         public ScanResult HandleCommand(string[] args, BcdeExecutionTelemetryRecord telemetryRecord)
         {
-            var scanResult = new ScanResult() 
+            var scanResult = new ScanResult()
             {
                 ResultCode = ProcessingResultCode.Error,
             };
@@ -139,22 +140,22 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
                     // Don't set production telemetry if we are running the build task in DevFabric. 0.36.0 is set in the task.json for the build task in development, but is calculated during deployment for production.
                     TelemetryConstants.CorrelationId = argumentSet.CorrelationId;
-                    telemetryRecord.Command = GetVerb(argumentSet);
+                    telemetryRecord.Command = this.GetVerb(argumentSet);
 
-                    scanResult = SafelyExecute(telemetryRecord, () =>
+                    scanResult = this.SafelyExecute(telemetryRecord, () =>
                     {
-                        GenerateEnvironmentSpecificTelemetry(telemetryRecord);
+                        this.GenerateEnvironmentSpecificTelemetry(telemetryRecord);
 
                         telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
                         FileWritingService.Init(argumentSet.Output);
                         Logger.Init(argumentSet.Verbosity);
                         Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId.ToString()}");
 
-                        return Dispatch(argumentSet, CancellationToken.None).GetAwaiter().GetResult();
+                        return this.Dispatch(argumentSet, CancellationToken.None).GetAwaiter().GetResult();
                     });
                 })
-                .WithNotParsed(errors => 
-                { 
+                .WithNotParsed(errors =>
+                {
                     if (errors.Any(e => e is HelpVerbRequestedError))
                     {
                         telemetryRecord.Command = "help";
@@ -188,7 +189,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
                     var getLibSslPackages = Task.Run(() =>
                     {
                         var startInfo = new ProcessStartInfo("apt", "list --installed") { RedirectStandardOutput = true };
-                        Process process = new Process { StartInfo = startInfo };
+                        var process = new Process { StartInfo = startInfo };
                         process.Start();
                         string aptListResult = null;
                         var task = Task.Run(() => aptListResult = process.StandardOutput.ReadToEnd());
@@ -223,7 +224,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
         }
 
         private async Task<ScanResult> Dispatch(IScanArguments arguments, CancellationToken cancellation)
-        {   
+        {
             var scanResult = new ScanResult()
             {
                 ResultCode = ProcessingResultCode.Error,
@@ -266,7 +267,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
             }
             catch (Exception ae)
             {
-                var result = new ScanResult() 
+                var result = new ScanResult()
                 {
                     ResultCode = ProcessingResultCode.Error,
                 };
@@ -288,7 +289,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
                     Logger.LogError($"There was an unexpected error: ");
                     Logger.LogException(e, isError: true);
 
-                    StringBuilder errorMessage = new StringBuilder();
+                    var errorMessage = new StringBuilder();
                     errorMessage.AppendLine(e.ToString());
                     if (e is ReflectionTypeLoadException refEx && refEx.LoaderExceptions != null)
                     {

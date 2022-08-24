@@ -37,7 +37,7 @@ namespace Microsoft.ComponentDetection.Common
             }
             catch (Exception e)
             {
-                Logger.LogException(e, false);
+                this.Logger.LogException(e, false);
                 return false;
             }
         }
@@ -45,7 +45,7 @@ namespace Microsoft.ComponentDetection.Common
         public async Task<bool> CanRunLinuxContainersAsync(CancellationToken cancellationToken = default)
         {
             using var record = new DockerServiceSystemInfoTelemetryRecord();
-            if (!await CanPingDockerAsync(cancellationToken))
+            if (!await this.CanPingDockerAsync(cancellationToken))
             {
                 return false;
             }
@@ -78,7 +78,7 @@ namespace Microsoft.ComponentDetection.Common
             }
             catch (Exception e)
             {
-                record.ExceptionMessage = e.Message; 
+                record.ExceptionMessage = e.Message;
                 return false;
             }
         }
@@ -120,7 +120,7 @@ namespace Microsoft.ComponentDetection.Common
             {
                 var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
                 record.ImageInspectResponse = JsonConvert.SerializeObject(imageInspectResponse);
-                
+
                 var baseImageRef = string.Empty;
                 var baseImageDigest = string.Empty;
 
@@ -128,12 +128,12 @@ namespace Microsoft.ComponentDetection.Common
                 imageInspectResponse.Config.Labels?.TryGetValue(BaseImageDigestAnnotation, out baseImageDigest);
 
                 record.BaseImageRef = baseImageRef;
-                record.BaseImageDigest = baseImageDigest; 
+                record.BaseImageDigest = baseImageDigest;
 
                 var layers = imageInspectResponse.RootFS?.Layers
-                    .Select((diffId, index) => 
+                    .Select((diffId, index) =>
                         new DockerLayer
-                        { 
+                        {
                             DiffId = diffId,
                             LayerIndex = index,
                         });
@@ -157,15 +157,14 @@ namespace Microsoft.ComponentDetection.Common
             }
         }
 
-        public async Task<(string stdout, string stderr)> CreateAndRunContainerAsync(string image, IList<string> command,
-            CancellationToken cancellationToken = default)
+        public async Task<(string stdout, string stderr)> CreateAndRunContainerAsync(string image, IList<string> command, CancellationToken cancellationToken = default)
         {
             using var record = new DockerServiceTelemetryRecord
             {
                 Image = image,
                 Command = JsonConvert.SerializeObject(command),
             };
-            await TryPullImageAsync(image, cancellationToken);
+            await this.TryPullImageAsync(image, cancellationToken);
             var container = await CreateContainerAsync(image, command, cancellationToken);
             record.Container = JsonConvert.SerializeObject(container);
             var stream = await AttachContainerAsync(container.ID, cancellationToken);
@@ -177,7 +176,9 @@ namespace Microsoft.ComponentDetection.Common
             return (stdout, stderr);
         }
 
-        private static async Task<CreateContainerResponse> CreateContainerAsync(string image, IList<string> command,
+        private static async Task<CreateContainerResponse> CreateContainerAsync(
+            string image,
+            IList<string> command,
             CancellationToken cancellationToken = default)
         {
             var parameters = new CreateContainerParameters

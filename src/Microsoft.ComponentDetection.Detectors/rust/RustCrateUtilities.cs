@@ -44,7 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// </returns>
         public static CargoDependencyData ExtractRootDependencyAndWorkspaceSpecifications(IEnumerable<IComponentStream> cargoTomlComponentStream, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
-            CargoDependencyData cargoDependencyData = new CargoDependencyData();
+            var cargoDependencyData = new CargoDependencyData();
 
             // The file handle is disposed if you call .First() on cargoTomlComponentStream
             // Since multiple Cargo.toml files for 1 Cargo.lock file obviously doesn't make sense
@@ -56,18 +56,18 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
 
                 // Extract the workspaces present, if any
-                if (cargoToml.ContainsKey(RustCrateUtilities.WorkspaceKey))
+                if (cargoToml.ContainsKey(WorkspaceKey))
                 {
-                    TomlTable workspaces = cargoToml.Get<TomlTable>(RustCrateUtilities.WorkspaceKey);
+                    var workspaces = cargoToml.Get<TomlTable>(WorkspaceKey);
 
-                    TomlObject workspaceMembers = workspaces.ContainsKey(RustCrateUtilities.WorkspaceMemberKey) ? workspaces[RustCrateUtilities.WorkspaceMemberKey] : null;
-                    TomlObject workspaceExclusions = workspaces.ContainsKey(RustCrateUtilities.WorkspaceExcludeKey) ? workspaces[RustCrateUtilities.WorkspaceExcludeKey] : null;
+                    var workspaceMembers = workspaces.ContainsKey(WorkspaceMemberKey) ? workspaces[WorkspaceMemberKey] : null;
+                    var workspaceExclusions = workspaces.ContainsKey(WorkspaceExcludeKey) ? workspaces[WorkspaceExcludeKey] : null;
 
                     if (workspaceMembers != null)
                     {
                         if (workspaceMembers.TomlType != TomlObjectType.Array)
                         {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {RustCrateUtilities.WorkspaceMemberKey} within {RustCrateUtilities.WorkspaceKey} to be of type Array, but found {workspaceMembers.TomlType}");
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceMemberKey} within {WorkspaceKey} to be of type Array, but found {workspaceMembers.TomlType}");
                         }
 
                         // TomlObject arrays do not natively implement a HashSet get, so add from a list
@@ -78,14 +78,14 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     {
                         if (workspaceExclusions.TomlType != TomlObjectType.Array)
                         {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {RustCrateUtilities.WorkspaceExcludeKey} within {RustCrateUtilities.WorkspaceKey} to be of type Array, but found {workspaceExclusions.TomlType}");
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceExcludeKey} within {WorkspaceKey} to be of type Array, but found {workspaceExclusions.TomlType}");
                         }
 
                         cargoDependencyData.CargoWorkspaceExclusions.UnionWith(workspaceExclusions.Get<List<string>>());
                     }
                 }
 
-                RustCrateUtilities.GenerateDependencies(cargoToml, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies);
+                GenerateDependencies(cargoToml, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies);
 
                 break;
             }
@@ -110,7 +110,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
                 singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
 
-                RustCrateUtilities.GenerateDependencies(cargoToml, nonDevDependencySpecifications, devDependencySpecifications);
+                GenerateDependencies(cargoToml, nonDevDependencySpecifications, devDependencySpecifications);
             }
         }
 
@@ -122,8 +122,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// <param name="devDependencySpecifications">Current list of development dependencies.</param>
         private static void GenerateDependencies(TomlTable cargoToml, IList<DependencySpecification> nonDevDependencySpecifications, IList<DependencySpecification> devDependencySpecifications)
         {
-            var dependencySpecification = RustCrateUtilities.GenerateDependencySpecifications(cargoToml, RustCrateUtilities.NonDevDependencyKeys);
-            var devDependencySpecification = RustCrateUtilities.GenerateDependencySpecifications(cargoToml, RustCrateUtilities.DevDependencyKeys);
+            var dependencySpecification = GenerateDependencySpecifications(cargoToml, NonDevDependencyKeys);
+            var devDependencySpecification = GenerateDependencySpecifications(cargoToml, DevDependencyKeys);
 
             // If null, this indicates the toml is an internal file that should not be tracked as a component.
             if (dependencySpecification != null)
@@ -146,15 +146,15 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// <returns></returns>
         public static ExcludeDirectoryPredicate BuildExcludeDirectoryPredicateFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces, HashSet<string> definedExclusions)
         {
-            Dictionary<string, Glob> workspaceGlobs = BuildGlobMatchingFromWorkspaces(rootLockFileInfo, definedWorkspaces);
+            var workspaceGlobs = BuildGlobMatchingFromWorkspaces(rootLockFileInfo, definedWorkspaces);
 
             // Since the paths come in as relative, make them fully qualified
-            HashSet<string> fullyQualifiedExclusions = definedExclusions.Select(x => Path.Combine(rootLockFileInfo.DirectoryName, x)).ToHashSet();
+            var fullyQualifiedExclusions = definedExclusions.Select(x => Path.Combine(rootLockFileInfo.DirectoryName, x)).ToHashSet();
 
             // The predicate will be evaluated with the current directory name to search and the full path of its parent. Return true when it should be excluded from search.
             return (ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider) =>
             {
-                string currentPath = Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString());
+                var currentPath = Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString());
 
                 return !workspaceGlobs.Values.Any(x => x.IsMatch(currentPath)) || fullyQualifiedExclusions.Contains(currentPath);
             };
@@ -168,22 +168,22 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// <returns></returns>
         private static Dictionary<string, Glob> BuildGlobMatchingFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces)
         {
-            Dictionary<string, Glob> directoryGlobs = new Dictionary<string, Glob>
+            var directoryGlobs = new Dictionary<string, Glob>
             {
                 { rootLockFileInfo.DirectoryName, Glob.Parse(rootLockFileInfo.DirectoryName) },
             };
 
             // For the given workspaces, add their paths to search list
-            foreach (string workspace in definedWorkspaces)
+            foreach (var workspace in definedWorkspaces)
             {
-                string currentPath = rootLockFileInfo.DirectoryName;
-                string[] directoryPathParts = workspace.Split('/');
+                var currentPath = rootLockFileInfo.DirectoryName;
+                var directoryPathParts = workspace.Split('/');
 
                 // When multiple levels of subdirectory are present, each directory parent must be added or the directory will not be reached
                 // For example, ROOT/test-space/first-test/src/Cargo.toml requires the following directories be matched:
                 // ROOT/test-space, ROOT/test-space/first-test, ROOT/test-space/first-test, ROOT/test-space/first-test/src
                 // Each directory is matched explicitly instead of performing a StartsWith due to the potential of Glob character matching
-                foreach (string pathPart in directoryPathParts)
+                foreach (var pathPart in directoryPathParts)
                 {
                     currentPath = Path.Combine(currentPath, pathPart);
                     directoryGlobs[currentPath] = Glob.Parse(currentPath);
@@ -251,7 +251,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                         var regexMatch = DependencyFormatRegex.Match(dependency);
                         if (regexMatch.Success)
                         {
-                            if (SemVersion.TryParse(regexMatch.Groups[2].Value, out SemVersion sv))
+                            if (SemVersion.TryParse(regexMatch.Groups[2].Value, out var sv))
                             {
                                 var name = regexMatch.Groups[1].Value;
                                 var version = sv.ToString();
@@ -293,49 +293,46 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         public static DependencySpecification GenerateDependencySpecifications(TomlTable cargoToml, IEnumerable<string> tomlDependencyKeys)
         {
             var dependencySpecifications = new DependencySpecification();
-            foreach (var tomlDependencyKey in tomlDependencyKeys)
+            var dependencyLocations = GetDependencies(cargoToml, tomlDependencyKeys);
+            foreach (var dependencies in dependencyLocations)
             {
-                if (cargoToml.ContainsKey(tomlDependencyKey))
+                foreach (var dependency in dependencies.Keys)
                 {
-                    var dependencies = cargoToml.Get<TomlTable>(tomlDependencyKey);
-                    foreach (var dependency in dependencies.Keys)
+                    string versionSpecifier;
+                    if (dependencies[dependency].TomlType == TomlObjectType.String)
                     {
-                        string versionSpecifier;
-                        if (dependencies[dependency].TomlType == TomlObjectType.String)
-                        {
-                            versionSpecifier = dependencies.Get<string>(dependency);
-                        }
-                        else if (dependencies.Get<TomlTable>(dependency).ContainsKey("version") && dependencies.Get<TomlTable>(dependency).Get<string>("version") != "0.0.0")
-                        {
-                            // We have a valid version that doesn't indicate 'internal' like 0.0.0 does.
-                            versionSpecifier = dependencies.Get<TomlTable>(dependency).Get<string>("version");
-                        }
-                        else if (dependencies.Get<TomlTable>(dependency).ContainsKey("path"))
-                        {
-                            // If this is a workspace dependency specification that specifies a component by path reference, skip adding it directly here.
-                            // Example: kubos-app = { path = "../../apis/app-api/rust" }
-                            continue;
-                        }
-                        else
-                        {
-                            return null;
-                        }
-
-                        // If the dependency is renamed, use the actual name of the package:
-                        // https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#renaming-dependencies-in-cargotoml
-                        string dependencyName;
-                        if (dependencies[dependency].TomlType == TomlObjectType.Table &&
-                        dependencies.Get<TomlTable>(dependency).ContainsKey("package"))
-                        {
-                            dependencyName = dependencies.Get<TomlTable>(dependency).Get<string>("package");
-                        }
-                        else
-                        {
-                            dependencyName = dependency;
-                        }
-
-                        dependencySpecifications.Add(dependencyName, versionSpecifier);
+                        versionSpecifier = dependencies.Get<string>(dependency);
                     }
+                    else if (dependencies.Get<TomlTable>(dependency).ContainsKey("version") && dependencies.Get<TomlTable>(dependency).Get<string>("version") != "0.0.0")
+                    {
+                        // We have a valid version that doesn't indicate 'internal' like 0.0.0 does.
+                        versionSpecifier = dependencies.Get<TomlTable>(dependency).Get<string>("version");
+                    }
+                    else if (dependencies.Get<TomlTable>(dependency).ContainsKey("path"))
+                    {
+                        // If this is a workspace dependency specification that specifies a component by path reference, skip adding it directly here.
+                        // Example: kubos-app = { path = "../../apis/app-api/rust" }
+                        continue;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+
+                    // If the dependency is renamed, use the actual name of the package:
+                    // https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#renaming-dependencies-in-cargotoml
+                    string dependencyName;
+                    if (dependencies[dependency].TomlType == TomlObjectType.Table &&
+                        dependencies.Get<TomlTable>(dependency).ContainsKey("package"))
+                    {
+                        dependencyName = dependencies.Get<TomlTable>(dependency).Get<string>("package");
+                    }
+                    else
+                    {
+                        dependencyName = dependency;
+                    }
+
+                    dependencySpecifications.Add(dependencyName, versionSpecifier);
                 }
             }
 
@@ -423,7 +420,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             var regexMatch = DependencyFormatRegex.Match(depString);
             if (regexMatch.Success)
             {
-                if (SemVersion.TryParse(regexMatch.Groups[2].Value, out SemVersion sv))
+                if (SemVersion.TryParse(regexMatch.Groups[2].Value, out var sv))
                 {
                     var dependencyPackage = new CargoPackage
                     {
@@ -450,6 +447,41 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         private static TypedComponent CargoPackageToCargoComponent(CargoPackage cargoPackage)
         {
             return new CargoComponent(cargoPackage.name, cargoPackage.version);
+        }
+
+        private static IEnumerable<TomlTable> GetDependencies(TomlTable cargoToml, IEnumerable<string> tomlDependencyKeys)
+        {
+            const string targetKey = "target";
+            var dependencies = new List<TomlTable>();
+
+            foreach (var tomlDependencyKey in tomlDependencyKeys)
+            {
+                if (cargoToml.ContainsKey(tomlDependencyKey))
+                {
+                    dependencies.Add(cargoToml.Get<TomlTable>(tomlDependencyKey));
+                }
+            }
+
+            if (cargoToml.ContainsKey(targetKey))
+            {
+                var configs = cargoToml.Get<TomlTable>(targetKey);
+                foreach (var config in configs)
+                {
+                    var properties = configs.Get<TomlTable>(config.Key);
+                    foreach (var propertyKey in properties.Keys)
+                    {
+                        var isRelevantKey = tomlDependencyKeys.Any(dependencyKey =>
+                            string.Equals(propertyKey, dependencyKey, StringComparison.InvariantCultureIgnoreCase));
+
+                        if (isRelevantKey)
+                        {
+                            dependencies.Add(properties.Get<TomlTable>(propertyKey));
+                        }
+                    }
+                }
+            }
+
+            return dependencies;
         }
     }
 }

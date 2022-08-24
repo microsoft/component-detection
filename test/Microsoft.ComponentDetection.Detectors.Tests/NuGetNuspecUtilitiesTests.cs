@@ -30,7 +30,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             using var stream = new MemoryStream();
 
-            for (int i = 0; i < NuGetNuspecUtilities.MinimumLengthForZipArchive - 1; i++)
+            for (var i = 0; i < NuGetNuspecUtilities.MinimumLengthForZipArchive - 1; i++)
             {
                 stream.WriteByte(0);
             }
@@ -50,7 +50,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             using var stream = new MemoryStream();
 
-            using (ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
             {
                 archive.CreateEntry("test.txt");
             }
@@ -73,7 +73,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             using var stream = new MemoryStream();
 
-            using (ZipArchive archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
             {
                 var entry = archive.CreateEntry("test.nuspec");
 
@@ -88,7 +88,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             Assert.AreEqual(randomBytes.Length, bytes.Length);
 
-            for (int i = 0; i < randomBytes.Length; i++)
+            for (var i = 0; i < randomBytes.Length; i++)
             {
                 Assert.AreEqual(randomBytes[i], bytes[i]);
             }

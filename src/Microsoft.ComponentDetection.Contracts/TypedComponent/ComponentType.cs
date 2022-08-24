@@ -1,4 +1,4 @@
-﻿using System.Runtime.Serialization;
+using System.Runtime.Serialization;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
@@ -52,6 +52,9 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         Vcpkg = 15,
 
         [EnumMember]
-        Pub = 16,
+        DockerReference = 16,
+
+        [EnumMember]
+        Pub = 17,
     }
 }

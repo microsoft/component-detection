@@ -1,13 +1,13 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -22,7 +22,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public void TestInitialize()
         {
             var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-            detectorTestUtility = DetectorTestUtilityCreator.Create<VcpkgComponentDetector>()
+            this.detectorTestUtility = DetectorTestUtilityCreator.Create<VcpkgComponentDetector>()
                                     .WithScanRequest(new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder));
         }
 
@@ -38,7 +38,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             ""name"": ""nlohmann-json"",
             ""SPDXID"": ""SPDXRef-port"",
-            ""versionInfo"": ""3.10.4"",
+            ""versionInfo"": ""3.10.4#5"",
             ""downloadLocation"": ""git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"",
             ""homepage"": ""https://github.com/nlohmann/json"",
             ""licenseConcluded"": ""NOASSERTION"",
@@ -49,7 +49,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         }
     ]
 }";
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                    .WithFile("vcpkg.spdx.json", spdxFile)
                                                     .ExecuteDetector();
 
@@ -67,10 +67,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.AreEqual(1, components.Count());
             Assert.AreEqual("nlohmann-json", sbomComponent.Name);
             Assert.AreEqual("3.10.4", sbomComponent.Version);
-            Assert.AreEqual("0", sbomComponent.PortVersion);
+            Assert.AreEqual(5, sbomComponent.PortVersion);
             Assert.AreEqual("SPDXRef-port", sbomComponent.SPDXID);
             Assert.AreEqual("git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json", sbomComponent.DownloadLocation);
-            Assert.AreEqual("pkg:vcpkg/nlohmann-json@3.10.4?port_version=0", sbomComponent.PackageUrl.ToString());
+            Assert.AreEqual("pkg:vcpkg/nlohmann-json@3.10.4?port_version=5", sbomComponent.PackageUrl.ToString());
         }
 
         [TestMethod]
@@ -108,7 +108,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         }
     ]
 }";
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                   .WithFile("vcpkg.spdx.json", spdxFile)
                                                     .ExecuteDetector();
 
@@ -137,7 +137,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var spdxFile = "{}";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                 .WithFile("vcpkg.spdx.json", spdxFile)
                 .ExecuteDetector();
 
@@ -153,7 +153,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var spdxFile = "invalidspdxfile";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                 .WithFile("vcpkg.spdx.json", spdxFile)
                 .ExecuteDetector();
 

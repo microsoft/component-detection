@@ -28,19 +28,19 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public virtual PackageURL PackageUrl { get; }
 
         [JsonIgnore]
-        internal string DebuggerDisplay => $"{Id}";
+        internal string DebuggerDisplay => $"{this.Id}";
 
         protected string ValidateRequiredInput(string input, string fieldName, string componentType)
         {
             return string.IsNullOrWhiteSpace(input)
-                ? throw new ArgumentNullException(fieldName, NullPropertyExceptionMessage(fieldName, componentType))
+                ? throw new ArgumentNullException(fieldName, this.NullPropertyExceptionMessage(fieldName, componentType))
                 : input;
         }
 
         protected T ValidateRequiredInput<T>(T input, string fieldName, string componentType)
         {
             // Null coalescing for generic types is not available until C# 8
-            return EqualityComparer<T>.Default.Equals(input, default(T)) ? throw new ArgumentNullException(fieldName, NullPropertyExceptionMessage(fieldName, componentType)) : input;
+            return EqualityComparer<T>.Default.Equals(input, default(T)) ? throw new ArgumentNullException(fieldName, this.NullPropertyExceptionMessage(fieldName, componentType)) : input;
         }
 
         protected string NullPropertyExceptionMessage(string propertyName, string componentType)

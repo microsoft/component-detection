@@ -35,9 +35,9 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
             public IList<PodDependency> Dependencies { get; set; }
 
-            public string Podspec => Name.Split('/', 2)[0];
+            public string Podspec => this.Name.Split('/', 2)[0];
 
-            public bool IsSubspec => Name != Podspec;
+            public bool IsSubspec => this.Name != this.Podspec;
 
             public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
             {
@@ -49,18 +49,18 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
                 var podInfo = parser.Consume<Scalar>();
                 var components = podInfo.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
-                Name = components[0].Trim();
-                Version = components[1].Trim();
+                this.Name = components[0].Trim();
+                this.Version = components[1].Trim();
 
                 if (hasDependencies)
                 {
-                    Dependencies = (IList<PodDependency>)nestedObjectDeserializer(typeof(IList<PodDependency>));
+                    this.Dependencies = (IList<PodDependency>)nestedObjectDeserializer(typeof(IList<PodDependency>));
 
                     parser.Consume<MappingEnd>();
                 }
                 else
                 {
-                    Dependencies = Array.Empty<PodDependency>();
+                    this.Dependencies = Array.Empty<PodDependency>();
                 }
             }
 
@@ -76,16 +76,16 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
             public string PodVersion { get; set; }
 
-            public string Podspec => PodName.Split('/', 2)[0];
+            public string Podspec => this.PodName.Split('/', 2)[0];
 
-            public bool IsSubspec => PodName != Podspec;
+            public bool IsSubspec => this.PodName != this.Podspec;
 
             public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
             {
                 var scalar = parser.Consume<Scalar>();
                 var components = scalar.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
-                PodName = components[0].Trim();
-                PodVersion = components.Length > 1 ? components[1].Trim() : null;
+                this.PodName = components[0].Trim();
+                this.PodVersion = components.Length > 1 ? components[1].Trim() : null;
             }
 
             public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
@@ -122,17 +122,17 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
             public PodfileLock()
             {
-                Dependencies = Array.Empty<PodDependency>();
-                PodspecRepositories = new Dictionary<string, IList<string>>();
-                PodspecChecksums = new Dictionary<string, string>();
-                ExternalSources = new Dictionary<string, IDictionary<string, string>>();
-                CheckoutOptions = new Dictionary<string, IDictionary<string, string>>();
-                Pods = Array.Empty<Pod>();
+                this.Dependencies = Array.Empty<PodDependency>();
+                this.PodspecRepositories = new Dictionary<string, IList<string>>();
+                this.PodspecChecksums = new Dictionary<string, string>();
+                this.ExternalSources = new Dictionary<string, IDictionary<string, string>>();
+                this.CheckoutOptions = new Dictionary<string, IDictionary<string, string>>();
+                this.Pods = Array.Empty<Pod>();
             }
 
             public string GetSpecRepositoryOfSpec(string specName)
             {
-                foreach (var repository in PodspecRepositories)
+                foreach (var repository in this.PodspecRepositories)
                 {
                     if (repository.Value.Contains(specName))
                     {
@@ -154,25 +154,6 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
             }
         }
 
-        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
-        {
-            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-            var file = processRequest.ComponentStream;
-
-            Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
-
-            try
-            {
-                var podfileLock = await ParsePodfileLock(file);
-
-                ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
-            }
-            catch (Exception e)
-            {
-                Logger.LogFailedReadingFile(file.Location, e);
-            }
-        }
-
         private static async Task<PodfileLock> ParsePodfileLock(IComponentStream file)
         {
             var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
@@ -182,6 +163,70 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     .Build();
 
             return deserializer.Deserialize<PodfileLock>(input);
+        }
+
+        private static (Pod pod, string key, DetectedComponent detectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
+        {
+            return podfileLock.Pods.Select(pod =>
+            {
+                // Find the spec repository URL for this pod
+                var specRepository = podfileLock.GetSpecRepositoryOfSpec(pod.Podspec) ?? string.Empty;
+
+                // Check if the Podspec comes from a git repository or not
+                TypedComponent typedComponent;
+                string key;
+                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
+                    && checkoutOptions.TryGetValue(":git", out var gitOption)
+                    && checkoutOptions.TryGetValue(":commit", out var commitOption))
+                {
+                    // Create the Git component
+                    gitOption = NormalizePodfileGitUri(gitOption);
+                    typedComponent = new GitComponent(new Uri(gitOption), commitOption);
+                    key = $"{commitOption}@{gitOption}";
+                }
+                else
+                {
+                    // Create the Pod component
+                    typedComponent = new PodComponent(pod.Podspec, pod.Version, specRepository);
+                    key = $"{pod.Podspec}:{pod.Version}@{specRepository}";
+                }
+
+                var detectedComponent = new DetectedComponent(typedComponent);
+
+                return (pod, key, detectedComponent);
+            })
+            .ToArray();
+        }
+
+        private static string NormalizePodfileGitUri(string gitOption)
+        {
+            // Podfiles can be built using git@ references to .git files, but this is not a valid Uri
+            // schema. Normalize to https:// so Uri creation doesn't fail
+            if (gitOption.StartsWith("git@", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"https://{gitOption[4..]}";
+            }
+
+            return gitOption;
+        }
+
+        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+        {
+            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+            var file = processRequest.ComponentStream;
+
+            this.Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
+
+            try
+            {
+                var podfileLock = await ParsePodfileLock(file);
+
+                this.ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
+            }
+            catch (Exception e)
+            {
+                this.Logger.LogFailedReadingFile(file.Location, e);
+            }
         }
 
         private void ProcessPodfileLock(
@@ -205,7 +250,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 // Check if the pod is a root component and add it to the list of discovered components
                 if (rootPodspecs.Contains(pod.Podspec))
                 {
-                    if (nonRootComponents.TryGetValue(key, out DetectedComponent existingComponent))
+                    if (nonRootComponents.TryGetValue(key, out var existingComponent))
                     {
                         rootComponents.TryAdd(key, existingComponent);
                         nonRootComponents.Remove(key);
@@ -241,9 +286,9 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 // Check if the Podspec comes from a git repository or not
                 TypedComponent typedComponent;
                 string key;
-                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out IDictionary<string, string> checkoutOptions)
-                    && checkoutOptions.TryGetValue(":git", out string gitOption)
-                    && checkoutOptions.TryGetValue(":commit", out string commitOption))
+                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
+                    && checkoutOptions.TryGetValue(":git", out var gitOption)
+                    && checkoutOptions.TryGetValue(":commit", out var commitOption))
                 {
                     // Create the Git component
                     gitOption = NormalizePodfileGitUri(gitOption);
@@ -265,7 +310,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 // Check if the pod is a root component and add it to the list of discovered components
                 if (rootPodspecs.Contains(pod.Podspec))
                 {
-                    if (nonRootComponents.TryGetValue(key, out DetectedComponent existingComponent))
+                    if (nonRootComponents.TryGetValue(key, out var existingComponent))
                     {
                         rootComponents.TryAdd(key, existingComponent);
                         nonRootComponents.Remove(key);
@@ -284,7 +329,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 podSpecs.TryAdd(pod.Podspec, key);
 
                 // Update the pod dependencies map
-                if (podDependencies.TryGetValue(key, out List<PodDependency> dependencies))
+                if (podDependencies.TryGetValue(key, out var dependencies))
                 {
                     dependencies.AddRange(pod.Dependencies);
                 }
@@ -301,7 +346,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
                 foreach (var dependency in pod.Value)
                 {
-                    if (podSpecs.TryGetValue(dependency.Podspec, out string dependencyKey))
+                    if (podSpecs.TryGetValue(dependency.Podspec, out var dependencyKey))
                     {
                         if (dependencyKey != pod.Key)
                         {
@@ -311,7 +356,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     }
                     else
                     {
-                        Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
+                        this.Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
                     }
                 }
             }
@@ -335,7 +380,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 {
                     var dependency = dependencies.Dequeue();
 
-                    if (rootComponents.TryGetValue(dependency, out DetectedComponent detectedRootComponent))
+                    if (rootComponents.TryGetValue(dependency, out var detectedRootComponent))
                     {
                         // Found another root component
                         singleFileComponentRecorder.RegisterUsage(
@@ -343,7 +388,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                             isExplicitReferencedDependency: true,
                             parentComponentId: rootComponent.Value.Component.Id);
                     }
-                    else if (nonRootComponents.TryGetValue(dependency, out DetectedComponent detectedComponent))
+                    else if (nonRootComponents.TryGetValue(dependency, out var detectedComponent))
                     {
                         singleFileComponentRecorder.RegisterUsage(
                             detectedComponent,
@@ -351,7 +396,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                             parentComponentId: rootComponent.Value.Component.Id);
 
                         // Add the new dependecies to the queue
-                        if (dependenciesMap.TryGetValue(dependency, out HashSet<string> newDependencies))
+                        if (dependenciesMap.TryGetValue(dependency, out var newDependencies))
                         {
                             newDependencies.ToList().ForEach(dependencies.Enqueue);
                         }
@@ -373,51 +418,6 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     component.Value,
                     isExplicitReferencedDependency: true);
             }
-        }
-
-        private static (Pod pod, string key, DetectedComponent detectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
-        {
-            return podfileLock.Pods.Select(pod =>
-            {
-                // Find the spec repository URL for this pod
-                var specRepository = podfileLock.GetSpecRepositoryOfSpec(pod.Podspec) ?? string.Empty;
-
-                // Check if the Podspec comes from a git repository or not
-                TypedComponent typedComponent;
-                string key;
-                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out IDictionary<string, string> checkoutOptions)
-                    && checkoutOptions.TryGetValue(":git", out string gitOption)
-                    && checkoutOptions.TryGetValue(":commit", out string commitOption))
-                {
-                    // Create the Git component
-                    gitOption = NormalizePodfileGitUri(gitOption);
-                    typedComponent = new GitComponent(new Uri(gitOption), commitOption);
-                    key = $"{commitOption}@{gitOption}";
-                }
-                else
-                {
-                    // Create the Pod component
-                    typedComponent = new PodComponent(pod.Podspec, pod.Version, specRepository);
-                    key = $"{pod.Podspec}:{pod.Version}@{specRepository}";
-                }
-
-                var detectedComponent = new DetectedComponent(typedComponent);
-
-                return (pod, key, detectedComponent);
-            })
-            .ToArray();
-        }
-
-        private static string NormalizePodfileGitUri(string gitOption)
-        {
-            // Podfiles can be built using git@ references to .git files, but this is not a valid Uri
-            // schema. Normalize to https:// so Uri creation doesn't fail
-            if (gitOption.StartsWith("git@", StringComparison.OrdinalIgnoreCase))
-            {
-                return $"https://{gitOption[4..]}";
-            }
-
-            return gitOption;
         }
     }
 }

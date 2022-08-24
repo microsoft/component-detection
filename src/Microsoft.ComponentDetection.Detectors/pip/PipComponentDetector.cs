@@ -31,10 +31,10 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         protected override async Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
         {
-            CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out string pythonExePath);
-            if (!await PythonCommandService.PythonExists(pythonExePath))
+            this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
+            if (!await this.PythonCommandService.PythonExists(pythonExePath))
             {
-                Logger.LogInfo($"No python found on system. Python detection will not run.");
+                this.Logger.LogInfo($"No python found on system. Python detection will not run.");
 
                 return Enumerable.Empty<ProcessRequest>().ToObservable();
             }
@@ -44,13 +44,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
-            CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out string pythonExePath);
+            this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
             try
             {
-                var initialPackages = await PythonCommandService.ParseFile(file.Location, pythonExePath);
+                var initialPackages = await this.PythonCommandService.ParseFile(file.Location, pythonExePath);
                 var listedPackage = initialPackages.Where(tuple => tuple.Item1 != null)
                     .Select(tuple => tuple.Item1)
                     .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -58,7 +58,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                     .Where(x => !x.PackageIsUnsafe())
                     .ToList();
 
-                var roots = await PythonResolver.ResolveRoots(listedPackage);
+                var roots = await this.PythonResolver.ResolveRoots(listedPackage);
 
                 RecordComponents(
                     singleFileComponentRecorder,
@@ -71,7 +71,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             }
             catch (Exception e)
             {
-                Logger.LogFailedReadingFile(file.Location, e);
+                this.Logger.LogFailedReadingFile(file.Location, e);
             }
         }
 

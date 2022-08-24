@@ -52,10 +52,9 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                     throw new FormatException("Lockfile did not contain a PackageSpec");
                 }
 
-                HashSet<string> frameworkComponents = GetFrameworkComponents(lockFile);
-                var explicitReferencedDependencies =
-                    GetTopLevelLibraries(lockFile)
-                    .Select(x => GetLibraryComponentWithDependencyLookup(lockFile.Libraries, x.name, x.version, x.versionRange))
+                var frameworkComponents = this.GetFrameworkComponents(lockFile);
+                var explicitReferencedDependencies = this.GetTopLevelLibraries(lockFile)
+                    .Select(x => this.GetLibraryComponentWithDependencyLookup(lockFile.Libraries, x.name, x.version, x.versionRange))
                     .ToList();
                 var explicitlyReferencedComponentIds =
                     explicitReferencedDependencies
@@ -63,20 +62,20 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                     .ToHashSet();
 
                 // Since we report projects as the location, we ignore the passed in single file recorder.
-                var singleFileComponentRecorder = ComponentRecorder.CreateSingleFileComponentRecorder(lockFile.PackageSpec.RestoreMetadata.ProjectPath);
+                var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(lockFile.PackageSpec.RestoreMetadata.ProjectPath);
                 foreach (var target in lockFile.Targets)
                 {
                     // This call to GetTargetLibrary is not guarded, because if this can't be resolved then something is fundamentally broken (e.g. an explicit dependency reference not being in the list of libraries)
                     foreach (var library in explicitReferencedDependencies.Select(x => target.GetTargetLibrary(x.Name)).Where(x => x != null))
                     {
-                        NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, frameworkComponents);
+                        this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, frameworkComponents);
                     }
                 }
             }
             catch (Exception e)
             {
                 // If something went wrong, just ignore the package
-                Logger.LogFailedReadingFile(processRequest.ComponentStream.Location, e);
+                this.Logger.LogFailedReadingFile(processRequest.ComponentStream.Location, e);
             }
 
             return Task.CompletedTask;
@@ -84,7 +83,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
         protected override Task OnDetectionFinished()
         {
-            Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonConvert.SerializeObject(frameworkComponentsThatWereOmmittedWithCount));
+            this.Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonConvert.SerializeObject(this.frameworkComponentsThatWereOmmittedWithCount));
 
             return Task.CompletedTask;
         }
@@ -98,8 +97,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             HashSet<string> dotnetRuntimePackageNames,
             HashSet<string> visited = null)
         {
-            if (IsAFrameworkComponent(dotnetRuntimePackageNames, library.Name, library.Dependencies)
-                       || library.Type == ProjectDependencyType)
+            if (this.IsAFrameworkComponent(dotnetRuntimePackageNames, library.Name, library.Dependencies)
+                || library.Type == ProjectDependencyType)
             {
                 return;
             }
@@ -127,7 +126,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 else
                 {
                     visited.Add(dependency.Id);
-                    NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, dotnetRuntimePackageNames, visited);
+                    this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, dotnetRuntimePackageNames, visited);
                 }
             }
         }
@@ -138,14 +137,14 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
             if (isAFrameworkComponent)
             {
-                frameworkComponentsThatWereOmmittedWithCount.AddOrUpdate(libraryName, 1, (name, existing) => existing + 1);
+                this.frameworkComponentsThatWereOmmittedWithCount.AddOrUpdate(libraryName, 1, (name, existing) => existing + 1);
 
                 if (dependencies != null)
                 {
                     // Also track shallow children if this is a top level library so we have a rough count of how many things have been ommitted + root relationships
                     foreach (var item in dependencies)
                     {
-                        frameworkComponentsThatWereOmmittedWithCount.AddOrUpdate(item.Id, 1, (name, existing) => existing + 1);
+                        this.frameworkComponentsThatWereOmmittedWithCount.AddOrUpdate(item.Id, 1, (name, existing) => existing + 1);
                     }
                 }
             }
@@ -166,7 +165,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 }
             }
 
-            // Next, we need to resolve project references -- This is a little funky, because project references are only stored via path in 
+            // Next, we need to resolve project references -- This is a little funky, because project references are only stored via path in
             //  project.assets.json, so we first build a list of all paths and then compare what is top level to them to resolve their
             //  associated library.
             var projectDirectory = Path.GetDirectoryName(lockFile.PackageSpec.RestoreMetadata.ProjectPath);
@@ -218,11 +217,11 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             if (matchingLibrary == null)
             {
                 matchingLibrary = matchingLibraryNames.First();
-                string logMessage = $"Couldn't satisfy lookup for {(versionRange != null ? versionRange.ToNormalizedString() : version.ToString())}. Falling back to first found component for {matchingLibrary.Name}, resolving to version {matchingLibrary.Version}.";
-                if (!alreadyLoggedWarnings.Contains(logMessage))
+                var logMessage = $"Couldn't satisfy lookup for {(versionRange != null ? versionRange.ToNormalizedString() : version.ToString())}. Falling back to first found component for {matchingLibrary.Name}, resolving to version {matchingLibrary.Version}.";
+                if (!this.alreadyLoggedWarnings.Contains(logMessage))
                 {
-                    Logger.LogWarning(logMessage);
-                    alreadyLoggedWarnings.Add(logMessage);
+                    this.Logger.LogWarning(logMessage);
+                    this.alreadyLoggedWarnings.Add(logMessage);
                 }
             }
 
@@ -234,24 +233,24 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             var frameworkDependencies = new HashSet<string>();
             foreach (var projectFileDependencyGroup in lockFile.ProjectFileDependencyGroups)
             {
-                var topLevelLibraries = GetTopLevelLibraries(lockFile);
+                var topLevelLibraries = this.GetTopLevelLibraries(lockFile);
                 foreach (var (name, version, versionRange) in topLevelLibraries)
                 {
-                    if (netCoreFrameworkNames.Contains(name))
+                    if (this.netCoreFrameworkNames.Contains(name))
                     {
                         frameworkDependencies.Add(name);
 
                         foreach (var target in lockFile.Targets)
                         {
                             var matchingLibrary = target.Libraries.FirstOrDefault(x => x.Name == name);
-                            HashSet<string> dependencyComponents = GetDependencyComponentIds(lockFile, target, matchingLibrary.Dependencies);
+                            var dependencyComponents = this.GetDependencyComponentIds(lockFile, target, matchingLibrary.Dependencies);
                             frameworkDependencies.UnionWith(dependencyComponents);
                         }
                     }
                 }
             }
 
-            foreach (var netstandardDep in netStandardDependencies)
+            foreach (var netstandardDep in this.netStandardDependencies)
             {
                 frameworkDependencies.Add(netstandardDep);
             }
@@ -262,7 +261,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         private HashSet<string> GetDependencyComponentIds(LockFile lockFile, LockFileTarget target, IList<PackageDependency> dependencies, HashSet<string> visited = null)
         {
             visited = visited ?? new HashSet<string>();
-            HashSet<string> currentComponents = new HashSet<string>();
+            var currentComponents = new HashSet<string>();
             foreach (var dependency in dependencies)
             {
                 if (visited.Contains(dependency.Id))
@@ -279,14 +278,14 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 else
                 {
                     visited.Add(dependency.Id);
-                    currentComponents.UnionWith(GetDependencyComponentIds(lockFile, target, libraryToExpand.Dependencies, visited));
+                    currentComponents.UnionWith(this.GetDependencyComponentIds(lockFile, target, libraryToExpand.Dependencies, visited));
                 }
             }
 
             return currentComponents;
         }
 
-        // This list is meant to encompass all net standard dependencies, but likely contains some net core app 1.x ones, too. 
+        // This list is meant to encompass all net standard dependencies, but likely contains some net core app 1.x ones, too.
         // The specific guidance we got around populating this list is to do so based on creating a dotnet core 1.x app to make sure we had the complete
         //  set of netstandard.library files that could show up in later sdk versions.
         private readonly string[] netStandardDependencies = new[]

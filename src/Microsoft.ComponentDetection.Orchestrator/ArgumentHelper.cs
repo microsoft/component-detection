@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using CommandLine;
@@ -11,29 +11,6 @@ namespace Microsoft.ComponentDetection.Orchestrator
     {
         [ImportMany]
         public IEnumerable<IScanArguments> ArgumentSets { get; set; }
-
-        public ArgumentHelper()
-        {
-            ArgumentSets = Enumerable.Empty<IScanArguments>();
-        }
-
-        public ParserResult<object> ParseArguments(string[] args)
-        {
-            return Parser.Default.ParseArguments(args, ArgumentSets.Select(x => x.GetType()).ToArray());
-        }
-
-        public ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
-        {
-            Parser p = new Parser(x =>
-            {
-                x.IgnoreUnknownArguments = ignoreInvalidArgs;
-
-                // This is not the main argument dispatch, so we don't want console output.
-                x.HelpWriter = null;
-            });
-
-            return p.ParseArguments<T>(args);
-        }
 
         public static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
         {
@@ -52,6 +29,29 @@ namespace Microsoft.ComponentDetection.Orchestrator
             }
 
             return detectorArgs;
+        }
+
+        public ArgumentHelper()
+        {
+            this.ArgumentSets = Enumerable.Empty<IScanArguments>();
+        }
+
+        public ParserResult<object> ParseArguments(string[] args)
+        {
+            return Parser.Default.ParseArguments(args, this.ArgumentSets.Select(x => x.GetType()).ToArray());
+        }
+
+        public ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
+        {
+            var p = new Parser(x =>
+            {
+                x.IgnoreUnknownArguments = ignoreInvalidArgs;
+
+                // This is not the main argument dispatch, so we don't want console output.
+                x.HelpWriter = null;
+            });
+
+            return p.ParseArguments<T>(args);
         }
     }
 }

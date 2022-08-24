@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,7 +22,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            detectorTestUtility = DetectorTestUtilityCreator.Create<PodComponentDetector>();
+            this.detectorTestUtility = DetectorTestUtilityCreator.Create<PodComponentDetector>();
         }
 
         [TestMethod]
@@ -32,7 +32,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
 COCOAPODS: 1.4.0.beta.1";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .ExecuteDetector();
 
@@ -68,7 +68,7 @@ SPEC CHECKSUMS:
 
 COCOAPODS: 0.39.0";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .ExecuteDetector();
 
@@ -77,12 +77,12 @@ COCOAPODS: 0.39.0";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(6, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
-            AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
-            AssertPodComponentNameAndVersion(detectedComponents, "Auth", "1.44.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "Auth", "1.44.1");
         }
 
         [TestMethod]
@@ -110,7 +110,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .ExecuteDetector();
 
@@ -119,8 +119,8 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(2, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "MSAL", "1.0.7");
-            AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "MSAL", "1.0.7");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
         }
 
         [TestMethod]
@@ -154,7 +154,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .ExecuteDetector();
 
@@ -163,7 +163,7 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
 
-            AssertGitComponentHashAndUrl(detectedComponents, "da7223e3c455fe558de361c611df36c6dcc4229d", "https://github.com/microsoftgraph/msgraph-sdk-objc.git");
+            this.AssertGitComponentHashAndUrl(detectedComponents, "da7223e3c455fe558de361c611df36c6dcc4229d", "https://github.com/microsoftgraph/msgraph-sdk-objc.git");
         }
 
         [TestMethod]
@@ -197,7 +197,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .ExecuteDetector();
 
@@ -206,7 +206,7 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
         }
 
         [TestMethod]
@@ -240,7 +240,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .ExecuteDetector();
 
@@ -249,7 +249,7 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
         }
 
         [TestMethod]
@@ -277,7 +277,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .ExecuteDetector();
 
@@ -286,8 +286,8 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(2, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "SVGKit", "2.1.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "SVGKit", "2.1.0");
         }
 
         [TestMethod]
@@ -310,7 +310,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .ExecuteDetector();
 
@@ -319,7 +319,7 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "Keys", "1.0.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "Keys", "1.0.1");
         }
 
         [TestMethod]
@@ -375,7 +375,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .WithFile("Podfile.lock", podfileLockContent2)
                                                     .ExecuteDetector();
@@ -385,14 +385,14 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(8, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
-            AssertPodComponentNameAndVersion(detectedComponents, "SVGKit", "2.1.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "SVGKit", "2.1.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
         }
 
         [TestMethod]
@@ -459,7 +459,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .WithFile("Podfile.lock", podfileLockContent2)
                                                     .ExecuteDetector();
@@ -469,27 +469,27 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(8, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
-            AssertGitComponentHashAndUrl(detectedComponents, "0d4db53890c664fb8605666e6fbccd14912ff821", "https://github.com/SVGKit/SVGKit.git");
-            AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
+            this.AssertGitComponentHashAndUrl(detectedComponents, "0d4db53890c664fb8605666e6fbccd14912ff821", "https://github.com/SVGKit/SVGKit.git");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
 
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.1"), root: (name: "AzureCore", version: "0.5.1"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureMobile", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
-            AssertGitComponentHasGitComponentDependencyRoot(componentRecorder, component: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.1"), root: (name: "AzureCore", version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureMobile", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
+            this.AssertGitComponentHasGitComponentDependencyRoot(componentRecorder, component: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
 
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
-            AssertPodComponentHasGitComponentDependencyRoot(componentRecorder, component: (name: "CocoaLumberjack", version: "3.6.0"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureCore", version: "0.5.1"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureData", version: "0.5.0"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureCore", version: "0.5.1"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
+            this.AssertPodComponentHasGitComponentDependencyRoot(componentRecorder, component: (name: "CocoaLumberjack", version: "3.6.0"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureCore", version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureCore", version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureData", version: "0.5.0"));
         }
 
         [TestMethod]
@@ -556,7 +556,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .WithFile("Podfile.lock", podfileLockContent2)
                                                     .ExecuteDetector();
@@ -566,27 +566,27 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(8, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
-            AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
-            AssertGitComponentHashAndUrl(detectedComponents, "0d4db53890c664fb8605666e6fbccd14912ff821", "https://github.com/SVGKit/SVGKit.git");
-            AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureMobile", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "KeychainAccess", "3.2.1");
+            this.AssertGitComponentHashAndUrl(detectedComponents, "0d4db53890c664fb8605666e6fbccd14912ff821", "https://github.com/SVGKit/SVGKit.git");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
 
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.1"), root: (name: "AzureCore", version: "0.5.1"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureMobile", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
-            AssertGitComponentHasGitComponentDependencyRoot(componentRecorder, component: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.1"), root: (name: "AzureCore", version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureMobile", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
+            this.AssertGitComponentHasGitComponentDependencyRoot(componentRecorder, component: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
 
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
-            AssertPodComponentHasGitComponentDependencyRoot(componentRecorder, component: (name: "CocoaLumberjack", version: "3.6.0"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureCore", version: "0.5.1"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureData", version: "0.5.0"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureCore", version: "0.5.1"));
-            AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
+            this.AssertPodComponentHasGitComponentDependencyRoot(componentRecorder, component: (name: "CocoaLumberjack", version: "3.6.0"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureCore", version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureCore", version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureData", version: "0.5.0"));
         }
 
         [TestMethod]
@@ -637,7 +637,7 @@ SPEC CHECKSUMS:
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .WithFile("Podfile.lock", podfileLockContent2)
                                                     .WithFile("Podfile.lock", podfileLockContent3)
@@ -648,7 +648,7 @@ COCOAPODS: 1.8.4";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
 
-            AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
+            this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
         }
 
         [TestMethod]
@@ -684,7 +684,7 @@ SPEC CHECKSUMS:
 
 COCOAPODS: 1.8.4";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("Podfile.lock", podfileLockContent)
                                                     .WithFile("Podfile.lock", podfileLockContent2, fileLocation: Path.Join(Path.GetTempPath(), "sub-folder", "Podfile.lock"))
                                                     .ExecuteDetector();
@@ -704,7 +704,8 @@ COCOAPODS: 1.8.4";
                 detectedComponents.SingleOrDefault(component =>
                 component.Component is PodComponent &&
                 (component.Component as PodComponent).Name.Equals(name) &&
-                (component.Component as PodComponent).Version.Equals(version)), $"Component with name {name} and version {version} was not found");
+                (component.Component as PodComponent).Version.Equals(version)),
+                $"Component with name {name} and version {version} was not found");
         }
 
         private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
@@ -713,7 +714,8 @@ COCOAPODS: 1.8.4";
                 detectedComponents.SingleOrDefault(component =>
                 component.Component is GitComponent &&
                 (component.Component as GitComponent).CommitHash.Equals(commitHash) &&
-                (component.Component as GitComponent).RepositoryUrl.Equals(repositoryUrl)), $"Component with commit hash {commitHash} and repository url {repositoryUrl} was not found");
+                (component.Component as GitComponent).RepositoryUrl.Equals(repositoryUrl)),
+                $"Component with commit hash {commitHash} and repository url {repositoryUrl} was not found");
         }
 
         private void AssertPodComponentHasPodComponentDependencyRoot(IComponentRecorder recorder, (string name, string version) component, (string name, string version) root)

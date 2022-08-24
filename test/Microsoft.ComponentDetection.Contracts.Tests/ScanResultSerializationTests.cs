@@ -18,7 +18,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            scanResultUnderTest = new ScanResult
+            this.scanResultUnderTest = new ScanResult
             {
                 ResultCode = ProcessingResultCode.PartialSuccess,
                 ComponentsFound = new[]
@@ -52,16 +52,18 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
                         Version = 2,
                     },
                 },
+                SourceDirectory = "D:\\test\\directory",
             };
         }
 
         [TestMethod]
         public void ScanResultSerialization_HappyPath()
         {
-            var serializedResult = JsonConvert.SerializeObject(scanResultUnderTest);
+            var serializedResult = JsonConvert.SerializeObject(this.scanResultUnderTest);
             var actual = JsonConvert.DeserializeObject<ScanResult>(serializedResult);
 
             actual.ResultCode.Should().Be(ProcessingResultCode.PartialSuccess);
+            actual.SourceDirectory.Should().Be("D:\\test\\directory");
             actual.ComponentsFound.Count().Should().Be(1);
             var actualDetectedComponent = actual.ComponentsFound.First();
             actualDetectedComponent.DetectorId.Should().Be("NpmDetectorId");
@@ -89,10 +91,11 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestMethod]
         public void ScanResultSerialization_ExpectedJsonFormat()
         {
-            var serializedResult = JsonConvert.SerializeObject(scanResultUnderTest);
-            JObject json = JObject.Parse(serializedResult);
+            var serializedResult = JsonConvert.SerializeObject(this.scanResultUnderTest);
+            var json = JObject.Parse(serializedResult);
 
             json.Value<string>("resultCode").Should().Be("PartialSuccess");
+            json.Value<string>("sourceDirectory").Should().Be("D:\\test\\directory");
             var foundComponent = json["componentsFound"].First();
 
             foundComponent.Value<string>("detectorId").Should().Be("NpmDetectorId");

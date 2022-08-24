@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
@@ -7,6 +7,10 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 {
     public class MavenStyleDependencyGraphParser
     {
+        private static readonly char[] TrimCharacters = new char[] { '|', ' ' };
+
+        private static readonly string[] ComponentSplitters = new[] { "+-", "\\-" };
+
         public GraphNode<string> DependencyCategory { get; private set; }
 
         private Stack<GraphNodeAtLevel<string>> stack = new Stack<GraphNodeAtLevel<string>>();
@@ -15,18 +19,14 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         private DetectedComponent topLevelComponent = null;
 
-        private static readonly char[] TrimCharacters = new char[] { '|', ' ' };
-
-        private static readonly string[] ComponentSplitters = new[] { "+-", "\\-" };
-
         private void StartDependencyCategory(string categoryName)
         {
-            if (DependencyCategory != null)
+            if (this.DependencyCategory != null)
             {
                 throw new InvalidOperationException("Current category must be finished before starting new category.");
             }
 
-            DependencyCategory = new GraphNode<string>(categoryName);
+            this.DependencyCategory = new GraphNode<string>(categoryName);
         }
 
         public GraphNode<string> Parse(string[] lines)
@@ -34,21 +34,21 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             foreach (var line in lines)
             {
                 var localLine = line.Trim(TrimCharacters);
-                if (!string.IsNullOrWhiteSpace(localLine) && DependencyCategory == null)
+                if (!string.IsNullOrWhiteSpace(localLine) && this.DependencyCategory == null)
                 {
-                    StartDependencyCategory(localLine);
+                    this.StartDependencyCategory(localLine);
                 }
                 else
                 {
                     var splitterOrDefault = ComponentSplitters.FirstOrDefault(x => localLine.Contains(x));
                     if (splitterOrDefault != null)
                     {
-                        TrackDependency(line.IndexOf(splitterOrDefault), localLine.Split(new[] { splitterOrDefault }, StringSplitOptions.None)[1].Trim());
+                        this.TrackDependency(line.IndexOf(splitterOrDefault), localLine.Split(new[] { splitterOrDefault }, StringSplitOptions.None)[1].Trim());
                     }
                 }
             }
 
-            return DependencyCategory;
+            return this.DependencyCategory;
         }
 
         public void Parse(string[] lines, ISingleFileComponentRecorder singleFileComponentRecorder)
@@ -56,10 +56,10 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             foreach (var line in lines)
             {
                 var localLine = line.Trim(TrimCharacters);
-                if (!string.IsNullOrWhiteSpace(localLine) && topLevelComponent == null)
+                if (!string.IsNullOrWhiteSpace(localLine) && this.topLevelComponent == null)
                 {
                     var topLevelMavenStringInfo = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(localLine);
-                    topLevelComponent = topLevelMavenStringInfo.Component;
+                    this.topLevelComponent = topLevelMavenStringInfo.Component;
                     singleFileComponentRecorder.RegisterUsage(
                         topLevelMavenStringInfo.Component,
                         isDevelopmentDependency: topLevelMavenStringInfo.IsDevelopmentDependency,
@@ -71,7 +71,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
                     if (splitterOrDefault != null)
                     {
-                        RecordDependencies(line.IndexOf(splitterOrDefault), localLine.Split(new[] { splitterOrDefault }, StringSplitOptions.None)[1].Trim(), singleFileComponentRecorder);
+                        this.RecordDependencies(line.IndexOf(splitterOrDefault), localLine.Split(new[] { splitterOrDefault }, StringSplitOptions.None)[1].Trim(), singleFileComponentRecorder);
                     }
                 }
             }
@@ -79,40 +79,40 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         private void TrackDependency(int position, string versionedComponent)
         {
-            while (stack.Count > 0 && stack.Peek().ParseLevel >= position)
+            while (this.stack.Count > 0 && this.stack.Peek().ParseLevel >= position)
             {
-                stack.Pop();
+                this.stack.Pop();
             }
 
             var myNode = new GraphNodeAtLevel<string>(position, versionedComponent);
 
-            if (stack.Count > 0)
+            if (this.stack.Count > 0)
             {
-                var parent = stack.Peek();
+                var parent = this.stack.Peek();
                 parent.Children.Add(myNode);
                 myNode.Parents.Add(parent);
             }
             else
             {
-                DependencyCategory.Children.Add(myNode);
+                this.DependencyCategory.Children.Add(myNode);
             }
 
-            stack.Push(myNode);
+            this.stack.Push(myNode);
         }
 
         private void RecordDependencies(int position, string versionedComponent, ISingleFileComponentRecorder componentRecorder)
         {
-            while (tupleStack.Count > 0 && tupleStack.Peek().ParseLevel >= position)
+            while (this.tupleStack.Count > 0 && this.tupleStack.Peek().ParseLevel >= position)
             {
-                tupleStack.Pop();
+                this.tupleStack.Pop();
             }
 
             var componentAndDevDependencyTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(versionedComponent);
             var newTuple = (ParseLevel: position, componentAndDevDependencyTuple.Component);
 
-            if (tupleStack.Count > 0)
+            if (this.tupleStack.Count > 0)
             {
-                var parent = tupleStack.Peek().Component;
+                var parent = this.tupleStack.Peek().Component;
                 componentRecorder.RegisterUsage(parent);
                 componentRecorder.RegisterUsage(
                     newTuple.Component,
@@ -125,12 +125,12 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 componentRecorder.RegisterUsage(
                     newTuple.Component,
                     isExplicitReferencedDependency: true,
-                    parentComponentId: topLevelComponent.Component.Id,
+                    parentComponentId: this.topLevelComponent.Component.Id,
                     isDevelopmentDependency: componentAndDevDependencyTuple.IsDevelopmentDependency,
                     dependencyScope: componentAndDevDependencyTuple.dependencyScope);
             }
 
-            tupleStack.Push(newTuple);
+            this.tupleStack.Push(newTuple);
         }
 
         private class GraphNodeAtLevel<T> : GraphNode<T>
@@ -140,7 +140,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             public GraphNodeAtLevel(int level, T value)
                 : base(value)
             {
-                ParseLevel = level;
+                this.ParseLevel = level;
             }
         }
     }

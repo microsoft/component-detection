@@ -10,7 +10,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     {
         public static string GetWellFormedEmptyYarnV1LockFile()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             builder.AppendLine("# THIS IS A YARNFILE");
             builder.AppendLine("# yarn lockfile v1");
@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static string GetWellFormedEmptyYarnV2LockFile()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             builder.AppendLine("# THIS IS A YARNFILE");
             builder.AppendLine();

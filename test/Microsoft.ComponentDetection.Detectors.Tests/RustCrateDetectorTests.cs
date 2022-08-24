@@ -25,16 +25,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            detectorTestUtility = DetectorTestUtilityCreator.Create<RustCrateDetector>();
-            detectorV2TestUtility = DetectorTestUtilityCreator.Create<RustCrateV2Detector>();
+            this.detectorTestUtility = DetectorTestUtilityCreator.Create<RustCrateDetector>();
+            this.detectorV2TestUtility = DetectorTestUtilityCreator.Create<RustCrateV2Detector>();
         }
 
         [TestMethod]
         public async Task TestGraphIsCorrect()
         {
-            var (result, componentRecorder) = await detectorTestUtility
-                                                    .WithFile("Cargo.lock", testCargoLockString)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
+            var (result, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile("Cargo.lock", this.testCargoLockString)
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -77,8 +77,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var cargoDefinitionPairsMatrix = new List<(string, string)>
             {
-                (null, testCargoTomlString),
-                (testCargoLockString, null),
+                (null, this.testCargoTomlString),
+                (this.testCargoLockString, null),
                 (null, null),
             };
 
@@ -86,15 +86,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 if (cargoDefinitionPairs.Item1 != null)
                 {
-                    detectorTestUtility.WithFile("Cargo.lock", cargoDefinitionPairs.Item1);
+                    this.detectorTestUtility.WithFile("Cargo.lock", cargoDefinitionPairs.Item1);
                 }
 
                 if (cargoDefinitionPairs.Item2 != null)
                 {
-                    detectorTestUtility.WithFile("Cargo.toml", cargoDefinitionPairs.Item2, new List<string> { "Cargo.toml" });
+                    this.detectorTestUtility.WithFile("Cargo.toml", cargoDefinitionPairs.Item2, new List<string> { "Cargo.toml" });
                 }
 
-                var (result, componentRecorder) = await detectorTestUtility.ExecuteDetector();
+                var (result, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
 
                 Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
 
@@ -106,26 +106,26 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public async Task TestSupportsCargoV1AndV2DefinitionPairs()
         {
             var componentRecorder = new ComponentRecorder();
-            ScanRequest request = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder);
+            var request = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder);
 
-            var (result1, _) = await detectorTestUtility
+            var (result1, _) = await this.detectorTestUtility
                                                     /* v1 files */
-                                                    .WithFile("Cargo.lock", testCargoLockString)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.lock", this.testCargoLockString)
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
                                                     /* v2 files */
-                                                    .WithFile("Cargo.lock", testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "v2", "Cargo.lock"))
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Join(Path.GetTempPath(), "v2", "Cargo.toml"))
+                                                    .WithFile("Cargo.lock", this.testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "v2", "Cargo.lock"))
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Join(Path.GetTempPath(), "v2", "Cargo.toml"))
                                                     /* so we can reuse the component recorder */
                                                     .WithScanRequest(request)
                                                     .ExecuteDetector();
 
-            var (result2, _) = await detectorV2TestUtility
+            var (result2, _) = await this.detectorV2TestUtility
                                                     /* v1 files */
-                                                    .WithFile("Cargo.lock", testCargoLockString)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.lock", this.testCargoLockString)
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
                                                     /* v2 files */
-                                                    .WithFile("Cargo.lock", testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "v2", "Cargo.lock"))
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Join(Path.GetTempPath(), "v2", "Cargo.toml"))
+                                                    .WithFile("Cargo.lock", this.testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "v2", "Cargo.lock"))
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Join(Path.GetTempPath(), "v2", "Cargo.toml"))
                                                     /* so we can reuse the component recorder */
                                                     .WithScanRequest(request)
                                                     .ExecuteDetector();
@@ -141,11 +141,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestSupportsMultipleCargoV1DefinitionPairs()
         {
-            var (result, componentRecorder) = await detectorTestUtility
-                                                    .WithFile("Cargo.lock", testCargoLockString)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
-                                                    .WithFile("Cargo.lock", testCargoLockString, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.toml"))
+            var (result, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile("Cargo.lock", this.testCargoLockString)
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.lock", this.testCargoLockString, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.toml"))
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -166,11 +166,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestSupportsMultipleCargoV2DefinitionPairs()
         {
-            var (result, componentRecorder) = await detectorV2TestUtility
-                                                    .WithFile("Cargo.lock", testCargoLockV2String)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
-                                                    .WithFile("Cargo.lock", testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.toml"))
+            var (result, componentRecorder) = await this.detectorV2TestUtility
+                                                    .WithFile("Cargo.lock", this.testCargoLockV2String)
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.lock", this.testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.toml"))
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -191,9 +191,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestRustDetector()
         {
-            var (result, componentRecorder) = await detectorTestUtility
-                                                    .WithFile("Cargo.lock", testCargoLockString)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
+            var (result, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile("Cargo.lock", this.testCargoLockString)
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -261,15 +261,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestRustV2Detector()
         {
-            var (result, componentRecorder) = await detectorV2TestUtility
-                                                    .WithFile("Cargo.lock", testCargoLockV2String)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
+            var (result, componentRecorder) = await this.detectorV2TestUtility
+                                                    .WithFile("Cargo.lock", this.testCargoLockV2String)
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
             Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
 
-            List<string> packageVersions = new List<string>()
+            var packageVersions = new List<string>()
             {
                 "my_dependency 1.0.0",
                 "other_dependency 0.4.0",
@@ -332,9 +332,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestRustV2Detector_DoesNotRunV1Format()
         {
-            var (result, componentRecorder) = await detectorV2TestUtility
-                                                    .WithFile("Cargo.lock", testCargoLockString)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
+            var (result, componentRecorder) = await this.detectorV2TestUtility
+                                                    .WithFile("Cargo.lock", this.testCargoLockString)
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -344,9 +344,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestRustV1Detector_DoesNotRunV2Format()
         {
-            var (result, componentRecorder) = await detectorTestUtility
-                                                    .WithFile("Cargo.lock", testCargoLockV2String)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
+            var (result, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile("Cargo.lock", this.testCargoLockV2String)
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -356,7 +356,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestRustV2Detector_DuplicatePackage()
         {
-            string testCargoLock = @"
+            var testCargoLock = @"
 [[package]]
 name = ""my_dependency""
 version = ""1.0.0""
@@ -425,9 +425,9 @@ version = ""2.0.0""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
 
-            var (result, componentRecorder) = await detectorV2TestUtility
+            var (result, componentRecorder) = await this.detectorV2TestUtility
                                                     .WithFile("Cargo.lock", testCargoLock)
-                                                    .WithFile("Cargo.toml", testCargoTomlString, new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.toml", this.testCargoTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -493,7 +493,7 @@ name = ""other_dependency_dependency""
 version = ""0.1.12-alpha.6""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
-            var (result, componentRecorder) = await detectorV2TestUtility
+            var (result, componentRecorder) = await this.detectorV2TestUtility
                                                     .WithFile("Cargo.lock", testLockString)
                                                     .WithFile("Cargo.toml", testTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
@@ -516,17 +516,17 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         [TestMethod]
         public async Task TestRustV1Detector_WorkspacesWithTopLevelDependencies()
         {
-            var (result, componentRecorder) = await detectorTestUtility
-                                                    .WithFile("Cargo.lock", string.Concat(testWorkspaceLockBaseDependency, testWorkspaceLockV1NoBaseString))
-                                                    .WithFile("Cargo.toml", string.Concat(testWorkspaceTomlBaseDependency, testWorkspacesBaseTomlString), new List<string> { "Cargo.toml" })
-                                                    .WithFile("Cargo.toml", testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work", "Cargo.toml"))
-                                                    .WithFile("Cargo.toml", testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work2", "Cargo.toml"))
+            var (result, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile("Cargo.lock", string.Concat(this.testWorkspaceLockBaseDependency, this.testWorkspaceLockV1NoBaseString))
+                                                    .WithFile("Cargo.toml", string.Concat(this.testWorkspaceTomlBaseDependency, this.testWorkspacesBaseTomlString), new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.toml", this.testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work", "Cargo.toml"))
+                                                    .WithFile("Cargo.toml", this.testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work2", "Cargo.toml"))
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
             Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
 
-            List<string> packageVersions = new List<string>()
+            var packageVersions = new List<string>()
             {
                 "dev_dependency_dependency 0.2.23",
                 "one_more_dev_dep 1.0.0",
@@ -589,17 +589,17 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         [TestMethod]
         public async Task TestRustV2Detector_WorkspacesWithTopLevelDependencies()
         {
-            var (result, componentRecorder) = await detectorV2TestUtility
-                                                    .WithFile("Cargo.lock", string.Concat(testWorkspaceLockBaseDependency, testWorkspaceLockV2NoBaseString))
-                                                    .WithFile("Cargo.toml", string.Concat(testWorkspaceTomlBaseDependency, testWorkspacesBaseTomlString), new List<string> { "Cargo.toml" })
-                                                    .WithFile("Cargo.toml", testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work", "Cargo.toml"))
-                                                    .WithFile("Cargo.toml", testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work2", "Cargo.toml"))
+            var (result, componentRecorder) = await this.detectorV2TestUtility
+                                                    .WithFile("Cargo.lock", string.Concat(this.testWorkspaceLockBaseDependency, this.testWorkspaceLockV2NoBaseString))
+                                                    .WithFile("Cargo.toml", string.Concat(this.testWorkspaceTomlBaseDependency, this.testWorkspacesBaseTomlString), new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.toml", this.testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work", "Cargo.toml"))
+                                                    .WithFile("Cargo.toml", this.testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work2", "Cargo.toml"))
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
             Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
 
-            List<string> packageVersions = new List<string>()
+            var packageVersions = new List<string>()
             {
                 "dev_dependency_dependency 0.2.23",
                 "one_more_dev_dep 1.0.0",
@@ -662,11 +662,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         [TestMethod]
         public async Task TestRustV1Detector_WorkspacesNoTopLevelDependencies()
         {
-            var (result, componentRecorder) = await detectorTestUtility
-                                                    .WithFile("Cargo.lock", testWorkspaceLockV1NoBaseString)
-                                                    .WithFile("Cargo.toml", testWorkspacesBaseTomlString, new List<string> { "Cargo.toml" })
-                                                    .WithFile("Cargo.toml", testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work", "Cargo.toml"))
-                                                    .WithFile("Cargo.toml", testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work2", "Cargo.toml"))
+            var (result, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile("Cargo.lock", this.testWorkspaceLockV1NoBaseString)
+                                                    .WithFile("Cargo.toml", this.testWorkspacesBaseTomlString, new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.toml", this.testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work", "Cargo.toml"))
+                                                    .WithFile("Cargo.toml", this.testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work2", "Cargo.toml"))
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -676,11 +676,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         [TestMethod]
         public async Task TestRustV2Detector_WorkspacesNoTopLevelDependencies()
         {
-            var (result, componentRecorder) = await detectorV2TestUtility
-                                                    .WithFile("Cargo.lock", testWorkspaceLockV2NoBaseString)
-                                                    .WithFile("Cargo.toml", testWorkspacesBaseTomlString, new List<string> { "Cargo.toml" })
-                                                    .WithFile("Cargo.toml", testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work", "Cargo.toml"))
-                                                    .WithFile("Cargo.toml", testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work2", "Cargo.toml"))
+            var (result, componentRecorder) = await this.detectorV2TestUtility
+                                                    .WithFile("Cargo.lock", this.testWorkspaceLockV2NoBaseString)
+                                                    .WithFile("Cargo.toml", this.testWorkspacesBaseTomlString, new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.toml", this.testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work", "Cargo.toml"))
+                                                    .WithFile("Cargo.toml", this.testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "test-work2", "Cargo.toml"))
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -690,11 +690,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         [TestMethod]
         public async Task TestRustV1Detector_WorkspacesWithSubDirectories()
         {
-            var (result, componentRecorder) = await detectorTestUtility
-                                                    .WithFile("Cargo.lock", testWorkspaceLockV1NoBaseString)
-                                                    .WithFile("Cargo.toml", testWorkspacesSubdirectoryTomlString, new List<string> { "Cargo.toml" })
-                                                    .WithFile("Cargo.toml", testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "sub//test-work", "Cargo.toml"))
-                                                    .WithFile("Cargo.toml", testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "sub2//test//test-work2", "Cargo.toml"))
+            var (result, componentRecorder) = await this.detectorTestUtility
+                                                    .WithFile("Cargo.lock", this.testWorkspaceLockV1NoBaseString)
+                                                    .WithFile("Cargo.toml", this.testWorkspacesSubdirectoryTomlString, new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.toml", this.testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "sub//test-work", "Cargo.toml"))
+                                                    .WithFile("Cargo.toml", this.testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "sub2//test//test-work2", "Cargo.toml"))
                                                     .ExecuteDetector();
 
             var componentGraphs = componentRecorder.GetDependencyGraphsByLocation();
@@ -711,11 +711,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         [TestMethod]
         public async Task TestRustV2Detector_WorkspacesWithSubDirectories()
         {
-            var (result, componentRecorder) = await detectorV2TestUtility
-                                                    .WithFile("Cargo.lock", testWorkspaceLockV2NoBaseString)
-                                                    .WithFile("Cargo.toml", testWorkspacesSubdirectoryTomlString, new List<string> { "Cargo.toml" })
-                                                    .WithFile("Cargo.toml", testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "sub//test-work", "Cargo.toml"))
-                                                    .WithFile("Cargo.toml", testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "sub2//test//test-work2", "Cargo.toml"))
+            var (result, componentRecorder) = await this.detectorV2TestUtility
+                                                    .WithFile("Cargo.lock", this.testWorkspaceLockV2NoBaseString)
+                                                    .WithFile("Cargo.toml", this.testWorkspacesSubdirectoryTomlString, new List<string> { "Cargo.toml" })
+                                                    .WithFile("Cargo.toml", this.testWorkspace1TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "sub//test-work", "Cargo.toml"))
+                                                    .WithFile("Cargo.toml", this.testWorkspace2TomlString, new List<string> { "Cargo.toml" }, fileLocation: Path.Combine(Path.GetTempPath(), "sub2//test//test-work2", "Cargo.toml"))
                                                     .ExecuteDetector();
 
             var componentGraphs = componentRecorder.GetDependencyGraphsByLocation();
@@ -764,7 +764,7 @@ dependencies = [
  ""c-ares"",
 ]
 ";
-            var (result, componentRecorder) = await detectorV2TestUtility
+            var (result, componentRecorder) = await this.detectorV2TestUtility
                                                     .WithFile("Cargo.lock", testLockString)
                                                     .WithFile("Cargo.toml", testTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
@@ -805,7 +805,7 @@ name = ""my_dependency""
 version = ""1.0.0""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
-            var (result, componentRecorder) = await detectorV2TestUtility
+            var (result, componentRecorder) = await this.detectorV2TestUtility
                                                     .WithFile("Cargo.lock", testLockString)
                                                     .WithFile("Cargo.toml", testTomlString, new List<string> { "Cargo.toml" })
                                                     .ExecuteDetector();
@@ -824,6 +824,25 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
                 "my_dependency 1.0.0 - Cargo",
             };
             rootComponents.ForEach(rootComponentId => dependencyGraph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue());
+        }
+
+        [TestMethod]
+        public async Task TestRustDetector_TargetSpecificDependencies()
+        {
+            var (result, componentRecorder) = await this.detectorV2TestUtility
+                                                    .WithFile("Cargo.lock", this.testTargetSpecificDependenciesLockString)
+                                                    .WithFile("Cargo.toml", this.testTargetSpecificDependenciesTomlString, new List<string> { "Cargo.toml" })
+                                                    .ExecuteDetector();
+
+            Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+            Assert.AreEqual(3, componentRecorder.GetDetectedComponents().Count());
+
+            componentRecorder.GetComponent("my_dependency 1.0.0 - Cargo").Should().NotBeNull();
+            componentRecorder.GetComponent("winhttp 0.4.0 - Cargo").Should().NotBeNull();
+
+            var openssl = componentRecorder.GetComponent("openssl 1.0.1 - Cargo");
+            openssl.Should().NotBeNull();
+            componentRecorder.GetEffectiveDevDependencyValue(openssl.Id).Value.Should().BeTrue();
         }
 
         /// <summary>
@@ -1089,6 +1108,39 @@ dev_dependency_dependency = ""0.2.23""
         private readonly string testWorkspace2TomlString = @"
 [dependencies]
 other_dependency = ""0.4.0""
+";
+
+        private readonly string testTargetSpecificDependenciesTomlString = @"
+[package]
+name = ""my_test_package""
+version = ""1.2.3""
+authors = [""example@example.com>""]
+
+[dependencies]
+my_dependency = ""1.0""
+
+[target.'cfg(windows)'.dependencies]
+winhttp = ""0.4.0""
+
+[target.'cfg(unix)'.dev-dependencies]
+openssl = ""1.0.1""
+";
+
+        private readonly string testTargetSpecificDependenciesLockString = @"
+[[package]]
+name = ""my_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""winhttp""
+version = ""0.4.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""openssl""
+version = ""1.0.1""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
     }
 }

@@ -34,141 +34,9 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
         public IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Linux };
 
-        public int Version => 3;
+        public int Version => 4;
 
         public bool NeedsAutomaticRootDependencyCalculation => false;
-
-        public async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
-        {
-            var imagesToProcess = request.ImagesToScan?.Where(image => !string.IsNullOrWhiteSpace(image))
-                .Select(image => image.ToLowerInvariant())
-                .ToList();
-
-            if (imagesToProcess == null || !imagesToProcess.Any())
-            {
-                Logger.LogInfo("No instructions received to scan docker images.");
-                return EmptySuccessfulScan();
-            }
-
-            var cancellationTokenSource = new CancellationTokenSource(GetTimeout(request.DetectorArgs));
-
-            if (!await DockerService.CanRunLinuxContainersAsync(cancellationTokenSource.Token))
-            {
-                using var record = new LinuxContainerDetectorUnsupportedOs
-                {
-                    Os = RuntimeInformation.OSDescription,
-                };
-                Logger.LogInfo("Linux containers are not available on this host.");
-                return EmptySuccessfulScan();
-            }
-
-            var results = Enumerable.Empty<ImageScanningResult>();
-            try
-            {
-                results = await ProcessImagesAsync(imagesToProcess, request.ComponentRecorder, cancellationTokenSource.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                using var record = new LinuxContainerDetectorTimeout();
-            }
-
-            return new IndividualDetectorScanResult
-            {
-                ContainerDetails = results.Where(tuple => tuple.ContainerDetails != null).Select(tuple => tuple.ContainerDetails).ToList(),
-                ResultCode = ProcessingResultCode.Success,
-            };
-        }
-
-        private async Task<IEnumerable<ImageScanningResult>> ProcessImagesAsync(
-            IEnumerable<string> imagesToProcess,
-            IComponentRecorder componentRecorder, CancellationToken cancellationToken = default)
-        {
-            var processedImages = new ConcurrentDictionary<string, ContainerDetails>();
-
-            var inspectTasks = imagesToProcess.Select(
-                async image =>
-                {
-                    try
-                    {
-                        // Check image exists locally. Try docker pull if not
-                        if (!(await DockerService.ImageExistsLocallyAsync(image, cancellationToken) ||
-                              await DockerService.TryPullImageAsync(image, cancellationToken)))
-                        {
-                            throw new InvalidUserInputException(
-                                $"Docker image {image} could not be found locally and could not be pulled. Verify the image is either available locally or through docker pull.",
-                                null);
-                        }
-
-                        var imageDetails = await DockerService.InspectImageAsync(image, cancellationToken);
-
-                        // Unable to fetch image details
-                        if (imageDetails == null)
-                        {
-                            throw new MissingContainerDetailException(image);
-                        }
-
-                        processedImages.TryAdd(imageDetails.ImageId, imageDetails);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogWarning($"Processing of image {image} failed with exception: {e.Message}");
-                        using var record = new LinuxContainerDetectorImageDetectionFailed
-                        {
-                            ExceptionType = e.GetType().ToString(),
-                            Message = e.Message,
-                            StackTrace = e.StackTrace,
-                            ImageId = image,
-                        };
-                    }
-                });
-
-            await Task.WhenAll(inspectTasks);
-
-            var scanTasks = processedImages.Select(async kvp =>
-            {
-                try
-                {
-                    var internalContainerDetails = kvp.Value;
-                    var image = kvp.Key;
-                    int baseImageLayerCount = await GetBaseImageLayerCount(internalContainerDetails, image, cancellationToken);
-
-                    //Update the layer information to specify if a layer was fond in the specified baseImage
-                    internalContainerDetails.Layers = internalContainerDetails.Layers.Select(layer => new DockerLayer
-                    {
-                        DiffId = layer.DiffId,
-                        LayerIndex = layer.LayerIndex,
-                        IsBaseImage = layer.LayerIndex < baseImageLayerCount,
-                    });
-
-                    var layers = await LinuxScanner.ScanLinuxAsync(kvp.Value.ImageId, internalContainerDetails.Layers, baseImageLayerCount, cancellationToken);
-
-                    var components = layers.SelectMany(layer => layer.LinuxComponents.Select(linuxComponent => new DetectedComponent(linuxComponent,  null, internalContainerDetails.Id, layer.DockerLayer.LayerIndex)));
-                    internalContainerDetails.Layers = layers.Select(layer => layer.DockerLayer);
-                    var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(kvp.Value.ImageId);
-                    components.ToList().ForEach(detectedComponent => singleFileComponentRecorder.RegisterUsage(detectedComponent, true));
-                    return new ImageScanningResult
-                    {
-                        ContainerDetails = kvp.Value,
-                        Components = components,
-                    };
-                }
-                catch (Exception e)
-                {
-                    Logger.LogWarning($"Scanning of image {kvp.Key} failed with exception: {e.Message}");
-                    using var record = new LinuxContainerDetectorImageDetectionFailed
-                    {
-                        ExceptionType = e.GetType().ToString(),
-                        Message = e.Message,
-                        StackTrace = e.StackTrace,
-                        ImageId = kvp.Value.ImageId,
-                    };
-                }
-
-                return EmptyImageScanningResult();
-            });
-
-            return await Task.WhenAll(scanTasks);
-        }
 
         /// <summary>
         /// Extracts and returns the timeout defined by the user, or a default value if one is not provided.
@@ -202,6 +70,139 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
             };
         }
 
+        public async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
+        {
+            var imagesToProcess = request.ImagesToScan?.Where(image => !string.IsNullOrWhiteSpace(image))
+                .Select(image => image.ToLowerInvariant())
+                .ToList();
+
+            if (imagesToProcess == null || !imagesToProcess.Any())
+            {
+                this.Logger.LogInfo("No instructions received to scan docker images.");
+                return EmptySuccessfulScan();
+            }
+
+            var cancellationTokenSource = new CancellationTokenSource(GetTimeout(request.DetectorArgs));
+
+            if (!await this.DockerService.CanRunLinuxContainersAsync(cancellationTokenSource.Token))
+            {
+                using var record = new LinuxContainerDetectorUnsupportedOs
+                {
+                    Os = RuntimeInformation.OSDescription,
+                };
+                this.Logger.LogInfo("Linux containers are not available on this host.");
+                return EmptySuccessfulScan();
+            }
+
+            var results = Enumerable.Empty<ImageScanningResult>();
+            try
+            {
+                results = await this.ProcessImagesAsync(imagesToProcess, request.ComponentRecorder, cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                using var record = new LinuxContainerDetectorTimeout();
+            }
+
+            return new IndividualDetectorScanResult
+            {
+                ContainerDetails = results.Where(tuple => tuple.ContainerDetails != null).Select(tuple => tuple.ContainerDetails).ToList(),
+                ResultCode = ProcessingResultCode.Success,
+            };
+        }
+
+        private async Task<IEnumerable<ImageScanningResult>> ProcessImagesAsync(
+            IEnumerable<string> imagesToProcess,
+            IComponentRecorder componentRecorder,
+            CancellationToken cancellationToken = default)
+        {
+            var processedImages = new ConcurrentDictionary<string, ContainerDetails>();
+
+            var inspectTasks = imagesToProcess.Select(
+                async image =>
+                {
+                    try
+                    {
+                        // Check image exists locally. Try docker pull if not
+                        if (!(await this.DockerService.ImageExistsLocallyAsync(image, cancellationToken) ||
+                              await this.DockerService.TryPullImageAsync(image, cancellationToken)))
+                        {
+                            throw new InvalidUserInputException(
+                                $"Docker image {image} could not be found locally and could not be pulled. Verify the image is either available locally or through docker pull.",
+                                null);
+                        }
+
+                        var imageDetails = await this.DockerService.InspectImageAsync(image, cancellationToken);
+
+                        // Unable to fetch image details
+                        if (imageDetails == null)
+                        {
+                            throw new MissingContainerDetailException(image);
+                        }
+
+                        processedImages.TryAdd(imageDetails.ImageId, imageDetails);
+                    }
+                    catch (Exception e)
+                    {
+                        this.Logger.LogWarning($"Processing of image {image} failed with exception: {e.Message}");
+                        using var record = new LinuxContainerDetectorImageDetectionFailed
+                        {
+                            ExceptionType = e.GetType().ToString(),
+                            Message = e.Message,
+                            StackTrace = e.StackTrace,
+                            ImageId = image,
+                        };
+                    }
+                });
+
+            await Task.WhenAll(inspectTasks);
+
+            var scanTasks = processedImages.Select(async kvp =>
+            {
+                try
+                {
+                    var internalContainerDetails = kvp.Value;
+                    var image = kvp.Key;
+                    var baseImageLayerCount = await this.GetBaseImageLayerCount(internalContainerDetails, image, cancellationToken);
+
+                    // Update the layer information to specify if a layer was fond in the specified baseImage
+                    internalContainerDetails.Layers = internalContainerDetails.Layers.Select(layer => new DockerLayer
+                    {
+                        DiffId = layer.DiffId,
+                        LayerIndex = layer.LayerIndex,
+                        IsBaseImage = layer.LayerIndex < baseImageLayerCount,
+                    });
+
+                    var layers = await this.LinuxScanner.ScanLinuxAsync(kvp.Value.ImageId, internalContainerDetails.Layers, baseImageLayerCount, cancellationToken);
+
+                    var components = layers.SelectMany(layer => layer.LinuxComponents.Select(linuxComponent => new DetectedComponent(linuxComponent,  null, internalContainerDetails.Id, layer.DockerLayer.LayerIndex)));
+                    internalContainerDetails.Layers = layers.Select(layer => layer.DockerLayer);
+                    var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(kvp.Value.ImageId);
+                    components.ToList().ForEach(detectedComponent => singleFileComponentRecorder.RegisterUsage(detectedComponent, true));
+                    return new ImageScanningResult
+                    {
+                        ContainerDetails = kvp.Value,
+                        Components = components,
+                    };
+                }
+                catch (Exception e)
+                {
+                    this.Logger.LogWarning($"Scanning of image {kvp.Key} failed with exception: {e.Message}");
+                    using var record = new LinuxContainerDetectorImageDetectionFailed
+                    {
+                        ExceptionType = e.GetType().ToString(),
+                        Message = e.Message,
+                        StackTrace = e.StackTrace,
+                        ImageId = kvp.Value.ImageId,
+                    };
+                }
+
+                return EmptyImageScanningResult();
+            });
+
+            return await Task.WhenAll(scanTasks);
+        }
+
         private async Task<int> GetBaseImageLayerCount(ContainerDetails scannedImageDetails, string image, CancellationToken cancellationToken = default)
         {
             using var record = new LinuxContainerDetectorLayerAwareness
@@ -212,28 +213,32 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
             if (string.IsNullOrEmpty(scannedImageDetails.BaseImageRef))
             {
                 record.BaseImageLayerMessage = $"Base image annotations not found on image {image}, Results will not be mapped to base image layers";
-                Logger.LogInfo(record.BaseImageLayerMessage);
+                this.Logger.LogInfo(record.BaseImageLayerMessage);
+                return 0;
+            } else if (scannedImageDetails.BaseImageRef == "scratch") {
+                record.BaseImageLayerMessage = $"{image} has no base image";
+                this.Logger.LogInfo(record.BaseImageLayerMessage);
                 return 0;
             }
 
             var baseImageDigest = scannedImageDetails.BaseImageDigest;
-            var refWithDigest = scannedImageDetails.BaseImageRef + (baseImageDigest != string.Empty ? $"@{baseImageDigest}" : string.Empty);
+            var refWithDigest = scannedImageDetails.BaseImageRef + (!string.IsNullOrEmpty(baseImageDigest) ? $"@{baseImageDigest}" : string.Empty);
             record.BaseImageDigest = baseImageDigest;
             record.BaseImageRef = scannedImageDetails.BaseImageRef;
 
-            if (!(await DockerService.ImageExistsLocallyAsync(refWithDigest, cancellationToken) ||
-                  await DockerService.TryPullImageAsync(refWithDigest, cancellationToken)))
+            if (!(await this.DockerService.ImageExistsLocallyAsync(refWithDigest, cancellationToken) ||
+                  await this.DockerService.TryPullImageAsync(refWithDigest, cancellationToken)))
             {
                 record.BaseImageLayerMessage = $"Base image {refWithDigest} could not be found locally and could not be pulled. Results will not be mapped to base image layers";
-                Logger.LogInfo(record.BaseImageLayerMessage);
+                this.Logger.LogInfo(record.BaseImageLayerMessage);
                 return 0;
             }
 
-            var baseImageDetails = await DockerService.InspectImageAsync(refWithDigest, cancellationToken);
-            if (!ValidateBaseImageLayers(scannedImageDetails, baseImageDetails))
+            var baseImageDetails = await this.DockerService.InspectImageAsync(refWithDigest, cancellationToken);
+            if (!this.ValidateBaseImageLayers(scannedImageDetails, baseImageDetails))
             {
                 record.BaseImageLayerMessage = $"Docker image {image} was set to have base image {refWithDigest} but is not built off of it. Results will not be mapped to base image layers";
-                Logger.LogInfo(record.BaseImageLayerMessage);
+                this.Logger.LogInfo(record.BaseImageLayerMessage);
                 return 0;
             }
 

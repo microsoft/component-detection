@@ -10,7 +10,7 @@ namespace Microsoft.ComponentDetection.Common
     {
         public bool DoesEnvironmentVariableExist(string name)
         {
-            return GetEnvironmentVariable(name) != null;
+            return this.GetEnvironmentVariable(name) != null;
         }
 
         public string GetEnvironmentVariable(string name)
@@ -23,6 +23,12 @@ namespace Microsoft.ComponentDetection.Common
                 .FirstOrDefault(x => string.Compare(x, name, true) == 0);
 
             return caseInsensitiveName != null ? Environment.GetEnvironmentVariable(caseInsensitiveName) : null;
+        }
+
+        public bool IsEnvironmentVariableValueTrue(string name)
+        {
+            _ = bool.TryParse(this.GetEnvironmentVariable(name), out var result);
+            return result;
         }
     }
 }
