@@ -32,6 +32,25 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
         [Import]
         public IObservableDirectoryWalkerFactory Scanner { get; set; }
 
+        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
+        {
+            var detectorArgs = new Dictionary<string, string>();
+
+            foreach (var arg in detectorArgsList)
+            {
+                var keyValue = arg.Split('=');
+
+                if (keyValue.Length != 2)
+                {
+                    continue;
+                }
+
+                detectorArgs.Add(keyValue[0], keyValue[1]);
+            }
+
+            return detectorArgs;
+        }
+
         public async Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions)
         {
             this.Logger.LogCreateLoggingGroup();
@@ -222,25 +241,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             {
                 this.Logger.LogInfo(line);
             }
-        }
-
-        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
-        {
-            var detectorArgs = new Dictionary<string, string>();
-
-            foreach (var arg in detectorArgsList)
-            {
-                var keyValue = arg.Split('=');
-
-                if (keyValue.Length != 2)
-                {
-                    continue;
-                }
-
-                detectorArgs.Add(keyValue[0], keyValue[1]);
-            }
-
-            return detectorArgs;
         }
 
         public ExcludeDirectoryPredicate GenerateDirectoryExclusionPredicate(string originalSourceDirectory, IEnumerable<string> directoryExclusionList, IEnumerable<string> directoryExclusionListObsolete, bool allowWindowsPaths, bool ignoreCase = true)
