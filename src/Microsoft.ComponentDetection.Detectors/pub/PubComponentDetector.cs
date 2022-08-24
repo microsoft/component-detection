@@ -36,7 +36,14 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
             var file = processRequest.ComponentStream;
 
             Logger.LogVerbose("Found Pubspec.lock: " + file.Location);
-            ParsePubspecYamlFile(singleFileComponentRecorder, file);
+            try
+            {
+                ParsePubspecYamlFile(singleFileComponentRecorder, file);
+            }
+            catch (Exception e)
+            {
+                Logger.LogFailedReadingFile(file.Location, e);
+            }
 
             return Task.CompletedTask;
         }
@@ -56,7 +63,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
                 .Build();
 
             dynamic pubspec = deserializer.Deserialize<System.Dynamic.ExpandoObject>(text);
-            Console.WriteLine(pubspec.packages);
+            Logger.LogVerbose(pubspec.packages);
 
             foreach (dynamic package in pubspec.packages)
             {
