@@ -523,10 +523,6 @@ dotnet_diagnostic.SA1413.severity = suggestion
 # Tuple types in signatures should have element names
 dotnet_diagnostic.SA1414.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1500.md
-# Braces for multi-line statements should not share line
-dotnet_diagnostic.SA1500.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1515.md
 # Single-line comment should be preceded by blank line
 dotnet_diagnostic.SA1515.severity = suggestion
