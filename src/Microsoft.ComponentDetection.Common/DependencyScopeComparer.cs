@@ -8,7 +8,8 @@ namespace Microsoft.ComponentDetection.Common
     /// </summary>
     public class DependencyScopeComparer
     {
-        public static DependencyScope? GetMergedDependencyScope(DependencyScope? scope1, DependencyScope? scope2) {
+        public static DependencyScope? GetMergedDependencyScope(DependencyScope? scope1, DependencyScope? scope2)
+        {
             if (!scope1.HasValue)
             {
                 return scope2;
