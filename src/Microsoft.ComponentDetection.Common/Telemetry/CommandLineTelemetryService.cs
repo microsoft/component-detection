@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Composition;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
@@ -13,6 +13,8 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
     [TelemetryService(nameof(CommandLineTelemetryService))]
     internal class CommandLineTelemetryService : ITelemetryService
     {
+        private static ConcurrentQueue<JObject> records = new ConcurrentQueue<JObject>();
+
         [Import]
         public ILogger Logger { get; set; }
 
@@ -22,8 +24,6 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
         public const string TelemetryRelativePath = "ScanTelemetry_{timestamp}.json";
 
         private TelemetryMode telemetryMode = TelemetryMode.Production;
-
-        private static ConcurrentQueue<JObject> records = new ConcurrentQueue<JObject>();
 
         public void Flush()
         {

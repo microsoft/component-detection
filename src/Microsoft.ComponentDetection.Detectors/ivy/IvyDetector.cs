@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -57,6 +57,19 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
 
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
+
+        private static MavenComponent JsonGavToComponent(JToken gav)
+        {
+            if (gav == null)
+            {
+                return null;
+            }
+
+            return new MavenComponent(
+                gav.Value<string>("g"),
+                gav.Value<string>("a"),
+                gav.Value<string>("v"));
+        }
 
         protected override async Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
         {
@@ -193,19 +206,6 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
             }
 
             return ret;
-        }
-
-        private static MavenComponent JsonGavToComponent(JToken gav)
-        {
-            if (gav == null)
-            {
-                return null;
-            }
-
-            return new MavenComponent(
-                gav.Value<string>("g"),
-                gav.Value<string>("a"),
-                gav.Value<string>("v"));
         }
 
         private void RegisterUsagesFromFile(ISingleFileComponentRecorder singleFileComponentRecorder, string instructionsFile)

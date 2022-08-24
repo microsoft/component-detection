@@ -1,4 +1,4 @@
-﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
+// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
 //
@@ -22,6 +22,70 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         private readonly ComparatorSet[] comparatorSets;
 
         private readonly string rangeSpec;
+
+        // Static convenience methods
+
+        /// <summary>
+        /// Determine whether the given version satisfies a given range.
+        /// With an invalid version this method returns false.
+        /// </summary>
+        /// <param name="rangeSpec">The range specification.</param>
+        /// <param name="versionString">The version to check.</param>
+        /// <param name="loose">When true, be more forgiving of some invalid version specifications.</param>
+        /// <returns>true if the range is satisfied by the version.</returns>
+        public static bool IsSatisfied(string rangeSpec, string versionString, bool loose = false)
+        {
+            var range = new Range(rangeSpec);
+            return range.IsSatisfied(versionString);
+        }
+
+        /// <summary>
+        /// Return the set of version strings that satisfy a given range.
+        /// Invalid version specifications are skipped.
+        /// </summary>
+        /// <param name="rangeSpec">The range specification.</param>
+        /// <param name="versions">The version strings to check.</param>
+        /// <param name="loose">When true, be more forgiving of some invalid version specifications.</param>
+        /// <returns>An IEnumerable of satisfying version strings.</returns>
+        public static IEnumerable<string> Satisfying(string rangeSpec, IEnumerable<string> versions, bool loose = false)
+        {
+            var range = new Range(rangeSpec);
+            return range.Satisfying(versions);
+        }
+
+        /// <summary>
+        /// Return the maximum version that satisfies a given range.
+        /// </summary>
+        /// <param name="rangeSpec">The range specification.</param>
+        /// <param name="versionStrings">The version strings to select from.</param>
+        /// <param name="loose">When true, be more forgiving of some invalid version specifications.</param>
+        /// <returns>The maximum satisfying version string, or null if no versions satisfied this range.</returns>
+        public static string MaxSatisfying(string rangeSpec, IEnumerable<string> versionStrings, bool loose = false)
+        {
+            var range = new Range(rangeSpec);
+            return range.MaxSatisfying(versionStrings);
+        }
+
+        private IEnumerable<SemVersion> ValidVersions(IEnumerable<string> versionStrings, bool loose)
+        {
+            foreach (var v in versionStrings)
+            {
+                SemVersion version = null;
+                try
+                {
+                    SemVersion.TryParse(v, out version, loose);
+                }
+                catch (ArgumentException)
+                {
+                    // Skip
+                }
+
+                if (version != null)
+                {
+                    yield return version;
+                }
+            }
+        }
 
         /// <summary>
         /// Construct a new range from a range specification.
@@ -181,70 +245,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             // XOR is commutative, so this hash code is independent
             // of the order of comparators.
             return this.comparatorSets.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());
-        }
-
-        // Static convenience methods
-
-        /// <summary>
-        /// Determine whether the given version satisfies a given range.
-        /// With an invalid version this method returns false.
-        /// </summary>
-        /// <param name="rangeSpec">The range specification.</param>
-        /// <param name="versionString">The version to check.</param>
-        /// <param name="loose">When true, be more forgiving of some invalid version specifications.</param>
-        /// <returns>true if the range is satisfied by the version.</returns>
-        public static bool IsSatisfied(string rangeSpec, string versionString, bool loose = false)
-        {
-            var range = new Range(rangeSpec);
-            return range.IsSatisfied(versionString);
-        }
-
-        /// <summary>
-        /// Return the set of version strings that satisfy a given range.
-        /// Invalid version specifications are skipped.
-        /// </summary>
-        /// <param name="rangeSpec">The range specification.</param>
-        /// <param name="versions">The version strings to check.</param>
-        /// <param name="loose">When true, be more forgiving of some invalid version specifications.</param>
-        /// <returns>An IEnumerable of satisfying version strings.</returns>
-        public static IEnumerable<string> Satisfying(string rangeSpec, IEnumerable<string> versions, bool loose = false)
-        {
-            var range = new Range(rangeSpec);
-            return range.Satisfying(versions);
-        }
-
-        /// <summary>
-        /// Return the maximum version that satisfies a given range.
-        /// </summary>
-        /// <param name="rangeSpec">The range specification.</param>
-        /// <param name="versionStrings">The version strings to select from.</param>
-        /// <param name="loose">When true, be more forgiving of some invalid version specifications.</param>
-        /// <returns>The maximum satisfying version string, or null if no versions satisfied this range.</returns>
-        public static string MaxSatisfying(string rangeSpec, IEnumerable<string> versionStrings, bool loose = false)
-        {
-            var range = new Range(rangeSpec);
-            return range.MaxSatisfying(versionStrings);
-        }
-
-        private IEnumerable<SemVersion> ValidVersions(IEnumerable<string> versionStrings, bool loose)
-        {
-            foreach (var v in versionStrings)
-            {
-                SemVersion version = null;
-                try
-                {
-                    SemVersion.TryParse(v, out version, loose);
-                }
-                catch (ArgumentException)
-                {
-                    // Skip
-                }
-
-                if (version != null)
-                {
-                    yield return version;
-                }
-            }
         }
     }
 }
