@@ -63,7 +63,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pub
                 .Build();
 
             dynamic pubspec = deserializer.Deserialize<System.Dynamic.ExpandoObject>(text);
-            Logger.LogVerbose(pubspec.packages);
 
             foreach (dynamic package in pubspec.packages)
             {
