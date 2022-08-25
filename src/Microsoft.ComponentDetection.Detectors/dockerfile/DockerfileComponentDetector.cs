@@ -5,11 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Valleysoft.DockerfileModel;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Valleysoft.DockerfileModel;
 
 namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 {
