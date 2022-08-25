@@ -13,7 +13,7 @@ using YamlDotNet.Serialization.NamingConventions;
 namespace Microsoft.ComponentDetection.Detectors.Pub
 {
     [Export(typeof(IComponentDetector))]
-    public class PubComponentDetector : FileComponentDetector, IDefaultOffComponentDetector 
+    public class PubComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
     {
         public override string Id { get; } = "Pub";
 
