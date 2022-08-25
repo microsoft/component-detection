@@ -471,10 +471,6 @@ dotnet_diagnostic.SA1108.severity = suggestion
 # Parameter list should follow declaration
 dotnet_diagnostic.SA1114.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1135.md
-# Using directive for namespace '...' should be qualified
-dotnet_diagnostic.SA1135.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1142.md
 # Refer to tuple fields by name
 dotnet_diagnostic.SA1142.severity = suggestion
