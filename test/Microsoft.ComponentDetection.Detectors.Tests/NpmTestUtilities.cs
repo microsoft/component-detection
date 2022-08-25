@@ -116,7 +116,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                         ""email"": ""{1}""
                     }}
                 }}";
-            } else
+            }
+            else
             {
                 packagejson = @"{{
                     ""name"": ""test"",
@@ -144,13 +145,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             if (authorEmail != null && authorUrl != null)
             {
                 author = @"""{0} <{1}> ({2})""";
-            } else if (authorEmail == null && authorUrl != null)
+            }
+            else if (authorEmail == null && authorUrl != null)
             {
                 author = @"""{0} ({2})""";
-            } else if (authorEmail != null && authorUrl == null)
+            }
+            else if (authorEmail != null && authorUrl == null)
             {
                 author = @"""{0} <{1}>""";
-            } else
+            }
+            else
             {
                 author = @"""{0}""";
             }

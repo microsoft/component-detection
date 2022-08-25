@@ -47,11 +47,13 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.retiredNpmDetector = this.GenerateDetector("MSLicenseDevNpm");
             this.newNpmDetector = this.GenerateDetector("NpmWithRoots");
 
-            this.detectors = new[] {
+            this.detectors = new[]
+            {
                 this.firstDetectorMock.Object, this.secondDetectorMock.Object,
                 this.thirdDetectorMock.Object,
                 this.retiredNpmDetector.Object,
-                this.newNpmDetector.Object };
+                this.newNpmDetector.Object
+            };
             this.serviceUnderTest = new DetectorRestrictionService() { Logger = this.logger.Object };
         }
 
