@@ -215,7 +215,10 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                 record.BaseImageLayerMessage = $"Base image annotations not found on image {image}, Results will not be mapped to base image layers";
                 this.Logger.LogInfo(record.BaseImageLayerMessage);
                 return 0;
-            } else if (scannedImageDetails.BaseImageRef == "scratch") {
+            }
+
+            if (scannedImageDetails.BaseImageRef == "scratch")
+            {
                 record.BaseImageLayerMessage = $"{image} has no base image";
                 this.Logger.LogInfo(record.BaseImageLayerMessage);
                 return 0;
