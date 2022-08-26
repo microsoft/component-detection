@@ -44,7 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// A CargoDependencyData containing populated lists of CargoWorkspaces that will be included from search, CargoWorkspaceExclusions that will be excluded from search,
         /// a list of non-development dependencies, and a list of development dependencies.
         /// </returns>
-        public static async Task<CargoDependencyData> ExtractRootDependencyAndWorkspaceSpecificationsAsync(IEnumerable<IComponentStream> cargoTomlComponentStream, ISingleFileComponentRecorder singleFileComponentRecorder)
+        public static CargoDependencyData ExtractRootDependencyAndWorkspaceSpecifications(IEnumerable<IComponentStream> cargoTomlComponentStream, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
             var cargoDependencyData = new CargoDependencyData();
 
@@ -54,38 +54,36 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             foreach (var cargoTomlFile in cargoTomlComponentStream)
             {
                 var reader = new StreamReader(cargoTomlFile.Stream);
-                var cargoToml = Toml.ToModel(await reader.ReadToEndAsync());
-                //var cargoToml = StreamTomlSerializer.Deserialize(cargoTomlFile.Stream, TomlSettings.Create());
+                var cargoToml = Toml.ToModel(reader.ReadToEnd());
 
                 singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
 
                 // Extract the workspaces present, if any
-                if (cargoToml.ContainsKey(WorkspaceKey))
+                if (cargoToml.TryGetValue(WorkspaceKey, out var value) && value is TomlTable workspaces)
                 {
-                    var workspaces = cargoToml["WorkspaceKey"] as TomlTable;
-
-                    var workspaceMembers = workspaces.ContainsKey(WorkspaceMemberKey) ? workspaces[WorkspaceMemberKey] as TomlObject : null;
-                    var workspaceExclusions = workspaces.ContainsKey(WorkspaceExcludeKey) ? workspaces[WorkspaceExcludeKey] as TomlObject : null;
-
-                    if (workspaceMembers != null)
+                    if (workspaces.TryGetValue(WorkspaceMemberKey, out var workspaceMembers))
                     {
-                        if (workspaceMembers.TomlType != TomlObjectType.Array)
+                        if (workspaceMembers is TomlArray workspaceMembersArray)
                         {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceMemberKey} within {WorkspaceKey} to be of type Array, but found {workspaceMembers.GetType}");
+                            // TomlObject arrays do not natively implement a HashSet get, so add from a list
+                            cargoDependencyData.CargoWorkspaces.UnionWith(workspaceMembersArray.Select(i => i.ToString()));
                         }
-
-                        // TomlObject arrays do not natively implement a HashSet get, so add from a list
-                        cargoDependencyData.CargoWorkspaces.UnionWith(workspaceMembers.Get<List<string>>());
+                        else
+                        {
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceMemberKey} within {WorkspaceKey} to be of type Array, but found {workspaceMembers?.GetType()}");
+                        }
                     }
 
-                    if (workspaceExclusions != null)
+                    if (workspaces.TryGetValue(WorkspaceExcludeKey, out var workspaceExclusions))
                     {
-                        if (workspaceExclusions.TomlType != TomlObjectType.Array)
+                        if (workspaceExclusions is TomlArray workspaceExclusionsArray)
                         {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceExcludeKey} within {WorkspaceKey} to be of type Array, but found {workspaceExclusions.GetType}");
+                            cargoDependencyData.CargoWorkspaceExclusions.UnionWith(workspaceExclusionsArray.Select(i => i.ToString()));
                         }
-
-                        cargoDependencyData.CargoWorkspaceExclusions.UnionWith(workspaceExclusions.Get<List<string>>());
+                        else
+                        {
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceExcludeKey} within {WorkspaceKey} to be of type Array, but found {workspaceExclusions?.GetType()}");
+                        }
                     }
                 }
 
@@ -110,7 +108,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             // This method is only used in non root toml extraction, so the whole list should be iterated
             foreach (var cargoTomlFile in cargoTomlComponentStreams)
             {
-                var cargoToml = StreamTomlSerializer.Deserialize(cargoTomlFile.Stream, TomlSettings.Create());
+                var reader = new StreamReader(cargoTomlFile.Stream);
+                var cargoToml = Toml.ToModel(reader.ReadToEnd());
 
                 singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
 
@@ -302,34 +301,41 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             {
                 foreach (var dependency in dependencies.Keys)
                 {
-                    string versionSpecifier;
-                    if (dependencies[dependency].TomlType == TomlObjectType.String)
+                    string versionSpecifier = string.Empty;
+
+
+                    if (dependencies.TryGetValue(dependency, out var value))
                     {
-                        versionSpecifier = dependencies.Get<string>(dependency);
-                    }
-                    else if (dependencies.Get<TomlTable>(dependency).ContainsKey("version") && dependencies.Get<TomlTable>(dependency).Get<string>("version") != "0.0.0")
-                    {
-                        // We have a valid version that doesn't indicate 'internal' like 0.0.0 does.
-                        versionSpecifier = dependencies.Get<TomlTable>(dependency).Get<string>("version");
-                    }
-                    else if (dependencies.Get<TomlTable>(dependency).ContainsKey("path"))
-                    {
-                        // If this is a workspace dependency specification that specifies a component by path reference, skip adding it directly here.
-                        // Example: kubos-app = { path = "../../apis/app-api/rust" }
-                        continue;
-                    }
-                    else
-                    {
-                        return null;
+                        if (value is string valueAsString)
+                        {
+                            versionSpecifier = valueAsString;
+                        }
+
+                        else if ((value is TomlTable versionTable) && versionTable.TryGetValue("version", out var versionValue) && versionValue is string versionValueAsSring && (versionValueAsSring != "0.0.0"))
+                        {
+                            // We have a valid version that doesn't indicate 'internal' like 0.0.0 does.
+                            versionSpecifier = versionValueAsSring;
+                        }
+                        else if ((value is TomlTable pathTable) && pathTable.TryGetValue("path", out var pathValue))
+                        {
+                            // If this is a workspace dependency specification that specifies a component by path reference, skip adding it directly here.
+                            // Example: kubos-app = { path = "../../apis/app-api/rust" }
+                            continue;
+                        }
+                        else
+                        {
+                            return null;
+                        }
                     }
 
                     // If the dependency is renamed, use the actual name of the package:
                     // https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#renaming-dependencies-in-cargotoml
                     string dependencyName;
-                    if (dependencies[dependency].TomlType == TomlObjectType.Table &&
-                        dependencies.Get<TomlTable>(dependency).ContainsKey("package"))
+
+
+                    if (dependencies.TryGetValue(dependency, out var dependencyValue) && dependencyValue is TomlTable tomlTable && tomlTable.TryGetValue("package", out var packageValue) && packageValue is string packageValueAsString)
                     {
-                        dependencyName = dependencies.Get<TomlTable>(dependency).Get<string>("package");
+                        dependencyName = packageValueAsString;
                     }
                     else
                     {
@@ -462,16 +468,17 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             {
                 if (cargoToml.ContainsKey(tomlDependencyKey))
                 {
-                    dependencies.Add(cargoToml.Get<TomlTable>(tomlDependencyKey));
+                    var newDependencyKey = cargoToml[tomlDependencyKey] as TomlTable;
+                    dependencies.Add(newDependencyKey);
                 }
             }
 
             if (cargoToml.ContainsKey(targetKey))
             {
-                var configs = cargoToml.Get<TomlTable>(targetKey);
+                var configs = cargoToml[targetKey] as TomlTable;
                 foreach (var config in configs)
                 {
-                    var properties = configs.Get<TomlTable>(config.Key);
+                    var properties = configs[config.Key] as TomlTable;
                     foreach (var propertyKey in properties.Keys)
                     {
                         var isRelevantKey = tomlDependencyKeys.Any(dependencyKey =>
@@ -479,7 +486,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
                         if (isRelevantKey)
                         {
-                            dependencies.Add(properties.Get<TomlTable>(propertyKey));
+                            var newDependencyKey = properties[propertyKey] as TomlTable;
+                            dependencies.Add(newDependencyKey);
                         }
                     }
                 }

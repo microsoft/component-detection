@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -8,6 +8,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
+using Tomlyn;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust
 {
@@ -31,8 +32,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
             try
             {
-                var cargoLock = StreamTomlSerializer.Deserialize(cargoLockFile.Stream, TomlSettings.Create()).Get<CargoLock>();
-
+                var reader = new StreamReader(cargoLockFile.Stream);
+                var cargoLock= Toml.ToModel<CargoLock>(reader.ReadToEnd());
                 // This makes sure we're only trying to parse Cargo.lock v1 formats
                 if (cargoLock.metadata == null)
                 {
@@ -43,7 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 var lockFileInfo = new FileInfo(cargoLockFile.Location);
                 var cargoTomlComponentStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(lockFileInfo.Directory, new List<string> { RustCrateUtilities.CargoTomlSearchPattern }, (name, directoryName) => false, recursivelyScanDirectories: false);
 
-                var cargoDependencyData = RustCrateUtilities.ExtractRootDependencyAndWorkspaceSpecificationsAsync(cargoTomlComponentStream, singleFileComponentRecorder);
+                var cargoDependencyData = RustCrateUtilities.ExtractRootDependencyAndWorkspaceSpecifications(cargoTomlComponentStream, singleFileComponentRecorder);
 
                 // If workspaces have been defined in the root cargo.toml file, scan for specified cargo.toml manifests
                 var numWorkspaceComponentStreams = 0;

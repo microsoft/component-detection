@@ -26,14 +26,18 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
 
         public override IEnumerable<string> Categories => new List<string> { "Python" };
 
-        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+        protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var poetryLockFile = processRequest.ComponentStream;
             this.Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
 
             var reader = new StreamReader(poetryLockFile.Stream);
-            var poetryLock = Toml.ToModel<PoetryLock>(await reader.ReadToEndAsync());
+            var options = new TomlModelOptions
+            {
+                IgnoreMissingProperties = true
+            };
+            var poetryLock = Toml.ToModel<PoetryLock>(reader.ReadToEnd(), options: options);
             poetryLock.package.ToList().ForEach(package =>
             {
                 var isDevelopmentDependency = package.category != "main";
@@ -49,6 +53,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
                     singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
                 }
             });
+             return Task.CompletedTask;
         }
     }
 }
