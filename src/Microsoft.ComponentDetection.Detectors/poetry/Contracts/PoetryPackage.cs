@@ -1,6 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Tomlyn.Model;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
 {
@@ -20,9 +19,9 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
         public PoetrySource Source { get; set; }
 
         [DataMember(Name = "dependencies")]
-        public TomlTable Dependencies { get; set; }
+        public Dictionary<string, object> Dependencies { get; set; }
 
         [DataMember(Name = "extras")]
-        public TomlTable Extras { get; set; }
+        public Dictionary<string, object> Extras { get; set; }
     }
 }
