@@ -9,9 +9,9 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Maven;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Microsoft.ComponentDetection.TestsUtilities;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {

@@ -6,9 +6,8 @@ using System.Reactive.Linq;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
-using Moq;
 using Microsoft.ComponentDetection.TestsUtilities;
-
+using Moq;
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
@@ -116,7 +115,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                         ""email"": ""{1}""
                     }}
                 }}";
-            } else
+            }
+            else
             {
                 packagejson = @"{{
                     ""name"": ""test"",
@@ -144,13 +144,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             if (authorEmail != null && authorUrl != null)
             {
                 author = @"""{0} <{1}> ({2})""";
-            } else if (authorEmail == null && authorUrl != null)
+            }
+            else if (authorEmail == null && authorUrl != null)
             {
                 author = @"""{0} ({2})""";
-            } else if (authorEmail != null && authorUrl == null)
+            }
+            else if (authorEmail != null && authorUrl == null)
             {
                 author = @"""{0} <{1}>""";
-            } else
+            }
+            else
             {
                 author = @"""{0}""";
             }

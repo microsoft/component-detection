@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -7,9 +7,9 @@ using System.Reactive.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.ComponentDetection.Detectors.Ivy
