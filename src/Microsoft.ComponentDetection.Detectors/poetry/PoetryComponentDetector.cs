@@ -38,18 +38,18 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
                 IgnoreMissingProperties = true
             };
             var poetryLock = Toml.ToModel<PoetryLock>(reader.ReadToEnd(), options: options);
-            poetryLock.package.ToList().ForEach(package =>
+            poetryLock.Package.ToList().ForEach(package =>
             {
-                var isDevelopmentDependency = package.category != "main";
+                var isDevelopmentDependency = package.Category != "main";
 
-                if (package.source != null && package.source.type == "git")
+                if (package.Source != null && package.Source.type == "git")
                 {
-                    var component = new DetectedComponent(new GitComponent(new Uri(package.source.url), package.source.resolved_reference));
+                    var component = new DetectedComponent(new GitComponent(new Uri(package.Source.url), package.Source.resolved_reference));
                     singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
                 }
                 else
                 {
-                    var component = new DetectedComponent(new PipComponent(package.name, package.version));
+                    var component = new DetectedComponent(new PipComponent(package.Name, package.Version));
                     singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
                 }
             });

@@ -7,6 +7,6 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
     public class PoetryLock
     {
         [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public List<PoetryPackage> package { get; set; }
+        public List<PoetryPackage> Package { get; set; }
     }
 }

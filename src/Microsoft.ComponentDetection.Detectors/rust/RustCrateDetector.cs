@@ -35,7 +35,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 var reader = new StreamReader(cargoLockFile.Stream);
                 var cargoLock= Toml.ToModel<CargoLock>(reader.ReadToEnd());
                 // This makes sure we're only trying to parse Cargo.lock v1 formats
-                if (cargoLock.metadata == null)
+                if (cargoLock.Metadata == null)
                 {
                     this.Logger.LogInfo($"Cargo.lock file at {cargoLockFile.Location} contains no metadata section so we're parsing it as the v2 format. The v1 detector will not process it.");
                     return Task.CompletedTask;
@@ -79,7 +79,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     return Task.CompletedTask;
                 }
 
-                var cargoPackages = cargoLock.package.ToHashSet();
+                var cargoPackages = cargoLock.Package.ToHashSet();
                 RustCrateUtilities.BuildGraph(cargoPackages, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies, singleFileComponentRecorder);
             }
             catch (Exception e)

@@ -65,7 +65,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     {
                         if (workspaceMembers is TomlArray workspaceMembersArray)
                         {
-                            // TomlObject arrays do not natively implement a HashSet get, so add from a list
                             cargoDependencyData.CargoWorkspaces.UnionWith(workspaceMembersArray.Select(i => i.ToString()));
                         }
                         else
@@ -352,7 +351,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         public static IEnumerable<CargoPackage> ConvertCargoLockV2PackagesToV1(CargoLock cargoLock)
         {
             var packageMap = new Dictionary<string, List<CargoPackage>>();
-            cargoLock.package.ToList().ForEach(package =>
+            cargoLock.Package.ToList().ForEach(package =>
             {
                 if (!packageMap.TryGetValue(package.name, out var packageList))
                 {
@@ -364,7 +363,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 }
             });
 
-            return cargoLock.package.Select(package =>
+            return cargoLock.Package.Select(package =>
             {
                 if (package.dependencies == null)
                 {

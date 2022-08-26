@@ -35,7 +35,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 var reader = new StreamReader(cargoLockFile.Stream);
                 var cargoLock = Toml.ToModel<CargoLock>(reader.ReadToEnd());
                 // This makes sure we're only trying to parse Cargo.lock v2 formats
-                if (cargoLock.metadata != null)
+                if (cargoLock.Metadata != null)
                 {
                     this.Logger.LogInfo($"Cargo.lock file at {cargoLockFile.Location} contains a metadata section so we're parsing it as the v1 format. The v2 detector will no process it.");
                     return Task.CompletedTask;
