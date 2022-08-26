@@ -1,15 +1,15 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Valleysoft.DockerfileModel;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Valleysoft.DockerfileModel;
 
 namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 {
@@ -51,7 +51,8 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 
                 var stageNameMap = new Dictionary<string, string>();
                 var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 this.Logger.LogError($"The file doesn't appear to be a Dockerfile: '{file.Location}'");
                 this.Logger.LogException(e, false);
@@ -97,7 +98,8 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
                 }
 
                 return baseImage;
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 this.Logger.LogError($"Failed to detect a DockerReference component, the component will not be registered. \n Error Message: <{e.Message}>");
                 this.Logger.LogException(e, isError: true, printException: true);
