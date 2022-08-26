@@ -166,7 +166,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 "DotNet.Glob",
                 "MinVer",
-                "Tomlyn",
+                "Nett",
                 "Newtonsoft.Json",
                 "NuGet.ProjectModel",
                 "NuGet.Versioning",
