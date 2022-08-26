@@ -17,7 +17,6 @@ namespace Microsoft.ComponentDetection.Contracts
 
         Task<ContainerDetails> InspectImageAsync(string image, CancellationToken cancellationToken = default);
 
-        Task<(string stdout, string stderr)> CreateAndRunContainerAsync(string image, IList<string> command,
-            CancellationToken cancellationToken = default);
+        Task<(string stdout, string stderr)> CreateAndRunContainerAsync(string image, IList<string> command, CancellationToken cancellationToken = default);
     }
 }

@@ -38,6 +38,38 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
         public bool NeedsAutomaticRootDependencyCalculation => false;
 
+        /// <summary>
+        /// Extracts and returns the timeout defined by the user, or a default value if one is not provided.
+        /// </summary>
+        /// <param name="detectorArgs">The arguments provided by the user.</param>
+        /// <returns></returns>
+        private static TimeSpan GetTimeout(IDictionary<string, string> detectorArgs)
+        {
+            if (detectorArgs == null || !detectorArgs.TryGetValue("Linux.ScanningTimeoutSec", out var timeout))
+            {
+                return TimeSpan.FromMinutes(10);
+            }
+
+            return double.TryParse(timeout, out var parsedTimeout) ? TimeSpan.FromSeconds(parsedTimeout) : TimeSpan.FromMinutes(10);
+        }
+
+        private static IndividualDetectorScanResult EmptySuccessfulScan()
+        {
+            return new IndividualDetectorScanResult
+            {
+                ResultCode = ProcessingResultCode.Success,
+            };
+        }
+
+        private static ImageScanningResult EmptyImageScanningResult()
+        {
+            return new ImageScanningResult
+            {
+                ContainerDetails = null,
+                Components = Enumerable.Empty<DetectedComponent>(),
+            };
+        }
+
         public async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
         {
             var imagesToProcess = request.ImagesToScan?.Where(image => !string.IsNullOrWhiteSpace(image))
@@ -81,7 +113,8 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
         private async Task<IEnumerable<ImageScanningResult>> ProcessImagesAsync(
             IEnumerable<string> imagesToProcess,
-            IComponentRecorder componentRecorder, CancellationToken cancellationToken = default)
+            IComponentRecorder componentRecorder,
+            CancellationToken cancellationToken = default)
         {
             var processedImages = new ConcurrentDictionary<string, ContainerDetails>();
 
@@ -170,38 +203,6 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
             return await Task.WhenAll(scanTasks);
         }
 
-        /// <summary>
-        /// Extracts and returns the timeout defined by the user, or a default value if one is not provided.
-        /// </summary>
-        /// <param name="detectorArgs">The arguments provided by the user.</param>
-        /// <returns></returns>
-        private static TimeSpan GetTimeout(IDictionary<string, string> detectorArgs)
-        {
-            if (detectorArgs == null || !detectorArgs.TryGetValue("Linux.ScanningTimeoutSec", out var timeout))
-            {
-                return TimeSpan.FromMinutes(10);
-            }
-
-            return double.TryParse(timeout, out var parsedTimeout) ? TimeSpan.FromSeconds(parsedTimeout) : TimeSpan.FromMinutes(10);
-        }
-
-        private static IndividualDetectorScanResult EmptySuccessfulScan()
-        {
-            return new IndividualDetectorScanResult
-            {
-                ResultCode = ProcessingResultCode.Success,
-            };
-        }
-
-        private static ImageScanningResult EmptyImageScanningResult()
-        {
-            return new ImageScanningResult
-            {
-                ContainerDetails = null,
-                Components = Enumerable.Empty<DetectedComponent>(),
-            };
-        }
-
         private async Task<int> GetBaseImageLayerCount(ContainerDetails scannedImageDetails, string image, CancellationToken cancellationToken = default)
         {
             using var record = new LinuxContainerDetectorLayerAwareness
@@ -214,7 +215,10 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                 record.BaseImageLayerMessage = $"Base image annotations not found on image {image}, Results will not be mapped to base image layers";
                 this.Logger.LogInfo(record.BaseImageLayerMessage);
                 return 0;
-            } else if (scannedImageDetails.BaseImageRef == "scratch") {
+            }
+
+            if (scannedImageDetails.BaseImageRef == "scratch")
+            {
                 record.BaseImageLayerMessage = $"{image} has no base image";
                 this.Logger.LogInfo(record.BaseImageLayerMessage);
                 return 0;

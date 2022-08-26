@@ -8,8 +8,8 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pnpm;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -186,7 +186,8 @@ shrinkwrapVersion: 3";
 
             componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
                 strictUriEncodeComponent.Component.Id,
-                parentComponent => parentComponent.Name == "some-other-root", parentComponent => parentComponent.Name == "query-string");
+                parentComponent => parentComponent.Name == "some-other-root",
+                parentComponent => parentComponent.Name == "query-string");
 
             componentRecorder.ForOneComponent(strictUriEncodeComponent.Component.Id, grouping => Assert.AreEqual(2, grouping.AllFileLocations.Count()));
         }

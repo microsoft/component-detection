@@ -7,9 +7,9 @@ using System.Reactive.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.ComponentDetection.Detectors.Ivy
@@ -57,6 +57,19 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
 
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
+
+        private static MavenComponent JsonGavToComponent(JToken gav)
+        {
+            if (gav == null)
+            {
+                return null;
+            }
+
+            return new MavenComponent(
+                gav.Value<string>("g"),
+                gav.Value<string>("a"),
+                gav.Value<string>("v"));
+        }
 
         protected override async Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
         {
@@ -193,19 +206,6 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
             }
 
             return ret;
-        }
-
-        private static MavenComponent JsonGavToComponent(JToken gav)
-        {
-            if (gav == null)
-            {
-                return null;
-            }
-
-            return new MavenComponent(
-                gav.Value<string>("g"),
-                gav.Value<string>("a"),
-                gav.Value<string>("v"));
         }
 
         private void RegisterUsagesFromFile(ISingleFileComponentRecorder singleFileComponentRecorder, string instructionsFile)

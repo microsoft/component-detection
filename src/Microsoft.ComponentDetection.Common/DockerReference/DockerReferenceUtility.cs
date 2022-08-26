@@ -1,5 +1,4 @@
 using Microsoft.ComponentDetection.Contracts;
-using System.Text.RegularExpressions;
 
 // transcribed from https://github.com/containers/image/blob/c1a5f92d0ebbf9e0bf187b3353dd400472b388eb/docker/reference/reference.go
 

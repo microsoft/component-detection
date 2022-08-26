@@ -5,9 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
-using Moq;
 using Microsoft.ComponentDetection.TestsUtilities;
-
+using Moq;
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests

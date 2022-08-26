@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Composition.Hosting;
@@ -76,7 +76,8 @@ namespace Microsoft.ComponentDetection.Orchestrator
                 }
 
                 return executionResult;
-            }, true);
+            },
+                true);
 
             // The order of these things is a little weird, but done this way mostly to prevent any of the logic inside if blocks from being duplicated
             if (shouldFailureBeSuppressed)

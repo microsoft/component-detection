@@ -1,5 +1,5 @@
-﻿using PackageUrl;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {

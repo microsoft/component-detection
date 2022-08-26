@@ -1,12 +1,12 @@
-﻿using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Contracts;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Composition;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.IO;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 namespace Microsoft.ComponentDetection.Detectors.Pip
 {

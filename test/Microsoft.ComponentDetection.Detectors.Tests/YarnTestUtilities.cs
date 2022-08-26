@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using System.Text;
 using Microsoft.ComponentDetection.Contracts;
-using Moq;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Moq;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {

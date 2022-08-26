@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -178,7 +178,8 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
                     // Go all the way up
                     while (currentDir != null);
-                }, s.OnCompleted);
+                },
+                    s.OnCompleted);
             });
         }
 

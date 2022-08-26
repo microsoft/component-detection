@@ -49,8 +49,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
             await processPomFile.Completion;
 
-            return this.ComponentStreamEnumerableFactory.GetComponentStreams(this.CurrentScanRequest.SourceDirectory, new[] {
-                    this.MavenCommandService.BcdeMvnDependencyFileName }, this.CurrentScanRequest.DirectoryExclusionPredicate)
+            return this.ComponentStreamEnumerableFactory.GetComponentStreams(this.CurrentScanRequest.SourceDirectory, new[] { this.MavenCommandService.BcdeMvnDependencyFileName }, this.CurrentScanRequest.DirectoryExclusionPredicate)
                 .Select(componentStream =>
                     {
                         // The file stream is going to be disposed after the iteration is finished
@@ -145,7 +144,8 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
                     // Go all the way up
                     while (currentDir != null);
-                }, s.OnCompleted);
+                },
+                    s.OnCompleted);
             });
         }
     }

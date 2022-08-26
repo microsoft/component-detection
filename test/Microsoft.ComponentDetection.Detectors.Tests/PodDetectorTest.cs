@@ -7,8 +7,8 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -704,7 +704,8 @@ COCOAPODS: 1.8.4";
                 detectedComponents.SingleOrDefault(component =>
                 component.Component is PodComponent &&
                 (component.Component as PodComponent).Name.Equals(name) &&
-                (component.Component as PodComponent).Version.Equals(version)), $"Component with name {name} and version {version} was not found");
+                (component.Component as PodComponent).Version.Equals(version)),
+                $"Component with name {name} and version {version} was not found");
         }
 
         private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
@@ -713,7 +714,8 @@ COCOAPODS: 1.8.4";
                 detectedComponents.SingleOrDefault(component =>
                 component.Component is GitComponent &&
                 (component.Component as GitComponent).CommitHash.Equals(commitHash) &&
-                (component.Component as GitComponent).RepositoryUrl.Equals(repositoryUrl)), $"Component with commit hash {commitHash} and repository url {repositoryUrl} was not found");
+                (component.Component as GitComponent).RepositoryUrl.Equals(repositoryUrl)),
+                $"Component with commit hash {commitHash} and repository url {repositoryUrl} was not found");
         }
 
         private void AssertPodComponentHasPodComponentDependencyRoot(IComponentRecorder recorder, (string name, string version) component, (string name, string version) root)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -17,6 +17,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
     [Export(typeof(IComponentDetector))]
     public class NuGetComponentDetector : FileComponentDetector
     {
+        private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
+
         public override string Id { get; } = "NuGet";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
@@ -30,8 +32,6 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         public const string NugetConfigFileName = "nuget.config";
 
         private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
-
-        private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
