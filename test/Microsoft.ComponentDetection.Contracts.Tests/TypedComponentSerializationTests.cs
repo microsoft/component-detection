@@ -29,8 +29,8 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestMethod]
         public void TypedComponent_Serialization_NuGet()
         {
-            string testComponentName = "SomeNuGetComponent";
-            string testVersion = "1.2.3";
+            var testComponentName = "SomeNuGetComponent";
+            var testVersion = "1.2.3";
             string[] testAuthors = { "John Doe", "Jane Doe" };
             TypedComponent.TypedComponent tc = new NuGetComponent(testComponentName, testVersion, testAuthors);
             var result = JsonConvert.SerializeObject(tc);
@@ -45,7 +45,7 @@ namespace Microsoft.ComponentDetection.Contracts.Tests
         [TestMethod]
         public void TypedComponent_Serialization_Npm()
         {
-            NpmAuthor npmAuthor = new Internal.NpmAuthor("someAuthorName", "someAuthorEmail");
+            var npmAuthor = new NpmAuthor("someAuthorName", "someAuthorEmail");
             var npmCompObj = new NpmComponent("SomeNpmComponent", "1.2.3")
             {
                 Author = npmAuthor,

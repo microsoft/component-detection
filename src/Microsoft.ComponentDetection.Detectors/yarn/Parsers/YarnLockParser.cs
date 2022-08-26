@@ -33,18 +33,18 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                 throw new ArgumentNullException(nameof(blockFile));
             }
 
-            YarnLockFile file = new YarnLockFile { LockVersion = blockFile.YarnLockVersion };
+            var file = new YarnLockFile { LockVersion = blockFile.YarnLockVersion };
             IList<YarnEntry> entries = new List<YarnEntry>();
 
             foreach (var block in blockFile)
             {
-                YarnEntry yarnEntry = new YarnEntry();
+                var yarnEntry = new YarnEntry();
                 var satisfiedPackages = block.Title.Split(',').Select(x => x.Trim())
-                    .Select(GenerateBlockTitleNormalizer(block));
+                    .Select(this.GenerateBlockTitleNormalizer(block));
 
                 foreach (var package in satisfiedPackages)
                 {
-                    if (!TryReadNameAndSatisfiedVersion(package, out Tuple<string, string> parsed))
+                    if (!this.TryReadNameAndSatisfiedVersion(package, out var parsed))
                     {
                         continue;
                     }
@@ -63,7 +63,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                     continue;
                 }
 
-                if (!block.Values.TryGetValue(VersionString, out string version))
+                if (!block.Values.TryGetValue(VersionString, out var version))
                 {
                     logger.LogWarning($"Failed to read a version for {yarnEntry.Name}. The entry will be skipped.");
                     continue;
@@ -71,7 +71,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
                 yarnEntry.Version = version;
 
-                if (block.Values.TryGetValue(Resolved, out string resolved))
+                if (block.Values.TryGetValue(Resolved, out var resolved))
                 {
                     yarnEntry.Resolved = resolved;
                 }
@@ -117,10 +117,10 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                     return blockTitleMember;
                 }
 
-                var versionValue = block.Values.FirstOrDefault(x => string.Equals(x.Key, YarnLockParser.VersionString, StringComparison.OrdinalIgnoreCase));
+                var versionValue = block.Values.FirstOrDefault(x => string.Equals(x.Key, VersionString, StringComparison.OrdinalIgnoreCase));
                 if (default(KeyValuePair<string, string>).Equals(versionValue))
                 {
-                    Logger.LogWarning("Block without version detected");
+                    this.Logger.LogWarning("Block without version detected");
                     return blockTitleMember;
                 }
 
@@ -131,25 +131,25 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         private bool TryReadNameAndSatisfiedVersion(string nameVersionPairing, out Tuple<string, string> output)
         {
             output = null;
-            string workingString = nameVersionPairing;
+            var workingString = nameVersionPairing;
             workingString = workingString.TrimEnd(':');
             workingString = workingString.Trim('\"');
-            bool startsWithAtSign = false;
+            var startsWithAtSign = false;
             if (workingString.StartsWith("@"))
             {
                 startsWithAtSign = true;
                 workingString = workingString.TrimStart('@');
             }
 
-            string[] parts = workingString.Split('@');
+            var parts = workingString.Split('@');
 
             if (parts.Length != 2)
             {
                 return false;
             }
 
-            string at = startsWithAtSign ? "@" : string.Empty;
-            string name = $"{at}{parts[0]}";
+            var at = startsWithAtSign ? "@" : string.Empty;
+            var name = $"{at}{parts[0]}";
 
             output = new Tuple<string, string>(name, parts[1]);
             return true;

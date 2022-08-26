@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -29,9 +29,9 @@ namespace Microsoft.ComponentDetection.Common
             this.directoryExclusionPredicate = directoryExclusionPredicate;
             this.recursivelyScanDirectories = recursivelyScanDirectories;
             this.pathUtilityService = pathUtilityService;
-            enumeratedDirectories = previouslyEnumeratedDirectories;
+            this.enumeratedDirectories = previouslyEnumeratedDirectories;
 
-            enumerationOptions = new EnumerationOptions()
+            this.enumerationOptions = new EnumerationOptions()
             {
                 IgnoreInaccessible = true,
                 RecurseSubdirectories = this.recursivelyScanDirectories,
@@ -48,9 +48,11 @@ namespace Microsoft.ComponentDetection.Common
 
         public IEnumerator<MatchedFile> GetEnumerator()
         {
-            var previouslyEnumeratedDirectories = enumeratedDirectories ?? new HashSet<string>();
+            var previouslyEnumeratedDirectories = this.enumeratedDirectories ?? new HashSet<string>();
 
-            var fse = new FileSystemEnumerable<MatchedFile>(directory.FullName, (ref FileSystemEntry entry) =>
+            var fse = new FileSystemEnumerable<MatchedFile>(
+                this.directory.FullName,
+                (ref FileSystemEntry entry) =>
             {
                 if (!(entry.ToFileSystemInfo() is FileInfo fi))
                 {
@@ -58,7 +60,7 @@ namespace Microsoft.ComponentDetection.Common
                 }
 
                 var foundPattern = entry.FileName.ToString();
-                foreach (var searchPattern in searchPatterns)
+                foreach (var searchPattern in this.searchPatterns)
                 {
                     if (PathUtilityService.MatchesPattern(searchPattern, ref entry))
                     {
@@ -67,7 +69,8 @@ namespace Microsoft.ComponentDetection.Common
                 }
 
                 return new MatchedFile() { File = fi, Pattern = foundPattern };
-            }, enumerationOptions)
+            },
+                this.enumerationOptions)
             {
                 ShouldIncludePredicate = (ref FileSystemEntry entry) =>
                 {
@@ -76,7 +79,7 @@ namespace Microsoft.ComponentDetection.Common
                         return false;
                     }
 
-                    foreach (var searchPattern in searchPatterns)
+                    foreach (var searchPattern in this.searchPatterns)
                     {
                         if (PathUtilityService.MatchesPattern(searchPattern, ref entry))
                         {
@@ -88,7 +91,7 @@ namespace Microsoft.ComponentDetection.Common
                 },
                 ShouldRecursePredicate = (ref FileSystemEntry entry) =>
                 {
-                    if (!recursivelyScanDirectories)
+                    if (!this.recursivelyScanDirectories)
                     {
                         return false;
                     }
@@ -99,7 +102,7 @@ namespace Microsoft.ComponentDetection.Common
 
                     if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
                     {
-                        var realPath = pathUtilityService.ResolvePhysicalPath(targetPath);
+                        var realPath = this.pathUtilityService.ResolvePhysicalPath(targetPath);
 
                         seenPreviously = previouslyEnumeratedDirectories.Contains(realPath);
                         previouslyEnumeratedDirectories.Add(realPath);
@@ -118,12 +121,12 @@ namespace Microsoft.ComponentDetection.Common
 
                     if (seenPreviously)
                     {
-                        logger.LogVerbose($"Encountered real path {targetPath} before. Short-Circuiting directory traversal");
+                        this.logger.LogVerbose($"Encountered real path {targetPath} before. Short-Circuiting directory traversal");
                         return false;
                     }
 
                     // This is actually a *directory* name (not FileName) and the directory containing that directory.
-                    if (entry.IsDirectory && directoryExclusionPredicate != null && directoryExclusionPredicate(entry.FileName, entry.Directory))
+                    if (entry.IsDirectory && this.directoryExclusionPredicate != null && this.directoryExclusionPredicate(entry.FileName, entry.Directory))
                     {
                         return false;
                     }
@@ -134,7 +137,7 @@ namespace Microsoft.ComponentDetection.Common
 
             foreach (var file in fse)
             {
-                if (fileMatchingPredicate == null || fileMatchingPredicate(file.File))
+                if (this.fileMatchingPredicate == null || this.fileMatchingPredicate(file.File))
                 {
                     yield return file;
                 }
@@ -143,7 +146,7 @@ namespace Microsoft.ComponentDetection.Common
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return GetEnumerator();
+            return this.GetEnumerator();
         }
     }
 }

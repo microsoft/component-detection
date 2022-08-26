@@ -1,12 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -16,7 +13,7 @@ using Newtonsoft.Json;
 namespace Microsoft.ComponentDetection.Detectors.Vcpkg
 {
     [Export(typeof(IComponentDetector))]
-    public class VcpkgComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+    public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
     {
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
@@ -32,7 +29,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Vcpkg };
 
-        public override int Version => 1;
+        public override int Version => 2;
 
         private HashSet<string> projectRoots = new HashSet<string>();
 
@@ -41,15 +38,15 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            Logger.LogWarning($"vcpkg detector found {file}");
+            this.Logger.LogWarning($"vcpkg detector found {file}");
 
             var projectRootDirectory = Directory.GetParent(file.Location);
-            if (projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
+            if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
             {
                 return;
             }
 
-            await ParseSpdxFile(singleFileComponentRecorder, file);
+            await this.ParseSpdxFile(singleFileComponentRecorder, file);
         }
 
         private async Task ParseSpdxFile(
@@ -81,7 +78,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
                         continue;
                     }
 
-                    Logger.LogWarning($"parsed package {item.Name}");
+                    this.Logger.LogWarning($"parsed package {item.Name}");
                     if (item.SPDXID == "SPDXRef-port")
                     {
                         var split = item.VersionInfo.Split('#');
@@ -110,7 +107,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
                 }
                 catch (Exception)
                 {
-                    Logger.LogWarning($"failed while handling {item.Name}");
+                    this.Logger.LogWarning($"failed while handling {item.Name}");
                 }
             }
         }

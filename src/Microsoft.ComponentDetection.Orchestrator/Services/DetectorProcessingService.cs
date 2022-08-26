@@ -1,11 +1,3 @@
-﻿using DotNet.Globbing;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,7 +7,14 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
+using DotNet.Globbing;
+using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Common.DependencyGraph;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Newtonsoft.Json;
 using static System.Environment;
 
 namespace Microsoft.ComponentDetection.Orchestrator.Services
@@ -33,29 +32,48 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
         [Import]
         public IObservableDirectoryWalkerFactory Scanner { get; set; }
 
+        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
+        {
+            var detectorArgs = new Dictionary<string, string>();
+
+            foreach (var arg in detectorArgsList)
+            {
+                var keyValue = arg.Split('=');
+
+                if (keyValue.Length != 2)
+                {
+                    continue;
+                }
+
+                detectorArgs.Add(keyValue[0], keyValue[1]);
+            }
+
+            return detectorArgs;
+        }
+
         public async Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions)
         {
-            Logger.LogCreateLoggingGroup();
-            Logger.LogInfo($"Finding components...");
+            this.Logger.LogCreateLoggingGroup();
+            this.Logger.LogInfo($"Finding components...");
 
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
             var exitCode = ProcessingResultCode.Success;
 
             // Run the scan on all protocol scanners and union the results
-            ConcurrentDictionary<string, DetectorRunResult> providerElapsedTime = new ConcurrentDictionary<string, DetectorRunResult>();
+            var providerElapsedTime = new ConcurrentDictionary<string, DetectorRunResult>();
             var detectorArguments = GetDetectorArgs(detectionArguments.DetectorArgs);
 
-            ExcludeDirectoryPredicate exclusionPredicate = IsOSLinuxOrMac()
-                ? GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: false, ignoreCase: false)
-                : GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
+            var exclusionPredicate = this.IsOSLinuxOrMac()
+                ? this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: false, ignoreCase: false)
+                : this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
 
             IEnumerable<Task<(IndividualDetectorScanResult, ComponentRecorder, IComponentDetector)>> scanTasks = detectors
                 .Select(async detector =>
                 {
-                    Stopwatch providerStopwatch = new Stopwatch();
+                    var providerStopwatch = new Stopwatch();
                     providerStopwatch.Start();
 
-                    var componentRecorder = new ComponentRecorder(Logger, !detector.NeedsAutomaticRootDependencyCalculation);
+                    var componentRecorder = new ComponentRecorder(this.Logger, !detector.NeedsAutomaticRootDependencyCalculation);
 
                     var isExperimentalDetector = detector is IExperimentalDetector && !(detectorRestrictions.ExplicitlyEnabledDetectorIds?.Contains(detector.Id)).GetValueOrDefault();
 
@@ -65,13 +83,13 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                     IndividualDetectorScanResult result;
                     using (var record = new DetectorExecutionTelemetryRecord())
                     {
-                        result = await WithExperimentalScanGuards(
-                            () => detector.ExecuteDetectorAsync(new ScanRequest(detectionArguments.SourceDirectory, exclusionPredicate, Logger, detectorArguments, detectionArguments.DockerImagesToScan, componentRecorder)),
+                        result = await this.WithExperimentalScanGuards(
+                            () => detector.ExecuteDetectorAsync(new ScanRequest(detectionArguments.SourceDirectory, exclusionPredicate, this.Logger, detectorArguments, detectionArguments.DockerImagesToScan, componentRecorder)),
                             isExperimentalDetector,
                             record);
 
                         // Make sure top level enumerables are at least empty and not null.
-                        result = CoalesceResult(result);
+                        result = this.CoalesceResult(result);
 
                         detectedComponents = componentRecorder.GetDetectedComponents();
                         resultCode = result.ResultCode;
@@ -118,13 +136,13 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
             var results = await Task.WhenAll(scanTasks);
 
-            DetectorProcessingResult detectorProcessingResult = ConvertDetectorResultsIntoResult(results, exitCode);
+            var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
             var totalElapsedTime = stopwatch.Elapsed.TotalSeconds;
-            LogTabularOutput(Logger, providerElapsedTime, totalElapsedTime);
+            this.LogTabularOutput(this.Logger, providerElapsedTime, totalElapsedTime);
 
-            Logger.LogCreateLoggingGroup();
-            Logger.LogInfo($"Detection time: {totalElapsedTime} seconds.");
+            this.Logger.LogCreateLoggingGroup();
+            this.Logger.LogInfo($"Detection time: {totalElapsedTime} seconds.");
 
             return detectorProcessingResult;
         }
@@ -164,7 +182,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
             try
             {
-                return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(2), CancellationToken.None);
+                return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(4), CancellationToken.None);
             }
             catch (TimeoutException)
             {
@@ -190,7 +208,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         private void LogTabularOutput(ILogger logger, ConcurrentDictionary<string, DetectorRunResult> providerElapsedTime, double totalElapsedTime)
         {
-            TabularStringFormat tsf = new TabularStringFormat(new Column[]
+            var tsf = new TabularStringFormat(new Column[]
                         {
                             new Column { Header = "Component Detector Id", Width = 30 },
                             new Column { Header = "Detection Time", Width = 30, Format = "{0:g2} seconds" },
@@ -219,29 +237,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             });
 
             foreach (var line in tsf.GenerateString(rows)
-                                    .Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
+                                    .Split(new string[] { NewLine }, StringSplitOptions.None))
             {
-                Logger.LogInfo(line);
+                this.Logger.LogInfo(line);
             }
-        }
-
-        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
-        {
-            var detectorArgs = new Dictionary<string, string>();
-
-            foreach (var arg in detectorArgsList)
-            {
-                var keyValue = arg.Split('=');
-
-                if (keyValue.Length != 2)
-                {
-                    continue;
-                }
-
-                detectorArgs.Add(keyValue[0], keyValue[1]);
-            }
-
-            return detectorArgs;
         }
 
         public ExcludeDirectoryPredicate GenerateDirectoryExclusionPredicate(string originalSourceDirectory, IEnumerable<string> directoryExclusionList, IEnumerable<string> directoryExclusionListObsolete, bool allowWindowsPaths, bool ignoreCase = true)
@@ -262,7 +261,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                         nameOfExcludedDirectory = exclusionDirectoryInfo.Name,
                         pathOfParentOfDirectoryToExclude = exclusionDirectoryInfo.Parent.FullName,
                         rootedLinuxSymlinkCompatibleRelativePathToExclude =
-                            Path.GetDirectoryName( // Get the parent of
+                            Path.GetDirectoryName(// Get the parent of
                                 Path.IsPathRooted(exclusionDirectoryInfo.ToString())
                                 ? exclusionDirectoryInfo.ToString() // If rooted, just use the natural path
                                 : Path.Join(originalSourceDirectory, exclusionDirectoryInfo.ToString())), // If not rooted, join to sourceDir
@@ -271,8 +270,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
                 return (ReadOnlySpan<char> nameOfDirectoryToConsiderSpan, ReadOnlySpan<char> pathOfParentOfDirectoryToConsiderSpan) =>
                 {
-                    string pathOfParentOfDirectoryToConsider = pathOfParentOfDirectoryToConsiderSpan.ToString();
-                    string nameOfDirectoryToConsider = nameOfDirectoryToConsiderSpan.ToString();
+                    var pathOfParentOfDirectoryToConsider = pathOfParentOfDirectoryToConsiderSpan.ToString();
+                    var nameOfDirectoryToConsider = nameOfDirectoryToConsiderSpan.ToString();
 
                     foreach (var valueTuple in directories)
                     {
@@ -283,7 +282,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                         && (pathOfParentOfDirectoryToConsider.Equals(pathOfParentOfDirectoryToExclude, StringComparison.Ordinal)
                             || pathOfParentOfDirectoryToConsider.ToString().Equals(valueTuple.rootedLinuxSymlinkCompatibleRelativePathToExclude, StringComparison.Ordinal)))
                         {
-                            Logger.LogVerbose($"Excluding folder {Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString())}.");
+                            this.Logger.LogVerbose($"Excluding folder {Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString())}.");
                             return true;
                         }
                     }
@@ -292,7 +291,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 };
             }
 
-            Dictionary<string, Glob> minimatchers = new Dictionary<string, Glob>();
+            var minimatchers = new Dictionary<string, Glob>();
 
             var globOptions = new GlobOptions()
             {
@@ -315,7 +314,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 {
                     if (minimatcherKeyValue.Value.IsMatch(path))
                     {
-                        Logger.LogVerbose($"Excluding folder {path} because it matched glob {minimatcherKeyValue.Key}.");
+                        this.Logger.LogVerbose($"Excluding folder {path} because it matched glob {minimatcherKeyValue.Key}.");
                         return true;
                     }
 

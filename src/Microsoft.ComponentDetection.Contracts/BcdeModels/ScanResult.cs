@@ -16,5 +16,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 
         [JsonConverter(typeof(StringEnumConverter))]
         public ProcessingResultCode ResultCode { get; set; }
+
+        public string SourceDirectory { get; set; }
     }
 }

@@ -13,9 +13,9 @@ namespace Microsoft.ComponentDetection.Common
                 throw new ArgumentNullException(nameof(toExecute));
             }
 
-            Task<T> work = Task.Run(toExecute);
+            var work = Task.Run(toExecute);
 
-            bool completedInTime = await Task.Run(() => work.Wait(timeout));
+            var completedInTime = await Task.Run(() => work.Wait(timeout));
             if (!completedInTime)
             {
                 throw new TimeoutException($"The execution did not complete in the alotted time ({timeout.TotalSeconds} seconds) and has been terminated prior to completion");
@@ -31,8 +31,8 @@ namespace Microsoft.ComponentDetection.Common
                 throw new ArgumentNullException(nameof(toExecute));
             }
 
-            Task work = Task.Run(toExecute);
-            bool completedInTime = await Task.Run(() => work.Wait(timeout));
+            var work = Task.Run(toExecute);
+            var completedInTime = await Task.Run(() => work.Wait(timeout));
             if (!completedInTime)
             {
                 throw new TimeoutException($"The execution did not complete in the alotted time ({timeout.TotalSeconds} seconds) and has been terminated prior to completion");

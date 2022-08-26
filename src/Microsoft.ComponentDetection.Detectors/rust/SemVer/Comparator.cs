@@ -1,9 +1,9 @@
 ﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
-// 
+//
 // This is a temporary solution, so avoid using this functionality outside of the Rust detector. The following
-// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning. 
+// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning.
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
@@ -39,65 +39,65 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 throw new ArgumentException(string.Format("Invalid comparator string: {0}", input));
             }
 
-            ComparatorType = ParseComparatorType(match.Groups[1].Value);
+            this.ComparatorType = ParseComparatorType(match.Groups[1].Value);
             var partialVersion = new PartialVersion(match.Groups[2].Value);
 
             if (!partialVersion.IsFull())
             {
                 // For Operator.Equal, partial versions are handled by the StarRange
                 // desugarer, and desugar to multiple comparators.
-                switch (ComparatorType)
+                switch (this.ComparatorType)
                 {
                     // For <= with a partial version, eg. <=1.2.x, this
                     // means the same as < 1.3.0, and <=1.x means <2.0
                     case Operator.LessThanOrEqual:
-                        ComparatorType = Operator.LessThan;
+                        this.ComparatorType = Operator.LessThan;
                         if (!partialVersion.Major.HasValue)
                         {
                             // <=* means >=0.0.0
-                            ComparatorType = Operator.GreaterThanOrEqual;
-                            Version = new SemVersion(0, 0, 0);
+                            this.ComparatorType = Operator.GreaterThanOrEqual;
+                            this.Version = new SemVersion(0, 0, 0);
                         }
                         else if (!partialVersion.Minor.HasValue)
                         {
-                            Version = new SemVersion(partialVersion.Major.Value + 1, 0, 0);
+                            this.Version = new SemVersion(partialVersion.Major.Value + 1, 0, 0);
                         }
                         else
                         {
-                            Version = new SemVersion(partialVersion.Major.Value, partialVersion.Minor.Value + 1, 0);
+                            this.Version = new SemVersion(partialVersion.Major.Value, partialVersion.Minor.Value + 1, 0);
                         }
 
                         break;
                     case Operator.GreaterThan:
-                        ComparatorType = Operator.GreaterThanOrEqual;
+                        this.ComparatorType = Operator.GreaterThanOrEqual;
                         if (!partialVersion.Major.HasValue)
                         {
                             // >* is unsatisfiable, so use <0.0.0
-                            ComparatorType = Operator.LessThan;
-                            Version = new SemVersion(0, 0, 0);
+                            this.ComparatorType = Operator.LessThan;
+                            this.Version = new SemVersion(0, 0, 0);
                         }
                         else if (!partialVersion.Minor.HasValue)
                         {
                             // eg. >1.x -> >=2.0
-                            Version = new SemVersion(partialVersion.Major.Value + 1, 0, 0);
+                            this.Version = new SemVersion(partialVersion.Major.Value + 1, 0, 0);
                         }
                         else
                         {
                             // eg. >1.2.x -> >=1.3
-                            Version = new SemVersion(partialVersion.Major.Value, partialVersion.Minor.Value + 1, 0);
+                            this.Version = new SemVersion(partialVersion.Major.Value, partialVersion.Minor.Value + 1, 0);
                         }
 
                         break;
                     default:
                         // <1.2.x means <1.2.0
                         // >=1.2.x means >=1.2.0
-                        Version = partialVersion.ToZeroVersion();
+                        this.Version = partialVersion.ToZeroVersion();
                         break;
                 }
             }
             else
             {
-                Version = partialVersion.ToZeroVersion();
+                this.Version = partialVersion.ToZeroVersion();
             }
         }
 
@@ -108,8 +108,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 throw new NullReferenceException("Null comparator version");
             }
 
-            ComparatorType = comparatorType;
-            Version = comparatorVersion;
+            this.ComparatorType = comparatorType;
+            this.Version = comparatorVersion;
         }
 
         public static Tuple<int, Comparator> TryParse(string input)
@@ -145,18 +145,18 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public bool IsSatisfied(SemVersion version)
         {
-            switch (ComparatorType)
+            switch (this.ComparatorType)
             {
                 case Operator.Equal:
-                    return version == Version;
+                    return version == this.Version;
                 case Operator.LessThan:
-                    return version < Version;
+                    return version < this.Version;
                 case Operator.LessThanOrEqual:
-                    return version <= Version;
+                    return version <= this.Version;
                 case Operator.GreaterThan:
-                    return version > Version;
+                    return version > this.Version;
                 case Operator.GreaterThanOrEqual:
-                    return version >= Version;
+                    return version >= this.Version;
                 default:
                     throw new InvalidOperationException("Comparator type not recognised.");
             }
@@ -175,17 +175,17 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 c.ComparatorType == Operator.Equal ||
                 c.ComparatorType == Operator.LessThanOrEqual;
 
-            if (Version > other.Version && (operatorIsLessThan(this) || operatorIsGreaterThan(other)))
+            if (this.Version > other.Version && (operatorIsLessThan(this) || operatorIsGreaterThan(other)))
             {
                 return true;
             }
 
-            if (Version < other.Version && (operatorIsGreaterThan(this) || operatorIsLessThan(other)))
+            if (this.Version < other.Version && (operatorIsGreaterThan(this) || operatorIsLessThan(other)))
             {
                 return true;
             }
 
-            if (Version == other.Version && (
+            if (this.Version == other.Version && (
                 (operatorIncludesEqual(this) && operatorIncludesEqual(other)) ||
                 (operatorIsLessThan(this) && operatorIsLessThan(other)) ||
                 (operatorIsGreaterThan(this) && operatorIsGreaterThan(other))))
@@ -208,7 +208,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         public override string ToString()
         {
             string operatorString = null;
-            switch (ComparatorType)
+            switch (this.ComparatorType)
             {
                 case Operator.Equal:
                     operatorString = "=";
@@ -229,7 +229,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                     throw new InvalidOperationException("Comparator type not recognised.");
             }
 
-            return string.Format("{0}{1}", operatorString, Version);
+            return string.Format("{0}{1}", operatorString, this.Version);
         }
 
         public bool Equals(Comparator other)
@@ -239,17 +239,17 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 return false;
             }
 
-            return ComparatorType == other.ComparatorType && Version == other.Version;
+            return this.ComparatorType == other.ComparatorType && this.Version == other.Version;
         }
 
         public override bool Equals(object other)
         {
-            return Equals(other as Comparator);
+            return this.Equals(other as Comparator);
         }
 
         public override int GetHashCode()
         {
-            return ToString().GetHashCode();
+            return this.ToString().GetHashCode();
         }
     }
 }

@@ -1,13 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.ComponentDetection.Detectors.Maven;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using static Microsoft.ComponentDetection.Detectors.Maven.MavenParsingUtilities;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using FluentAssertions.Collections;
+﻿using System;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using static Microsoft.ComponentDetection.Detectors.Maven.MavenParsingUtilities;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -26,12 +21,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             Assert.IsNotNull(componentAndMetaData.Component);
             Assert.IsNotNull(componentAndMetaData.IsDevelopmentDependency);
             Assert.IsNotNull(componentAndMetaData.dependencyScope);
-            
+
             var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
             Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
 
             var expectedComponent = new MavenComponent("org.apache.maven", "maven-artifact", "3.6.1-SNAPSHOT");
-            
+
             Assert.AreEqual(expectedComponent.ArtifactId, actualComponent.ArtifactId);
             Assert.AreEqual(expectedComponent.GroupId, actualComponent.GroupId);
             Assert.AreEqual(expectedComponent.Version, actualComponent.Version);

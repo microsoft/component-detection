@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using System.Text;
 using Microsoft.ComponentDetection.Contracts;
-using Moq;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Moq;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -10,7 +10,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     {
         public static string GetWellFormedEmptyYarnV1LockFile()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             builder.AppendLine("# THIS IS A YARNFILE");
             builder.AppendLine("# yarn lockfile v1");
@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static string GetWellFormedEmptyYarnV2LockFile()
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
             builder.AppendLine("# THIS IS A YARNFILE");
             builder.AppendLine();

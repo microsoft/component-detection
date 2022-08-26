@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 
         // Summary:
         //     The digest of the exact image used as the base image
-        //     This is to avoid errors if there are ref updates between build time and scan time 
+        //     This is to avoid errors if there are ref updates between build time and scan time
         public string BaseImageDigest { get; set; }
 
         // Summary:

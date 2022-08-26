@@ -19,7 +19,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            loggerMock = new Mock<ILogger>();
+            this.loggerMock = new Mock<ILogger>();
         }
 
         [TestMethod]
@@ -27,7 +27,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var parser = new YarnLockParser();
 
-            Action action = () => parser.Parse(null, loggerMock.Object);
+            Action action = () => parser.Parse(null, this.loggerMock.Object);
 
             Assert.ThrowsException<ArgumentNullException>(action);
         }
@@ -70,7 +70,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
             blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
 
-            var file = parser.Parse(blockFile.Object, loggerMock.Object);
+            var file = parser.Parse(blockFile.Object, this.loggerMock.Object);
 
             Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
             Assert.AreEqual(0, file.Entries.Count());
@@ -85,25 +85,31 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var blocks = new List<YarnBlock>
             {
-                CreateBlock("a@^1.0.0", "1.0.0", "https://a", new List<YarnBlock> { CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }) }),
-                CreateBlock("b@2.4.6", "2.4.6", "https://b", new List<YarnBlock> { CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }) }),
-                CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", Enumerable.Empty<YarnBlock>()),
+                this.CreateBlock("a@^1.0.0", "1.0.0", "https://a", new List<YarnBlock>
+                {
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } })
+                }),
+                this.CreateBlock("b@2.4.6", "2.4.6", "https://b", new List<YarnBlock>
+                {
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } })
+                }),
+                this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", Enumerable.Empty<YarnBlock>()),
             };
 
             var blockFile = new Mock<IYarnBlockFile>();
             blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
             blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
 
-            var file = parser.Parse(blockFile.Object, loggerMock.Object);
+            var file = parser.Parse(blockFile.Object, this.loggerMock.Object);
 
             Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
             Assert.AreEqual(3, file.Entries.Count());
 
             foreach (var entry in file.Entries)
             {
-                YarnBlock block = blocks.Single(x => x.Values["resolved"] == entry.Resolved);
+                var block = blocks.Single(x => x.Values["resolved"] == entry.Resolved);
 
-                AssertBlockMatchesEntry(block, entry);
+                this.AssertBlockMatchesEntry(block, entry);
             }
         }
 
@@ -116,15 +122,21 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var blocks = new List<YarnBlock>
             {
-                CreateBlock("a", "1.0.0", "https://a", new List<YarnBlock> { CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }) }),
-                CreateBlock("b", "2.4.6", "https://b", new List<YarnBlock> { CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }) }),
+                this.CreateBlock("a", "1.0.0", "https://a", new List<YarnBlock>
+                {
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } })
+                }),
+                this.CreateBlock("b", "2.4.6", "https://b", new List<YarnBlock>
+                {
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } })
+                }),
             };
 
             var blockFile = new Mock<IYarnBlockFile>();
             blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
             blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
 
-            var file = parser.Parse(blockFile.Object, loggerMock.Object);
+            var file = parser.Parse(blockFile.Object, this.loggerMock.Object);
 
             Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
             Assert.AreEqual(2, file.Entries.Count());
@@ -148,7 +160,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private YarnBlock CreateBlock(string title, string version, string resolved, IEnumerable<YarnBlock> dependencies)
         {
-            var block = new YarnBlock 
+            var block = new YarnBlock
             {
                 Title = title,
                 Values =

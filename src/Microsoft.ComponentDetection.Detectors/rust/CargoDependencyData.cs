@@ -14,10 +14,10 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
         public CargoDependencyData()
         {
-            CargoWorkspaces = new HashSet<string>();
-            CargoWorkspaceExclusions = new HashSet<string>();
-            NonDevDependencies = new List<DependencySpecification>();
-            DevDependencies = new List<DependencySpecification>();
+            this.CargoWorkspaces = new HashSet<string>();
+            this.CargoWorkspaceExclusions = new HashSet<string>();
+            this.NonDevDependencies = new List<DependencySpecification>();
+            this.DevDependencies = new List<DependencySpecification>();
         }
     }
 }

@@ -17,9 +17,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void MavenFormat_ExpectedParse()
         {
-            var sampleMavenDependencyTree = File.ReadAllLines(sampleMavenDependencyTreePath);
+            var sampleMavenDependencyTree = File.ReadAllLines(this.sampleMavenDependencyTreePath);
 
-            MavenStyleDependencyGraphParser parser = new MavenStyleDependencyGraphParser();
+            var parser = new MavenStyleDependencyGraphParser();
             var parsedGraph = parser.Parse(sampleMavenDependencyTree);
             Assert.AreEqual(parsedGraph.Children.Count, 20);
             Assert.AreEqual(parsedGraph.Value, "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT");
@@ -45,9 +45,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void MavenFormat_WithSingleFileComponentRecorder_ExpectedParse()
         {
-            var sampleMavenDependencyTree = File.ReadAllLines(sampleMavenDependencyTreePath);
+            var sampleMavenDependencyTree = File.ReadAllLines(this.sampleMavenDependencyTreePath);
 
-            MavenStyleDependencyGraphParser parser = new MavenStyleDependencyGraphParser();
+            var parser = new MavenStyleDependencyGraphParser();
 
             var componentRecorder = new ComponentRecorder();
             var pomfileLocation = "location";

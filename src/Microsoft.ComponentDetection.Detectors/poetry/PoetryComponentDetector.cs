@@ -12,7 +12,7 @@ using Nett;
 namespace Microsoft.ComponentDetection.Detectors.Poetry
 {
     [Export(typeof(IComponentDetector))]
-    public class PoetryComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+    public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
     {
         public override string Id => "Poetry";
 
@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
 
         public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Pip };
 
-        public override int Version { get; } = 1;
+        public override int Version { get; } = 2;
 
         public override IEnumerable<string> Categories => new List<string> { "Python" };
 
@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var poetryLockFile = processRequest.ComponentStream;
-            Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
+            this.Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
 
             var poetryLock = StreamTomlSerializer.Deserialize(poetryLockFile.Stream, TomlSettings.Create()).Get<PoetryLock>();
             poetryLock.package.ToList().ForEach(package =>

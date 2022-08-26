@@ -6,8 +6,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     {
         public int Compare(string x, string y)
         {
-            PythonVersion xVer = new PythonVersion(x);
-            PythonVersion yVer = new PythonVersion(y);
+            var xVer = new PythonVersion(x);
+            var yVer = new PythonVersion(y);
 
             return xVer.CompareTo(yVer);
         }

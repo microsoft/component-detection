@@ -28,48 +28,52 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         [TestInitialize]
         public void InitializeTest()
         {
-            loggerMock = new Mock<ILogger>();
-            detectorRegistryServiceMock = new Mock<IDetectorRegistryService>();
-            componentDetector2Mock = new Mock<IComponentDetector>();
-            componentDetector3Mock = new Mock<IComponentDetector>();
-            versionedComponentDetector1Mock = new Mock<IComponentDetector>();
+            this.loggerMock = new Mock<ILogger>();
+            this.detectorRegistryServiceMock = new Mock<IDetectorRegistryService>();
+            this.componentDetector2Mock = new Mock<IComponentDetector>();
+            this.componentDetector3Mock = new Mock<IComponentDetector>();
+            this.versionedComponentDetector1Mock = new Mock<IComponentDetector>();
 
-            serviceUnderTest = new DetectorListingCommandService
+            this.serviceUnderTest = new DetectorListingCommandService
             {
-                DetectorRegistryService = detectorRegistryServiceMock.Object,
-                Logger = loggerMock.Object,
+                DetectorRegistryService = this.detectorRegistryServiceMock.Object,
+                Logger = this.loggerMock.Object,
             };
 
-            logOutput = new List<string>();
-            loggerMock.Setup(x => x.LogInfo(It.IsAny<string>())).Callback<string>(loggedString =>
+            this.logOutput = new List<string>();
+            this.loggerMock.Setup(x => x.LogInfo(It.IsAny<string>())).Callback<string>(loggedString =>
             {
-                logOutput.Add(loggedString);
+                this.logOutput.Add(loggedString);
             });
 
-            componentDetector2Mock.SetupGet(x => x.Id).Returns("ComponentDetector2");
-            componentDetector3Mock.SetupGet(x => x.Id).Returns("ComponentDetector3");
-            versionedComponentDetector1Mock.SetupGet(x => x.Id).Returns("VersionedComponentDetector");
+            this.componentDetector2Mock.SetupGet(x => x.Id).Returns("ComponentDetector2");
+            this.componentDetector3Mock.SetupGet(x => x.Id).Returns("ComponentDetector3");
+            this.versionedComponentDetector1Mock.SetupGet(x => x.Id).Returns("VersionedComponentDetector");
 
-            var registeredDetectors = new[] { componentDetector2Mock.Object, componentDetector3Mock.Object, versionedComponentDetector1Mock.Object };
-            detectorRegistryServiceMock.Setup(x => x.GetDetectors(It.IsAny<IEnumerable<DirectoryInfo>>(), It.IsAny<IEnumerable<string>>()))
+            var registeredDetectors = new[]
+            {
+                this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
+                this.versionedComponentDetector1Mock.Object
+            };
+            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(It.IsAny<IEnumerable<DirectoryInfo>>(), It.IsAny<IEnumerable<string>>()))
                 .Returns(registeredDetectors);
         }
 
         [TestCleanup]
         public void CleanupTests()
         {
-            detectorRegistryServiceMock.VerifyAll();
+            this.detectorRegistryServiceMock.VerifyAll();
         }
 
         [TestMethod]
         public async Task DetectorListingCommandService_ListsDetectors()
         {
-            var result = await serviceUnderTest.Handle(new ListDetectionArgs());
+            var result = await this.serviceUnderTest.Handle(new ListDetectionArgs());
             result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-            logOutput.Should().Contain("ComponentDetector2");
-            logOutput.Should().Contain("ComponentDetector3");
-            logOutput.Should().Contain("VersionedComponentDetector");
+            this.logOutput.Should().Contain("ComponentDetector2");
+            this.logOutput.Should().Contain("ComponentDetector3");
+            this.logOutput.Should().Contain("VersionedComponentDetector");
         }
     }
 }

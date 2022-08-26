@@ -15,7 +15,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
 
             // This magic grouping is a flattening of "occurrences" of components across single file recorders. This allows aggregate operations
             //  per component id, which is logical for most tests.
-            List<IGrouping<string, (string Location, IDependencyGraph Graph, string ComponentId)>> graphsAndLocationsByComponentId = GroupByComponentId(graphs);
+            var graphsAndLocationsByComponentId = GroupByComponentId(graphs);
 
             foreach (var item in graphsAndLocationsByComponentId)
             {
@@ -30,7 +30,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
 
             // This magic grouping is a flattening of "occurrences" of components across single file recorders. This allows aggregate operations
             //  per component id, which is logical for most tests.
-            List<IGrouping<string, (string Location, IDependencyGraph Graph, string ComponentId)>> graphsAndLocationsByComponentId = GroupByComponentId(graphs);
+            var graphsAndLocationsByComponentId = GroupByComponentId(graphs);
 
             forOneComponent(TupleToObject(graphsAndLocationsByComponentId.First(x => x.Key == componentId)));
         }
@@ -62,7 +62,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
             string componentIdToValidate,
             params Func<TTypedComponent, bool>[] locatingPredicatesForParentExplicitReference)
         {
-            bool isDependency = false;
+            var isDependency = false;
             recorder.ForOneComponent(componentIdToValidate, grouping =>
             {
                 isDependency = true;
@@ -84,8 +84,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
         {
             recorder.ForOneComponent(componentIdToValidate, grouping =>
             {
-                HashSet<string> explicitReferrers = new HashSet<string>(grouping.ParentComponentIdsThatAreExplicitReferences);
-                int assertionIndex = 0;
+                var explicitReferrers = new HashSet<string>(grouping.ParentComponentIdsThatAreExplicitReferences);
+                var assertionIndex = 0;
                 foreach (var predicate in locatingPredicatesForParentExplicitReference)
                 {
                     var dependencyModel = recorder.GetDetectedComponents().Select(x => x.Component).OfType<TTypedComponent>()

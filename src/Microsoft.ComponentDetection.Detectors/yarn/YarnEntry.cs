@@ -4,7 +4,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 {
     public class YarnEntry
     {
-        public string LookupKey => $"{Name}@{Version}";
+        public string LookupKey => $"{this.Name}@{this.Version}";
 
         /// <summary>
         /// Gets or sets the non-version qualified name of the entry.

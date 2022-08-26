@@ -11,7 +11,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class PipDependencySpecification
     {
-        private string DebuggerDisplay => $"{Name} ({string.Join(';', DependencySpecifiers)})";
+        private string DebuggerDisplay => $"{this.Name} ({string.Join(';', this.DependencySpecifiers)})";
 
         /// <summary>
         /// Gets or sets the package <see cref="Name"/> (ex: pyyaml).
@@ -58,7 +58,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         /// <returns></returns>
         public bool PackageIsUnsafe()
         {
-            return PackagesToIgnore.Contains(Name);
+            return PackagesToIgnore.Contains(this.Name);
         }
 
         /// <summary>
@@ -79,20 +79,20 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             {
                 var distMatch = RequiresDistRegex.Match(packageString);
 
-                for (int i = 1; i < distMatch.Groups.Count; i++)
+                for (var i = 1; i < distMatch.Groups.Count; i++)
                 {
                     if (string.IsNullOrWhiteSpace(distMatch.Groups[i].Value))
                     {
                         continue;
                     }
 
-                    if (string.IsNullOrWhiteSpace(Name))
+                    if (string.IsNullOrWhiteSpace(this.Name))
                     {
-                        Name = distMatch.Groups[i].Value;
+                        this.Name = distMatch.Groups[i].Value;
                     }
                     else
                     {
-                        DependencySpecifiers = distMatch.Groups[i].Value.Split(',');
+                        this.DependencySpecifiers = distMatch.Groups[i].Value.Split(',');
                     }
                 }
             }
@@ -103,20 +103,20 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
                 if (nameMatches.Captures.Count > 0)
                 {
-                    Name = nameMatches.Captures[0].Value;
+                    this.Name = nameMatches.Captures[0].Value;
                 }
                 else
                 {
-                    Name = packageString;
+                    this.Name = packageString;
                 }
 
                 if (versionMatches.Captures.Count > 0)
                 {
-                    DependencySpecifiers = versionMatches.Captures[0].Value.Split(',');
+                    this.DependencySpecifiers = versionMatches.Captures[0].Value.Split(',');
                 }
             }
 
-            DependencySpecifiers = DependencySpecifiers.Where(x => !x.Contains("python_version")).ToList();
+            this.DependencySpecifiers = this.DependencySpecifiers.Where(x => !x.Contains("python_version")).ToList();
         }
     }
 }

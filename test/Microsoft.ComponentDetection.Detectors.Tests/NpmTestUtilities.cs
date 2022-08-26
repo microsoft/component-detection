@@ -6,9 +6,8 @@ using System.Reactive.Linq;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
-using Moq;
 using Microsoft.ComponentDetection.TestsUtilities;
-
+using Moq;
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
@@ -17,7 +16,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     {
         public static string GetPackageJsonNoDependencies()
         {
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0""
             }}";
@@ -27,7 +26,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static IComponentStream GetPackageJsonOneRootComponentStream(string componentName0, string version0)
         {
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -79,7 +78,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static (string, string, string) GetPackageJsonOneRoot(string componentName0, string version0)
         {
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -94,7 +93,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static (string, string, string) GetPackageJsonNoDependenciesForNameAndVersion(string packageName, string packageVersion)
         {
-            string packagejson = @"{{
+            var packagejson = @"{{
                 ""name"": ""{0}"",
                 ""version"": ""{1}""
             }}";
@@ -116,7 +115,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                         ""email"": ""{1}""
                     }}
                 }}";
-            } else
+            }
+            else
             {
                 packagejson = @"{{
                     ""name"": ""test"",
@@ -126,7 +126,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                     }}
                 }}";
             }
-            
+
             var packageJsonTemplate = string.Format(packagejson, authorName, authorEmail);
             return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
         }
@@ -134,7 +134,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public static (string, string, string) GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(
             string authorName, string authorEmail = null, string authorUrl = null)
         {
-            string packagejson = @"{{{{
+            var packagejson = @"{{{{
                     ""name"": ""test"",
                     ""version"": ""0.0.0"",
                     ""author"": {0}
@@ -144,13 +144,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             if (authorEmail != null && authorUrl != null)
             {
                 author = @"""{0} <{1}> ({2})""";
-            } else if (authorEmail == null && authorUrl != null)
+            }
+            else if (authorEmail == null && authorUrl != null)
             {
                 author = @"""{0} ({2})""";
-            } else if (authorEmail != null && authorUrl == null)
+            }
+            else if (authorEmail != null && authorUrl == null)
             {
                 author = @"""{0} <{1}>""";
-            } else
+            }
+            else
             {
                 author = @"""{0}""";
             }
@@ -162,7 +165,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         public static (string, string, string) GetPackageJsonNoDependenciesMalformedAuthorAsSingleString(
             string authorName, string authorEmail = null, string authorUrl = null)
         {
-            string packagejson = @"{{{{
+            var packagejson = @"{{{{
                     ""name"": ""test"",
                     ""version"": ""0.0.0"",
                     ""author"": {0}
@@ -192,7 +195,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public static (string, string, string) GetWellFormedPackageLock2(string lockFileName, string rootName0 = null, string rootVersion0 = null, string rootName2 = null, string rootVersion2 = null, string packageName0 = "test", string packageName1 = null, string packageName3 = null)
         {
-            string packageLockJson = @"{{
+            var packageLockJson = @"{{
                 ""name"": ""{10}"",
                 ""version"": ""0.0.0"",
                 ""dependencies"": {{
@@ -225,14 +228,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                     }}
                 }}
             }}";
-            string componentName0 = rootName0 ?? Guid.NewGuid().ToString("N");
-            string version0 = rootVersion0 ?? NewRandomVersion();
-            string componentName1 = packageName1 ?? Guid.NewGuid().ToString("N");
-            string version1 = NewRandomVersion();
-            string componentName2 = rootName2 ?? Guid.NewGuid().ToString("N");
-            string version2 = rootVersion2 ?? NewRandomVersion();
-            string componentName3 = packageName3 ?? Guid.NewGuid().ToString("N");
-            string version3 = NewRandomVersion();
+            var componentName0 = rootName0 ?? Guid.NewGuid().ToString("N");
+            var version0 = rootVersion0 ?? NewRandomVersion();
+            var componentName1 = packageName1 ?? Guid.NewGuid().ToString("N");
+            var version1 = NewRandomVersion();
+            var componentName2 = rootName2 ?? Guid.NewGuid().ToString("N");
+            var version2 = rootVersion2 ?? NewRandomVersion();
+            var componentName3 = packageName3 ?? Guid.NewGuid().ToString("N");
+            var version3 = NewRandomVersion();
             var packageLockTemplate = string.Format(packageLockJson, componentName0, version0, componentName1, version1, componentName2, version2, componentName2, version2, componentName3, version3, packageName0);
 
             return (lockFileName, packageLockTemplate, Path.Combine(Path.GetTempPath(), lockFileName));

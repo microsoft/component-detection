@@ -27,45 +27,45 @@ namespace Microsoft.ComponentDetection.Common
 
         public void Init(VerbosityMode verbosity)
         {
-            WriteToFile = true;
-            Verbosity = verbosity;
+            this.WriteToFile = true;
+            this.Verbosity = verbosity;
             try
             {
-                FileWritingService.WriteFile(LogRelativePath, string.Empty);
-                LogInfo($"Log file: {FileWritingService.ResolveFilePath(LogRelativePath)}");
+                this.FileWritingService.WriteFile(LogRelativePath, string.Empty);
+                this.LogInfo($"Log file: {this.FileWritingService.ResolveFilePath(LogRelativePath)}");
             }
             catch (Exception)
             {
-                WriteToFile = false;
-                LogError("There was an issue writing to the log file, for the remainder of execution verbose output will be written to the console.");
-                Verbosity = VerbosityMode.Verbose;
+                this.WriteToFile = false;
+                this.LogError("There was an issue writing to the log file, for the remainder of execution verbose output will be written to the console.");
+                this.Verbosity = VerbosityMode.Verbose;
             }
         }
 
         public void LogCreateLoggingGroup()
         {
-            PrintToConsole(NewLine, VerbosityMode.Normal);
-            AppendToFile(NewLine);
+            this.PrintToConsole(NewLine, VerbosityMode.Normal);
+            this.AppendToFile(NewLine);
         }
 
         public void LogWarning(string message)
         {
-            LogInternal("WARN", message);
+            this.LogInternal("WARN", message);
         }
 
         public void LogInfo(string message)
         {
-            LogInternal("INFO", message);
+            this.LogInternal("INFO", message);
         }
 
         public void LogVerbose(string message)
         {
-            LogInternal("VERBOSE", message, VerbosityMode.Verbose);
+            this.LogInternal("VERBOSE", message, VerbosityMode.Verbose);
         }
 
         public void LogError(string message)
         {
-            LogInternal("ERROR", message, VerbosityMode.Quiet);
+            this.LogInternal("ERROR", message, VerbosityMode.Quiet);
         }
 
         private void LogInternal(string prefix, string message, VerbosityMode verbosity = VerbosityMode.Normal)
@@ -73,15 +73,15 @@ namespace Microsoft.ComponentDetection.Common
             var formattedPrefix = string.IsNullOrWhiteSpace(prefix) ? string.Empty : $"[{prefix}] ";
             var text = $"{formattedPrefix}{message} {NewLine}";
 
-            PrintToConsole(text, verbosity);
-            AppendToFile(text);
+            this.PrintToConsole(text, verbosity);
+            this.AppendToFile(text);
         }
 
         public void LogFailedReadingFile(string filePath, Exception e)
         {
-            PrintToConsole(NewLine, VerbosityMode.Verbose);
-            LogFailedProcessingFile(filePath);
-            LogException(e, isError: false);
+            this.PrintToConsole(NewLine, VerbosityMode.Verbose);
+            this.LogFailedProcessingFile(filePath);
+            this.LogException(e, isError: false);
             using var record = new FailedReadingFileRecord
             {
                 FilePath = filePath,
@@ -97,7 +97,7 @@ namespace Microsoft.ComponentDetection.Common
             [CallerMemberName] string callerMemberName = "",
             [CallerLineNumber] int callerLineNumber = 0)
         {
-            string tag = isError ? "[ERROR]" : "[INFO]";
+            var tag = isError ? "[ERROR]" : "[INFO]";
 
             var fullExceptionText = $"{tag} Exception encountered." + NewLine +
                 $"CallerMember: [{callerMemberName} : {callerLineNumber}]" + NewLine +
@@ -109,45 +109,45 @@ namespace Microsoft.ComponentDetection.Common
 
             if (isError)
             {
-                PrintToConsole(consoleText, VerbosityMode.Quiet);
+                this.PrintToConsole(consoleText, VerbosityMode.Quiet);
             }
             else
             {
-                PrintToConsole(consoleText, VerbosityMode.Verbose);
+                this.PrintToConsole(consoleText, VerbosityMode.Verbose);
             }
 
-            AppendToFile(fullExceptionText);
+            this.AppendToFile(fullExceptionText);
         }
 
         // TODO: All these vso specific logs should go away
         public void LogBuildWarning(string message)
         {
-            PrintToConsole($"##vso[task.LogIssue type=warning;]{message}{NewLine}", VerbosityMode.Quiet);
+            this.PrintToConsole($"##vso[task.LogIssue type=warning;]{message}{NewLine}", VerbosityMode.Quiet);
         }
 
         public void LogBuildError(string message)
         {
-            PrintToConsole($"##vso[task.LogIssue type=error;]{message}{NewLine}", VerbosityMode.Quiet);
+            this.PrintToConsole($"##vso[task.LogIssue type=error;]{message}{NewLine}", VerbosityMode.Quiet);
         }
 
         private void LogFailedProcessingFile(string filePath)
         {
-            LogVerbose($"Could not read component details from file {filePath} {NewLine}");
+            this.LogVerbose($"Could not read component details from file {filePath} {NewLine}");
         }
 
         private void AppendToFile(string text)
         {
-            if (WriteToFile)
+            if (this.WriteToFile)
             {
-                FileWritingService.AppendToFile(LogRelativePath, text);
+                this.FileWritingService.AppendToFile(LogRelativePath, text);
             }
         }
 
         private void PrintToConsole(string text, VerbosityMode minVerbosity)
         {
-            if (Verbosity >= minVerbosity)
+            if (this.Verbosity >= minVerbosity)
             {
-                ConsoleWriter.Write(text);
+                this.ConsoleWriter.Write(text);
             }
         }
     }

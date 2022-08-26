@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json.Linq;
 using NuGet.Versioning;
-using System.Text.RegularExpressions;
 
 namespace Microsoft.ComponentDetection.Detectors.Npm
 {
@@ -43,16 +43,16 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                 contents = await reader.ReadToEndAsync();
             }
 
-            await SafeProcessAllPackageJTokens(filePath, contents, (token) =>
+            await this.SafeProcessAllPackageJTokens(filePath, contents, (token) =>
             {
                 if (token["name"] == null || token["version"] == null)
                 {
-                    Logger.LogInfo($"{filePath} does not contain a name and/or version. These are required fields for a valid package.json file." +
-                                   $"It and its dependencies will not be registered.");
+                    this.Logger.LogInfo($"{filePath} does not contain a name and/or version. These are required fields for a valid package.json file." +
+                                        $"It and its dependencies will not be registered.");
                     return false;
                 }
 
-                return ProcessIndividualPackageJTokens(filePath, singleFileComponentRecorder, token);
+                return this.ProcessIndividualPackageJTokens(filePath, singleFileComponentRecorder, token);
             });
         }
 
@@ -60,13 +60,13 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
         {
             try
             {
-                await ProcessAllPackageJTokensAsync(contents, jtokenProcessor);
+                await this.ProcessAllPackageJTokensAsync(contents, jtokenProcessor);
             }
             catch (Exception e)
             {
                 // If something went wrong, just ignore the component
-                Logger.LogBuildWarning($"Could not parse Jtokens from file {sourceFilePath}.");
-                Logger.LogFailedReadingFile(sourceFilePath, e);
+                this.Logger.LogBuildWarning($"Could not parse Jtokens from file {sourceFilePath}.");
+                this.Logger.LogFailedReadingFile(sourceFilePath, e);
                 return;
             }
         }
@@ -83,15 +83,15 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             var name = packageJToken["name"].ToString();
             var version = packageJToken["version"].ToString();
             var authorToken = packageJToken["author"];
-            
+
             if (!SemanticVersion.TryParse(version, out _))
             {
-                Logger.LogWarning($"Unable to parse version \"{version}\" for package \"{name}\" found at path \"{filePath}\". This may indicate an invalid npm package component and it will not be registered.");
+                this.Logger.LogWarning($"Unable to parse version \"{version}\" for package \"{name}\" found at path \"{filePath}\". This may indicate an invalid npm package component and it will not be registered.");
                 return false;
             }
 
-            NpmComponent npmComponent = new NpmComponent(name, version, author: GetAuthor(authorToken, name, filePath));
-            
+            var npmComponent = new NpmComponent(name, version, author: this.GetAuthor(authorToken, name, filePath));
+
             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(npmComponent));
             return true;
         }
@@ -106,12 +106,12 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
             string authorName;
             string authorEmail;
-            string authorSingleStringPattern = @"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)";
-            Match authorMatch = new Regex(authorSingleStringPattern).Match(authorString);
+            var authorSingleStringPattern = @"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)";
+            var authorMatch = new Regex(authorSingleStringPattern).Match(authorString);
 
             /*
              * for parsing author in Json Format
-             * for e.g. 
+             * for e.g.
              * "author": {
              *     "name": "John Doe",
              *     "email": "johndoe@outlook.com",
@@ -127,21 +127,21 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
              *  for e.g.
              *  "author": "John Doe <johdoe@outlook.com> https://jd.com"
              */
-            } 
+            }
             else if (authorMatch.Success)
             {
                 authorName = authorMatch.Groups["name"].ToString().Trim();
                 authorEmail = authorMatch.Groups["email"].ToString().Trim();
-            } 
+            }
             else
             {
-                Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
+                this.Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
                 return null;
             }
 
             if (string.IsNullOrEmpty(authorName))
             {
-                Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
+                this.Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
                 return null;
             }
 

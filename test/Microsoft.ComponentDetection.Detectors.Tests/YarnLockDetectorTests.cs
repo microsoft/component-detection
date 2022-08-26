@@ -13,11 +13,10 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.Detectors.Yarn;
+using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Newtonsoft.Json;
-
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
@@ -34,9 +33,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            loggerMock = new Mock<ILogger>();
-            componentRecorder = new ComponentRecorder();
-            detectorTestUtility = DetectorTestUtilityCreator.Create<YarnLockComponentDetector>();
+            this.loggerMock = new Mock<ILogger>();
+            this.componentRecorder = new ComponentRecorder();
+            this.detectorTestUtility = DetectorTestUtilityCreator.Create<YarnLockComponentDetector>();
         }
 
         [TestMethod]
@@ -45,7 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var yarnLock = YarnTestUtilities.GetWellFormedEmptyYarnV1LockFile();
             var packageJson = NpmTestUtilities.GetPackageJsonNoDependencies();
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJson, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -60,7 +59,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var yarnLock = YarnTestUtilities.GetWellFormedEmptyYarnV2LockFile();
             var packageJson = NpmTestUtilities.GetPackageJsonNoDependencies();
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJson, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -89,7 +88,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var yarnLock = builder.ToString();
             var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, providedVersion0);
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -108,7 +107,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var builder = new StringBuilder();
 
-            builder.AppendLine(CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition>()));
+            builder.AppendLine(this.CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition>()));
             builder.AppendLine($"{componentName0}@{providedVersion0}");
             builder.AppendLine($"  version {version0}");
             builder.AppendLine($"  resolved {resolved0}");
@@ -116,7 +115,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var yarnLock = builder.ToString();
             var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, providedVersion0);
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -137,10 +136,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 ResolvedVersion = "https://resolved0/a/resolved",
             };
 
-            var yarnLock = CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA });
+            var yarnLock = this.CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA });
             var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentA.Name, componentA.RequestedVersion);
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -169,10 +168,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 ResolvedVersion = "https://resolved0/a/resolved",
             };
 
-            var yarnLock = CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA });
+            var yarnLock = this.CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA });
             var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentA.Name, componentA.RequestedVersion);
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -203,7 +202,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 Name = Guid.NewGuid().ToString("N"),
             };
 
-            var componentStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA }));
+            var componentStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", this.CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA }));
 
             var workspaceJson = new
             {
@@ -219,7 +218,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new YarnLockComponentDetector
             {
-                Logger = loggerMock.Object,
+                Logger = this.loggerMock.Object,
             };
 
             var mock = new Mock<IComponentStreamEnumerableFactory>();
@@ -233,21 +232,21 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             // The call to get the package.json that contains actual information
             mock.Setup(x => x.GetComponentStreams(It.IsAny<DirectoryInfo>(), It.IsAny<Func<FileInfo, bool>>(), It.IsAny<ExcludeDirectoryPredicate>(), true)).Returns(new List<IComponentStream> { packageStream });
 
-            var directoryWalkerMock = NpmTestUtilities.GetMockDirectoryWalker(new List<IComponentStream> { componentStream }, new List<IComponentStream> { packageStream }, directory.FullName, patterns: detector.SearchPatterns, componentRecorder: componentRecorder);
+            var directoryWalkerMock = NpmTestUtilities.GetMockDirectoryWalker(new List<IComponentStream> { componentStream }, new List<IComponentStream> { packageStream }, directory.FullName, patterns: detector.SearchPatterns, componentRecorder: this.componentRecorder);
 
-            var (scanResult, _) = await detectorTestUtility
+            var (scanResult, _) = await this.detectorTestUtility
                                                     .WithObservableDirectoryWalkerFactory(directoryWalkerMock)
                                                     .WithComponentStreamEnumerableFactory(mock)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
+            var detectedComponents = this.componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
             Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
             Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
 
-            componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            this.componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
                 detectedComponents.Single().Component.Id,
                 parentComponent => parentComponent.Name == componentA.Name && parentComponent.Version == version0);
         }
@@ -266,7 +265,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 Name = Guid.NewGuid().ToString("N"),
             };
 
-            var componentStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA }));
+            var componentStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", this.CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA }));
 
             var workspaceJson = new
             {
@@ -282,7 +281,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new YarnLockComponentDetector
             {
-                Logger = loggerMock.Object,
+                Logger = this.loggerMock.Object,
             };
 
             var mock = new Mock<IComponentStreamEnumerableFactory>();
@@ -296,21 +295,21 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             // The call to get the package.json that contains actual information
             mock.Setup(x => x.GetComponentStreams(It.IsAny<DirectoryInfo>(), It.IsAny<Func<FileInfo, bool>>(), It.IsAny<ExcludeDirectoryPredicate>(), true)).Returns(new List<IComponentStream> { packageStream });
 
-            var directoryWalkerMock = NpmTestUtilities.GetMockDirectoryWalker(new List<IComponentStream> { componentStream }, new List<IComponentStream> { packageStream }, directory.FullName, patterns: detector.SearchPatterns, componentRecorder: componentRecorder);
+            var directoryWalkerMock = NpmTestUtilities.GetMockDirectoryWalker(new List<IComponentStream> { componentStream }, new List<IComponentStream> { packageStream }, directory.FullName, patterns: detector.SearchPatterns, componentRecorder: this.componentRecorder);
 
-            var (scanResult, _) = await detectorTestUtility
+            var (scanResult, _) = await this.detectorTestUtility
                                                     .WithObservableDirectoryWalkerFactory(directoryWalkerMock)
                                                     .WithComponentStreamEnumerableFactory(mock)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
+            var detectedComponents = this.componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
             Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
             Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
 
-            componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            this.componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
                 detectedComponents.Single().Component.Id,
                 parentComponent => parentComponent.Name == componentA.Name && parentComponent.Version == version0);
         }
@@ -329,7 +328,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 Name = Guid.NewGuid().ToString("N"),
             };
 
-            var componentStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA }));
+            var componentStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", this.CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA }));
 
             var workspaceJson = new
             {
@@ -345,7 +344,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new YarnLockComponentDetector
             {
-                Logger = loggerMock.Object,
+                Logger = this.loggerMock.Object,
             };
 
             var mock = new Mock<IComponentStreamEnumerableFactory>();
@@ -370,22 +369,22 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                     }.Select(cs => new ProcessRequest
                     {
                         ComponentStream = cs,
-                        SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location),
+                        SingleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(cs.Location),
                     }).ToObservable());
 
-            var (scanResult, _) = await detectorTestUtility
+            var (scanResult, _) = await this.detectorTestUtility
                                                     .WithObservableDirectoryWalkerFactory(directoryWalkerMock)
                                                     .WithComponentStreamEnumerableFactory(mock)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
+            var detectedComponents = this.componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
             Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
             Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
 
-            componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            this.componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
                 detectedComponents.Single().Component.Id,
                 parentComponent => parentComponent.Name == componentA.Name && parentComponent.Version == version0);
         }
@@ -404,7 +403,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 Name = Guid.NewGuid().ToString("N"),
             };
 
-            var componentStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA }));
+            var componentStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", this.CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA }));
 
             var workspaceJson = new
             {
@@ -420,7 +419,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var detector = new YarnLockComponentDetector
             {
-                Logger = loggerMock.Object,
+                Logger = this.loggerMock.Object,
             };
 
             var mock = new Mock<IComponentStreamEnumerableFactory>();
@@ -445,22 +444,22 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                     }.Select(cs => new ProcessRequest
                     {
                         ComponentStream = cs,
-                        SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location),
+                        SingleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(cs.Location),
                     }).ToObservable());
 
-            var (scanResult, _) = await detectorTestUtility
+            var (scanResult, _) = await this.detectorTestUtility
                                                     .WithObservableDirectoryWalkerFactory(directoryWalkerMock)
                                                     .WithComponentStreamEnumerableFactory(mock)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
+            var detectedComponents = this.componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
             Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
             Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
 
-            componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            this.componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
                 detectedComponents.Single().Component.Id,
                 parentComponent => parentComponent.Name == componentA.Name && parentComponent.Version == version0);
         }
@@ -488,10 +487,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             componentA.Dependencies = new List<(string, string)> { (componentB.Name, componentB.RequestedVersion) };
 
-            var yarnLock = CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA, componentB });
+            var yarnLock = this.CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA, componentB });
             var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentA.Name, componentA.RequestedVersion);
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -535,10 +534,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             componentA.Dependencies = new List<(string, string)> { (componentB.Name, componentB.RequestedVersion) };
 
-            var yarnLock = CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA, componentB });
+            var yarnLock = this.CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA, componentB });
             var (packageJsonName, packageJsonContent, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentA.Name, componentA.RequestedVersion);
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -611,7 +610,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var yarnLock = builder.ToString();
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -673,7 +672,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var builder = new StringBuilder();
 
-            builder.AppendLine(CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition>()));
+            builder.AppendLine(this.CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition>()));
             builder.AppendLine($"{componentNameA}@{requestedVersionA}:");
             builder.AppendLine($"  version: {actualVersionA}");
             builder.AppendLine($"  resolved: {resolvedA}");
@@ -687,7 +686,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var yarnLock = builder.ToString();
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLock)
                                                     .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -743,10 +742,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             componentA.Dependencies = new List<(string, string)> { (componentB.Name, componentB.RequestedVersion) };
             componentB.Dependencies = new List<(string, string)> { (componentC.Name, componentC.RequestedVersion) };
 
-            var yarnLockFileContent = CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA, componentB, componentC });
-            var packageJsonFileContent = CreatePackageJsonFileContent(new List<YarnTestComponentDefinition> { componentA, componentB, componentC });
+            var yarnLockFileContent = this.CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA, componentB, componentC });
+            var packageJsonFileContent = this.CreatePackageJsonFileContent(new List<YarnTestComponentDefinition> { componentA, componentB, componentC });
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLockFileContent)
                                                     .WithFile("package.json", packageJsonFileContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -799,10 +798,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             componentA.Dependencies = new List<(string, string)> { (componentB.Name, componentB.RequestedVersion) };
             componentB.Dependencies = new List<(string, string)> { (componentC.Name, componentC.RequestedVersion) };
 
-            var yarnLockFileContent = CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA, componentB, componentC });
-            var packageJsonFileContent = CreatePackageJsonFileContent(new List<YarnTestComponentDefinition> { componentA, componentB, componentC });
+            var yarnLockFileContent = this.CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition> { componentA, componentB, componentC });
+            var packageJsonFileContent = this.CreatePackageJsonFileContent(new List<YarnTestComponentDefinition> { componentA, componentB, componentC });
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("yarn.lock", yarnLockFileContent)
                                                     .WithFile("package.json", packageJsonFileContent, new List<string> { "package.json" })
                                                     .ExecuteDetector();
@@ -833,24 +832,24 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             const string componentNameB = "lodash";
             const string requestedVersionB = "file:lodash-shim";
             const string actualVersion = "2.4.2";
-            
+
             var builder = new StringBuilder();
 
-            builder.AppendLine(CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition>()));
+            builder.AppendLine(this.CreateYarnLockV2FileContent(new List<YarnTestComponentDefinition>()));
             builder.AppendLine($"\"{componentNameA}@{requestedVersionA}\", \"{componentNameB}@{requestedVersionB}\":");
             builder.AppendLine($"  version: {actualVersion}");
             builder.AppendLine();
 
             var yarnLockFileContent = builder.ToString();
-            var packageJsonFileContent = CreatePackageJsonFileContent(new List<YarnTestComponentDefinition>());
-            
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var packageJsonFileContent = this.CreatePackageJsonFileContent(new List<YarnTestComponentDefinition>());
+
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                 .WithFile("yarn.lock", yarnLockFileContent)
                 .WithFile("package.json", packageJsonFileContent, new List<string> { "package.json" })
                 .ExecuteDetector();
-            
+
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-            
+
             var detectedComponents = componentRecorder.GetDetectedComponents();
 
             detectedComponents.Should().HaveCount(1);

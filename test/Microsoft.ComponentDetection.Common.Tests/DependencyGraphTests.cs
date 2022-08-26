@@ -14,7 +14,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void TestInitializer()
         {
             // Default value of true -- some tests will create their own, though.
-            dependencyGraph = new DependencyGraph.DependencyGraph(true);
+            this.dependencyGraph = new DependencyGraph.DependencyGraph(true);
         }
 
         [TestMethod]
@@ -25,25 +25,25 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var componentC = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC" };
             var componentD = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentD" };
 
-            dependencyGraph.AddComponent(componentD);
-            dependencyGraph.AddComponent(componentB, parentComponentId: componentD.Id);
-            dependencyGraph.AddComponent(componentC, parentComponentId: componentB.Id);
-            dependencyGraph.AddComponent(componentA, parentComponentId: componentB.Id);
-            dependencyGraph.AddComponent(componentA, parentComponentId: componentC.Id);
+            this.dependencyGraph.AddComponent(componentD);
+            this.dependencyGraph.AddComponent(componentB, parentComponentId: componentD.Id);
+            this.dependencyGraph.AddComponent(componentC, parentComponentId: componentB.Id);
+            this.dependencyGraph.AddComponent(componentA, parentComponentId: componentB.Id);
+            this.dependencyGraph.AddComponent(componentA, parentComponentId: componentC.Id);
 
-            var componentAChildren = dependencyGraph.GetDependenciesForComponent(componentA.Id);
+            var componentAChildren = this.dependencyGraph.GetDependenciesForComponent(componentA.Id);
             componentAChildren.Should().HaveCount(0);
 
-            var componentBChildren = dependencyGraph.GetDependenciesForComponent(componentB.Id);
+            var componentBChildren = this.dependencyGraph.GetDependenciesForComponent(componentB.Id);
             componentBChildren.Should().HaveCount(2);
             componentBChildren.Should().Contain(componentA.Id);
             componentBChildren.Should().Contain(componentC.Id);
 
-            var componentCChildren = dependencyGraph.GetDependenciesForComponent(componentC.Id);
+            var componentCChildren = this.dependencyGraph.GetDependenciesForComponent(componentC.Id);
             componentCChildren.Should().HaveCount(1);
             componentCChildren.Should().Contain(componentA.Id);
 
-            var componentDChildren = dependencyGraph.GetDependenciesForComponent(componentD.Id);
+            var componentDChildren = this.dependencyGraph.GetDependenciesForComponent(componentD.Id);
             componentDChildren.Should().HaveCount(1);
             componentDChildren.Should().Contain(componentB.Id);
         }
@@ -53,16 +53,16 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             var componentA = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA", IsExplicitReferencedDependency = true };
 
-            Action action = () => dependencyGraph.AddComponent(componentA);
+            Action action = () => this.dependencyGraph.AddComponent(componentA);
             action.Should().NotThrow();
 
-            dependencyGraph.Contains(componentA.Id).Should().BeTrue();
+            this.dependencyGraph.Contains(componentA.Id).Should().BeTrue();
         }
 
         [TestMethod]
         public void AddComponent_ComponentIsNull_ArgumentNullExceptionIsThrow()
         {
-            Action action = () => dependencyGraph.AddComponent(null);
+            Action action = () => this.dependencyGraph.AddComponent(null);
 
             action.Should().Throw<ArgumentNullException>();
         }
@@ -71,15 +71,15 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void AddComponent_ComponentHasNoId_ArgumentNullExceptionIsThrow()
         {
             var component = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = null };
-            Action action = () => dependencyGraph.AddComponent(component);
+            Action action = () => this.dependencyGraph.AddComponent(component);
             action.Should().Throw<ArgumentNullException>();
 
             component = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = string.Empty };
-            action = () => dependencyGraph.AddComponent(component);
+            action = () => this.dependencyGraph.AddComponent(component);
             action.Should().Throw<ArgumentNullException>();
 
             component = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "   " };
-            action = () => dependencyGraph.AddComponent(component);
+            action = () => this.dependencyGraph.AddComponent(component);
             action.Should().Throw<ArgumentNullException>();
         }
 
@@ -88,7 +88,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             var componentA = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA" };
 
-            Action action = () => dependencyGraph.AddComponent(componentA, parentComponentId: "nonexistingComponent");
+            Action action = () => this.dependencyGraph.AddComponent(componentA, parentComponentId: "nonexistingComponent");
 
             action.Should().Throw<ArgumentException>();
         }
@@ -103,34 +103,34 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var componentE = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentE", IsExplicitReferencedDependency = true };
             var componentF = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentF" };
 
-            dependencyGraph.AddComponent(componentA);
-            dependencyGraph.AddComponent(componentB, componentA.Id);
-            dependencyGraph.AddComponent(componentC, componentB.Id);
-            dependencyGraph.AddComponent(componentE);
-            dependencyGraph.AddComponent(componentD, componentE.Id);
-            dependencyGraph.AddComponent(componentC, componentD.Id);
-            dependencyGraph.AddComponent(componentF, componentC.Id);
+            this.dependencyGraph.AddComponent(componentA);
+            this.dependencyGraph.AddComponent(componentB, componentA.Id);
+            this.dependencyGraph.AddComponent(componentC, componentB.Id);
+            this.dependencyGraph.AddComponent(componentE);
+            this.dependencyGraph.AddComponent(componentD, componentE.Id);
+            this.dependencyGraph.AddComponent(componentC, componentD.Id);
+            this.dependencyGraph.AddComponent(componentF, componentC.Id);
 
-            var rootsForComponentA = dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+            var rootsForComponentA = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
             rootsForComponentA.Should().HaveCount(1);
 
-            var rootsForComponentE = dependencyGraph.GetExplicitReferencedDependencyIds(componentE.Id);
+            var rootsForComponentE = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentE.Id);
             rootsForComponentE.Should().HaveCount(1);
 
-            var rootsForComponentB = dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+            var rootsForComponentB = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
             rootsForComponentB.Should().HaveCount(1);
             rootsForComponentB.Should().Contain(componentA.Id);
 
-            var rootsForComponentD = dependencyGraph.GetExplicitReferencedDependencyIds(componentD.Id);
+            var rootsForComponentD = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentD.Id);
             rootsForComponentD.Should().HaveCount(1);
             rootsForComponentD.Should().Contain(componentE.Id);
 
-            var rootsForComponentC = dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
+            var rootsForComponentC = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
             rootsForComponentC.Should().HaveCount(2);
             rootsForComponentC.Should().Contain(componentA.Id);
             rootsForComponentC.Should().Contain(componentE.Id);
 
-            var rootsForComponentF = dependencyGraph.GetExplicitReferencedDependencyIds(componentF.Id);
+            var rootsForComponentF = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentF.Id);
             rootsForComponentF.Should().HaveCount(2);
             rootsForComponentF.Should().Contain(componentA.Id);
             rootsForComponentF.Should().Contain(componentE.Id);
@@ -142,13 +142,13 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var componentA = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA" };
             var componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB" };
 
-            dependencyGraph.AddComponent(componentA);
-            dependencyGraph.AddComponent(componentB, componentA.Id);
+            this.dependencyGraph.AddComponent(componentA);
+            this.dependencyGraph.AddComponent(componentB, componentA.Id);
 
-            var rootsForComponentA = dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+            var rootsForComponentA = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
             rootsForComponentA.Should().HaveCount(0);
 
-            var rootsForComponentB = dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+            var rootsForComponentB = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
             rootsForComponentB.Should().HaveCount(0);
         }
 
@@ -156,9 +156,9 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void GetExplicitReferencedDependencyIds_ComponentIsRoot_ARootIsRootOfItSelf()
         {
             var componentA = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA", IsExplicitReferencedDependency = true };
-            dependencyGraph.AddComponent(componentA);
+            this.dependencyGraph.AddComponent(componentA);
 
-            var aRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+            var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
             aRoots.Should().HaveCount(1);
             aRoots.Should().Contain(componentA.Id);
         }
@@ -170,20 +170,20 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB", IsExplicitReferencedDependency = true };
             var componentC = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC", IsExplicitReferencedDependency = true };
 
-            dependencyGraph.AddComponent(componentA);
-            dependencyGraph.AddComponent(componentB, componentA.Id);
-            dependencyGraph.AddComponent(componentC, componentB.Id);
+            this.dependencyGraph.AddComponent(componentA);
+            this.dependencyGraph.AddComponent(componentB, componentA.Id);
+            this.dependencyGraph.AddComponent(componentC, componentB.Id);
 
-            var aRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+            var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
             aRoots.Should().HaveCount(1);
             aRoots.Should().Contain(componentA.Id);
 
-            var bRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+            var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
             bRoots.Should().HaveCount(2);
             bRoots.Should().Contain(componentA.Id);
             bRoots.Should().Contain(componentB.Id);
 
-            var cRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
+            var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
             cRoots.Should().HaveCount(3);
             cRoots.Should().Contain(componentA.Id);
             cRoots.Should().Contain(componentB.Id);
@@ -197,26 +197,26 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB" };
             var componentC = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC", IsExplicitReferencedDependency = true };
 
-            dependencyGraph.AddComponent(componentA);
-            dependencyGraph.AddComponent(componentB, componentA.Id);
-            dependencyGraph.AddComponent(componentC);
-            dependencyGraph.AddComponent(componentA, componentC.Id);
+            this.dependencyGraph.AddComponent(componentA);
+            this.dependencyGraph.AddComponent(componentB, componentA.Id);
+            this.dependencyGraph.AddComponent(componentC);
+            this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
             componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB", IsExplicitReferencedDependency = true };
-            dependencyGraph.AddComponent(componentB);
+            this.dependencyGraph.AddComponent(componentB);
 
-            var aRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+            var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
             aRoots.Should().HaveCount(2);
             aRoots.Should().Contain(componentA.Id);
             aRoots.Should().Contain(componentC.Id);
 
-            var bRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+            var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
             bRoots.Should().HaveCount(3);
             bRoots.Should().Contain(componentA.Id);
             bRoots.Should().Contain(componentB.Id);
             bRoots.Should().Contain(componentC.Id);
 
-            var cRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
+            var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
             cRoots.Should().HaveCount(1);
             cRoots.Should().Contain(componentC.Id);
         }
@@ -224,78 +224,78 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void GetExplicitReferencedDependencyIds_UseManualSelectionTurnedOff_ComponentsWithNoParentsAreSelectedAsExplicitReferencedDependencies()
         {
-            dependencyGraph = new DependencyGraph.DependencyGraph(false);
+            this.dependencyGraph = new DependencyGraph.DependencyGraph(false);
             var componentA = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA" };
             var componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB" };
             var componentC = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC" };
 
-            dependencyGraph.AddComponent(componentA);
-            dependencyGraph.AddComponent(componentB, componentA.Id);
-            dependencyGraph.AddComponent(componentC);
-            dependencyGraph.AddComponent(componentA, componentC.Id);
+            this.dependencyGraph.AddComponent(componentA);
+            this.dependencyGraph.AddComponent(componentB, componentA.Id);
+            this.dependencyGraph.AddComponent(componentC);
+            this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
-            var aRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+            var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
             aRoots.Should().HaveCount(1);
             aRoots.Should().Contain(componentC.Id);
-            ((IDependencyGraph)dependencyGraph).IsComponentExplicitlyReferenced(componentA.Id).Should().BeFalse();
+            ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentA.Id).Should().BeFalse();
 
-            var bRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+            var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
             bRoots.Should().HaveCount(1);
             bRoots.Should().Contain(componentC.Id);
-            ((IDependencyGraph)dependencyGraph).IsComponentExplicitlyReferenced(componentB.Id).Should().BeFalse();
+            ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentB.Id).Should().BeFalse();
 
-            var cRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
+            var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
             cRoots.Should().HaveCount(1);
             cRoots.Should().Contain(componentC.Id);
-            ((IDependencyGraph)dependencyGraph).IsComponentExplicitlyReferenced(componentC.Id).Should().BeTrue();
+            ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentC.Id).Should().BeTrue();
         }
 
         [TestMethod]
         public void GetExplicitReferencedDependencyIds_UseManualSelectionTurnedOff_PropertyIsExplicitReferencedDependencyIsIgnored()
         {
-            dependencyGraph = new DependencyGraph.DependencyGraph(false);
+            this.dependencyGraph = new DependencyGraph.DependencyGraph(false);
             var componentA = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA", IsExplicitReferencedDependency = true };
             var componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB", IsExplicitReferencedDependency = true };
             var componentC = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC", IsExplicitReferencedDependency = true };
 
-            dependencyGraph.AddComponent(componentA);
-            dependencyGraph.AddComponent(componentB, componentA.Id);
-            dependencyGraph.AddComponent(componentC);
-            dependencyGraph.AddComponent(componentA, componentC.Id);
+            this.dependencyGraph.AddComponent(componentA);
+            this.dependencyGraph.AddComponent(componentB, componentA.Id);
+            this.dependencyGraph.AddComponent(componentC);
+            this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
-            var aRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+            var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
             aRoots.Should().HaveCount(1);
             aRoots.Should().Contain(componentC.Id);
-            ((IDependencyGraph)dependencyGraph).IsComponentExplicitlyReferenced(componentA.Id).Should().BeFalse();
+            ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentA.Id).Should().BeFalse();
 
-            var bRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+            var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
             bRoots.Should().HaveCount(1);
             bRoots.Should().Contain(componentC.Id);
-            ((IDependencyGraph)dependencyGraph).IsComponentExplicitlyReferenced(componentB.Id).Should().BeFalse();
+            ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentB.Id).Should().BeFalse();
 
-            var cRoots = dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
+            var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
             cRoots.Should().HaveCount(1);
             cRoots.Should().Contain(componentC.Id);
-            ((IDependencyGraph)dependencyGraph).IsComponentExplicitlyReferenced(componentC.Id).Should().BeTrue();
+            ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentC.Id).Should().BeTrue();
         }
 
         [TestMethod]
         public void GetExplicitReferencedDependencyIds_NullComponentId_ArgumentNullExceptionIsThrown()
         {
-            Action action = () => dependencyGraph.GetExplicitReferencedDependencyIds(null);
+            Action action = () => this.dependencyGraph.GetExplicitReferencedDependencyIds(null);
             action.Should().Throw<ArgumentNullException>();
 
-            action = () => dependencyGraph.GetExplicitReferencedDependencyIds(string.Empty);
+            action = () => this.dependencyGraph.GetExplicitReferencedDependencyIds(string.Empty);
             action.Should().Throw<ArgumentNullException>();
 
-            action = () => dependencyGraph.GetExplicitReferencedDependencyIds("   ");
+            action = () => this.dependencyGraph.GetExplicitReferencedDependencyIds("   ");
             action.Should().Throw<ArgumentNullException>();
         }
 
         [TestMethod]
         public void GetExplicitReferencedDependencyIds_ComponentIdIsNotRegisteredInGraph_ArgumentExceptionIsThrown()
         {
-            Action action = () => dependencyGraph.GetExplicitReferencedDependencyIds("nonExistingId");
+            Action action = () => this.dependencyGraph.GetExplicitReferencedDependencyIds("nonExistingId");
             action.Should().Throw<ArgumentException>();
         }
 
@@ -306,14 +306,14 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB", IsDevelopmentDependency = false };
             var componentC = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC" };
 
-            dependencyGraph.AddComponent(componentA);
-            dependencyGraph.AddComponent(componentB, componentA.Id);
-            dependencyGraph.AddComponent(componentC);
-            dependencyGraph.AddComponent(componentA, componentC.Id);
+            this.dependencyGraph.AddComponent(componentA);
+            this.dependencyGraph.AddComponent(componentB, componentA.Id);
+            this.dependencyGraph.AddComponent(componentC);
+            this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
-            dependencyGraph.IsDevelopmentDependency(componentA.Id).Should().Be(true);
-            dependencyGraph.IsDevelopmentDependency(componentB.Id).Should().Be(false);
-            dependencyGraph.IsDevelopmentDependency(componentC.Id).Should().Be(null);
+            this.dependencyGraph.IsDevelopmentDependency(componentA.Id).Should().Be(true);
+            this.dependencyGraph.IsDevelopmentDependency(componentB.Id).Should().Be(false);
+            this.dependencyGraph.IsDevelopmentDependency(componentC.Id).Should().Be(null);
         }
 
         [TestMethod]
@@ -323,32 +323,32 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB", IsDevelopmentDependency = false };
             var componentC = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC" };
 
-            dependencyGraph.AddComponent(componentA);
-            dependencyGraph.AddComponent(componentB, componentA.Id);
-            dependencyGraph.AddComponent(componentC);
-            dependencyGraph.AddComponent(componentA, componentC.Id);
+            this.dependencyGraph.AddComponent(componentA);
+            this.dependencyGraph.AddComponent(componentB, componentA.Id);
+            this.dependencyGraph.AddComponent(componentC);
+            this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
             var componentANewValue = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA", IsDevelopmentDependency = false };
             var componentBNewValue = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB", IsDevelopmentDependency = true };
             var componentCNewValue = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC", IsDevelopmentDependency = true };
-            dependencyGraph.AddComponent(componentANewValue);
-            dependencyGraph.AddComponent(componentBNewValue);
-            dependencyGraph.AddComponent(componentCNewValue);
+            this.dependencyGraph.AddComponent(componentANewValue);
+            this.dependencyGraph.AddComponent(componentBNewValue);
+            this.dependencyGraph.AddComponent(componentCNewValue);
 
-            dependencyGraph.IsDevelopmentDependency(componentA.Id).Should().Be(false);
-            dependencyGraph.IsDevelopmentDependency(componentB.Id).Should().Be(false);
-            dependencyGraph.IsDevelopmentDependency(componentC.Id).Should().Be(true);
+            this.dependencyGraph.IsDevelopmentDependency(componentA.Id).Should().Be(false);
+            this.dependencyGraph.IsDevelopmentDependency(componentB.Id).Should().Be(false);
+            this.dependencyGraph.IsDevelopmentDependency(componentC.Id).Should().Be(true);
 
             var componentANullValue = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA" };
             var componentBNullValue = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB" };
             var componentCNullValue = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC" };
-            dependencyGraph.AddComponent(componentANullValue);
-            dependencyGraph.AddComponent(componentBNullValue);
-            dependencyGraph.AddComponent(componentCNullValue);
+            this.dependencyGraph.AddComponent(componentANullValue);
+            this.dependencyGraph.AddComponent(componentBNullValue);
+            this.dependencyGraph.AddComponent(componentCNullValue);
 
-            dependencyGraph.IsDevelopmentDependency(componentA.Id).Should().Be(false);
-            dependencyGraph.IsDevelopmentDependency(componentB.Id).Should().Be(false);
-            dependencyGraph.IsDevelopmentDependency(componentC.Id).Should().Be(true);
+            this.dependencyGraph.IsDevelopmentDependency(componentA.Id).Should().Be(false);
+            this.dependencyGraph.IsDevelopmentDependency(componentB.Id).Should().Be(false);
+            this.dependencyGraph.IsDevelopmentDependency(componentC.Id).Should().Be(true);
         }
     }
 }
