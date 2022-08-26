@@ -1,4 +1,3 @@
-﻿using Moq;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +7,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
+using Moq;
 
 namespace Microsoft.ComponentDetection.TestsUtilities
 {
@@ -27,6 +27,16 @@ namespace Microsoft.ComponentDetection.TestsUtilities
         private T detector;
 
         private List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)> filesToAdd = new List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)>();
+
+        private static IComponentStream CreateComponentStreamForFile(string pattern, string filePath, Stream content)
+        {
+            var getFileMock = new Mock<IComponentStream>();
+            getFileMock.SetupGet(x => x.Stream).Returns(content);
+            getFileMock.SetupGet(x => x.Pattern).Returns(pattern);
+            getFileMock.SetupGet(x => x.Location).Returns(filePath);
+
+            return getFileMock.Object;
+        }
 
         public async Task<(IndividualDetectorScanResult, IComponentRecorder)> ExecuteDetector()
         {
@@ -114,16 +124,6 @@ namespace Microsoft.ComponentDetection.TestsUtilities
                 SingleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath),
                 ComponentStream = CreateComponentStreamForFile(pattern, filePath, content),
             };
-        }
-
-        private static IComponentStream CreateComponentStreamForFile(string pattern, string filePath, Stream content)
-        {
-            var getFileMock = new Mock<IComponentStream>();
-            getFileMock.SetupGet(x => x.Stream).Returns(content);
-            getFileMock.SetupGet(x => x.Pattern).Returns(pattern);
-            getFileMock.SetupGet(x => x.Location).Returns(filePath);
-
-            return getFileMock.Object;
         }
 
         private void InitializeFileRelatedMocksUsingDefaultImplementationIfNecessary()

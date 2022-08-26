@@ -9,10 +9,9 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Microsoft.ComponentDetection.TestsUtilities;
-
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
@@ -608,10 +607,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var packageLockTemplate = string.Format(
                 packageLockJson,
-                componentA.Name, componentA.Version,
-                componentB.Name, componentB.Version,
-                componentB.Name, componentB.Version,
-                componentC.Name, componentC.Version);
+                componentA.Name,
+                componentA.Version,
+                componentB.Name,
+                componentB.Version,
+                componentB.Name,
+                componentB.Version,
+                componentC.Name,
+                componentC.Version);
 
             var packagejson = @"{{
                 ""name"": ""test"",

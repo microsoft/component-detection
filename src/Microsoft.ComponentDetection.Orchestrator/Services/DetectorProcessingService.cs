@@ -1,11 +1,3 @@
-﻿using DotNet.Globbing;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,7 +7,14 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
+using DotNet.Globbing;
+using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Common.DependencyGraph;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Newtonsoft.Json;
 using static System.Environment;
 
 namespace Microsoft.ComponentDetection.Orchestrator.Services
@@ -32,6 +31,25 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         [Import]
         public IObservableDirectoryWalkerFactory Scanner { get; set; }
+
+        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
+        {
+            var detectorArgs = new Dictionary<string, string>();
+
+            foreach (var arg in detectorArgsList)
+            {
+                var keyValue = arg.Split('=');
+
+                if (keyValue.Length != 2)
+                {
+                    continue;
+                }
+
+                detectorArgs.Add(keyValue[0], keyValue[1]);
+            }
+
+            return detectorArgs;
+        }
 
         public async Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions)
         {
@@ -225,25 +243,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             }
         }
 
-        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
-        {
-            var detectorArgs = new Dictionary<string, string>();
-
-            foreach (var arg in detectorArgsList)
-            {
-                var keyValue = arg.Split('=');
-
-                if (keyValue.Length != 2)
-                {
-                    continue;
-                }
-
-                detectorArgs.Add(keyValue[0], keyValue[1]);
-            }
-
-            return detectorArgs;
-        }
-
         public ExcludeDirectoryPredicate GenerateDirectoryExclusionPredicate(string originalSourceDirectory, IEnumerable<string> directoryExclusionList, IEnumerable<string> directoryExclusionListObsolete, bool allowWindowsPaths, bool ignoreCase = true)
         {
             if (directoryExclusionListObsolete?.Any() != true && directoryExclusionList?.Any() != true)
@@ -262,7 +261,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                         nameOfExcludedDirectory = exclusionDirectoryInfo.Name,
                         pathOfParentOfDirectoryToExclude = exclusionDirectoryInfo.Parent.FullName,
                         rootedLinuxSymlinkCompatibleRelativePathToExclude =
-                            Path.GetDirectoryName( // Get the parent of
+                            Path.GetDirectoryName(// Get the parent of
                                 Path.IsPathRooted(exclusionDirectoryInfo.ToString())
                                 ? exclusionDirectoryInfo.ToString() // If rooted, just use the natural path
                                 : Path.Join(originalSourceDirectory, exclusionDirectoryInfo.ToString())), // If not rooted, join to sourceDir

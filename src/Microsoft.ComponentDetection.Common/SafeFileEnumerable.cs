@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -50,7 +50,9 @@ namespace Microsoft.ComponentDetection.Common
         {
             var previouslyEnumeratedDirectories = this.enumeratedDirectories ?? new HashSet<string>();
 
-            var fse = new FileSystemEnumerable<MatchedFile>(this.directory.FullName, (ref FileSystemEntry entry) =>
+            var fse = new FileSystemEnumerable<MatchedFile>(
+                this.directory.FullName,
+                (ref FileSystemEntry entry) =>
             {
                 if (!(entry.ToFileSystemInfo() is FileInfo fi))
                 {
@@ -67,7 +69,8 @@ namespace Microsoft.ComponentDetection.Common
                 }
 
                 return new MatchedFile() { File = fi, Pattern = foundPattern };
-            }, this.enumerationOptions)
+            },
+                this.enumerationOptions)
             {
                 ShouldIncludePredicate = (ref FileSystemEntry entry) =>
                 {

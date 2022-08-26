@@ -9,9 +9,9 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Tests.Mocks;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Newtonsoft.Json;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests

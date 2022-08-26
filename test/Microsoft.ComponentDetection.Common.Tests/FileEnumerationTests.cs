@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -25,8 +25,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var loggerMock = new Mock<ILogger>();
 
             var pathUtility = new PathUtilityService();
-            var sfe = new SafeFileEnumerable(new DirectoryInfo(Path.Combine(testDirectory, "root")), new[] { "*" }, loggerMock.Object,
-                pathUtility, (name, directoryName) => false, true);
+            var sfe = new SafeFileEnumerable(new DirectoryInfo(Path.Combine(testDirectory, "root")), new[] { "*" }, loggerMock.Object, pathUtility, (name, directoryName) => false, true);
 
             var foundFiles = new List<string>();
             foreach (var f in sfe)
