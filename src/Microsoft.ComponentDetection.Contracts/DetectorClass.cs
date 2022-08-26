@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <summary>Indicates a detector applies to Pip packages.</summary>
         Pip,
 
-        /// <summary>Indicates a detector applies to Go modules</summary>
+        /// <summary>Indicates a detector applies to Go modules.</summary>
         GoMod,
 
         /// <summary>Indicates a detector applies to CocoaPods packages.</summary>
