@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -57,13 +57,13 @@ namespace Microsoft.ComponentDetection.Common
             if (!isCommandLocatable)
             {
                 throw new InvalidOperationException(
-                    $"{nameof(ExecuteCommand)} was called with a command that could not be located: `{command}`!");
+                    $"{nameof(this.ExecuteCommand)} was called with a command that could not be located: `{command}`!");
             }
 
             if (workingDirectory != null && !Directory.Exists(workingDirectory.FullName))
             {
                 throw new InvalidOperationException(
-                    $"{nameof(ExecuteCommand)} was called with a working directory that could not be located: `{workingDirectory.FullName}`");
+                    $"{nameof(this.ExecuteCommand)} was called with a working directory that could not be located: `{workingDirectory.FullName}`");
             }
 
             using var record = new CommandLineInvocationTelemetryRecord();
