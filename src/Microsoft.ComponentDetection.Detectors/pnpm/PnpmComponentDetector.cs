@@ -1,14 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
 namespace Microsoft.ComponentDetection.Detectors.Pnpm
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.Internal;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+
     [Export(typeof(IComponentDetector))]
     public class PnpmComponentDetector : FileComponentDetector
     {

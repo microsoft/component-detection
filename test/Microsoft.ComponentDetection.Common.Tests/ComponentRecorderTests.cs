@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using FluentAssertions;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace Microsoft.ComponentDetection.Common.Tests
 {
+    using System;
+    using System.Collections.Generic;
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.Common.DependencyGraph;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.BcdeModels;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
     [TestClass]
     public class ComponentRecorderTests
     {
@@ -155,9 +155,9 @@ namespace Microsoft.ComponentDetection.Common.Tests
             // We want to take a look at how the class is used by it's friends
             var internalsView = (ComponentRecorder.SingleFileComponentRecorder)singleFileComponentRecorder;
             var graph = internalsView.DependencyGraph;
-            var component1 = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "component1" };
+            var component1 = new Common.DependencyGraph.DependencyGraph.ComponentRefNode { Id = "component1" };
             graph.AddComponent(component1);
-            var component2 = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "component2" };
+            var component2 = new Common.DependencyGraph.DependencyGraph.ComponentRefNode { Id = "component2" };
             graph.AddComponent(component2);
 
             component2.DependedOnByIds.Add(component1.Id);
@@ -199,9 +199,9 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var internalsView = (ComponentRecorder.SingleFileComponentRecorder)singleFileComponentRecorder;
             var graph = internalsView.DependencyGraph;
 
-            var component1 = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "component1" };
+            var component1 = new Common.DependencyGraph.DependencyGraph.ComponentRefNode { Id = "component1" };
             graph.AddComponent(component1);
-            var component2 = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "component2" };
+            var component2 = new Common.DependencyGraph.DependencyGraph.ComponentRefNode { Id = "component2" };
             graph.AddComponent(component2);
 
             component2.DependedOnByIds.Add(component1.Id);

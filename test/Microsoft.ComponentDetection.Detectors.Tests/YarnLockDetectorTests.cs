@@ -1,26 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FluentAssertions;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.Detectors.Yarn;
-using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using Newtonsoft.Json;
-using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Reactive.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.Common;
+    using Microsoft.ComponentDetection.Common.DependencyGraph;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.Internal;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+    using Microsoft.ComponentDetection.Detectors.Yarn;
+    using Microsoft.ComponentDetection.TestsUtilities;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+    using Newtonsoft.Json;
+    using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

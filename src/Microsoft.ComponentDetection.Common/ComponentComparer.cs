@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System.Collections.Generic;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+
     public class ComponentComparer : EqualityComparer<TypedComponent>
     {
         public override bool Equals(TypedComponent t0, TypedComponent t1)

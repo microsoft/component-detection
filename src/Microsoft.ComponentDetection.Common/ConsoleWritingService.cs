@@ -1,8 +1,8 @@
-﻿using System;
-using System.Composition;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System;
+    using System.Composition;
+
     [Export(typeof(IConsoleWritingService))]
     public class ConsoleWritingService : IConsoleWritingService
     {

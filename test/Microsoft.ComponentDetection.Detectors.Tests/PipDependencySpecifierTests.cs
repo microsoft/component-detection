@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using Microsoft.ComponentDetection.Detectors.Pip;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using System.Collections.Generic;
+    using Microsoft.ComponentDetection.Detectors.Pip;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
     [TestClass]
     public class PipDependencySpecifierTests
     {

@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
-using Semver;
-
-using Range = Microsoft.ComponentDetection.Detectors.Rust.SemVer.Range;
-
 namespace Microsoft.ComponentDetection.Detectors.Rust
 {
+    using System;
+    using System.Collections.Generic;
+    using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
+    using Semver;
+
+    using Range = Microsoft.ComponentDetection.Detectors.Rust.SemVer.Range;
+
     public class DependencySpecification
     {
         private IDictionary<string, ISet<ISet<Range>>> dependencies;

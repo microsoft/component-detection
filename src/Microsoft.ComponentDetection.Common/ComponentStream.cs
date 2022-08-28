@@ -1,8 +1,8 @@
-﻿using System.IO;
-using Microsoft.ComponentDetection.Contracts;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System.IO;
+    using Microsoft.ComponentDetection.Contracts;
+
     public class ComponentStream : IComponentStream
     {
         public Stream Stream { get; set; }

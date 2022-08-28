@@ -1,7 +1,7 @@
-using System.Collections.Generic;
-
 namespace Microsoft.ComponentDetection.Detectors.Pip
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// A project on pypi.
     /// </summary>

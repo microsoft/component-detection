@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
-namespace Microsoft.ComponentDetection.Contracts
+﻿namespace Microsoft.ComponentDetection.Contracts
 {
+    using System.Collections.Generic;
+    using Microsoft.ComponentDetection.Contracts.BcdeModels;
+
     public interface IComponentRecorder
     {
         TypedComponent.TypedComponent GetComponent(string componentId);

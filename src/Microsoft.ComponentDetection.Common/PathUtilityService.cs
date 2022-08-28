@@ -1,16 +1,16 @@
-using System;
-using System.Collections.Concurrent;
-using System.Composition;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Enumeration;
-using System.Runtime.InteropServices;
-using System.Text;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.Win32.SafeHandles;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Composition;
+    using System.Diagnostics;
+    using System.IO;
+    using System.IO.Enumeration;
+    using System.Runtime.InteropServices;
+    using System.Text;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.Win32.SafeHandles;
+
     // We may want to consider breaking this class into Win/Mac/Linux variants if it gets bigger
     [Export(typeof(IPathUtilityService))]
     [Export(typeof(PathUtilityService))]

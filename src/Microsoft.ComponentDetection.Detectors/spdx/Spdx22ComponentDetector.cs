@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Spdx
+﻿namespace Microsoft.ComponentDetection.Detectors.Spdx
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using System.Linq;
+    using System.Security.Cryptography;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.Internal;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+
     /// <summary>
     /// Spdx22ComponentDetector discover SPDX SBOM files in JSON format and create components with the information about
     /// what SPDX document describes.

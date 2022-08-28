@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
-
-namespace Microsoft.ComponentDetection.Contracts.BcdeModels
+﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 {
+    using System.Collections.Generic;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
+    using Newtonsoft.Json.Serialization;
+
     [JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class Detector
     {

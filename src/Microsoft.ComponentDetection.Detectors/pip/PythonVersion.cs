@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-
 namespace Microsoft.ComponentDetection.Detectors.Pip
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text.RegularExpressions;
+
     public class PythonVersion : IComparable<PythonVersion>
     {
         // This is a light C# port of the python version capture regex described here:

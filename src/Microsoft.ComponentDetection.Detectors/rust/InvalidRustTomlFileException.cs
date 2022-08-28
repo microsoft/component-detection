@@ -1,8 +1,8 @@
-﻿using System;
-using System.Runtime.Serialization;
-
 namespace Microsoft.ComponentDetection.Detectors.Rust
 {
+    using System;
+    using System.Runtime.Serialization;
+
     public class InvalidRustTomlFileException : Exception
     {
         public InvalidRustTomlFileException()

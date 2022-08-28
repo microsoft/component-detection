@@ -1,8 +1,8 @@
-using System.Linq;
-using System.Text.RegularExpressions;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System.Linq;
+    using System.Text.RegularExpressions;
+
     public class DockerRegex
     {
         /**

@@ -1,18 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
-using DotNet.Globbing;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
-using Nett;
-using Semver;
-
 namespace Microsoft.ComponentDetection.Detectors.Rust
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text.RegularExpressions;
+    using DotNet.Globbing;
+    using Microsoft.ComponentDetection.Common.Telemetry.Records;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
+    using Nett;
+    using Semver;
+
     public class RustCrateUtilities
     {
         private static readonly Regex DependencyFormatRegex = new Regex(

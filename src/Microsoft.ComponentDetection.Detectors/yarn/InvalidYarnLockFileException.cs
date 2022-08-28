@@ -1,8 +1,8 @@
-﻿using System;
-using System.Runtime.Serialization;
-
 namespace Microsoft.ComponentDetection.Detectors.Yarn
 {
+    using System;
+    using System.Runtime.Serialization;
+
     public class InvalidYarnLockFileException : Exception
     {
         public InvalidYarnLockFileException()

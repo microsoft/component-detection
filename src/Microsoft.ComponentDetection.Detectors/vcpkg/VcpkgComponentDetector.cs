@@ -1,17 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
-using Newtonsoft.Json;
-
 namespace Microsoft.ComponentDetection.Detectors.Vcpkg
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.Internal;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
+    using Newtonsoft.Json;
+
     [Export(typeof(IComponentDetector))]
     public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
     {

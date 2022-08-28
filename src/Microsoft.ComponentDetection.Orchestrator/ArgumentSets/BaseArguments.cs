@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using CommandLine;
-using Microsoft.ComponentDetection.Common;
-using Newtonsoft.Json;
-
 namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using CommandLine;
+    using Microsoft.ComponentDetection.Common;
+    using Newtonsoft.Json;
+
     public class BaseArguments : IScanArguments
     {
         [Option("Debug", Required = false, HelpText = "Wait for debugger on start")]

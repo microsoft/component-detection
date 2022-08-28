@@ -1,22 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using FluentAssertions;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Npm;
-using Microsoft.ComponentDetection.Detectors.Pip;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-using Microsoft.ComponentDetection.Orchestrator.Services;
-using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.Common.DependencyGraph;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.BcdeModels;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Detectors.Npm;
+    using Microsoft.ComponentDetection.Detectors.Pip;
+    using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+    using Microsoft.ComponentDetection.Orchestrator.Services;
+    using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

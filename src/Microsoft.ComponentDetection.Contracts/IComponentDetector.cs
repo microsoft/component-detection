@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
 namespace Microsoft.ComponentDetection.Contracts
 {
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+
     /// <summary>
     /// Basic interface required for something to satisfy component detection.
     /// If you are writing a File based component detector, you may prefer the<see cref="FileComponentDetector" /> class.

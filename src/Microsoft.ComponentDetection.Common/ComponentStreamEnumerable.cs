@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using Microsoft.ComponentDetection.Contracts;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.IO;
+    using Microsoft.ComponentDetection.Contracts;
+
     public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
     {
         private IEnumerable<MatchedFile> ToEnumerate { get; }

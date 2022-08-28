@@ -1,19 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-
 namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Common;
+    using Microsoft.ComponentDetection.Common.DependencyGraph;
+    using Microsoft.ComponentDetection.Common.Telemetry.Records;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.BcdeModels;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+
     [Export(typeof(IGraphTranslationService))]
     [ExportMetadata("Priority", 0)]
     public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationService

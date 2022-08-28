@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
-using Microsoft.ComponentDetection.Contracts;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System;
+    using System.IO;
+    using Microsoft.ComponentDetection.Contracts;
+
     public class LazyComponentStream : IComponentStream
     {
         private readonly FileInfo fileInfo;

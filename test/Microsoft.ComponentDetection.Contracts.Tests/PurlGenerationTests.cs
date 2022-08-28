@@ -1,9 +1,9 @@
-﻿using FluentAssertions;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace Microsoft.ComponentDetection.Contracts.Tests
 {
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using Microsoft.ComponentDetection.Contracts;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using Microsoft.ComponentDetection.Contracts;
+
     [Export(typeof(ISafeFileEnumerableFactory))]
     [Shared]
     public class SafeFileEnumerableFactory : ISafeFileEnumerableFactory

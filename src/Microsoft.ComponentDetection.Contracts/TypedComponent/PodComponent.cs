@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using PackageUrl;
-
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
+    using System.Collections.Generic;
+    using PackageUrl;
+
     public class PodComponent : TypedComponent
     {
         private PodComponent()

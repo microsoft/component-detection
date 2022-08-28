@@ -1,19 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using YamlDotNet.Core;
-using YamlDotNet.Core.Events;
-using YamlDotNet.Serialization;
-
 namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Common;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.Internal;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using YamlDotNet.Core;
+    using YamlDotNet.Core.Events;
+    using YamlDotNet.Serialization;
+
     [Export(typeof(IComponentDetector))]
     public class PodComponentDetector : FileComponentDetector
     {

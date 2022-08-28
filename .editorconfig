@@ -471,10 +471,6 @@ dotnet_diagnostic.SA1108.severity = suggestion
 # Parameter list should follow declaration
 dotnet_diagnostic.SA1114.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1200.md
-# Using directive should appear within a namespace declaration
-dotnet_diagnostic.SA1200.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1201.md
 # A field should not follow a property
 dotnet_diagnostic.SA1201.severity = suggestion

@@ -1,16 +1,16 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.TestsUtilities;
-using Moq;
-using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
-
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using System.IO.Compression;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.TestsUtilities;
+    using Moq;
+    using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
+
     public static class NugetTestUtilities
     {
         public static string GetRandomValidNuSpecComponent()

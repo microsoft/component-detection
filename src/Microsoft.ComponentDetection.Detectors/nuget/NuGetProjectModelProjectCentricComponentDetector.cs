@@ -1,20 +1,20 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Newtonsoft.Json;
-using NuGet.Packaging.Core;
-using NuGet.ProjectModel;
-using NuGet.Versioning;
-
 namespace Microsoft.ComponentDetection.Detectors.NuGet
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.Internal;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Newtonsoft.Json;
+    using global::NuGet.Packaging.Core;
+    using global::NuGet.ProjectModel;
+    using global::NuGet.Versioning;
+
     [Export(typeof(IComponentDetector))]
     public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDetector
     {

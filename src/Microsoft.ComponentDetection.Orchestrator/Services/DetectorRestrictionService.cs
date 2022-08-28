@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.Linq;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Orchestrator.Exceptions;
-
 namespace Microsoft.ComponentDetection.Orchestrator.Services
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.Linq;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Orchestrator.Exceptions;
+
     [Export(typeof(IDetectorRestrictionService))]
     public class DetectorRestrictionService : IDetectorRestrictionService
     {

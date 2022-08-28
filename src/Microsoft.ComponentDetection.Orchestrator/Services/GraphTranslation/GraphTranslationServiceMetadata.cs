@@ -1,7 +1,7 @@
-﻿using System.ComponentModel;
-
 namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 {
+    using System.ComponentModel;
+
     public class GraphTranslationServiceMetadata
     {
         /// <summary>

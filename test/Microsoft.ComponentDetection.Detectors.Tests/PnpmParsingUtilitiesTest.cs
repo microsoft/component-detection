@@ -1,15 +1,15 @@
-﻿using System;
-using System.Threading.Tasks;
-using FluentAssertions;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Pnpm;
-using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using System;
+    using System.Threading.Tasks;
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Detectors.Pnpm;
+    using Microsoft.ComponentDetection.TestsUtilities;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+
     [TestClass]
     public class PnpmParsingUtilitiesTest
     {

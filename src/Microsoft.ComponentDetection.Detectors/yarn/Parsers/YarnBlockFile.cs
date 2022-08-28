@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-
-namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// https://github.com/yarnpkg/yarn/issues/5629
     ///

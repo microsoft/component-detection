@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
-using FluentAssertions;
-using Microsoft.ComponentDetection.Detectors.Rust;
-using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using System.Collections.Generic;
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.Detectors.Rust;
+    using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

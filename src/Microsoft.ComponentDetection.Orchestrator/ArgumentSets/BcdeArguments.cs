@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using CommandLine;
-using Newtonsoft.Json;
-
 namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
 {
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using CommandLine;
+    using Newtonsoft.Json;
+
     [Verb("scan", HelpText = "Scans components")]
     [Export(typeof(IScanArguments))]
     public class BcdeArguments : BaseArguments, IDetectionArguments

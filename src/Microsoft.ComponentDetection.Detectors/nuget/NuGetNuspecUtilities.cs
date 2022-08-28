@@ -1,11 +1,11 @@
-﻿using System;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace Microsoft.ComponentDetection.Detectors.NuGet
 {
+    using System;
+    using System.IO;
+    using System.IO.Compression;
+    using System.Linq;
+    using System.Threading.Tasks;
+
     public static class NuGetNuspecUtilities
     {
         // An empty zip archive file is 22 bytes long which is minumum possible for a zip archive file.

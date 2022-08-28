@@ -1,7 +1,7 @@
-﻿using System;
-
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 {
+    using System;
+
     public class BcdeExecutionTelemetryRecord : BaseDetectionTelemetryRecord
     {
         public override string RecordName => "BcdeExecution";

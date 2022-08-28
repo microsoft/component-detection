@@ -1,7 +1,7 @@
-﻿using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using Microsoft.ComponentDetection.Contracts.BcdeModels;
+
     /// <summary>
     /// Merges dependnecy Scope in their order of Priority.
     /// Higher priority scope, as indicated by its lower enum value is given precendence.

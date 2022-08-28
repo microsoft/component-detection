@@ -1,13 +1,13 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using FluentAssertions;
-using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace Microsoft.ComponentDetection.Common.Tests
 {
+    using System;
+    using System.IO;
+    using System.Text;
+    using System.Threading.Tasks;
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.TestsUtilities;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

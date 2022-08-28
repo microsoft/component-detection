@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
 namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.BcdeModels;
+
     public static class GraphTranslationUtility
     {
         public static DependencyGraphCollection AccumulateAndConvertToContract(IEnumerable<IReadOnlyDictionary<string, IDependencyGraph>> dependencyGraphs)

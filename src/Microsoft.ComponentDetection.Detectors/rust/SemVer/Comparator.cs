@@ -1,4 +1,4 @@
-﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
+// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
 //
@@ -7,12 +7,12 @@
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
-using System;
-using System.Text.RegularExpressions;
-using Semver;
-
 namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 {
+    using System;
+    using System.Text.RegularExpressions;
+    using Semver;
+
     internal class Comparator : IEquatable<Comparator>
     {
         public readonly Operator ComparatorType;

@@ -7,13 +7,13 @@
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Semver;
-
 namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Semver;
+
     /// <summary>
     /// Specifies valid versions.
     /// </summary>

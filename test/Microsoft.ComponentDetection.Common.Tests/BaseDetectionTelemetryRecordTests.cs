@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Runtime.Serialization;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace Microsoft.ComponentDetection.Common.Tests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Reflection;
+    using System.Runtime.Serialization;
+    using Microsoft.ComponentDetection.Common.Telemetry.Records;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

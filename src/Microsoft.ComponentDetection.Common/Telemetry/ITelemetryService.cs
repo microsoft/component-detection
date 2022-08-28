@@ -1,7 +1,7 @@
-﻿using Microsoft.ComponentDetection.Common.Telemetry.Records;
-
 namespace Microsoft.ComponentDetection.Common.Telemetry
 {
+    using Microsoft.ComponentDetection.Common.Telemetry.Records;
+
     public interface ITelemetryService
     {
         /// <summary>

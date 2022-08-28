@@ -7,12 +7,12 @@
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
-using System;
-using System.Text.RegularExpressions;
-using Semver;
-
 namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 {
+    using System;
+    using System.Text.RegularExpressions;
+    using Semver;
+
     internal static class Desugarer
     {
         private const string VersionChars = @"[0-9a-zA-Z\-\+\.\*]";

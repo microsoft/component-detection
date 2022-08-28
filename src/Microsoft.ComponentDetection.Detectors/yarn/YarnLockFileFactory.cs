@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
-
-namespace Microsoft.ComponentDetection.Detectors.Yarn
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+
     public static class YarnLockFileFactory
     {
         public static IList<IYarnLockParser> Parsers { get; }

@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-
-namespace Microsoft.ComponentDetection.Contracts
+﻿namespace Microsoft.ComponentDetection.Contracts
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+
     public interface IComponentStreamEnumerableFactory
     {
         /// <summary>

@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-
-namespace Microsoft.ComponentDetection.Contracts.BcdeModels
+﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 {
+    using System.Collections.Generic;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Serialization;
+
     [JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class DependencyGraphWithMetadata
     {

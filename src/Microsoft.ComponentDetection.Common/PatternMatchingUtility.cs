@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Reflection;
+
     public static class PatternMatchingUtility
     {
         public delegate bool FilePatternMatcher(ReadOnlySpan<char> span);

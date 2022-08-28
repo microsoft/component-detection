@@ -1,8 +1,8 @@
-﻿using System.IO;
-using System.Text;
-
 namespace Microsoft.ComponentDetection.TestsUtilities
 {
+    using System.IO;
+    using System.Text;
+
     public static class ExtensionMethods
     {
         public static Stream ToStream(this string input)

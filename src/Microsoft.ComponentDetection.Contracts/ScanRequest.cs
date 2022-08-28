@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.IO;
-
-namespace Microsoft.ComponentDetection.Contracts
+﻿namespace Microsoft.ComponentDetection.Contracts
 {
+    using System.Collections.Generic;
+    using System.IO;
+
     /// <summary>Request object for a component scan.</summary>
     public class ScanRequest
     {

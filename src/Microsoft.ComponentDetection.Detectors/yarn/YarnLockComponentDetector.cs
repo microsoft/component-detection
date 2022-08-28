@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using DotNet.Globbing;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Npm;
-
-namespace Microsoft.ComponentDetection.Detectors.Yarn
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using System.Threading.Tasks;
+    using DotNet.Globbing;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.Internal;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Detectors.Npm;
+
     [Export(typeof(IComponentDetector))]
     public class YarnLockComponentDetector : FileComponentDetector
     {

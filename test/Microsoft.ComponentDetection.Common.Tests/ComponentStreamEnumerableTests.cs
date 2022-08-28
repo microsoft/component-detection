@@ -1,12 +1,12 @@
-using System.IO;
-using System.Linq;
-using FluentAssertions;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-
 namespace Microsoft.ComponentDetection.Common.Tests
 {
+    using System.IO;
+    using System.Linq;
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

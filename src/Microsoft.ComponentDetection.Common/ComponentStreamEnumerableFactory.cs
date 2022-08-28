@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using Microsoft.ComponentDetection.Contracts;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using Microsoft.ComponentDetection.Contracts;
+
     [Export(typeof(IComponentStreamEnumerableFactory))]
     [Shared]
     public class ComponentStreamEnumerableFactory : IComponentStreamEnumerableFactory

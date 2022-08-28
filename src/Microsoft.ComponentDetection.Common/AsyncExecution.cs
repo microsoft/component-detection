@@ -1,9 +1,9 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     public static class AsyncExecution
     {
         public static async Task<T> ExecuteWithTimeoutAsync<T>(Func<Task<T>> toExecute, TimeSpan timeout, CancellationToken cancellationToken)

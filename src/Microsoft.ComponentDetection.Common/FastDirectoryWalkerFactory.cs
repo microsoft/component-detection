@@ -1,20 +1,20 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Composition;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Enumeration;
-using System.Linq;
-using System.Reactive.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.Diagnostics;
+    using System.IO;
+    using System.IO.Enumeration;
+    using System.Linq;
+    using System.Reactive.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using System.Threading.Tasks.Dataflow;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.Internal;
+
     [Export(typeof(IObservableDirectoryWalkerFactory))]
     [Export(typeof(FastDirectoryWalkerFactory))]
     [Shared]

@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using Microsoft.ComponentDetection.Contracts;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using Microsoft.ComponentDetection.Contracts;
+
     /// <summary>Factory for generating safe file enumerables.</summary>
     public interface ISafeFileEnumerableFactory
     {

@@ -1,8 +1,8 @@
-using System;
-using Newtonsoft.Json;
-
 namespace Microsoft.ComponentDetection.Detectors.Pip
 {
+    using System;
+    using Newtonsoft.Json;
+
     /// <summary>
     /// A specific release of a project on pypy.
     /// </summary>

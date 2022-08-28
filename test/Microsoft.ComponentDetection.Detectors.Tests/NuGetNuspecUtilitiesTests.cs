@@ -1,12 +1,12 @@
-﻿using System;
-using System.IO;
-using System.IO.Compression;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Detectors.NuGet;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using System;
+    using System.IO;
+    using System.IO.Compression;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Detectors.NuGet;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

@@ -1,8 +1,8 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-
-namespace Microsoft.ComponentDetection.Contracts
+﻿namespace Microsoft.ComponentDetection.Contracts
 {
+    using System;
+    using System.Runtime.CompilerServices;
+
     /// <summary>Simple abstraction around console/output file logging for component detection.</summary>
     public interface ILogger
     {

@@ -1,8 +1,8 @@
-using System.Runtime.InteropServices;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace Microsoft.ComponentDetection.TestsUtilities
 {
+    using System.Runtime.InteropServices;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
     public class SkipTestOnWindowsAttribute : TestMethodAttribute
     {
         public override TestResult[] Execute(ITestMethod testMethod)

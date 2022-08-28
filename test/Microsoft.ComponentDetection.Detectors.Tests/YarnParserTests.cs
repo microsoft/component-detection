@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Detectors.Yarn;
-using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Detectors.Yarn;
+    using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

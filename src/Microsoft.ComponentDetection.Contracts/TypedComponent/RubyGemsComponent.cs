@@ -1,7 +1,7 @@
-using PackageUrl;
-
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
+    using PackageUrl;
+
     public class RubyGemsComponent : TypedComponent
     {
         private RubyGemsComponent()

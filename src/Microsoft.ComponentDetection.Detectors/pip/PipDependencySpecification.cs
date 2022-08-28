@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text.RegularExpressions;
-
 namespace Microsoft.ComponentDetection.Detectors.Pip
 {
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Text.RegularExpressions;
+
     /// <summary>
     /// Represents a package and a list of dependency specifications that the package must be.
     /// </summary>

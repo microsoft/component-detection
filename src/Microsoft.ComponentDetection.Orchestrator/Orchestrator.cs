@@ -1,28 +1,28 @@
-using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.Composition.Hosting;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using CommandLine;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Common.Exceptions;
-using Microsoft.ComponentDetection.Common.Telemetry;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-using Microsoft.ComponentDetection.Orchestrator.Services;
-using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
-using Newtonsoft.Json;
-
 namespace Microsoft.ComponentDetection.Orchestrator
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.Composition.Hosting;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Reflection;
+    using System.Runtime.InteropServices;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using CommandLine;
+    using Microsoft.ComponentDetection.Common;
+    using Microsoft.ComponentDetection.Common.Exceptions;
+    using Microsoft.ComponentDetection.Common.Telemetry;
+    using Microsoft.ComponentDetection.Common.Telemetry.Records;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.BcdeModels;
+    using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+    using Microsoft.ComponentDetection.Orchestrator.Services;
+    using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
+    using Newtonsoft.Json;
+
     public class Orchestrator
     {
         private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);

@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Valleysoft.DockerfileModel;
-
 namespace Microsoft.ComponentDetection.Detectors.Dockerfile
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.IO;
+    using System.Linq;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Common;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.Internal;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Valleysoft.DockerfileModel;
+
     [Export(typeof(IComponentDetector))]
     public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
     {

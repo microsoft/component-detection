@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.Linq;
-using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.Linq;
+    using Microsoft.ComponentDetection.Contracts;
+
     public class YarnLockParser : IYarnLockParser
     {
         private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };

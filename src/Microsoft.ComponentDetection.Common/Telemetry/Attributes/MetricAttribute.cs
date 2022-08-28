@@ -1,7 +1,7 @@
-﻿using System;
-
 namespace Microsoft.ComponentDetection.Common.Telemetry.Attributes
 {
+    using System;
+
     /// <summary>
     /// Denotes that a telemetry property should be treated as a Metric (numeric) value
     ///

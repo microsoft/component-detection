@@ -1,9 +1,9 @@
-﻿using System;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using System;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

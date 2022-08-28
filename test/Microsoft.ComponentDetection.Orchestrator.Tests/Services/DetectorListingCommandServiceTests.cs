@@ -1,15 +1,15 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using FluentAssertions;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-using Microsoft.ComponentDetection.Orchestrator.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Threading.Tasks;
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+    using Microsoft.ComponentDetection.Orchestrator.Services;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

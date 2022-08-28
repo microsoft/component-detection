@@ -1,15 +1,15 @@
-﻿using System;
-using System.Linq;
-using FluentAssertions;
-using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Orchestrator.Exceptions;
-using Microsoft.ComponentDetection.Orchestrator.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 {
+    using System;
+    using System.Linq;
+    using FluentAssertions;
+    using Microsoft.ComponentDetection.Common;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Orchestrator.Exceptions;
+    using Microsoft.ComponentDetection.Orchestrator.Services;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Moq;
+
     [TestClass]
     [TestCategory("Governance/All")]
     [TestCategory("Governance/ComponentDetection")]

@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.IO;
-
 namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
 {
+    using System.Collections.Generic;
+    using System.IO;
+
     public interface IDetectionArguments : IScanArguments
     {
         IEnumerable<string> DirectoryExclusionList { get; set; }

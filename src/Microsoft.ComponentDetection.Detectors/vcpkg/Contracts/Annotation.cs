@@ -1,7 +1,7 @@
-using System;
-
 namespace Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts
 {
+    using System;
+
     public class Annotation
     {
         public DateTime Date { get; set; }

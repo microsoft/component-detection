@@ -1,7 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
 namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
 {
+    using System.Diagnostics.CodeAnalysis;
+
     // Represents Poetry.Lock file structure.
     public class PoetryLock
     {

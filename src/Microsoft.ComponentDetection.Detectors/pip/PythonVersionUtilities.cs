@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace Microsoft.ComponentDetection.Detectors.Pip
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+
     public static class PythonVersionUtilities
     {
         /// <summary>

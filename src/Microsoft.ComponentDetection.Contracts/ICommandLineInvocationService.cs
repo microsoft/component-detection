@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-
-namespace Microsoft.ComponentDetection.Contracts
+﻿namespace Microsoft.ComponentDetection.Contracts
 {
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Service for managing execution on a command line. Generally, methods on this service expect a command line environment to be
     /// where the detection tool is running, so all logic relying on them should gate on .IsCommandLineExecution().

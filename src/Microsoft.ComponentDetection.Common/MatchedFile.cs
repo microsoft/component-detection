@@ -1,7 +1,7 @@
-﻿using System.IO;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System.IO;
+
     public class MatchedFile
     {
         public FileInfo File { get; set; }

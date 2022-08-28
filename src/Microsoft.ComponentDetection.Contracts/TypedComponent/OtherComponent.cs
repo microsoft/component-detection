@@ -1,7 +1,7 @@
-using System;
-
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
+    using System;
+
     public class OtherComponent : TypedComponent
     {
         private OtherComponent()

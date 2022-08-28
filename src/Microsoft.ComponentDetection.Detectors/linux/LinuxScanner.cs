@@ -1,19 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Composition;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Common.Telemetry.Records;
-using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
-using MoreLinq.Extensions;
-using Newtonsoft.Json;
-
 namespace Microsoft.ComponentDetection.Detectors.Linux
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Composition;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Common.Telemetry.Records;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.BcdeModels;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
+    using MoreLinq.Extensions;
+    using Newtonsoft.Json;
+
     [Export(typeof(ILinuxScanner))]
     public class LinuxScanner : ILinuxScanner
     {

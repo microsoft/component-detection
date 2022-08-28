@@ -1,10 +1,10 @@
-﻿using System;
-using System.Composition;
-using System.IO;
-using Microsoft.ComponentDetection.Common.Exceptions;
-
 namespace Microsoft.ComponentDetection.Common
 {
+    using System;
+    using System.Composition;
+    using System.IO;
+    using Microsoft.ComponentDetection.Common.Exceptions;
+
     [Export(typeof(IFileWritingService))]
     [Export(typeof(FileWritingService))]
     [Shared]
