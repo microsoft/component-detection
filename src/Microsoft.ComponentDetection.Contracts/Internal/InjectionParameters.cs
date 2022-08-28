@@ -1,4 +1,4 @@
-﻿using System.Composition;
+using System.Composition;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Orchestrator")]
@@ -12,6 +12,16 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
     // It also makes a little bit of sense because everything that IComponentDetectors can inject is in this file :).
     internal class InjectionParameters
     {
+        private static ILogger loggerStatic;
+        private static IComponentStreamEnumerableFactory factoryStatic;
+        private static IPathUtilityService pathUtilityServiceStatic;
+        private static ICommandLineInvocationService commandLineInvocationServiceStatic;
+        private static IFileUtilityService fileUtilityServiceStatic;
+        private static IObservableDirectoryWalkerFactory observableDirectoryWalkerFactoryServiceStatic;
+        private static IDockerService dockerServiceStatic;
+
+        private static IEnvironmentVariableService environmentVariableServiceStatic;
+
         public InjectionParameters()
         {
         }
@@ -27,16 +37,6 @@ namespace Microsoft.ComponentDetection.Contracts.Internal
             dockerServiceStatic = detectorDependencies.DockerService;
             environmentVariableServiceStatic = detectorDependencies.EnvironmentVariableService;
         }
-
-        private static ILogger loggerStatic;
-        private static IComponentStreamEnumerableFactory factoryStatic;
-        private static IPathUtilityService pathUtilityServiceStatic;
-        private static ICommandLineInvocationService commandLineInvocationServiceStatic;
-        private static IFileUtilityService fileUtilityServiceStatic;
-        private static IObservableDirectoryWalkerFactory observableDirectoryWalkerFactoryServiceStatic;
-        private static IDockerService dockerServiceStatic;
-
-        private static IEnvironmentVariableService environmentVariableServiceStatic;
 
         [Export(typeof(ILogger))]
         public ILogger Logger => loggerStatic;

@@ -112,6 +112,15 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             this.Version = comparatorVersion;
         }
 
+        public enum Operator
+        {
+            Equal = 0,
+            LessThan,
+            LessThanOrEqual,
+            GreaterThan,
+            GreaterThanOrEqual,
+        }
+
         public static Tuple<int, Comparator> TryParse(string input)
         {
             var match = RangePatternRegex.Match(input);
@@ -194,15 +203,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             }
 
             return false;
-        }
-
-        public enum Operator
-        {
-            Equal = 0,
-            LessThan,
-            LessThanOrEqual,
-            GreaterThan,
-            GreaterThanOrEqual,
         }
 
         public override string ToString()

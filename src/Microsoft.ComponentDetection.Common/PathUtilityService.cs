@@ -17,6 +17,44 @@ namespace Microsoft.ComponentDetection.Common
     [Shared]
     public class PathUtilityService : IPathUtilityService
     {
+        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
+        public const uint CreationDispositionRead = 0x3;
+
+        public const uint FileFlagBackupSemantics = 0x02000000;
+
+        public const int InitalPathBufferSize = 512;
+
+        public const string LongPathPrefix = "\\\\?\\";
+
+        private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
+
+        private object isRunningOnWindowsContainerLock = new object();
+        private bool? isRunningOnWindowsContainer = null;
+
+        [Import]
+        public ILogger Logger { get; set; }
+
+        public bool IsRunningOnWindowsContainer
+        {
+            get
+            {
+                if (!this.isRunningOnWindowsContainer.HasValue)
+                {
+                    lock (this.isRunningOnWindowsContainerLock)
+                    {
+                        if (!this.isRunningOnWindowsContainer.HasValue)
+                        {
+                            this.isRunningOnWindowsContainer = this.CheckIfRunningOnWindowsContainer();
+                        }
+                    }
+                }
+
+                return this.isRunningOnWindowsContainer.Value;
+            }
+        }
+
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern SafeFileHandle CreateFile(
             [In] string lpFileName,
@@ -49,44 +87,6 @@ namespace Microsoft.ComponentDetection.Common
         /// <param name="toFree"></param>
         [DllImport("libc", EntryPoint = "free")]
         public static extern void FreeMemoryLinux([In] IntPtr toFree);
-
-        [Import]
-        public ILogger Logger { get; set; }
-
-        public const uint CreationDispositionRead = 0x3;
-
-        public const uint FileFlagBackupSemantics = 0x02000000;
-
-        public const int InitalPathBufferSize = 512;
-
-        public const string LongPathPrefix = "\\\\?\\";
-
-        private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
-
-        public bool IsRunningOnWindowsContainer
-        {
-            get
-            {
-                if (!this.isRunningOnWindowsContainer.HasValue)
-                {
-                    lock (this.isRunningOnWindowsContainerLock)
-                    {
-                        if (!this.isRunningOnWindowsContainer.HasValue)
-                        {
-                            this.isRunningOnWindowsContainer = this.CheckIfRunningOnWindowsContainer();
-                        }
-                    }
-                }
-
-                return this.isRunningOnWindowsContainer.Value;
-            }
-        }
-
-        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-
-        private object isRunningOnWindowsContainerLock = new object();
-        private bool? isRunningOnWindowsContainer = null;
 
         public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
         {

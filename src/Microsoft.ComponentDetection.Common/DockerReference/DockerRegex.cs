@@ -5,54 +5,6 @@ namespace Microsoft.ComponentDetection.Common
 
     public class DockerRegex
     {
-        /**
- * expression defines a full expression, where each regular expression must follow the previous.
- */
-        public static Regex Expression(params Regex[] regexps)
-        {
-            return new Regex(string.Join(string.Empty, regexps.Select(re => re.ToString())));
-        }
-
-        /**
-         * group wraps the regexp in a non-capturing group.
-         */
-        public static Regex Group(params Regex[] regexps)
-        {
-            return new Regex($"(?:{Expression(regexps).ToString()})");
-        }
-
-        /**
-         * repeated wraps the regexp in a non-capturing group to get one or more matches.
-         */
-        public static Regex Optional(params Regex[] regexps)
-        {
-            return new Regex($"{Group(regexps).ToString()}?");
-        }
-
-        /**
-         * repeated wraps the regexp in a non-capturing group to get one or more matches.
-         */
-        public static Regex Repeated(params Regex[] regexps)
-        {
-            return new Regex($"{Group(regexps).ToString()}+");
-        }
-
-        /**
-         * anchored anchors the regular expression by adding start and end delimiters.
-         */
-        public static Regex Anchored(params Regex[] regexps)
-        {
-            return new Regex($"^{Expression(regexps).ToString()}$");
-        }
-
-        /**
-         * capture wraps the expression in a capturing group.
-         */
-        public static Regex Capture(params Regex[] regexps)
-        {
-            return new Regex($"({Expression(regexps).ToString()})");
-        }
-
         public static Regex AlphaNumericRegexp = new Regex("[a-z0-9]+");
         public static Regex SeparatorRegexp = new Regex("(?:[._]|__|[-]*)");
 
@@ -104,5 +56,53 @@ namespace Microsoft.ComponentDetection.Common
             Optional(new Regex("@"), Capture(DigestRegexp)));
 
         public static Regex AnchoredIdentifierRegexp = Anchored(IdentifierRegexp);
+
+        /**
+        * expression defines a full expression, where each regular expression must follow the previous.
+        */
+        public static Regex Expression(params Regex[] regexps)
+        {
+            return new Regex(string.Join(string.Empty, regexps.Select(re => re.ToString())));
+        }
+
+        /**
+         * group wraps the regexp in a non-capturing group.
+         */
+        public static Regex Group(params Regex[] regexps)
+        {
+            return new Regex($"(?:{Expression(regexps).ToString()})");
+        }
+
+        /**
+         * repeated wraps the regexp in a non-capturing group to get one or more matches.
+         */
+        public static Regex Optional(params Regex[] regexps)
+        {
+            return new Regex($"{Group(regexps).ToString()}?");
+        }
+
+        /**
+         * repeated wraps the regexp in a non-capturing group to get one or more matches.
+         */
+        public static Regex Repeated(params Regex[] regexps)
+        {
+            return new Regex($"{Group(regexps).ToString()}+");
+        }
+
+        /**
+         * anchored anchors the regular expression by adding start and end delimiters.
+         */
+        public static Regex Anchored(params Regex[] regexps)
+        {
+            return new Regex($"^{Expression(regexps).ToString()}$");
+        }
+
+        /**
+         * capture wraps the expression in a capturing group.
+         */
+        public static Regex Capture(params Regex[] regexps)
+        {
+            return new Regex($"({Expression(regexps).ToString()})");
+        }
     }
 }

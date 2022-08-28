@@ -23,15 +23,15 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         public const string CargoTomlSearchPattern = "Cargo.toml";
         public const string CargoLockSearchPattern = "Cargo.lock";
 
-        public static string[] NonDevDependencyKeys => new string[] { "dependencies", "build-dependencies" };
-
-        public static string[] DevDependencyKeys => new string[] { "dev-dependencies" };
-
         private const string WorkspaceKey = "workspace";
 
         private const string WorkspaceMemberKey = "members";
 
         private const string WorkspaceExcludeKey = "exclude";
+
+        public static string[] NonDevDependencyKeys => new string[] { "dependencies", "build-dependencies" };
+
+        public static string[] DevDependencyKeys => new string[] { "dev-dependencies" };
 
         /// <summary>
         /// Given the project root Cargo.toml file, extract any workspaces specified and any root dependencies.

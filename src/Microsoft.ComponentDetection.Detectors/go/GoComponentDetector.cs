@@ -16,17 +16,19 @@ namespace Microsoft.ComponentDetection.Detectors.Go
     [Export(typeof(IComponentDetector))]
     public class GoComponentDetector : FileComponentDetector
     {
-        [Import]
-        public ICommandLineInvocationService CommandLineInvocationService { get; set; }
-
-        [Import]
-        public IEnvironmentVariableService EnvVarService { get; set; }
-
         private static readonly Regex GoSumRegex = new Regex(
             @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
             RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
+        private HashSet<string> projectRoots = new HashSet<string>();
+
+        [Import]
+        public IEnvironmentVariableService EnvVarService { get; set; }
+
         public override string Id { get; } = "Go";
+
+        [Import]
+        public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod) };
 
@@ -35,8 +37,6 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
         public override int Version => 6;
-
-        private HashSet<string> projectRoots = new HashSet<string>();
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {

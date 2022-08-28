@@ -19,6 +19,10 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
     {
         private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
 
+        public const string NugetConfigFileName = "nuget.config";
+
+        private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
+
         public override string Id { get; } = "NuGet";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
@@ -28,10 +32,6 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.NuGet };
 
         public override int Version { get; } = 2;
-
-        public const string NugetConfigFileName = "nuget.config";
-
-        private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {

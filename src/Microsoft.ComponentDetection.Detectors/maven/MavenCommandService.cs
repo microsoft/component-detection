@@ -10,6 +10,12 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
     [Export(typeof(IMavenCommandService))]
     public class MavenCommandService : IMavenCommandService
     {
+        internal const string PrimaryCommand = "mvn";
+
+        internal const string MvnVersionArgument = "--version";
+
+        internal static readonly string[] AdditionalValidCommands = new[] { "mvn.cmd" };
+
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
@@ -20,12 +26,6 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
         public ILogger Logger { get; set; }
 
         public string BcdeMvnDependencyFileName => "bcde.mvndeps";
-
-        internal const string PrimaryCommand = "mvn";
-
-        internal const string MvnVersionArgument = "--version";
-
-        internal static readonly string[] AdditionalValidCommands = new[] { "mvn.cmd" };
 
         public async Task<bool> MavenCLIExists()
         {

@@ -21,6 +21,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
     [TestCategory("Governance/ComponentDetection")]
     public class DetectorProcessingServiceTests
     {
+        private static DirectoryInfo defaultSourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
+        private static BcdeArguments defaultArgs = new BcdeArguments { SourceDirectory = defaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
+
         private Mock<ILogger> loggerMock;
         private DetectorProcessingService serviceUnderTest;
         private FastDirectoryWalkerFactory directoryWalkerFactory;
@@ -32,6 +35,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         private Mock<FileComponentDetector> experimentalFileComponentDetectorMock;
 
         private IEnumerable<IComponentDetector> detectorsToUse;
+
+        private bool isWin;
 
         private readonly Dictionary<string, DetectedComponent> componentDictionary = new Dictionary<string, DetectedComponent>()
         {
@@ -50,11 +55,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 ResultCode = ProcessingResultCode.Success,
             };
         }
-
-        private static DirectoryInfo defaultSourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
-        private static BcdeArguments defaultArgs = new BcdeArguments { SourceDirectory = defaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
-
-        private bool isWin;
 
         [TestInitialize]
         public void TestInit()

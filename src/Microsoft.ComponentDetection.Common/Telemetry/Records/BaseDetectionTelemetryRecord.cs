@@ -6,17 +6,19 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 
     public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
     {
-        public abstract string RecordName { get; }
-
-        [Metric]
-        public TimeSpan? ExecutionTime { get; protected set; }
-
         private Stopwatch stopwatch = new Stopwatch();
+
+        private bool disposedValue = false;
 
         protected BaseDetectionTelemetryRecord()
         {
             this.stopwatch.Start();
         }
+
+        public abstract string RecordName { get; }
+
+        [Metric]
+        public TimeSpan? ExecutionTime { get; protected set; }
 
         public void StopExecutionTimer()
         {
@@ -26,8 +28,6 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
                 this.ExecutionTime = this.stopwatch.Elapsed;
             }
         }
-
-        private bool disposedValue = false;
 
         protected virtual void Dispose(bool disposing)
         {

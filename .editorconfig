@@ -471,10 +471,6 @@ dotnet_diagnostic.SA1108.severity = suggestion
 # Parameter list should follow declaration
 dotnet_diagnostic.SA1114.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1201.md
-# A field should not follow a property
-dotnet_diagnostic.SA1201.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1202.md
 # Constant fields should appear before non-constant fields
 dotnet_diagnostic.SA1202.severity = suggestion

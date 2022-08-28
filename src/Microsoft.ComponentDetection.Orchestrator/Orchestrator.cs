@@ -27,6 +27,18 @@ namespace Microsoft.ComponentDetection.Orchestrator
     {
         private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
+        [ImportMany]
+        private static IEnumerable<IArgumentHandlingService> ArgumentHandlers { get; set; }
+
+        [Import]
+        private static Logger Logger { get; set; }
+
+        [Import]
+        private static FileWritingService FileWritingService { get; set; }
+
+        [Import]
+        private static IArgumentHelper ArgumentHelper { get; set; }
+
         public ScanResult Load(string[] args)
         {
             var argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
@@ -67,16 +79,16 @@ namespace Microsoft.ComponentDetection.Orchestrator
             // Don't use the using pattern here so we can take care not to clobber the stack
             var returnResult = BcdeExecutionTelemetryRecord.Track(
                 (record) =>
-            {
-                var executionResult = this.HandleCommand(args, record);
-                if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)
                 {
-                    shouldFailureBeSuppressed = true;
-                    record.HiddenExitCode = (int)executionResult.ResultCode;
-                }
+                    var executionResult = this.HandleCommand(args, record);
+                    if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)
+                    {
+                        shouldFailureBeSuppressed = true;
+                        record.HiddenExitCode = (int)executionResult.ResultCode;
+                    }
 
-                return executionResult;
-            },
+                    return executionResult;
+                },
                 true);
 
             // The order of these things is a little weird, but done this way mostly to prevent any of the logic inside if blocks from being duplicated
@@ -113,18 +125,6 @@ namespace Microsoft.ComponentDetection.Orchestrator
                 .Where(x => typeof(T).IsAssignableFrom(x)).ToList()
                 .ForEach(service => containerConfiguration = containerConfiguration.WithPart(service));
         }
-
-        [ImportMany]
-        private static IEnumerable<IArgumentHandlingService> ArgumentHandlers { get; set; }
-
-        [Import]
-        private static Logger Logger { get; set; }
-
-        [Import]
-        private static FileWritingService FileWritingService { get; set; }
-
-        [Import]
-        private static IArgumentHelper ArgumentHelper { get; set; }
 
         public ScanResult HandleCommand(string[] args, BcdeExecutionTelemetryRecord telemetryRecord)
         {

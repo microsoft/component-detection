@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common.Telemetry
+namespace Microsoft.ComponentDetection.Common.Telemetry
 {
     using System;
     using System.Collections.Generic;
@@ -12,21 +12,21 @@
     /// </summary>
     public sealed class TelemetryRelay
     {
-        [ImportMany]
-        public static IEnumerable<ITelemetryService> TelemetryServices { get; set; }
-
         private static readonly TelemetryRelay InternalInstance = new TelemetryRelay();
-
-        /// <summary>
-        /// Gets a value indicating whether or not the telemetry relay has been shutdown.
-        /// </summary>
-        public static bool Active { get; private set; } = true;
 
         private TelemetryRelay()
         {
             // For things not populating the telemetry services collection, let's not throw.
             TelemetryServices = Enumerable.Empty<ITelemetryService>();
         }
+
+        [ImportMany]
+        public static IEnumerable<ITelemetryService> TelemetryServices { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether or not the telemetry relay has been shutdown.
+        /// </summary>
+        public static bool Active { get; private set; } = true;
 
         /// <summary>
         /// Gets the singleton.

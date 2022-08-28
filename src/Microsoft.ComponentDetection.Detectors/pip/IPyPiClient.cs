@@ -28,12 +28,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     [Export(typeof(IPyPiClient))]
     public class PyPiClient : IPyPiClient
     {
-        [Import]
-        public ILogger Logger { get; set; }
-
-        [Import]
-        public IEnvironmentVariableService EnvironmentVariableService { get; set; }
-
         private static HttpClientHandler httpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
 
         internal static HttpClient HttpClient = new HttpClient(httpClientHandler);
@@ -75,6 +69,12 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
             this.cacheTelemetry.Dispose();
         }
+
+        [Import]
+        public ILogger Logger { get; set; }
+
+        [Import]
+        public IEnvironmentVariableService EnvironmentVariableService { get; set; }
 
         /// <summary>
         /// Returns a cached response if it exists, otherwise returns the response from PyPi REST call.

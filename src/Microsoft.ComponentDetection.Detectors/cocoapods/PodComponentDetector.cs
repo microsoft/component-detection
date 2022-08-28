@@ -27,133 +27,6 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
 
         public override int Version { get; } = 2;
 
-        private class Pod : IYamlConvertible
-        {
-            public string Name { get; set; }
-
-            public string Version { get; set; }
-
-            public IList<PodDependency> Dependencies { get; set; }
-
-            public string Podspec => this.Name.Split('/', 2)[0];
-
-            public bool IsSubspec => this.Name != this.Podspec;
-
-            public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
-            {
-                var hasDependencies = parser.Accept<MappingStart>(out _);
-                if (hasDependencies)
-                {
-                    parser.Consume<MappingStart>();
-                }
-
-                var podInfo = parser.Consume<Scalar>();
-                var components = podInfo.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
-                this.Name = components[0].Trim();
-                this.Version = components[1].Trim();
-
-                if (hasDependencies)
-                {
-                    this.Dependencies = (IList<PodDependency>)nestedObjectDeserializer(typeof(IList<PodDependency>));
-
-                    parser.Consume<MappingEnd>();
-                }
-                else
-                {
-                    this.Dependencies = Array.Empty<PodDependency>();
-                }
-            }
-
-            public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        private class PodDependency : IYamlConvertible
-        {
-            public string PodName { get; set; }
-
-            public string PodVersion { get; set; }
-
-            public string Podspec => this.PodName.Split('/', 2)[0];
-
-            public bool IsSubspec => this.PodName != this.Podspec;
-
-            public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
-            {
-                var scalar = parser.Consume<Scalar>();
-                var components = scalar.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
-                this.PodName = components[0].Trim();
-                this.PodVersion = components.Length > 1 ? components[1].Trim() : null;
-            }
-
-            public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        private class PodfileLock
-        {
-            [YamlMember(Alias = "PODFILE CHECKSUM", ApplyNamingConventions = false)]
-            public string Checksum { get; set; }
-
-            [YamlMember(Alias = "COCOAPODS", ApplyNamingConventions = false)]
-            public string CocoapodsVersion { get; set; }
-
-            [YamlMember(Alias = "DEPENDENCIES", ApplyNamingConventions = false)]
-            public IList<PodDependency> Dependencies { get; set; }
-
-            [YamlMember(Alias = "SPEC REPOS", ApplyNamingConventions = false)]
-            public IDictionary<string, IList<string>> PodspecRepositories { get; set; }
-
-            [YamlMember(Alias = "SPEC CHECKSUMS", ApplyNamingConventions = false)]
-            public IDictionary<string, string> PodspecChecksums { get; set; }
-
-            [YamlMember(Alias = "EXTERNAL SOURCES", ApplyNamingConventions = false)]
-            public IDictionary<string, IDictionary<string, string>> ExternalSources { get; set; }
-
-            [YamlMember(Alias = "CHECKOUT OPTIONS", ApplyNamingConventions = false)]
-            public IDictionary<string, IDictionary<string, string>> CheckoutOptions { get; set; }
-
-            [YamlMember(Alias = "PODS", ApplyNamingConventions = false)]
-            public IList<Pod> Pods { get; set; }
-
-            public PodfileLock()
-            {
-                this.Dependencies = Array.Empty<PodDependency>();
-                this.PodspecRepositories = new Dictionary<string, IList<string>>();
-                this.PodspecChecksums = new Dictionary<string, string>();
-                this.ExternalSources = new Dictionary<string, IDictionary<string, string>>();
-                this.CheckoutOptions = new Dictionary<string, IDictionary<string, string>>();
-                this.Pods = Array.Empty<Pod>();
-            }
-
-            public string GetSpecRepositoryOfSpec(string specName)
-            {
-                foreach (var repository in this.PodspecRepositories)
-                {
-                    if (repository.Value.Contains(specName))
-                    {
-                        // CocoaPods specs are stored in a git repo but depending on settings/CocoaPods version
-                        // the repo is shown differently in the Podfile.lock
-                        switch (repository.Key.ToLowerInvariant())
-                        {
-                            case "trunk":
-                            case "https://github.com/cocoapods/specs.git":
-                                return "trunk";
-
-                            default:
-                                return repository.Key;
-                        }
-                    }
-                }
-
-                return null;
-            }
-        }
-
         private static async Task<PodfileLock> ParsePodfileLock(IComponentStream file)
         {
             var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
@@ -417,6 +290,133 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 singleFileComponentRecorder.RegisterUsage(
                     component.Value,
                     isExplicitReferencedDependency: true);
+            }
+        }
+
+        private class Pod : IYamlConvertible
+        {
+            public string Name { get; set; }
+
+            public string Version { get; set; }
+
+            public IList<PodDependency> Dependencies { get; set; }
+
+            public string Podspec => this.Name.Split('/', 2)[0];
+
+            public bool IsSubspec => this.Name != this.Podspec;
+
+            public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
+            {
+                var hasDependencies = parser.Accept<MappingStart>(out _);
+                if (hasDependencies)
+                {
+                    parser.Consume<MappingStart>();
+                }
+
+                var podInfo = parser.Consume<Scalar>();
+                var components = podInfo.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+                this.Name = components[0].Trim();
+                this.Version = components[1].Trim();
+
+                if (hasDependencies)
+                {
+                    this.Dependencies = (IList<PodDependency>)nestedObjectDeserializer(typeof(IList<PodDependency>));
+
+                    parser.Consume<MappingEnd>();
+                }
+                else
+                {
+                    this.Dependencies = Array.Empty<PodDependency>();
+                }
+            }
+
+            public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private class PodDependency : IYamlConvertible
+        {
+            public string PodName { get; set; }
+
+            public string PodVersion { get; set; }
+
+            public string Podspec => this.PodName.Split('/', 2)[0];
+
+            public bool IsSubspec => this.PodName != this.Podspec;
+
+            public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
+            {
+                var scalar = parser.Consume<Scalar>();
+                var components = scalar.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+                this.PodName = components[0].Trim();
+                this.PodVersion = components.Length > 1 ? components[1].Trim() : null;
+            }
+
+            public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private class PodfileLock
+        {
+            public PodfileLock()
+            {
+                this.Dependencies = Array.Empty<PodDependency>();
+                this.PodspecRepositories = new Dictionary<string, IList<string>>();
+                this.PodspecChecksums = new Dictionary<string, string>();
+                this.ExternalSources = new Dictionary<string, IDictionary<string, string>>();
+                this.CheckoutOptions = new Dictionary<string, IDictionary<string, string>>();
+                this.Pods = Array.Empty<Pod>();
+            }
+
+            [YamlMember(Alias = "PODFILE CHECKSUM", ApplyNamingConventions = false)]
+            public string Checksum { get; set; }
+
+            [YamlMember(Alias = "COCOAPODS", ApplyNamingConventions = false)]
+            public string CocoapodsVersion { get; set; }
+
+            [YamlMember(Alias = "DEPENDENCIES", ApplyNamingConventions = false)]
+            public IList<PodDependency> Dependencies { get; set; }
+
+            [YamlMember(Alias = "SPEC REPOS", ApplyNamingConventions = false)]
+            public IDictionary<string, IList<string>> PodspecRepositories { get; set; }
+
+            [YamlMember(Alias = "SPEC CHECKSUMS", ApplyNamingConventions = false)]
+            public IDictionary<string, string> PodspecChecksums { get; set; }
+
+            [YamlMember(Alias = "EXTERNAL SOURCES", ApplyNamingConventions = false)]
+            public IDictionary<string, IDictionary<string, string>> ExternalSources { get; set; }
+
+            [YamlMember(Alias = "CHECKOUT OPTIONS", ApplyNamingConventions = false)]
+            public IDictionary<string, IDictionary<string, string>> CheckoutOptions { get; set; }
+
+            [YamlMember(Alias = "PODS", ApplyNamingConventions = false)]
+            public IList<Pod> Pods { get; set; }
+
+            public string GetSpecRepositoryOfSpec(string specName)
+            {
+                foreach (var repository in this.PodspecRepositories)
+                {
+                    if (repository.Value.Contains(specName))
+                    {
+                        // CocoaPods specs are stored in a git repo but depending on settings/CocoaPods version
+                        // the repo is shown differently in the Podfile.lock
+                        switch (repository.Key.ToLowerInvariant())
+                        {
+                            case "trunk":
+                            case "https://github.com/cocoapods/specs.git":
+                                return "trunk";
+
+                            default:
+                                return repository.Key;
+                        }
+                    }
+                }
+
+                return null;
             }
         }
     }

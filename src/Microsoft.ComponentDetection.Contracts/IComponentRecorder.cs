@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts
+namespace Microsoft.ComponentDetection.Contracts
 {
     using System.Collections.Generic;
     using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -17,6 +17,8 @@
     public interface ISingleFileComponentRecorder
     {
         string ManifestFileLocation { get; }
+
+        IDependencyGraph DependencyGraph { get; }
 
         /// <summary>
         /// Add or Update a component. In case that a parent componentId is specified
@@ -42,8 +44,6 @@
         IReadOnlyDictionary<string, DetectedComponent> GetDetectedComponents();
 
         IComponentRecorder GetParentComponentRecorder();
-
-        IDependencyGraph DependencyGraph { get; }
     }
 
     public interface IDependencyGraph

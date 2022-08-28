@@ -8,15 +8,15 @@ namespace Microsoft.ComponentDetection.Common
 
     public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
     {
-        private IEnumerable<MatchedFile> ToEnumerate { get; }
-
-        private ILogger Logger { get; }
-
         public ComponentStreamEnumerable(IEnumerable<MatchedFile> fileEnumerable, ILogger logger)
         {
             this.ToEnumerate = fileEnumerable;
             this.Logger = logger;
         }
+
+        private IEnumerable<MatchedFile> ToEnumerate { get; }
+
+        private ILogger Logger { get; }
 
         public IEnumerator<IComponentStream> GetEnumerator()
         {

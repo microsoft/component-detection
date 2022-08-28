@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
+namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 {
     using System;
     using System.Collections;
@@ -49,10 +49,6 @@
 
         private readonly IList<string> fileLines = new List<string>();
 
-        public string VersionHeader { get; set; }
-
-        public YarnLockVersion YarnLockVersion { get; set; }
-
         private YarnBlockFile(IList<string> parsedFileLines)
         {
             this.fileLines = parsedFileLines;
@@ -67,6 +63,10 @@
                 this.YarnLockVersion = YarnLockVersion.Invalid;
             }
         }
+
+        public string VersionHeader { get; set; }
+
+        public YarnLockVersion YarnLockVersion { get; set; }
 
         public static async Task<YarnBlockFile> CreateBlockFileAsync(Stream stream)
         {

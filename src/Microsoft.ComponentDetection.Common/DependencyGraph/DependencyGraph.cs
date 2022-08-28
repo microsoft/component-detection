@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -15,8 +15,6 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
     {
         private ConcurrentDictionary<string, ComponentRefNode> componentNodes;
 
-        internal ConcurrentDictionary<string, byte> AdditionalRelatedFiles { get; } = new ConcurrentDictionary<string, byte>();
-
         private bool enableManualTrackingOfExplicitReferences;
 
         public DependencyGraph(bool enableManualTrackingOfExplicitReferences)
@@ -24,6 +22,8 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
             this.componentNodes = new ConcurrentDictionary<string, ComponentRefNode>();
             this.enableManualTrackingOfExplicitReferences = enableManualTrackingOfExplicitReferences;
         }
+
+        internal ConcurrentDictionary<string, byte> AdditionalRelatedFiles { get; } = new ConcurrentDictionary<string, byte>();
 
         public void AddComponent(ComponentRefNode componentNode, string parentComponentId = null)
         {
@@ -176,6 +176,12 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
         internal class ComponentRefNode
         {
+            internal ComponentRefNode()
+            {
+                this.DependencyIds = new HashSet<string>();
+                this.DependedOnByIds = new HashSet<string>();
+            }
+
             internal bool IsExplicitReferencedDependency { get; set; }
 
             internal string Id { get; set; }
@@ -187,12 +193,6 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
             internal bool? IsDevelopmentDependency { get; set; }
 
             internal DependencyScope? DependencyScope { get; set; }
-
-            internal ComponentRefNode()
-            {
-                this.DependencyIds = new HashSet<string>();
-                this.DependedOnByIds = new HashSet<string>();
-            }
         }
     }
 }

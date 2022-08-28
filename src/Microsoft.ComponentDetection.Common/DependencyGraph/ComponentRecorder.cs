@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -94,12 +94,6 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
         {
             private readonly ILogger log;
 
-            public string ManifestFileLocation { get; }
-
-            internal DependencyGraph DependencyGraph { get; }
-
-            IDependencyGraph ISingleFileComponentRecorder.DependencyGraph => this.DependencyGraph;
-
             private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new ConcurrentDictionary<string, DetectedComponent>();
 
             private readonly ComponentRecorder recorder;
@@ -113,6 +107,12 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 this.log = log;
                 this.DependencyGraph = new DependencyGraph(enableManualTrackingOfExplicitReferences);
             }
+
+            IDependencyGraph ISingleFileComponentRecorder.DependencyGraph => this.DependencyGraph;
+
+            public string ManifestFileLocation { get; }
+
+            internal DependencyGraph DependencyGraph { get; }
 
             public DetectedComponent GetComponent(string componentId)
             {

@@ -10,6 +10,21 @@ namespace Microsoft.ComponentDetection.Common
         private readonly Lazy<byte[]> fileBuffer;
         private readonly ILogger logger;
 
+        public LazyComponentStream(FileInfo fileInfo, string pattern, ILogger logger)
+        {
+            this.Pattern = pattern;
+            this.Location = fileInfo.FullName;
+            this.fileInfo = fileInfo;
+            this.logger = logger;
+            this.fileBuffer = new Lazy<byte[]>(this.SafeOpenFile);
+        }
+
+        public Stream Stream => new MemoryStream(this.fileBuffer.Value);
+
+        public string Pattern { get; set; }
+
+        public string Location { get; set; }
+
         private byte[] SafeOpenFile()
         {
             try
@@ -33,20 +48,5 @@ namespace Microsoft.ComponentDetection.Common
 
             return new byte[0];
         }
-
-        public LazyComponentStream(FileInfo fileInfo, string pattern, ILogger logger)
-        {
-            this.Pattern = pattern;
-            this.Location = fileInfo.FullName;
-            this.fileInfo = fileInfo;
-            this.logger = logger;
-            this.fileBuffer = new Lazy<byte[]>(this.SafeOpenFile);
-        }
-
-        public Stream Stream => new MemoryStream(this.fileBuffer.Value);
-
-        public string Pattern { get; set; }
-
-        public string Location { get; set; }
     }
 }

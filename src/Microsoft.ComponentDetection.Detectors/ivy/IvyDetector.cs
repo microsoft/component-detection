@@ -39,6 +39,12 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
     [Export(typeof(IComponentDetector))]
     public class IvyDetector : FileComponentDetector, IExperimentalDetector
     {
+        internal const string PrimaryCommand = "ant.bat";
+
+        internal static readonly string[] AdditionalValidCommands = { "ant" };
+
+        internal const string AntVersionArgument = "-version";
+
         public override string Id => "Ivy";
 
         public override IList<string> SearchPatterns => new List<string> { "ivy.xml" };
@@ -48,12 +54,6 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
         public override int Version => 2;
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
-
-        internal const string PrimaryCommand = "ant.bat";
-
-        internal static readonly string[] AdditionalValidCommands = { "ant" };
-
-        internal const string AntVersionArgument = "-version";
 
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
