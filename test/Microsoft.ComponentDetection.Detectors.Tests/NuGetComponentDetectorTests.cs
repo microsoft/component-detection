@@ -6,6 +6,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     using System.Linq;
     using System.Reactive.Linq;
     using System.Threading.Tasks;
+    using FluentAssertions;
     using Microsoft.ComponentDetection.Common.DependencyGraph;
     using Microsoft.ComponentDetection.Contracts;
     using Microsoft.ComponentDetection.Contracts.Internal;
@@ -14,7 +15,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     using Microsoft.ComponentDetection.TestsUtilities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using FluentAssertions;
 
     [TestClass]
     [TestCategory("Governance/All")]

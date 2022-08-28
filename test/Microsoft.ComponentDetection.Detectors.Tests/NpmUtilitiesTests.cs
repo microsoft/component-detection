@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 {
     using System.Linq;
     using FluentAssertions;
+    using global::NuGet.Versioning;
     using Microsoft.ComponentDetection.Common.DependencyGraph;
     using Microsoft.ComponentDetection.Contracts;
     using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -10,7 +11,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using Newtonsoft.Json.Linq;
-    using global::NuGet.Versioning;
 
     [TestClass]
     [TestCategory("Governance/All")]

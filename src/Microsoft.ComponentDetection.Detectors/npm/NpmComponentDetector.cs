@@ -6,11 +6,11 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
     using System.IO;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
+    using global::NuGet.Versioning;
     using Microsoft.ComponentDetection.Contracts;
     using Microsoft.ComponentDetection.Contracts.Internal;
     using Microsoft.ComponentDetection.Contracts.TypedComponent;
     using Newtonsoft.Json.Linq;
-    using global::NuGet.Versioning;
 
     [Export(typeof(IComponentDetector))]
     public class NpmComponentDetector : FileComponentDetector

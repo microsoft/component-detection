@@ -4,9 +4,9 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
+    using global::NuGet.Versioning;
     using Microsoft.ComponentDetection.Contracts;
     using Microsoft.ComponentDetection.Contracts.TypedComponent;
-    using global::NuGet.Versioning;
     using YamlDotNet.Serialization;
 
     public static class PnpmParsingUtilities
