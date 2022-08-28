@@ -233,7 +233,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     continue;
                 }
 
-                if (string.IsNullOrEmpty(parentId)) // This is a root component
+                var isRootComponent = string.IsNullOrEmpty(parentId);
+                if (isRootComponent)
                 {
                     AddOrUpdateDetectedComponent(singleFileComponentRecorder, currentComponent, isDevDependencies, isExplicitReferencedDependency: true);
                 }
