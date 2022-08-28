@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -115,7 +115,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             return detectorProcessingResult
                         .ComponentRecorders
-                        .Select(componentRecorder => componentRecorder.Item2.GetDetectedComponents())
+                        .Select(componentRecorder => componentRecorder.recorder.GetDetectedComponents())
                         .SelectMany(x => x);
         }
 
@@ -215,7 +215,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             {
                 var componentId = discoveredComponent.Component.Id;
                 var isMatched = false;
-                foreach (var graph in results.ComponentRecorders.Select(componentRecorder => componentRecorder.Item2.GetDependencyGraphsByLocation()).SelectMany(x => x.Values))
+                foreach (var graph in results.ComponentRecorders.Select(componentRecorder => componentRecorder.recorder.GetDependencyGraphsByLocation()).SelectMany(x => x.Values))
                 {
                     isMatched |= graph.GetComponents().Contains(componentId);
                 }
