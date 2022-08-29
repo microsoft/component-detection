@@ -104,7 +104,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
                 if (splitSpecVer.Length > i && splitVersion.Length > i)
                 {
-                    if (string.Equals(splitSpecVer[i], splitVersion[i], StringComparison.OrdinalIgnoreCase)) 
+                    if (string.Equals(splitSpecVer[i], splitVersion[i], StringComparison.OrdinalIgnoreCase))
                     {
                         // Match keep going
                         i++;
