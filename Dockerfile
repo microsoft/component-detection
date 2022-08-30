@@ -19,6 +19,10 @@ COPY --from=build /app/out ./
 RUN tdnf install -y \
     golang \
     moby-engine \
+    gradle \
+    maven \
+    pnpm \
+    poetry \
     python
 
 ENTRYPOINT ["/app/Microsoft.ComponentDetection"]
