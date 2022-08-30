@@ -153,7 +153,7 @@ NUGET
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-            // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches. 
+            // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches.
             Assert.AreEqual(11, componentRecorder.GetDetectedComponents().Count());
         }
 
