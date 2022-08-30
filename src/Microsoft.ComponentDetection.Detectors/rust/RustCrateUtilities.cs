@@ -15,10 +15,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 {
     public class RustCrateUtilities
     {
-        private static readonly Regex DependencyFormatRegex = new Regex(
-        ////  PkgName Version    Source
-            @"([^ ]+) ([^ ]+) \(([^()]*)\)",
-            RegexOptions.Compiled);
+        private const string Pattern = @"([^ ]+) ([^ ]+) \(([^()]*)\)"; // PkgName Version Source
+        private static readonly Regex DependencyFormatRegex = new Regex(Pattern, RegexOptions.Compiled);
 
         public const string CargoTomlSearchPattern = "Cargo.toml";
         public const string CargoLockSearchPattern = "Cargo.lock";
