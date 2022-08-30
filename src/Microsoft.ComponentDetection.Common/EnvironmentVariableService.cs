@@ -1,6 +1,6 @@
 using System;
-using System.Linq;
 using System.Composition;
+using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
 namespace Microsoft.ComponentDetection.Common

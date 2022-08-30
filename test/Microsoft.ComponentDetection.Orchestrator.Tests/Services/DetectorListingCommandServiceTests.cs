@@ -50,9 +50,11 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.componentDetector3Mock.SetupGet(x => x.Id).Returns("ComponentDetector3");
             this.versionedComponentDetector1Mock.SetupGet(x => x.Id).Returns("VersionedComponentDetector");
 
-            var registeredDetectors = new[] {
+            var registeredDetectors = new[]
+            {
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
-                this.versionedComponentDetector1Mock.Object };
+                this.versionedComponentDetector1Mock.Object
+            };
             this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(It.IsAny<IEnumerable<DirectoryInfo>>(), It.IsAny<IEnumerable<string>>()))
                 .Returns(registeredDetectors);
         }
