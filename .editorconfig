@@ -463,10 +463,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Block statements should not contain embedded comments
 dotnet_diagnostic.SA1108.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1114.md
-# Parameter list should follow declaration
-dotnet_diagnostic.SA1114.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1142.md
 # Refer to tuple fields by name
 dotnet_diagnostic.SA1142.severity = suggestion
