@@ -29,7 +29,7 @@ ComponentDetection is a package scanning tool intended to be used at build time.
 | Go | ✔ | ❌ |
 | Maven | ✔ | ✔ |
 | NPM (including Yarn, Pnpm) | ✔ | ✔ |
-| NuGet | ✔ | ✔ |
+| NuGet (including Paket) | ✔ | ✔ |
 | Pip (Python) | ✔ | ✔ |
 | Poetry (Python, lockfiles only) | ✔ | ❌ |
 | Pub (Dart, Flutter, lockfiles only) | ✔ | ❌ |
