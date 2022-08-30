@@ -135,7 +135,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             }
         }
 
-        private void ParsePaketLock(ProcessRequest processRequest) { 
+        private void ParsePaketLock(ProcessRequest processRequest) 
+        {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var stream = processRequest.ComponentStream;
 
