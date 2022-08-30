@@ -143,7 +143,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             using StreamReader reader = new StreamReader(stream.Stream);
 
             string line;
-            while ((line = reader.ReadLine()) != null) 
+            while ((line = reader.ReadLine()) != null)
             {
                 var matches = Regex.Matches(line, @"\s*([a-zA-Z0-9-.]*) \([<>=]*[ ]*([0-9a-zA-Z-.]*)\)", RegexOptions.Singleline);
                 foreach (Match match in matches) 
