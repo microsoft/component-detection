@@ -154,6 +154,25 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
             }
         }
 
+        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+        {
+            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+            var file = processRequest.ComponentStream;
+
+            this.Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
+
+            try
+            {
+                var podfileLock = await ParsePodfileLock(file);
+
+                this.ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
+            }
+            catch (Exception e)
+            {
+                this.Logger.LogFailedReadingFile(file.Location, e);
+            }
+        }
+
         private static async Task<PodfileLock> ParsePodfileLock(IComponentStream file)
         {
             var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
@@ -208,25 +227,6 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
             }
 
             return gitOption;
-        }
-
-        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
-        {
-            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-            var file = processRequest.ComponentStream;
-
-            this.Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
-
-            try
-            {
-                var podfileLock = await ParsePodfileLock(file);
-
-                this.ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
-            }
-            catch (Exception e)
-            {
-                this.Logger.LogFailedReadingFile(file.Location, e);
-            }
         }
 
         private void ProcessPodfileLock(

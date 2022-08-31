@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -88,6 +88,16 @@ namespace Microsoft.ComponentDetection.Common
             return true;
         }
 
+        public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
+        {
+            return await this.CanCommandBeLocated(command, additionalCandidateCommands, workingDirectory: null, parameters);
+        }
+
+        public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
+        {
+            return await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters);
+        }
+
         private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
         {
             var tcs = new TaskCompletionSource<CommandLineExecutionResult>();
@@ -143,16 +153,6 @@ namespace Microsoft.ComponentDetection.Common
             t2.Start();
 
             return tcs.Task;
-        }
-
-        public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
-        {
-            return await this.CanCommandBeLocated(command, additionalCandidateCommands, workingDirectory: null, parameters);
-        }
-
-        public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
-        {
-            return await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters);
         }
     }
 }

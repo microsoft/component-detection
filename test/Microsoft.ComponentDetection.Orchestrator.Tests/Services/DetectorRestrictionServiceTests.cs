@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
@@ -23,19 +23,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         private Mock<IComponentDetector> newNpmDetector;
         private IComponentDetector[] detectors;
         private DetectorRestrictionService serviceUnderTest;
-
-        private Mock<IComponentDetector> GenerateDetector(string detectorName, string[] categories = null)
-        {
-            var mockDetector = new Mock<IComponentDetector>();
-            mockDetector.SetupGet(x => x.Id).Returns($"{detectorName}");
-            if (categories == null)
-            {
-                categories = new[] { $"{detectorName}Category", "AllCategory" };
-            }
-
-            mockDetector.SetupGet(x => x.Categories).Returns(categories);
-            return mockDetector;
-        }
 
         [TestInitialize]
         public void TestInitialize()
@@ -187,6 +174,19 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 .Should().Contain(detectors[0])
                 .And.Contain(detectors[1])
                 .And.Contain(detectors[2]);
+        }
+
+        private Mock<IComponentDetector> GenerateDetector(string detectorName, string[] categories = null)
+        {
+            var mockDetector = new Mock<IComponentDetector>();
+            mockDetector.SetupGet(x => x.Id).Returns($"{detectorName}");
+            if (categories == null)
+            {
+                categories = new[] { $"{detectorName}Category", "AllCategory" };
+            }
+
+            mockDetector.SetupGet(x => x.Categories).Returns(categories);
+            return mockDetector;
         }
     }
 }

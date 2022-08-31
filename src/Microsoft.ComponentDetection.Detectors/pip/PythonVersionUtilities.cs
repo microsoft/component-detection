@@ -26,55 +26,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             return true;
         }
 
-        private static bool VersionValidForSpec(string version, string spec)
-        {
-            var opChars = new char[] { '=', '<', '>', '~', '!' };
-            var specArray = spec.ToCharArray();
-
-            var i = 0;
-            while (i < spec.Length && i < 3 && opChars.Contains(specArray[i]))
-            {
-                i++;
-            }
-
-            var op = spec.Substring(0, i);
-
-            var targetVer = new PythonVersion(version);
-            var specVer = new PythonVersion(spec.Substring(i));
-
-            if (!targetVer.Valid)
-            {
-                throw new ArgumentException($"{version} is not a valid python version");
-            }
-
-            if (!specVer.Valid)
-            {
-                throw new ArgumentException($"The version specification {spec.Substring(i)} is not a valid python version");
-            }
-
-            switch (op)
-            {
-                case "==":
-                    return targetVer.CompareTo(specVer) == 0;
-                case "===":
-                    return targetVer.CompareTo(specVer) == 0;
-                case "<":
-                    return specVer > targetVer;
-                case ">":
-                    return targetVer > specVer;
-                case "<=":
-                    return specVer >= targetVer;
-                case ">=":
-                    return targetVer >= specVer;
-                case "!=":
-                    return targetVer.CompareTo(specVer) != 0;
-                case "~=":
-                    return CheckEquality(version, spec.Substring(i), true);
-                default:
-                    return false;
-            }
-        }
-
         // Todo, remove this code once * parsing is handled in the python version class
         public static bool CheckEquality(string version, string specVer, bool fuzzy = false)
         {
@@ -134,6 +85,55 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
                     return false;
                 }
+            }
+        }
+
+        private static bool VersionValidForSpec(string version, string spec)
+        {
+            var opChars = new char[] { '=', '<', '>', '~', '!' };
+            var specArray = spec.ToCharArray();
+
+            var i = 0;
+            while (i < spec.Length && i < 3 && opChars.Contains(specArray[i]))
+            {
+                i++;
+            }
+
+            var op = spec.Substring(0, i);
+
+            var targetVer = new PythonVersion(version);
+            var specVer = new PythonVersion(spec.Substring(i));
+
+            if (!targetVer.Valid)
+            {
+                throw new ArgumentException($"{version} is not a valid python version");
+            }
+
+            if (!specVer.Valid)
+            {
+                throw new ArgumentException($"The version specification {spec.Substring(i)} is not a valid python version");
+            }
+
+            switch (op)
+            {
+                case "==":
+                    return targetVer.CompareTo(specVer) == 0;
+                case "===":
+                    return targetVer.CompareTo(specVer) == 0;
+                case "<":
+                    return specVer > targetVer;
+                case ">":
+                    return targetVer > specVer;
+                case "<=":
+                    return specVer >= targetVer;
+                case ">=":
+                    return targetVer >= specVer;
+                case "!=":
+                    return targetVer.CompareTo(specVer) != 0;
+                case "~=":
+                    return CheckEquality(version, spec.Substring(i), true);
+                default:
+                    return false;
             }
         }
     }

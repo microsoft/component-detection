@@ -479,9 +479,6 @@ dotnet_diagnostic.SA1200.severity = suggestion
 # A field should not follow a property
 dotnet_diagnostic.SA1201.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1202.md
-# Constant fields should appear before non-constant fields
-dotnet_diagnostic.SA1202.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1203.md
 # 'public' members should come before 'private' members

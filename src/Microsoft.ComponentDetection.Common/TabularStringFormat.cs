@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,14 +7,14 @@ namespace Microsoft.ComponentDetection.Common
 {
     public class TabularStringFormat
     {
+        public const char DefaultVerticalLineChar = '|';
+        public const char DefaultHorizontalLineChar = '_';
+
         private IList<Column> columns;
         private int totalWidth;
         private char horizontalLineChar;
         private char verticalLineChar;
         private string tableTitle;
-
-        public const char DefaultVerticalLineChar = '|';
-        public const char DefaultHorizontalLineChar = '_';
 
         public TabularStringFormat(IList<Column> columns, char horizontalLineChar = DefaultHorizontalLineChar, char verticalLineChar = DefaultVerticalLineChar, string tableTitle = null)
         {

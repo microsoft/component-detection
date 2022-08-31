@@ -1,14 +1,9 @@
-﻿using PackageUrl;
+using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class MavenComponent : TypedComponent
     {
-        private MavenComponent()
-        {
-            /* Reserved for deserialization */
-        }
-
         public MavenComponent(string groupId, string artifactId, string version)
         {
             this.GroupId = this.ValidateRequiredInput(groupId, nameof(this.GroupId), nameof(ComponentType.Maven));
@@ -27,5 +22,10 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public override string Id => $"{this.GroupId} {this.ArtifactId} {this.Version} - {this.Type}";
 
         public override PackageURL PackageUrl => new PackageURL("maven", this.GroupId, this.ArtifactId, this.Version, null, null);
+
+        private MavenComponent()
+        {
+            /* Reserved for deserialization */
+        }
     }
 }

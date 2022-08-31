@@ -4,11 +4,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class SpdxComponent : TypedComponent
     {
-        private SpdxComponent()
-        {
-            /* Reserved for deserialization */
-        }
-
         public SpdxComponent(string spdxVersion, Uri documentNamespace, string name, string checksum, string rootElementId, string path)
         {
             this.SpdxVersion = this.ValidateRequiredInput(spdxVersion, nameof(this.SpdxVersion), nameof(ComponentType.Spdx));
@@ -34,5 +29,10 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public string Path { get; }
 
         public override string Id => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
+
+        private SpdxComponent()
+        {
+            /* Reserved for deserialization */
+        }
     }
 }

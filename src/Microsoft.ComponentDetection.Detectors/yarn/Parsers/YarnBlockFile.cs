@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -97,6 +97,11 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             yield break;
         }
 
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
         private void ReadVersionHeader()
         {
             this.YarnLockVersion = YarnLockVersion.Invalid;
@@ -193,11 +198,6 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             }
 
             return block;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
         }
 
         /// <summary>

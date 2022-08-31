@@ -109,6 +109,60 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             });
         }
 
+        protected Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
+        {
+            try
+            {
+                if (!componentStream.Stream.CanRead)
+                {
+                    componentStream.Stream.ReadByte();
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Logger.LogBuildWarning($"Could not read {componentStream.Location} file.");
+                this.Logger.LogFailedReadingFile(componentStream.Location, ex);
+                return Task.CompletedTask;
+            }
+
+            using var file = new StreamReader(componentStream.Stream);
+            using var reader = new JsonTextReader(file);
+
+            var o = JToken.ReadFrom(reader);
+            jtokenProcessor(o);
+            return Task.CompletedTask;
+        }
+
+        protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
+        {
+            var dependencies = packageLockJToken["dependencies"];
+            var topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
+
+            var dependencyLookup = dependencies.Children<JProperty>().ToDictionary(dependency => dependency.Name);
+
+            foreach (var stream in packageJsonComponentStream)
+            {
+                using var file = new StreamReader(stream.Stream);
+                using var reader = new JsonTextReader(file);
+
+                var packageJsonToken = JToken.ReadFrom(reader);
+                var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
+                enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, skipValidation: skipValidation);
+                if (!enqueued)
+                {
+                    // This represents a mismatch between lock file and package.json, break out and do not register anything for these files
+                    throw new InvalidOperationException(string.Format("InvalidPackageJson -- There was a mismatch between the components in the package.json and the lock file at '{0}'", singleFileComponentRecorder.ManifestFileLocation));
+                }
+            }
+
+            if (!packageJsonComponentStream.Any())
+            {
+                throw new InvalidOperationException(string.Format("InvalidPackageJson -- There must be a package.json file at '{0}' for components to be registered", singleFileComponentRecorder.ManifestFileLocation));
+            }
+
+            this.TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, singleFileComponentRecorder);
+        }
+
         private IObservable<ProcessRequest> RemoveNodeModuleNestedFiles(IObservable<ProcessRequest> componentStreams)
         {
             var directoryItemFacades = new List<DirectoryItemFacade>();
@@ -196,60 +250,6 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                 this.Logger.LogFailedReadingFile(componentStream.Location, e);
                 return;
             }
-        }
-
-        protected Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
-        {
-            try
-            {
-                if (!componentStream.Stream.CanRead)
-                {
-                    componentStream.Stream.ReadByte();
-                }
-            }
-            catch (Exception ex)
-            {
-                this.Logger.LogBuildWarning($"Could not read {componentStream.Location} file.");
-                this.Logger.LogFailedReadingFile(componentStream.Location, ex);
-                return Task.CompletedTask;
-            }
-
-            using var file = new StreamReader(componentStream.Stream);
-            using var reader = new JsonTextReader(file);
-
-            var o = JToken.ReadFrom(reader);
-            jtokenProcessor(o);
-            return Task.CompletedTask;
-        }
-
-        protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
-        {
-            var dependencies = packageLockJToken["dependencies"];
-            var topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
-
-            var dependencyLookup = dependencies.Children<JProperty>().ToDictionary(dependency => dependency.Name);
-
-            foreach (var stream in packageJsonComponentStream)
-            {
-                using var file = new StreamReader(stream.Stream);
-                using var reader = new JsonTextReader(file);
-
-                var packageJsonToken = JToken.ReadFrom(reader);
-                var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
-                enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, skipValidation: skipValidation);
-                if (!enqueued)
-                {
-                    // This represents a mismatch between lock file and package.json, break out and do not register anything for these files
-                    throw new InvalidOperationException(string.Format("InvalidPackageJson -- There was a mismatch between the components in the package.json and the lock file at '{0}'", singleFileComponentRecorder.ManifestFileLocation));
-                }
-            }
-
-            if (!packageJsonComponentStream.Any())
-            {
-                throw new InvalidOperationException(string.Format("InvalidPackageJson -- There must be a package.json file at '{0}' for components to be registered", singleFileComponentRecorder.ManifestFileLocation));
-            }
-
-            this.TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, singleFileComponentRecorder);
         }
 
         private void TraverseRequirementAndDependencyTree(IEnumerable<(JProperty, TypedComponent)> topLevelDependencies, IDictionary<string, JProperty> dependencyLookup, ISingleFileComponentRecorder singleFileComponentRecorder)
