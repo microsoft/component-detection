@@ -138,14 +138,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 {
                     this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
                 }),
-                this.CreateBlock("a", "1.0.0", "https://a", new List<YarnBlock>
-                {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
-                }),
-                this.CreateBlock("b", "2.4.6", "https://b", new List<YarnBlock>
-                {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
-                }),
             };
 
             var blockFile = new Mock<IYarnBlockFile>();
