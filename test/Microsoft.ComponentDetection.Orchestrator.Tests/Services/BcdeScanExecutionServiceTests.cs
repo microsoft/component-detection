@@ -632,7 +632,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
 
                 this.versionedComponentDetector1Mock.Object, 
-                };
+            };
             var restrictedDetectors = new[] 
             {
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object, 
