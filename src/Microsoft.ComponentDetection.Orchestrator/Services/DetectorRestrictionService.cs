@@ -31,7 +31,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 if (allowedIds.Where(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)).Any() && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
                 {
                     allowedIds = allowedIds.Concat(new string[] {
-                        this.newDetectorId });
+                        this.newDetectorId, });
                 }
 
                 detectors = detectors.Where(d => allowedIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase)).ToList();

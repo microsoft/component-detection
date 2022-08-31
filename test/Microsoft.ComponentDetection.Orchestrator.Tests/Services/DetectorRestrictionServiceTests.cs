@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
@@ -51,7 +51,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 this.firstDetectorMock.Object, this.secondDetectorMock.Object,
                 this.thirdDetectorMock.Object,
                 this.retiredNpmDetector.Object,
-                this.newNpmDetector.Object };
+                this.newNpmDetector.Object, };
             this.serviceUnderTest = new DetectorRestrictionService() { Logger = this.logger.Object };
         }
 
