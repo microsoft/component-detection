@@ -506,11 +506,6 @@ dotnet_diagnostic.SA1208.severity = suggestion
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1210.md
 #  Using directives should be ordered alphabetically by the namespaces
 dotnet_diagnostic.SA1210.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1214.md
-# Readonly fields should appear before non-readonly fields
-dotnet_diagnostic.SA1214.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1216.md
 # Using static directives should be placed at the correct location
 dotnet_diagnostic.SA1216.severity = suggestion
