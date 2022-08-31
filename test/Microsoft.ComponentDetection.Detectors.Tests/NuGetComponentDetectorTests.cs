@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
+using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -111,6 +111,50 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
             Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
+        }
+
+        [TestMethod]
+        public async Task TestNugetDetector_ReturnsValidPaketComponent()
+        {
+            var paketLock = @"
+NUGET
+  remote: https://nuget.org/api/v2
+    Castle.Core (3.3.0)
+    Castle.Core-log4net (3.3.0)
+      Castle.Core (>= 3.3.0)
+      log4net (1.2.10)
+    Castle.LoggingFacility (3.3.0)
+      Castle.Core (>= 3.3.0)
+      Castle.Windsor (>= 3.3.0)
+    Castle.Windsor (3.3.0)
+      Castle.Core (>= 3.3.0)
+    Castle.Windsor-log4net (3.3.0)
+      Castle.Core-log4net (>= 3.3.0)
+      Castle.LoggingFacility (>= 3.3.0)
+    Rx-Core (2.2.5)
+      Rx-Interfaces (>= 2.2.5)
+    Rx-Interfaces (2.2.5)
+    Rx-Linq (2.2.5)
+      Rx-Interfaces (>= 2.2.5)
+      Rx-Core (>= 2.2.5)
+    Rx-Main (2.2.5)
+      Rx-Interfaces (>= 2.2.5)
+      Rx-Core (>= 2.2.5)
+      Rx-Linq (>= 2.2.5)
+      Rx-PlatformServices (>= 2.2.5)
+    Rx-PlatformServices (2.2.5)
+      Rx-Interfaces (>= 2.2.5)
+      Rx-Core (>= 2.2.5)
+    log4net (1.2.10)
+            ";
+
+            var (scanResult, componentRecorder) = await detectorTestUtility
+                                                    .WithFile("paket.lock", paketLock)
+                                                    .ExecuteDetector();
+
+            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+            // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches.
+            Assert.AreEqual(11, componentRecorder.GetDetectedComponents().Count());
         }
 
         [TestMethod]

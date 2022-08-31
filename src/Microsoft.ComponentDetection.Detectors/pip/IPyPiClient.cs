@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -38,13 +38,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         internal static HttpClient HttpClient = new HttpClient(httpClientHandler);
 
+        // time to wait before retrying a failed call to pypi.org
+        private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
+
         // Values used for cache creation
         private const long CACHEINTERVALSECONDS = 60;
         private const long DEFAULTCACHEENTRIES = 128;
         private bool checkedMaxEntriesVariable = false;
-
-        // time to wait before retrying a failed call to pypi.org
-        private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
 
         // max number of retries allowed, to cap the total delay period
         private const long MAXRETRIES = 15;
