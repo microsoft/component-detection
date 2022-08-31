@@ -26,8 +26,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private static readonly IEnumerable<LayerMappedLinuxComponents> LinuxComponents = new List<LayerMappedLinuxComponents>
             {
-                new LayerMappedLinuxComponents {
-                    DockerLayer = new DockerLayer { },
+                new LayerMappedLinuxComponents
+                {
+                    DockerLayer = new DockerLayer(),
                     LinuxComponents = new List<LinuxComponent> { new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1") },
                 },
             };
@@ -201,7 +202,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         }
 
         [TestMethod]
-        public async Task TestLinuxContainerDetector_HandlesScratchBase() {
+        public async Task TestLinuxContainerDetector_HandlesScratchBase()
+        {
             // Setup docker service to throw an exception on scratch
             // then specify that the base image is scratch, to test this
             // is coped with.

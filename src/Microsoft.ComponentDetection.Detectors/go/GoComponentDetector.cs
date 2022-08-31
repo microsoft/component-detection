@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -121,7 +121,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             this.Logger.LogInfo("Go CLI was found in system and will be used to generate dependency graph. " +
                                 "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
                                 "But, it will introduce noise into the detected components.");
-            var goDependenciesProcess = await this.CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-m", "-json", "all" });
+            var goDependenciesProcess = await this.CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-mod=readonly", "-m", "-json", "all" });
             if (goDependenciesProcess.ExitCode != 0)
             {
                 this.Logger.LogError($"Go CLI command \"go list -m -json all\" failed with error:\n {goDependenciesProcess.StdErr}");

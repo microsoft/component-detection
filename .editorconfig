@@ -467,14 +467,6 @@ dotnet_diagnostic.SA1101.severity = suggestion
 # Block statements should not contain embedded comments
 dotnet_diagnostic.SA1108.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1114.md
-# Parameter list should follow declaration
-dotnet_diagnostic.SA1114.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1135.md
-# Using directive for namespace '...' should be qualified
-dotnet_diagnostic.SA1135.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1142.md
 # Refer to tuple fields by name
 dotnet_diagnostic.SA1142.severity = suggestion
@@ -494,18 +486,6 @@ dotnet_diagnostic.SA1202.severity = suggestion
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1203.md
 # 'public' members should come before 'private' members
 dotnet_diagnostic.SA1203.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1204.md
-# Static members should appear before non-static members
-dotnet_diagnostic.SA1204.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1208.md
-# Using directive for '...' should appear before directive for '...'
-dotnet_diagnostic.SA1208.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1210.md
-#  Using directives should be ordered alphabetically by the namespaces
-dotnet_diagnostic.SA1210.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1214.md
 # Readonly fields should appear before non-readonly fields
@@ -530,10 +510,6 @@ dotnet_diagnostic.SA1413.severity = suggestion
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
 # Tuple types in signatures should have element names
 dotnet_diagnostic.SA1414.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1500.md
-# Braces for multi-line statements should not share line
-dotnet_diagnostic.SA1500.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented
@@ -566,10 +542,6 @@ dotnet_diagnostic.SA1616.severity = suggestion
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1617.md
 # Void return value should not be documented
 dotnet_diagnostic.SA1617.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1629.md
-# Documentation text should end with a period
-dotnet_diagnostic.SA1629.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1633.md
 # The file header is missing or not located at the top of the file.

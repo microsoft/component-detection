@@ -1,8 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using static Microsoft.ComponentDetection.Detectors.Maven.MavenParsingUtilities;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
+﻿using System;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using static Microsoft.ComponentDetection.Detectors.Maven.MavenParsingUtilities;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
