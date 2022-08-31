@@ -111,10 +111,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             {
                 this.sampleContainerDetails.Id,
             };
-            this.detectedComponents[0].ContainerDetailIds = new HashSet<int>
-            {
-                this.sampleContainerDetails.Id,
-            };
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0], isDevelopmentDependency: true);
 
             var parentPipComponent = new PipComponent("sample-root", "1.0");
