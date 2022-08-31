@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -207,7 +207,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             {
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
-            
+
             var results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
 
             this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
@@ -291,7 +291,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
                 this.experimentalFileComponentDetectorMock.Object,
             };
-            
+
             var experimentalDetectorId = this.experimentalFileComponentDetectorMock.Object.Id;
 
             DetectorProcessingResult results = null;
@@ -516,7 +516,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
 
-
             var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
             {
                 this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions()).Wait();
@@ -546,7 +545,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
                 this.secondCommandComponentDetectorMock.Object,
             };
-
 
             DetectorProcessingResult results = null;
             var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>

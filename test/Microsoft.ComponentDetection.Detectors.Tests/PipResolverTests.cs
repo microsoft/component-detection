@@ -227,9 +227,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             foreach (var version in versions)
             {
-                toReturn.Add(version, new List<PythonProjectRelease> 
+                toReturn.Add(version, new List<PythonProjectRelease>
                 {
-                    this.CreatePythonProjectRelease(), 
+                    this.CreatePythonProjectRelease(),
                 });
             }
 
