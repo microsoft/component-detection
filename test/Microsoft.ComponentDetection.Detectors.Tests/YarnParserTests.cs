@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
@@ -87,11 +87,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 this.CreateBlock("a@^1.0.0", "1.0.0", "https://a", new List<YarnBlock>
                 {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } })
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
                 }),
                 this.CreateBlock("b@2.4.6", "2.4.6", "https://b", new List<YarnBlock>
                 {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } })
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
                 }),
                 this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", Enumerable.Empty<YarnBlock>()),
             };
@@ -124,11 +124,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 this.CreateBlock("a", "1.0.0", "https://a", new List<YarnBlock>
                 {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } })
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
                 }),
                 this.CreateBlock("b", "2.4.6", "https://b", new List<YarnBlock>
                 {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } })
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
                 }),
             };
 
