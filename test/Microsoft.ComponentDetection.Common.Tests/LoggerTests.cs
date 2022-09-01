@@ -26,7 +26,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
             this.fileWritingServiceMock.VerifyAll();
         }
         
-         private Logger CreateLogger(VerbosityMode verbosityMode)
+        private Logger CreateLogger(VerbosityMode verbosityMode)
         {
             var serviceUnderTest = new Logger
             {
