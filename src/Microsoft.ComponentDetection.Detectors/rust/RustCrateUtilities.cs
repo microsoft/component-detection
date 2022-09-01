@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using DotNet.Globbing;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
-using Tomlyn;
 using Semver;
-using System.Threading.Tasks;
+using Tomlyn;
 using Tomlyn.Model;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust
@@ -299,15 +299,12 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 foreach (var dependency in dependencies.Keys)
                 {
                     string versionSpecifier = string.Empty;
-
-
                     if (dependencies.TryGetValue(dependency, out var value))
                     {
                         if (value is string valueAsString)
                         {
                             versionSpecifier = valueAsString;
                         }
-
                         else if ((value is TomlTable versionTable) && versionTable.TryGetValue("version", out var versionValue) && versionValue is string versionValueAsSring && (versionValueAsSring != "0.0.0"))
                         {
                             // We have a valid version that doesn't indicate 'internal' like 0.0.0 does.
@@ -328,8 +325,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     // If the dependency is renamed, use the actual name of the package:
                     // https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#renaming-dependencies-in-cargotoml
                     string dependencyName;
-
-
                     if (dependencies.TryGetValue(dependency, out var dependencyValue) && dependencyValue is TomlTable tomlTable && tomlTable.TryGetValue("package", out var packageValue) && packageValue is string packageValueAsString)
                     {
                         dependencyName = packageValueAsString;

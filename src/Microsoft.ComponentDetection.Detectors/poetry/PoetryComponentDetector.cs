@@ -35,7 +35,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
             var reader = new StreamReader(poetryLockFile.Stream);
             var options = new TomlModelOptions
             {
-                IgnoreMissingProperties = true
+                IgnoreMissingProperties = true,
             };
             var poetryLock = Toml.ToModel<PoetryLock>(reader.ReadToEnd(), options: options);
             poetryLock.Package.ToList().ForEach(package =>
@@ -53,7 +53,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
                     singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
                 }
             });
-             return Task.CompletedTask;
+            return Task.CompletedTask;
         }
     }
 }
