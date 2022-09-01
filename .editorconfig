@@ -467,10 +467,6 @@ dotnet_diagnostic.SA1101.severity = suggestion
 # Block statements should not contain embedded comments
 dotnet_diagnostic.SA1108.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1114.md
-# Parameter list should follow declaration
-dotnet_diagnostic.SA1114.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1142.md
 # Refer to tuple fields by name
 dotnet_diagnostic.SA1142.severity = suggestion
@@ -507,17 +503,9 @@ dotnet_diagnostic.SA1316.severity = suggestion
 # Field should be private
 dotnet_diagnostic.SA1401.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1413.md
-# Use trailing comma in multi-line initializers
-dotnet_diagnostic.SA1413.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
 # Tuple types in signatures should have element names
 dotnet_diagnostic.SA1414.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1515.md
-# Single-line comment should be preceded by blank line
-dotnet_diagnostic.SA1515.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented

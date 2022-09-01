@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -160,8 +160,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
+
             var results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
 
             this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
@@ -204,8 +205,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
+
             var results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
 
             this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
@@ -229,8 +231,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
+
             var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
             {
                 this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Wait();
@@ -249,7 +252,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.detectorsToUse = new[]
             {
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-                this.experimentalFileComponentDetectorMock.Object
+
+                this.experimentalFileComponentDetectorMock.Object,
             };
 
             DetectorProcessingResult results = null;
@@ -285,8 +289,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.detectorsToUse = new[]
             {
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-                this.experimentalFileComponentDetectorMock.Object
+                this.experimentalFileComponentDetectorMock.Object,
             };
+
             var experimentalDetectorId = this.experimentalFileComponentDetectorMock.Object.Id;
 
             DetectorProcessingResult results = null;
@@ -312,7 +317,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.detectorsToUse = new[]
             {
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-                this.experimentalFileComponentDetectorMock.Object
+                this.experimentalFileComponentDetectorMock.Object,
             };
 
             this.experimentalFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)))
@@ -344,8 +349,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object,
             };
+
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Assert.Inconclusive("Test is platform specific and fails on non-windows");
@@ -451,8 +457,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object,
             };
+
             var sourceDirectory = defaultSourceDirectory;
             var args = defaultArgs;
             var d1 = new DirectoryInfo(Path.Combine(sourceDirectory.FullName, "Child"));
@@ -503,9 +510,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         public void ProcessDetectorsAsync_CapturesTelemetry()
         {
             var args = defaultArgs;
+
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
 
             var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
@@ -534,7 +542,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             {
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
                 this.firstCommandComponentDetectorMock.Object,
-                this.secondCommandComponentDetectorMock.Object
+
+                this.secondCommandComponentDetectorMock.Object,
             };
 
             DetectorProcessingResult results = null;
