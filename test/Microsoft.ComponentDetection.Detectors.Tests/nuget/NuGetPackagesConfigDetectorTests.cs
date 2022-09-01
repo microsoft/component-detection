@@ -1,12 +1,12 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests.NuGet
+namespace Microsoft.ComponentDetection.Detectors.Tests.NuGet
 {
     using System.Threading.Tasks;
-    using Contracts;
-    using Contracts.TypedComponent;
-    using Detectors.NuGet;
     using FluentAssertions;
-    using TestsUtilities;
-    using VisualStudio.TestTools.UnitTesting;
+    using Microsoft.ComponentDetection.Contracts;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Detectors.NuGet;
+    using Microsoft.ComponentDetection.TestsUtilities;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
     public class NuGetPackagesConfigDetectorTests

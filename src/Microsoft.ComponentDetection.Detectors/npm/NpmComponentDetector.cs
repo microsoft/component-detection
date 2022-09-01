@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json.Linq;
 using NuGet.Versioning;
-using System.Text.RegularExpressions;
 
 namespace Microsoft.ComponentDetection.Detectors.Npm
 {
@@ -65,7 +65,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             catch (Exception e)
             {
                 // If something went wrong, just ignore the component
-                this.Logger.LogBuildWarning($"Could not parse Jtokens from file {sourceFilePath}.");
+                this.Logger.LogInfo($"Could not parse Jtokens from file {sourceFilePath}.");
                 this.Logger.LogFailedReadingFile(sourceFilePath, e);
                 return;
             }

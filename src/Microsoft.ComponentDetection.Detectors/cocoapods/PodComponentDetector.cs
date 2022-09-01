@@ -154,6 +154,62 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
             }
         }
 
+        private static async Task<PodfileLock> ParsePodfileLock(IComponentStream file)
+        {
+            var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
+            var input = new StringReader(fileContent);
+            var deserializer = new DeserializerBuilder()
+                    .IgnoreUnmatchedProperties()
+                    .Build();
+
+            return deserializer.Deserialize<PodfileLock>(input);
+        }
+
+        private static (Pod pod, string key, DetectedComponent detectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
+        {
+            return podfileLock.Pods.Select(pod =>
+            {
+                // Find the spec repository URL for this pod
+                var specRepository = podfileLock.GetSpecRepositoryOfSpec(pod.Podspec) ?? string.Empty;
+
+                // Check if the Podspec comes from a git repository or not
+                TypedComponent typedComponent;
+                string key;
+                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
+                    && checkoutOptions.TryGetValue(":git", out var gitOption)
+                    && checkoutOptions.TryGetValue(":commit", out var commitOption))
+                {
+                    // Create the Git component
+                    gitOption = NormalizePodfileGitUri(gitOption);
+                    typedComponent = new GitComponent(new Uri(gitOption), commitOption);
+                    key = $"{commitOption}@{gitOption}";
+                }
+                else
+                {
+                    // Create the Pod component
+                    typedComponent = new PodComponent(pod.Podspec, pod.Version, specRepository);
+                    key = $"{pod.Podspec}:{pod.Version}@{specRepository}";
+                }
+
+                var detectedComponent = new DetectedComponent(typedComponent);
+
+                return (pod, key, detectedComponent);
+            })
+            .ToArray();
+        }
+
+        private static string NormalizePodfileGitUri(string gitOption)
+        {
+            // Podfiles can be built using git@ references to .git files, but this is not a valid Uri
+            // schema. Normalize to https:// so Uri creation doesn't fail
+            if (gitOption.StartsWith("git@", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"https://{gitOption[4..]}";
+            }
+
+            return gitOption;
+        }
+
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -171,17 +227,6 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
             {
                 this.Logger.LogFailedReadingFile(file.Location, e);
             }
-        }
-
-        private static async Task<PodfileLock> ParsePodfileLock(IComponentStream file)
-        {
-            var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
-            var input = new StringReader(fileContent);
-            var deserializer = new DeserializerBuilder()
-                    .IgnoreUnmatchedProperties()
-                    .Build();
-
-            return deserializer.Deserialize<PodfileLock>(input);
         }
 
         private void ProcessPodfileLock(
@@ -373,51 +418,6 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     component.Value,
                     isExplicitReferencedDependency: true);
             }
-        }
-
-        private static (Pod pod, string key, DetectedComponent detectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
-        {
-            return podfileLock.Pods.Select(pod =>
-            {
-                // Find the spec repository URL for this pod
-                var specRepository = podfileLock.GetSpecRepositoryOfSpec(pod.Podspec) ?? string.Empty;
-
-                // Check if the Podspec comes from a git repository or not
-                TypedComponent typedComponent;
-                string key;
-                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
-                    && checkoutOptions.TryGetValue(":git", out var gitOption)
-                    && checkoutOptions.TryGetValue(":commit", out var commitOption))
-                {
-                    // Create the Git component
-                    gitOption = NormalizePodfileGitUri(gitOption);
-                    typedComponent = new GitComponent(new Uri(gitOption), commitOption);
-                    key = $"{commitOption}@{gitOption}";
-                }
-                else
-                {
-                    // Create the Pod component
-                    typedComponent = new PodComponent(pod.Podspec, pod.Version, specRepository);
-                    key = $"{pod.Podspec}:{pod.Version}@{specRepository}";
-                }
-
-                var detectedComponent = new DetectedComponent(typedComponent);
-
-                return (pod, key, detectedComponent);
-            })
-            .ToArray();
-        }
-
-        private static string NormalizePodfileGitUri(string gitOption)
-        {
-            // Podfiles can be built using git@ references to .git files, but this is not a valid Uri
-            // schema. Normalize to https:// so Uri creation doesn't fail
-            if (gitOption.StartsWith("git@", StringComparison.OrdinalIgnoreCase))
-            {
-                return $"https://{gitOption[4..]}";
-            }
-
-            return gitOption;
         }
     }
 }
