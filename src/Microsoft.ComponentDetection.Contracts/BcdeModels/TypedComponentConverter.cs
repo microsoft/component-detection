@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             { ComponentType.Linux, typeof(LinuxComponent) },
             { ComponentType.Conda, typeof(CondaComponent) },
             { ComponentType.DockerReference, typeof(DockerReferenceComponent) },
-            { ComponentType.Vcpkg, typeof(VcpkgComponent) }
+            { ComponentType.Vcpkg, typeof(VcpkgComponent) },
         };
 
         public override bool CanConvert(Type objectType)
