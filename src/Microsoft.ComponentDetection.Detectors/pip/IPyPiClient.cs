@@ -33,10 +33,10 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         [Import]
         public IEnvironmentVariableService EnvironmentVariableService { get; set; }
+        
+        private static HttpClientHandler httpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
 
         internal static HttpClient HttpClient = new HttpClient(httpClientHandler);
-
-        private static HttpClientHandler httpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
 
         // time to wait before retrying a failed call to pypi.org
         private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
