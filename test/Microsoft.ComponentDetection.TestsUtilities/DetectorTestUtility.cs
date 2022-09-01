@@ -28,6 +28,16 @@ namespace Microsoft.ComponentDetection.TestsUtilities
 
         private List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)> filesToAdd = new List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)>();
 
+        private static IComponentStream CreateComponentStreamForFile(string pattern, string filePath, Stream content)
+        {
+            var getFileMock = new Mock<IComponentStream>();
+            getFileMock.SetupGet(x => x.Stream).Returns(content);
+            getFileMock.SetupGet(x => x.Pattern).Returns(pattern);
+            getFileMock.SetupGet(x => x.Location).Returns(filePath);
+
+            return getFileMock.Object;
+        }
+
         public async Task<(IndividualDetectorScanResult, IComponentRecorder)> ExecuteDetector()
         {
             if (this.scanRequest == null)
@@ -105,16 +115,6 @@ namespace Microsoft.ComponentDetection.TestsUtilities
         {
             this.mockObservableDirectoryWalkerFactory = mock;
             return this;
-        }
-
-        private static IComponentStream CreateComponentStreamForFile(string pattern, string filePath, Stream content)
-        {
-            var getFileMock = new Mock<IComponentStream>();
-            getFileMock.SetupGet(x => x.Stream).Returns(content);
-            getFileMock.SetupGet(x => x.Pattern).Returns(pattern);
-            getFileMock.SetupGet(x => x.Location).Returns(filePath);
-
-            return getFileMock.Object;
         }
 
         private ProcessRequest CreateProcessRequest(string pattern, string filePath, Stream content)
