@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -32,7 +32,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 {
                     allowedIds = allowedIds.Concat(new string[]
                     {
-                        this.newDetectorId
+                        this.newDetectorId,
                     });
                 }
 

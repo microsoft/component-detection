@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -53,8 +53,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var registeredDetectors = new[]
             {
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
-                this.versionedComponentDetector1Mock.Object
+
+                this.versionedComponentDetector1Mock.Object,
             };
+
             this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(It.IsAny<IEnumerable<DirectoryInfo>>(), It.IsAny<IEnumerable<string>>()))
                 .Returns(registeredDetectors);
         }
