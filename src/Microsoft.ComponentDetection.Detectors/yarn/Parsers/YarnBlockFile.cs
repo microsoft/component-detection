@@ -45,9 +45,9 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         private static readonly Regex YarnV2Regex = new Regex("(.*):\\s\"?(.*)", RegexOptions.Compiled);
 
-        private int fileLineIndex = 0;
-
         private readonly IList<string> fileLines = new List<string>();
+
+        private int fileLineIndex = 0;
 
         public string VersionHeader { get; set; }
 
