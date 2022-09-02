@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Composition;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -33,9 +34,10 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         [Import]
         public IEnvironmentVariableService EnvironmentVariableService { get; set; }
-        
+
         private static HttpClientHandler httpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
 
+        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1202:ElementMustBeAccessLevelOrder", Justification = "Field needs to be declared before use so order can not follow Access Levels.")]
         internal static HttpClient HttpClient = new HttpClient(httpClientHandler);
 
         // time to wait before retrying a failed call to pypi.org

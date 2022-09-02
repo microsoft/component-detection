@@ -262,8 +262,8 @@ namespace Microsoft.ComponentDetection.Common.Tests
 
             logger.LogException(error, false);
         }
-        
-         private Logger CreateLogger(VerbosityMode verbosityMode)
+
+        private Logger CreateLogger(VerbosityMode verbosityMode)
         {
             var serviceUnderTest = new Logger
             {
