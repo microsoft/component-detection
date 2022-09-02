@@ -120,7 +120,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             }
             catch (Exception ex)
             {
-                this.Logger.LogBuildWarning($"Could not read {componentStream.Location} file.");
+                this.Logger.LogInfo($"Could not read {componentStream.Location} file.");
                 this.Logger.LogFailedReadingFile(componentStream.Location, ex);
                 return Task.CompletedTask;
             }
@@ -246,7 +246,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             catch (Exception e)
             {
                 // If something went wrong, just ignore the component
-                this.Logger.LogBuildWarning($"Could not parse Jtokens from {componentStream.Location} file.");
+                this.Logger.LogInfo($"Could not parse Jtokens from {componentStream.Location} file.");
                 this.Logger.LogFailedReadingFile(componentStream.Location, e);
                 return;
             }

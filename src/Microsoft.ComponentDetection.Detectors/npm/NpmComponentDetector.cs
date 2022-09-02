@@ -90,7 +90,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             catch (Exception e)
             {
                 // If something went wrong, just ignore the component
-                this.Logger.LogBuildWarning($"Could not parse Jtokens from file {sourceFilePath}.");
+                this.Logger.LogInfo($"Could not parse Jtokens from file {sourceFilePath}.");
                 this.Logger.LogFailedReadingFile(sourceFilePath, e);
                 return;
             }

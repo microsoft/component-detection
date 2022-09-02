@@ -463,10 +463,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Prefix local calls with this
 dotnet_diagnostic.SA1101.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1108.md
-# Block statements should not contain embedded comments
-dotnet_diagnostic.SA1108.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1142.md
 # Refer to tuple fields by name
 dotnet_diagnostic.SA1142.severity = suggestion
@@ -483,9 +479,9 @@ dotnet_diagnostic.SA1201.severity = suggestion
 # 'public' members should come before 'private' members
 dotnet_diagnostic.SA1203.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1214.md
-# Readonly fields should appear before non-readonly fields
-dotnet_diagnostic.SA1214.severity = suggestion
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1210.md
+#  Using directives should be ordered alphabetically by the namespaces
+dotnet_diagnostic.SA1210.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1216.md
 # Using static directives should be placed at the correct location
@@ -499,17 +495,9 @@ dotnet_diagnostic.SA1316.severity = suggestion
 # Field should be private
 dotnet_diagnostic.SA1401.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1413.md
-# Use trailing comma in multi-line initializers
-dotnet_diagnostic.SA1413.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
 # Tuple types in signatures should have element names
 dotnet_diagnostic.SA1414.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1515.md
-# Single-line comment should be preceded by blank line
-dotnet_diagnostic.SA1515.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented

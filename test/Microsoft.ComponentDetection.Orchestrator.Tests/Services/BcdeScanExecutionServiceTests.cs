@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -109,7 +109,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.detectedComponents[0].DevelopmentDependency = true;
             this.detectedComponents[0].ContainerDetailIds = new HashSet<int>
             {
-                this.sampleContainerDetails.Id
+                this.sampleContainerDetails.Id,
             };
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0], isDevelopmentDependency: true);
 
@@ -248,15 +248,17 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1], isDevelopmentDependency: false, parentComponentId: this.detectedComponents[0].Component.Id);
 
             var mockDependencyGraphA = new Mock<IDependencyGraph>();
+
             mockDependencyGraphA.Setup(x => x.GetComponents()).Returns(new[]
             {
-                this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id
+                this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id,
             });
             mockDependencyGraphA.Setup(x => x.GetDependenciesForComponent(this.detectedComponents[0].Component.Id))
                 .Returns(new[]
                 {
-                    this.detectedComponents[1].Component.Id
+                    this.detectedComponents[1].Component.Id,
                 });
+
             mockDependencyGraphA.Setup(x => x.IsComponentExplicitlyReferenced(this.detectedComponents[0].Component.Id)).Returns(true);
             mockDependencyGraphA.Setup(x => x.IsDevelopmentDependency(this.detectedComponents[0].Component.Id)).Returns(true);
             mockDependencyGraphA.Setup(x => x.IsDevelopmentDependency(this.detectedComponents[1].Component.Id)).Returns(false);
@@ -301,15 +303,17 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var componentRecorder = new ComponentRecorder();
 
             var mockDependencyGraphA = new Mock<IDependencyGraph>();
+
             mockDependencyGraphA.Setup(x => x.GetComponents()).Returns(new[]
             {
-                this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id
+                this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id,
             });
             mockDependencyGraphA.Setup(x => x.GetDependenciesForComponent(this.detectedComponents[0].Component.Id))
                 .Returns(new[]
                 {
-                    this.detectedComponents[1].Component.Id
+                    this.detectedComponents[1].Component.Id,
                 });
+
             mockDependencyGraphA.Setup(x => x.IsComponentExplicitlyReferenced(this.detectedComponents[0].Component.Id)).Returns(true);
 
             var singleFileComponentRecorderA = componentRecorder.CreateSingleFileComponentRecorder(mockGraphLocation);
@@ -317,15 +321,17 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorderA.RegisterUsage(this.detectedComponents[1], parentComponentId: this.detectedComponents[0].Component.Id);
 
             var mockDependencyGraphB = new Mock<IDependencyGraph>();
+
             mockDependencyGraphB.Setup(x => x.GetComponents()).Returns(new[]
             {
-                this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id
+                this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id,
             });
             mockDependencyGraphB.Setup(x => x.GetDependenciesForComponent(this.detectedComponents[1].Component.Id))
                 .Returns(new[]
                 {
-                    this.detectedComponents[0].Component.Id
+                    this.detectedComponents[0].Component.Id,
                 });
+
             mockDependencyGraphB.Setup(x => x.IsComponentExplicitlyReferenced(this.detectedComponents[1].Component.Id)).Returns(true);
 
             var singleFileComponentRecorderB = componentRecorder.CreateSingleFileComponentRecorder(mockGraphLocation);
@@ -621,12 +627,14 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var registeredDetectors = new[]
             {
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
-                this.versionedComponentDetector1Mock.Object
+
+                this.versionedComponentDetector1Mock.Object,
             };
             var restrictedDetectors = new[]
             {
-                this.componentDetector2Mock.Object, this.componentDetector3Mock.Object
+                this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
             };
+
             this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>()))
                 .Returns(registeredDetectors);
             this.detectorRestrictionServiceMock.Setup(
@@ -677,12 +685,14 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var registeredDetectors = new[]
             {
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
-                this.versionedComponentDetector1Mock.Object
+
+                this.versionedComponentDetector1Mock.Object,
             };
             var restrictedDetectors = new[]
             {
-                this.componentDetector2Mock.Object, this.componentDetector3Mock.Object
+                this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
             };
+
             this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>()))
                 .Returns(registeredDetectors);
             this.detectorRestrictionServiceMock.Setup(
