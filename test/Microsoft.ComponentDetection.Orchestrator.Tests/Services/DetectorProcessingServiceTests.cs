@@ -21,6 +21,16 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
     [TestCategory("Governance/ComponentDetection")]
     public class DetectorProcessingServiceTests
     {
+        private readonly Dictionary<string, DetectedComponent> componentDictionary = new Dictionary<string, DetectedComponent>()
+        {
+            { "firstFileDetectorId", new DetectedComponent(new NpmComponent($"{Guid.NewGuid()}", "FileComponentVersion1")) },
+            { "secondFileDetectorId", new DetectedComponent(new NuGetComponent("FileComponentName2", "FileComponentVersion2")) },
+            { "firstCommandDetectorId", new DetectedComponent(new NpmComponent("CommandComponentName1", "CommandComponentVersion1")) },
+            { "secondCommandDetectorId",  new DetectedComponent(new NuGetComponent("CommandComponentName2", "CommandComponentVersion2")) },
+            { "experimentalFileDetectorId", new DetectedComponent(new NuGetComponent("experimentalDetectorName", "experimentalDetectorVersion")) },
+        };
+
+        private IEnumerable<IComponentDetector> detectorsToUse;
         private Mock<ILogger> loggerMock;
         private DetectorProcessingService serviceUnderTest;
         private FastDirectoryWalkerFactory directoryWalkerFactory;
@@ -30,17 +40,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         private Mock<IComponentDetector> firstCommandComponentDetectorMock;
         private Mock<IComponentDetector> secondCommandComponentDetectorMock;
         private Mock<FileComponentDetector> experimentalFileComponentDetectorMock;
-
-        private IEnumerable<IComponentDetector> detectorsToUse;
-
-        private readonly Dictionary<string, DetectedComponent> componentDictionary = new Dictionary<string, DetectedComponent>()
-        {
-            { "firstFileDetectorId", new DetectedComponent(new NpmComponent($"{Guid.NewGuid()}", "FileComponentVersion1")) },
-            { "secondFileDetectorId", new DetectedComponent(new NuGetComponent("FileComponentName2", "FileComponentVersion2")) },
-            { "firstCommandDetectorId", new DetectedComponent(new NpmComponent("CommandComponentName1", "CommandComponentVersion1")) },
-            { "secondCommandDetectorId",  new DetectedComponent(new NuGetComponent("CommandComponentName2", "CommandComponentVersion2")) },
-            { "experimentalFileDetectorId", new DetectedComponent(new NuGetComponent("experimentalDetectorName", "experimentalDetectorVersion")) },
-        };
 
         private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId)
         {
