@@ -95,7 +95,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 }
                 else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
                 {
-                    ParsePaketLock(processRequest);
+                    this.ParsePaketLock(processRequest);
                 }
                 else
                 {
@@ -140,7 +140,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var stream = processRequest.ComponentStream;
 
-            using StreamReader reader = new StreamReader(stream.Stream);
+            using var reader = new StreamReader(stream.Stream);
 
             string line;
             while ((line = reader.ReadLine()) != null)
@@ -148,7 +148,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 var matches = Regex.Matches(line, @"\s*([a-zA-Z0-9-.]*) \([<>=]*[ ]*([0-9a-zA-Z-.]*)\)", RegexOptions.Singleline);
                 foreach (Match match in matches)
                 {
-                    string name = match.Groups[1].Value;
+                    var name = match.Groups[1].Value;
                     string version = match.Groups[2].Value;
                     NuGetComponent component = new NuGetComponent(name, version);
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
