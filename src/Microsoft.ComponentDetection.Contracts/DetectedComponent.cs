@@ -8,8 +8,6 @@ namespace Microsoft.ComponentDetection.Contracts
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class DetectedComponent
     {
-        private readonly object hashLock = new object();
-
         /// <summary>Creates a new DetectedComponent.</summary>
         /// <param name="component">The typed component instance to base this detection on.</param>
         /// <param name="detector">The detector that detected this component.</param>
@@ -31,8 +29,6 @@ namespace Microsoft.ComponentDetection.Contracts
                 }
             }
         }
-
-        private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
 
         /// <summary>
         /// Gets or sets the detector that detected this component.
@@ -70,5 +66,9 @@ namespace Microsoft.ComponentDetection.Contracts
                 this.FilePaths.Add(filePath);
             }
         }
+
+        private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
+
+        private readonly object hashLock = new object();
     }
 }

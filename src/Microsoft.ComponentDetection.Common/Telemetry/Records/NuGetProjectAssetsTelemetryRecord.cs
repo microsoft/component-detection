@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 {
@@ -14,6 +14,11 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 
         private bool disposedValue = false;
 
+        public void Dispose()
+        {
+            this.Dispose(true);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!this.disposedValue)
@@ -25,11 +30,6 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 
                 this.disposedValue = true;
             }
-        }
-
-        public void Dispose()
-        {
-            this.Dispose(true);
         }
     }
 }
