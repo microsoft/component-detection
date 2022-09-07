@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 namespace Microsoft.ComponentDetection.VerificationTests
 {
     [TestClass]
-    public class ComponentDetectionIntegrationTests 
+    public class ComponentDetectionIntegrationTests
     {
         private string oldLogFileContents;
         private string newLogFileContents;

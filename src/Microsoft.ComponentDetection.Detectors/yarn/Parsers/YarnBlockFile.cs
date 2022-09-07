@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -45,9 +45,9 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         private static readonly Regex YarnV2Regex = new Regex("(.*):\\s\"?(.*)", RegexOptions.Compiled);
 
-        private int fileLineIndex = 0;
-
         private readonly IList<string> fileLines = new List<string>();
+
+        private int fileLineIndex = 0;
 
         public string VersionHeader { get; set; }
 
@@ -95,6 +95,11 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             }
 
             yield break;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
         }
 
         private void ReadVersionHeader()
@@ -178,7 +183,8 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                     // Match on the specified version
                     var matches = this.YarnLockVersion == YarnLockVersion.V1 ? YarnV1Regex.Match(toParse) : YarnV2Regex.Match(toParse);
 
-                    if (matches.Groups.Count != 3) // Whole group + two captures
+                    // Whole group + two captures
+                    if (matches.Groups.Count != 3)
                     {
                         continue;
                     }
@@ -193,11 +199,6 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             }
 
             return block;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
         }
 
         /// <summary>

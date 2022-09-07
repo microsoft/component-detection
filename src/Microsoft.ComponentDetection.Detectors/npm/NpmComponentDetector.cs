@@ -56,21 +56,6 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             });
         }
 
-        private async Task SafeProcessAllPackageJTokens(string sourceFilePath, string contents, JTokenProcessingDelegate jtokenProcessor)
-        {
-            try
-            {
-                await this.ProcessAllPackageJTokensAsync(contents, jtokenProcessor);
-            }
-            catch (Exception e)
-            {
-                // If something went wrong, just ignore the component
-                this.Logger.LogInfo($"Could not parse Jtokens from file {sourceFilePath}.");
-                this.Logger.LogFailedReadingFile(sourceFilePath, e);
-                return;
-            }
-        }
-
         protected virtual Task ProcessAllPackageJTokensAsync(string contents, JTokenProcessingDelegate jtokenProcessor)
         {
             var o = JToken.Parse(contents);
@@ -94,6 +79,21 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(npmComponent));
             return true;
+        }
+
+        private async Task SafeProcessAllPackageJTokens(string sourceFilePath, string contents, JTokenProcessingDelegate jtokenProcessor)
+        {
+            try
+            {
+                await this.ProcessAllPackageJTokensAsync(contents, jtokenProcessor);
+            }
+            catch (Exception e)
+            {
+                // If something went wrong, just ignore the component
+                this.Logger.LogInfo($"Could not parse Jtokens from file {sourceFilePath}.");
+                this.Logger.LogFailedReadingFile(sourceFilePath, e);
+                return;
+            }
         }
 
         private NpmAuthor GetAuthor(JToken authorToken, string packageName, string filePath)

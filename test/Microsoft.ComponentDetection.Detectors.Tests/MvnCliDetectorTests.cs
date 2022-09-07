@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -176,6 +176,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             dependencyGraph.IsComponentExplicitlyReferenced(leafComponentId).Should().BeFalse();
         }
 
+        protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
+        {
+            result.Should<T>().BeEquivalentTo(expected);
+            return true;
+        }
+
         private void MvnCliHappyPath(string content)
         {
             this.commandLineMock.Setup(x => x.CanCommandBeLocated(MavenCommandService.PrimaryCommand, MavenCommandService.AdditionalValidCommands, MavenCommandService.MvnVersionArgument)).ReturnsAsync(true);
@@ -196,12 +202,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 {
                     ExitCode = 0,
                 });
-        }
-
-        protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
-        {
-            result.Should<T>().BeEquivalentTo(expected);
-            return true;
         }
     }
 }

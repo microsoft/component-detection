@@ -32,25 +32,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
         [Import]
         public IObservableDirectoryWalkerFactory Scanner { get; set; }
 
-        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
-        {
-            var detectorArgs = new Dictionary<string, string>();
-
-            foreach (var arg in detectorArgsList)
-            {
-                var keyValue = arg.Split('=');
-
-                if (keyValue.Length != 2)
-                {
-                    continue;
-                }
-
-                detectorArgs.Add(keyValue[0], keyValue[1]);
-            }
-
-            return detectorArgs;
-        }
-
         public async Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions)
         {
             this.Logger.LogCreateLoggingGroup();
@@ -147,6 +128,105 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             return detectorProcessingResult;
         }
 
+        public ExcludeDirectoryPredicate GenerateDirectoryExclusionPredicate(string originalSourceDirectory, IEnumerable<string> directoryExclusionList, IEnumerable<string> directoryExclusionListObsolete, bool allowWindowsPaths, bool ignoreCase = true)
+        {
+            if (directoryExclusionListObsolete?.Any() != true && directoryExclusionList?.Any() != true)
+            {
+                return (ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider) => false;
+            }
+
+            if (directoryExclusionListObsolete?.Any() == true)
+            {
+                var directories = directoryExclusionListObsolete
+
+                    // Note: directory info will *automatically* parent relative paths to the working directory of the current assembly. Hold on to your rear.
+                    .Select(relativeOrAbsoluteExclusionPath => new DirectoryInfo(relativeOrAbsoluteExclusionPath))
+                    .Select(exclusionDirectoryInfo => new
+                    {
+                        nameOfExcludedDirectory = exclusionDirectoryInfo.Name,
+                        pathOfParentOfDirectoryToExclude = exclusionDirectoryInfo.Parent.FullName,
+                        rootedLinuxSymlinkCompatibleRelativePathToExclude =
+                            Path.GetDirectoryName(// Get the parent of
+                                Path.IsPathRooted(exclusionDirectoryInfo.ToString())
+                                ? exclusionDirectoryInfo.ToString() // If rooted, just use the natural path
+                                : Path.Join(originalSourceDirectory, exclusionDirectoryInfo.ToString())), // If not rooted, join to sourceDir
+                    })
+                    .Distinct();
+
+                return (ReadOnlySpan<char> nameOfDirectoryToConsiderSpan, ReadOnlySpan<char> pathOfParentOfDirectoryToConsiderSpan) =>
+                {
+                    var pathOfParentOfDirectoryToConsider = pathOfParentOfDirectoryToConsiderSpan.ToString();
+                    var nameOfDirectoryToConsider = nameOfDirectoryToConsiderSpan.ToString();
+
+                    foreach (var valueTuple in directories)
+                    {
+                        var nameOfExcludedDirectory = valueTuple.nameOfExcludedDirectory;
+                        var pathOfParentOfDirectoryToExclude = valueTuple.pathOfParentOfDirectoryToExclude;
+
+                        if (nameOfDirectoryToConsider.Equals(nameOfExcludedDirectory, StringComparison.Ordinal)
+                        && (pathOfParentOfDirectoryToConsider.Equals(pathOfParentOfDirectoryToExclude, StringComparison.Ordinal)
+                            || pathOfParentOfDirectoryToConsider.ToString().Equals(valueTuple.rootedLinuxSymlinkCompatibleRelativePathToExclude, StringComparison.Ordinal)))
+                        {
+                            this.Logger.LogVerbose($"Excluding folder {Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString())}.");
+                            return true;
+                        }
+                    }
+
+                    return false;
+                };
+            }
+
+            var minimatchers = new Dictionary<string, Glob>();
+
+            var globOptions = new GlobOptions()
+            {
+                Evaluation = new EvaluationOptions()
+                {
+                    CaseInsensitive = ignoreCase,
+                },
+            };
+
+            foreach (var directoryExclusion in directoryExclusionList)
+            {
+                minimatchers.Add(directoryExclusion, Glob.Parse(allowWindowsPaths ? directoryExclusion : /* [] escapes special chars */ directoryExclusion.Replace("\\", "[\\]"), globOptions));
+            }
+
+            return (name, directoryName) =>
+            {
+                var path = Path.Combine(directoryName.ToString(), name.ToString());
+
+                return minimatchers.Any(minimatcherKeyValue =>
+                {
+                    if (minimatcherKeyValue.Value.IsMatch(path))
+                    {
+                        this.Logger.LogVerbose($"Excluding folder {path} because it matched glob {minimatcherKeyValue.Key}.");
+                        return true;
+                    }
+
+                    return false;
+                });
+            };
+        }
+
+        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
+        {
+            var detectorArgs = new Dictionary<string, string>();
+
+            foreach (var arg in detectorArgsList)
+            {
+                var keyValue = arg.Split('=');
+
+                if (keyValue.Length != 2)
+                {
+                    continue;
+                }
+
+                detectorArgs.Add(keyValue[0], keyValue[1]);
+            }
+
+            return detectorArgs;
+        }
+
         private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
         {
             if (individualDetectorScanResult == null)
@@ -241,86 +321,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             {
                 this.Logger.LogInfo(line);
             }
-        }
-
-        public ExcludeDirectoryPredicate GenerateDirectoryExclusionPredicate(string originalSourceDirectory, IEnumerable<string> directoryExclusionList, IEnumerable<string> directoryExclusionListObsolete, bool allowWindowsPaths, bool ignoreCase = true)
-        {
-            if (directoryExclusionListObsolete?.Any() != true && directoryExclusionList?.Any() != true)
-            {
-                return (ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider) => false;
-            }
-
-            if (directoryExclusionListObsolete?.Any() == true)
-            {
-                var directories = directoryExclusionListObsolete
-
-                    // Note: directory info will *automatically* parent relative paths to the working directory of the current assembly. Hold on to your rear.
-                    .Select(relativeOrAbsoluteExclusionPath => new DirectoryInfo(relativeOrAbsoluteExclusionPath))
-                    .Select(exclusionDirectoryInfo => new
-                    {
-                        nameOfExcludedDirectory = exclusionDirectoryInfo.Name,
-                        pathOfParentOfDirectoryToExclude = exclusionDirectoryInfo.Parent.FullName,
-                        rootedLinuxSymlinkCompatibleRelativePathToExclude =
-                            Path.GetDirectoryName(// Get the parent of
-                                Path.IsPathRooted(exclusionDirectoryInfo.ToString())
-                                ? exclusionDirectoryInfo.ToString() // If rooted, just use the natural path
-                                : Path.Join(originalSourceDirectory, exclusionDirectoryInfo.ToString())), // If not rooted, join to sourceDir
-                    })
-                    .Distinct();
-
-                return (ReadOnlySpan<char> nameOfDirectoryToConsiderSpan, ReadOnlySpan<char> pathOfParentOfDirectoryToConsiderSpan) =>
-                {
-                    var pathOfParentOfDirectoryToConsider = pathOfParentOfDirectoryToConsiderSpan.ToString();
-                    var nameOfDirectoryToConsider = nameOfDirectoryToConsiderSpan.ToString();
-
-                    foreach (var valueTuple in directories)
-                    {
-                        var nameOfExcludedDirectory = valueTuple.nameOfExcludedDirectory;
-                        var pathOfParentOfDirectoryToExclude = valueTuple.pathOfParentOfDirectoryToExclude;
-
-                        if (nameOfDirectoryToConsider.Equals(nameOfExcludedDirectory, StringComparison.Ordinal)
-                        && (pathOfParentOfDirectoryToConsider.Equals(pathOfParentOfDirectoryToExclude, StringComparison.Ordinal)
-                            || pathOfParentOfDirectoryToConsider.ToString().Equals(valueTuple.rootedLinuxSymlinkCompatibleRelativePathToExclude, StringComparison.Ordinal)))
-                        {
-                            this.Logger.LogVerbose($"Excluding folder {Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString())}.");
-                            return true;
-                        }
-                    }
-
-                    return false;
-                };
-            }
-
-            var minimatchers = new Dictionary<string, Glob>();
-
-            var globOptions = new GlobOptions()
-            {
-                Evaluation = new EvaluationOptions()
-                {
-                    CaseInsensitive = ignoreCase,
-                },
-            };
-
-            foreach (var directoryExclusion in directoryExclusionList)
-            {
-                minimatchers.Add(directoryExclusion, Glob.Parse(allowWindowsPaths ? directoryExclusion : /* [] escapes special chars */ directoryExclusion.Replace("\\", "[\\]"), globOptions));
-            }
-
-            return (name, directoryName) =>
-            {
-                var path = Path.Combine(directoryName.ToString(), name.ToString());
-
-                return minimatchers.Any(minimatcherKeyValue =>
-                {
-                    if (minimatcherKeyValue.Value.IsMatch(path))
-                    {
-                        this.Logger.LogVerbose($"Excluding folder {path} because it matched glob {minimatcherKeyValue.Key}.");
-                        return true;
-                    }
-
-                    return false;
-                });
-            };
         }
     }
 }

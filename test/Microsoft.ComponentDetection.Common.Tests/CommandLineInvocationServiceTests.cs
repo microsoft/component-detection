@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -56,7 +56,9 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var isLocated = await this.commandLineService.CanCommandBeLocated("cmd.exe", default, "/C");
             Assert.IsTrue(isLocated);
             var largeStringBuilder = new StringBuilder();
-            while (largeStringBuilder.Length < 8100) // Cmd.exe command limit is in the 8100s
+
+            // Cmd.exe command limit is in the 8100s
+            while (largeStringBuilder.Length < 8100)
             {
                 largeStringBuilder.Append("Some sample text");
             }
@@ -73,7 +75,9 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var isLocated = await this.commandLineService.CanCommandBeLocated("cmd.exe", default, "/C");
             Assert.IsTrue(isLocated);
             var largeStringBuilder = new StringBuilder();
-            while (largeStringBuilder.Length < 9000) // Pick a command that is "too big" for cmd.
+
+            // Pick a command that is "too big" for cmd.
+            while (largeStringBuilder.Length < 9000)
             {
                 largeStringBuilder.Append("Some sample text");
             }

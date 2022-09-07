@@ -1,14 +1,9 @@
-﻿using PackageUrl;
+using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class NuGetComponent : TypedComponent
     {
-        private NuGetComponent()
-        {
-            /* Reserved for deserialization */
-        }
-
         public NuGetComponent(string name, string version, string[] authors = null)
         {
             this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.NuGet));
@@ -27,5 +22,10 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
         public override PackageURL PackageUrl => new PackageURL("nuget", null, this.Name, this.Version, null, null);
+
+        private NuGetComponent()
+        {
+            /* Reserved for deserialization */
+        }
     }
 }
