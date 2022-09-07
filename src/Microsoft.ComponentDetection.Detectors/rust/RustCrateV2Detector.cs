@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
-using Nett;
+using Tomlyn;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust
 {
@@ -29,13 +29,17 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var cargoLockFile = processRequest.ComponentStream;
-
+            var options = new TomlModelOptions
+            {
+                IgnoreMissingProperties = true,
+            };
             try
             {
-                var cargoLock = StreamTomlSerializer.Deserialize(cargoLockFile.Stream, TomlSettings.Create()).Get<CargoLock>();
+                var reader = new StreamReader(cargoLockFile.Stream);
+                var cargoLock = Toml.ToModel<CargoLock>(reader.ReadToEnd(), options: options);
 
                 // This makes sure we're only trying to parse Cargo.lock v2 formats
-                if (cargoLock.metadata != null)
+                if (cargoLock.Metadata != null)
                 {
                     this.Logger.LogInfo($"Cargo.lock file at {cargoLockFile.Location} contains a metadata section so we're parsing it as the v1 format. The v2 detector will no process it.");
                     return Task.CompletedTask;

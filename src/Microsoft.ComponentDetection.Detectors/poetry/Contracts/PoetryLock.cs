@@ -1,11 +1,17 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
 {
     // Represents Poetry.Lock file structure.
+    [DataContract]
     public class PoetryLock
     {
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public PoetryPackage[] package { get; set; }
+        [DataMember(Name = "Package")]
+        public List<PoetryPackage> Package { get; set; }
+
+        [DataMember(Name = "metadata")]
+        public Dictionary<string, object> Metadata { get; set; }
     }
 }
