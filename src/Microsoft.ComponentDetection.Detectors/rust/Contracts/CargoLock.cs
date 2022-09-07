@@ -14,6 +14,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
         public List<CargoPackage> Package { get; set; }
 
         [DataMember(Name = "metadata")]
-        public TomlTable Metadata { get; set; }
+        public Dictionary<string, object> Metadata { get; set; }
     }
 }

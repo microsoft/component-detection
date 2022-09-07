@@ -10,5 +10,8 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
     {
         [DataMember(Name = "Package")]
         public List<PoetryPackage> Package { get; set; }
+
+        [DataMember(Name = "metadata")]
+        public Dictionary<string, object> Metadata { get; set; }
     }
 }

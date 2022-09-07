@@ -33,7 +33,11 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             try
             {
                 var reader = new StreamReader(cargoLockFile.Stream);
-                var cargoLock = Toml.ToModel<CargoLock>(reader.ReadToEnd());
+                var options = new TomlModelOptions
+                {
+                    IgnoreMissingProperties = true,
+                };
+                var cargoLock = Toml.ToModel<CargoLock>(reader.ReadToEnd(), options: options);
 
                 // This makes sure we're only trying to parse Cargo.lock v1 formats
                 if (cargoLock.Metadata == null)

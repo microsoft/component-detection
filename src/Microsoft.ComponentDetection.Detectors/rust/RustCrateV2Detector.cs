@@ -29,11 +29,14 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var cargoLockFile = processRequest.ComponentStream;
-
+            var options = new TomlModelOptions
+            {
+                IgnoreMissingProperties = true,
+            };
             try
             {
                 var reader = new StreamReader(cargoLockFile.Stream);
-                var cargoLock = Toml.ToModel<CargoLock>(reader.ReadToEnd());
+                var cargoLock = Toml.ToModel<CargoLock>(reader.ReadToEnd(), options: options);
 
                 // This makes sure we're only trying to parse Cargo.lock v2 formats
                 if (cargoLock.Metadata != null)
