@@ -38,38 +38,6 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
         public bool NeedsAutomaticRootDependencyCalculation => false;
 
-        /// <summary>
-        /// Extracts and returns the timeout defined by the user, or a default value if one is not provided.
-        /// </summary>
-        /// <param name="detectorArgs">The arguments provided by the user.</param>
-        /// <returns></returns>
-        private static TimeSpan GetTimeout(IDictionary<string, string> detectorArgs)
-        {
-            if (detectorArgs == null || !detectorArgs.TryGetValue("Linux.ScanningTimeoutSec", out var timeout))
-            {
-                return TimeSpan.FromMinutes(10);
-            }
-
-            return double.TryParse(timeout, out var parsedTimeout) ? TimeSpan.FromSeconds(parsedTimeout) : TimeSpan.FromMinutes(10);
-        }
-
-        private static IndividualDetectorScanResult EmptySuccessfulScan()
-        {
-            return new IndividualDetectorScanResult
-            {
-                ResultCode = ProcessingResultCode.Success,
-            };
-        }
-
-        private static ImageScanningResult EmptyImageScanningResult()
-        {
-            return new ImageScanningResult
-            {
-                ContainerDetails = null,
-                Components = Enumerable.Empty<DetectedComponent>(),
-            };
-        }
-
         public async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
         {
             var imagesToProcess = request.ImagesToScan?.Where(image => !string.IsNullOrWhiteSpace(image))
@@ -108,6 +76,38 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
             {
                 ContainerDetails = results.Where(tuple => tuple.ContainerDetails != null).Select(tuple => tuple.ContainerDetails).ToList(),
                 ResultCode = ProcessingResultCode.Success,
+            };
+        }
+
+        /// <summary>
+        /// Extracts and returns the timeout defined by the user, or a default value if one is not provided.
+        /// </summary>
+        /// <param name="detectorArgs">The arguments provided by the user.</param>
+        /// <returns></returns>
+        private static TimeSpan GetTimeout(IDictionary<string, string> detectorArgs)
+        {
+            if (detectorArgs == null || !detectorArgs.TryGetValue("Linux.ScanningTimeoutSec", out var timeout))
+            {
+                return TimeSpan.FromMinutes(10);
+            }
+
+            return double.TryParse(timeout, out var parsedTimeout) ? TimeSpan.FromSeconds(parsedTimeout) : TimeSpan.FromMinutes(10);
+        }
+
+        private static IndividualDetectorScanResult EmptySuccessfulScan()
+        {
+            return new IndividualDetectorScanResult
+            {
+                ResultCode = ProcessingResultCode.Success,
+            };
+        }
+
+        private static ImageScanningResult EmptyImageScanningResult()
+        {
+            return new ImageScanningResult
+            {
+                ContainerDetails = null,
+                Components = Enumerable.Empty<DetectedComponent>(),
             };
         }
 

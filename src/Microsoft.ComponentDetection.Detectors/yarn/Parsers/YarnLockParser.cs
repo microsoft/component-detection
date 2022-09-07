@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -17,6 +17,11 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         private const string Dependencies = "dependencies";
 
         private const string OptionalDependencies = "optionalDependencies";
+
+        public static string NormalizeVersion(string version)
+        {
+            return version.StartsWith("npm:") ? version : $"npm:{version}";
+        }
 
         [Import]
         public ILogger Logger { get; set; }
@@ -153,11 +158,6 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
             output = new Tuple<string, string>(name, parts[1]);
             return true;
-        }
-
-        public static string NormalizeVersion(string version)
-        {
-            return version.StartsWith("npm:") ? version : $"npm:{version}";
         }
     }
 }

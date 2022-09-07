@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -79,15 +79,15 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
             return matching;
         }
 
-        internal DependencyGraph GetDependencyGraphForLocation(string location)
-        {
-            return this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
-        }
-
         public IReadOnlyDictionary<string, IDependencyGraph> GetDependencyGraphsByLocation()
         {
             return this.singleFileRecorders.Where(x => x.DependencyGraph.HasComponents())
                 .ToImmutableDictionary(x => x.ManifestFileLocation, x => x.DependencyGraph as IDependencyGraph);
+        }
+
+        internal DependencyGraph GetDependencyGraphForLocation(string location)
+        {
+            return this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
         }
 
         public class SingleFileComponentRecorder : ISingleFileComponentRecorder
@@ -96,9 +96,9 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
             public string ManifestFileLocation { get; }
 
-            internal DependencyGraph DependencyGraph { get; }
-
             IDependencyGraph ISingleFileComponentRecorder.DependencyGraph => this.DependencyGraph;
+
+            internal DependencyGraph DependencyGraph { get; }
 
             private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new ConcurrentDictionary<string, DetectedComponent>();
 

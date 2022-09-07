@@ -83,77 +83,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.isWin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         }
 
-        private Mock<FileComponentDetector> SetupFileDetectorMock(string id)
-        {
-            var mockFileDetector = new Mock<FileComponentDetector>();
-            mockFileDetector.SetupAllProperties();
-            mockFileDetector.SetupGet(x => x.Id).Returns(id);
-
-            var sourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "Some", "Source", "Directory"));
-            this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
-
-            var expectedResult = this.ExpectedResultForDetector(id);
-
-            mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
-                (ScanRequest request) =>
-                {
-                    return mockFileDetector.Object.ExecuteDetectorAsync(request).Result;
-                }).Verifiable();
-            mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
-                (ScanRequest request) =>
-                {
-                    this.serviceUnderTest.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
-                    this.FillComponentRecorder(request.ComponentRecorder, id);
-                    return expectedResult;
-                }).Verifiable();
-
-            return mockFileDetector;
-        }
-
-        private IEnumerable<DetectedComponent> GetDiscoveredComponentsFromDetectorProcessingResult(DetectorProcessingResult detectorProcessingResult)
-        {
-            return detectorProcessingResult
-                        .ComponentRecorders
-                        .Select(componentRecorder => componentRecorder.Item2.GetDetectedComponents())
-                        .SelectMany(x => x);
-        }
-
-        private void FillComponentRecorder(IComponentRecorder componentRecorder, string id)
-        {
-            var singleFileRecorder = componentRecorder.CreateSingleFileComponentRecorder("/mock/location");
-            singleFileRecorder.RegisterUsage(this.componentDictionary[id], false);
-        }
-
-        private void ValidateExpectedComponents(DetectorProcessingResult result, IEnumerable<IComponentDetector> detectorsRan)
-        {
-            var shouldBePresent = detectorsRan.Where(detector => !(detector is IExperimentalDetector))
-                .Select(detector => this.componentDictionary[detector.Id]);
-            var isPresent = this.GetDiscoveredComponentsFromDetectorProcessingResult(result);
-
-            var check = isPresent.Select(i => i.GetType());
-
-            isPresent.All(discovered => shouldBePresent.Contains(discovered));
-            shouldBePresent.Should().HaveCount(isPresent.Count());
-        }
-
-        private Mock<IComponentDetector> SetupCommandDetectorMock(string id)
-        {
-            var mockCommandDetector = new Mock<IComponentDetector>();
-            mockCommandDetector.SetupAllProperties();
-            mockCommandDetector.SetupGet(x => x.Id).Returns(id);
-
-            this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
-
-            mockCommandDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && !request.DetectorArgs.Any()))).ReturnsAsync(
-                (ScanRequest request) =>
-                {
-                    this.FillComponentRecorder(request.ComponentRecorder, id);
-                    return this.ExpectedResultForDetector(id);
-                }).Verifiable();
-
-            return mockCommandDetector;
-        }
-
         [TestMethod]
         public void ProcessDetectorsAsync_HappyPathReturnsDetectedComponents()
         {
@@ -583,6 +512,77 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 .Should().Contain("arg1", "val1")
                 .And.NotContainKey("arg2")
                 .And.Contain("arg3", "val3");
+        }
+
+        private Mock<FileComponentDetector> SetupFileDetectorMock(string id)
+        {
+            var mockFileDetector = new Mock<FileComponentDetector>();
+            mockFileDetector.SetupAllProperties();
+            mockFileDetector.SetupGet(x => x.Id).Returns(id);
+
+            var sourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "Some", "Source", "Directory"));
+            this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
+
+            var expectedResult = this.ExpectedResultForDetector(id);
+
+            mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
+                (ScanRequest request) =>
+                {
+                    return mockFileDetector.Object.ExecuteDetectorAsync(request).Result;
+                }).Verifiable();
+            mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
+                (ScanRequest request) =>
+                {
+                    this.serviceUnderTest.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
+                    this.FillComponentRecorder(request.ComponentRecorder, id);
+                    return expectedResult;
+                }).Verifiable();
+
+            return mockFileDetector;
+        }
+
+        private IEnumerable<DetectedComponent> GetDiscoveredComponentsFromDetectorProcessingResult(DetectorProcessingResult detectorProcessingResult)
+        {
+            return detectorProcessingResult
+                        .ComponentRecorders
+                        .Select(componentRecorder => componentRecorder.Item2.GetDetectedComponents())
+                        .SelectMany(x => x);
+        }
+
+        private void FillComponentRecorder(IComponentRecorder componentRecorder, string id)
+        {
+            var singleFileRecorder = componentRecorder.CreateSingleFileComponentRecorder("/mock/location");
+            singleFileRecorder.RegisterUsage(this.componentDictionary[id], false);
+        }
+
+        private void ValidateExpectedComponents(DetectorProcessingResult result, IEnumerable<IComponentDetector> detectorsRan)
+        {
+            var shouldBePresent = detectorsRan.Where(detector => !(detector is IExperimentalDetector))
+                .Select(detector => this.componentDictionary[detector.Id]);
+            var isPresent = this.GetDiscoveredComponentsFromDetectorProcessingResult(result);
+
+            var check = isPresent.Select(i => i.GetType());
+
+            isPresent.All(discovered => shouldBePresent.Contains(discovered));
+            shouldBePresent.Should().HaveCount(isPresent.Count());
+        }
+
+        private Mock<IComponentDetector> SetupCommandDetectorMock(string id)
+        {
+            var mockCommandDetector = new Mock<IComponentDetector>();
+            mockCommandDetector.SetupAllProperties();
+            mockCommandDetector.SetupGet(x => x.Id).Returns(id);
+
+            this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
+
+            mockCommandDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && !request.DetectorArgs.Any()))).ReturnsAsync(
+                (ScanRequest request) =>
+                {
+                    this.FillComponentRecorder(request.ComponentRecorder, id);
+                    return this.ExpectedResultForDetector(id);
+                }).Verifiable();
+
+            return mockCommandDetector;
         }
     }
 }

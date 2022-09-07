@@ -15,9 +15,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 {
     public class RustCrateUtilities
     {
-        private const string Pattern = @"([^ ]+) ([^ ]+) \(([^()]*)\)"; // PkgName Version Source
-        private static readonly Regex DependencyFormatRegex = new Regex(Pattern, RegexOptions.Compiled);
-
         public const string CargoTomlSearchPattern = "Cargo.toml";
         public const string CargoLockSearchPattern = "Cargo.lock";
 
@@ -25,269 +22,14 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
         public static string[] DevDependencyKeys => new string[] { "dev-dependencies" };
 
+        private const string Pattern = @"([^ ]+) ([^ ]+) \(([^()]*)\)"; // PkgName Version Source
+        private static readonly Regex DependencyFormatRegex = new Regex(Pattern, RegexOptions.Compiled);
+
         private const string WorkspaceKey = "workspace";
 
         private const string WorkspaceMemberKey = "members";
 
         private const string WorkspaceExcludeKey = "exclude";
-
-        /// <summary>
-        /// Given the project root Cargo.toml file, extract any workspaces specified and any root dependencies.
-        /// </summary>
-        /// <param name="cargoTomlComponentStream">A stream representing the root cargo.toml file.</param>
-        /// <param name="singleFileComponentRecorder">The component recorder which will have workspace toml files added as related.</param>
-        /// <returns>
-        /// A CargoDependencyData containing populated lists of CargoWorkspaces that will be included from search, CargoWorkspaceExclusions that will be excluded from search,
-        /// a list of non-development dependencies, and a list of development dependencies.
-        /// </returns>
-        public static CargoDependencyData ExtractRootDependencyAndWorkspaceSpecifications(IEnumerable<IComponentStream> cargoTomlComponentStream, ISingleFileComponentRecorder singleFileComponentRecorder)
-        {
-            var cargoDependencyData = new CargoDependencyData();
-
-            // The file handle is disposed if you call .First() on cargoTomlComponentStream
-            // Since multiple Cargo.toml files for 1 Cargo.lock file obviously doesn't make sense
-            // We break at the end of this loop
-            foreach (var cargoTomlFile in cargoTomlComponentStream)
-            {
-                var cargoToml = StreamTomlSerializer.Deserialize(cargoTomlFile.Stream, TomlSettings.Create());
-
-                singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
-
-                // Extract the workspaces present, if any
-                if (cargoToml.ContainsKey(WorkspaceKey))
-                {
-                    var workspaces = cargoToml.Get<TomlTable>(WorkspaceKey);
-
-                    var workspaceMembers = workspaces.ContainsKey(WorkspaceMemberKey) ? workspaces[WorkspaceMemberKey] : null;
-                    var workspaceExclusions = workspaces.ContainsKey(WorkspaceExcludeKey) ? workspaces[WorkspaceExcludeKey] : null;
-
-                    if (workspaceMembers != null)
-                    {
-                        if (workspaceMembers.TomlType != TomlObjectType.Array)
-                        {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceMemberKey} within {WorkspaceKey} to be of type Array, but found {workspaceMembers.TomlType}");
-                        }
-
-                        // TomlObject arrays do not natively implement a HashSet get, so add from a list
-                        cargoDependencyData.CargoWorkspaces.UnionWith(workspaceMembers.Get<List<string>>());
-                    }
-
-                    if (workspaceExclusions != null)
-                    {
-                        if (workspaceExclusions.TomlType != TomlObjectType.Array)
-                        {
-                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceExcludeKey} within {WorkspaceKey} to be of type Array, but found {workspaceExclusions.TomlType}");
-                        }
-
-                        cargoDependencyData.CargoWorkspaceExclusions.UnionWith(workspaceExclusions.Get<List<string>>());
-                    }
-                }
-
-                GenerateDependencies(cargoToml, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies);
-
-                break;
-            }
-
-            return cargoDependencyData;
-        }
-
-        /// <summary>
-        /// Given a set of Cargo.toml files, extract development and non-development dependency lists for each.
-        /// </summary>
-        /// <param name="cargoTomlComponentStreams">A list of streams representing cargo workspaces.</param>
-        /// <param name="singleFileComponentRecorder">The component recorder which will have workspace toml files added as related.</param>
-        /// <param name="nonDevDependencySpecifications">Current list of non-development dependencies.</param>
-        /// <param name="devDependencySpecifications">Current list of development dependencies.</param>
-        public static void ExtractDependencySpecifications(IEnumerable<IComponentStream> cargoTomlComponentStreams, ISingleFileComponentRecorder singleFileComponentRecorder, IList<DependencySpecification> nonDevDependencySpecifications, IList<DependencySpecification> devDependencySpecifications)
-        {
-            // The file handles within cargoTomlComponentStreams will be disposed after enumeration
-            // This method is only used in non root toml extraction, so the whole list should be iterated
-            foreach (var cargoTomlFile in cargoTomlComponentStreams)
-            {
-                var cargoToml = StreamTomlSerializer.Deserialize(cargoTomlFile.Stream, TomlSettings.Create());
-
-                singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
-
-                GenerateDependencies(cargoToml, nonDevDependencySpecifications, devDependencySpecifications);
-            }
-        }
-
-        /// <summary>
-        /// Extract development and non-development dependency lists from a given TomlTable.
-        /// </summary>
-        /// <param name="cargoToml">The TomlTable representing a whole cargo.toml file.</param>
-        /// <param name="nonDevDependencySpecifications">Current list of non-development dependencies.</param>
-        /// <param name="devDependencySpecifications">Current list of development dependencies.</param>
-        private static void GenerateDependencies(TomlTable cargoToml, IList<DependencySpecification> nonDevDependencySpecifications, IList<DependencySpecification> devDependencySpecifications)
-        {
-            var dependencySpecification = GenerateDependencySpecifications(cargoToml, NonDevDependencyKeys);
-            var devDependencySpecification = GenerateDependencySpecifications(cargoToml, DevDependencyKeys);
-
-            // If null, this indicates the toml is an internal file that should not be tracked as a component.
-            if (dependencySpecification != null)
-            {
-                nonDevDependencySpecifications.Add(dependencySpecification);
-            }
-
-            if (devDependencySpecification != null)
-            {
-                devDependencySpecifications.Add(devDependencySpecification);
-            }
-        }
-
-        /// <summary>
-        /// Generate a predicate which will be used to exclude directories which should not contain cargo.toml files.
-        /// </summary>
-        /// <param name="rootLockFileInfo">The FileInfo for the cargo.lock file found in the root directory.</param>
-        /// <param name="definedWorkspaces">A list of relative folder paths to include in search.</param>
-        /// <param name="definedExclusions">A list of relative folder paths to exclude from search.</param>
-        /// <returns></returns>
-        public static ExcludeDirectoryPredicate BuildExcludeDirectoryPredicateFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces, HashSet<string> definedExclusions)
-        {
-            var workspaceGlobs = BuildGlobMatchingFromWorkspaces(rootLockFileInfo, definedWorkspaces);
-
-            // Since the paths come in as relative, make them fully qualified
-            var fullyQualifiedExclusions = definedExclusions.Select(x => Path.Combine(rootLockFileInfo.DirectoryName, x)).ToHashSet();
-
-            // The predicate will be evaluated with the current directory name to search and the full path of its parent. Return true when it should be excluded from search.
-            return (ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider) =>
-            {
-                var currentPath = Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString());
-
-                return !workspaceGlobs.Values.Any(x => x.IsMatch(currentPath)) || fullyQualifiedExclusions.Contains(currentPath);
-            };
-        }
-
-        /// <summary>
-        /// Generates a list of Glob compatible Cargo workspace directories which will be searched. See https://docs.rs/glob/0.3.0/glob/struct.Pattern.html for glob patterns.
-        /// </summary>
-        /// <param name="rootLockFileInfo">The FileInfo for the cargo.lock file found in the root directory.</param>
-        /// <param name="definedWorkspaces">A list of relative folder paths to include in search.</param>
-        /// <returns></returns>
-        private static Dictionary<string, Glob> BuildGlobMatchingFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces)
-        {
-            var directoryGlobs = new Dictionary<string, Glob>
-            {
-                { rootLockFileInfo.DirectoryName, Glob.Parse(rootLockFileInfo.DirectoryName) },
-            };
-
-            // For the given workspaces, add their paths to search list
-            foreach (var workspace in definedWorkspaces)
-            {
-                var currentPath = rootLockFileInfo.DirectoryName;
-                var directoryPathParts = workspace.Split('/');
-
-                // When multiple levels of subdirectory are present, each directory parent must be added or the directory will not be reached
-                // For example, ROOT/test-space/first-test/src/Cargo.toml requires the following directories be matched:
-                // ROOT/test-space, ROOT/test-space/first-test, ROOT/test-space/first-test, ROOT/test-space/first-test/src
-                // Each directory is matched explicitly instead of performing a StartsWith due to the potential of Glob character matching
-                foreach (var pathPart in directoryPathParts)
-                {
-                    currentPath = Path.Combine(currentPath, pathPart);
-                    directoryGlobs[currentPath] = Glob.Parse(currentPath);
-                }
-            }
-
-            return directoryGlobs;
-        }
-
-        public static void BuildGraph(HashSet<CargoPackage> cargoPackages, IList<DependencySpecification> nonDevDependencies, IList<DependencySpecification> devDependencies, ISingleFileComponentRecorder singleFileComponentRecorder)
-        {
-            // Get all root components that are not dev dependencies
-            // This is a bug:
-            // Say Cargo.toml defined async ^1.0 as a dependency
-            // Say Cargo.lock has async 1.0.0 and async 1.0.2
-            // Both will be marked as root and there's no way to tell which one is "real"
-            IList<CargoPackage> nonDevRoots = cargoPackages
-                                                .Where(detectedComponent => IsCargoPackageInDependencySpecifications(detectedComponent, nonDevDependencies))
-                                                .ToList();
-
-            // Get all roots that are dev deps
-            IList<CargoPackage> devRoots = cargoPackages
-                                                .Where(detectedComponent => IsCargoPackageInDependencySpecifications(detectedComponent, devDependencies))
-                                                .ToList();
-
-            var packagesDict = cargoPackages.ToDictionary(cargoPackage => new CargoComponent(cargoPackage.name, cargoPackage.version).Id);
-
-            FollowRoots(packagesDict, devRoots, singleFileComponentRecorder, true);
-            FollowRoots(packagesDict, nonDevRoots, singleFileComponentRecorder, false);
-        }
-
-        private static void FollowRoots(Dictionary<string, CargoPackage> packagesDict, IList<CargoPackage> roots, ISingleFileComponentRecorder singleFileComponentRecorder, bool isDevDependencies)
-        {
-            var componentQueue = new Queue<(string, CargoPackage)>();
-            roots.ToList().ForEach(devRootDetectedComponent => componentQueue.Enqueue((null, devRootDetectedComponent)));
-
-            var visited = new HashSet<string>();
-
-            // All of these components will be dev deps
-            while (componentQueue.Count > 0)
-            {
-                var (parentId, currentPackage) = componentQueue.Dequeue();
-                var currentComponent = CargoPackageToCargoComponent(currentPackage);
-
-                if (visited.Contains(currentComponent.Id))
-                {
-                    continue;
-                }
-
-                var isRootComponent = string.IsNullOrEmpty(parentId);
-                if (isRootComponent)
-                {
-                    AddOrUpdateDetectedComponent(singleFileComponentRecorder, currentComponent, isDevDependencies, isExplicitReferencedDependency: true);
-                }
-                else
-                {
-                    AddOrUpdateDetectedComponent(singleFileComponentRecorder, currentComponent, isDevDependencies, parentComponentId: parentId);
-                }
-
-                visited.Add(currentComponent.Id);
-
-                if (currentPackage.dependencies != null && currentPackage.dependencies.Any())
-                {
-                    foreach (var dependency in currentPackage.dependencies)
-                    {
-                        var regexMatch = DependencyFormatRegex.Match(dependency);
-                        if (regexMatch.Success)
-                        {
-                            if (SemVersion.TryParse(regexMatch.Groups[2].Value, out var sv))
-                            {
-                                var name = regexMatch.Groups[1].Value;
-                                var version = sv.ToString();
-                                var source = regexMatch.Groups[3].Value;
-
-                                packagesDict.TryGetValue(new CargoComponent(name, version).Id, out var dependencyPackage);
-
-                                componentQueue.Enqueue((currentComponent.Id, dependencyPackage));
-                            }
-                            else
-                            {
-                                throw new FormatException($"Could not parse {regexMatch.Groups[2].Value} into a valid Semver");
-                            }
-                        }
-                        else
-                        {
-                            throw new FormatException("Could not parse: " + dependency);
-                        }
-                    }
-                }
-            }
-        }
-
-        private static DetectedComponent AddOrUpdateDetectedComponent(
-            ISingleFileComponentRecorder singleFileComponentRecorder,
-            TypedComponent component,
-            bool isDevDependency,
-            string parentComponentId = null,
-            bool isExplicitReferencedDependency = false)
-        {
-            var newComponent = new DetectedComponent(component);
-            singleFileComponentRecorder.RegisterUsage(newComponent, isExplicitReferencedDependency, parentComponentId: parentComponentId, isDevelopmentDependency: isDevDependency);
-            var recordedComponent = singleFileComponentRecorder.GetComponent(newComponent.Component.Id);
-            recordedComponent.DevelopmentDependency &= isDevDependency;
-
-            return recordedComponent;
-        }
 
         public static DependencySpecification GenerateDependencySpecifications(TomlTable cargoToml, IEnumerable<string> tomlDependencyKeys)
         {
@@ -412,6 +154,264 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         public static string MakeDependencyStringFromPackage(CargoPackage package)
         {
             return $"{package.name} {package.version} ({package.source})";
+        }
+
+        /// <summary>
+        /// Given the project root Cargo.toml file, extract any workspaces specified and any root dependencies.
+        /// </summary>
+        /// <param name="cargoTomlComponentStream">A stream representing the root cargo.toml file.</param>
+        /// <param name="singleFileComponentRecorder">The component recorder which will have workspace toml files added as related.</param>
+        /// <returns>
+        /// A CargoDependencyData containing populated lists of CargoWorkspaces that will be included from search, CargoWorkspaceExclusions that will be excluded from search,
+        /// a list of non-development dependencies, and a list of development dependencies.
+        /// </returns>
+        public static CargoDependencyData ExtractRootDependencyAndWorkspaceSpecifications(IEnumerable<IComponentStream> cargoTomlComponentStream, ISingleFileComponentRecorder singleFileComponentRecorder)
+        {
+            var cargoDependencyData = new CargoDependencyData();
+
+            // The file handle is disposed if you call .First() on cargoTomlComponentStream
+            // Since multiple Cargo.toml files for 1 Cargo.lock file obviously doesn't make sense
+            // We break at the end of this loop
+            foreach (var cargoTomlFile in cargoTomlComponentStream)
+            {
+                var cargoToml = StreamTomlSerializer.Deserialize(cargoTomlFile.Stream, TomlSettings.Create());
+
+                singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
+
+                // Extract the workspaces present, if any
+                if (cargoToml.ContainsKey(WorkspaceKey))
+                {
+                    var workspaces = cargoToml.Get<TomlTable>(WorkspaceKey);
+
+                    var workspaceMembers = workspaces.ContainsKey(WorkspaceMemberKey) ? workspaces[WorkspaceMemberKey] : null;
+                    var workspaceExclusions = workspaces.ContainsKey(WorkspaceExcludeKey) ? workspaces[WorkspaceExcludeKey] : null;
+
+                    if (workspaceMembers != null)
+                    {
+                        if (workspaceMembers.TomlType != TomlObjectType.Array)
+                        {
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceMemberKey} within {WorkspaceKey} to be of type Array, but found {workspaceMembers.TomlType}");
+                        }
+
+                        // TomlObject arrays do not natively implement a HashSet get, so add from a list
+                        cargoDependencyData.CargoWorkspaces.UnionWith(workspaceMembers.Get<List<string>>());
+                    }
+
+                    if (workspaceExclusions != null)
+                    {
+                        if (workspaceExclusions.TomlType != TomlObjectType.Array)
+                        {
+                            throw new InvalidRustTomlFileException($"In accompanying Cargo.toml file expected {WorkspaceExcludeKey} within {WorkspaceKey} to be of type Array, but found {workspaceExclusions.TomlType}");
+                        }
+
+                        cargoDependencyData.CargoWorkspaceExclusions.UnionWith(workspaceExclusions.Get<List<string>>());
+                    }
+                }
+
+                GenerateDependencies(cargoToml, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies);
+
+                break;
+            }
+
+            return cargoDependencyData;
+        }
+
+        /// <summary>
+        /// Generate a predicate which will be used to exclude directories which should not contain cargo.toml files.
+        /// </summary>
+        /// <param name="rootLockFileInfo">The FileInfo for the cargo.lock file found in the root directory.</param>
+        /// <param name="definedWorkspaces">A list of relative folder paths to include in search.</param>
+        /// <param name="definedExclusions">A list of relative folder paths to exclude from search.</param>
+        /// <returns></returns>
+        public static ExcludeDirectoryPredicate BuildExcludeDirectoryPredicateFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces, HashSet<string> definedExclusions)
+        {
+            var workspaceGlobs = BuildGlobMatchingFromWorkspaces(rootLockFileInfo, definedWorkspaces);
+
+            // Since the paths come in as relative, make them fully qualified
+            var fullyQualifiedExclusions = definedExclusions.Select(x => Path.Combine(rootLockFileInfo.DirectoryName, x)).ToHashSet();
+
+            // The predicate will be evaluated with the current directory name to search and the full path of its parent. Return true when it should be excluded from search.
+            return (ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider) =>
+            {
+                var currentPath = Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString());
+
+                return !workspaceGlobs.Values.Any(x => x.IsMatch(currentPath)) || fullyQualifiedExclusions.Contains(currentPath);
+            };
+        }
+
+        /// <summary>
+        /// Given a set of Cargo.toml files, extract development and non-development dependency lists for each.
+        /// </summary>
+        /// <param name="cargoTomlComponentStreams">A list of streams representing cargo workspaces.</param>
+        /// <param name="singleFileComponentRecorder">The component recorder which will have workspace toml files added as related.</param>
+        /// <param name="nonDevDependencySpecifications">Current list of non-development dependencies.</param>
+        /// <param name="devDependencySpecifications">Current list of development dependencies.</param>
+        public static void ExtractDependencySpecifications(IEnumerable<IComponentStream> cargoTomlComponentStreams, ISingleFileComponentRecorder singleFileComponentRecorder, IList<DependencySpecification> nonDevDependencySpecifications, IList<DependencySpecification> devDependencySpecifications)
+        {
+            // The file handles within cargoTomlComponentStreams will be disposed after enumeration
+            // This method is only used in non root toml extraction, so the whole list should be iterated
+            foreach (var cargoTomlFile in cargoTomlComponentStreams)
+            {
+                var cargoToml = StreamTomlSerializer.Deserialize(cargoTomlFile.Stream, TomlSettings.Create());
+
+                singleFileComponentRecorder.AddAdditionalRelatedFile(cargoTomlFile.Location);
+
+                GenerateDependencies(cargoToml, nonDevDependencySpecifications, devDependencySpecifications);
+            }
+        }
+
+        public static void BuildGraph(HashSet<CargoPackage> cargoPackages, IList<DependencySpecification> nonDevDependencies, IList<DependencySpecification> devDependencies, ISingleFileComponentRecorder singleFileComponentRecorder)
+        {
+            // Get all root components that are not dev dependencies
+            // This is a bug:
+            // Say Cargo.toml defined async ^1.0 as a dependency
+            // Say Cargo.lock has async 1.0.0 and async 1.0.2
+            // Both will be marked as root and there's no way to tell which one is "real"
+            IList<CargoPackage> nonDevRoots = cargoPackages
+                                                .Where(detectedComponent => IsCargoPackageInDependencySpecifications(detectedComponent, nonDevDependencies))
+                                                .ToList();
+
+            // Get all roots that are dev deps
+            IList<CargoPackage> devRoots = cargoPackages
+                                                .Where(detectedComponent => IsCargoPackageInDependencySpecifications(detectedComponent, devDependencies))
+                                                .ToList();
+
+            var packagesDict = cargoPackages.ToDictionary(cargoPackage => new CargoComponent(cargoPackage.name, cargoPackage.version).Id);
+
+            FollowRoots(packagesDict, devRoots, singleFileComponentRecorder, true);
+            FollowRoots(packagesDict, nonDevRoots, singleFileComponentRecorder, false);
+        }
+
+        /// <summary>
+        /// Extract development and non-development dependency lists from a given TomlTable.
+        /// </summary>
+        /// <param name="cargoToml">The TomlTable representing a whole cargo.toml file.</param>
+        /// <param name="nonDevDependencySpecifications">Current list of non-development dependencies.</param>
+        /// <param name="devDependencySpecifications">Current list of development dependencies.</param>
+        private static void GenerateDependencies(TomlTable cargoToml, IList<DependencySpecification> nonDevDependencySpecifications, IList<DependencySpecification> devDependencySpecifications)
+        {
+            var dependencySpecification = GenerateDependencySpecifications(cargoToml, NonDevDependencyKeys);
+            var devDependencySpecification = GenerateDependencySpecifications(cargoToml, DevDependencyKeys);
+
+            // If null, this indicates the toml is an internal file that should not be tracked as a component.
+            if (dependencySpecification != null)
+            {
+                nonDevDependencySpecifications.Add(dependencySpecification);
+            }
+
+            if (devDependencySpecification != null)
+            {
+                devDependencySpecifications.Add(devDependencySpecification);
+            }
+        }
+
+        /// <summary>
+        /// Generates a list of Glob compatible Cargo workspace directories which will be searched. See https://docs.rs/glob/0.3.0/glob/struct.Pattern.html for glob patterns.
+        /// </summary>
+        /// <param name="rootLockFileInfo">The FileInfo for the cargo.lock file found in the root directory.</param>
+        /// <param name="definedWorkspaces">A list of relative folder paths to include in search.</param>
+        /// <returns></returns>
+        private static Dictionary<string, Glob> BuildGlobMatchingFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces)
+        {
+            var directoryGlobs = new Dictionary<string, Glob>
+            {
+                { rootLockFileInfo.DirectoryName, Glob.Parse(rootLockFileInfo.DirectoryName) },
+            };
+
+            // For the given workspaces, add their paths to search list
+            foreach (var workspace in definedWorkspaces)
+            {
+                var currentPath = rootLockFileInfo.DirectoryName;
+                var directoryPathParts = workspace.Split('/');
+
+                // When multiple levels of subdirectory are present, each directory parent must be added or the directory will not be reached
+                // For example, ROOT/test-space/first-test/src/Cargo.toml requires the following directories be matched:
+                // ROOT/test-space, ROOT/test-space/first-test, ROOT/test-space/first-test, ROOT/test-space/first-test/src
+                // Each directory is matched explicitly instead of performing a StartsWith due to the potential of Glob character matching
+                foreach (var pathPart in directoryPathParts)
+                {
+                    currentPath = Path.Combine(currentPath, pathPart);
+                    directoryGlobs[currentPath] = Glob.Parse(currentPath);
+                }
+            }
+
+            return directoryGlobs;
+        }
+
+        private static void FollowRoots(Dictionary<string, CargoPackage> packagesDict, IList<CargoPackage> roots, ISingleFileComponentRecorder singleFileComponentRecorder, bool isDevDependencies)
+        {
+            var componentQueue = new Queue<(string, CargoPackage)>();
+            roots.ToList().ForEach(devRootDetectedComponent => componentQueue.Enqueue((null, devRootDetectedComponent)));
+
+            var visited = new HashSet<string>();
+
+            // All of these components will be dev deps
+            while (componentQueue.Count > 0)
+            {
+                var (parentId, currentPackage) = componentQueue.Dequeue();
+                var currentComponent = CargoPackageToCargoComponent(currentPackage);
+
+                if (visited.Contains(currentComponent.Id))
+                {
+                    continue;
+                }
+
+                var isRootComponent = string.IsNullOrEmpty(parentId);
+                if (isRootComponent)
+                {
+                    AddOrUpdateDetectedComponent(singleFileComponentRecorder, currentComponent, isDevDependencies, isExplicitReferencedDependency: true);
+                }
+                else
+                {
+                    AddOrUpdateDetectedComponent(singleFileComponentRecorder, currentComponent, isDevDependencies, parentComponentId: parentId);
+                }
+
+                visited.Add(currentComponent.Id);
+
+                if (currentPackage.dependencies != null && currentPackage.dependencies.Any())
+                {
+                    foreach (var dependency in currentPackage.dependencies)
+                    {
+                        var regexMatch = DependencyFormatRegex.Match(dependency);
+                        if (regexMatch.Success)
+                        {
+                            if (SemVersion.TryParse(regexMatch.Groups[2].Value, out var sv))
+                            {
+                                var name = regexMatch.Groups[1].Value;
+                                var version = sv.ToString();
+                                var source = regexMatch.Groups[3].Value;
+
+                                packagesDict.TryGetValue(new CargoComponent(name, version).Id, out var dependencyPackage);
+
+                                componentQueue.Enqueue((currentComponent.Id, dependencyPackage));
+                            }
+                            else
+                            {
+                                throw new FormatException($"Could not parse {regexMatch.Groups[2].Value} into a valid Semver");
+                            }
+                        }
+                        else
+                        {
+                            throw new FormatException("Could not parse: " + dependency);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static DetectedComponent AddOrUpdateDetectedComponent(
+            ISingleFileComponentRecorder singleFileComponentRecorder,
+            TypedComponent component,
+            bool isDevDependency,
+            string parentComponentId = null,
+            bool isExplicitReferencedDependency = false)
+        {
+            var newComponent = new DetectedComponent(component);
+            singleFileComponentRecorder.RegisterUsage(newComponent, isExplicitReferencedDependency, parentComponentId: parentComponentId, isDevelopmentDependency: isDevDependency);
+            var recordedComponent = singleFileComponentRecorder.GetComponent(newComponent.Component.Id);
+            recordedComponent.DevelopmentDependency &= isDevDependency;
+
+            return recordedComponent;
         }
 
         private static CargoPackage DependencyStringToCargoPackage(string depString)

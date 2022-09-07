@@ -19,16 +19,6 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         private DetectedComponent topLevelComponent = null;
 
-        private void StartDependencyCategory(string categoryName)
-        {
-            if (this.DependencyCategory != null)
-            {
-                throw new InvalidOperationException("Current category must be finished before starting new category.");
-            }
-
-            this.DependencyCategory = new GraphNode<string>(categoryName);
-        }
-
         public GraphNode<string> Parse(string[] lines)
         {
             foreach (var line in lines)
@@ -75,6 +65,16 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                     }
                 }
             }
+        }
+
+        private void StartDependencyCategory(string categoryName)
+        {
+            if (this.DependencyCategory != null)
+            {
+                throw new InvalidOperationException("Current category must be finished before starting new category.");
+            }
+
+            this.DependencyCategory = new GraphNode<string>(categoryName);
         }
 
         private void TrackDependency(int position, string versionedComponent)

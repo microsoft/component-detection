@@ -1,15 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class PodComponent : TypedComponent
     {
-        private PodComponent()
-        {
-            /* Reserved for deserialization */
-        }
-
         public PodComponent(string name, string version, string specRepo = "")
         {
             this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Pod));
@@ -39,6 +34,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
                 return new PackageURL("cocoapods", null, this.Name, this.Version, qualifiers, null);
             }
+        }
+
+        private PodComponent()
+        {
+            /* Reserved for deserialization */
         }
     }
 }

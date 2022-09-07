@@ -196,22 +196,6 @@ namespace Microsoft.ComponentDetection.Common
             });
         }
 
-        private FileSystemInfo Transform(ref FileSystemEntry entry)
-        {
-            return entry.ToFileSystemInfo();
-        }
-
-        private IObservable<FileSystemInfo> CreateDirectoryWalker(DirectoryInfo di, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns)
-        {
-            return this.GetDirectoryScanner(di, new ConcurrentDictionary<string, bool>(), directoryExclusionPredicate, filePatterns, true).Replay() // Returns a replay subject which will republish anything found to new subscribers.
-                .AutoConnect(minimumConnectionCount); // Specifies that this connectable observable should start when minimumConnectionCount subscribe.
-        }
-
-        private bool MatchesAnyPattern(FileInfo fi, params string[] searchPatterns)
-        {
-            return searchPatterns != null && searchPatterns.Any(sp => this.PathUtilityService.MatchesPattern(sp, fi.Name));
-        }
-
         /// <summary>
         /// Initialized an observable file enumerator.
         /// </summary>
@@ -289,6 +273,22 @@ namespace Microsoft.ComponentDetection.Common
         public void Reset()
         {
             this.pendingScans.Clear();
+        }
+
+        private FileSystemInfo Transform(ref FileSystemEntry entry)
+        {
+            return entry.ToFileSystemInfo();
+        }
+
+        private IObservable<FileSystemInfo> CreateDirectoryWalker(DirectoryInfo di, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns)
+        {
+            return this.GetDirectoryScanner(di, new ConcurrentDictionary<string, bool>(), directoryExclusionPredicate, filePatterns, true).Replay() // Returns a replay subject which will republish anything found to new subscribers.
+                .AutoConnect(minimumConnectionCount); // Specifies that this connectable observable should start when minimumConnectionCount subscribe.
+        }
+
+        private bool MatchesAnyPattern(FileInfo fi, params string[] searchPatterns)
+        {
+            return searchPatterns != null && searchPatterns.Any(sp => this.PathUtilityService.MatchesPattern(sp, fi.Name));
         }
     }
 }

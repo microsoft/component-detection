@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
@@ -26,24 +26,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         [ImportMany]
         public IEnumerable<Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>> GraphTranslationServices { get; set; }
-
-        private DetectorRestrictions GetDetectorRestrictions(IDetectionArguments detectionArguments)
-        {
-            var detectorRestrictions = new DetectorRestrictions
-            {
-                AllowedDetectorIds = detectionArguments.DetectorsFilter,
-                AllowedDetectorCategories = detectionArguments.DetectorCategories,
-            };
-
-            if (detectionArguments.DetectorArgs != null && detectionArguments.DetectorArgs.Any())
-            {
-                var args = ArgumentHelper.GetDetectorArgs(detectionArguments.DetectorArgs);
-                var allEnabledDetectorIds = args.Where(x => string.Equals("EnableIfDefaultOff", x.Value, StringComparison.OrdinalIgnoreCase) || string.Equals("Enable", x.Value, StringComparison.OrdinalIgnoreCase));
-                detectorRestrictions.ExplicitlyEnabledDetectorIds = new HashSet<string>(allEnabledDetectorIds.Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
-            }
-
-            return detectorRestrictions;
-        }
 
         public async Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments)
         {
@@ -82,6 +64,24 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 Version = detector.Version,
                 SupportedComponentTypes = detector.SupportedComponentTypes,
             };
+        }
+
+        private DetectorRestrictions GetDetectorRestrictions(IDetectionArguments detectionArguments)
+        {
+            var detectorRestrictions = new DetectorRestrictions
+            {
+                AllowedDetectorIds = detectionArguments.DetectorsFilter,
+                AllowedDetectorCategories = detectionArguments.DetectorCategories,
+            };
+
+            if (detectionArguments.DetectorArgs != null && detectionArguments.DetectorArgs.Any())
+            {
+                var args = ArgumentHelper.GetDetectorArgs(detectionArguments.DetectorArgs);
+                var allEnabledDetectorIds = args.Where(x => string.Equals("EnableIfDefaultOff", x.Value, StringComparison.OrdinalIgnoreCase) || string.Equals("Enable", x.Value, StringComparison.OrdinalIgnoreCase));
+                detectorRestrictions.ExplicitlyEnabledDetectorIds = new HashSet<string>(allEnabledDetectorIds.Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
+            }
+
+            return detectorRestrictions;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
+// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
 //
@@ -123,26 +123,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 : null;
         }
 
-        private static Operator ParseComparatorType(string input)
-        {
-            switch (input)
-            {
-                case "":
-                case "=":
-                    return Operator.Equal;
-                case "<":
-                    return Operator.LessThan;
-                case "<=":
-                    return Operator.LessThanOrEqual;
-                case ">":
-                    return Operator.GreaterThan;
-                case ">=":
-                    return Operator.GreaterThanOrEqual;
-                default:
-                    throw new ArgumentException(string.Format("Invalid comparator type: {0}", input));
-            }
-        }
-
         public bool IsSatisfied(SemVersion version)
         {
             switch (this.ComparatorType)
@@ -250,6 +230,26 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         public override int GetHashCode()
         {
             return this.ToString().GetHashCode();
+        }
+
+        private static Operator ParseComparatorType(string input)
+        {
+            switch (input)
+            {
+                case "":
+                case "=":
+                    return Operator.Equal;
+                case "<":
+                    return Operator.LessThan;
+                case "<=":
+                    return Operator.LessThanOrEqual;
+                case ">":
+                    return Operator.GreaterThan;
+                case ">=":
+                    return Operator.GreaterThanOrEqual;
+                default:
+                    throw new ArgumentException(string.Format("Invalid comparator type: {0}", input));
+            }
         }
     }
 }

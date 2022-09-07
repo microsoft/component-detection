@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -24,22 +24,6 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             this.consoleWritingServiceMock.VerifyAll();
             this.fileWritingServiceMock.VerifyAll();
-        }
-
-        private Logger CreateLogger(VerbosityMode verbosityMode)
-        {
-            var serviceUnderTest = new Logger
-            {
-                ConsoleWriter = this.consoleWritingServiceMock.Object,
-                FileWritingService = this.fileWritingServiceMock.Object,
-            };
-
-            serviceUnderTest.Init(verbosityMode);
-
-            // We're not explicitly testing init behavior here, so we reset mock expecations. Another test should verify these.
-            this.consoleWritingServiceMock.Invocations.Clear();
-            this.fileWritingServiceMock.Invocations.Clear();
-            return serviceUnderTest;
         }
 
         [TestMethod]
@@ -277,6 +261,22 @@ namespace Microsoft.ComponentDetection.Common.Tests
                 Match.Create<string>(message => message.StartsWith("[INFO]") && message.Contains(error.Message))));
 
             logger.LogException(error, false);
+        }
+
+        private Logger CreateLogger(VerbosityMode verbosityMode)
+        {
+            var serviceUnderTest = new Logger
+            {
+                ConsoleWriter = this.consoleWritingServiceMock.Object,
+                FileWritingService = this.fileWritingServiceMock.Object,
+            };
+
+            serviceUnderTest.Init(verbosityMode);
+
+            // We're not explicitly testing init behavior here, so we reset mock expecations. Another test should verify these.
+            this.consoleWritingServiceMock.Invocations.Clear();
+            this.fileWritingServiceMock.Invocations.Clear();
+            return serviceUnderTest;
         }
     }
 }
