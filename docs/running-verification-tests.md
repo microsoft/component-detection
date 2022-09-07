@@ -14,7 +14,7 @@ For Example:
 ```dotnet run scan --Verbosity Verbose --SourceDirectory C:\componentdetection --Output C:\old-output-folder```
 
 
-## Step 2 : Run Detection on your  new branch
+## Step 2 : Run Detection on your new branch
 
 - Checkout the branch with the new changes you are trying to merge
 - Create a folder to store detection results. This folder should be seperate from the one you used in Step 1 (e.g C:\new-output-folder)
@@ -37,4 +37,6 @@ For Example:
 
 
 ## Step 4: Run The tests
-    Run or Debug the tests in test explorer like you would any other test.
+You can run the tests in two ways:
+- Run or Debug the tests in test explorer.
+- Use the command line to navigate to the Microsoft.ComponentDetection.VerificationTests folder, and run `dotnet test`.

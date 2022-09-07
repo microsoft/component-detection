@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
+using Tomlyn;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -10,9 +12,6 @@ using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry
 {
-    using System.IO;
-    using Tomlyn;
-
     [Export(typeof(IComponentDetector))]
     public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
     {
