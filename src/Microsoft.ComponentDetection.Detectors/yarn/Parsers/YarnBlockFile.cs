@@ -151,7 +151,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         /// Parses a block and its sub-blocks into <see cref="YarnBlock"/>.
         /// </summary>
         /// <param name="level"></param>
-        /// <returns></returns>
+        /// <returns>Yarnblock <see cref="YarnBlock"/> gotten from the parsed block. </returns>
         private YarnBlock ParseBlock(int level = 0)
         {
             var currentLevelDelimiter = "  ";
@@ -204,7 +204,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         /// <summary>
         /// Increments the internal pointer so that it is at the next block.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if the pointer was succesfully incremented.</returns>
         private bool ReadToNextMajorBlock()
         {
             string line;
@@ -234,7 +234,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         /// <summary>
         /// Checks to see if any lines are left in the file contents.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if there are any lines left in the file.</returns>
         private bool Peek()
         {
             if (this.fileLineIndex >= this.fileLines.Count)

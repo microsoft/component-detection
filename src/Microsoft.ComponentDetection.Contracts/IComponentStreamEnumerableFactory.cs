@@ -14,7 +14,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="searchPatterns">The patterns to use in the search.</param>
         /// <param name="directoryExclusionPredicate">Predicate which indicates which directories should be excluded.</param>
         /// <param name="recursivelyScanDirectories">Indicates whether the streams should enumerate files from sub directories.</param>
-        /// <returns></returns>
+        /// <returns> Enumerable of <see cref="IComponentStream"/> files that matched the given search pattern and directory exclusion predicate.</returns>
         IEnumerable<IComponentStream> GetComponentStreams(DirectoryInfo directory, IEnumerable<string> searchPatterns, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true);
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="fileMatchingPredicate">Predicate which indicates what files should be included.</param>
         /// <param name="directoryExclusionPredicate">Predicate which indicates which directories should be excluded.</param>
         /// <param name="recursivelyScanDirectories">Indicates whether the streams should enumerate files from sub directories.</param>
-        /// <returns></returns>
+        /// <returns> Enumerable of <see cref="IComponentStream"/> files that matched the given file matching predicate and directory exclusion predicate. </returns>
         IEnumerable<IComponentStream> GetComponentStreams(DirectoryInfo directory, Func<FileInfo, bool> fileMatchingPredicate, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true);
     }
 }

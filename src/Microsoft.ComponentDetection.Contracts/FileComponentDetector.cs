@@ -70,7 +70,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// </summary>
         /// <param name="sourceDirectory">The directory to search.</param>
         /// <param name="exclusionPredicate">The exclusion predicate function.</param>
-        /// <returns></returns>
+        /// <returns>Awaitable task with enumerable streams <see cref="IEnumerable{IComponentStream}"/> for the declared detector. </returns>
         protected Task<IEnumerable<IComponentStream>> GetFileStreamsAsync(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate exclusionPredicate)
         {
             return Task.FromResult(this.ComponentStreamEnumerableFactory.GetComponentStreams(sourceDirectory, this.SearchPatterns, exclusionPredicate));

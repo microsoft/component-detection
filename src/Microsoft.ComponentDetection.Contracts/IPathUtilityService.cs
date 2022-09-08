@@ -11,7 +11,7 @@
         /// Given a path, resolve the underlying path, traversing any symlinks (man 2 lstat :D ).
         /// </summary>
         /// <param name="path"></param>
-        /// <returns></returns>
+        /// <returns> Returns a string of the underlying path. </returns>
         string ResolvePhysicalPath(string path);
 
         /// <summary>
@@ -19,7 +19,7 @@
         /// </summary>
         /// <param name="aboveFilePath"></param>
         /// <param name="belowFilePath"></param>
-        /// <returns></returns>
+        /// <returns> Return a bool. True, if below file path is found under above file path, otherwise false. </returns>
         bool IsFileBelowAnother(string aboveFilePath, string belowFilePath);
 
         /// <summary>
@@ -27,7 +27,7 @@
         /// </summary>
         /// <param name="searchPattern">Search pattern.</param>
         /// <param name="fileName">File name without directory.</param>
-        /// <returns></returns>
+        /// <returns>Returns true if file name matches a pattern, therwise false. </returns>
         bool MatchesPattern(string searchPattern, string fileName);
     }
 }

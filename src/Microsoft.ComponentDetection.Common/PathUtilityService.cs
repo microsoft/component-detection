@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Common
         /// </summary>
         /// <param name="path"></param>
         /// <param name="output"></param>
-        /// <returns></returns>
+        /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
         [DllImport("libc", EntryPoint = "realpath")]
         public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
 

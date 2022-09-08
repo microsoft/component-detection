@@ -225,7 +225,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// <param name="rootLockFileInfo">The FileInfo for the cargo.lock file found in the root directory.</param>
         /// <param name="definedWorkspaces">A list of relative folder paths to include in search.</param>
         /// <param name="definedExclusions">A list of relative folder paths to exclude from search.</param>
-        /// <returns></returns>
+        /// <returns> Returns predicate <see cref="ExcludeDirectoryPredicate"/> which will be used to exclude directories. </returns>
         public static ExcludeDirectoryPredicate BuildExcludeDirectoryPredicateFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces, HashSet<string> definedExclusions)
         {
             var workspaceGlobs = BuildGlobMatchingFromWorkspaces(rootLockFileInfo, definedWorkspaces);
@@ -314,7 +314,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         /// </summary>
         /// <param name="rootLockFileInfo">The FileInfo for the cargo.lock file found in the root directory.</param>
         /// <param name="definedWorkspaces">A list of relative folder paths to include in search.</param>
-        /// <returns></returns>
+        /// <returns>Dictionary with worspace paths and their corresponding Globs.</returns>
         private static Dictionary<string, Glob> BuildGlobMatchingFromWorkspaces(FileInfo rootLockFileInfo, HashSet<string> definedWorkspaces)
         {
             var directoryGlobs = new Dictionary<string, Glob>
