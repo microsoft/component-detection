@@ -64,6 +64,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                     IndividualDetectorScanResult result;
                     using (var record = new DetectorExecutionTelemetryRecord())
                     {
+                        record.DetectorId = detector.Id;
+                        record.ExecutionComplete = false;
+
                         result = await this.WithExperimentalScanGuards(
                             () => detector.ExecuteDetectorAsync(new ScanRequest(detectionArguments.SourceDirectory, exclusionPredicate, this.Logger, detectorArguments, detectionArguments.DockerImagesToScan, componentRecorder)),
                             isExperimentalDetector,
@@ -77,8 +80,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                         containerDetails = result.ContainerDetails;
 
                         record.AdditionalTelemetryDetails = result.AdditionalTelemetryDetails != null ? JsonConvert.SerializeObject(result.AdditionalTelemetryDetails) : null;
+                        record.ExecutionComplete = true;
                         record.IsExperimental = isExperimentalDetector;
-                        record.DetectorId = detector.Id;
                         record.DetectedComponentCount = detectedComponents.Count();
                         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation().Values;
                         record.ExplicitlyReferencedComponentCount = dependencyGraphs.Select(dependencyGraph =>

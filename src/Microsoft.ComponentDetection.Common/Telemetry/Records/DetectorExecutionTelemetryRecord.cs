@@ -12,6 +12,8 @@
 
         public int? ReturnCode { get; set; }
 
+        public bool ExecutionComplete { get; set; }
+
         public bool IsExperimental { get; set; }
 
         public string ExperimentalInformation { get; set; }
