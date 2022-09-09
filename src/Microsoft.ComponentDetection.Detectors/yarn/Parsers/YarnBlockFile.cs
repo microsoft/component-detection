@@ -150,7 +150,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         /// <summary>
         /// Parses a block and its sub-blocks into <see cref="YarnBlock"/>.
         /// </summary>
-        /// <param name="level"></param>
+        /// <param name="level"> Level to get block from in YarnBlock file. </param>
         /// <returns>Yarnblock <see cref="YarnBlock"/> gotten from the parsed block. </returns>
         private YarnBlock ParseBlock(int level = 0)
         {

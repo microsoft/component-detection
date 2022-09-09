@@ -515,10 +515,6 @@ dotnet_diagnostic.SA1604.severity = suggestion
 # The documentation for parameter '...' is missing
 dotnet_diagnostic.SA1611.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1614.md
-# Element parameter documentation should have text
-dotnet_diagnostic.SA1614.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1633.md
 # The file header is missing or not located at the top of the file.
 dotnet_diagnostic.SA1633.severity = suggestion

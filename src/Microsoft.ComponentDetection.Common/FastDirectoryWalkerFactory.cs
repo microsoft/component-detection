@@ -200,7 +200,7 @@ namespace Microsoft.ComponentDetection.Common
         /// Initialized an observable file enumerator.
         /// </summary>
         /// <param name="root">Root directory to scan.</param>
-        /// <param name="directoryExclusionPredicate"></param>
+        /// <param name="directoryExclusionPredicate">predicate for excluding directories</param>
         /// <param name="minimumConnectionCount">Number of observers that need to subscribe before the observable connects and starts enumerating.</param>
         /// <param name="filePatterns">Pattern used to filter files.</param>
         public void Initialize(DirectoryInfo root, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns = null)
