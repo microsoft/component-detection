@@ -8,8 +8,6 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 {
     public class YarnLockParser : IYarnLockParser
     {
-        private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
-
         private const string VersionString = "version";
 
         private const string Resolved = "resolved";
@@ -17,6 +15,8 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         private const string Dependencies = "dependencies";
 
         private const string OptionalDependencies = "optionalDependencies";
+
+        private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
 
         public static string NormalizeVersion(string version)
         {

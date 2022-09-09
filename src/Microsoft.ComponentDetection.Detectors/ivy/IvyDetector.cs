@@ -49,11 +49,11 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
 
+        internal const string AntVersionArgument = "-version";
+
         internal const string PrimaryCommand = "ant.bat";
 
         internal static readonly string[] AdditionalValidCommands = { "ant" };
-
-        internal const string AntVersionArgument = "-version";
 
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }

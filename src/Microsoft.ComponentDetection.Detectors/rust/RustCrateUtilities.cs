@@ -25,13 +25,14 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         public static string[] DevDependencyKeys => new string[] { "dev-dependencies" };
 
         private const string Pattern = @"([^ ]+) ([^ ]+) \(([^()]*)\)"; // PkgName Version Source
-        private static readonly Regex DependencyFormatRegex = new Regex(Pattern, RegexOptions.Compiled);
 
         private const string WorkspaceKey = "workspace";
 
         private const string WorkspaceMemberKey = "members";
 
         private const string WorkspaceExcludeKey = "exclude";
+
+        private static readonly Regex DependencyFormatRegex = new Regex(Pattern, RegexOptions.Compiled);
 
         public static DependencySpecification GenerateDependencySpecifications(TomlTable cargoToml, IEnumerable<string> tomlDependencyKeys)
         {

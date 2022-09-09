@@ -35,21 +35,21 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         [Import]
         public IEnvironmentVariableService EnvironmentVariableService { get; set; }
 
+        // time to wait before retrying a failed call to pypi.org
+        private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
+
         private static HttpClientHandler httpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
 
         [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1202:ElementMustBeAccessLevelOrder", Justification = "Field needs to be declared before use so order can not follow Access Levels.")]
         internal static HttpClient HttpClient = new HttpClient(httpClientHandler);
 
-        // time to wait before retrying a failed call to pypi.org
-        private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
+        // max number of retries allowed, to cap the total delay period
+        private const long MAXRETRIES = 15;
 
         // Values used for cache creation
         private const long CACHEINTERVALSECONDS = 60;
         private const long DEFAULTCACHEENTRIES = 128;
         private bool checkedMaxEntriesVariable = false;
-
-        // max number of retries allowed, to cap the total delay period
-        private const long MAXRETRIES = 15;
 
         // retries used so far for calls to pypi.org
         private long retries = 0;

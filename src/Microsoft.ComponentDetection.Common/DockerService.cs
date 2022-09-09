@@ -17,16 +17,16 @@ namespace Microsoft.ComponentDetection.Common
     [Export(typeof(IDockerService))]
     public class DockerService : IDockerService
     {
+        // Base image annotations from ADO dockerTask
+        private const string BaseImageRefAnnotation = "image.base.ref.name";
+        private const string BaseImageDigestAnnotation = "image.base.digest";
+
         private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
 
         private static int incrementingContainerId;
 
         [Import]
         public ILogger Logger { get; set; }
-
-        // Base image annotations from ADO dockerTask
-        private const string BaseImageRefAnnotation = "image.base.ref.name";
-        private const string BaseImageDigestAnnotation = "image.base.digest";
 
         public async Task<bool> CanPingDockerAsync(CancellationToken cancellationToken = default)
         {
