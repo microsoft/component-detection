@@ -27,7 +27,6 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="parentComponentId">Id of the parent component.</param>
         /// <param name="isDevelopmentDependency">Boolean value indicating whether or not a component is a development-time dependency. Null implies that the value is unknown.</param>
         /// <param name="dependencyScope">Enum value indicating scope of the component. </param>
-        /// <returns>DetectedComponent added or updated.</returns>
         void RegisterUsage(
             DetectedComponent detectedComponent,
             bool isExplicitReferencedDependency = false,
