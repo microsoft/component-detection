@@ -69,6 +69,66 @@ namespace Microsoft.ComponentDetection.VerificationTests
                 CompareGraphs(newGraphs, oldGraphs, "new", "old");
             }
         }
+        
+         [TestMethod]
+        public void CheckDetectorsRunTimesAndCounts()
+        {
+            // makes sure that all detectors have the same number of components found.
+            // if some are lost, error. 
+            // if some are new, check if version of detector is updated. if it isn't error 
+            // Run times should be fairly close to identical. errors if there is an increase of more than 5%
+            using (new AssertionScope())
+            {
+                ProcessDetectorVersions();
+                string regexPattern = @"Detection time: (\w+\.\w+) seconds. |(\w+ *[\w()]+) *\|(\w+\.*\w*) seconds *\|(\d+)";
+                var oldMatches = Regex.Matches(oldLogFileContents, regexPattern);
+                var newMatches = Regex.Matches(newLogFileContents, regexPattern);
+
+                newMatches.Should().HaveCountGreaterOrEqualTo(oldMatches.Count, "A detector was lost, make sure this was intentional.");
+
+                var detectorTimes = new Dictionary<string, float>();
+                var detectorCounts = new Dictionary<string, int>();
+                foreach (Match match in oldMatches)
+                {
+                    if (!match.Groups[2].Success)
+                    {
+                        detectorTimes.Add("TotalTime", float.Parse(match.Groups[1].Value));
+                    }
+                    else
+                    {
+                        string detectorId = match.Groups[2].Value;
+                        detectorTimes.Add(detectorId, float.Parse(match.Groups[3].Value));
+                        detectorCounts.Add(detectorId, int.Parse(match.Groups[4].Value));
+                    }
+                }
+
+                // fail at the end to gather all failures instead of just the first.
+                foreach (Match match in newMatches)
+                {
+                    // for each detector and overall, make sure the time doesn't increase by more than 10%
+                    // for each detector make sure component counts do not change. if they increase, make sure the version of the detector was bumped.
+                    if (!match.Groups[2].Success)
+                    {
+                        detectorTimes.TryGetValue("TotalTime", out var oldTime);
+                        float newTime = float.Parse(match.Groups[1].Value);
+
+                        float maxTimeThreshold = (float)(oldTime + Math.Max(5, oldTime * allowedTimeDriftRatio));
+                        newTime.Should().BeLessOrEqualTo(maxTimeThreshold, $"Total Time take increased by a large amount. Please verify before continuing. old time: {oldTime}, new time: {newTime}");
+                    }
+                    else
+                    {
+                        string detectorId = match.Groups[2].Value;
+                        int newCount = int.Parse(match.Groups[4].Value);
+                        if (detectorCounts.TryGetValue(detectorId, out var oldCount))
+                        {
+                            newCount.Should().BeGreaterOrEqualTo(oldCount, $"{oldCount - newCount} Components were lost for detector {detectorId}. Verify this is expected behavior. \n Old Count: {oldCount}, PPE Count: {newCount}");
+
+                            (newCount > oldCount && !bumpedDetectorVersions.Contains(detectorId)).Should().BeFalse($"{newCount - oldCount} New Components were found for detector {detectorId}, but the detector version was not updated.");
+                        }
+                    }
+                }
+            }
+        }
 
         private ISet<string> GetExperimentalDetectorsId(IEnumerable<Detector> newScanDetectors, IEnumerable<Detector> oldScanDetectors)
         {
@@ -166,66 +226,6 @@ namespace Microsoft.ComponentDetection.VerificationTests
         private string GetKey(ScannedComponent component)
         {
             return $"{component.DetectorId}-{component.Component.Id}";
-        }
-
-        [TestMethod]
-        public void CheckDetectorsRunTimesAndCounts()
-        {
-            // makes sure that all detectors have the same number of components found.
-            // if some are lost, error. 
-            // if some are new, check if version of detector is updated. if it isn't error 
-            // Run times should be fairly close to identical. errors if there is an increase of more than 5%
-            using (new AssertionScope())
-            {
-                ProcessDetectorVersions();
-                string regexPattern = @"Detection time: (\w+\.\w+) seconds. |(\w+ *[\w()]+) *\|(\w+\.*\w*) seconds *\|(\d+)";
-                var oldMatches = Regex.Matches(oldLogFileContents, regexPattern);
-                var newMatches = Regex.Matches(newLogFileContents, regexPattern);
-
-                newMatches.Should().HaveCountGreaterOrEqualTo(oldMatches.Count, "A detector was lost, make sure this was intentional.");
-
-                var detectorTimes = new Dictionary<string, float>();
-                var detectorCounts = new Dictionary<string, int>();
-                foreach (Match match in oldMatches)
-                {
-                    if (!match.Groups[2].Success)
-                    {
-                        detectorTimes.Add("TotalTime", float.Parse(match.Groups[1].Value));
-                    }
-                    else
-                    {
-                        string detectorId = match.Groups[2].Value;
-                        detectorTimes.Add(detectorId, float.Parse(match.Groups[3].Value));
-                        detectorCounts.Add(detectorId, int.Parse(match.Groups[4].Value));
-                    }
-                }
-
-                // fail at the end to gather all failures instead of just the first.
-                foreach (Match match in newMatches)
-                {
-                    // for each detector and overall, make sure the time doesn't increase by more than 10%
-                    // for each detector make sure component counts do not change. if they increase, make sure the version of the detector was bumped.
-                    if (!match.Groups[2].Success)
-                    {
-                        detectorTimes.TryGetValue("TotalTime", out var oldTime);
-                        float newTime = float.Parse(match.Groups[1].Value);
-
-                        float maxTimeThreshold = (float)(oldTime + Math.Max(5, oldTime * allowedTimeDriftRatio));
-                        newTime.Should().BeLessOrEqualTo(maxTimeThreshold, $"Total Time take increased by a large amount. Please verify before continuing. old time: {oldTime}, new time: {newTime}");
-                    }
-                    else
-                    {
-                        string detectorId = match.Groups[2].Value;
-                        int newCount = int.Parse(match.Groups[4].Value);
-                        if (detectorCounts.TryGetValue(detectorId, out var oldCount))
-                        {
-                            newCount.Should().BeGreaterOrEqualTo(oldCount, $"{oldCount - newCount} Components were lost for detector {detectorId}. Verify this is expected behavior. \n Old Count: {oldCount}, PPE Count: {newCount}");
-
-                            (newCount > oldCount && !bumpedDetectorVersions.Contains(detectorId)).Should().BeFalse($"{newCount - oldCount} New Components were found for detector {detectorId}, but the detector version was not updated.");
-                        }
-                    }
-                }
-            }
         }
 
         private void ProcessDetectorVersions()
