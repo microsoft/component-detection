@@ -22,9 +22,9 @@ namespace Microsoft.ComponentDetection.Common
         /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
         /// using FreeMemoryLinux otherwise things will get very leaky.
         /// </summary>
-        /// <param name="path"></param>
-        /// <param name="output"></param>
-        /// <returns></returns>
+        /// <param name="path"> The path to resolve. </param>
+        /// <param name="output"> The pointer output. </param>
+        /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
         [DllImport("libc", EntryPoint = "realpath")]
         public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
 
@@ -33,7 +33,7 @@ namespace Microsoft.ComponentDetection.Common
         /// However, beware.... Improper usage of this function will cause segfaults and other nasty double-free errors.
         /// THIS WILL CRASH THE CLR IF YOU USE IT WRONG.
         /// </summary>
-        /// <param name="toFree"></param>
+        /// <param name="toFree">Pointer to the memory space to free. </param>
         [DllImport("libc", EntryPoint = "free")]
         public static extern void FreeMemoryLinux([In] IntPtr toFree);
 
