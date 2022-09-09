@@ -17,7 +17,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <summary>
         /// Returns true when the below file path exists under the above file path.
         /// </summary>
-        /// <param name="aboveFilePath">The top file path</param>
+        /// <param name="aboveFilePath">The top file path. </param>
         /// <param name="belowFilePath">The file path to find within the top file path. </param>
         /// <returns> Return a bool. True, if below file path is found under above file path, otherwise false. </returns>
         bool IsFileBelowAnother(string aboveFilePath, string belowFilePath);
