@@ -83,7 +83,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
         /// Extracts and returns the timeout defined by the user, or a default value if one is not provided.
         /// </summary>
         /// <param name="detectorArgs">The arguments provided by the user.</param>
-        /// <returns></returns>
+        /// <returns> Time interval <see cref="TimeSpan"/> repesenting the timeout defined by the user, or a default value if one is not provided. </returns>
         private static TimeSpan GetTimeout(IDictionary<string, string> detectorArgs)
         {
             if (detectorArgs == null || !detectorArgs.TryGetValue("Linux.ScanningTimeoutSec", out var timeout))
