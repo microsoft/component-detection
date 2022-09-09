@@ -11,7 +11,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         /// </summary>
         /// <param name="version">Version.</param>
         /// <param name="specs">Version specifications.</param>
-        /// <returns></returns>
+        /// <returns>True if the version is valid for all specs, otherwise false. </returns>
         /// <exception cref="ArgumentException">The version or any of the specs are an invalid python version.</exception>
         public static bool VersionValidForSpec(string version, IList<string> specs)
         {
