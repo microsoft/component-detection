@@ -519,11 +519,6 @@ dotnet_diagnostic.SA1611.severity = suggestion
 # Element parameter documentation should have text
 dotnet_diagnostic.SA1614.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1615.md
-# Element return value should be documented
-dotnet_diagnostic.SA1615.severity = suggestion
-
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1617.md
 # Void return value should not be documented
 dotnet_diagnostic.SA1617.severity = suggestion

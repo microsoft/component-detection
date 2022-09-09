@@ -5,49 +5,63 @@ namespace Microsoft.ComponentDetection.Common
 {
     public class DockerRegex
     {
-        /**
- * expression defines a full expression, where each regular expression must follow the previous.
- */
+        /// <summary>
+        /// expression defines a full expression, where each regular expression must follow the previous.
+        /// </summary>
+        /// <param name="regexps">list of Regular expressions.</param>
+        /// <returns> full Regex expression <see cref="Regex"/> from the given list. </returns>
         public static Regex Expression(params Regex[] regexps)
         {
             return new Regex(string.Join(string.Empty, regexps.Select(re => re.ToString())));
         }
 
-        /**
-         * group wraps the regexp in a non-capturing group.
-         */
+        /// <summary>
+        /// group wraps the regexp in a non-capturing group.
+        /// </summary>
+        /// <param name="regexps">list of Regular expressions.</param>
+        /// <returns> <see cref="Regex"/> of the non-capturing group. </returns>
         public static Regex Group(params Regex[] regexps)
         {
             return new Regex($"(?:{Expression(regexps).ToString()})");
         }
 
-        /**
-         * repeated wraps the regexp in a non-capturing group to get one or more matches.
-         */
+        /// <summary>
+        /// repeated wraps the regexp in a non-capturing group to get one or more matches.
+        /// </summary>
+        /// <param name="regexps">list of Regular expressions.</param>
+        /// <returns> The wrapped <see cref="Regex"/>. </returns>
         public static Regex Optional(params Regex[] regexps)
         {
             return new Regex($"{Group(regexps).ToString()}?");
         }
 
-        /**
-         * repeated wraps the regexp in a non-capturing group to get one or more matches.
-         */
+        /// <summary>
+        /// repeated wraps the regexp in a non-capturing group to get one or more matches.
+        /// </summary>
+        /// <param name="regexps">list of Regular expressions.</param>
+        /// <returns> The wrapped <see cref="Regex"/>. </returns>
         public static Regex Repeated(params Regex[] regexps)
         {
             return new Regex($"{Group(regexps).ToString()}+");
         }
 
-        /**
-         * anchored anchors the regular expression by adding start and end delimiters.
-         */
+        /// <summary>
+        /// anchored anchors the regular expression by adding start and end delimiters.
+        /// </summary>
+        /// <param name="regexps">list of Regular expressions.</param>
+        /// <returns> The anchored <see cref="Regex"/>. </returns>
         public static Regex Anchored(params Regex[] regexps)
         {
             return new Regex($"^{Expression(regexps).ToString()}$");
         }
 
-        /**
-         * capture wraps the expression in a capturing group.
-         */
+
+        /// <summary>
+        /// capture wraps the expression in a capturing group.
+        /// </summary>
+        /// <param name="regexps">list of Regular expressions.</param>
+        /// <returns> The captured <see cref="Regex"/>. </returns>
+
         public static Regex Capture(params Regex[] regexps)
         {
             return new Regex($"({Expression(regexps).ToString()})");

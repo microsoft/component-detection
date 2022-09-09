@@ -90,6 +90,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// Null can be returned if a detector doesn't have the scope infromation.
         /// </summary>
         /// <param name="componentId">The componentId to check.</param>
+        /// <returns> DependencyScope <see cref="DependencyScope"/> for the given componentId. </returns>
         DependencyScope? GetDependencyScope(string componentId);
 
         /// <summary>
