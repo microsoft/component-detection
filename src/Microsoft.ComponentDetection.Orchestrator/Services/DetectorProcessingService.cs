@@ -133,6 +133,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         public ExcludeDirectoryPredicate GenerateDirectoryExclusionPredicate(string originalSourceDirectory, IEnumerable<string> directoryExclusionList, IEnumerable<string> directoryExclusionListObsolete, bool allowWindowsPaths, bool ignoreCase = true)
         {
+            directoryExclusionList = directoryExclusionList.Where(path => !string.IsNullOrEmpty(path));
+            directoryExclusionListObsolete = directoryExclusionListObsolete.Where(path => !string.IsNullOrEmpty(path));
+
             if (directoryExclusionListObsolete?.Any() != true && directoryExclusionList?.Any() != true)
             {
                 return (ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider) => false;
