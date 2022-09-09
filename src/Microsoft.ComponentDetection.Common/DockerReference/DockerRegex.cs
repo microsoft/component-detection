@@ -55,13 +55,11 @@ namespace Microsoft.ComponentDetection.Common
             return new Regex($"^{Expression(regexps).ToString()}$");
         }
 
-
         /// <summary>
         /// capture wraps the expression in a capturing group.
         /// </summary>
         /// <param name="regexps">list of Regular expressions.</param>
         /// <returns> The captured <see cref="Regex"/>. </returns>
-
         public static Regex Capture(params Regex[] regexps)
         {
             return new Regex($"({Expression(regexps).ToString()})");
