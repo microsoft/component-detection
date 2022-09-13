@@ -2,11 +2,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class DockerReferenceComponent : TypedComponent
     {
-        private DockerReferenceComponent()
-        {
-            /* Reserved for deserialization */
-        }
-
         public DockerReferenceComponent(string hash, string repository = null, string tag = null)
         {
             this.Digest = this.ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.DockerReference));
@@ -37,5 +32,10 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         }
 
         public override string Id => $"{this.Repository} {this.Tag} {this.Digest}";
+
+        private DockerReferenceComponent()
+        {
+            /* Reserved for deserialization */
+        }
     }
 }

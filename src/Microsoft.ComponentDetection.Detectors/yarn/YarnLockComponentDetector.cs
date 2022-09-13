@@ -170,7 +170,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
         /// <param name="location">The file location of the yarn.lock file.</param>
         /// <param name="yarnEntries">All the yarn entries that we know about.</param>
         /// <param name="yarnRoots">The output yarnRoots that we care about using as starting points.</param>
-        /// <returns></returns>
+        /// <returns>False if no package.json file was found at location, otherwise it returns true. </returns>
         private bool TryReadPeerPackageJsonRequestsAsYarnEntries(string location, Dictionary<string, YarnEntry> yarnEntries, out List<YarnEntry> yarnRoots)
         {
             yarnRoots = new List<YarnEntry>();

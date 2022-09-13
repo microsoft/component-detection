@@ -17,27 +17,14 @@ namespace Microsoft.ComponentDetection.Common
     [Shared]
     public class PathUtilityService : IPathUtilityService
     {
-        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern SafeFileHandle CreateFile(
-            [In] string lpFileName,
-            [In] uint dwDesiredAccess,
-            [In] uint dwShareMode,
-            [In] IntPtr lpSecurityAttributes,
-            [In] uint dwCreationDisposition,
-            [In] uint dwFlagsAndAttributes,
-            [In] IntPtr hTemplateFile);
-
-        [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
-
         /// <summary>
         /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
         /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
         /// using FreeMemoryLinux otherwise things will get very leaky.
         /// </summary>
-        /// <param name="path"></param>
-        /// <param name="output"></param>
-        /// <returns></returns>
+        /// <param name="path"> The path to resolve. </param>
+        /// <param name="output"> The pointer output. </param>
+        /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
         [DllImport("libc", EntryPoint = "realpath")]
         public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
 
@@ -46,7 +33,7 @@ namespace Microsoft.ComponentDetection.Common
         /// However, beware.... Improper usage of this function will cause segfaults and other nasty double-free errors.
         /// THIS WILL CRASH THE CLR IF YOU USE IT WRONG.
         /// </summary>
-        /// <param name="toFree"></param>
+        /// <param name="toFree">Pointer to the memory space to free. </param>
         [DllImport("libc", EntryPoint = "free")]
         public static extern void FreeMemoryLinux([In] IntPtr toFree);
 
@@ -241,6 +228,19 @@ namespace Microsoft.ComponentDetection.Common
                 }
             }
         }
+
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern SafeFileHandle CreateFile(
+            [In] string lpFileName,
+            [In] uint dwDesiredAccess,
+            [In] uint dwShareMode,
+            [In] IntPtr lpSecurityAttributes,
+            [In] uint dwCreationDisposition,
+            [In] uint dwFlagsAndAttributes,
+            [In] IntPtr hTemplateFile);
+
+        [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
 
         private bool CheckIfRunningOnWindowsContainer()
         {

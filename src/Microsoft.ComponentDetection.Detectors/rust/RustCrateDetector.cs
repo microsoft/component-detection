@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
-using Nett;
+using Tomlyn;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust
 {
@@ -32,10 +32,15 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
             try
             {
-                var cargoLock = StreamTomlSerializer.Deserialize(cargoLockFile.Stream, TomlSettings.Create()).Get<CargoLock>();
+                var reader = new StreamReader(cargoLockFile.Stream);
+                var options = new TomlModelOptions
+                {
+                    IgnoreMissingProperties = true,
+                };
+                var cargoLock = Toml.ToModel<CargoLock>(reader.ReadToEnd(), options: options);
 
                 // This makes sure we're only trying to parse Cargo.lock v1 formats
-                if (cargoLock.metadata == null)
+                if (cargoLock.Metadata == null)
                 {
                     this.Logger.LogInfo($"Cargo.lock file at {cargoLockFile.Location} contains no metadata section so we're parsing it as the v2 format. The v1 detector will not process it.");
                     return Task.CompletedTask;
@@ -79,7 +84,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     return Task.CompletedTask;
                 }
 
-                var cargoPackages = cargoLock.package.ToHashSet();
+                var cargoPackages = cargoLock.Package.ToHashSet();
                 RustCrateUtilities.BuildGraph(cargoPackages, cargoDependencyData.NonDevDependencies, cargoDependencyData.DevDependencies, singleFileComponentRecorder);
             }
             catch (Exception e)

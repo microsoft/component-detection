@@ -4,11 +4,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class CargoComponent : TypedComponent
     {
-        private CargoComponent()
-        {
-            // reserved for deserialization
-        }
-
         public CargoComponent(string name, string version)
         {
             this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Cargo));
@@ -24,5 +19,10 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
         public override PackageURL PackageUrl => new PackageURL("cargo", string.Empty, this.Name, this.Version, null, string.Empty);
+
+        private CargoComponent()
+        {
+            // reserved for deserialization
+        }
     }
 }
