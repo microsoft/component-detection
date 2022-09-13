@@ -55,7 +55,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         /// <summary>
         /// Whether or not the package is safe to resolve based on the packagesToIgnore.
         /// </summary>
-        /// <returns></returns>
+        /// <returns> True if the package is unsafe, otherwise false. </returns>
         public bool PackageIsUnsafe()
         {
             return PackagesToIgnore.Contains(this.Name);

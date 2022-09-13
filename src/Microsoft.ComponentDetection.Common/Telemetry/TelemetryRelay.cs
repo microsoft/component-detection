@@ -42,7 +42,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
         /// <summary>
         /// Post a given telemetry record to all telemetry services.
         /// </summary>
-        /// <param name="record"></param>
+        /// <param name="record">Record to post. </param>
         public void PostTelemetryRecord(IDetectionTelemetryRecord record)
         {
             foreach (var service in TelemetryServices)
