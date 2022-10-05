@@ -37,7 +37,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private static HttpClientHandler httpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1202:ElementMustBeAccessLevelOrder", Justification = "Field needs to be declared before use so order can not follow Access Levels.")]
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:ElementsMustBeOrderedByAccess", Justification = "Field needs to be declared before use so order can not follow Access Levels.")]
         internal static HttpClient HttpClient = new HttpClient(httpClientHandler);
 
         // time to wait before retrying a failed call to pypi.org

@@ -222,8 +222,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         /// <summary>
         /// Checks to make sure a path is valid (does not have to exist).
         /// </summary>
-        /// <param name="potentialPath"></param>
-        /// <returns></returns>
+        /// <param name="potentialPath"> The path to validate. </param>
+        /// <returns>True if path is valid, otherwise it retuns false. </returns>
         private bool IsValidPath(string potentialPath)
         {
             FileInfo fileInfo = null;

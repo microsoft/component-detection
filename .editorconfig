@@ -511,22 +511,6 @@ dotnet_diagnostic.SA1604.severity = suggestion
 # The documentation for parameter '...' is missing
 dotnet_diagnostic.SA1611.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1614.md
-# Element parameter documentation should have text
-dotnet_diagnostic.SA1614.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1615.md
-# Element return value should be documented
-dotnet_diagnostic.SA1615.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1616.md
-# Element return value documentation should have text
-dotnet_diagnostic.SA1616.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1617.md
-# Void return value should not be documented
-dotnet_diagnostic.SA1617.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1633.md
 # The file header is missing or not located at the top of the file.
 dotnet_diagnostic.SA1633.severity = suggestion

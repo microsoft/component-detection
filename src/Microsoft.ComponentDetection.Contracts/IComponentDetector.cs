@@ -33,7 +33,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <summary>
         ///  Run the detector and return the result set of components found.
         /// </summary>
-        /// <returns></returns>
+        /// <returns> Awaitable task with result of components found. </returns>
         Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request);
 
         /// <summary>
