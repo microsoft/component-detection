@@ -248,3 +248,6 @@ dotnet_diagnostic.CA1827.severity = suggestion
 
 # CA1064: Exceptions should be public
 dotnet_diagnostic.CA1064.severity = suggestion
+
+# CA1837: Use 'Environment.ProcessId'
+dotnet_diagnostic.CA1837.severity = suggestion
