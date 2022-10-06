@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup Label="Build">
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
@@ -21,6 +21,8 @@
     <RepositoryUrl>https://github.com/microsoft/component-detection.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReleaseNotes>https://github.com/microsoft/component-detection/releases</PackageReleaseNotes>
+    <!-- https://github.com/NuGet/Home/issues/11822#issuecomment-1218230674 -->
+    <NoWarn>$(NoWarn);NU1507</NoWarn>
   </PropertyGroup>
 
   <ItemGroup Label="Package References">

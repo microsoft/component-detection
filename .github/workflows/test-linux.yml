@@ -16,9 +16,7 @@ jobs:
           fetch-depth: 0
 
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 3.1.x
+      uses: actions/setup-dotnet@v3
 
     - name: dotnet restore
       run: dotnet restore
