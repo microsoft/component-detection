@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Exceptions
+namespace Microsoft.ComponentDetection.Orchestrator.Exceptions
 {
     [Serializable]
     public class InvalidDetectorCategoriesException : Exception

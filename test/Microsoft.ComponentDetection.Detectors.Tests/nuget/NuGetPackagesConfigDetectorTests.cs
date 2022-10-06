@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.NuGet
     using System.Threading.Tasks;
     using FluentAssertions;
     using Microsoft.ComponentDetection.Contracts;
-    using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
+    using Microsoft.ComponentDetection.Contracts.TypedComponent;
     using Microsoft.ComponentDetection.Detectors.NuGet;
     using Microsoft.ComponentDetection.TestsUtilities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;

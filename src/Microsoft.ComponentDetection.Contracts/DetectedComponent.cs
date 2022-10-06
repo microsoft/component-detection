@@ -13,7 +13,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="detector">The detector that detected this component.</param>
         /// <param name="containerDetailsId">Id of the containerDetails, this is only necessary if the component was found inside a container.</param>
         /// <param name="containerLayerId">Id of the layer the component was found, this is only necessary if the component was found inside a container.</param>
-        public DetectedComponent(TypedComponentNS.TypedComponent component, IComponentDetector detector = null, int? containerDetailsId = null, int? containerLayerId = null)
+        public DetectedComponent(TypedComponent.TypedComponent component, IComponentDetector detector = null, int? containerDetailsId = null, int? containerLayerId = null)
         {
             this.Component = component;
             this.FilePaths = new HashSet<string>();
@@ -36,13 +36,13 @@ namespace Microsoft.ComponentDetection.Contracts
         public IComponentDetector DetectedBy { get; set; }
 
         /// <summary>Gets the component associated with this detection.</summary>
-        public TypedComponentNS.TypedComponent Component { get; private set; }
+        public TypedComponent.TypedComponent Component { get; private set; }
 
         /// <summary> Gets or sets the hashset containing the file paths associated with the component. </summary>
         public HashSet<string> FilePaths { get; set; }
 
         /// <summary> Gets or sets the dependency roots for this component. </summary>
-        public HashSet<TypedComponentNS.TypedComponent> DependencyRoots { get; set; }
+        public HashSet<TypedComponent.TypedComponent> DependencyRoots { get; set; }
 
         /// <summary>Gets or sets the flag to mark the component as a development dependency or not.
         /// This is used at build or development time not a distributed dependency.</summary>

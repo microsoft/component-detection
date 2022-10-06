@@ -3,12 +3,12 @@ using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
-using Microsoft.ComponentDetection.OrchestratorNS.Services;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Tests.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 {
     [TestClass]
     [TestCategory("Governance/All")]

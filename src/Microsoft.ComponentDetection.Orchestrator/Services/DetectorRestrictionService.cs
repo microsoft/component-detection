@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.OrchestratorNS.Exceptions;
+using Microsoft.ComponentDetection.Orchestrator.Exceptions;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services
 {
     [Export(typeof(IDetectorRestrictionService))]
     public class DetectorRestrictionService : IDetectorRestrictionService

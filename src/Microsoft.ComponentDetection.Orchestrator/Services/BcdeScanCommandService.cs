@@ -3,10 +3,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services
 {
     [Export(typeof(IArgumentHandlingService))]
     public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService

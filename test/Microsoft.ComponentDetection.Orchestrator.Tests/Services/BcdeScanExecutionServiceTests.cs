@@ -6,16 +6,16 @@ using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.Pip;
-using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
-using Microsoft.ComponentDetection.OrchestratorNS.Services;
-using Microsoft.ComponentDetection.OrchestratorNS.Services.GraphTranslation;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Services;
+using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Tests.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 {
     [TestClass]
     [TestCategory("Governance/All")]

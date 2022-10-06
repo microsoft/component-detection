@@ -1,4 +1,4 @@
-﻿using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
+﻿using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.ComponentDetection.Contracts.Tests

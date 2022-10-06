@@ -3,7 +3,7 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services
 {
     public class DetectorProcessingResult
     {

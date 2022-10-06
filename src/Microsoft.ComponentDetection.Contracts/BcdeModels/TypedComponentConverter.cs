@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(TypedComponentNS.TypedComponent);
+            return objectType == typeof(TypedComponent.TypedComponent);
         }
 
         public override object ReadJson(

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace Microsoft.ComponentDetection.Contracts.TypedComponentNS
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     // This is used in BcdeModels as well
     [DataContract]

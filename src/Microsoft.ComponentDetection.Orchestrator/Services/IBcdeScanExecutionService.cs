@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services
 {
     public interface IBcdeScanExecutionService
     {

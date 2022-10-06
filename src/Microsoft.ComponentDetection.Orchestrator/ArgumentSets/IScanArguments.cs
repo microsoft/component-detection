@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Common;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets
+namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
 {
     public interface IScanArguments
     {

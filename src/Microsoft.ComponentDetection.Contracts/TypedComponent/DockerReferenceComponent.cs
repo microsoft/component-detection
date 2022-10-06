@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Contracts.TypedComponentNS
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class DockerReferenceComponent : TypedComponent
     {

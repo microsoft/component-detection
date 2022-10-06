@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 {

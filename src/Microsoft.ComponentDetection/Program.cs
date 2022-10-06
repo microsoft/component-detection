@@ -27,7 +27,7 @@
                     }
                 }
 
-                var orchestrator = new OrchestratorNS.Orchestrator();
+                var orchestrator = new Orchestrator.Orchestrator();
 
                 var result = orchestrator.Load(args);
 

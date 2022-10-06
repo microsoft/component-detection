@@ -6,11 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
-using Microsoft.ComponentDetection.OrchestratorNS.Exceptions;
-using Microsoft.ComponentDetection.OrchestratorNS.Services.GraphTranslation;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Exceptions;
+using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services
 {
     [Export(typeof(IBcdeScanExecutionService))]
     public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService

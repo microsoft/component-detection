@@ -3,12 +3,12 @@ using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.OrchestratorNS.Exceptions;
-using Microsoft.ComponentDetection.OrchestratorNS.Services;
+using Microsoft.ComponentDetection.Orchestrator.Exceptions;
+using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Tests.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 {
     [TestClass]
     [TestCategory("Governance/All")]

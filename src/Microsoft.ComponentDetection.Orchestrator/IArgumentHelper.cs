@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS
+namespace Microsoft.ComponentDetection.Orchestrator
 {
     public interface IArgumentHelper
     {

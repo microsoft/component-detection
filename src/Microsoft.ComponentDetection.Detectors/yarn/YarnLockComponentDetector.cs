@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using DotNet.Globbing;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
 
 namespace Microsoft.ComponentDetection.Detectors.Yarn

@@ -7,7 +7,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using PackageUrl;
 
-namespace Microsoft.ComponentDetection.Contracts.TypedComponentNS
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     [JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     [JsonConverter(typeof(TypedComponentConverter))]

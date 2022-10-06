@@ -962,3 +962,7 @@ dotnet_diagnostic.IDE0150.severity = suggestion
 
 # IDE0051: Private member is unused
 dotnet_diagnostic.IDE0051.severity = suggestion
+
+# CA1724: Type names should not match namespaces
+dotnet_diagnostic.CA1724.severity = suggestion
+

@@ -1,7 +1,7 @@
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Services.GraphTranslation
+namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 {
     public interface IGraphTranslationService
     {

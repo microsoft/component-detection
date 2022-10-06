@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
-using Microsoft.ComponentDetection.OrchestratorNS.Services.GraphTranslation;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Tests
+namespace Microsoft.ComponentDetection.Orchestrator.Tests
 {
     [TestClass]
     [TestCategory("Governance/All")]

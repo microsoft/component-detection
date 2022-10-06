@@ -9,10 +9,10 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
-using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.Services.GraphTranslation
+namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 {
     [Export(typeof(IGraphTranslationService))]
     [ExportMetadata("Priority", 0)]

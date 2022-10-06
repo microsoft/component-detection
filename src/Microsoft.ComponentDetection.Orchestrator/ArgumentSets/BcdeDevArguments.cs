@@ -1,7 +1,7 @@
 ﻿using System.Composition;
 using CommandLine;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets
+namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
 {
     [Verb("dev", HelpText = "Dev command", Hidden = true)]
     [Export(typeof(IScanArguments))]

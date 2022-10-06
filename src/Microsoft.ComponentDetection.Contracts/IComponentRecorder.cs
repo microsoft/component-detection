@@ -5,7 +5,7 @@ namespace Microsoft.ComponentDetection.Contracts
 {
     public interface IComponentRecorder
     {
-        TypedComponentNS.TypedComponent GetComponent(string componentId);
+        TypedComponent.TypedComponent GetComponent(string componentId);
 
         IEnumerable<DetectedComponent> GetDetectedComponents();
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Microsoft.ComponentDetection.OrchestratorNS
+namespace Microsoft.ComponentDetection.Orchestrator
 {
     public class DetectorRunResult
     {

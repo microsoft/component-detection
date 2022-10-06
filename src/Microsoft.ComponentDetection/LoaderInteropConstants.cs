@@ -2,7 +2,7 @@
 {
     public static class LoaderInteropConstants
     {
-        public static readonly string OrchestratorAssemblyModule = typeof(OrchestratorNS.Orchestrator).Assembly.GetName().Name;
-        public static readonly string OrchestratorTypeName = typeof(OrchestratorNS.Orchestrator).FullName;
+        public static readonly string OrchestratorAssemblyModule = typeof(Orchestrator.Orchestrator).Assembly.GetName().Name;
+        public static readonly string OrchestratorTypeName = typeof(Orchestrator.Orchestrator).FullName;
     }
 }
