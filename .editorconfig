@@ -561,12 +561,6 @@ dotnet_diagnostic.CS0618.severity = suggestion
 # Missing XML comment for publicly visible type or member '...'
 dotnet_diagnostic.CS1591.severity = suggestion
 
-# SA1600: Elements should be documented
-dotnet_diagnostic.SA1600.severity = suggestion
-
-# CS1591: Missing XML comment for publicly visible type or member
-dotnet_diagnostic.CS1591.severity = suggestion
-
 # IDE0003: Remove qualification
 dotnet_diagnostic.IDE0003.severity = suggestion
 
@@ -575,15 +569,6 @@ dotnet_diagnostic.CA2007.severity = suggestion
 
 # CA1062: Validate arguments of public methods
 dotnet_diagnostic.CA1062.severity = suggestion
-
-# SA1602: Enumeration items should be documented
-dotnet_diagnostic.SA1602.severity = suggestion
-
-# SA1633: File should have header
-dotnet_diagnostic.SA1633.severity = suggestion
-
-# SA1200: Using directives should be placed correctly
-dotnet_diagnostic.SA1200.severity = suggestion
 
 # SA1201: Elements should appear in the correct order
 dotnet_diagnostic.SA1201.severity = suggestion
@@ -630,24 +615,6 @@ dotnet_diagnostic.CA1032.severity = suggestion
 # CA1051: Do not declare visible instance fields
 dotnet_diagnostic.CA1051.severity = suggestion
 
-# SA1401: Fields should be private
-dotnet_diagnostic.SA1401.severity = suggestion
-
-# VSTHRD200: Use "Async" suffix for async methods
-dotnet_diagnostic.VSTHRD200.severity = suggestion
-
-# SA1316: Tuple element names should use correct casing
-dotnet_diagnostic.SA1316.severity = suggestion
-
-# SA1414: Tuple types in signatures should have element names
-dotnet_diagnostic.SA1414.severity = suggestion
-
-# SA1611: Element parameters should be documented
-dotnet_diagnostic.SA1611.severity = suggestion
-
-# SA1642: Constructor summary documentation should begin with standard text
-dotnet_diagnostic.SA1642.severity = suggestion
-
 # CA1401: P/Invokes should not be visible
 dotnet_diagnostic.CA1401.severity = suggestion
 
@@ -690,9 +657,6 @@ dotnet_diagnostic.CA1846.severity = suggestion
 # CA1806: Do not ignore method results
 dotnet_diagnostic.CA1806.severity = suggestion
 
-# VSTHRD002: Avoid problematic synchronous waits
-dotnet_diagnostic.VSTHRD002.severity = suggestion
-
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = suggestion
 
@@ -732,17 +696,11 @@ dotnet_diagnostic.CA1838.severity = suggestion
 # CA1849: Call async methods when in an async method
 dotnet_diagnostic.CA1849.severity = suggestion
 
-# VSTHRD103: Call async methods when in an async method
-dotnet_diagnostic.VSTHRD103.severity = suggestion
-
 # CA2000: Dispose objects before losing scope
 dotnet_diagnostic.CA2000.severity = suggestion
 
 # CA2016: Forward the 'CancellationToken' parameter to methods
 dotnet_diagnostic.CA2016.severity = suggestion
-
-# SA1203: Constants should appear before fields
-dotnet_diagnostic.SA1203.severity = suggestion
 
 # CA1014: Mark assemblies with CLSCompliantAttribute
 dotnet_diagnostic.CA1014.severity = none
@@ -765,14 +723,10 @@ dotnet_diagnostic.CA1829.severity = suggestion
 # CA2234: Pass system uri objects instead of strings
 dotnet_diagnostic.CA2234.severity = suggestion
 
-# CS0618: Type or member is obsolete
-dotnet_diagnostic.CS0618.severity = suggestion
+# rbhansali
 
 # SA1101: Prefix local calls with this
 dotnet_diagnostic.SA1101.severity = suggestion
-
-# SA1210: Using directives should be ordered alphabetically by namespace
-dotnet_diagnostic.SA1210.severity = suggestion
 
 # CA2219: Do not raise exceptions in finally clauses
 dotnet_diagnostic.CA2219.severity = suggestion
@@ -798,12 +752,6 @@ dotnet_diagnostic.CA1036.severity = suggestion
 # CA1001: Types that own disposable fields should be disposable
 dotnet_diagnostic.CA1001.severity = suggestion
 
-# VSTHRD111: Use ConfigureAwait(bool)
-dotnet_diagnostic.VSTHRD111.severity = suggestion
-
-# VSTHRD101: Avoid unsupported async delegates
-dotnet_diagnostic.VSTHRD101.severity = suggestion
-
 # CA1827: Do not use Count() or LongCount() when Any() can be used
 dotnet_diagnostic.CA1827.severity = suggestion
 
@@ -827,9 +775,6 @@ dotnet_diagnostic.SA1500.severity = suggestion
 
 # SA1515: Single-line comment should be preceded by blank line
 dotnet_diagnostic.SA1515.severity = suggestion
-
-# SA1142: Refer to tuple fields by name
-dotnet_diagnostic.SA1142.severity = suggestion
 
 # IDE0022: Use expression body for methods
 dotnet_diagnostic.IDE0022.severity = suggestion
@@ -897,8 +842,6 @@ dotnet_diagnostic.IDE0027.severity = suggestion
 
 # IDE0120: Simplify LINQ expression
 dotnet_diagnostic.IDE0120.severity = suggestion
-
-###############
 
 # IDE0075: Conditional expression can be simplified
 dotnet_diagnostic.IDE0075.severity = suggestion
