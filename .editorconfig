@@ -251,3 +251,21 @@ dotnet_diagnostic.CA1064.severity = suggestion
 
 # CA1837: Use 'Environment.ProcessId'
 dotnet_diagnostic.CA1837.severity = suggestion
+
+# CA1024: Use properties where appropriate
+dotnet_diagnostic.CA1024.severity = suggestion
+
+# CA1834: Consider using 'StringBuilder.Append(char)' when applicable
+dotnet_diagnostic.CA1834.severity = suggestion
+
+# SA1202: Elements should be ordered by access
+dotnet_diagnostic.SA1202.severity = suggestion
+
+# SA1500: Braces for multi-line statements should not share line
+dotnet_diagnostic.SA1500.severity = suggestion
+
+# SA1515: Single-line comment should be preceded by blank line
+dotnet_diagnostic.SA1515.severity = suggestion
+
+# SA1142: Refer to tuple fields by name
+dotnet_diagnostic.SA1142.severity = suggestion
