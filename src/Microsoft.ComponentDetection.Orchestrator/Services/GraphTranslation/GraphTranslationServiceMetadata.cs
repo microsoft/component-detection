@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
+namespace Microsoft.ComponentDetection.OrchestratorNS.Services.GraphTranslation
 {
     public class GraphTranslationServiceMetadata
     {

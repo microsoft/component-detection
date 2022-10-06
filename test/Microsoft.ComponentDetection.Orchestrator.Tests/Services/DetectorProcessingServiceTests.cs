@@ -8,13 +8,13 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-using Microsoft.ComponentDetection.Orchestrator.Services;
+using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
+using Microsoft.ComponentDetection.OrchestratorNS.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
+namespace Microsoft.ComponentDetection.OrchestratorNS.Tests.Services
 {
     [TestClass]
     [TestCategory("Governance/All")]

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Microsoft.ComponentDetection.Orchestrator
+namespace Microsoft.ComponentDetection.OrchestratorNS
 {
     public class DetectorRestrictions
     {

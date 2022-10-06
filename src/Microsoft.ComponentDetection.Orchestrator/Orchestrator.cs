@@ -16,12 +16,12 @@ using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-using Microsoft.ComponentDetection.Orchestrator.Services;
-using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
+using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
+using Microsoft.ComponentDetection.OrchestratorNS.Services;
+using Microsoft.ComponentDetection.OrchestratorNS.Services.GraphTranslation;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.Orchestrator
+namespace Microsoft.ComponentDetection.OrchestratorNS
 {
     public class Orchestrator
     {

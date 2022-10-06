@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
+namespace Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets
 {
     public interface IDetectionArguments : IScanArguments
     {

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.OrchestratorNS.Services
 {
     public interface IDetectorProcessingService
     {

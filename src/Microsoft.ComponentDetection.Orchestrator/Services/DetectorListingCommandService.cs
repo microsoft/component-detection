@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.OrchestratorNS.Services
 {
     [Export(typeof(IArgumentHandlingService))]
     public class DetectorListingCommandService : ServiceBase, IArgumentHandlingService

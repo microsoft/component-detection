@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
+namespace Microsoft.ComponentDetection.OrchestratorNS.Services.GraphTranslation
 {
     public static class GraphTranslationUtility
     {

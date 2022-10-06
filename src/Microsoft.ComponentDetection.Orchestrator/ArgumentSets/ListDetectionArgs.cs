@@ -1,7 +1,7 @@
 ﻿using System.Composition;
 using CommandLine;
 
-namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
+namespace Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets
 {
     [Verb("list-detectors", HelpText = "Lists available detectors")]
     [Export(typeof(IScanArguments))]

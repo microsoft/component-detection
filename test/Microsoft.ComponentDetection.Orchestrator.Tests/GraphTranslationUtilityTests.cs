@@ -3,10 +3,10 @@ using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
-using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
+using Microsoft.ComponentDetection.OrchestratorNS.Services.GraphTranslation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Tests
+namespace Microsoft.ComponentDetection.OrchestratorNS.Tests
 {
     [TestClass]
     [TestCategory("Governance/All")]

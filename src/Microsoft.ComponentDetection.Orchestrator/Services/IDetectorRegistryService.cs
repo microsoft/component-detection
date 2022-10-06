@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.OrchestratorNS.Services
 {
     public interface IDetectorRegistryService
     {

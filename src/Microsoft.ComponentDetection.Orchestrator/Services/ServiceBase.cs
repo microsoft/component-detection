@@ -1,7 +1,7 @@
 ﻿using System.Composition;
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.OrchestratorNS.Services
 {
     public abstract class ServiceBase
     {

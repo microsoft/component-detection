@@ -4,7 +4,7 @@ using System.IO;
 using CommandLine;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
+namespace Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets
 {
     [Verb("scan", HelpText = "Scans components")]
     [Export(typeof(IScanArguments))]

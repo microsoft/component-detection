@@ -6,7 +6,7 @@ using CommandLine;
 using Microsoft.ComponentDetection.Common;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
+namespace Microsoft.ComponentDetection.OrchestratorNS.ArgumentSets
 {
     public class BaseArguments : IScanArguments
     {

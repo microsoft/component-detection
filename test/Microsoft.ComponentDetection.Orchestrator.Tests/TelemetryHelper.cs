@@ -6,7 +6,7 @@ using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Moq;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Tests
+namespace Microsoft.ComponentDetection.OrchestratorNS.Tests
 {
     public static class TelemetryHelper
     {
