@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

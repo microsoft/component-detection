@@ -7,7 +7,7 @@
     using global::NuGet.Packaging;
     using Microsoft.ComponentDetection.Contracts;
     using Microsoft.ComponentDetection.Contracts.Internal;
-    using Microsoft.ComponentDetection.Contracts.TypedComponent;
+    using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
 
     [Export(typeof(IComponentDetector))]
     public class NuGetPackagesConfigDetector : FileComponentDetector, IExperimentalDetector

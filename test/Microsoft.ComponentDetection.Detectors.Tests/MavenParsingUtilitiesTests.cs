@@ -1,6 +1,6 @@
 ﻿using System;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Microsoft.ComponentDetection.Detectors.Maven.MavenParsingUtilities;
 

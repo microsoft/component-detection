@@ -1,6 +1,6 @@
 using PackageUrl;
 
-namespace Microsoft.ComponentDetection.Contracts.TypedComponent
+namespace Microsoft.ComponentDetection.Contracts.TypedComponentNS
 {
     public class PipComponent : TypedComponent
     {

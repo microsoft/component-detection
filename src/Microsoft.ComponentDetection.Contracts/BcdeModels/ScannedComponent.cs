@@ -10,7 +10,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
     {
         public IEnumerable<string> LocationsFoundAt { get; set; }
 
-        public TypedComponent.TypedComponent Component { get; set; }
+        public TypedComponentNS.TypedComponent Component { get; set; }
 
         public string DetectorId { get; set; }
 
@@ -19,7 +19,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
         [JsonConverter(typeof(StringEnumConverter))]
         public DependencyScope? DependencyScope { get; set; }
 
-        public IEnumerable<TypedComponent.TypedComponent> TopLevelReferrers { get; set; }
+        public IEnumerable<TypedComponentNS.TypedComponent> TopLevelReferrers { get; set; }
 
         public IEnumerable<int> ContainerDetailIds { get; set; }
 

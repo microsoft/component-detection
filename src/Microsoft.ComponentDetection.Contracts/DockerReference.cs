@@ -62,7 +62,7 @@ namespace Microsoft.ComponentDetection.Contracts
 
         public virtual DockerReferenceKind Kind { get; }
 
-        public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+        public virtual TypedComponentNS.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             throw new System.NotImplementedException();
         }
@@ -100,9 +100,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.Digest}";
         }
 
-        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+        public override TypedComponentNS.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerReferenceComponent(this)
+            return new TypedComponentNS.DockerReferenceComponent(this)
             {
                 Digest = this.Digest,
             };
@@ -125,9 +125,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.Domain}/{this.Repository}@${this.Digest}";
         }
 
-        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+        public override TypedComponentNS.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerReferenceComponent(this)
+            return new TypedComponentNS.DockerReferenceComponent(this)
             {
                 Domain = this.Domain,
                 Digest = this.Digest,
@@ -150,9 +150,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.Repository}";
         }
 
-        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+        public override TypedComponentNS.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerReferenceComponent(this)
+            return new TypedComponentNS.DockerReferenceComponent(this)
             {
                 Domain = this.Domain,
                 Repository = this.Repository,
@@ -176,9 +176,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.Domain}/{this.Repository}:${this.Tag}";
         }
 
-        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+        public override TypedComponentNS.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerReferenceComponent(this)
+            return new TypedComponentNS.DockerReferenceComponent(this)
             {
                 Domain = this.Domain,
                 Tag = this.Tag,
@@ -205,9 +205,9 @@ namespace Microsoft.ComponentDetection.Contracts
             return $"{this.Domain}/{this.Repository}:${this.Tag}@${this.Digest}";
         }
 
-        public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+        public override TypedComponentNS.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
-            return new TypedComponent.DockerReferenceComponent(this)
+            return new TypedComponentNS.DockerReferenceComponent(this)
             {
                 Domain = this.Domain,
                 Digest = this.Digest,

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;

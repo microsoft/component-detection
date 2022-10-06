@@ -10,7 +10,7 @@ using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
 
 namespace Microsoft.ComponentDetection.Detectors.Maven
 {

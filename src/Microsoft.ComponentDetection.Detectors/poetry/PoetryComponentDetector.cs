@@ -7,7 +7,7 @@ using System.IO;
 using Tomlyn;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Contracts.TypedComponentNS;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry
