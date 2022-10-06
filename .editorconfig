@@ -561,4 +561,353 @@ dotnet_diagnostic.CS0618.severity = suggestion
 # Missing XML comment for publicly visible type or member '...'
 dotnet_diagnostic.CS1591.severity = suggestion
 
+# IDE0003: Remove qualification
+dotnet_diagnostic.IDE0003.severity = suggestion
 
+# CA2007: Consider calling ConfigureAwait on the awaited task
+dotnet_diagnostic.CA2007.severity = suggestion
+
+# CA1062: Validate arguments of public methods
+dotnet_diagnostic.CA1062.severity = suggestion
+
+# SA1201: Elements should appear in the correct order
+dotnet_diagnostic.SA1201.severity = suggestion
+
+# CA1819: Properties should not return arrays
+dotnet_diagnostic.CA1819.severity = suggestion
+
+# CA1309: Use ordinal string comparison
+dotnet_diagnostic.CA1309.severity = suggestion
+
+# CA1031: Do not catch general exception types
+dotnet_diagnostic.CA1031.severity = suggestion
+
+# CA1711: Identifiers should not have incorrect suffix
+dotnet_diagnostic.CA1711.severity = suggestion
+
+# CA1018: Mark attributes with AttributeUsageAttribute
+dotnet_diagnostic.CA1018.severity = suggestion
+
+# CA1813: Avoid unsealed attributes
+dotnet_diagnostic.CA1813.severity = suggestion
+
+# CA2227: Collection properties should be read only
+dotnet_diagnostic.CA2227.severity = suggestion
+
+# CA1825: Avoid zero-length array allocations
+dotnet_diagnostic.CA1825.severity = suggestion
+
+# CA1310: Specify StringComparison for correctness
+dotnet_diagnostic.CA1310.severity = suggestion
+
+# CA1002: Do not expose generic lists
+dotnet_diagnostic.CA1002.severity = suggestion
+
+# IDE0008: Use explicit type
+dotnet_diagnostic.IDE0008.severity = suggestion
+
+# CA1305: Specify IFormatProvider
+dotnet_diagnostic.CA1305.severity = suggestion
+
+# CA1032: Implement standard exception constructors
+dotnet_diagnostic.CA1032.severity = suggestion
+
+# CA1051: Do not declare visible instance fields
+dotnet_diagnostic.CA1051.severity = suggestion
+
+# CA1401: P/Invokes should not be visible
+dotnet_diagnostic.CA1401.severity = suggestion
+
+# CA5392: Use DefaultDllImportSearchPaths attribute for P/Invokes
+dotnet_diagnostic.CA5392.severity = suggestion
+
+# CA2101: Specify marshaling for P/Invoke string arguments
+dotnet_diagnostic.CA2101.severity = suggestion
+
+# CA2211: Non-constant fields should not be visible
+dotnet_diagnostic.CA2211.severity = suggestion
+
+# CA2251: Use 'string.Equals'
+dotnet_diagnostic.CA2251.severity = suggestion
+
+# CA1304: Specify CultureInfo
+dotnet_diagnostic.CA1304.severity = suggestion
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = suggestion
+
+# CA1308: Normalize strings to uppercase
+dotnet_diagnostic.CA1308.severity = suggestion
+
+# CA1307: Specify StringComparison for clarity
+dotnet_diagnostic.CA1307.severity = suggestion
+
+# CA1052: Static holder types should be Static or NotInheritable
+dotnet_diagnostic.CA1052.severity = suggestion
+
+# CA1725: Parameter names should match base declaration
+dotnet_diagnostic.CA1725.severity = suggestion
+
+# CA1805: Do not initialize unnecessarily
+dotnet_diagnostic.CA1805.severity = suggestion
+
+# CA1846: Prefer 'AsSpan' over 'Substring'
+dotnet_diagnostic.CA1846.severity = suggestion
+
+# CA1806: Do not ignore method results
+dotnet_diagnostic.CA1806.severity = suggestion
+
+# CA1303: Do not pass literals as localized parameters
+dotnet_diagnostic.CA1303.severity = suggestion
+
+# CA1816: Dispose methods should call SuppressFinalize
+dotnet_diagnostic.CA1816.severity = suggestion
+
+# CA2249: Consider using 'string.Contains' instead of 'string.IndexOf'
+dotnet_diagnostic.CA2249.severity = suggestion
+
+# CA1836: Prefer IsEmpty over Count
+dotnet_diagnostic.CA1836.severity = suggestion
+
+# CA2208: Instantiate argument exceptions correctly
+dotnet_diagnostic.CA2208.severity = suggestion
+
+# CA1028: Enum Storage should be Int32
+dotnet_diagnostic.CA1028.severity = suggestion
+
+# CA1034: Nested types should not be visible
+dotnet_diagnostic.CA1034.severity = suggestion
+
+# CA1033: Interface methods should be callable by child types
+dotnet_diagnostic.CA1033.severity = suggestion
+
+# CA1054: URI-like parameters should not be strings
+dotnet_diagnostic.CA1054.severity = suggestion
+
+# CA1027: Mark enums with FlagsAttribute
+dotnet_diagnostic.CA1027.severity = suggestion
+
+# CA1056: URI-like properties should not be strings
+dotnet_diagnostic.CA1056.severity = suggestion
+
+# CA1838: Avoid 'StringBuilder' parameters for P/Invokes
+dotnet_diagnostic.CA1838.severity = suggestion
+
+# CA1849: Call async methods when in an async method
+dotnet_diagnostic.CA1849.severity = suggestion
+
+# CA2000: Dispose objects before losing scope
+dotnet_diagnostic.CA2000.severity = suggestion
+
+# CA2016: Forward the 'CancellationToken' parameter to methods
+dotnet_diagnostic.CA2016.severity = suggestion
+
+# CA1014: Mark assemblies with CLSCompliantAttribute
+dotnet_diagnostic.CA1014.severity = none
+
+# CA1824: Mark assemblies with NeutralResourcesLanguageAttribute
+dotnet_diagnostic.CA1824.severity = none
+
+# CA1820: Test for empty strings using string length
+dotnet_diagnostic.CA1820.severity = suggestion
+
+# CA1508: Avoid dead conditional code
+dotnet_diagnostic.CA1508.severity = suggestion
+
+# CA1823: Avoid unused private fields
+dotnet_diagnostic.CA1823.severity = suggestion
+
+# CA1829: Use Length/Count property instead of Count() when available
+dotnet_diagnostic.CA1829.severity = suggestion
+
+# CA2234: Pass system uri objects instead of strings
+dotnet_diagnostic.CA2234.severity = suggestion
+
+# rbhansali
+
+# SA1101: Prefix local calls with this
+dotnet_diagnostic.SA1101.severity = suggestion
+
+# CA2219: Do not raise exceptions in finally clauses
+dotnet_diagnostic.CA2219.severity = suggestion
+
+# CA2201: Exception type System.Exception is not sufficiently specific
+dotnet_diagnostic.CA2201.severity = suggestion
+
+# CA1847: Use char literal for a single character lookup
+dotnet_diagnostic.CA1847.severity = suggestion
+
+# CA1835: Prefer the 'Memory'-based overloads for 'ReadAsync' and 'WriteAsync'
+dotnet_diagnostic.CA1835.severity = suggestion
+
+# CA1707: Identifiers should not contain underscores
+dotnet_diagnostic.CA1707.severity = suggestion
+
+# CA1040: Avoid empty interfaces
+dotnet_diagnostic.CA1040.severity = suggestion
+
+# CA1036: Override methods on comparable types
+dotnet_diagnostic.CA1036.severity = suggestion
+
+# CA1001: Types that own disposable fields should be disposable
+dotnet_diagnostic.CA1001.severity = suggestion
+
+# CA1827: Do not use Count() or LongCount() when Any() can be used
+dotnet_diagnostic.CA1827.severity = suggestion
+
+# CA1064: Exceptions should be public
+dotnet_diagnostic.CA1064.severity = suggestion
+
+# CA1837: Use 'Environment.ProcessId'
+dotnet_diagnostic.CA1837.severity = suggestion
+
+# CA1024: Use properties where appropriate
+dotnet_diagnostic.CA1024.severity = suggestion
+
+# CA1834: Consider using 'StringBuilder.Append(char)' when applicable
+dotnet_diagnostic.CA1834.severity = suggestion
+
+# SA1202: Elements should be ordered by access
+dotnet_diagnostic.SA1202.severity = suggestion
+
+# SA1500: Braces for multi-line statements should not share line
+dotnet_diagnostic.SA1500.severity = suggestion
+
+# SA1515: Single-line comment should be preceded by blank line
+dotnet_diagnostic.SA1515.severity = suggestion
+
+# IDE0022: Use expression body for methods
+dotnet_diagnostic.IDE0022.severity = suggestion
+
+# IDE0090: Simplify new expression
+dotnet_diagnostic.IDE0090.severity = suggestion
+
+# IDE0044: Add readonly modifier
+dotnet_diagnostic.IDE0044.severity = suggestion
+
+# IDE0065: 'using' directive placement
+dotnet_diagnostic.IDE0065.severity = suggestion
+
+# IDE0021: Use expression body for constructors
+dotnet_diagnostic.IDE0021.severity = suggestion
+
+# IDE0019: Use pattern matching to avoid 'as' followed by a 'null' check
+dotnet_diagnostic.IDE0019.severity = suggestion
+
+# IDE0160 and IDE0161: Namespace declaration preferences
+dotnet_diagnostic.IDE0160.severity = suggestion
+dotnet_diagnostic.IDE0161.severity = suggestion
+
+# IDE1006: Naming rule violation
+dotnet_diagnostic.IDE1006.severity = suggestion
+
+# IDE0060: Remove unused parameter
+dotnet_diagnostic.IDE0060.severity = suggestion
+
+# IDE0055: Formatting rule
+dotnet_diagnostic.IDE0055.severity = suggestion
+
+# IDE0025: Use expression body for properties
+dotnet_diagnostic.IDE0025.severity = suggestion
+
+# IDE0034: 'default' expression can be simplified
+dotnet_diagnostic.IDE0034.severity = suggestion
+
+# IDE0036: Modifiers are not ordered
+dotnet_diagnostic.IDE0036.severity = suggestion
+
+# IDE0057: Substring can be simplified
+dotnet_diagnostic.IDE0057.severity = suggestion
+
+# IDE0078: Use pattern matching (may change code meaning)
+dotnet_diagnostic.IDE0078.severity = suggestion
+
+# IDE0083: Use pattern matchin
+dotnet_diagnostic.IDE0083.severity = suggestion
+
+# IDE0032: Use auto property
+dotnet_diagnostic.IDE0032.severity = suggestion
+
+# IDE0052: Private member 'TabularStringFormat.totalWidth' can be removed as the value assigned to it is never read
+dotnet_diagnostic.IDE0052.severity = suggestion
+
+# IDE0054: Use compound assignment
+dotnet_diagnostic.IDE0054.severity = suggestion
+
+# IDE0071: Interpolation can be simplified
+dotnet_diagnostic.IDE0071.severity = suggestion
+
+# IDE0027: Use expression body for accessors
+dotnet_diagnostic.IDE0027.severity = suggestion
+
+# IDE0120: Simplify LINQ expression
+dotnet_diagnostic.IDE0120.severity = suggestion
+
+# IDE0075: Conditional expression can be simplified
+dotnet_diagnostic.IDE0075.severity = suggestion
+
+# IDE0042: Variable declaration can be deconstructed
+dotnet_diagnostic.IDE0042.severity = suggestion
+
+# IDE0037: Member name can be simplified
+dotnet_diagnostic.IDE0037.severity = suggestion
+
+# IDE0066: Use 'switch' expression
+dotnet_diagnostic.IDE0066.severity = suggestion
+
+# IDE0018: Variable declaration can be inlined
+dotnet_diagnostic.IDE0018.severity = suggestion
+
+# IDE0017: Object initialization can be simplified
+dotnet_diagnostic.IDE0017.severity = suggestion
+
+# IDE0004: Cast is redundant.
+dotnet_diagnostic.IDE0004.severity = suggestion
+
+# IDE0074: Use compound assignment
+dotnet_diagnostic.IDE0074.severity = suggestion
+
+# IDE0007: use 'var' instead of explicit type
+dotnet_diagnostic.IDE0007.severity = suggestion
+
+# IDE0024: Use expression body for operators
+dotnet_diagnostic.IDE0024.severity = suggestion
+
+# IDE0010: Populate switch
+dotnet_diagnostic.IDE0010.severity = suggestion
+
+# IDE0041: Null check can be simplified
+dotnet_diagnostic.IDE0041.severity = suggestion
+
+# IDE0016: Null check can be simplified
+dotnet_diagnostic.IDE0016.severity = suggestion
+
+# IDE0039: Use local function
+dotnet_diagnostic.IDE0039.severity = suggestion
+
+# IDE0220: 
+dotnet_diagnostic.IDE0220.severity = suggestion
+
+# IDE0031: Null check can be simplified
+dotnet_diagnostic.IDE0031.severity = suggestion
+
+# IDE0009: Add 'this' or 'Me' qualification
+dotnet_diagnostic.IDE0009.severity = suggestion
+
+# IDE0005: Using directive is unnecessary
+dotnet_diagnostic.IDE0005.severity = suggestion
+
+# IDE0033: Prefer explicitly provided tuple element name
+dotnet_diagnostic.IDE0033.severity = suggestion
+
+# IDE0150: Null check can be clarified
+dotnet_diagnostic.IDE0150.severity = suggestion
+
+# IDE0051: Private member is unused
+dotnet_diagnostic.IDE0051.severity = suggestion
+
+# CA1724: Type names should not match namespaces
+dotnet_diagnostic.CA1724.severity = suggestion
+
+# SA1028: Code should not contain trailing whitespace
+dotnet_diagnostic.SA1028.severity = suggestion
