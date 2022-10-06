@@ -27,7 +27,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
     {
         private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
-        public ScanResult Load(string[] args)
+        public async Task<ScanResult> LoadAsync(string[] args, CancellationToken cancellationToken = default)
         {
             var argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
             BaseArguments baseArguments = null;
@@ -65,19 +65,20 @@ namespace Microsoft.ComponentDetection.Orchestrator
             var shouldFailureBeSuppressed = false;
 
             // Don't use the using pattern here so we can take care not to clobber the stack
-            var returnResult = BcdeExecutionTelemetryRecord.Track(
-                (record) =>
-            {
-                var executionResult = this.HandleCommand(args, record);
-                if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)
+            var returnResult = await BcdeExecutionTelemetryRecord.TrackAsync(
+                async (record, ct) =>
                 {
-                    shouldFailureBeSuppressed = true;
-                    record.HiddenExitCode = (int)executionResult.ResultCode;
-                }
+                    var executionResult = await this.HandleCommandAsync(args, record, ct);
+                    if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)
+                    {
+                        shouldFailureBeSuppressed = true;
+                        record.HiddenExitCode = (int)executionResult.ResultCode;
+                    }
 
-                return executionResult;
-            },
-                true);
+                    return executionResult;
+                },
+                true,
+                cancellationToken);
 
             // The order of these things is a little weird, but done this way mostly to prevent any of the logic inside if blocks from being duplicated
             if (shouldFailureBeSuppressed)
@@ -126,35 +127,38 @@ namespace Microsoft.ComponentDetection.Orchestrator
         [Import]
         private static IArgumentHelper ArgumentHelper { get; set; }
 
-        public ScanResult HandleCommand(string[] args, BcdeExecutionTelemetryRecord telemetryRecord)
+        public async Task<ScanResult> HandleCommandAsync(
+            string[] args,
+            BcdeExecutionTelemetryRecord telemetryRecord,
+            CancellationToken cancellationToken = default)
         {
             var scanResult = new ScanResult()
             {
                 ResultCode = ProcessingResultCode.Error,
             };
 
-            var parsedArguments = ArgumentHelper.ParseArguments(args)
-                .WithParsed<IScanArguments>(argumentSet =>
+            var parsedArguments = ArgumentHelper.ParseArguments(args);
+            await parsedArguments.WithParsedAsync<IScanArguments>(async argumentSet =>
+            {
+                CommandLineArgumentsExporter.ArgumentsForDelayedInjection = argumentSet;
+
+                // Don't set production telemetry if we are running the build task in DevFabric. 0.36.0 is set in the task.json for the build task in development, but is calculated during deployment for production.
+                TelemetryConstants.CorrelationId = argumentSet.CorrelationId;
+                telemetryRecord.Command = this.GetVerb(argumentSet);
+
+                scanResult = await this.SafelyExecuteAsync(telemetryRecord, async () =>
                 {
-                    CommandLineArgumentsExporter.ArgumentsForDelayedInjection = argumentSet;
+                    await this.GenerateEnvironmentSpecificTelemetryAsync(telemetryRecord);
 
-                    // Don't set production telemetry if we are running the build task in DevFabric. 0.36.0 is set in the task.json for the build task in development, but is calculated during deployment for production.
-                    TelemetryConstants.CorrelationId = argumentSet.CorrelationId;
-                    telemetryRecord.Command = this.GetVerb(argumentSet);
+                    telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
+                    FileWritingService.Init(argumentSet.Output);
+                    Logger.Init(argumentSet.Verbosity);
+                    Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId.ToString()}");
 
-                    scanResult = this.SafelyExecute(telemetryRecord, () =>
-                    {
-                        this.GenerateEnvironmentSpecificTelemetry(telemetryRecord);
-
-                        telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
-                        FileWritingService.Init(argumentSet.Output);
-                        Logger.Init(argumentSet.Verbosity);
-                        Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId.ToString()}");
-
-                        return this.Dispatch(argumentSet, CancellationToken.None).GetAwaiter().GetResult();
-                    });
-                })
-                .WithNotParsed(errors =>
+                    return await this.Dispatch(argumentSet, cancellationToken);
+                });
+            });
+            parsedArguments.WithNotParsed(errors =>
                 {
                     if (errors.Any(e => e is HelpVerbRequestedError))
                     {
@@ -174,7 +178,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
             return scanResult;
         }
 
-        private void GenerateEnvironmentSpecificTelemetry(BcdeExecutionTelemetryRecord telemetryRecord)
+        private async Task GenerateEnvironmentSpecificTelemetryAsync(BcdeExecutionTelemetryRecord telemetryRecord)
         {
             telemetryRecord.AgentOSDescription = RuntimeInformation.OSDescription;
 
@@ -204,7 +208,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
                         throw new TimeoutException($"The execution did not complete in the alotted time ({taskTimeout} seconds) and has been terminated prior to completion");
                     }
 
-                    agentOSMeaningfulDetails[LibSslDetailsKey] = getLibSslPackages.GetAwaiter().GetResult();
+                    agentOSMeaningfulDetails[LibSslDetailsKey] = await getLibSslPackages;
                 }
                 catch (Exception ex)
                 {
@@ -259,11 +263,11 @@ namespace Microsoft.ComponentDetection.Orchestrator
             return scanResult;
         }
 
-        private ScanResult SafelyExecute(BcdeExecutionTelemetryRecord record, Func<ScanResult> wrappedInvocation)
+        private async Task<ScanResult> SafelyExecuteAsync(BcdeExecutionTelemetryRecord record, Func<Task<ScanResult>> wrappedInvocation)
         {
             try
             {
-                return wrappedInvocation();
+                return await wrappedInvocation();
             }
             catch (Exception ae)
             {
