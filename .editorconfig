@@ -182,3 +182,9 @@ dotnet_diagnostic.CA2016.severity = suggestion
 
 # SA1203: Constants should appear before fields
 dotnet_diagnostic.SA1203.severity = suggestion
+
+# CA1014: Mark assemblies with CLSCompliantAttribute
+dotnet_diagnostic.CA1014.severity = none
+
+# CA1824: Mark assemblies with NeutralResourcesLanguageAttribute
+dotnet_diagnostic.CA1824.severity = none
