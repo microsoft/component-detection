@@ -104,7 +104,7 @@ dotnet_style_collection_initializer = true:warning
 dotnet_style_explicit_tuple_names = true:warning
 dotnet_style_prefer_inferred_tuple_names = true:warning
 dotnet_style_prefer_inferred_anonymous_type_member_names = true:warning
-dotnet_style_prefer_auto_properties = true:warning
+dotnet_style_prefer_auto_properties = true:suggestion
 dotnet_style_prefer_conditional_expression_over_assignment = false:suggestion
 dotnet_diagnostic.IDE0045.severity = suggestion
 dotnet_style_prefer_conditional_expression_over_return = false:suggestion
@@ -144,15 +144,15 @@ csharp_style_expression_bodied_local_functions = true:warning
 csharp_style_pattern_matching_over_is_with_cast_check = true:warning
 csharp_style_pattern_matching_over_as_with_null_check = true:warning
 csharp_style_prefer_switch_expression = true:warning
-csharp_style_prefer_pattern_matching = true:warning
-csharp_style_prefer_not_pattern = true:warning
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
 # Expression-level preferences
 csharp_style_inlined_variable_declaration = true:warning
 csharp_prefer_simple_default_expression = true:warning
 csharp_style_pattern_local_over_anonymous_function = true:warning
 csharp_style_deconstructed_variable_declaration = true:warning
 csharp_style_prefer_index_operator = true:warning
-csharp_style_prefer_range_operator = true:warning
+csharp_style_prefer_range_operator = true:suggestion
 csharp_style_implicit_object_creation_when_type_is_apparent = true:warning
 # "Null" checking preferences
 csharp_style_throw_expression = true:warning
@@ -173,7 +173,7 @@ csharp_prefer_static_local_function = true:warning
 
 # .NET Unnecessary code rules
 [*.{cs,csx,cake,vb,vbx}]
-dotnet_code_quality_unused_parameters = all:warning
+dotnet_code_quality_unused_parameters = all:suggestion
 dotnet_remove_unnecessary_suppression_exclusions = none:warning
 
 # C# Unnecessary code rules
@@ -561,4 +561,73 @@ dotnet_diagnostic.CS0618.severity = suggestion
 # Missing XML comment for publicly visible type or member '...'
 dotnet_diagnostic.CS1591.severity = suggestion
 
+# CA1819: Properties should not return arrays
+dotnet_diagnostic.CA1819.severity = suggestion
 
+# IDE0032: Use auto property
+dotnet_diagnostic.IDE0032.severity = suggestion
+
+# CA2227: Collection properties should be read only
+dotnet_diagnostic.CA2227.severity = suggestion
+
+# CA1002: Do not expose generic lists
+dotnet_diagnostic.CA1002.severity = suggestion
+
+# CA1018: Mark attributes with AttributeUsageAttribute
+dotnet_diagnostic.CA1018.severity = suggestion
+
+# CA1031: Do not catch general exception types
+dotnet_diagnostic.CA1031.severity = suggestion
+
+# CA1051: Do not declare visible instance fields
+dotnet_diagnostic.CA1051.severity = suggestion
+
+# CA1062: Validate arguments of public methods
+dotnet_diagnostic.CA1062.severity = suggestion
+
+# CA1063: Implement IDisposable Correctly
+dotnet_diagnostic.CA1063.severity = suggestion
+
+# CA1711: Identifiers should not have incorrect suffix
+dotnet_diagnostic.CA1711.severity = suggestion
+
+# CA2007: Consider calling ConfigureAwait on the awaited task
+dotnet_diagnostic.CA2007.severity = suggestion
+
+# CA1308: Normalize strings to uppercase
+dotnet_diagnostic.CA1308.severity = suggestion
+
+# IDE1006: Naming Styles
+dotnet_diagnostic.IDE1006.severity = none
+
+# IDE0060: Remove unused parameter
+dotnet_diagnostic.IDE0060.severity = suggestion
+
+dotnet_diagnostic.CA1014.severity = none
+
+# CA1310: Specify StringComparison for correctness
+dotnet_diagnostic.CA1310.severity = suggestion
+
+# IDE0057: Use range operator
+dotnet_diagnostic.IDE0057.severity = suggestion
+
+# IDE0052: Remove unread private members
+dotnet_diagnostic.IDE0052.severity = suggestion
+
+# IDE0078: Use pattern matching (may change code meaning)
+dotnet_diagnostic.IDE0078.severity = suggestion
+
+# IDE0083: Use pattern matching
+dotnet_diagnostic.IDE0083.severity = suggestion
+
+# CA2101: Specify marshaling for P/Invoke string arguments
+dotnet_diagnostic.CA2101.severity = suggestion
+
+# CA1401: P/Invokes should not be visible
+dotnet_diagnostic.CA1401.severity = suggestion
+
+# CA2000: Dispose objects before losing scope
+dotnet_diagnostic.CA2000.severity = suggestion
+
+# CA1307: Specify StringComparison for clarity
+dotnet_diagnostic.CA1307.severity = suggestion
