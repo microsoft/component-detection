@@ -870,3 +870,31 @@ dotnet_diagnostic.IDE0034.severity = suggestion
 
 # IDE0036: Modifiers are not ordered
 dotnet_diagnostic.IDE0036.severity = suggestion
+
+# IDE0057: Substring can be simplified
+dotnet_diagnostic.IDE0057.severity = suggestion
+
+# IDE0078: Use pattern matching (may change code meaning)
+dotnet_diagnostic.IDE0078.severity = suggestion
+
+# IDE0083: Use pattern matchin
+dotnet_diagnostic.IDE0083.severity = suggestion
+
+# IDE0032: Use auto property
+dotnet_diagnostic.IDE0032.severity = suggestion
+
+# IDE0052: Private member 'TabularStringFormat.totalWidth' can be removed as the value assigned to it is never read
+dotnet_diagnostic.IDE0052.severity = suggestion
+
+# IDE0054: Use compound assignment
+dotnet_diagnostic.IDE0054.severity = suggestion
+
+# IDE0071: Interpolation can be simplified
+dotnet_diagnostic.IDE0071.severity = suggestion
+
+# IDE0027: Use expression body for accessors
+dotnet_diagnostic.IDE0027.severity = suggestion
+
+# IDE0120: Simplify LINQ expression
+dotnet_diagnostic.IDE0120.severity = suggestion
+
