@@ -1,11 +1,7 @@
 ﻿using FluentAssertions;
-using FluentAssertions.Primitives;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using Faker;
 using static Microsoft.ComponentDetection.Common.DependencyScopeComparer;
-using System.Linq;
 
 namespace Microsoft.ComponentDetection.Common.Tests
 {
@@ -23,7 +19,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void GetMergedDependencyScope_returnSecondIfFirstNulll()
         {
-            DependencyScope randomDependencyScope = Faker.Enum.Random<DependencyScope>();
+            var randomDependencyScope = Faker.Enum.Random<DependencyScope>();
             GetMergedDependencyScope(null, randomDependencyScope)
                 .Should()
                 .Be(randomDependencyScope);
@@ -32,7 +28,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         [TestMethod]
         public void GetMergedDependencyScope_returnFirstIfSecondNulll()
         {
-            DependencyScope randomDependencyScope = Faker.Enum.Random<DependencyScope>();
+            var randomDependencyScope = Faker.Enum.Random<DependencyScope>();
             GetMergedDependencyScope(randomDependencyScope, null)
                 .Should()
                 .Be(randomDependencyScope);

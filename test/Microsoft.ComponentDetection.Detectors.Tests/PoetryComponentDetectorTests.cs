@@ -5,8 +5,8 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            detectorTestUtility = DetectorTestUtilityCreator.Create<PoetryComponentDetector>();
+            this.detectorTestUtility = DetectorTestUtilityCreator.Create<PoetryComponentDetector>();
         }
 
         [TestMethod]
@@ -40,7 +40,7 @@ url = ""https://pypi.custom.com//simple""
 reference = ""custom""
 ";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("poetry.lock", poetryLockContent)
                                                     .ExecuteDetector();
 
@@ -49,7 +49,7 @@ reference = ""custom""
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
 
-            AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
+            this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
             var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
             Assert.IsFalse(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
         }
@@ -66,7 +66,7 @@ optional = false
 python-versions = ""*""
 ";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("poetry.lock", poetryLockContent)
                                                     .ExecuteDetector();
 
@@ -75,7 +75,7 @@ python-versions = ""*""
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(1, detectedComponents.Count());
 
-            AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
+            this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
 
             var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
             Assert.IsTrue(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
@@ -117,7 +117,7 @@ url = ""https://github.com/requests/requests.git""
 reference = ""master""
 resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("poetry.lock", poetryLockContent)
                                                     .ExecuteDetector();
 
@@ -126,7 +126,7 @@ resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
             var detectedComponents = componentRecorder.GetDetectedComponents();
             Assert.AreEqual(2, detectedComponents.Count());
 
-            AssertGitComponentHashAndUrl(detectedComponents, "232a5596424c98d11c3cf2e29b2f6a6c591c2ff3", "https://github.com/requests/requests.git");
+            this.AssertGitComponentHashAndUrl(detectedComponents, "232a5596424c98d11c3cf2e29b2f6a6c591c2ff3", "https://github.com/requests/requests.git");
         }
 
         private void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
@@ -135,7 +135,8 @@ resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
                 detectedComponents.SingleOrDefault(c =>
             c.Component is PipComponent component &&
             component.Name.Equals(name) &&
-            component.Version.Equals(version)), $"Component with name {name} and version {version} was not found");
+            component.Version.Equals(version)),
+                $"Component with name {name} and version {version} was not found");
         }
 
         private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)

@@ -24,10 +24,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         [TestInitialize]
         public void InitializeTest()
         {
-            scanExecutionServiceMock = new Mock<IBcdeScanExecutionService>();
-            serviceUnderTest = new BcdeDevCommandService();
+            this.scanExecutionServiceMock = new Mock<IBcdeScanExecutionService>();
+            this.serviceUnderTest = new BcdeDevCommandService();
 
-            scannedComponents = new ScannedComponent[]
+            this.scannedComponents = new ScannedComponent[]
             {
                 new ScannedComponent
                 {
@@ -39,13 +39,13 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var executeScanAsyncResult = new ScanResult
             {
                 DetectorsInScan = new List<Detector>(),
-                ComponentsFound = scannedComponents,
+                ComponentsFound = this.scannedComponents,
                 ContainerDetailsMap = new Dictionary<int, ContainerDetails>(),
                 ResultCode = ProcessingResultCode.Success,
                 SourceDirectory = "D:\\test\\directory",
             };
 
-            scanExecutionServiceMock.Setup(x => x.ExecuteScanAsync(It.IsAny<IDetectionArguments>()))
+            this.scanExecutionServiceMock.Setup(x => x.ExecuteScanAsync(It.IsAny<IDetectionArguments>()))
                 .ReturnsAsync(executeScanAsyncResult);
         }
 
@@ -54,12 +54,12 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             var args = new BcdeArguments();
 
-            serviceUnderTest = new BcdeDevCommandService
+            this.serviceUnderTest = new BcdeDevCommandService
             {
-                BcdeScanExecutionService = scanExecutionServiceMock.Object,
+                BcdeScanExecutionService = this.scanExecutionServiceMock.Object,
             };
 
-            var result = serviceUnderTest.Handle(args);
+            var result = this.serviceUnderTest.Handle(args);
             result.Result.ResultCode.Should().Be(ProcessingResultCode.Success);
             result.Result.SourceDirectory.Should().Be("D:\\test\\directory");
         }

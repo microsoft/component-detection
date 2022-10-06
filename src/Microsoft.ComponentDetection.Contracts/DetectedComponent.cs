@@ -8,8 +8,6 @@ namespace Microsoft.ComponentDetection.Contracts
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class DetectedComponent
     {
-        private readonly object hashLock = new object();
-
         /// <summary>Creates a new DetectedComponent.</summary>
         /// <param name="component">The typed component instance to base this detection on.</param>
         /// <param name="detector">The detector that detected this component.</param>
@@ -17,22 +15,20 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="containerLayerId">Id of the layer the component was found, this is only necessary if the component was found inside a container.</param>
         public DetectedComponent(TypedComponent.TypedComponent component, IComponentDetector detector = null, int? containerDetailsId = null, int? containerLayerId = null)
         {
-            Component = component;
-            FilePaths = new HashSet<string>();
-            DetectedBy = detector;
-            ContainerDetailIds = new HashSet<int>();
-            ContainerLayerIds = new Dictionary<int, IEnumerable<int>>();
+            this.Component = component;
+            this.FilePaths = new HashSet<string>();
+            this.DetectedBy = detector;
+            this.ContainerDetailIds = new HashSet<int>();
+            this.ContainerLayerIds = new Dictionary<int, IEnumerable<int>>();
             if (containerDetailsId.HasValue)
             {
-                ContainerDetailIds.Add(containerDetailsId.Value);
+                this.ContainerDetailIds.Add(containerDetailsId.Value);
                 if (containerLayerId.HasValue)
                 {
-                    ContainerLayerIds.Add(containerDetailsId.Value, new List<int>() { containerLayerId.Value });
+                    this.ContainerLayerIds.Add(containerDetailsId.Value, new List<int>() { containerLayerId.Value });
                 }
             }
         }
-
-        private string DebuggerDisplay => $"{Component.DebuggerDisplay}";
 
         /// <summary>
         /// Gets or sets the detector that detected this component.
@@ -57,7 +53,7 @@ namespace Microsoft.ComponentDetection.Contracts
 
         /// <summary> Gets or sets the layer within a container where this component was found.</summary>
         public IDictionary<int, IEnumerable<int>> ContainerLayerIds { get; set; }
-        
+
         /// <summary> Gets or sets Dependency Scope of the component.</summary>
         public DependencyScope? DependencyScope { get; set; }
 
@@ -65,10 +61,14 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="filePath">The file path to add to the hashset.</param>
         public void AddComponentFilePath(string filePath)
         {
-            lock (hashLock)
+            lock (this.hashLock)
             {
-                FilePaths.Add(filePath);
+                this.FilePaths.Add(filePath);
             }
         }
+
+        private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
+
+        private readonly object hashLock = new object();
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -28,18 +28,18 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
         public TypedComponent GetComponent(string componentId)
         {
-            return singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).Where(x => x != null).FirstOrDefault();
+            return this.singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).Where(x => x != null).FirstOrDefault();
         }
 
         public IEnumerable<DetectedComponent> GetDetectedComponents()
         {
             IEnumerable<DetectedComponent> detectedComponents;
-            if (singleFileRecorders == null)
+            if (this.singleFileRecorders == null)
             {
                 return Enumerable.Empty<DetectedComponent>();
             }
 
-            detectedComponents = singleFileRecorders
+            detectedComponents = this.singleFileRecorders
                 .Select(singleFileRecorder => singleFileRecorder.GetDetectedComponents().Values)
                 .SelectMany(x => x)
                 .GroupBy(x => x.Component.Id)
@@ -69,25 +69,25 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 throw new ArgumentNullException(nameof(location));
             }
 
-            var matching = singleFileRecorders.FirstOrDefault(x => x.ManifestFileLocation == location);
+            var matching = this.singleFileRecorders.FirstOrDefault(x => x.ManifestFileLocation == location);
             if (matching == null)
             {
-                matching = new SingleFileComponentRecorder(location, this, enableManualTrackingOfExplicitReferences, log);
-                singleFileRecorders.Add(matching);
+                matching = new SingleFileComponentRecorder(location, this, this.enableManualTrackingOfExplicitReferences, this.log);
+                this.singleFileRecorders.Add(matching);
             }
 
             return matching;
         }
 
-        internal DependencyGraph GetDependencyGraphForLocation(string location)
-        {
-            return singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
-        }
-
         public IReadOnlyDictionary<string, IDependencyGraph> GetDependencyGraphsByLocation()
         {
-            return singleFileRecorders.Where(x => x.DependencyGraph.HasComponents())
+            return this.singleFileRecorders.Where(x => x.DependencyGraph.HasComponents())
                 .ToImmutableDictionary(x => x.ManifestFileLocation, x => x.DependencyGraph as IDependencyGraph);
+        }
+
+        internal DependencyGraph GetDependencyGraphForLocation(string location)
+        {
+            return this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
         }
 
         public class SingleFileComponentRecorder : ISingleFileComponentRecorder
@@ -96,9 +96,9 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
             public string ManifestFileLocation { get; }
 
-            internal DependencyGraph DependencyGraph { get; }
+            IDependencyGraph ISingleFileComponentRecorder.DependencyGraph => this.DependencyGraph;
 
-            IDependencyGraph ISingleFileComponentRecorder.DependencyGraph => DependencyGraph;
+            internal DependencyGraph DependencyGraph { get; }
 
             private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new ConcurrentDictionary<string, DetectedComponent>();
 
@@ -108,15 +108,15 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
             public SingleFileComponentRecorder(string location, ComponentRecorder recorder, bool enableManualTrackingOfExplicitReferences, ILogger log)
             {
-                ManifestFileLocation = location;
+                this.ManifestFileLocation = location;
                 this.recorder = recorder;
                 this.log = log;
-                DependencyGraph = new DependencyGraph(enableManualTrackingOfExplicitReferences);
+                this.DependencyGraph = new DependencyGraph(enableManualTrackingOfExplicitReferences);
             }
 
             public DetectedComponent GetComponent(string componentId)
             {
-                if (detectedComponentsInternal.TryGetValue(componentId, out var detectedComponent))
+                if (this.detectedComponentsInternal.TryGetValue(componentId, out var detectedComponent))
                 {
                     return detectedComponent;
                 }
@@ -127,7 +127,7 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
             public IReadOnlyDictionary<string, DetectedComponent> GetDetectedComponents()
             {
                 // Should this be immutable?
-                return detectedComponentsInternal;
+                return this.detectedComponentsInternal;
             }
 
             public void RegisterUsage(
@@ -150,42 +150,42 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 #if DEBUG
                 if (detectedComponent.FilePaths?.Any() ?? false)
                 {
-                    log?.LogWarning("Detector should not populate DetectedComponent.FilePaths!");
+                    this.log?.LogWarning("Detector should not populate DetectedComponent.FilePaths!");
                 }
 
                 if (detectedComponent.DependencyRoots?.Any() ?? false)
                 {
-                    log?.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");
+                    this.log?.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");
                 }
 
                 if (detectedComponent.DevelopmentDependency.HasValue)
                 {
-                    log?.LogWarning("Detector should not populate DetectedComponent.DevelopmentDependency!");
+                    this.log?.LogWarning("Detector should not populate DetectedComponent.DevelopmentDependency!");
                 }
 #endif
 
-                string componentId = detectedComponent.Component.Id;
+                var componentId = detectedComponent.Component.Id;
                 DetectedComponent storedComponent = null;
-                lock (registerUsageLock)
+                lock (this.registerUsageLock)
                 {
-                    storedComponent = detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
-                    AddComponentToGraph(ManifestFileLocation, detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, dependencyScope);
+                    storedComponent = this.detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
+                    this.AddComponentToGraph(this.ManifestFileLocation, detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, dependencyScope);
                 }
             }
 
             public void AddAdditionalRelatedFile(string relatedFilePath)
             {
-                DependencyGraph.AddAdditionalRelatedFile(relatedFilePath);
+                this.DependencyGraph.AddAdditionalRelatedFile(relatedFilePath);
             }
 
             public IList<string> GetAdditionalRelatedFiles()
             {
-                return DependencyGraph.GetAdditionalRelatedFiles().ToImmutableList();
+                return this.DependencyGraph.GetAdditionalRelatedFiles().ToImmutableList();
             }
 
             public IComponentRecorder GetParentComponentRecorder()
             {
-                return recorder;
+                return this.recorder;
             }
 
             private void AddComponentToGraph(
@@ -204,7 +204,7 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                     DependencyScope = dependencyScope,
                 };
 
-                DependencyGraph.AddComponent(componentNode, parentComponentId);
+                this.DependencyGraph.AddComponent(componentNode, parentComponentId);
             }
         }
     }

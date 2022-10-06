@@ -26,8 +26,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private static readonly IEnumerable<LayerMappedLinuxComponents> LinuxComponents = new List<LayerMappedLinuxComponents>
             {
-                new LayerMappedLinuxComponents {
-                    DockerLayer = new DockerLayer { },
+                new LayerMappedLinuxComponents
+                {
+                    DockerLayer = new DockerLayer(),
                     LinuxComponents = new List<LinuxComponent> { new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1") },
                 },
             };
@@ -39,18 +40,18 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            mockDockerService = new Mock<IDockerService>();
-            mockDockerService.Setup(service => service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>()))
+            this.mockDockerService = new Mock<IDockerService>();
+            this.mockDockerService.Setup(service => service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
-            mockDockerService.Setup(service => service.TryPullImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            this.mockDockerService.Setup(service => service.TryPullImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
-            mockDockerService.Setup(service => service.InspectImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            this.mockDockerService.Setup(service => service.InspectImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = Enumerable.Empty<DockerLayer>() });
 
-            mockLogger = new Mock<ILogger>();
+            this.mockLogger = new Mock<ILogger>();
 
-            mockSyftLinuxScanner = new Mock<ILinuxScanner>();
-            mockSyftLinuxScanner.Setup(scanner => scanner.ScanLinuxAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DockerLayer>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            this.mockSyftLinuxScanner = new Mock<ILinuxScanner>();
+            this.mockSyftLinuxScanner.Setup(scanner => scanner.ScanLinuxAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DockerLayer>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(LinuxComponents);
         }
 
@@ -59,14 +60,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, mockLogger.Object,
-                null, new List<string> { NodeLatestImage }, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage }, componentRecorder);
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
-                LinuxScanner = mockSyftLinuxScanner.Object,
-                Logger = mockLogger.Object,
-                DockerService = mockDockerService.Object,
+                LinuxScanner = this.mockSyftLinuxScanner.Object,
+                Logger = this.mockLogger.Object,
+                DockerService = this.mockDockerService.Object,
             };
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
@@ -87,17 +87,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, mockLogger.Object, null,
-                new List<string> { NodeLatestImage }, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage }, componentRecorder);
 
-            mockDockerService.Setup(service => service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>()))
+            this.mockDockerService.Setup(service => service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
-                LinuxScanner = mockSyftLinuxScanner.Object,
-                Logger = mockLogger.Object,
-                DockerService = mockDockerService.Object,
+                LinuxScanner = this.mockSyftLinuxScanner.Object,
+                Logger = this.mockLogger.Object,
+                DockerService = this.mockDockerService.Object,
             };
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
@@ -107,7 +106,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
             detectedComponents.Should().HaveCount(0);
             scanResult.ContainerDetails.Should().HaveCount(0);
-            mockLogger.Verify(logger => logger.LogInfo(It.IsAny<string>()));
+            this.mockLogger.Verify(logger => logger.LogInfo(It.IsAny<string>()));
         }
 
         [TestMethod]
@@ -115,14 +114,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, mockLogger.Object, null,
-                null, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, null, componentRecorder);
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
-                LinuxScanner = mockSyftLinuxScanner.Object,
-                Logger = mockLogger.Object,
-                DockerService = mockDockerService.Object,
+                LinuxScanner = this.mockSyftLinuxScanner.Object,
+                Logger = this.mockLogger.Object,
+                DockerService = this.mockDockerService.Object,
             };
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
@@ -132,7 +130,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
             detectedComponents.Should().HaveCount(0);
             scanResult.ContainerDetails.Should().HaveCount(0);
-            mockLogger.Verify(logger => logger.LogInfo(It.IsAny<string>()));
+            this.mockLogger.Verify(logger => logger.LogInfo(It.IsAny<string>()));
         }
 
         [TestMethod]
@@ -140,14 +138,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, mockLogger.Object, null,
-                new List<string> { "UPPERCASE" }, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { "UPPERCASE" }, componentRecorder);
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
-                LinuxScanner = mockSyftLinuxScanner.Object,
-                Logger = mockLogger.Object,
-                DockerService = mockDockerService.Object,
+                LinuxScanner = this.mockSyftLinuxScanner.Object,
+                Logger = this.mockLogger.Object,
+                DockerService = this.mockDockerService.Object,
             };
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
@@ -166,14 +163,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var componentRecorder = new ComponentRecorder();
 
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, mockLogger.Object, null,
-                new List<string> { NodeLatestImage, NodeLatestDigest }, componentRecorder);
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage, NodeLatestDigest }, componentRecorder);
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
-                LinuxScanner = mockSyftLinuxScanner.Object,
-                Logger = mockLogger.Object,
-                DockerService = mockDockerService.Object,
+                LinuxScanner = this.mockSyftLinuxScanner.Object,
+                Logger = this.mockLogger.Object,
+                DockerService = this.mockDockerService.Object,
             };
 
             var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
@@ -185,25 +181,39 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             detectedComponents.Should().HaveCount(1);
             detectedComponents.First().Component.Id.Should().Be(BashPackageId);
             detectedComponents.All(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id)).Should().BeTrue();
-            mockSyftLinuxScanner.Verify(scanner => scanner.ScanLinuxAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DockerLayer>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+            this.mockSyftLinuxScanner.Verify(scanner => scanner.ScanLinuxAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DockerLayer>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [TestMethod]
         public async Task TestLinuxContainerDetector_TimeoutParameterSpecified()
         {
             var detectorArgs = new Dictionary<string, string> { { "Linux.ScanningTimeoutSec", "2" } };
-            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, mockLogger.Object,
-                detectorArgs, new List<string> { NodeLatestImage }, new ComponentRecorder());
+            var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, detectorArgs, new List<string> { NodeLatestImage }, new ComponentRecorder());
 
             var linuxContainerDetector = new LinuxContainerDetector
             {
-                LinuxScanner = mockSyftLinuxScanner.Object,
-                Logger = mockLogger.Object,
-                DockerService = mockDockerService.Object,
+                LinuxScanner = this.mockSyftLinuxScanner.Object,
+                Logger = this.mockLogger.Object,
+                DockerService = this.mockDockerService.Object,
             };
 
             Func<Task> action = async () => await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
             await action.Should().NotThrowAsync<OperationCanceledException>();
+        }
+
+        [TestMethod]
+        public async Task TestLinuxContainerDetector_HandlesScratchBase()
+        {
+            // Setup docker service to throw an exception on scratch
+            // then specify that the base image is scratch, to test this
+            // is coped with.
+            this.mockDockerService.Setup(service => service.TryPullImageAsync("scratch", It.IsAny<CancellationToken>()))
+                .Throws(new IOException());
+            this.mockDockerService.Setup(service => service.InspectImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+
+                // Specify BaseImageRef = scratch to verify that cope
+                .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = Enumerable.Empty<DockerLayer>(), BaseImageRef = "scratch" });
+            await this.TestLinuxContainerDetector();
         }
     }
 }

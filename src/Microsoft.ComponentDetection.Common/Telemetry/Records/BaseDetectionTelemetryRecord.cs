@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
 
@@ -15,37 +15,37 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 
         protected BaseDetectionTelemetryRecord()
         {
-            stopwatch.Start();
+            this.stopwatch.Start();
         }
 
         public void StopExecutionTimer()
         {
-            if (stopwatch.IsRunning)
+            if (this.stopwatch.IsRunning)
             {
-                stopwatch.Stop();
-                ExecutionTime = stopwatch.Elapsed;
+                this.stopwatch.Stop();
+                this.ExecutionTime = this.stopwatch.Elapsed;
             }
+        }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
         }
 
         private bool disposedValue = false;
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!this.disposedValue)
             {
                 if (disposing)
                 {
-                    StopExecutionTimer();
+                    this.StopExecutionTimer();
                     TelemetryRelay.Instance.PostTelemetryRecord(this);
                 }
 
-                disposedValue = true;
+                this.disposedValue = true;
             }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
         }
     }
 }

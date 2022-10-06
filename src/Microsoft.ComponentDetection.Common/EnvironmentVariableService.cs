@@ -1,6 +1,6 @@
 using System;
-using System.Linq;
 using System.Composition;
+using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
 namespace Microsoft.ComponentDetection.Common
@@ -10,7 +10,7 @@ namespace Microsoft.ComponentDetection.Common
     {
         public bool DoesEnvironmentVariableExist(string name)
         {
-            return GetEnvironmentVariable(name) != null;
+            return this.GetEnvironmentVariable(name) != null;
         }
 
         public string GetEnvironmentVariable(string name)
@@ -27,7 +27,7 @@ namespace Microsoft.ComponentDetection.Common
 
         public bool IsEnvironmentVariableValueTrue(string name)
         {
-            _ = bool.TryParse(GetEnvironmentVariable(name), out bool result);
+            _ = bool.TryParse(this.GetEnvironmentVariable(name), out var result);
             return result;
         }
     }

@@ -19,23 +19,23 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 
         internal void Track(CommandLineExecutionResult result, string path, string parameters)
         {
-            ExitCode = result.ExitCode;
-            StandardError = result.StdErr;
-            TrackCommon(path, parameters);
+            this.ExitCode = result.ExitCode;
+            this.StandardError = result.StdErr;
+            this.TrackCommon(path, parameters);
         }
 
         internal void Track(Exception ex, string path, string parameters)
         {
-            ExitCode = -1;
-            UnhandledException = ex.ToString();
-            TrackCommon(path, parameters);
+            this.ExitCode = -1;
+            this.UnhandledException = ex.ToString();
+            this.TrackCommon(path, parameters);
         }
 
         private void TrackCommon(string path, string parameters)
         {
-            PathThatWasRan = path;
-            Parameters = parameters;
-            StopExecutionTimer();
+            this.PathThatWasRan = path;
+            this.Parameters = parameters;
+            this.StopExecutionTimer();
         }
     }
 }

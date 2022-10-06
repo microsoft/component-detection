@@ -22,15 +22,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            commandLineInvokationService = new Mock<ICommandLineInvocationService>();
+            this.commandLineInvokationService = new Mock<ICommandLineInvocationService>();
         }
 
         [TestMethod]
         public async Task PythonCommandService_ReturnsTrueWhenPythonExists()
         {
-            commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+            this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             Assert.IsTrue(await service.PythonExists());
         }
@@ -38,9 +38,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task PythonCommandService_ReturnsFalseWhenPythonExists()
         {
-            commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
+            this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             Assert.IsFalse(await service.PythonExists());
         }
@@ -48,9 +48,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task PythonCommandService_ReturnsTrueWhenPythonExistsForAPath()
         {
-            commandLineInvokationService.Setup(x => x.CanCommandBeLocated("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+            this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             Assert.IsTrue(await service.PythonExists("test"));
         }
@@ -58,9 +58,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task PythonCommandService_ReturnsFalseWhenPythonExistsForAPath()
         {
-            commandLineInvokationService.Setup(x => x.CanCommandBeLocated("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
+            this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             Assert.IsFalse(await service.PythonExists("test"));
         }
@@ -71,11 +71,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var fakePath = @"c:\the\fake\path.py";
             var fakePathAsPassedToPython = fakePath.Replace("\\", "/");
 
-            commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-            commandLineInvokationService.Setup(x => x.ExecuteCommand("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
+            this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+            this.commandLineInvokationService.Setup(x => x.ExecuteCommand("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
                                         .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "[]", StdErr = string.Empty });
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             var result = await service.ParseFile(fakePath);
 
@@ -88,18 +88,18 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var fakePath = @"c:\the\fake\path.py";
             var fakePathAsPassedToPython = fakePath.Replace("\\", "/");
 
-            commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-            commandLineInvokationService.Setup(x => x.ExecuteCommand("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
+            this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+            this.commandLineInvokationService.Setup(x => x.ExecuteCommand("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
                                         .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "['knack==0.4.1', 'setuptools>=1.0,!=1.1', 'vsts-cli-common==0.1.3', 'vsts-cli-admin==0.1.3', 'vsts-cli-build==0.1.3', 'vsts-cli-code==0.1.3', 'vsts-cli-team==0.1.3', 'vsts-cli-package==0.1.3', 'vsts-cli-work==0.1.3']", StdErr = string.Empty });
 
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = commandLineInvokationService.Object };
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             var result = await service.ParseFile(fakePath);
             var expected = new string[] { "knack==0.4.1", "setuptools>=1.0,!=1.1", "vsts-cli-common==0.1.3", "vsts-cli-admin==0.1.3", "vsts-cli-build==0.1.3", "vsts-cli-code==0.1.3", "vsts-cli-team==0.1.3", "vsts-cli-package==0.1.3", "vsts-cli-work==0.1.3" }.Select<string, (string, GitComponent)>(dep => (dep, null)).ToArray();
 
             Assert.AreEqual(9, result.Count);
 
-            for (int i = 0; i < 9; i++)
+            for (var i = 0; i < 9; i++)
             {
                 Assert.AreEqual(expected[i], result[i]);
             }
@@ -110,12 +110,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
-            commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = commandLineInvokationService.Object };
+            this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             try
             {
-                using (StreamWriter writer = File.CreateText(testPath))
+                using (var writer = File.CreateText(testPath))
                 {
                     writer.WriteLine("knack==0.4.1");
                     writer.WriteLine("vsts-cli-common==0.1.3    \\      ");
@@ -128,7 +128,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
                 Assert.AreEqual(expected.Length, result.Count);
 
-                for (int i = 0; i < expected.Length; i++)
+                for (var i = 0; i < expected.Length; i++)
                 {
                     Assert.AreEqual(expected[i], result[i]);
                 }
@@ -147,12 +147,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
-            commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = commandLineInvokationService.Object };
+            this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
             try
             {
-                using (StreamWriter writer = File.CreateText(testPath))
+                using (var writer = File.CreateText(testPath))
                 {
                     writer.WriteLine("#this is a comment");
                     writer.WriteLine("knack==0.4.1 #this is another comment");
@@ -177,10 +177,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ParseFile_RequirementTxtHasComment_GitComponentsSupported()
         {
-            await SetupAndParseReqsTxt(requirementstxtBasicGitComponent, parseResult =>
+            await this.SetupAndParseReqsTxt(this.requirementstxtBasicGitComponent, parseResult =>
             {
                 parseResult.Count.Should().Be(1);
-                
+
                 var tuple = parseResult.Single();
                 tuple.Item1.Should().BeNull();
                 tuple.Item2.Should().NotBeNull();
@@ -194,7 +194,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ParseFile_RequirementTxtHasComment_GitComponentAndEnvironmentMarker()
         {
-            await SetupAndParseReqsTxt(requirementstxtGitComponentAndEnvironmentMarker, parseResult =>
+            await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentAndEnvironmentMarker, parseResult =>
             {
                 parseResult.Count.Should().Be(1);
 
@@ -211,7 +211,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ParseFile_RequirementTxtHasComment_GitComponentAndComment()
         {
-            await SetupAndParseReqsTxt(requirementstxtGitComponentAndComment, parseResult =>
+            await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentAndComment, parseResult =>
             {
                 parseResult.Count.Should().Be(1);
 
@@ -228,7 +228,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ParseFile_RequirementTxtHasComment_GitComponentAndCommentAndEnvironmentMarker()
         {
-            await SetupAndParseReqsTxt(requirementstxtGitComponentAndCommentAndEnvironmentMarker, parseResult =>
+            await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentAndCommentAndEnvironmentMarker, parseResult =>
             {
                 parseResult.Count.Should().Be(1);
 
@@ -245,7 +245,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenBranch()
         {
-            await SetupAndParseReqsTxt(requirementstxtGitComponentBranchInsteadOfCommitId, parseResult =>
+            await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentBranchInsteadOfCommitId, parseResult =>
             {
                 parseResult.Count.Should().Be(0);
             });
@@ -254,7 +254,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenRelease()
         {
-            await SetupAndParseReqsTxt(requirementstxtGitComponentReleaseInsteadOfCommitId, parseResult =>
+            await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentReleaseInsteadOfCommitId, parseResult =>
             {
                 parseResult.Count.Should().Be(0);
             });
@@ -263,7 +263,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenMalformedCommitHash()
         {
-            await SetupAndParseReqsTxt(requirementstxtGitComponentCommitIdWrongLength, parseResult =>
+            await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentCommitIdWrongLength, parseResult =>
             {
                 parseResult.Count.Should().Be(0);
             });
@@ -272,7 +272,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ParseFile_RequirementTxtHasComment_GitComponentsMultiple()
         {
-            await SetupAndParseReqsTxt(requirementstxtDoubleGitComponents, parseResult =>
+            await this.SetupAndParseReqsTxt(this.requirementstxtDoubleGitComponents, parseResult =>
             {
                 parseResult.Count.Should().Be(2);
 
@@ -297,7 +297,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task ParseFile_RequirementTxtHasComment_GitComponentWrappedInRegularComponent()
         {
-            await SetupAndParseReqsTxt(requirementstxtGitComponentWrappedinRegularComponents, parseResult =>
+            await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentWrappedinRegularComponents, parseResult =>
             {
                 parseResult.Count.Should().Be(3);
 
@@ -329,10 +329,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
-            commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-            PythonCommandService service = new PythonCommandService { CommandLineInvocationService = commandLineInvokationService.Object };
+            this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+            var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
 
-            using (StreamWriter writer = File.CreateText(testPath))
+            using (var writer = File.CreateText(testPath))
             {
                 writer.WriteLine(fileToParse);
                 writer.Flush();

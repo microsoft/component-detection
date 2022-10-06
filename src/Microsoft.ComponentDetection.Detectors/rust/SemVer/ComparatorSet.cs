@@ -1,9 +1,9 @@
 ﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
-// 
+//
 // This is a temporary solution, so avoid using this functionality outside of the Rust detector. The following
-// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning. 
+// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning.
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public ComparatorSet(string spec)
         {
-            comparators = new List<Comparator> { };
+            this.comparators = new List<Comparator> { };
 
             spec = spec.Trim();
             if (spec == string.Empty)
@@ -28,12 +28,12 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 spec = "*";
             }
 
-            int position = 0;
-            int end = spec.Length;
+            var position = 0;
+            var end = spec.Length;
 
             while (position < end)
             {
-                int iterStartPosition = position;
+                var iterStartPosition = position;
 
                 // A comparator set might be an advanced range specifier
                 // like ~1.2.3, ^1.2, or 1.*.
@@ -50,7 +50,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                     if (result != null)
                     {
                         position += result.Item1;
-                        comparators.AddRange(result.Item2);
+                        this.comparators.AddRange(result.Item2);
                     }
                 }
 
@@ -59,7 +59,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 if (comparatorResult != null)
                 {
                     position += comparatorResult.Item1;
-                    comparators.Add(comparatorResult.Item2);
+                    this.comparators.Add(comparatorResult.Item2);
                 }
 
                 if (position == iterStartPosition)
@@ -77,13 +77,13 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public bool IsSatisfied(SemVersion version)
         {
-            bool satisfied = comparators.All(c => c.IsSatisfied(version));
+            var satisfied = this.comparators.All(c => c.IsSatisfied(version));
             if (version.Prerelease != string.Empty)
             {
                 // If the version is a pre-release, then one of the
                 // comparators must have the same version and also include
                 // a pre-release tag.
-                return satisfied && comparators.Any(c =>
+                return satisfied && this.comparators.Any(c =>
                         c.Version.Prerelease != string.Empty &&
                         c.Version.Major == version.Major &&
                         c.Version.Minor == version.Minor &&
@@ -170,25 +170,25 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 return false;
             }
 
-            var thisSet = new HashSet<Comparator>(comparators);
+            var thisSet = new HashSet<Comparator>(this.comparators);
             return thisSet.SetEquals(other.comparators);
         }
 
         public override bool Equals(object other)
         {
-            return Equals(other as ComparatorSet);
+            return this.Equals(other as ComparatorSet);
         }
 
         public override string ToString()
         {
-            return string.Join(" ", comparators.Select(c => c.ToString()).ToArray());
+            return string.Join(" ", this.comparators.Select(c => c.ToString()).ToArray());
         }
 
         public override int GetHashCode()
         {
             // XOR is commutative, so this hash code is independent
             // of the order of comparators.
-            return comparators.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());
+            return this.comparators.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());
         }
     }
 }

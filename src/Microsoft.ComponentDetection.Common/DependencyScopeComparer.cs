@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
+﻿using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 namespace Microsoft.ComponentDetection.Common
 {
     /// <summary>
-    /// Merges dependnecy Scope in their order of Priority. 
-    /// Higher priority scope, as indicated by its lower enum value is given precendence. 
+    /// Merges dependnecy Scope in their order of Priority.
+    /// Higher priority scope, as indicated by its lower enum value is given precendence.
     /// </summary>
     public class DependencyScopeComparer
     {
-        public static DependencyScope? GetMergedDependencyScope(DependencyScope? scope1, DependencyScope? scope2) {
+        public static DependencyScope? GetMergedDependencyScope(DependencyScope? scope1, DependencyScope? scope2)
+        {
             if (!scope1.HasValue)
             {
                 return scope2;

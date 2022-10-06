@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
@@ -14,7 +14,7 @@ namespace Microsoft.ComponentDetection.Contracts
         string Id { get; }
 
         /// <summary>
-        /// Gets the set of categories this detector is a member of. 
+        /// Gets the set of categories this detector is a member of.
         /// Names of the <see cref="DetectorClass"/> enumeration comprise some of the built in categories.
         /// If the category "All" is specified, the detector will always run.
         /// </summary>
@@ -33,7 +33,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <summary>
         ///  Run the detector and return the result set of components found.
         /// </summary>
-        /// <returns></returns>
+        /// <returns> Awaitable task with result of components found. </returns>
         Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request);
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace Microsoft.ComponentDetection.Contracts
 
     /// <summary>
     /// Component detectors implementing this interface are, by default, off. This is used during composition to opt detectors out of being on by default.
-    /// If opted in, they should behave like a normal detector.    
+    /// If opted in, they should behave like a normal detector.
     /// </summary>
     public interface IDefaultOffComponentDetector : IComponentDetector
     {
@@ -53,7 +53,7 @@ namespace Microsoft.ComponentDetection.Contracts
     /// <summary>
     /// Component detectors implementing this interface are in an experimental state.
     /// The detector processing service guarantees that:
-    ///     They should NOT return their components as part of the scan result or be allowed to run too long (e.g. 2 min or less).
+    ///     They should NOT return their components as part of the scan result or be allowed to run too long (e.g. 4 min or less).
     ///     They SHOULD submit telemetry about how they ran.
     /// If opted in, they should behave like a normal detector.
     /// </summary>

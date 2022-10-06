@@ -1,4 +1,4 @@
-﻿# Version: 4.1.1 (Using https://semver.org/)
+# Version: 4.1.1 (Using https://semver.org/)
 # Updated: 2022-05-23
 # See https://github.com/RehanSaeed/EditorConfig/releases for release notes.
 # See https://github.com/RehanSaeed/EditorConfig for updates to this file.
@@ -448,3 +448,117 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 ##########################################
+
+##########################################
+# Custom rules
+##########################################
+[*.cs]
+# See https://github.com/microsoft/component-detection/issues/202
+##########################################
+# Provided by StyleCop.Analyzers
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers
+##########################################
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1142.md
+# Refer to tuple fields by name
+dotnet_diagnostic.SA1142.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1200.md
+# Using directive should appear within a namespace declaration
+dotnet_diagnostic.SA1200.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1201.md
+# A field should not follow a property
+dotnet_diagnostic.SA1201.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1203.md
+# 'public' members should come before 'private' members
+dotnet_diagnostic.SA1203.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1210.md
+#  Using directives should be ordered alphabetically by the namespaces
+dotnet_diagnostic.SA1210.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1216.md
+# Using static directives should be placed at the correct location
+dotnet_diagnostic.SA1216.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1316.md
+# Tuple element names should use correct casing
+dotnet_diagnostic.SA1316.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1401.md
+# Field should be private
+dotnet_diagnostic.SA1401.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
+# Tuple types in signatures should have element names
+dotnet_diagnostic.SA1414.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
+# Elements should be documented
+dotnet_diagnostic.SA1600.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1602.md
+# Enumeration items should be documented
+dotnet_diagnostic.SA1602.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1604.md
+# Element documentation should have summary
+dotnet_diagnostic.SA1604.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1611.md
+# The documentation for parameter '...' is missing
+dotnet_diagnostic.SA1611.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1633.md
+# The file header is missing or not located at the top of the file.
+dotnet_diagnostic.SA1633.severity = suggestion
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1642.md
+# Constructor summary documentation should begin with standard text
+dotnet_diagnostic.SA1642.severity = suggestion
+
+##########################################
+# Provided by Microsoft.VisualStudio.Threading.Analyzers
+# https://github.com/Microsoft/vs-threading
+##########################################
+
+# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD002.md
+# Synchronously waiting on tasks or awaiters may cause deadlocks. Use await or JoinableTaskFactory.Run instead.
+dotnet_diagnostic.VSTHRD002.severity = suggestion
+
+# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD103.md
+# Result synchronously blocks. Use await instead.
+dotnet_diagnostic.VSTHRD103.severity = suggestion
+
+# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD101.md
+# Avoid using async lambda for a void returning delegate type, because any exceptions not handled by the delegate will crash the process
+dotnet_diagnostic.VSTHRD101.severity = suggestion
+
+# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD104.md
+# Expose an async version of this method that does not synchronously block. Then simplify this method to call that async method within a JoinableTaskFactory.Run delegate.
+dotnet_diagnostic.VSTHRD104.severity = suggestion
+
+# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD111.md
+# Add .ConfigureAwait(bool) to your await expression
+dotnet_diagnostic.VSTHRD111.severity = suggestion
+
+# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD200.md
+# Use "Async" suffix in names of methods that return an awaitable type
+dotnet_diagnostic.VSTHRD200.severity = suggestion
+
+##########################################
+# Provided by Roslyn
+# https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/
+##########################################
+
+# https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/cs0618
+# '...' is obsolete
+dotnet_diagnostic.CS0618.severity = suggestion
+
+# https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/cs1591
+# Missing XML comment for publicly visible type or member '...'
+dotnet_diagnostic.CS1591.severity = suggestion
+
+

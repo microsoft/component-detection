@@ -3,13 +3,6 @@ namespace Microsoft.ComponentDetection.Contracts
 #pragma warning disable SA1402
     public class DockerReference
     {
-        public virtual DockerReferenceKind Kind { get; }
-
-        public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
-        {
-            throw new System.NotImplementedException();
-        }
-
         public static DockerReference CreateDockerReference(string repository, string domain, string digest, string tag)
         {
             if (!string.IsNullOrEmpty(repository) && string.IsNullOrEmpty(domain))
@@ -66,6 +59,13 @@ namespace Microsoft.ComponentDetection.Contracts
                 };
             }
         }
+
+        public virtual DockerReferenceKind Kind { get; }
+
+        public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     public enum DockerReferenceKind
@@ -97,14 +97,14 @@ namespace Microsoft.ComponentDetection.Contracts
 
         public override string ToString()
         {
-            return $"{Digest}";
+            return $"{this.Digest}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Digest = Digest,
+                Digest = this.Digest,
             };
         }
     }
@@ -122,16 +122,16 @@ namespace Microsoft.ComponentDetection.Contracts
 
         public override string ToString()
         {
-            return $"{Domain}/{Repository}@${Digest}";
+            return $"{this.Domain}/{this.Repository}@${this.Digest}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Domain = Domain,
-                Digest = Digest,
-                Repository = Repository,
+                Domain = this.Domain,
+                Digest = this.Digest,
+                Repository = this.Repository,
             };
         }
     }
@@ -147,15 +147,15 @@ namespace Microsoft.ComponentDetection.Contracts
 
         public override string ToString()
         {
-            return $"{Repository}";
+            return $"{this.Repository}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Domain = Domain,
-                Repository = Repository,
+                Domain = this.Domain,
+                Repository = this.Repository,
             };
         }
     }
@@ -173,16 +173,16 @@ namespace Microsoft.ComponentDetection.Contracts
 
         public override string ToString()
         {
-            return $"{Domain}/{Repository}:${Tag}";
+            return $"{this.Domain}/{this.Repository}:${this.Tag}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Domain = Domain,
-                Tag = Tag,
-                Repository = Repository,
+                Domain = this.Domain,
+                Tag = this.Tag,
+                Repository = this.Repository,
             };
         }
     }
@@ -202,17 +202,17 @@ namespace Microsoft.ComponentDetection.Contracts
 
         public override string ToString()
         {
-            return $"{Domain}/{Repository}:${Tag}@${Digest}";
+            return $"{this.Domain}/{this.Repository}:${this.Tag}@${this.Digest}";
         }
 
         public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             return new TypedComponent.DockerReferenceComponent(this)
             {
-                Domain = Domain,
-                Digest = Digest,
-                Tag = Tag,
-                Repository = Repository,
+                Domain = this.Domain,
+                Digest = this.Digest,
+                Tag = this.Tag,
+                Repository = this.Repository,
             };
         }
     }

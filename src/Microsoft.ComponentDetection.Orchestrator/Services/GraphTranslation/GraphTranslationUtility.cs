@@ -35,7 +35,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                         var componentDependencies = graphByLocation.Value.GetDependenciesForComponent(componentId);
 
                         // We set dependencies to null basically to make the serialized output look more consistent (instead of empty arrays). If another location gets merged that has dependencies, it needs to create and set the key to non-null.
-                        if (!graphWithMetadata.Graph.TryGetValue(componentId, out HashSet<string> dependencies))
+                        if (!graphWithMetadata.Graph.TryGetValue(componentId, out var dependencies))
                         {
                             dependencies = componentDependencies != null && componentDependencies.Any() ? new HashSet<string>() : null;
                             graphWithMetadata.Graph[componentId] = dependencies;

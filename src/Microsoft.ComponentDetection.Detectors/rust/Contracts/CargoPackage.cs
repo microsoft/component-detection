@@ -28,18 +28,20 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
         // Manually added some casing handling
         public override bool Equals(object obj)
         {
-            var package = obj as CargoPackage;
-            return package != null &&
-                   name.Equals(package.name) &&
-                   version.Equals(package.version, StringComparison.OrdinalIgnoreCase);
+            return obj is CargoPackage package &&
+                   string.Equals(this.name, package.name) &&
+                   string.Equals(this.version, package.version, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(this.source, package.source) &&
+                   string.Equals(this.checksum, package.checksum);
         }
 
         public override int GetHashCode()
         {
-            var hashCode = -2143789899;
-            hashCode = (hashCode * -1521134295) + EqualityComparer<string>.Default.GetHashCode(name);
-            hashCode = (hashCode * -1521134295) + EqualityComparer<string>.Default.GetHashCode(version.ToLowerInvariant());
-            return hashCode;
+            return HashCode.Combine(
+                EqualityComparer<string>.Default.GetHashCode(this.name),
+                EqualityComparer<string>.Default.GetHashCode(this.version.ToLowerInvariant()),
+                EqualityComparer<string>.Default.GetHashCode(this.source),
+                EqualityComparer<string>.Default.GetHashCode(this.checksum));
         }
     }
 }

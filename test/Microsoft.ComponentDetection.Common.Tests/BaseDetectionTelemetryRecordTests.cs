@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         public void Initialize()
         {
             // this only discovers types in a single assembly, since that's the current situation!
-            recordTypes = typeof(BaseDetectionTelemetryRecord).Assembly.GetTypes()
+            this.recordTypes = typeof(BaseDetectionTelemetryRecord).Assembly.GetTypes()
                 .Where(type => typeof(BaseDetectionTelemetryRecord).IsAssignableFrom(type))
                 .Where(type => !type.IsAbstract)
                 .ToArray();
@@ -31,7 +31,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
         {
             var dic = new Dictionary<string, Type>();
 
-            foreach (var type in recordTypes)
+            foreach (var type in this.recordTypes)
             {
                 var inst = Activator.CreateInstance(type) as IDetectionTelemetryRecord;
                 Assert.IsNotNull(inst);
@@ -65,7 +65,7 @@ namespace Microsoft.ComponentDetection.Common.Tests
                 typeof(HttpStatusCode),
             });
 
-            foreach (var type in recordTypes)
+            foreach (var type in this.recordTypes)
             {
                 foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {

@@ -4,15 +4,10 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class CargoComponent : TypedComponent
     {
-        private CargoComponent()
-        {
-            // reserved for deserialization
-        }
-
         public CargoComponent(string name, string version)
         {
-            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Cargo));
-            Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.Cargo));
+            this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Cargo));
+            this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Cargo));
         }
 
         public string Name { get; set; }
@@ -21,8 +16,13 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.Cargo;
 
-        public override string Id => $"{Name} {Version} - {Type}";
+        public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
-        public override PackageURL PackageUrl => new PackageURL("cargo", string.Empty, Name, Version, null, string.Empty);
+        public override PackageURL PackageUrl => new PackageURL("cargo", string.Empty, this.Name, this.Version, null, string.Empty);
+
+        private CargoComponent()
+        {
+            // reserved for deserialization
+        }
     }
 }

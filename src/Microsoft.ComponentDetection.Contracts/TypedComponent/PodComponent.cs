@@ -1,20 +1,15 @@
-﻿using PackageUrl;
 using System.Collections.Generic;
+using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class PodComponent : TypedComponent
     {
-        private PodComponent()
-        {
-            /* Reserved for deserialization */
-        }
-
         public PodComponent(string name, string version, string specRepo = "")
         {
-            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Pod));
-            Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.Pod));
-            SpecRepo = specRepo;
+            this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Pod));
+            this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Pod));
+            this.SpecRepo = specRepo;
         }
 
         public string Name { get; set; }
@@ -25,20 +20,25 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.Pod;
 
-        public override string Id => $"{Name} {Version} - {Type}";
+        public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
         public override PackageURL PackageUrl
         {
-            get 
+            get
             {
                 var qualifiers = new SortedDictionary<string, string>();
-                if (!string.IsNullOrWhiteSpace(SpecRepo))
+                if (!string.IsNullOrWhiteSpace(this.SpecRepo))
                 {
-                    qualifiers.Add("repository_url", SpecRepo);
+                    qualifiers.Add("repository_url", this.SpecRepo);
                 }
 
-                return new PackageURL("cocoapods", null, Name, Version, qualifiers, null);
+                return new PackageURL("cocoapods", null, this.Name, this.Version, qualifiers, null);
             }
+        }
+
+        private PodComponent()
+        {
+            /* Reserved for deserialization */
         }
     }
 }

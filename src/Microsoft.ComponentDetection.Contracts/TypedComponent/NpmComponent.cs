@@ -1,21 +1,16 @@
-﻿using Microsoft.ComponentDetection.Contracts.Internal;
+using Microsoft.ComponentDetection.Contracts.Internal;
 using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class NpmComponent : TypedComponent
     {
-        private NpmComponent()
-        {
-            /* Reserved for deserialization */
-        }
-
         public NpmComponent(string name, string version, string hash = null, NpmAuthor author = null)
         {
-            Name = ValidateRequiredInput(name, nameof(Name), nameof(ComponentType.Npm));
-            Version = ValidateRequiredInput(version, nameof(Version), nameof(ComponentType.Npm));
-            Hash = hash; // Not required; only found in package-lock.json, not package.json
-            Author = author;
+            this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Npm));
+            this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Npm));
+            this.Hash = hash; // Not required; only found in package-lock.json, not package.json
+            this.Author = author;
         }
 
         public string Name { get; set; }
@@ -28,8 +23,13 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.Npm;
 
-        public override string Id => $"{Name} {Version} - {Type}";
+        public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
-        public override PackageURL PackageUrl => new PackageURL("npm", null, Name, Version, null, null);
+        public override PackageURL PackageUrl => new PackageURL("npm", null, this.Name, this.Version, null, null);
+
+        private NpmComponent()
+        {
+            /* Reserved for deserialization */
+        }
     }
 }

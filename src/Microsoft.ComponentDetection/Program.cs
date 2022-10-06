@@ -1,13 +1,14 @@
-﻿using System;
-using System.Diagnostics;
-using System.Linq;
-using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Loader
+﻿namespace Microsoft.ComponentDetection
 {
+    using System;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.ComponentDetection.Contracts;
+
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             try
             {
@@ -22,7 +23,7 @@ namespace Microsoft.ComponentDetection.Loader
 
                     while (!Debugger.IsAttached)
                     {
-                        System.Threading.Tasks.Task.Delay(1000).GetAwaiter().GetResult();
+                        await Task.Delay(1000);
                     }
                 }
 
@@ -30,12 +31,12 @@ namespace Microsoft.ComponentDetection.Loader
 
                 var result = orchestrator.Load(args);
 
-                int exitCode = (int)result.ResultCode;
+                var exitCode = (int)result.ResultCode;
                 if (result.ResultCode == ProcessingResultCode.Error || result.ResultCode == ProcessingResultCode.InputError)
                 {
                     exitCode = -1;
                 }
-                
+
                 Console.WriteLine($"Execution finished, status: {exitCode}.");
 
                 // force an exit, not letting any lingering threads not responding.
@@ -43,7 +44,7 @@ namespace Microsoft.ComponentDetection.Loader
             }
             catch (ArgumentException ae)
             {
-                Console.Error.WriteLine(ae.ToString());
+                await Console.Error.WriteLineAsync(ae.ToString());
                 Environment.Exit(-1);
             }
         }

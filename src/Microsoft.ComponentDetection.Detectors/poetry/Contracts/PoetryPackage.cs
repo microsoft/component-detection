@@ -1,19 +1,27 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
 {
+    [DataContract]
     public class PoetryPackage
     {
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public string category { get; set; }
+        [DataMember(Name = "category")]
+        public string Category { get; set; }
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public string name { get; set; }
+        [DataMember(Name = "name")]
+        public string Name { get; set; }
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public string version { get; set; }
+        [DataMember(Name = "version")]
+        public string Version { get; set; }
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public PoetrySource source { get; set; }
+        [DataMember(Name = "source")]
+        public PoetrySource Source { get; set; }
+
+        [DataMember(Name = "dependencies")]
+        public Dictionary<string, object> Dependencies { get; set; }
+
+        [DataMember(Name = "extras")]
+        public Dictionary<string, object> Extras { get; set; }
     }
 }

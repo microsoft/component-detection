@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
@@ -24,6 +24,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             { ComponentType.Linux, typeof(LinuxComponent) },
             { ComponentType.Conda, typeof(CondaComponent) },
             { ComponentType.DockerReference, typeof(DockerReferenceComponent) },
+            { ComponentType.Vcpkg, typeof(VcpkgComponent) },
         };
 
         public override bool CanConvert(Type objectType)
@@ -32,13 +33,12 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
         }
 
         public override object ReadJson(
-            JsonReader reader,
-            Type objectType, object existingValue, JsonSerializer serializer)
+            JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            JToken jo = JToken.Load(reader);
+            var jo = JToken.Load(reader);
 
             var value = (ComponentType)Enum.Parse(typeof(ComponentType), (string)jo["type"]);
-            var targetType = componentTypesToTypes[value];
+            var targetType = this.componentTypesToTypes[value];
             var instanceOfTypedComponent = Activator.CreateInstance(targetType, true);
             serializer.Populate(jo.CreateReader(), instanceOfTypedComponent);
 
@@ -52,7 +52,8 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 
         public override void WriteJson(
             JsonWriter writer,
-            object value, JsonSerializer serializer)
+            object value,
+            JsonSerializer serializer)
         {
             throw new NotImplementedException();
         }

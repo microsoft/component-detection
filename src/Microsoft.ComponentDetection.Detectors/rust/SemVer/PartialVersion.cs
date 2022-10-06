@@ -1,9 +1,9 @@
 ﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
-// 
+//
 // This is a temporary solution, so avoid using this functionality outside of the Rust detector. The following
-// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning. 
+// issues describe the problems with the SemanticVersioning package that make it problematic to use for versioning.
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
@@ -61,22 +61,22 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
             if (xValues.Contains(match.Groups[1].Value))
             {
-                Major = null;
+                this.Major = null;
             }
             else
             {
-                Major = int.Parse(match.Groups[1].Value);
+                this.Major = int.Parse(match.Groups[1].Value);
             }
 
             if (match.Groups[2].Success)
             {
                 if (xValues.Contains(match.Groups[3].Value))
                 {
-                    Minor = null;
+                    this.Minor = null;
                 }
                 else
                 {
-                    Minor = int.Parse(match.Groups[3].Value);
+                    this.Minor = int.Parse(match.Groups[3].Value);
                 }
             }
 
@@ -84,32 +84,28 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             {
                 if (xValues.Contains(match.Groups[5].Value))
                 {
-                    Patch = null;
+                    this.Patch = null;
                 }
                 else
                 {
-                    Patch = int.Parse(match.Groups[5].Value);
+                    this.Patch = int.Parse(match.Groups[5].Value);
                 }
             }
 
             if (match.Groups[6].Success)
             {
-                PreRelease = match.Groups[7].Value;
+                this.PreRelease = match.Groups[7].Value;
             }
         }
 
         public SemVersion ToZeroVersion()
         {
-            return new SemVersion(
-                    Major ?? 0,
-                    Minor ?? 0,
-                    Patch ?? 0,
-                    PreRelease);
+            return new SemVersion(this.Major ?? 0, this.Minor ?? 0, this.Patch ?? 0, this.PreRelease);
         }
 
         public bool IsFull()
         {
-            return Major.HasValue && Minor.HasValue && Patch.HasValue;
+            return this.Major.HasValue && this.Minor.HasValue && this.Patch.HasValue;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -9,8 +9,8 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 {
     /// <summary>
     /// https://github.com/yarnpkg/yarn/issues/5629
-    /// 
-    /// Yarn uses something that is "Almost-YAML", and we haven't found a YAML parser 
+    ///
+    /// Yarn uses something that is "Almost-YAML", and we haven't found a YAML parser
     ///  that understands Almost-YAML yet, so here's ours...
     ///
     /// In V1, this represents a file of newline delimited blocks in the form:
@@ -45,9 +45,9 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         private static readonly Regex YarnV2Regex = new Regex("(.*):\\s\"?(.*)", RegexOptions.Compiled);
 
-        private int fileLineIndex = 0;
-
         private readonly IList<string> fileLines = new List<string>();
+
+        private int fileLineIndex = 0;
 
         public string VersionHeader { get; set; }
 
@@ -55,16 +55,16 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         private YarnBlockFile(IList<string> parsedFileLines)
         {
-            fileLines = parsedFileLines;
+            this.fileLines = parsedFileLines;
 
-            if (fileLines.Count > 0)
+            if (this.fileLines.Count > 0)
             {
-                ReadVersionHeader();
+                this.ReadVersionHeader();
             }
             else
             {
-                VersionHeader = string.Empty;
-                YarnLockVersion = YarnLockVersion.Invalid;
+                this.VersionHeader = string.Empty;
+                this.YarnLockVersion = YarnLockVersion.Invalid;
             }
         }
 
@@ -75,8 +75,8 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                 throw new ArgumentNullException(nameof(stream));
             }
 
-            List<string> fileLines = new List<string>();
-            using (StreamReader reader = new StreamReader(stream))
+            var fileLines = new List<string>();
+            using (var reader = new StreamReader(stream))
             {
                 while (!reader.EndOfStream)
                 {
@@ -89,48 +89,53 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         public IEnumerator<YarnBlock> GetEnumerator()
         {
-            while (ReadToNextMajorBlock())
+            while (this.ReadToNextMajorBlock())
             {
-                yield return ParseBlock();
+                yield return this.ParseBlock();
             }
 
             yield break;
         }
 
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
         private void ReadVersionHeader()
         {
-            YarnLockVersion = YarnLockVersion.Invalid;
+            this.YarnLockVersion = YarnLockVersion.Invalid;
 
             do
             {
-                if (fileLines[fileLineIndex].StartsWith("#"))
+                if (this.fileLines[this.fileLineIndex].StartsWith("#"))
                 {
-                    if (fileLines[fileLineIndex].Contains("yarn lockfile"))
+                    if (this.fileLines[this.fileLineIndex].Contains("yarn lockfile"))
                     {
-                        YarnLockVersion = YarnLockVersion.V1;
-                        VersionHeader = fileLines[fileLineIndex];
+                        this.YarnLockVersion = YarnLockVersion.V1;
+                        this.VersionHeader = this.fileLines[this.fileLineIndex];
                         break;
                     }
                 }
-                else if (string.IsNullOrEmpty(fileLines[fileLineIndex]))
+                else if (string.IsNullOrEmpty(this.fileLines[this.fileLineIndex]))
                 {
                     // If the comment header does not specify V1, a V2 metadata block will follow a line break
-                    if (IncrementIndex())
+                    if (this.IncrementIndex())
                     {
-                        if (fileLines[fileLineIndex].StartsWith("__metadata:"))
+                        if (this.fileLines[this.fileLineIndex].StartsWith("__metadata:"))
                         {
-                            VersionHeader = fileLines[fileLineIndex];
-                            YarnLockVersion = YarnLockVersion.V2;
+                            this.VersionHeader = this.fileLines[this.fileLineIndex];
+                            this.YarnLockVersion = YarnLockVersion.V2;
 
-                            YarnBlock metadataBlock = ParseBlock();
+                            var metadataBlock = this.ParseBlock();
 
                             if (metadataBlock.Values.ContainsKey("version") && metadataBlock.Values.ContainsKey("cacheKey"))
                             {
                                 break;
                             }
 
-                            VersionHeader = null;
-                            YarnLockVersion = YarnLockVersion.Invalid;
+                            this.VersionHeader = null;
+                            this.YarnLockVersion = YarnLockVersion.Invalid;
                         }
                     }
                 }
@@ -139,46 +144,47 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                     break;
                 }
             }
-            while (IncrementIndex());
+            while (this.IncrementIndex());
         }
 
         /// <summary>
         /// Parses a block and its sub-blocks into <see cref="YarnBlock"/>.
         /// </summary>
-        /// <param name="level"></param>
-        /// <returns></returns>
+        /// <param name="level"> Level to get block from in YarnBlock file. </param>
+        /// <returns>Yarnblock <see cref="YarnBlock"/> gotten from the parsed block. </returns>
         private YarnBlock ParseBlock(int level = 0)
         {
-            string currentLevelDelimiter = "  ";
-            for (int i = 0; i < level; i++)
+            var currentLevelDelimiter = "  ";
+            for (var i = 0; i < level; i++)
             {
                 currentLevelDelimiter = currentLevelDelimiter + "  ";
             }
 
             // Assuming the pointer has been set up to a block
-            YarnBlock block = new YarnBlock { Title = fileLines[fileLineIndex].TrimEnd(':').Trim('\"').Trim() };
+            var block = new YarnBlock { Title = this.fileLines[this.fileLineIndex].TrimEnd(':').Trim('\"').Trim() };
 
-            while (IncrementIndex())
+            while (this.IncrementIndex())
             {
-                if (!fileLines[fileLineIndex].StartsWith(currentLevelDelimiter) || string.IsNullOrWhiteSpace(fileLines[fileLineIndex]))
+                if (!this.fileLines[this.fileLineIndex].StartsWith(currentLevelDelimiter) || string.IsNullOrWhiteSpace(this.fileLines[this.fileLineIndex]))
                 {
                     break;
                 }
 
-                if (fileLines[fileLineIndex].EndsWith(":"))
+                if (this.fileLines[this.fileLineIndex].EndsWith(":"))
                 {
-                    block.Children.Add(ParseBlock(level + 1));
-                    fileLineIndex--;
+                    block.Children.Add(this.ParseBlock(level + 1));
+                    this.fileLineIndex--;
                 }
                 else
                 {
-                    string toParse = fileLines[fileLineIndex].Trim();
+                    var toParse = this.fileLines[this.fileLineIndex].Trim();
 
                     // Yarn V1 and V2 have slightly different formats, where V2 adds a : between property name and value
                     // Match on the specified version
-                    var matches = YarnLockVersion == YarnLockVersion.V1 ? YarnV1Regex.Match(toParse) : YarnV2Regex.Match(toParse);
+                    var matches = this.YarnLockVersion == YarnLockVersion.V1 ? YarnV1Regex.Match(toParse) : YarnV2Regex.Match(toParse);
 
-                    if (matches.Groups.Count != 3) // Whole group + two captures
+                    // Whole group + two captures
+                    if (matches.Groups.Count != 3)
                     {
                         continue;
                     }
@@ -186,7 +192,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                     block.Values.Add(matches.Groups[1].Value.Trim('\"'), matches.Groups[2].Value.Trim('\"'));
                 }
 
-                if (!Peek() || !fileLines[fileLineIndex].StartsWith(currentLevelDelimiter) || string.IsNullOrWhiteSpace(fileLines[fileLineIndex]))
+                if (!this.Peek() || !this.fileLines[this.fileLineIndex].StartsWith(currentLevelDelimiter) || string.IsNullOrWhiteSpace(this.fileLines[this.fileLineIndex]))
                 {
                     break;
                 }
@@ -195,27 +201,22 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             return block;
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
         /// <summary>
         /// Increments the internal pointer so that it is at the next block.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if the pointer was succesfully incremented.</returns>
         private bool ReadToNextMajorBlock()
         {
             string line;
             do
             {
-                if (!IncrementIndex())
+                if (!this.IncrementIndex())
                 {
                     return false;
                 }
                 else
                 {
-                    line = fileLines[fileLineIndex];
+                    line = this.fileLines[this.fileLineIndex];
                 }
             }
             while (string.IsNullOrWhiteSpace(line) || line.StartsWith(" ") || line.StartsWith("\t") || line.StartsWith("#"));
@@ -225,18 +226,18 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         private bool IncrementIndex()
         {
-            fileLineIndex++;
+            this.fileLineIndex++;
 
-            return Peek();
+            return this.Peek();
         }
 
         /// <summary>
         /// Checks to see if any lines are left in the file contents.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if there are any lines left in the file.</returns>
         private bool Peek()
         {
-            if (fileLineIndex >= fileLines.Count)
+            if (this.fileLineIndex >= this.fileLines.Count)
             {
                 return false;
             }

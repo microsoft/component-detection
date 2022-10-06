@@ -46,8 +46,8 @@ jobs:
           unzip output.zip
           rm output.zip
 
-      - name: Setup .NET 6
-        uses: actions/setup-dotnet@v2
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
 

@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
+using Tomlyn;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
-using Nett;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry
 {
     [Export(typeof(IComponentDetector))]
-    public class PoetryComponentDetector : FileComponentDetector
+    public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
     {
         public override string Id => "Poetry";
 
@@ -28,25 +29,29 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var poetryLockFile = processRequest.ComponentStream;
-            Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
+            this.Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
 
-            var poetryLock = StreamTomlSerializer.Deserialize(poetryLockFile.Stream, TomlSettings.Create()).Get<PoetryLock>();
-            poetryLock.package.ToList().ForEach(package =>
+            var reader = new StreamReader(poetryLockFile.Stream);
+            var options = new TomlModelOptions
             {
-                var isDevelopmentDependency = package.category != "main";
+                IgnoreMissingProperties = true,
+            };
+            var poetryLock = Toml.ToModel<PoetryLock>(reader.ReadToEnd(), options: options);
+            poetryLock.Package.ToList().ForEach(package =>
+            {
+                var isDevelopmentDependency = package.Category != "main";
 
-                if (package.source != null && package.source.type == "git")
+                if (package.Source != null && package.Source.type == "git")
                 {
-                    var component = new DetectedComponent(new GitComponent(new Uri(package.source.url), package.source.resolved_reference));
+                    var component = new DetectedComponent(new GitComponent(new Uri(package.Source.url), package.Source.resolved_reference));
                     singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
                 }
                 else
                 {
-                    var component = new DetectedComponent(new PipComponent(package.name, package.version));
+                    var component = new DetectedComponent(new PipComponent(package.Name, package.Version));
                     singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
                 }
             });
-
             return Task.CompletedTask;
         }
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Composition;
 using System.IO;
 using Microsoft.ComponentDetection.Common.Exceptions;
@@ -10,9 +10,10 @@ namespace Microsoft.ComponentDetection.Common
     [Shared]
     public class FileWritingService : IFileWritingService
     {
+        public const string TimestampFormatString = "yyyyMMddHHmmss";
+
         private object lockObject = new object();
         private string timestamp = DateTime.Now.ToString(TimestampFormatString);
-        public const string TimestampFormatString = "yyyyMMddHHmmss";
 
         public string BasePath { get; private set; }
 
@@ -23,14 +24,14 @@ namespace Microsoft.ComponentDetection.Common
                 throw new InvalidUserInputException($"The path {basePath} does not exist.", new DirectoryNotFoundException());
             }
 
-            BasePath = string.IsNullOrEmpty(basePath) ? Path.GetTempPath() : basePath;
+            this.BasePath = string.IsNullOrEmpty(basePath) ? Path.GetTempPath() : basePath;
         }
 
         public void AppendToFile(string relativeFilePath, string text)
         {
-            relativeFilePath = ResolveFilePath(relativeFilePath);
+            relativeFilePath = this.ResolveFilePath(relativeFilePath);
 
-            lock (lockObject)
+            lock (this.lockObject)
             {
                 File.AppendAllText(relativeFilePath, text);
             }
@@ -38,9 +39,9 @@ namespace Microsoft.ComponentDetection.Common
 
         public void WriteFile(string relativeFilePath, string text)
         {
-            relativeFilePath = ResolveFilePath(relativeFilePath);
+            relativeFilePath = this.ResolveFilePath(relativeFilePath);
 
-            lock (lockObject)
+            lock (this.lockObject)
             {
                 File.WriteAllText(relativeFilePath, text);
             }
@@ -53,19 +54,19 @@ namespace Microsoft.ComponentDetection.Common
 
         public string ResolveFilePath(string relativeFilePath)
         {
-            EnsureInit();
+            this.EnsureInit();
             if (relativeFilePath.Contains("{timestamp}"))
             {
-                relativeFilePath = relativeFilePath.Replace("{timestamp}", timestamp);
+                relativeFilePath = relativeFilePath.Replace("{timestamp}", this.timestamp);
             }
 
-            relativeFilePath = Path.Combine(BasePath, relativeFilePath);
+            relativeFilePath = Path.Combine(this.BasePath, relativeFilePath);
             return relativeFilePath;
         }
 
         private void EnsureInit()
         {
-            if (string.IsNullOrEmpty(BasePath))
+            if (string.IsNullOrEmpty(this.BasePath))
             {
                 throw new InvalidOperationException("Base path has not yet been initialized in File Writing Service!");
             }

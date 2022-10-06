@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Composition;
@@ -34,7 +34,7 @@ namespace Microsoft.ComponentDetection.Common
             {
                 if (!root.Exists)
                 {
-                    Logger?.LogError($"Root directory doesn't exist: {root.FullName}");
+                    this.Logger?.LogError($"Root directory doesn't exist: {root.FullName}");
                     s.OnCompleted();
                     return Task.CompletedTask;
                 }
@@ -52,7 +52,7 @@ namespace Microsoft.ComponentDetection.Common
 
                 var sw = Stopwatch.StartNew();
 
-                Logger?.LogInfo($"Starting enumeration of {root.FullName}");
+                this.Logger?.LogInfo($"Starting enumeration of {root.FullName}");
 
                 var fileCount = 0;
                 var directoryCount = 0;
@@ -73,7 +73,7 @@ namespace Microsoft.ComponentDetection.Common
 
                     if (di.Attributes.HasFlag(FileAttributes.ReparsePoint))
                     {
-                        var realPath = PathUtilityService.ResolvePhysicalPath(di.FullName);
+                        var realPath = this.PathUtilityService.ResolvePhysicalPath(di.FullName);
 
                         realDirectory = new DirectoryInfo(realPath);
                     }
@@ -91,7 +91,7 @@ namespace Microsoft.ComponentDetection.Common
                     return true;
                 });
 
-                var initialIterator = new FileSystemEnumerable<FileSystemInfo>(root.FullName, Transform, new EnumerationOptions()
+                var initialIterator = new FileSystemEnumerable<FileSystemInfo>(root.FullName, this.Transform, new EnumerationOptions()
                 {
                     RecurseSubdirectories = false,
                     IgnoreInaccessible = true,
@@ -145,7 +145,7 @@ namespace Microsoft.ComponentDetection.Common
                         var scan = new ActionBlock<DirectoryInfo>(
                             di =>
                         {
-                            var enumerator = new FileSystemEnumerable<FileSystemInfo>(di.FullName, Transform, new EnumerationOptions()
+                            var enumerator = new FileSystemEnumerable<FileSystemInfo>(di.FullName, this.Transform, new EnumerationOptions()
                             {
                                 RecurseSubdirectories = true,
                                 IgnoreInaccessible = true,
@@ -159,7 +159,8 @@ namespace Microsoft.ComponentDetection.Common
                             {
                                 observer.OnNext(fileSystemInfo);
                             }
-                        }, new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount });
+                        },
+                            new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount });
 
                         foreach (var directoryInfo in initialDirectories)
                         {
@@ -185,56 +186,41 @@ namespace Microsoft.ComponentDetection.Common
                     }
 
                     s.OnNext(info);
-                }, () =>
+                },
+                    () =>
                 {
                     sw.Stop();
-                    Logger?.LogInfo($"Enumerated {fileCount} files and {directoryCount} directories in {sw.Elapsed}");
+                    this.Logger?.LogInfo($"Enumerated {fileCount} files and {directoryCount} directories in {sw.Elapsed}");
                     s.OnCompleted();
                 });
             });
-        }
-
-        private FileSystemInfo Transform(ref FileSystemEntry entry)
-        {
-            return entry.ToFileSystemInfo();
-        }
-
-        private IObservable<FileSystemInfo> CreateDirectoryWalker(DirectoryInfo di, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns)
-        {
-            return GetDirectoryScanner(di, new ConcurrentDictionary<string, bool>(), directoryExclusionPredicate, filePatterns, true).Replay() // Returns a replay subject which will republish anything found to new subscribers.
-                .AutoConnect(minimumConnectionCount); // Specifies that this connectable observable should start when minimumConnectionCount subscribe.
-        }
-
-        private bool MatchesAnyPattern(FileInfo fi, params string[] searchPatterns)
-        {
-            return searchPatterns != null && searchPatterns.Any(sp => PathUtilityService.MatchesPattern(sp, fi.Name));
         }
 
         /// <summary>
         /// Initialized an observable file enumerator.
         /// </summary>
         /// <param name="root">Root directory to scan.</param>
-        /// <param name="directoryExclusionPredicate"></param>
+        /// <param name="directoryExclusionPredicate">predicate for excluding directories.</param>
         /// <param name="minimumConnectionCount">Number of observers that need to subscribe before the observable connects and starts enumerating.</param>
         /// <param name="filePatterns">Pattern used to filter files.</param>
         public void Initialize(DirectoryInfo root, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns = null)
         {
-            pendingScans.GetOrAdd(root, new Lazy<IObservable<FileSystemInfo>>(() => CreateDirectoryWalker(root, directoryExclusionPredicate, minimumConnectionCount, filePatterns)));
+            this.pendingScans.GetOrAdd(root, new Lazy<IObservable<FileSystemInfo>>(() => this.CreateDirectoryWalker(root, directoryExclusionPredicate, minimumConnectionCount, filePatterns)));
         }
 
         public IObservable<FileSystemInfo> Subscribe(DirectoryInfo root, IEnumerable<string> patterns)
         {
             var patternArray = patterns.ToArray();
 
-            if (pendingScans.TryGetValue(root, out var scannerObservable))
+            if (this.pendingScans.TryGetValue(root, out var scannerObservable))
             {
-                Logger.LogVerbose(string.Join(":", patterns));
+                this.Logger.LogVerbose(string.Join(":", patterns));
 
                 var inner = scannerObservable.Value.Where(fsi =>
                 {
                     if (fsi is FileInfo fi)
                     {
-                        return MatchesAnyPattern(fi, patternArray);
+                        return this.MatchesAnyPattern(fi, patternArray);
                     }
                     else
                     {
@@ -250,7 +236,7 @@ namespace Microsoft.ComponentDetection.Common
 
         public IObservable<ProcessRequest> GetFilteredComponentStreamObservable(DirectoryInfo root, IEnumerable<string> patterns, IComponentRecorder componentRecorder)
         {
-            var observable = Subscribe(root, patterns).OfType<FileInfo>().SelectMany(f => patterns.Select(sp => new
+            var observable = this.Subscribe(root, patterns).OfType<FileInfo>().SelectMany(f => patterns.Select(sp => new
             {
                 SearchPattern = sp,
                 File = f,
@@ -259,11 +245,11 @@ namespace Microsoft.ComponentDetection.Common
                 var searchPattern = x.SearchPattern;
                 var fileName = x.File.Name;
 
-                return PathUtilityService.MatchesPattern(searchPattern, fileName);
+                return this.PathUtilityService.MatchesPattern(searchPattern, fileName);
             }).Where(x => x.File.Exists)
             .Select(x =>
             {
-                var lazyComponentStream = new LazyComponentStream(x.File, x.SearchPattern, Logger);
+                var lazyComponentStream = new LazyComponentStream(x.File, x.SearchPattern, this.Logger);
                 return new ProcessRequest
                 {
                     ComponentStream = lazyComponentStream,
@@ -276,7 +262,7 @@ namespace Microsoft.ComponentDetection.Common
 
         public void StartScan(DirectoryInfo root)
         {
-            if (pendingScans.TryRemove(root, out var scannerObservable))
+            if (this.pendingScans.TryRemove(root, out var scannerObservable))
             {
                 // scannerObservable.Connect();
             }
@@ -286,7 +272,23 @@ namespace Microsoft.ComponentDetection.Common
 
         public void Reset()
         {
-            pendingScans.Clear();
+            this.pendingScans.Clear();
+        }
+
+        private FileSystemInfo Transform(ref FileSystemEntry entry)
+        {
+            return entry.ToFileSystemInfo();
+        }
+
+        private IObservable<FileSystemInfo> CreateDirectoryWalker(DirectoryInfo di, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns)
+        {
+            return this.GetDirectoryScanner(di, new ConcurrentDictionary<string, bool>(), directoryExclusionPredicate, filePatterns, true).Replay() // Returns a replay subject which will republish anything found to new subscribers.
+                .AutoConnect(minimumConnectionCount); // Specifies that this connectable observable should start when minimumConnectionCount subscribe.
+        }
+
+        private bool MatchesAnyPattern(FileInfo fi, params string[] searchPatterns)
+        {
+            return searchPatterns != null && searchPatterns.Any(sp => this.PathUtilityService.MatchesPattern(sp, fi.Name));
         }
     }
 }

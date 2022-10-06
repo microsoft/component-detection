@@ -24,7 +24,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task BlockFileParserWithClosedStream_Fails()
         {
-            using MemoryStream stream = new MemoryStream();
+            using var stream = new MemoryStream();
 
             stream.Close();
 
@@ -50,7 +50,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task BlockFileParserV1WithVersionString_ProducesEnumerableOfZero()
         {
-            string yarnLockFileVersionString = "#yarn lockfile v1";
+            var yarnLockFileVersionString = "#yarn lockfile v1";
 
             using var stream = new MemoryStream();
 
@@ -70,7 +70,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task BlockFileParserV1WithSingleBlock_Parses()
         {
-            string yarnLockFileVersionString = "#yarn lockfile v1";
+            var yarnLockFileVersionString = "#yarn lockfile v1";
 
             using var stream = new MemoryStream();
 
@@ -101,7 +101,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task BlockFileParserV1WithSeveralBlocks_Parses()
         {
-            string yarnLockFileVersionString = "#yarn lockfile v1";
+            var yarnLockFileVersionString = "#yarn lockfile v1";
 
             using var stream = new MemoryStream();
 
@@ -145,7 +145,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task BlockFileParserV2WithMetadataBlock_Parses()
         {
-            string yarnLockFileVersionString = "__metadata:";
+            var yarnLockFileVersionString = "__metadata:";
 
             using var stream = new MemoryStream();
 
@@ -172,7 +172,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task BlockFileParserV2WithSingleBlock_Parses()
         {
-            string yarnLockFileVersionString = "__metadata:";
+            var yarnLockFileVersionString = "__metadata:";
 
             using var stream = new MemoryStream();
 
@@ -210,7 +210,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task BlockFileParserV2WithSingleBlock_ParsesWithQuotes()
         {
-            string yarnLockFileVersionString = "__metadata:";
+            var yarnLockFileVersionString = "__metadata:";
 
             using var stream = new MemoryStream();
 
@@ -248,7 +248,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task BlockFileParserV2WithMultipleBlocks_Parses()
         {
-            string yarnLockFileVersionString = "__metadata:";
+            var yarnLockFileVersionString = "__metadata:";
 
             using var stream = new MemoryStream();
 

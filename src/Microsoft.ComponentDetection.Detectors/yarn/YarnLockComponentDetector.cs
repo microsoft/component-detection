@@ -35,30 +35,30 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            string skippedFolder = SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
+            var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
             if (!string.IsNullOrEmpty(skippedFolder))
             {
-                Logger.LogInfo($"Yarn.Lock file {file.Location} was found in a {skippedFolder} folder and will be skipped.");
+                this.Logger.LogInfo($"Yarn.Lock file {file.Location} was found in a {skippedFolder} folder and will be skipped.");
                 return;
             }
 
-            Logger.LogInfo($"Processing file {file.Location}");
+            this.Logger.LogInfo($"Processing file {file.Location}");
 
             try
             {
-                var parsed = await YarnLockFileFactory.ParseYarnLockFileAsync(file.Stream, Logger);
-                DetectComponents(parsed, file.Location, singleFileComponentRecorder);
+                var parsed = await YarnLockFileFactory.ParseYarnLockFileAsync(file.Stream, this.Logger);
+                this.DetectComponents(parsed, file.Location, singleFileComponentRecorder);
             }
             catch (Exception ex)
             {
-                Logger.LogBuildWarning($"Could not read components from file {file.Location}.");
-                Logger.LogFailedReadingFile(file.Location, ex);
+                this.Logger.LogBuildWarning($"Could not read components from file {file.Location}.");
+                this.Logger.LogFailedReadingFile(file.Location, ex);
             }
         }
 
         private void DetectComponents(YarnLockFile file, string location, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
-            Dictionary<string, YarnEntry> yarnPackages = new Dictionary<string, YarnEntry>();
+            var yarnPackages = new Dictionary<string, YarnEntry>();
 
             // Iterate once and build our provider lookup for all possible yarn packages requests
             // Each entry can satisfy more than one request in a Yarn.Lock file
@@ -73,12 +73,12 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
                     var addSuccessful = yarnPackages.TryAdd(key, entry);
                     if (!addSuccessful)
                     {
-                        Logger.LogWarning($"Found duplicate entry {key} in {location}");
+                        this.Logger.LogWarning($"Found duplicate entry {key} in {location}");
                     }
                 }
             }
 
-            if (yarnPackages.Count == 0 || !TryReadPeerPackageJsonRequestsAsYarnEntries(location, yarnPackages, out List<YarnEntry> yarnRoots))
+            if (yarnPackages.Count == 0 || !this.TryReadPeerPackageJsonRequestsAsYarnEntries(location, yarnPackages, out var yarnRoots))
             {
                 return;
             }
@@ -86,15 +86,15 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
             foreach (var dependency in yarnRoots)
             {
                 var root = new DetectedComponent(new NpmComponent(dependency.Name, dependency.Version));
-                AddDetectedComponentToGraph(root, null, singleFileComponentRecorder, isRootComponent: true);
+                this.AddDetectedComponentToGraph(root, null, singleFileComponentRecorder, isRootComponent: true);
             }
 
             // It's important that all of the root dependencies get registered *before* we start processing any non-root
             // dependencies; otherwise, we would miss root dependency links for root dependencies that are also indirect
-            // transitive dependencies. 
+            // transitive dependencies.
             foreach (var dependency in yarnRoots)
             {
-                ParseTreeWithAssignedRoot(dependency, yarnPackages, singleFileComponentRecorder);
+                this.ParseTreeWithAssignedRoot(dependency, yarnPackages, singleFileComponentRecorder);
             }
 
             // Catch straggler top level packages in the yarn.lock file that aren't in the package.lock file for whatever reason
@@ -103,7 +103,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
                 var component = new DetectedComponent(new NpmComponent(entry.Name, entry.Version));
                 if (singleFileComponentRecorder.GetComponent(component.Component.Id) == null)
                 {
-                    AddDetectedComponentToGraph(component, parentComponent: null, singleFileComponentRecorder);
+                    this.AddDetectedComponentToGraph(component, parentComponent: null, singleFileComponentRecorder);
                 }
             }
         }
@@ -116,26 +116,26 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
         /// <param name="singleFileComponentRecorder">The component recorder for file that is been processed.</param>
         private void ParseTreeWithAssignedRoot(YarnEntry root, Dictionary<string, YarnEntry> providerTable, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
-            Queue<(YarnEntry, YarnEntry)> queue = new Queue<(YarnEntry, YarnEntry)>();
+            var queue = new Queue<(YarnEntry, YarnEntry)>();
 
             queue.Enqueue((root, null));
-            HashSet<string> processed = new HashSet<string>();
+            var processed = new HashSet<string>();
 
             while (queue.Count > 0)
             {
                 var (currentEntry, parentEntry) = queue.Dequeue();
-                DetectedComponent currentComponent = singleFileComponentRecorder.GetComponent(YarnEntryToComponentId(currentEntry));
-                DetectedComponent parentComponent = parentEntry != null ? singleFileComponentRecorder.GetComponent(YarnEntryToComponentId(parentEntry)) : null;
+                var currentComponent = singleFileComponentRecorder.GetComponent(this.YarnEntryToComponentId(currentEntry));
+                var parentComponent = parentEntry != null ? singleFileComponentRecorder.GetComponent(this.YarnEntryToComponentId(parentEntry)) : null;
 
                 if (currentComponent != null)
                 {
-                    AddDetectedComponentToGraph(currentComponent, parentComponent, singleFileComponentRecorder, isDevDependency: root.DevDependency);
+                    this.AddDetectedComponentToGraph(currentComponent, parentComponent, singleFileComponentRecorder, isDevDependency: root.DevDependency);
                 }
                 else
                 {
                     // If this is the first time we've seen a component...
                     var detectedComponent = new DetectedComponent(new NpmComponent(currentEntry.Name, currentEntry.Version));
-                    AddDetectedComponentToGraph(detectedComponent, parentComponent, singleFileComponentRecorder, isDevDependency: root.DevDependency);
+                    this.AddDetectedComponentToGraph(detectedComponent, parentComponent, singleFileComponentRecorder, isDevDependency: root.DevDependency);
                 }
 
                 // Ensure that we continue to parse the tree for dependencies
@@ -156,7 +156,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
                     }
                     else
                     {
-                        Logger.LogInfo($"Failed to find resolved dependency for {newDependency.LookupKey}");
+                        this.Logger.LogInfo($"Failed to find resolved dependency for {newDependency.LookupKey}");
                     }
                 }
             }
@@ -170,16 +170,16 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
         /// <param name="location">The file location of the yarn.lock file.</param>
         /// <param name="yarnEntries">All the yarn entries that we know about.</param>
         /// <param name="yarnRoots">The output yarnRoots that we care about using as starting points.</param>
-        /// <returns></returns>
+        /// <returns>False if no package.json file was found at location, otherwise it returns true. </returns>
         private bool TryReadPeerPackageJsonRequestsAsYarnEntries(string location, Dictionary<string, YarnEntry> yarnEntries, out List<YarnEntry> yarnRoots)
         {
             yarnRoots = new List<YarnEntry>();
 
-            var pkgJsons = ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(location).Directory, new List<string> { "package.json" }, (name, directoryName) => false, recursivelyScanDirectories: false);
+            var pkgJsons = this.ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(location).Directory, new List<string> { "package.json" }, (name, directoryName) => false, recursivelyScanDirectories: false);
 
             IDictionary<string, IDictionary<string, bool>> combinedDependencies = new Dictionary<string, IDictionary<string, bool>>();
 
-            int pkgJsonCount = 0;
+            var pkgJsonCount = 0;
 
             IList<string> yarnWorkspaces = new List<string>();
             foreach (var pkgJson in pkgJsons)
@@ -190,26 +190,26 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 
             if (pkgJsonCount != 1)
             {
-                Logger.LogWarning($"No package.json was found for file at {location}. It will not be registered.");
+                this.Logger.LogWarning($"No package.json was found for file at {location}. It will not be registered.");
                 return false;
             }
 
             if (yarnWorkspaces.Count > 0)
             {
-                GetWorkspaceDependencies(yarnWorkspaces, new FileInfo(location).Directory, combinedDependencies);
+                this.GetWorkspaceDependencies(yarnWorkspaces, new FileInfo(location).Directory, combinedDependencies);
             }
 
             // Convert all of the dependencies we retrieved from package.json
             // into the appropriate yarn package
             foreach (var dependency in combinedDependencies)
             {
-                string name = dependency.Key;
+                var name = dependency.Key;
                 foreach (var version in dependency.Value)
                 {
                     var entryKey = $"{name}@npm:{version.Key}";
                     if (!yarnEntries.ContainsKey(entryKey))
                     {
-                        Logger.LogWarning($"A package was requested in the package.json file that was a peer of {location} but was not contained in the lockfile. {name} - {version.Key}");
+                        this.Logger.LogWarning($"A package was requested in the package.json file that was a peer of {location} but was not contained in the lockfile. {name} - {version.Key}");
                         continue;
                     }
 
@@ -240,16 +240,16 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
             {
                 var glob = Glob.Parse($"{root.FullName.Replace('\\', '/')}/{workspacePattern}/package.json", globOptions);
 
-                var componentStreams = ComponentStreamEnumerableFactory.GetComponentStreams(root, (file) => glob.IsMatch(file.FullName.Replace('\\', '/')), null, true);
+                var componentStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(root, (file) => glob.IsMatch(file.FullName.Replace('\\', '/')), null, true);
 
                 foreach (var stream in componentStreams)
                 {
-                    Logger.LogInfo($"{stream.Location} found for workspace {workspacePattern}");
+                    this.Logger.LogInfo($"{stream.Location} found for workspace {workspacePattern}");
                     var combinedDependencies = NpmComponentUtilities.TryGetAllPackageJsonDependencies(stream.Stream, out _);
 
                     foreach (var dependency in combinedDependencies)
                     {
-                        ProcessWorkspaceDependency(dependencies, dependency);
+                        this.ProcessWorkspaceDependency(dependencies, dependency);
                     }
                 }
             }
@@ -265,7 +265,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 
             foreach (var item in newDependency.Value)
             {
-                if (existingDependency.TryGetValue(item.Key, out bool wasDev))
+                if (existingDependency.TryGetValue(item.Key, out var wasDev))
                 {
                     existingDependency[item.Key] = wasDev && item.Value;
                 }

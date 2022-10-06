@@ -7,15 +7,14 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-    <NoWarn>$(NoWarn);CS1591;NU1608,NU5119;SA1600</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">
     <Authors>Microsoft</Authors>
     <Company>Microsoft</Company>
-    <Copyright>Copyright © Microsoft Corporation. All rights reserved.</Copyright>
+    <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/microsoft/component-detection</PackageProjectUrl>

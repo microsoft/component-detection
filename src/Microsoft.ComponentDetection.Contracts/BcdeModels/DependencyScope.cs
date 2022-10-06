@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Microsoft.ComponentDetection.Contracts.BcdeModels
+﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 {
-    /// <summary>Used to communicate Dependency Scope of Component. 
-    /// Currently only populated for Maven component. 
+    /// <summary>Used to communicate Dependency Scope of Component.
+    /// Currently only populated for Maven component.
     /// The values are ordered in terms of priority, which is used to resolve the scope for duplicate component while merging them.
     /// </summary>
     public enum DependencyScope
