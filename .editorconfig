@@ -188,3 +188,63 @@ dotnet_diagnostic.CA1014.severity = none
 
 # CA1824: Mark assemblies with NeutralResourcesLanguageAttribute
 dotnet_diagnostic.CA1824.severity = none
+
+# CA1820: Test for empty strings using string length
+dotnet_diagnostic.CA1820.severity = suggestion
+
+# CA1508: Avoid dead conditional code
+dotnet_diagnostic.CA1508.severity = suggestion
+
+# CA1823: Avoid unused private fields
+dotnet_diagnostic.CA1823.severity = suggestion
+
+# CA1829: Use Length/Count property instead of Count() when available
+dotnet_diagnostic.CA1829.severity = suggestion
+
+# CA2234: Pass system uri objects instead of strings
+dotnet_diagnostic.CA2234.severity = suggestion
+
+# CS0618: Type or member is obsolete
+dotnet_diagnostic.CS0618.severity = suggestion
+
+# SA1101: Prefix local calls with this
+dotnet_diagnostic.SA1101.severity = suggestion
+
+# SA1210: Using directives should be ordered alphabetically by namespace
+dotnet_diagnostic.SA1210.severity = suggestion
+
+# CA2219: Do not raise exceptions in finally clauses
+dotnet_diagnostic.CA2219.severity = suggestion
+
+# CA2201: Exception type System.Exception is not sufficiently specific
+dotnet_diagnostic.CA2201.severity = suggestion
+
+# CA1847: Use char literal for a single character lookup
+dotnet_diagnostic.CA1847.severity = suggestion
+
+# CA1835: Prefer the 'Memory'-based overloads for 'ReadAsync' and 'WriteAsync'
+dotnet_diagnostic.CA1835.severity = suggestion
+
+# CA1707: Identifiers should not contain underscores
+dotnet_diagnostic.CA1707.severity = suggestion
+
+# CA1040: Avoid empty interfaces
+dotnet_diagnostic.CA1040.severity = suggestion
+
+# CA1036: Override methods on comparable types
+dotnet_diagnostic.CA1036.severity = suggestion
+
+# CA1001: Types that own disposable fields should be disposable
+dotnet_diagnostic.CA1001.severity = suggestion
+
+# VSTHRD111: Use ConfigureAwait(bool)
+dotnet_diagnostic.VSTHRD111.severity = suggestion
+
+# VSTHRD101: Avoid unsupported async delegates
+dotnet_diagnostic.VSTHRD101.severity = suggestion
+
+# CA1827: Do not use Count() or LongCount() when Any() can be used
+dotnet_diagnostic.CA1827.severity = suggestion
+
+# CA1064: Exceptions should be public
+dotnet_diagnostic.CA1064.severity = suggestion
