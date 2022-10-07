@@ -34,7 +34,7 @@ jobs:
         run: dotnet restore
 
       - name: Build CLI tool
-        run: dotnet publish --configuration Release --output ./bin --self-contained --runtime ${{ matrix.rid }} -p:PublishSingleFile=true -p:DebugType=None -p:PublishTrimmed=false ./src/Microsoft.ComponentDetection
+        run: dotnet publish --configuration Release --output ./bin --self-contained --runtime ${{ matrix.rid }} -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:DebugType=None -p:PublishTrimmed=false ./src/Microsoft.ComponentDetection
 
       - name: Publish CLI tool
         uses: shogo82148/actions-upload-release-asset@v1.6.2
