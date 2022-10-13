@@ -38,7 +38,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            this.Logger.LogWarning($"vcpkg detector found {file}");
+            this.Logger.LogInfo($"vcpkg detector found {file}");
 
             var projectRootDirectory = Directory.GetParent(file.Location);
             if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
@@ -78,7 +78,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
                         continue;
                     }
 
-                    this.Logger.LogWarning($"parsed package {item.Name}");
+                    this.Logger.LogVerbose($"vcpkg parsed package {item.Name}");
                     if (item.SPDXID == "SPDXRef-port")
                     {
                         var split = item.VersionInfo.Split('#');
