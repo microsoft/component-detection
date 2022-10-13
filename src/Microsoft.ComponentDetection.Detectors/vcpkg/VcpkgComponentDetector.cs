@@ -78,7 +78,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
                         continue;
                     }
 
-                    this.Logger.LogDebug($"parsed package {item.Name}");
+                    this.Logger.LogVerbose($"vcpkg parsed package {item.Name}");
                     if (item.SPDXID == "SPDXRef-port")
                     {
                         var split = item.VersionInfo.Split('#');
