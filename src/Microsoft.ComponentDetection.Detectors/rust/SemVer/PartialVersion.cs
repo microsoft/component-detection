@@ -47,7 +47,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         {
             string[] xValues = { "X", "x", "*" };
 
-            if (input.Trim() == string.Empty)
+            if (string.IsNullOrEmpty(input.Trim()))
             {
                 // Empty input means any version
                 return;

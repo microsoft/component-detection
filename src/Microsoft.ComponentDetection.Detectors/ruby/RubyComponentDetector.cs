@@ -211,7 +211,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                     {
                         line = lines[0].TrimEnd();
                         lines.RemoveAt(0);
-                        if (line.Trim().Equals(string.Empty))
+                        if (string.IsNullOrEmpty(line.Trim()))
                         {
                             break;
                         }

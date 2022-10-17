@@ -35,7 +35,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             version = versionMatch.Success ? versionMatch.Value : null;
             source = sourceMatch.Success ? sourceMatch.Value : null;
 
-            if (source == string.Empty)
+            if (string.IsNullOrEmpty(source))
             {
                 source = null;
             }
