@@ -708,9 +708,6 @@ dotnet_diagnostic.CA1014.severity = none
 # CA1824: Mark assemblies with NeutralResourcesLanguageAttribute
 dotnet_diagnostic.CA1824.severity = none
 
-# CA1820: Test for empty strings using string length
-dotnet_diagnostic.CA1820.severity = suggestion
-
 # CA1508: Avoid dead conditional code
 dotnet_diagnostic.CA1508.severity = suggestion
 
@@ -885,7 +882,7 @@ dotnet_diagnostic.IDE0016.severity = suggestion
 # IDE0039: Use local function
 dotnet_diagnostic.IDE0039.severity = suggestion
 
-# IDE0220: 
+# IDE0220:
 dotnet_diagnostic.IDE0220.severity = suggestion
 
 # IDE0031: Null check can be simplified
