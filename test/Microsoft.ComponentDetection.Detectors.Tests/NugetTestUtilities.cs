@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -118,56 +118,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                     </config>
                 </configuration>";
             return string.Format(nugetConfig, repositoryPath);
-        }
-
-        private static string GetTemplatedProjectAsset(IDictionary<string, IEnumerable<KeyValuePair<string, string>>> packages)
-        {
-            var individualPackageJson =
-                @"""{packageName}"": {
-                      ""type"": ""package"",
-                      ""dependencies"": {
-                          {dependencyList}
-                      }
-                  }";
-
-            var packageJsons = new List<string>();
-            foreach (var package in packages)
-            {
-                var packageName = package.Key;
-                var dependencyList = string.Join(",", package.Value.Select(d => string.Format(@"""{0}"":""{1}""", d.Key, d.Value)));
-                packageJsons.Add(individualPackageJson.Replace("{packageName}", packageName).Replace("{dependencyList}", dependencyList));
-            }
-
-            var allPackageJson = string.Join(",", packageJsons);
-            var pojectAssetsJson =
-                @"{
-                      ""version"": 2,
-                      ""targets"": {
-                            "".NETCoreApp,Version=v2.1"": {
-                                {allPackageJson}
-                            },
-                            "".NETFramework,Version=v4.6.1"": {
-                                {allPackageJson}
-                            }
-                      },
-                      ""project"": {
-                        ""version"": ""1.0.0"",
-                        ""restore"": {
-                          ""projectPath"": ""myproject.csproj""
-                        },
-                        ""frameworks"": {
-                          ""netcoreapp2.0"": {
-                            ""dependencies"": {
-                              ""Microsoft.NETCore.App"": {
-                                ""target"": ""Package"",
-                                ""version"": ""[2.0.0, )""
-                              }
-                            }
-                          }
-                        }
-                      }
-                }";
-            return pojectAssetsJson.Replace("{allPackageJson}", allPackageJson);
         }
     }
 }
