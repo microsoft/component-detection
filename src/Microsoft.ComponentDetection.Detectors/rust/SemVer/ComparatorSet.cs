@@ -165,7 +165,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public bool Equals(ComparatorSet other)
         {
-            if (ReferenceEquals(other, null))
+            if (other is null)
             {
                 return false;
             }

@@ -406,19 +406,19 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         [TestMethod]
         public async Task TestRustDetector_V1WorkspacesWithTopLevelDependencies()
         {
-            await TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
+            await this.TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
         }
 
         [TestMethod]
         public async Task TestRustDetector_V2WorkspacesWithTopLevelDependencies()
         {
-            await TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
+            await this.TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
         }
 
         private async Task TestRustDetector_WorkspacesWithTopLevelDependencies(string lockFile)
         {
             var (result, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile("Cargo.lock", string.Concat(testWorkspaceLockBaseDependency, lockFile))
+                                                    .WithFile("Cargo.lock", string.Concat(this.testWorkspaceLockBaseDependency, lockFile))
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
@@ -473,13 +473,13 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         [TestMethod]
         public async Task TestRustDetector_V1WorkspacesNoTopLevelDependencies()
         {
-            await TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
+            await this.TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
         }
 
         [TestMethod]
         public async Task TestRustDetector_V2WorkspacesNoTopLevelDependencies()
         {
-            await TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
+            await this.TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
         }
 
         private async Task TestRustDetector_WorkspacesNoTopLevelDependencies(string lockFile)
@@ -495,13 +495,13 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         [TestMethod]
         public async Task TestRustDetector_V1WorkspacesWithSubDirectories()
         {
-            await TestRustDetector_WorkspacesWithSubDirectories(testWorkspaceLockV1NoBaseString);
+            await this.TestRustDetector_WorkspacesWithSubDirectories(this.testWorkspaceLockV1NoBaseString);
         }
 
         [TestMethod]
         public async Task TestRustDetector_V2WorkspacesWithSubDirectories()
         {
-            await TestRustDetector_WorkspacesWithSubDirectories(this.testWorkspaceLockV2NoBaseString);
+            await this.TestRustDetector_WorkspacesWithSubDirectories(this.testWorkspaceLockV2NoBaseString);
         }
 
         private async Task TestRustDetector_WorkspacesWithSubDirectories(string lockFile)
@@ -621,7 +621,7 @@ name = ""common_name""
 version = ""0.2.0""
 source = ""registry+sparse+https://other.registry/index/""
 ";
-            var (result, componentRecorder) = await detectorTestUtility
+            var (result, componentRecorder) = await this.detectorTestUtility
                                         .WithFile("Cargo.lock", testLockString)
                                         .ExecuteDetector();
 

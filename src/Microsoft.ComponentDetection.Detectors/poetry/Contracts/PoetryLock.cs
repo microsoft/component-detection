@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
