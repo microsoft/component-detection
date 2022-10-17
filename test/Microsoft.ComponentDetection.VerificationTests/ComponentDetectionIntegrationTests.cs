@@ -118,7 +118,7 @@ namespace Microsoft.ComponentDetection.VerificationTests
 
                 if (rightGraph == null)
                 {
-                    // the rest of test depends on rightDependencies, if it is null a 
+                    // the rest of test depends on rightDependencies, if it is null a
                     // NullReferenceException is going to be thrown stopping the verification process
                     // the previous test that validate its existance is going to include a meaningfull message
                     // in the test summary
@@ -136,7 +136,7 @@ namespace Microsoft.ComponentDetection.VerificationTests
 
                     if (rightDependencies == null)
                     {
-                        // the rest of test depends on rightDependencies, if it is null a 
+                        // the rest of test depends on rightDependencies, if it is null a
                         // NullReferenceException is going to be thrown stopping the verification process
                         continue;
                     }
@@ -149,7 +149,7 @@ namespace Microsoft.ComponentDetection.VerificationTests
                         {
                             rightDependencies.Should().Contain(leftDependency, $"Component dependency {leftDependency} for component {leftComponent} was not in the {rightGraphName} dependency graph.");
                         }
-                        
+
                         leftDependencies.Should().BeEquivalentTo(rightDependencies, $"{rightGraphName} has the following components that were not found in {leftGraphName}, please verify this is expected behavior. {JsonConvert.SerializeObject(rightDependencies.Except(leftDependencies))}");
                     }
                 }
@@ -172,8 +172,8 @@ namespace Microsoft.ComponentDetection.VerificationTests
         public void CheckDetectorsRunTimesAndCounts()
         {
             // makes sure that all detectors have the same number of components found.
-            // if some are lost, error. 
-            // if some are new, check if version of detector is updated. if it isn't error 
+            // if some are lost, error.
+            // if some are new, check if version of detector is updated. if it isn't error
             // Run times should be fairly close to identical. errors if there is an increase of more than 5%
             using (new AssertionScope())
             {
