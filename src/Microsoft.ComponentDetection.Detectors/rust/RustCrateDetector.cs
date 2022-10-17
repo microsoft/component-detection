@@ -117,7 +117,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                             // Process each dependency
                             foreach (var dependency in parentPackage.dependencies)
                             {
-                                ProcessDependency(cargoLockFile, singleFileComponentRecorder, seenAsDependency, packagesByName, parentPackage, parentComponent, dependency);
+                                this.ProcessDependency(cargoLockFile, singleFileComponentRecorder, seenAsDependency, packagesByName, parentPackage, parentComponent, dependency);
                             }
                         }
                     }
