@@ -23,7 +23,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             this.comparators = new List<Comparator> { };
 
             spec = spec.Trim();
-            if (spec == string.Empty)
+            if (string.IsNullOrEmpty(spec))
             {
                 spec = "*";
             }
@@ -78,16 +78,16 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         public bool IsSatisfied(SemVersion version)
         {
             var satisfied = this.comparators.All(c => c.IsSatisfied(version));
-            if (version.Prerelease != string.Empty)
+            if (!string.IsNullOrEmpty(version.Prerelease))
             {
                 // If the version is a pre-release, then one of the
                 // comparators must have the same version and also include
                 // a pre-release tag.
                 return satisfied && this.comparators.Any(c =>
-                        c.Version.Prerelease != string.Empty &&
-                        c.Version.Major == version.Major &&
-                        c.Version.Minor == version.Minor &&
-                        c.Version.Patch == version.Patch);
+                    !string.IsNullOrEmpty(c.Version.Prerelease) &&
+                    c.Version.Major == version.Major &&
+                    c.Version.Minor == version.Minor &&
+                    c.Version.Patch == version.Patch);
             }
             else
             {
