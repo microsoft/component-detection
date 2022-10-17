@@ -873,9 +873,6 @@ dotnet_diagnostic.IDE0024.severity = suggestion
 # IDE0010: Populate switch
 dotnet_diagnostic.IDE0010.severity = suggestion
 
-# IDE0041: Null check can be simplified
-dotnet_diagnostic.IDE0041.severity = suggestion
-
 # IDE0016: Null check can be simplified
 dotnet_diagnostic.IDE0016.severity = suggestion
 

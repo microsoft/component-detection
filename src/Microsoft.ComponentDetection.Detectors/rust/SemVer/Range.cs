@@ -211,7 +211,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public bool Equals(Range other)
         {
-            if (ReferenceEquals(other, null))
+            if (other is null)
             {
                 return false;
             }
@@ -227,9 +227,9 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public static bool operator ==(Range a, Range b)
         {
-            if (ReferenceEquals(a, null))
+            if (a is null)
             {
-                return ReferenceEquals(b, null);
+                return b is null;
             }
 
             return a.Equals(b);
