@@ -900,9 +900,6 @@ dotnet_diagnostic.IDE0005.severity = suggestion
 # IDE0033: Prefer explicitly provided tuple element name
 dotnet_diagnostic.IDE0033.severity = suggestion
 
-# IDE0150: Null check can be clarified
-dotnet_diagnostic.IDE0150.severity = suggestion
-
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion
 

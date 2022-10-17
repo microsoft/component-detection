@@ -450,7 +450,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             });
 
             records.Should().Contain(x => x is DetectorExecutionTelemetryRecord);
-            records.Count(x => x is DetectorExecutionTelemetryRecord)
+            records.Count(x => x is not null)
                 .Should().Be(2);
             var firstDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.firstFileComponentDetectorMock.Object.Id);
             firstDetectorRecord.Should().NotBeNull();
@@ -484,7 +484,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             records.Should().Contain(x => x is DetectorExecutionTelemetryRecord);
 
-            records.Count(x => x is DetectorExecutionTelemetryRecord)
+            records.Count(x => x is not null)
                 .Should().Be(4);
 
             this.ValidateExpectedComponents(results, this.detectorsToUse);
