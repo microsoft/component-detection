@@ -1,10 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
 {
     using System.Collections.Generic;
     using System.Runtime.Serialization;
-    using Tomlyn.Model;
 
     // Represents Cargo.Lock file structure.
     [DataContract]

@@ -8,7 +8,6 @@ using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json.Linq;
-using NuGet.Versioning;
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
