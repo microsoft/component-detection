@@ -906,8 +906,5 @@ dotnet_diagnostic.IDE0150.severity = suggestion
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion
 
-# SA1028: Code should not contain trailing whitespace
-dotnet_diagnostic.SA1028.severity = suggestion
-
 # IL3000: always returns an empty string for assemblies embedded in a single-file app.
 dotnet_diagnostic.IL3000.severity = suggestion
