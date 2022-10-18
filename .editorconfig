@@ -855,9 +855,6 @@ dotnet_diagnostic.IDE0066.severity = suggestion
 # IDE0018: Variable declaration can be inlined
 dotnet_diagnostic.IDE0018.severity = suggestion
 
-# IDE0017: Object initialization can be simplified
-dotnet_diagnostic.IDE0017.severity = suggestion
-
 # IDE0074: Use compound assignment
 dotnet_diagnostic.IDE0074.severity = suggestion
 

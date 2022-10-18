@@ -277,8 +277,10 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
             var goBuildModules = new List<GoBuildModule>();
-            var reader = new JsonTextReader(new StringReader(goListOutput));
-            reader.SupportMultipleContent = true;
+            var reader = new JsonTextReader(new StringReader(goListOutput))
+            {
+                SupportMultipleContent = true,
+            };
 
             while (reader.Read())
             {
