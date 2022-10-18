@@ -296,7 +296,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
         {
             if (dependencies != null)
             {
-                foreach (JProperty dependency in dependencies.Cast<JProperty>())
+                foreach (var dependency in dependencies.Cast<JProperty>())
                 {
                     if (dependency != null)
                     {
@@ -311,7 +311,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             var isValid = true;
             if (dependencies != null)
             {
-                foreach (JProperty dependency in dependencies.Cast<JProperty>())
+                foreach (var dependency in dependencies.Cast<JProperty>())
                 {
                     if (dependency == null || dependency.Name == null)
                     {

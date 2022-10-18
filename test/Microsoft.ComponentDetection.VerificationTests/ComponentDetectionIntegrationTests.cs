@@ -36,11 +36,11 @@ namespace Microsoft.ComponentDetection.VerificationTests
         public void LogFileHasNoErrors()
         {
             // make sure the new log does not contain any error messages.
-            int errorIndex = this.newLogFileContents.IndexOf("[ERROR]");
+            var errorIndex = this.newLogFileContents.IndexOf("[ERROR]");
             if (errorIndex >= 0)
             {
                 // prints out the line that the error occured.
-                string errorMessage = $"An Error was found: {this.newLogFileContents.Substring(errorIndex, 200)}";
+                var errorMessage = $"An Error was found: {this.newLogFileContents.Substring(errorIndex, 200)}";
                 throw new Exception(errorMessage);
             }
         }
@@ -57,14 +57,14 @@ namespace Microsoft.ComponentDetection.VerificationTests
             var newComponents = this.newScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
             var oldComponents = this.oldScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
 
-            Dictionary<string, ScannedComponent> newComponentDictionary = this.GetComponentDictionary(newComponents);
-            Dictionary<string, ScannedComponent> oldComponentDictionary = this.GetComponentDictionary(oldComponents);
+            var newComponentDictionary = this.GetComponentDictionary(newComponents);
+            var oldComponentDictionary = this.GetComponentDictionary(oldComponents);
             using (new AssertionScope())
             {
                 this.CompareDetectedComponents(oldComponents, newComponentDictionary, "new");
                 this.CompareDetectedComponents(newComponents, oldComponentDictionary, "old");
-                DependencyGraphCollection oldGraphs = this.oldScanResult.DependencyGraphs;
-                DependencyGraphCollection newGraphs = this.newScanResult.DependencyGraphs;
+                var oldGraphs = this.oldScanResult.DependencyGraphs;
+                var newGraphs = this.newScanResult.DependencyGraphs;
                 this.CompareGraphs(oldGraphs, newGraphs, "old", "new");
                 this.CompareGraphs(newGraphs, oldGraphs, "new", "old");
             }
@@ -178,7 +178,7 @@ namespace Microsoft.ComponentDetection.VerificationTests
             using (new AssertionScope())
             {
                 this.ProcessDetectorVersions();
-                string regexPattern = @"Detection time: (\w+\.\w+) seconds. |(\w+ *[\w()]+) *\|(\w+\.*\w*) seconds *\|(\d+)";
+                var regexPattern = @"Detection time: (\w+\.\w+) seconds. |(\w+ *[\w()]+) *\|(\w+\.*\w*) seconds *\|(\d+)";
                 var oldMatches = Regex.Matches(this.oldLogFileContents, regexPattern);
                 var newMatches = Regex.Matches(this.newLogFileContents, regexPattern);
 
@@ -186,7 +186,7 @@ namespace Microsoft.ComponentDetection.VerificationTests
 
                 var detectorTimes = new Dictionary<string, float>();
                 var detectorCounts = new Dictionary<string, int>();
-                foreach (Match match in oldMatches.Cast<Match>())
+                foreach (var match in oldMatches.Cast<Match>())
                 {
                     if (!match.Groups[2].Success)
                     {
@@ -194,29 +194,29 @@ namespace Microsoft.ComponentDetection.VerificationTests
                     }
                     else
                     {
-                        string detectorId = match.Groups[2].Value;
+                        var detectorId = match.Groups[2].Value;
                         detectorTimes.Add(detectorId, float.Parse(match.Groups[3].Value));
                         detectorCounts.Add(detectorId, int.Parse(match.Groups[4].Value));
                     }
                 }
 
                 // fail at the end to gather all failures instead of just the first.
-                foreach (Match match in newMatches.Cast<Match>())
+                foreach (var match in newMatches.Cast<Match>())
                 {
                     // for each detector and overall, make sure the time doesn't increase by more than 10%
                     // for each detector make sure component counts do not change. if they increase, make sure the version of the detector was bumped.
                     if (!match.Groups[2].Success)
                     {
                         detectorTimes.TryGetValue("TotalTime", out var oldTime);
-                        float newTime = float.Parse(match.Groups[1].Value);
+                        var newTime = float.Parse(match.Groups[1].Value);
 
-                        float maxTimeThreshold = (float)(oldTime + Math.Max(5, oldTime * this.allowedTimeDriftRatio));
+                        var maxTimeThreshold = (float)(oldTime + Math.Max(5, oldTime * this.allowedTimeDriftRatio));
                         newTime.Should().BeLessOrEqualTo(maxTimeThreshold, $"Total Time take increased by a large amount. Please verify before continuing. old time: {oldTime}, new time: {newTime}");
                     }
                     else
                     {
-                        string detectorId = match.Groups[2].Value;
-                        int newCount = int.Parse(match.Groups[4].Value);
+                        var detectorId = match.Groups[2].Value;
+                        var newCount = int.Parse(match.Groups[4].Value);
                         if (detectorCounts.TryGetValue(detectorId, out var oldCount))
                         {
                             newCount.Should().BeGreaterOrEqualTo(oldCount, $"{oldCount - newCount} Components were lost for detector {detectorId}. Verify this is expected behavior. \n Old Count: {oldCount}, PPE Count: {newCount}");
