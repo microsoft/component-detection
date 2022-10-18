@@ -243,11 +243,8 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                     continue;
                 }
 
-                GoComponent parentComponent;
-                GoComponent childComponent;
-
-                var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out parentComponent);
-                var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out childComponent);
+                var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out var parentComponent);
+                var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out var childComponent);
 
                 if (!isParentParsed)
                 {
