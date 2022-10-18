@@ -843,9 +843,6 @@ dotnet_diagnostic.IDE0120.severity = suggestion
 # IDE0075: Conditional expression can be simplified
 dotnet_diagnostic.IDE0075.severity = suggestion
 
-# IDE0042: Variable declaration can be deconstructed
-dotnet_diagnostic.IDE0042.severity = suggestion
-
 # IDE0037: Member name can be simplified
 dotnet_diagnostic.IDE0037.severity = suggestion
 

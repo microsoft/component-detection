@@ -56,8 +56,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation()[pomfileLocation];
 
-            var topLevelComponentInfo = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT");
-            var topLevelComponent = topLevelComponentInfo.Component;
+            var (component, isDevelopmentDependency, dependencyScope) = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT");
+            var topLevelComponent = component;
             var mavenCoreTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-core:jar:3.6.1-SNAPSHOT:compile");
             var mavenCore = mavenCoreTuple.Component;
             var guiceTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("com.google.inject:guice:jar:no_aop:4.2.1:compile");

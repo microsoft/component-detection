@@ -41,16 +41,16 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         public void DoAllTheTests(IEnumerable<(bool shouldMatch, string caseName, string specifierName, string specifierRange)> testCases)
         {
-            foreach (var testCase in testCases)
+            foreach (var (shouldMatch, caseName, specifierName, specifierRange) in testCases)
             {
                 var di = new DependencySpecification();
-                if (testCase.specifierName != null)
+                if (specifierName != null)
                 {
-                    di.Add(testCase.specifierName, testCase.specifierRange);
+                    di.Add(specifierName, specifierRange);
                 }
 
                 di.MatchesPackage(new CargoPackage { name = "some-cargo-package", version = "1.2.3" })
-                    .Should().Be(testCase.shouldMatch, testCase.caseName);
+                    .Should().Be(shouldMatch, caseName);
             }
         }
     }

@@ -48,12 +48,12 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 var localLine = line.Trim(TrimCharacters);
                 if (!string.IsNullOrWhiteSpace(localLine) && this.topLevelComponent == null)
                 {
-                    var topLevelMavenStringInfo = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(localLine);
-                    this.topLevelComponent = topLevelMavenStringInfo.Component;
+                    var (component, isDevelopmentDependency, dependencyScope) = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(localLine);
+                    this.topLevelComponent = component;
                     singleFileComponentRecorder.RegisterUsage(
-                        topLevelMavenStringInfo.Component,
-                        isDevelopmentDependency: topLevelMavenStringInfo.IsDevelopmentDependency,
-                        dependencyScope: topLevelMavenStringInfo.dependencyScope);
+                        component,
+                        isDevelopmentDependency: isDevelopmentDependency,
+                        dependencyScope: dependencyScope);
                 }
                 else
                 {
@@ -107,8 +107,8 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 this.tupleStack.Pop();
             }
 
-            var componentAndDevDependencyTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(versionedComponent);
-            var newTuple = (ParseLevel: position, componentAndDevDependencyTuple.Component);
+            var (component, isDevelopmentDependency, dependencyScope) = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString(versionedComponent);
+            var newTuple = (ParseLevel: position, Component: component);
 
             if (this.tupleStack.Count > 0)
             {
@@ -117,8 +117,8 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                 componentRecorder.RegisterUsage(
                     newTuple.Component,
                     parentComponentId: parent.Component.Id,
-                    isDevelopmentDependency: componentAndDevDependencyTuple.IsDevelopmentDependency,
-                    dependencyScope: componentAndDevDependencyTuple.dependencyScope);
+                    isDevelopmentDependency: isDevelopmentDependency,
+                    dependencyScope: dependencyScope);
             }
             else
             {
@@ -126,8 +126,8 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                     newTuple.Component,
                     isExplicitReferencedDependency: true,
                     parentComponentId: this.topLevelComponent.Component.Id,
-                    isDevelopmentDependency: componentAndDevDependencyTuple.IsDevelopmentDependency,
-                    dependencyScope: componentAndDevDependencyTuple.dependencyScope);
+                    isDevelopmentDependency: isDevelopmentDependency,
+                    dependencyScope: dependencyScope);
             }
 
             this.tupleStack.Push(newTuple);
