@@ -186,7 +186,7 @@ namespace Microsoft.ComponentDetection.VerificationTests
 
                 var detectorTimes = new Dictionary<string, float>();
                 var detectorCounts = new Dictionary<string, int>();
-                foreach (Match match in oldMatches)
+                foreach (Match match in oldMatches.Cast<Match>())
                 {
                     if (!match.Groups[2].Success)
                     {
@@ -201,7 +201,7 @@ namespace Microsoft.ComponentDetection.VerificationTests
                 }
 
                 // fail at the end to gather all failures instead of just the first.
-                foreach (Match match in newMatches)
+                foreach (Match match in newMatches.Cast<Match>())
                 {
                     // for each detector and overall, make sure the time doesn't increase by more than 10%
                     // for each detector make sure component counts do not change. if they increase, make sure the version of the detector was bumped.
