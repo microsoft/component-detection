@@ -1,10 +1,10 @@
 name: Publish snapshot of test scan
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch
+  - push:
+      branches:
+        - main
+  - workflow_dispatch
 
 jobs:
   build:
