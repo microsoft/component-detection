@@ -843,29 +843,14 @@ dotnet_diagnostic.IDE0120.severity = suggestion
 # IDE0075: Conditional expression can be simplified
 dotnet_diagnostic.IDE0075.severity = suggestion
 
-# IDE0042: Variable declaration can be deconstructed
-dotnet_diagnostic.IDE0042.severity = suggestion
-
 # IDE0037: Member name can be simplified
 dotnet_diagnostic.IDE0037.severity = suggestion
 
 # IDE0066: Use 'switch' expression
 dotnet_diagnostic.IDE0066.severity = suggestion
 
-# IDE0018: Variable declaration can be inlined
-dotnet_diagnostic.IDE0018.severity = suggestion
-
-# IDE0017: Object initialization can be simplified
-dotnet_diagnostic.IDE0017.severity = suggestion
-
-# IDE0004: Cast is redundant.
-dotnet_diagnostic.IDE0004.severity = suggestion
-
 # IDE0074: Use compound assignment
 dotnet_diagnostic.IDE0074.severity = suggestion
-
-# IDE0007: use 'var' instead of explicit type
-dotnet_diagnostic.IDE0007.severity = suggestion
 
 # IDE0024: Use expression body for operators
 dotnet_diagnostic.IDE0024.severity = suggestion
@@ -873,17 +858,8 @@ dotnet_diagnostic.IDE0024.severity = suggestion
 # IDE0010: Populate switch
 dotnet_diagnostic.IDE0010.severity = suggestion
 
-# IDE0016: Null check can be simplified
-dotnet_diagnostic.IDE0016.severity = suggestion
-
 # IDE0039: Use local function
 dotnet_diagnostic.IDE0039.severity = suggestion
-
-# IDE0220:
-dotnet_diagnostic.IDE0220.severity = suggestion
-
-# IDE0031: Null check can be simplified
-dotnet_diagnostic.IDE0031.severity = suggestion
 
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion

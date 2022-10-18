@@ -146,11 +146,11 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             while ((line = reader.ReadLine()) != null)
             {
                 var matches = Regex.Matches(line, @"\s*([a-zA-Z0-9-.]*) \([<>=]*[ ]*([0-9a-zA-Z-.]*)\)", RegexOptions.Singleline);
-                foreach (Match match in matches)
+                foreach (var match in matches.Cast<Match>())
                 {
                     var name = match.Groups[1].Value;
-                    string version = match.Groups[2].Value;
-                    NuGetComponent component = new NuGetComponent(name, version);
+                    var version = match.Groups[2].Value;
+                    var component = new NuGetComponent(name, version);
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
                 }
             }

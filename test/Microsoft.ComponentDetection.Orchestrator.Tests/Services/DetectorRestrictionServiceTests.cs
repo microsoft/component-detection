@@ -64,7 +64,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.detectors = this.detectors.Union(new[] { defaultOffDetectorMock.Object as IComponentDetector }).ToArray();
             var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
             restrictedDetectors
-                .Should().NotContain(defaultOffDetectorMock.Object as IComponentDetector);
+                .Should().NotContain(defaultOffDetectorMock.Object);
         }
 
         [TestMethod]
@@ -77,7 +77,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             r.ExplicitlyEnabledDetectorIds = new[] { "defaultOffDetector" };
             var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
             restrictedDetectors
-                .Should().Contain(defaultOffDetectorMock.Object as IComponentDetector);
+                .Should().Contain(defaultOffDetectorMock.Object);
         }
 
         [TestMethod]

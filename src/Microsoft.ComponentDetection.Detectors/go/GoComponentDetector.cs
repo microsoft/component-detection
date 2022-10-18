@@ -243,11 +243,8 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                     continue;
                 }
 
-                GoComponent parentComponent;
-                GoComponent childComponent;
-
-                var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out parentComponent);
-                var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out childComponent);
+                var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out var parentComponent);
+                var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out var childComponent);
 
                 if (!isParentParsed)
                 {
@@ -277,8 +274,10 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
             var goBuildModules = new List<GoBuildModule>();
-            var reader = new JsonTextReader(new StringReader(goListOutput));
-            reader.SupportMultipleContent = true;
+            var reader = new JsonTextReader(new StringReader(goListOutput))
+            {
+                SupportMultipleContent = true,
+            };
 
             while (reader.Read())
             {

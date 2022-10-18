@@ -103,13 +103,8 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public Comparator(Operator comparatorType, SemVersion comparatorVersion)
         {
-            if (comparatorVersion == null)
-            {
-                throw new NullReferenceException("Null comparator version");
-            }
-
             this.ComparatorType = comparatorType;
-            this.Version = comparatorVersion;
+            this.Version = comparatorVersion ?? throw new NullReferenceException("Null comparator version");
         }
 
         public static Tuple<int, Comparator> TryParse(string input)
