@@ -180,7 +180,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 {
                     if (librariesWithAbsolutePath.TryGetValue(Path.GetFullPath(projectReference.ProjectPath), out var library))
                     {
-                        toBeFilled.Add((library.Name, library.Version.Version, (VersionRange)null));
+                        toBeFilled.Add((library.Name, library.Version.Version, null));
                     }
                 }
             }
