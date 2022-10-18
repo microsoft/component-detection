@@ -178,7 +178,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         {
             var versions = this.ValidVersions(versionStrings, loose);
             var maxVersion = this.MaxSatisfying(versions);
-            return maxVersion == null ? null : maxVersion.ToString();
+            return maxVersion?.ToString();
         }
 
         /// <summary>

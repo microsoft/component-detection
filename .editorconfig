@@ -882,9 +882,6 @@ dotnet_diagnostic.IDE0039.severity = suggestion
 # IDE0220:
 dotnet_diagnostic.IDE0220.severity = suggestion
 
-# IDE0031: Null check can be simplified
-dotnet_diagnostic.IDE0031.severity = suggestion
-
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion
 
