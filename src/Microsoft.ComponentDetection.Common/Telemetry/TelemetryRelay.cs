@@ -14,6 +14,12 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
     {
         private static readonly TelemetryRelay InternalInstance = new TelemetryRelay();
 
+        private TelemetryRelay()
+        {
+            // For things not populating the telemetry services collection, let's not throw.
+            TelemetryServices = Enumerable.Empty<ITelemetryService>();
+        }
+
         [ImportMany]
         public static IEnumerable<ITelemetryService> TelemetryServices { get; set; }
 

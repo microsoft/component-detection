@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,6 +17,36 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     [TestCategory("Governance/ComponentDetection")]
     public class PythonCommandServiceTests
     {
+        private readonly string requirementstxtBasicGitComponent = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553";
+
+        private readonly string requirementstxtGitComponentAndEnvironmentMarker = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= ""3.6""";
+
+        private readonly string requirementstxtGitComponentAndComment = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 # this is a comment";
+
+        private readonly string requirementstxtGitComponentAndCommentAndEnvironmentMarker = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= {""3.6""  # via -r requirements.in";
+
+        private readonly string requirementstxtGitComponentBranchInsteadOfCommitId = @"
+git+git://github.com/path/to/package-two@master#egg=package-two";
+
+        private readonly string requirementstxtGitComponentReleaseInsteadOfCommitId = @"
+git+git://github.com/path/to/package-two@0.1#egg=package-two";
+
+        private readonly string requirementstxtGitComponentCommitIdWrongLength = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d6755300000000000";
+
+        private readonly string requirementstxtDoubleGitComponents = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= {""3.6""  # via -r requirements.in
+git+git://github.com/path/to/package-two@41b95ec#egg=package-two";
+
+        private readonly string requirementstxtGitComponentWrappedinRegularComponents = @"
+something=1.3
+git+git://github.com/path/to/package-two@41b95ec#egg=package-two
+other=2.1";
+
         private Mock<ICommandLineInvocationService> commandLineInvokationService;
 
         [TestInitialize]
@@ -347,35 +377,5 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             return 0;
         }
-
-        private readonly string requirementstxtBasicGitComponent = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553";
-
-        private readonly string requirementstxtGitComponentAndEnvironmentMarker = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= ""3.6""";
-
-        private readonly string requirementstxtGitComponentAndComment = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 # this is a comment";
-
-        private readonly string requirementstxtGitComponentAndCommentAndEnvironmentMarker = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= {""3.6""  # via -r requirements.in";
-
-        private readonly string requirementstxtGitComponentBranchInsteadOfCommitId = @"
-git+git://github.com/path/to/package-two@master#egg=package-two";
-
-        private readonly string requirementstxtGitComponentReleaseInsteadOfCommitId = @"
-git+git://github.com/path/to/package-two@0.1#egg=package-two";
-
-        private readonly string requirementstxtGitComponentCommitIdWrongLength = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d6755300000000000";
-
-        private readonly string requirementstxtDoubleGitComponents = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= {""3.6""  # via -r requirements.in
-git+git://github.com/path/to/package-two@41b95ec#egg=package-two";
-
-        private readonly string requirementstxtGitComponentWrappedinRegularComponents = @"
-something=1.3
-git+git://github.com/path/to/package-two@41b95ec#egg=package-two
-other=2.1";
     }
 }
