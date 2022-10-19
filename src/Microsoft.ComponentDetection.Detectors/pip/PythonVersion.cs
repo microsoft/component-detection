@@ -14,26 +14,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private static Dictionary<string, int> preReleaseMapping = new Dictionary<string, int> { { "a", 0 }, { "alpha", 0 }, { "b", 1 }, { "beta", 1 }, { "c", 2 }, { "rc", 2 }, { "pre", 2 }, { "preview", 2 } };
 
-        public bool Valid { get; set; }
-
-        public bool IsReleasedPackage => string.IsNullOrEmpty(this.PreReleaseLabel) && !this.PreReleaseNumber.HasValue && !this.DevNumber.HasValue;
-
-        public int Epoch { get; set; }
-
-        public string Release { get; set; }
-
-        public string PreReleaseLabel { get; set; }
-
-        public int? PreReleaseNumber { get; set; }
-
-        public int? PostNumber { get; set; }
-
-        public string DevLabel { get; set; }
-
-        public int? DevNumber { get; set; }
-
-        public bool Floating { get; set; } = false;
-
         private Match match;
 
         public PythonVersion(string version)
@@ -96,6 +76,26 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
             this.Valid = true;
         }
+
+        public bool Valid { get; set; }
+
+        public bool IsReleasedPackage => string.IsNullOrEmpty(this.PreReleaseLabel) && !this.PreReleaseNumber.HasValue && !this.DevNumber.HasValue;
+
+        public int Epoch { get; set; }
+
+        public string Release { get; set; }
+
+        public string PreReleaseLabel { get; set; }
+
+        public int? PreReleaseNumber { get; set; }
+
+        public int? PostNumber { get; set; }
+
+        public string DevLabel { get; set; }
+
+        public int? DevNumber { get; set; }
+
+        public bool Floating { get; set; } = false;
 
         public static bool operator >(PythonVersion operand1, PythonVersion operand2)
         {

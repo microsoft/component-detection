@@ -18,6 +18,8 @@ namespace Microsoft.ComponentDetection.Contracts
     {
         string ManifestFileLocation { get; }
 
+        IDependencyGraph DependencyGraph { get; }
+
         /// <summary>
         /// Add or Update a component. In case that a parent componentId is specified
         /// an edge is created between those components in the dependency graph.
@@ -41,8 +43,6 @@ namespace Microsoft.ComponentDetection.Contracts
         IReadOnlyDictionary<string, DetectedComponent> GetDetectedComponents();
 
         IComponentRecorder GetParentComponentRecorder();
-
-        IDependencyGraph DependencyGraph { get; }
     }
 
     public interface IDependencyGraph

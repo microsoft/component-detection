@@ -9,6 +9,11 @@ namespace Microsoft.ComponentDetection.Orchestrator
     [Export(typeof(IArgumentHelper))]
     public class ArgumentHelper : IArgumentHelper
     {
+        public ArgumentHelper()
+        {
+            this.ArgumentSets = Enumerable.Empty<IScanArguments>();
+        }
+
         [ImportMany]
         public IEnumerable<IScanArguments> ArgumentSets { get; set; }
 
@@ -29,11 +34,6 @@ namespace Microsoft.ComponentDetection.Orchestrator
             }
 
             return detectorArgs;
-        }
-
-        public ArgumentHelper()
-        {
-            this.ArgumentSets = Enumerable.Empty<IScanArguments>();
         }
 
         public ParserResult<object> ParseArguments(string[] args)

@@ -1,8 +1,19 @@
 namespace Microsoft.ComponentDetection.Contracts
 {
+    public enum DockerReferenceKind
+    {
+        Canonical = 0,
+        Repository = 1,
+        Tagged = 2,
+        Dual = 3,
+        Digest = 4,
+    }
+
 #pragma warning disable SA1402
     public class DockerReference
     {
+        public virtual DockerReferenceKind Kind { get; }
+
         public static DockerReference CreateDockerReference(string repository, string domain, string digest, string tag)
         {
             if (!string.IsNullOrEmpty(repository) && string.IsNullOrEmpty(domain))
@@ -60,21 +71,10 @@ namespace Microsoft.ComponentDetection.Contracts
             }
         }
 
-        public virtual DockerReferenceKind Kind { get; }
-
         public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
         {
             throw new System.NotImplementedException();
         }
-    }
-
-    public enum DockerReferenceKind
-    {
-        Canonical = 0,
-        Repository = 1,
-        Tagged = 2,
-        Dual = 3,
-        Digest = 4,
     }
 
     public class Reference
@@ -91,9 +91,9 @@ namespace Microsoft.ComponentDetection.Contracts
     // sha256:abc123...
     public class DigestReference : DockerReference
     {
-        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Digest;
-
         public string Digest;
+
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Digest;
 
         public override string ToString()
         {
@@ -112,13 +112,13 @@ namespace Microsoft.ComponentDetection.Contracts
     // docker.io/library/ubuntu@sha256:abc123...
     public class CanonicalReference : DockerReference
     {
-        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Canonical;
-
         public string Domain;
 
         public string Repository;
 
         public string Digest;
+
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Canonical;
 
         public override string ToString()
         {
@@ -139,11 +139,11 @@ namespace Microsoft.ComponentDetection.Contracts
     // docker.io/library/ubuntu
     public class RepositoryReference : DockerReference
     {
-        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Repository;
-
         public string Domain;
 
         public string Repository;
+
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Repository;
 
         public override string ToString()
         {
@@ -163,13 +163,13 @@ namespace Microsoft.ComponentDetection.Contracts
     // docker.io/library/ubuntu:latest
     public class TaggedReference : DockerReference
     {
-        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Tagged;
-
         public string Domain;
 
         public string Repository;
 
         public string Tag;
+
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Tagged;
 
         public override string ToString()
         {
@@ -190,8 +190,6 @@ namespace Microsoft.ComponentDetection.Contracts
     // docker.io/library/ubuntu:latest@sha256:abc123...
     public class DualReference : DockerReference
     {
-        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Dual;
-
         public string Domain;
 
         public string Repository;
@@ -199,6 +197,8 @@ namespace Microsoft.ComponentDetection.Contracts
         public string Tag;
 
         public string Digest;
+
+        public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Dual;
 
         public override string ToString()
         {

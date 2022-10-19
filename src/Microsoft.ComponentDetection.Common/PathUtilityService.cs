@@ -17,29 +17,6 @@ namespace Microsoft.ComponentDetection.Common
     [Shared]
     public class PathUtilityService : IPathUtilityService
     {
-        /// <summary>
-        /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
-        /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
-        /// using FreeMemoryLinux otherwise things will get very leaky.
-        /// </summary>
-        /// <param name="path"> The path to resolve. </param>
-        /// <param name="output"> The pointer output. </param>
-        /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
-        [DllImport("libc", EntryPoint = "realpath")]
-        public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
-
-        /// <summary>
-        /// Use this function to free memory and prevent memory leaks.
-        /// However, beware.... Improper usage of this function will cause segfaults and other nasty double-free errors.
-        /// THIS WILL CRASH THE CLR IF YOU USE IT WRONG.
-        /// </summary>
-        /// <param name="toFree">Pointer to the memory space to free. </param>
-        [DllImport("libc", EntryPoint = "free")]
-        public static extern void FreeMemoryLinux([In] IntPtr toFree);
-
-        [Import]
-        public ILogger Logger { get; set; }
-
         public const uint CreationDispositionRead = 0x3;
 
         public const uint FileFlagBackupSemantics = 0x02000000;
@@ -48,7 +25,14 @@ namespace Microsoft.ComponentDetection.Common
 
         public const string LongPathPrefix = "\\\\?\\";
 
+        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        private static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
         private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
+
+        private object isRunningOnWindowsContainerLock = new object();
+        private bool? isRunningOnWindowsContainer = null;
 
         public bool IsRunningOnWindowsContainer
         {
@@ -69,11 +53,28 @@ namespace Microsoft.ComponentDetection.Common
             }
         }
 
-        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        [Import]
+        public ILogger Logger { get; set; }
 
-        private object isRunningOnWindowsContainerLock = new object();
-        private bool? isRunningOnWindowsContainer = null;
+        /// <summary>
+        /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
+        /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
+        /// using FreeMemoryLinux otherwise things will get very leaky.
+        /// </summary>
+        /// <param name="path"> The path to resolve. </param>
+        /// <param name="output"> The pointer output. </param>
+        /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
+        [DllImport("libc", EntryPoint = "realpath")]
+        public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
+
+        /// <summary>
+        /// Use this function to free memory and prevent memory leaks.
+        /// However, beware.... Improper usage of this function will cause segfaults and other nasty double-free errors.
+        /// THIS WILL CRASH THE CLR IF YOU USE IT WRONG.
+        /// </summary>
+        /// <param name="toFree">Pointer to the memory space to free. </param>
+        [DllImport("libc", EntryPoint = "free")]
+        public static extern void FreeMemoryLinux([In] IntPtr toFree);
 
         public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
         {
@@ -135,9 +136,9 @@ namespace Microsoft.ComponentDetection.Common
             {
                 return this.ResolvePhysicalPathWindows(path);
             }
-            else if (IsLinux)
+            else if (IsLinux || IsMacOS)
             {
-                return this.ResolvePhysicalPathLinux(path);
+                return this.ResolvePhysicalPathLibC(path);
             }
 
             return path;
@@ -193,9 +194,9 @@ namespace Microsoft.ComponentDetection.Common
             return result;
         }
 
-        public string ResolvePhysicalPathLinux(string path)
+        public string ResolvePhysicalPathLibC(string path)
         {
-            if (!IsLinux)
+            if (!IsLinux && !IsMacOS)
             {
                 throw new PlatformNotSupportedException("Attempted to call a function that makes linux-only library calls");
             }

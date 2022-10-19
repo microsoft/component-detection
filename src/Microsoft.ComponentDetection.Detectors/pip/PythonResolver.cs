@@ -213,9 +213,9 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
             public readonly Queue<(string, PipDependencySpecification)> ProcessingQueue = new Queue<(string, PipDependencySpecification)>();
 
-            public IList<PipGraphNode> Roots { get; } = new List<PipGraphNode>();
-
             public readonly IDictionary<string, PipGraphNode> NodeReferences = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
+
+            public IList<PipGraphNode> Roots { get; } = new List<PipGraphNode>();
         }
     }
 }

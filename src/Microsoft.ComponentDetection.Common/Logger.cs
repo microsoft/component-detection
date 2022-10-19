@@ -13,6 +13,8 @@ namespace Microsoft.ComponentDetection.Common
     [Shared]
     public class Logger : ILogger
     {
+        public const string LogRelativePath = "GovCompDisc_Log_{timestamp}.log";
+
         [Import]
         public IFileWritingService FileWritingService { get; set; }
 
@@ -22,8 +24,6 @@ namespace Microsoft.ComponentDetection.Common
         private VerbosityMode Verbosity { get; set; }
 
         private bool WriteToFile { get; set; }
-
-        public const string LogRelativePath = "GovCompDisc_Log_{timestamp}.log";
 
         public void Init(VerbosityMode verbosity)
         {

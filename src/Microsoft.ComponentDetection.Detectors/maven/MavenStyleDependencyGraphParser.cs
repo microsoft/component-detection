@@ -11,13 +11,13 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         private static readonly string[] ComponentSplitters = new[] { "+-", "\\-" };
 
-        public GraphNode<string> DependencyCategory { get; private set; }
-
         private Stack<GraphNodeAtLevel<string>> stack = new Stack<GraphNodeAtLevel<string>>();
 
         private Stack<(int ParseLevel, DetectedComponent Component)> tupleStack = new Stack<(int, DetectedComponent)>();
 
         private DetectedComponent topLevelComponent = null;
+
+        public GraphNode<string> DependencyCategory { get; private set; }
 
         public GraphNode<string> Parse(string[] lines)
         {
@@ -135,13 +135,13 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         private class GraphNodeAtLevel<T> : GraphNode<T>
         {
-            public int ParseLevel { get; }
-
             public GraphNodeAtLevel(int level, T value)
                 : base(value)
             {
                 this.ParseLevel = level;
             }
+
+            public int ParseLevel { get; }
         }
     }
 }

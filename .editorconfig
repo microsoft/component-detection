@@ -459,17 +459,9 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers
 ##########################################
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1142.md
-# Refer to tuple fields by name
-dotnet_diagnostic.SA1142.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1200.md
 # Using directive should appear within a namespace declaration
 dotnet_diagnostic.SA1200.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1201.md
-# A field should not follow a property
-dotnet_diagnostic.SA1201.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1203.md
 # 'public' members should come before 'private' members
@@ -569,9 +561,6 @@ dotnet_diagnostic.CA2007.severity = suggestion
 
 # CA1062: Validate arguments of public methods
 dotnet_diagnostic.CA1062.severity = suggestion
-
-# SA1201: Elements should appear in the correct order
-dotnet_diagnostic.SA1201.severity = suggestion
 
 # CA1819: Properties should not return arrays
 dotnet_diagnostic.CA1819.severity = suggestion

@@ -19,6 +19,217 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     [TestCategory("Governance/ComponentDetection")]
     public class RustCrateDetectorTests
     {
+        private readonly string testCargoLockString = @"
+[[package]]
+name = ""my_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""other_dependency""
+version = ""0.4.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+ ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
+]
+
+[[package]]
+name = ""other_dependency_dependency""
+version = ""0.1.12-alpha.6""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""my_dev_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+ ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
+ ""dev_dependency_dependency 0.2.23 (registry+https://github.com/rust-lang/crates.io-index)"",
+]
+
+[[package]]
+name = ""dev_dependency_dependency""
+version = ""0.2.23""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+  ""one_more_dev_dep 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
+]
+
+[[package]]
+name = ""one_more_dev_dep""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""my_other_package""
+version = ""1.0.0""
+
+[[package]]
+name = ""my_test_package""
+version = ""1.2.3""
+dependencies = [
+ ""my_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"",
+ ""my_other_package 1.0.0"",
+ ""other_dependency 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)"",
+ ""my_dev_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"",
+]
+
+[metadata]
+";
+
+        private readonly string testCargoLockV2String = @"
+[[package]]
+name = ""my_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+  ""same_package 1.0.0""
+]
+
+[[package]]
+name = ""other_dependency""
+version = ""0.4.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+ ""other_dependency_dependency"",
+]
+
+[[package]]
+name = ""other_dependency_dependency""
+version = ""0.1.12-alpha.6""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""my_dev_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+ ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
+ ""dev_dependency_dependency 0.2.23 (registry+https://github.com/rust-lang/crates.io-index)"",
+]
+
+[[package]]
+name = ""dev_dependency_dependency""
+version = ""0.2.23""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+  ""same_package 2.0.0""
+]
+
+[[package]]
+name = ""my_other_package""
+version = ""1.0.0""
+
+[[package]]
+name = ""my_test_package""
+version = ""1.2.3""
+dependencies = [
+ ""my_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"",
+ ""my_other_package 1.0.0"",
+ ""other_dependency 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)"",
+ ""my_dev_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"",
+]
+
+[[package]]
+name = ""same_package""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""same_package""
+version = ""2.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+";
+
+        private readonly string testWorkspaceLockV1NoBaseString = @"[[package]]
+name = ""dev_dependency_dependency""
+version = ""0.2.23""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+  ""one_more_dev_dep 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
+]
+
+[[package]]
+name = ""one_more_dev_dep""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""other_dependency""
+version = ""0.4.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+ ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
+]
+
+[[package]]
+name = ""other_dependency_dependency""
+version = ""0.1.12-alpha.6""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""my_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+  ""same_package 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
+]
+
+[[package]]
+name = ""same_package""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[metadata]
+";
+
+        private readonly string testWorkspaceLockV2NoBaseString = @"[[package]]
+name = ""dev_dependency_dependency""
+version = ""0.2.23""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+  ""one_more_dev_dep 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
+]
+
+[[package]]
+name = ""one_more_dev_dep""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""other_dependency""
+version = ""0.4.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+ ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
+]
+
+[[package]]
+name = ""other_dependency_dependency""
+version = ""0.1.12-alpha.6""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""my_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+  ""same_package 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
+]
+
+[[package]]
+name = ""same_package""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+";
+
+        private readonly string testWorkspaceLockBaseDependency = @"
+[[package]]
+name = ""test_package""
+version = ""2.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+";
+
         private DetectorTestUtility<RustCrateDetector> detectorTestUtility;
 
         [TestInitialize]
@@ -642,216 +853,5 @@ source = ""registry+sparse+https://other.registry/index/""
 
             componentIds.ForEach(componentId => dependencyGraph.Contains(componentId).Should().BeTrue());
         }
-
-        private readonly string testCargoLockString = @"
-[[package]]
-name = ""my_dependency""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[[package]]
-name = ""other_dependency""
-version = ""0.4.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
- ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
-]
-
-[[package]]
-name = ""other_dependency_dependency""
-version = ""0.1.12-alpha.6""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[[package]]
-name = ""my_dev_dependency""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
- ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
- ""dev_dependency_dependency 0.2.23 (registry+https://github.com/rust-lang/crates.io-index)"",
-]
-
-[[package]]
-name = ""dev_dependency_dependency""
-version = ""0.2.23""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
-  ""one_more_dev_dep 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
-]
-
-[[package]]
-name = ""one_more_dev_dep""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[[package]]
-name = ""my_other_package""
-version = ""1.0.0""
-
-[[package]]
-name = ""my_test_package""
-version = ""1.2.3""
-dependencies = [
- ""my_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"",
- ""my_other_package 1.0.0"",
- ""other_dependency 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)"",
- ""my_dev_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"",
-]
-
-[metadata]
-";
-
-        private readonly string testCargoLockV2String = @"
-[[package]]
-name = ""my_dependency""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
-  ""same_package 1.0.0""
-]
-
-[[package]]
-name = ""other_dependency""
-version = ""0.4.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
- ""other_dependency_dependency"",
-]
-
-[[package]]
-name = ""other_dependency_dependency""
-version = ""0.1.12-alpha.6""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[[package]]
-name = ""my_dev_dependency""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
- ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
- ""dev_dependency_dependency 0.2.23 (registry+https://github.com/rust-lang/crates.io-index)"",
-]
-
-[[package]]
-name = ""dev_dependency_dependency""
-version = ""0.2.23""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
-  ""same_package 2.0.0""
-]
-
-[[package]]
-name = ""my_other_package""
-version = ""1.0.0""
-
-[[package]]
-name = ""my_test_package""
-version = ""1.2.3""
-dependencies = [
- ""my_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"",
- ""my_other_package 1.0.0"",
- ""other_dependency 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)"",
- ""my_dev_dependency 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)"",
-]
-
-[[package]]
-name = ""same_package""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[[package]]
-name = ""same_package""
-version = ""2.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-";
-
-        private readonly string testWorkspaceLockV1NoBaseString = @"[[package]]
-name = ""dev_dependency_dependency""
-version = ""0.2.23""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
-  ""one_more_dev_dep 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
-]
-
-[[package]]
-name = ""one_more_dev_dep""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[[package]]
-name = ""other_dependency""
-version = ""0.4.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
- ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
-]
-
-[[package]]
-name = ""other_dependency_dependency""
-version = ""0.1.12-alpha.6""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[[package]]
-name = ""my_dependency""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
-  ""same_package 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
-]
-
-[[package]]
-name = ""same_package""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[metadata]
-";
-
-        private readonly string testWorkspaceLockV2NoBaseString = @"[[package]]
-name = ""dev_dependency_dependency""
-version = ""0.2.23""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
-  ""one_more_dev_dep 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
-]
-
-[[package]]
-name = ""one_more_dev_dep""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[[package]]
-name = ""other_dependency""
-version = ""0.4.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
- ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
-]
-
-[[package]]
-name = ""other_dependency_dependency""
-version = ""0.1.12-alpha.6""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-
-[[package]]
-name = ""my_dependency""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-dependencies = [
-  ""same_package 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)""
-]
-
-[[package]]
-name = ""same_package""
-version = ""1.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-";
-
-        private readonly string testWorkspaceLockBaseDependency = @"
-[[package]]
-name = ""test_package""
-version = ""2.0.0""
-source = ""registry+https://github.com/rust-lang/crates.io-index""
-";
     }
 }
