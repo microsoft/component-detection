@@ -27,6 +27,7 @@ namespace Microsoft.ComponentDetection.Common
 
         private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        private static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
         private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
 
@@ -54,10 +55,7 @@ namespace Microsoft.ComponentDetection.Common
         
         [Import]
         public ILogger Logger { get; set; }
-        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-        private static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-
+        
         /// <summary>
         /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
         /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
