@@ -15,15 +15,15 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
     {
         private static ConcurrentQueue<JObject> records = new ConcurrentQueue<JObject>();
 
+        public const string TelemetryRelativePath = "ScanTelemetry_{timestamp}.json";
+
+        private TelemetryMode telemetryMode = TelemetryMode.Production;
+
         [Import]
         public ILogger Logger { get; set; }
 
         [Import]
         public IFileWritingService FileWritingService { get; set; }
-
-        public const string TelemetryRelativePath = "ScanTelemetry_{timestamp}.json";
-
-        private TelemetryMode telemetryMode = TelemetryMode.Production;
 
         public void Flush()
         {

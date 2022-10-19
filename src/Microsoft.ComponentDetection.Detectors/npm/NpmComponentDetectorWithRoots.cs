@@ -17,6 +17,17 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
     [Export(typeof(IComponentDetector))]
     public class NpmComponentDetectorWithRoots : FileComponentDetector
     {
+        private const string NpmRegistryHost = "registry.npmjs.org";
+
+        private readonly object lernaFilesLock = new object();
+
+        public const string LernaSearchPattern = "lerna.json";
+
+        /// <summary>Common delegate for Package.json JToken processing.</summary>
+        /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
+        /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
+        protected delegate bool JTokenProcessingDelegate(JToken token);
+
         /// <summary>Gets or sets the logger for writing basic logging message to both console and file. Injected automatically by MEF composition.</summary>
         [Import]
         public IPathUtilityService PathUtilityService { get; set; }
@@ -30,17 +41,6 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
         public override int Version { get; } = 2;
-
-        private const string NpmRegistryHost = "registry.npmjs.org";
-
-        private readonly object lernaFilesLock = new object();
-
-        /// <summary>Common delegate for Package.json JToken processing.</summary>
-        /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
-        /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
-        protected delegate bool JTokenProcessingDelegate(JToken token);
-
-        public const string LernaSearchPattern = "lerna.json";
 
         public List<ProcessRequest> LernaFiles { get; set; } = new List<ProcessRequest>();
 

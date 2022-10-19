@@ -21,6 +21,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
     [TestCategory("Governance/ComponentDetection")]
     public class DetectorProcessingServiceTests
     {
+        private static DirectoryInfo defaultSourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
+        private static BcdeArguments defaultArgs = new BcdeArguments { SourceDirectory = defaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
+
         private readonly Dictionary<string, DetectedComponent> componentDictionary = new Dictionary<string, DetectedComponent>()
         {
             { "firstFileDetectorId", new DetectedComponent(new NpmComponent($"{Guid.NewGuid()}", "FileComponentVersion1")) },
@@ -41,6 +44,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         private Mock<IComponentDetector> secondCommandComponentDetectorMock;
         private Mock<FileComponentDetector> experimentalFileComponentDetectorMock;
 
+        private bool isWin;
+
         private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId)
         {
             return new IndividualDetectorScanResult
@@ -49,11 +54,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 ResultCode = ProcessingResultCode.Success,
             };
         }
-
-        private static DirectoryInfo defaultSourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
-        private static BcdeArguments defaultArgs = new BcdeArguments { SourceDirectory = defaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
-
-        private bool isWin;
 
         [TestInitialize]
         public void TestInit()

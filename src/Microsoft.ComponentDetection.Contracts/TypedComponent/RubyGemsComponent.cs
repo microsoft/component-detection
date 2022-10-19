@@ -4,6 +4,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class RubyGemsComponent : TypedComponent
     {
+        private RubyGemsComponent()
+        {
+            /* Reserved for deserialization */
+        }
+
         public RubyGemsComponent(string name, string version, string source = "")
         {
             this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.RubyGems));
@@ -22,10 +27,5 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
         public override PackageURL PackageUrl => new PackageURL("gem", null, this.Name, this.Version, null, null);
-
-        private RubyGemsComponent()
-        {
-            /* Reserved for deserialization */
-        }
     }
 }

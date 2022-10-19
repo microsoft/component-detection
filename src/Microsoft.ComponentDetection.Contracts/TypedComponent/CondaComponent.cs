@@ -14,6 +14,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             this.MD5 = md5;
         }
 
+        private CondaComponent()
+        {
+            /* Reserved for deserialization */
+        }
+
         public string Build { get; set; }
 
         public string Channel { get; set; }
@@ -33,10 +38,5 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public override ComponentType Type => ComponentType.Conda;
 
         public override string Id => $"{this.Name} {this.Version} {this.Build} {this.Channel} {this.Subdir} {this.Namespace} {this.Url} {this.MD5} - {this.Type}";
-
-        private CondaComponent()
-        {
-            /* Reserved for deserialization */
-        }
     }
 }

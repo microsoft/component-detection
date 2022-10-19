@@ -18,13 +18,13 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         private const string OptionalDependencies = "optionalDependencies";
 
+        [Import]
+        public ILogger Logger { get; set; }
+
         public static string NormalizeVersion(string version)
         {
             return version.StartsWith("npm:") ? version : $"npm:{version}";
         }
-
-        [Import]
-        public ILogger Logger { get; set; }
 
         public bool CanParse(YarnLockVersion yarnLockVersion)
         {

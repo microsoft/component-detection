@@ -4,6 +4,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class LinuxComponent : TypedComponent
     {
+        private LinuxComponent()
+        {
+            /* Reserved for deserialization */
+        }
+
         public LinuxComponent(string distribution, string release, string name, string version)
         {
             this.Distribution = this.ValidateRequiredInput(distribution, nameof(this.Distribution), nameof(ComponentType.Linux));
@@ -46,11 +51,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
                 return null;
             }
-        }
-
-        private LinuxComponent()
-        {
-            /* Reserved for deserialization */
         }
 
         private bool IsUbuntu()

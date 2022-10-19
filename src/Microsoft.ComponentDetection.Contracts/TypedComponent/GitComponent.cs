@@ -16,6 +16,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             this.Tag = tag;
         }
 
+        private GitComponent()
+        {
+            /* Reserved for deserialization */
+        }
+
         public Uri RepositoryUrl { get; set; }
 
         public string CommitHash { get; set; }
@@ -25,10 +30,5 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public override ComponentType Type => ComponentType.Git;
 
         public override string Id => $"{this.RepositoryUrl} : {this.CommitHash} - {this.Type}";
-
-        private GitComponent()
-        {
-            /* Reserved for deserialization */
-        }
     }
 }

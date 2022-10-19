@@ -2,6 +2,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class DockerImageComponent : TypedComponent
     {
+        private DockerImageComponent()
+        {
+            /* Reserved for deserialization */
+        }
+
         public DockerImageComponent(string hash, string name = null, string tag = null)
         {
             this.Digest = this.ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.DockerImage));
@@ -18,10 +23,5 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public override ComponentType Type => ComponentType.DockerImage;
 
         public override string Id => $"{this.Name} {this.Tag} {this.Digest}";
-
-        private DockerImageComponent()
-        {
-            /* Reserved for deserialization */
-        }
     }
 }

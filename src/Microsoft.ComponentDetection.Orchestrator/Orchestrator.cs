@@ -27,6 +27,18 @@ namespace Microsoft.ComponentDetection.Orchestrator
     {
         private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
+        [ImportMany]
+        private static IEnumerable<IArgumentHandlingService> ArgumentHandlers { get; set; }
+
+        [Import]
+        private static Logger Logger { get; set; }
+
+        [Import]
+        private static FileWritingService FileWritingService { get; set; }
+
+        [Import]
+        private static IArgumentHelper ArgumentHelper { get; set; }
+
         public async Task<ScanResult> LoadAsync(string[] args, CancellationToken cancellationToken = default)
         {
             var argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
@@ -114,18 +126,6 @@ namespace Microsoft.ComponentDetection.Orchestrator
                 .Where(x => typeof(T).IsAssignableFrom(x)).ToList()
                 .ForEach(service => containerConfiguration = containerConfiguration.WithPart(service));
         }
-
-        [ImportMany]
-        private static IEnumerable<IArgumentHandlingService> ArgumentHandlers { get; set; }
-
-        [Import]
-        private static Logger Logger { get; set; }
-
-        [Import]
-        private static FileWritingService FileWritingService { get; set; }
-
-        [Import]
-        private static IArgumentHelper ArgumentHelper { get; set; }
 
         public async Task<ScanResult> HandleCommandAsync(
             string[] args,
