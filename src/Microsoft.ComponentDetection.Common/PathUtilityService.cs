@@ -52,10 +52,10 @@ namespace Microsoft.ComponentDetection.Common
                 return this.isRunningOnWindowsContainer.Value;
             }
         }
-        
+
         [Import]
         public ILogger Logger { get; set; }
-        
+
         /// <summary>
         /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
         /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
