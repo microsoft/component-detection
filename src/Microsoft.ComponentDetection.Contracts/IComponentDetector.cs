@@ -31,15 +31,15 @@ namespace Microsoft.ComponentDetection.Contracts
         int Version { get; }
 
         /// <summary>
+        /// Gets a value indicating whether this detector needs automatic root dependency calculation or is going to be specified as part of RegisterUsage.
+        /// </summary>
+        bool NeedsAutomaticRootDependencyCalculation { get; }
+
+        /// <summary>
         ///  Run the detector and return the result set of components found.
         /// </summary>
         /// <returns> Awaitable task with result of components found. </returns>
         Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request);
-
-        /// <summary>
-        /// Gets a value indicating whether this detector needs automatic root dependency calculation or is going to be specified as part of RegisterUsage.
-        /// </summary>
-        bool NeedsAutomaticRootDependencyCalculation { get; }
     }
 
     /// <summary>

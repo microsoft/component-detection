@@ -27,6 +27,11 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             { ComponentType.Vcpkg, typeof(VcpkgComponent) },
         };
 
+        public override bool CanWrite
+        {
+            get { return false; }
+        }
+
         public override bool CanConvert(Type objectType)
         {
             return objectType == typeof(TypedComponent.TypedComponent);
@@ -43,11 +48,6 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             serializer.Populate(jo.CreateReader(), instanceOfTypedComponent);
 
             return instanceOfTypedComponent;
-        }
-
-        public override bool CanWrite
-        {
-            get { return false; }
         }
 
         public override void WriteJson(

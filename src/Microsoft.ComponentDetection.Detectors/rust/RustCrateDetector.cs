@@ -24,6 +24,16 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
            @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
            RegexOptions.Compiled);
 
+        public override string Id => "RustCrateDetector";
+
+        public override IList<string> SearchPatterns => new List<string> { CargoLockSearchPattern };
+
+        public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
+
+        public override int Version { get; } = 8;
+
+        public override IEnumerable<string> Categories => new List<string> { "Rust" };
+
         private static bool ParseDependency(string dependency, out string packageName, out string version, out string source)
         {
             var match = DependencyFormatRegex.Match(dependency);
@@ -44,16 +54,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
         }
 
         private static bool IsLocalPackage(CargoPackage package) => package.source == null;
-
-        public override string Id => "RustCrateDetector";
-
-        public override IList<string> SearchPatterns => new List<string> { CargoLockSearchPattern };
-
-        public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
-
-        public override int Version { get; } = 8;
-
-        public override IEnumerable<string> Categories => new List<string> { "Rust" };
 
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {

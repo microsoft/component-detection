@@ -13,6 +13,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         {
         }
 
+        private DockerReferenceComponent()
+        {
+            /* Reserved for deserialization */
+        }
+
         public string Repository { get; set; }
 
         public string Digest { get; set; }
@@ -32,10 +37,5 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         }
 
         public override string Id => $"{this.Repository} {this.Tag} {this.Digest}";
-
-        private DockerReferenceComponent()
-        {
-            /* Reserved for deserialization */
-        }
     }
 }

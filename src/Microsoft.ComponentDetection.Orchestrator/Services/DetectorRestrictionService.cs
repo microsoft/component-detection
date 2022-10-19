@@ -10,11 +10,11 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
     [Export(typeof(IDetectorRestrictionService))]
     public class DetectorRestrictionService : IDetectorRestrictionService
     {
-        [Import]
-        public ILogger Logger { get; set; }
-
         private IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
         private string newDetectorId = "NpmWithRoots";
+
+        [Import]
+        public ILogger Logger { get; set; }
 
         public IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions argSpecifiedRestrictions, IEnumerable<IComponentDetector> detectors)
         {

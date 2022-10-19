@@ -5,6 +5,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class NpmComponent : TypedComponent
     {
+        private NpmComponent()
+        {
+            /* Reserved for deserialization */
+        }
+
         public NpmComponent(string name, string version, string hash = null, NpmAuthor author = null)
         {
             this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Npm));
@@ -26,10 +31,5 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
         public override PackageURL PackageUrl => new PackageURL("npm", null, this.Name, this.Version, null, null);
-
-        private NpmComponent()
-        {
-            /* Reserved for deserialization */
-        }
     }
 }

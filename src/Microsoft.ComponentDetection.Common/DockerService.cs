@@ -21,12 +21,12 @@ namespace Microsoft.ComponentDetection.Common
 
         private static int incrementingContainerId;
 
-        [Import]
-        public ILogger Logger { get; set; }
-
         // Base image annotations from ADO dockerTask
         private const string BaseImageRefAnnotation = "image.base.ref.name";
         private const string BaseImageDigestAnnotation = "image.base.digest";
+
+        [Import]
+        public ILogger Logger { get; set; }
 
         public async Task<bool> CanPingDockerAsync(CancellationToken cancellationToken = default)
         {

@@ -15,6 +15,8 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
     [Export(typeof(IComponentDetector))]
     public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
     {
+        private HashSet<string> projectRoots = new HashSet<string>();
+
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
@@ -30,8 +32,6 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Vcpkg };
 
         public override int Version => 2;
-
-        private HashSet<string> projectRoots = new HashSet<string>();
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {

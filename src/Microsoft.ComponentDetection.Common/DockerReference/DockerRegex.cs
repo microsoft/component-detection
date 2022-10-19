@@ -5,6 +5,58 @@ namespace Microsoft.ComponentDetection.Common
 {
     public class DockerRegex
     {
+        public static Regex AlphaNumericRegexp = new Regex("[a-z0-9]+");
+        public static Regex SeparatorRegexp = new Regex("(?:[._]|__|[-]*)");
+
+        public static Regex DomainComponentRegexp = new Regex("(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])");
+        public static Regex TagRegexp = new Regex(@"[\w][\w.-]{0,127}");
+        public static Regex DigestRegexp = new Regex("[a-zA-Z][a-zA-Z0-9]*(?:[-_+.][a-zA-Z][a-zA-Z0-9]*)*[:][a-fA-F0-9]{32,}");
+        public static Regex IdentifierRegexp = new Regex("[a-f0-9]{64}");
+
+        public static Regex NameComponentRegexp = Expression(
+             AlphaNumericRegexp,
+             Optional(Repeated(SeparatorRegexp, AlphaNumericRegexp)));
+
+        public static Regex DomainRegexp = Expression(
+            DomainComponentRegexp,
+            Optional(
+                Repeated(
+                    new Regex(@"\."),
+                    DomainComponentRegexp)),
+            Optional(
+                new Regex(":"),
+                new Regex("[0-9]+")));
+
+        public static Regex AnchoredDigestRegexp = Anchored(DigestRegexp);
+
+        public static Regex NameRegexp = Expression(
+            Optional(
+                DomainRegexp,
+                new Regex(@"\/")),
+            NameComponentRegexp,
+            Optional(
+                Repeated(
+                    new Regex(@"\/"),
+                    NameComponentRegexp)));
+
+        public static Regex AnchoredNameRegexp = Anchored(
+            Optional(
+                Capture(DomainRegexp),
+                new Regex(@"\/")),
+            Capture(
+                NameComponentRegexp,
+                Optional(
+                    Repeated(
+                        new Regex(@"\/"),
+                        NameComponentRegexp))));
+
+        public static Regex ReferenceRegexp = Anchored(
+            Capture(NameRegexp),
+            Optional(new Regex(":"), Capture(TagRegexp)),
+            Optional(new Regex("@"), Capture(DigestRegexp)));
+
+        public static Regex AnchoredIdentifierRegexp = Anchored(IdentifierRegexp);
+
         /// <summary>
         /// expression defines a full expression, where each regular expression must follow the previous.
         /// </summary>
@@ -64,57 +116,5 @@ namespace Microsoft.ComponentDetection.Common
         {
             return new Regex($"({Expression(regexps).ToString()})");
         }
-
-        public static Regex AlphaNumericRegexp = new Regex("[a-z0-9]+");
-        public static Regex SeparatorRegexp = new Regex("(?:[._]|__|[-]*)");
-
-        public static Regex DomainComponentRegexp = new Regex("(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])");
-        public static Regex TagRegexp = new Regex(@"[\w][\w.-]{0,127}");
-        public static Regex DigestRegexp = new Regex("[a-zA-Z][a-zA-Z0-9]*(?:[-_+.][a-zA-Z][a-zA-Z0-9]*)*[:][a-fA-F0-9]{32,}");
-        public static Regex IdentifierRegexp = new Regex("[a-f0-9]{64}");
-
-        public static Regex NameComponentRegexp = Expression(
-             AlphaNumericRegexp,
-             Optional(Repeated(SeparatorRegexp, AlphaNumericRegexp)));
-
-        public static Regex DomainRegexp = Expression(
-            DomainComponentRegexp,
-            Optional(
-                Repeated(
-                    new Regex(@"\."),
-                    DomainComponentRegexp)),
-            Optional(
-                new Regex(":"),
-                new Regex("[0-9]+")));
-
-        public static Regex AnchoredDigestRegexp = Anchored(DigestRegexp);
-
-        public static Regex NameRegexp = Expression(
-            Optional(
-                DomainRegexp,
-                new Regex(@"\/")),
-            NameComponentRegexp,
-            Optional(
-                Repeated(
-                    new Regex(@"\/"),
-                    NameComponentRegexp)));
-
-        public static Regex AnchoredNameRegexp = Anchored(
-            Optional(
-                Capture(DomainRegexp),
-                new Regex(@"\/")),
-            Capture(
-                NameComponentRegexp,
-                Optional(
-                    Repeated(
-                        new Regex(@"\/"),
-                        NameComponentRegexp))));
-
-        public static Regex ReferenceRegexp = Anchored(
-            Capture(NameRegexp),
-            Optional(new Regex(":"), Capture(TagRegexp)),
-            Optional(new Regex("@"), Capture(DigestRegexp)));
-
-        public static Regex AnchoredIdentifierRegexp = Anchored(IdentifierRegexp);
     }
 }
