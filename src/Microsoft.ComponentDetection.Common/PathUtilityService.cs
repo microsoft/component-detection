@@ -71,6 +71,7 @@ namespace Microsoft.ComponentDetection.Common
 
         private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        private static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
         private object isRunningOnWindowsContainerLock = new object();
         private bool? isRunningOnWindowsContainer = null;
@@ -135,9 +136,9 @@ namespace Microsoft.ComponentDetection.Common
             {
                 return this.ResolvePhysicalPathWindows(path);
             }
-            else if (IsLinux)
+            else if (IsLinux || IsMacOS)
             {
-                return this.ResolvePhysicalPathLinux(path);
+                return this.ResolvePhysicalPathLibC(path);
             }
 
             return path;
@@ -193,9 +194,9 @@ namespace Microsoft.ComponentDetection.Common
             return result;
         }
 
-        public string ResolvePhysicalPathLinux(string path)
+        public string ResolvePhysicalPathLibC(string path)
         {
-            if (!IsLinux)
+            if (!IsLinux && !IsMacOS)
             {
                 throw new PlatformNotSupportedException("Attempted to call a function that makes linux-only library calls");
             }
