@@ -70,7 +70,7 @@ jobs:
         if: >- 
           ${{
             matrix.os == 'macos-latest' ||
-            (matrix.os == 'windows-latest')
+            matrix.os == 'windows-latest'
           }}
         run: echo "Linux detection is not supported on ${{ matrix.os }}. Please rely on ubuntu run for LinuxDetection."
 
