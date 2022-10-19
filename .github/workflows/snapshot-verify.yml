@@ -77,7 +77,7 @@ jobs:
       - name: Scan verification repo
         working-directory: src/Microsoft.ComponentDetection
         run: dotnet run scan --Verbosity Verbose --SourceDirectory ${{ github.workspace }}/test/Microsoft.ComponentDetection.VerificationTests/resources --Output ${{ github.workspace }}/output
-                                                 --DockerImagesToScan "docker.io/library/debian@sha256:9b0e3056b8cd8630271825665a0613cc27829d6a24906dc0122b3b4834312f7d,mcr.microsoft.com/cbl-mariner/base/core:2.0,alpine@sha256:1304f174557314a7ed9eddb4eab12fed12cb0cd9809e4c28f29af86979a3c870"
+                                                 --DockerImagesToScan "docker.io/library/debian@sha256:9b0e3056b8cd8630271825665a0613cc27829d6a24906dc0122b3b4834312f7d,mcr.microsoft.com/cbl-mariner/base/core:2.0,docker.io/library/alpine@sha256:1304f174557314a7ed9eddb4eab12fed12cb0cd9809e4c28f29af86979a3c870"
 
       - name: Run Verification Tests
         working-directory: test/Microsoft.ComponentDetection.VerificationTests
