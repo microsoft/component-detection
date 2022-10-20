@@ -29,6 +29,14 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     [Export(typeof(IPyPiClient))]
     public class PyPiClient : IPyPiClient
     {
+        // Values used for cache creation
+        private const long CACHEINTERVALSECONDS = 60;
+
+        private const long DEFAULTCACHEENTRIES = 128;
+
+        // max number of retries allowed, to cap the total delay period
+        private const long MAXRETRIES = 15;
+
         private static readonly HttpClientHandler HttpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
 
         // Keep telemetry on how the cache is being used for future refinements
@@ -40,13 +48,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         // time to wait before retrying a failed call to pypi.org
         private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
 
-        // Values used for cache creation
-        private const long CACHEINTERVALSECONDS = 60;
-        private const long DEFAULTCACHEENTRIES = 128;
         private bool checkedMaxEntriesVariable = false;
-
-        // max number of retries allowed, to cap the total delay period
-        private const long MAXRETRIES = 15;
 
         // retries used so far for calls to pypi.org
         private long retries = 0;
