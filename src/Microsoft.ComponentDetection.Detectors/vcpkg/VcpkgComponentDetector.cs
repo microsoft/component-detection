@@ -15,7 +15,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
     [Export(typeof(IComponentDetector))]
     public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
     {
-        private HashSet<string> projectRoots = new HashSet<string>();
+        private readonly HashSet<string> projectRoots = new HashSet<string>();
 
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }

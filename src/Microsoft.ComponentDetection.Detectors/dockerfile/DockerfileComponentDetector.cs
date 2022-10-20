@@ -16,7 +16,7 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
     [Export(typeof(IComponentDetector))]
     public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
     {
-        private HashSet<string> projectRoots = new HashSet<string>();
+        private readonly HashSet<string> projectRoots = new HashSet<string>();
 
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }

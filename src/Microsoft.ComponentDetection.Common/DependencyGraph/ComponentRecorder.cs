@@ -98,7 +98,7 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
             private readonly ComponentRecorder recorder;
 
-            private object registerUsageLock = new object();
+            private readonly object registerUsageLock = new object();
 
             public SingleFileComponentRecorder(string location, ComponentRecorder recorder, bool enableManualTrackingOfExplicitReferences, ILogger log)
             {

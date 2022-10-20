@@ -31,7 +31,7 @@ namespace Microsoft.ComponentDetection.Common
 
         private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
 
-        private object isRunningOnWindowsContainerLock = new object();
+        private readonly object isRunningOnWindowsContainerLock = new object();
         private bool? isRunningOnWindowsContainer = null;
 
         public bool IsRunningOnWindowsContainer

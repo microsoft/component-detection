@@ -14,6 +14,8 @@ namespace Microsoft.ComponentDetection.TestsUtilities
     public class DetectorTestUtility<T>
         where T : FileComponentDetector, new()
     {
+        private readonly List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)> filesToAdd = new List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)>();
+
         private Mock<ILogger> mockLogger = new Mock<ILogger>();
 
         private Mock<IComponentStreamEnumerableFactory> mockComponentStreamEnumerableFactory;
@@ -25,8 +27,6 @@ namespace Microsoft.ComponentDetection.TestsUtilities
         private ScanRequest scanRequest;
 
         private T detector;
-
-        private List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)> filesToAdd = new List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)>();
 
         public async Task<(IndividualDetectorScanResult, IComponentRecorder)> ExecuteDetector()
         {

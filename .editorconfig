@@ -759,9 +759,6 @@ dotnet_diagnostic.IDE0022.severity = suggestion
 # IDE0090: Simplify new expression
 dotnet_diagnostic.IDE0090.severity = suggestion
 
-# IDE0044: Add readonly modifier
-dotnet_diagnostic.IDE0044.severity = suggestion
-
 # IDE0065: 'using' directive placement
 dotnet_diagnostic.IDE0065.severity = suggestion
 

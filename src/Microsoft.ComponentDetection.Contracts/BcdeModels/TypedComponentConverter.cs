@@ -8,7 +8,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 {
     public class TypedComponentConverter : JsonConverter
     {
-        private Dictionary<ComponentType, Type> componentTypesToTypes = new Dictionary<ComponentType, Type>
+        private readonly Dictionary<ComponentType, Type> componentTypesToTypes = new Dictionary<ComponentType, Type>
         {
             { ComponentType.Other, typeof(OtherComponent) },
             { ComponentType.NuGet, typeof(NuGetComponent) },

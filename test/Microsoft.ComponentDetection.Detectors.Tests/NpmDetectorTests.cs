@@ -18,11 +18,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     [TestCategory("Governance/ComponentDetection")]
     public class NpmDetectorTests
     {
+        private readonly DetectorTestUtility<NpmComponentDetector> detectorTestUtility = DetectorTestUtilityCreator.Create<NpmComponentDetector>();
+        private readonly List<string> packageJsonSearchPattern = new List<string> { "package.json" };
         private Mock<ILogger> loggerMock;
         private Mock<IPathUtilityService> pathUtilityService;
         private ComponentRecorder componentRecorder;
-        private DetectorTestUtility<NpmComponentDetector> detectorTestUtility = DetectorTestUtilityCreator.Create<NpmComponentDetector>();
-        private List<string> packageJsonSearchPattern = new List<string> { "package.json" };
 
         [TestInitialize]
         public void TestInitialize()
