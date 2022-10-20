@@ -261,10 +261,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 return;
             }
 
-            if (visited == null)
-            {
-                visited = new HashSet<string>();
-            }
+            visited ??= new HashSet<string>();
 
             var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
             singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId);

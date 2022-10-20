@@ -835,9 +835,6 @@ dotnet_diagnostic.IDE0075.severity = suggestion
 # IDE0037: Member name can be simplified
 dotnet_diagnostic.IDE0037.severity = suggestion
 
-# IDE0074: Use compound assignment
-dotnet_diagnostic.IDE0074.severity = suggestion
-
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion
 

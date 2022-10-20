@@ -229,15 +229,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
         {
-            if (individualDetectorScanResult == null)
-            {
-                individualDetectorScanResult = new IndividualDetectorScanResult();
-            }
+            individualDetectorScanResult ??= new IndividualDetectorScanResult();
 
-            if (individualDetectorScanResult.ContainerDetails == null)
-            {
-                individualDetectorScanResult.ContainerDetails = Enumerable.Empty<ContainerDetails>();
-            }
+            individualDetectorScanResult.ContainerDetails ??= Enumerable.Empty<ContainerDetails>();
 
             // Additional telemetry details can safely be null
             return individualDetectorScanResult;
