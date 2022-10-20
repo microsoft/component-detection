@@ -109,27 +109,18 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 throw new ArgumentException($"The version specification {spec.Substring(i)} is not a valid python version");
             }
 
-            switch (op)
+            return op switch
             {
-                case "==":
-                    return targetVer.CompareTo(specVer) == 0;
-                case "===":
-                    return targetVer.CompareTo(specVer) == 0;
-                case "<":
-                    return specVer > targetVer;
-                case ">":
-                    return targetVer > specVer;
-                case "<=":
-                    return specVer >= targetVer;
-                case ">=":
-                    return targetVer >= specVer;
-                case "!=":
-                    return targetVer.CompareTo(specVer) != 0;
-                case "~=":
-                    return CheckEquality(version, spec.Substring(i), true);
-                default:
-                    return false;
-            }
+                "==" => targetVer.CompareTo(specVer) == 0,
+                "===" => targetVer.CompareTo(specVer) == 0,
+                "<" => specVer > targetVer,
+                ">" => targetVer > specVer,
+                "<=" => specVer >= targetVer,
+                ">=" => targetVer >= specVer,
+                "!=" => targetVer.CompareTo(specVer) != 0,
+                "~=" => CheckEquality(version, spec.Substring(i), true),
+                _ => false,
+            };
         }
     }
 }

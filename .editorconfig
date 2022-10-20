@@ -835,9 +835,6 @@ dotnet_diagnostic.IDE0075.severity = suggestion
 # IDE0037: Member name can be simplified
 dotnet_diagnostic.IDE0037.severity = suggestion
 
-# IDE0066: Use 'switch' expression
-dotnet_diagnostic.IDE0066.severity = suggestion
-
 # IDE0074: Use compound assignment
 dotnet_diagnostic.IDE0074.severity = suggestion
 

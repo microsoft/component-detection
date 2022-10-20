@@ -129,21 +129,15 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public bool IsSatisfied(SemVersion version)
         {
-            switch (this.ComparatorType)
+            return this.ComparatorType switch
             {
-                case Operator.Equal:
-                    return version == this.Version;
-                case Operator.LessThan:
-                    return version < this.Version;
-                case Operator.LessThanOrEqual:
-                    return version <= this.Version;
-                case Operator.GreaterThan:
-                    return version > this.Version;
-                case Operator.GreaterThanOrEqual:
-                    return version >= this.Version;
-                default:
-                    throw new InvalidOperationException("Comparator type not recognised.");
-            }
+                Operator.Equal => version == this.Version,
+                Operator.LessThan => version < this.Version,
+                Operator.LessThanOrEqual => version <= this.Version,
+                Operator.GreaterThan => version > this.Version,
+                Operator.GreaterThanOrEqual => version >= this.Version,
+                _ => throw new InvalidOperationException("Comparator type not recognised."),
+            };
         }
 
         public bool Intersects(Comparator other)
@@ -183,27 +177,15 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         public override string ToString()
         {
             string operatorString = null;
-            switch (this.ComparatorType)
+            operatorString = this.ComparatorType switch
             {
-                case Operator.Equal:
-                    operatorString = "=";
-                    break;
-                case Operator.LessThan:
-                    operatorString = "<";
-                    break;
-                case Operator.LessThanOrEqual:
-                    operatorString = "<=";
-                    break;
-                case Operator.GreaterThan:
-                    operatorString = ">";
-                    break;
-                case Operator.GreaterThanOrEqual:
-                    operatorString = ">=";
-                    break;
-                default:
-                    throw new InvalidOperationException("Comparator type not recognised.");
-            }
-
+                Operator.Equal => "=",
+                Operator.LessThan => "<",
+                Operator.LessThanOrEqual => "<=",
+                Operator.GreaterThan => ">",
+                Operator.GreaterThanOrEqual => ">=",
+                _ => throw new InvalidOperationException("Comparator type not recognised."),
+            };
             return string.Format("{0}{1}", operatorString, this.Version);
         }
 
@@ -229,22 +211,15 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         private static Operator ParseComparatorType(string input)
         {
-            switch (input)
+            return input switch
             {
-                case "":
-                case "=":
-                    return Operator.Equal;
-                case "<":
-                    return Operator.LessThan;
-                case "<=":
-                    return Operator.LessThanOrEqual;
-                case ">":
-                    return Operator.GreaterThan;
-                case ">=":
-                    return Operator.GreaterThanOrEqual;
-                default:
-                    throw new ArgumentException(string.Format("Invalid comparator type: {0}", input));
-            }
+                "" or "=" => Operator.Equal,
+                "<" => Operator.LessThan,
+                "<=" => Operator.LessThanOrEqual,
+                ">" => Operator.GreaterThan,
+                ">=" => Operator.GreaterThanOrEqual,
+                _ => throw new ArgumentException(string.Format("Invalid comparator type: {0}", input)),
+            };
         }
     }
 }
