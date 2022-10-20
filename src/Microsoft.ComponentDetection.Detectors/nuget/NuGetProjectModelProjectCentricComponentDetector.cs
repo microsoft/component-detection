@@ -416,7 +416,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
         private HashSet<string> GetDependencyComponentIds(LockFile lockFile, LockFileTarget target, IList<PackageDependency> dependencies, HashSet<string> visited = null)
         {
-            visited = visited ?? new HashSet<string>();
+            visited ??= new HashSet<string>();
             var currentComponents = new HashSet<string>();
             foreach (var dependency in dependencies)
             {

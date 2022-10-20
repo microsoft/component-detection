@@ -166,7 +166,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
 
         private void AddRootsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
         {
-            detectedComponent.DependencyRoots = detectedComponent.DependencyRoots ?? new HashSet<TypedComponent>(new ComponentComparer());
+            detectedComponent.DependencyRoots ??= new HashSet<TypedComponent>(new ComponentComparer());
 
             if (dependencyGraph == null)
             {
