@@ -16,9 +16,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task BlockFileParserWithNullStream_Fails()
         {
-            Func<Task> action = async () => await YarnBlockFile.CreateBlockFileAsync(null);
+            static async Task Action() => await YarnBlockFile.CreateBlockFileAsync(null);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(action);
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(Action);
         }
 
         [TestMethod]
@@ -28,9 +28,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             stream.Close();
 
-            Func<Task> action = async () => await YarnBlockFile.CreateBlockFileAsync(stream);
+            async Task Action() => await YarnBlockFile.CreateBlockFileAsync(stream);
 
-            await Assert.ThrowsExceptionAsync<ArgumentException>(action);
+            await Assert.ThrowsExceptionAsync<ArgumentException>(Action);
         }
 
         [TestMethod]

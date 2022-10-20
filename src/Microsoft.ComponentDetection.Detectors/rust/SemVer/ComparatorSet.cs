@@ -97,19 +97,19 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public ComparatorSet Intersect(ComparatorSet other)
         {
-            Func<Comparator, bool> operatorIsGreaterThan = c =>
+            static bool OperatorIsGreaterThan(Comparator c) =>
                 c.ComparatorType == Comparator.Operator.GreaterThan ||
                 c.ComparatorType == Comparator.Operator.GreaterThanOrEqual;
-            Func<Comparator, bool> operatorIsLessThan = c =>
+            static bool OperatorIsLessThan(Comparator c) =>
                 c.ComparatorType == Comparator.Operator.LessThan ||
                 c.ComparatorType == Comparator.Operator.LessThanOrEqual;
             var maxOfMins =
                 this.comparators.Concat(other.comparators)
-                .Where(operatorIsGreaterThan)
+                .Where(OperatorIsGreaterThan)
                 .OrderByDescending(c => c.Version).FirstOrDefault();
             var minOfMaxs =
                 this.comparators.Concat(other.comparators)
-                .Where(operatorIsLessThan)
+                .Where(OperatorIsLessThan)
                 .OrderBy(c => c.Version).FirstOrDefault();
             if (maxOfMins != null && minOfMaxs != null && !maxOfMins.Intersects(minOfMaxs))
             {

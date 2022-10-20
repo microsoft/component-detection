@@ -844,9 +844,6 @@ dotnet_diagnostic.IDE0074.severity = suggestion
 # IDE0010: Populate switch
 dotnet_diagnostic.IDE0010.severity = suggestion
 
-# IDE0039: Use local function
-dotnet_diagnostic.IDE0039.severity = suggestion
-
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion
 

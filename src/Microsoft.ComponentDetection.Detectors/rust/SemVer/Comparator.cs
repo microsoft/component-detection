@@ -148,31 +148,31 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public bool Intersects(Comparator other)
         {
-            Func<Comparator, bool> operatorIsGreaterThan = c =>
+            static bool OperatorIsGreaterThan(Comparator c) =>
                 c.ComparatorType == Operator.GreaterThan ||
                 c.ComparatorType == Operator.GreaterThanOrEqual;
-            Func<Comparator, bool> operatorIsLessThan = c =>
+            static bool OperatorIsLessThan(Comparator c) =>
                 c.ComparatorType == Operator.LessThan ||
                 c.ComparatorType == Operator.LessThanOrEqual;
-            Func<Comparator, bool> operatorIncludesEqual = c =>
+            static bool OperatorIncludesEqual(Comparator c) =>
                 c.ComparatorType == Operator.GreaterThanOrEqual ||
                 c.ComparatorType == Operator.Equal ||
                 c.ComparatorType == Operator.LessThanOrEqual;
 
-            if (this.Version > other.Version && (operatorIsLessThan(this) || operatorIsGreaterThan(other)))
+            if (this.Version > other.Version && (OperatorIsLessThan(this) || OperatorIsGreaterThan(other)))
             {
                 return true;
             }
 
-            if (this.Version < other.Version && (operatorIsGreaterThan(this) || operatorIsLessThan(other)))
+            if (this.Version < other.Version && (OperatorIsGreaterThan(this) || OperatorIsLessThan(other)))
             {
                 return true;
             }
 
             if (this.Version == other.Version && (
-                (operatorIncludesEqual(this) && operatorIncludesEqual(other)) ||
-                (operatorIsLessThan(this) && operatorIsLessThan(other)) ||
-                (operatorIsGreaterThan(this) && operatorIsGreaterThan(other))))
+                (OperatorIncludesEqual(this) && OperatorIncludesEqual(other)) ||
+                (OperatorIsLessThan(this) && OperatorIsLessThan(other)) ||
+                (OperatorIsGreaterThan(this) && OperatorIsGreaterThan(other))))
             {
                 return true;
             }
