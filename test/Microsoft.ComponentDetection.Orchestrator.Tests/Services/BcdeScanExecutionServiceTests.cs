@@ -36,7 +36,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         private BcdeScanExecutionService serviceUnderTest;
 
         private DirectoryInfo sourceDirectory;
-        private Dictionary<string, string> contentByFileInfo;
 
         [TestInitialize]
         public void InitializeTest()
@@ -53,8 +52,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             {
                 Logger = this.loggerMock.Object,
             };
-
-            this.contentByFileInfo = new Dictionary<string, string>();
 
             this.detectedComponents = new[]
             {
