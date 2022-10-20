@@ -756,9 +756,6 @@ dotnet_diagnostic.CA1834.severity = suggestion
 # SA1202: Elements should be ordered by access
 dotnet_diagnostic.SA1202.severity = suggestion
 
-# SA1515: Single-line comment should be preceded by blank line
-dotnet_diagnostic.SA1515.severity = suggestion
-
 # IDE0022: Use expression body for methods
 dotnet_diagnostic.IDE0022.severity = suggestion
 

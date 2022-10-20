@@ -841,6 +841,7 @@ source = ""registry+sparse+https://other.registry/index/""
                                         .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+
             // If registries have identity, this should be 2
             Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
 
