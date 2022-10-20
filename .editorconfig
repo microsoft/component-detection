@@ -812,9 +812,6 @@ dotnet_diagnostic.IDE0071.severity = suggestion
 # IDE0027: Use expression body for accessors
 dotnet_diagnostic.IDE0027.severity = suggestion
 
-# IDE0037: Member name can be simplified
-dotnet_diagnostic.IDE0037.severity = suggestion
-
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion
 
