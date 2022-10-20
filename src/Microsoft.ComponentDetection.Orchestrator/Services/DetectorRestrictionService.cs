@@ -70,7 +70,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
                     return false;
                 }).ToList();
-                if (detectors.Count() == 0)
+                if (!detectors.Any())
                 {
                     throw new InvalidDetectorCategoriesException($"Categories {string.Join(",", detectorCategories)} did not match any available detectors.");
                 }
