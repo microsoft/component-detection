@@ -829,9 +829,6 @@ dotnet_diagnostic.IDE0027.severity = suggestion
 # IDE0120: Simplify LINQ expression
 dotnet_diagnostic.IDE0120.severity = suggestion
 
-# IDE0075: Conditional expression can be simplified
-dotnet_diagnostic.IDE0075.severity = suggestion
-
 # IDE0037: Member name can be simplified
 dotnet_diagnostic.IDE0037.severity = suggestion
 
