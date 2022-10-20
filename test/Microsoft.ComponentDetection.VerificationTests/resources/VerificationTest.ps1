@@ -24,6 +24,7 @@ function main()
     $CDRelease =  $testDataDir + "\component-detection-release"
     $output = $testDataDir + "\output"
     $releaseOutput = $testDataDir + "\release-output"
+    $dockerImagesToScan = "docker.io/library/debian@sha256:9b0e3056b8cd8630271825665a0613cc27829d6a24906dc0122b3b4834312f7d,mcr.microsoft.com/cbl-mariner/base/core@sha256:c1bc83a3d385eccbb2f7f7da43a726c697e22a996f693a407c35ac7b4387cd59,docker.io/library/alpine@sha256:1304f174557314a7ed9eddb4eab12fed12cb0cd9809e4c28f29af86979a3c870"
 
     Write-Progress "cloning released component-detection at $CDRelease"
     git clone "https://github.com/microsoft/component-detection.git" $CDRelease
@@ -35,14 +36,14 @@ function main()
     Set-Location (Get-Item  $repoPath).FullName
     dotnet restore
     Set-Location ((Get-Item  $repoPath).FullName + "\src\Microsoft.ComponentDetection")
-    dotnet run scan --SourceDirectory $verificationTestRepo --Output $output
+    dotnet run scan --SourceDirectory $verificationTestRepo --Output $output `
+                    --DockerImagesToScan $dockerImagesToScan
 
     Set-Location $CDRelease
     dotnet restore
     Set-Location ($CDRelease + "\src\Microsoft.ComponentDetection")
-    dotnet run scan --SourceDirectory $verificationTestRepo --Output $releaseOutput
-
-    
+    dotnet run scan --SourceDirectory $verificationTestRepo --Output $releaseOutput `
+                    --DockerImagesToScan $dockerImagesToScan    
 
     $env:GITHUB_OLD_ARTIFACTS_DIR = $releaseOutput
     $env:GITHUB_NEW_ARTIFACTS_DIR = $output
