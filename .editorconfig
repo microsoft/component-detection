@@ -738,9 +738,6 @@ dotnet_diagnostic.CA1036.severity = suggestion
 # CA1001: Types that own disposable fields should be disposable
 dotnet_diagnostic.CA1001.severity = suggestion
 
-# CA1827: Do not use Count() or LongCount() when Any() can be used
-dotnet_diagnostic.CA1827.severity = suggestion
-
 # CA1064: Exceptions should be public
 dotnet_diagnostic.CA1064.severity = suggestion
 
@@ -756,20 +753,11 @@ dotnet_diagnostic.CA1834.severity = suggestion
 # SA1202: Elements should be ordered by access
 dotnet_diagnostic.SA1202.severity = suggestion
 
-# SA1500: Braces for multi-line statements should not share line
-dotnet_diagnostic.SA1500.severity = suggestion
-
-# SA1515: Single-line comment should be preceded by blank line
-dotnet_diagnostic.SA1515.severity = suggestion
-
 # IDE0022: Use expression body for methods
 dotnet_diagnostic.IDE0022.severity = suggestion
 
 # IDE0090: Simplify new expression
 dotnet_diagnostic.IDE0090.severity = suggestion
-
-# IDE0044: Add readonly modifier
-dotnet_diagnostic.IDE0044.severity = suggestion
 
 # IDE0065: 'using' directive placement
 dotnet_diagnostic.IDE0065.severity = suggestion
@@ -829,26 +817,8 @@ dotnet_diagnostic.IDE0027.severity = suggestion
 # IDE0120: Simplify LINQ expression
 dotnet_diagnostic.IDE0120.severity = suggestion
 
-# IDE0075: Conditional expression can be simplified
-dotnet_diagnostic.IDE0075.severity = suggestion
-
 # IDE0037: Member name can be simplified
 dotnet_diagnostic.IDE0037.severity = suggestion
-
-# IDE0066: Use 'switch' expression
-dotnet_diagnostic.IDE0066.severity = suggestion
-
-# IDE0074: Use compound assignment
-dotnet_diagnostic.IDE0074.severity = suggestion
-
-# IDE0024: Use expression body for operators
-dotnet_diagnostic.IDE0024.severity = suggestion
-
-# IDE0010: Populate switch
-dotnet_diagnostic.IDE0010.severity = suggestion
-
-# IDE0039: Use local function
-dotnet_diagnostic.IDE0039.severity = suggestion
 
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion

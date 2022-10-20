@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
             RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
-        private HashSet<string> projectRoots = new HashSet<string>();
+        private readonly HashSet<string> projectRoots = new HashSet<string>();
 
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }

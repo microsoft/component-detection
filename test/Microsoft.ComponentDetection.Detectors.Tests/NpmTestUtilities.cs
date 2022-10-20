@@ -53,10 +53,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var mock = new Mock<IObservableDirectoryWalkerFactory>();
             var components = new List<IComponentStream>();
-            if (componentRecorder == null)
-            {
-                componentRecorder = new ComponentRecorder();
-            }
+            componentRecorder ??= new ComponentRecorder();
 
             if (lernaJsonStreams != null && lernaPatterns != null)
             {

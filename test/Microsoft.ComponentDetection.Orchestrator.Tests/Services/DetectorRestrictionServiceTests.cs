@@ -182,10 +182,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             var mockDetector = new Mock<IComponentDetector>();
             mockDetector.SetupGet(x => x.Id).Returns($"{detectorName}");
-            if (categories == null)
-            {
-                categories = new[] { $"{detectorName}Category", "AllCategory" };
-            }
+            categories ??= new[] { $"{detectorName}Category", "AllCategory" };
 
             mockDetector.SetupGet(x => x.Categories).Returns(categories);
             return mockDetector;

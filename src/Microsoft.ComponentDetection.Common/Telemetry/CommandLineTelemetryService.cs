@@ -13,7 +13,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
     [TelemetryService(nameof(CommandLineTelemetryService))]
     internal class CommandLineTelemetryService : ITelemetryService
     {
-        private static ConcurrentQueue<JObject> records = new ConcurrentQueue<JObject>();
+        private static readonly ConcurrentQueue<JObject> Records = new ConcurrentQueue<JObject>();
 
         public const string TelemetryRelativePath = "ScanTelemetry_{timestamp}.json";
 
@@ -27,7 +27,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
 
         public void Flush()
         {
-            this.FileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(records));
+            this.FileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(Records));
         }
 
         public void PostRecord(IDetectionTelemetryRecord record)
@@ -38,7 +38,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
                 jsonRecord.Add("Timestamp", DateTime.UtcNow);
                 jsonRecord.Add("CorrelationId", TelemetryConstants.CorrelationId);
 
-                records.Enqueue(jsonRecord);
+                Records.Enqueue(jsonRecord);
 
                 if (this.telemetryMode == TelemetryMode.Debug)
                 {

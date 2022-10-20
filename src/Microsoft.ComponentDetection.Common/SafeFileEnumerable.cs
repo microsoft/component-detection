@@ -19,7 +19,7 @@ namespace Microsoft.ComponentDetection.Common
 
         private readonly EnumerationOptions enumerationOptions;
 
-        private HashSet<string> enumeratedDirectories;
+        private readonly HashSet<string> enumeratedDirectories;
 
         public SafeFileEnumerable(DirectoryInfo directory, IEnumerable<string> searchPatterns, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
         {

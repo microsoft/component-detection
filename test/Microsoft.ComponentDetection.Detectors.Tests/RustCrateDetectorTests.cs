@@ -264,14 +264,16 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             graph.GetDependenciesForComponent("my_dependency 1.0.0 - Cargo").Should().BeEmpty();
 
             // Verify dependencies for other_dependency
-            var other_dependencyDependencies = new List<string> {
+            var other_dependencyDependencies = new List<string>
+            {
                 "other_dependency_dependency 0.1.12-alpha.6 - Cargo",
             };
 
             graph.GetDependenciesForComponent("other_dependency 0.4.0 - Cargo").Should().BeEquivalentTo(other_dependencyDependencies);
 
             // Verify dependencies for my_dev_dependency
-            var my_dev_dependencyDependencies = new List<string> {
+            var my_dev_dependencyDependencies = new List<string>
+            {
                 "other_dependency_dependency 0.1.12-alpha.6 - Cargo",
                 "dev_dependency_dependency 0.2.23 - Cargo",
             };
@@ -551,7 +553,8 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             rootComponents.ForEach(rootComponentId => graph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue());
 
             // Verify dependencies for my_dependency
-            var my_dependencyDependencies = new List<string> {
+            var my_dependencyDependencies = new List<string>
+            {
                 "same_package 1.0.0 - Cargo",
             };
 
@@ -563,7 +566,8 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             graph.GetDependenciesForComponent("other_dependency 0.4.0 - Cargo").Should().BeEquivalentTo(other_dependencyDependencies);
 
             // Verify dependencies for my_dev_dependency
-            var my_dev_dependencyDependencies = new List<string> {
+            var my_dev_dependencyDependencies = new List<string>
+            {
                 "other_dependency_dependency 0.1.12-alpha.6 - Cargo",
                 "dev_dependency_dependency 0.2.23 - Cargo",
             };
@@ -837,6 +841,7 @@ source = ""registry+sparse+https://other.registry/index/""
                                         .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+
             // If registries have identity, this should be 2
             Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
 

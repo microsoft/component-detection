@@ -6,7 +6,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 {
     public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
     {
-        private Stopwatch stopwatch = new Stopwatch();
+        private readonly Stopwatch stopwatch = new Stopwatch();
 
         private bool disposedValue = false;
 

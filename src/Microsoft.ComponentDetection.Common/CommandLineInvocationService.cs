@@ -15,7 +15,7 @@ namespace Microsoft.ComponentDetection.Common
     [Export(typeof(ICommandLineInvocationService))]
     public class CommandLineInvocationService : ICommandLineInvocationService
     {
-        private IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
+        private readonly IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
 
         public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
         {

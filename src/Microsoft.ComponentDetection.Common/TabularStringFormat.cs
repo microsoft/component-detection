@@ -10,11 +10,11 @@ namespace Microsoft.ComponentDetection.Common
         public const char DefaultVerticalLineChar = '|';
         public const char DefaultHorizontalLineChar = '_';
 
-        private IList<Column> columns;
-        private int totalWidth;
-        private char horizontalLineChar;
-        private char verticalLineChar;
-        private string tableTitle;
+        private readonly IList<Column> columns;
+        private readonly int totalWidth;
+        private readonly char horizontalLineChar;
+        private readonly char verticalLineChar;
+        private readonly string tableTitle;
 
         public TabularStringFormat(IList<Column> columns, char horizontalLineChar = DefaultHorizontalLineChar, char verticalLineChar = DefaultVerticalLineChar, string tableTitle = null)
         {

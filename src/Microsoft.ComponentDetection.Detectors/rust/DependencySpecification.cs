@@ -9,7 +9,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 {
     public class DependencySpecification
     {
-        private IDictionary<string, ISet<ISet<Range>>> dependencies;
+        private readonly IDictionary<string, ISet<ISet<Range>>> dependencies;
 
         public DependencySpecification()
         {

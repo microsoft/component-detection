@@ -27,6 +27,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         private readonly List<string> netCoreFrameworkNames = new List<string> { "Microsoft.AspNetCore.App", "Microsoft.AspNetCore.Razor.Design", "Microsoft.NETCore.App" };
 
         private readonly HashSet<string> alreadyLoggedWarnings = new HashSet<string>();
+
         // This list is meant to encompass all net standard dependencies, but likely contains some net core app 1.x ones, too.
         // The specific guidance we got around populating this list is to do so based on creating a dotnet core 1.x app to make sure we had the complete
         //  set of netstandard.library files that could show up in later sdk versions.
@@ -261,10 +262,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 return;
             }
 
-            if (visited == null)
-            {
-                visited = new HashSet<string>();
-            }
+            visited ??= new HashSet<string>();
 
             var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
             singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId);

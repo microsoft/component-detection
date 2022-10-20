@@ -13,9 +13,9 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 {
     internal class DependencyGraph : IDependencyGraph
     {
-        private ConcurrentDictionary<string, ComponentRefNode> componentNodes;
+        private readonly ConcurrentDictionary<string, ComponentRefNode> componentNodes;
 
-        private bool enableManualTrackingOfExplicitReferences;
+        private readonly bool enableManualTrackingOfExplicitReferences;
 
         public DependencyGraph(bool enableManualTrackingOfExplicitReferences)
         {

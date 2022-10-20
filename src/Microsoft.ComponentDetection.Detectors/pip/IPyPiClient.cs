@@ -29,10 +29,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     [Export(typeof(IPyPiClient))]
     public class PyPiClient : IPyPiClient
     {
-        private static HttpClientHandler httpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
+        private static readonly HttpClientHandler HttpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
+
+        // Keep telemetry on how the cache is being used for future refinements
+        private readonly PypiCacheTelemetryRecord cacheTelemetry;
 
         [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:ElementsMustBeOrderedByAccess", Justification = "Field needs to be declared before use so order can not follow Access Levels.")]
-        internal static HttpClient HttpClient = new HttpClient(httpClientHandler);
+        internal static HttpClient HttpClient = new HttpClient(HttpClientHandler);
 
         // time to wait before retrying a failed call to pypi.org
         private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
@@ -53,9 +56,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         /// and has a limited number of entries which will expire after the cache fills or a specified interval.
         /// </summary>
         private MemoryCache cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
-
-        // Keep telemetry on how the cache is being used for future refinements
-        private PypiCacheTelemetryRecord cacheTelemetry;
 
         public PyPiClient()
         {

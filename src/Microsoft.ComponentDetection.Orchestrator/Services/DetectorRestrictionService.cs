@@ -10,8 +10,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
     [Export(typeof(IDetectorRestrictionService))]
     public class DetectorRestrictionService : IDetectorRestrictionService
     {
-        private IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
-        private string newDetectorId = "NpmWithRoots";
+        private readonly IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
+        private readonly string newDetectorId = "NpmWithRoots";
 
         [Import]
         public ILogger Logger { get; set; }
@@ -70,7 +70,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
                     return false;
                 }).ToList();
-                if (detectors.Count() == 0)
+                if (!detectors.Any())
                 {
                     throw new InvalidDetectorCategoriesException($"Categories {string.Join(",", detectorCategories)} did not match any available detectors.");
                 }

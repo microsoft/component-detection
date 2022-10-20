@@ -21,13 +21,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     [TestCategory("Governance/ComponentDetection")]
     public class NpmDetectorWithRootsTests
     {
+        private readonly DetectorTestUtility<NpmComponentDetectorWithRoots> detectorTestUtility = DetectorTestUtilityCreator.Create<NpmComponentDetectorWithRoots>();
+        private readonly string packageLockJsonFileName = "package-lock.json";
+        private readonly string packageJsonFileName = "package.json";
+        private readonly List<string> packageJsonSearchPattern = new List<string> { "package.json" };
+        private ComponentRecorder componentRecorder;
         private Mock<ILogger> loggerMock;
         private Mock<IPathUtilityService> pathUtilityService;
-        private ComponentRecorder componentRecorder;
-        private DetectorTestUtility<NpmComponentDetectorWithRoots> detectorTestUtility = DetectorTestUtilityCreator.Create<NpmComponentDetectorWithRoots>();
-        private string packageLockJsonFileName = "package-lock.json";
-        private string packageJsonFileName = "package.json";
-        private List<string> packageJsonSearchPattern = new List<string> { "package.json" };
 
         [TestInitialize]
         public void TestInitialize()

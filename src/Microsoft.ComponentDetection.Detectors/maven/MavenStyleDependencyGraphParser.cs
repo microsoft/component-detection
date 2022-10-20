@@ -11,9 +11,9 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         private static readonly string[] ComponentSplitters = new[] { "+-", "\\-" };
 
-        private Stack<GraphNodeAtLevel<string>> stack = new Stack<GraphNodeAtLevel<string>>();
+        private readonly Stack<GraphNodeAtLevel<string>> stack = new Stack<GraphNodeAtLevel<string>>();
 
-        private Stack<(int ParseLevel, DetectedComponent Component)> tupleStack = new Stack<(int, DetectedComponent)>();
+        private readonly Stack<(int ParseLevel, DetectedComponent Component)> tupleStack = new Stack<(int, DetectedComponent)>();
 
         private DetectedComponent topLevelComponent = null;
 
