@@ -97,25 +97,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         public bool Floating { get; set; } = false;
 
-        public static bool operator >(PythonVersion operand1, PythonVersion operand2)
-        {
-            return operand1.CompareTo(operand2) == 1;
-        }
+        public static bool operator >(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) == 1;
 
-        public static bool operator <(PythonVersion operand1, PythonVersion operand2)
-        {
-            return operand1.CompareTo(operand2) == -1;
-        }
+        public static bool operator <(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) == -1;
 
-        public static bool operator >=(PythonVersion operand1, PythonVersion operand2)
-        {
-            return operand1.CompareTo(operand2) >= 0;
-        }
+        public static bool operator >=(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) >= 0;
 
-        public static bool operator <=(PythonVersion operand1, PythonVersion operand2)
-        {
-            return operand1.CompareTo(operand2) <= 0;
-        }
+        public static bool operator <=(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) <= 0;
 
         public int CompareTo(PythonVersion other)
         {

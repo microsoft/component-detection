@@ -841,9 +841,6 @@ dotnet_diagnostic.IDE0066.severity = suggestion
 # IDE0074: Use compound assignment
 dotnet_diagnostic.IDE0074.severity = suggestion
 
-# IDE0024: Use expression body for operators
-dotnet_diagnostic.IDE0024.severity = suggestion
-
 # IDE0010: Populate switch
 dotnet_diagnostic.IDE0010.severity = suggestion
 

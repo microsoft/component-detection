@@ -52,10 +52,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             return a.Equals(b);
         }
 
-        public static bool operator !=(Range a, Range b)
-        {
-            return !(a == b);
-        }
+        public static bool operator !=(Range a, Range b) => !(a == b);
 
         // Static convenience methods
 
