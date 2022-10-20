@@ -797,9 +797,6 @@ dotnet_diagnostic.IDE0078.severity = suggestion
 # IDE0083: Use pattern matchin
 dotnet_diagnostic.IDE0083.severity = suggestion
 
-# IDE0032: Use auto property
-dotnet_diagnostic.IDE0032.severity = suggestion
-
 # IDE0054: Use compound assignment
 dotnet_diagnostic.IDE0054.severity = suggestion
 
