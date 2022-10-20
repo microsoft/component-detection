@@ -611,12 +611,12 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: true);
 
             var results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
-            results.ComponentsFound.Where(component => component.Component.Id == detectedComponent.Component.Id).Single().IsDevelopmentDependency.Should().BeTrue();
+            results.ComponentsFound.Single(component => component.Component.Id == detectedComponent.Component.Id).IsDevelopmentDependency.Should().BeTrue();
 
             singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: false);
 
             results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
-            results.ComponentsFound.Where(component => component.Component.Id == detectedComponent.Component.Id).Single().IsDevelopmentDependency.Should().BeFalse();
+            results.ComponentsFound.Single(component => component.Component.Id == detectedComponent.Component.Id).IsDevelopmentDependency.Should().BeFalse();
         }
 
         private TestOutput DetectComponentsHappyPath(

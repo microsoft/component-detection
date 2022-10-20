@@ -212,7 +212,7 @@ namespace Microsoft.ComponentDetection.TestsUtilities
 
         private string FindMatchingPattern(string fileName, IEnumerable<string> searchPatterns)
         {
-            var foundPattern = searchPatterns.Where(searchPattern => new PathUtilityService().MatchesPattern(searchPattern, fileName)).FirstOrDefault();
+            var foundPattern = searchPatterns.FirstOrDefault(searchPattern => new PathUtilityService().MatchesPattern(searchPattern, fileName));
 
             return foundPattern != default(string) ? foundPattern : fileName;
         }
