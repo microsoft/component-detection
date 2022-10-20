@@ -74,7 +74,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> <see cref="Regex"/> of the non-capturing group. </returns>
         public static Regex Group(params Regex[] regexps)
         {
-            return new Regex($"(?:{Expression(regexps).ToString()})");
+            return new Regex($"(?:{Expression(regexps)})");
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> The wrapped <see cref="Regex"/>. </returns>
         public static Regex Optional(params Regex[] regexps)
         {
-            return new Regex($"{Group(regexps).ToString()}?");
+            return new Regex($"{Group(regexps)}?");
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> The wrapped <see cref="Regex"/>. </returns>
         public static Regex Repeated(params Regex[] regexps)
         {
-            return new Regex($"{Group(regexps).ToString()}+");
+            return new Regex($"{Group(regexps)}+");
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> The anchored <see cref="Regex"/>. </returns>
         public static Regex Anchored(params Regex[] regexps)
         {
-            return new Regex($"^{Expression(regexps).ToString()}$");
+            return new Regex($"^{Expression(regexps)}$");
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> The captured <see cref="Regex"/>. </returns>
         public static Regex Capture(params Regex[] regexps)
         {
-            return new Regex($"({Expression(regexps).ToString()})");
+            return new Regex($"({Expression(regexps)})");
         }
     }
 }

@@ -806,9 +806,6 @@ dotnet_diagnostic.IDE0052.severity = suggestion
 # IDE0054: Use compound assignment
 dotnet_diagnostic.IDE0054.severity = suggestion
 
-# IDE0071: Interpolation can be simplified
-dotnet_diagnostic.IDE0071.severity = suggestion
-
 # IDE0027: Use expression body for accessors
 dotnet_diagnostic.IDE0027.severity = suggestion
 
