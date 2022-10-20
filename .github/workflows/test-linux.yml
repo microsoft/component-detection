@@ -7,9 +7,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    env:
-      OFFICIAL_BUILD: 'True'
-
     steps:
     - uses: actions/checkout@v3
       with:
