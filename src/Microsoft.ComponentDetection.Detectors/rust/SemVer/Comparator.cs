@@ -88,6 +88,10 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                         }
 
                         break;
+
+                    case Operator.Equal:
+                    case Operator.LessThan:
+                    case Operator.GreaterThanOrEqual:
                     default:
                         // <1.2.x means <1.2.0
                         // >=1.2.x means >=1.2.0
