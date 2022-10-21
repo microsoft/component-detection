@@ -120,10 +120,10 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                 });
 
                 syftTelemetryRecord.LinuxComponents = JsonConvert.SerializeObject(linuxComponentsWithLayers.Select(linuxComponentWithLayer =>
-                    new
+                    new LinuxComponentRecord
                     {
-                        linuxComponentWithLayer.Component.Name,
-                        linuxComponentWithLayer.Component.Version,
+                        Name = linuxComponentWithLayer.Component.Name,
+                        Version = linuxComponentWithLayer.Component.Version,
                     }));
 
                 return layerMappedLinuxComponents;
@@ -133,6 +133,13 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                 record.FailedDeserializingScannerOutput = e.ToString();
                 return null;
             }
+        }
+
+        internal sealed class LinuxComponentRecord
+        {
+            public string Name { get; set; }
+
+            public string Version { get; set; }
         }
     }
 }
