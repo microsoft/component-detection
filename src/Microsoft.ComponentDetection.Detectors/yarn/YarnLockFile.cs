@@ -5,7 +5,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
     public class YarnLockFile
     {
         /// <summary>
-        /// Gets or sets the declared Yarn Lock Version.
+        /// Gets or sets the declared Yarn Lock version.
         /// </summary>
         public YarnLockVersion LockVersion { get; set; }
 

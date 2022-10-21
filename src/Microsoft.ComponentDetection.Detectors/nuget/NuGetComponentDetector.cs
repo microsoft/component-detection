@@ -117,7 +117,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
                 if (!NuGetVersion.TryParse(version, out var parsedVer))
                 {
-                    this.Logger.LogInfo($"Version '{version}' from {stream.Location} could not be parsed as a NuGet version");
+                    this.Logger.LogInfo($"version '{version}' from {stream.Location} could not be parsed as a NuGet version");
 
                     return;
                 }

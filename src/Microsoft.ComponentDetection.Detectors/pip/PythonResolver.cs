@@ -87,7 +87,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                         // The currently selected version is invalid, try to see if there is another valid version available
                         if (!await this.InvalidateAndReprocessAsync(state, node, dependencyNode))
                         {
-                            this.Logger.LogWarning($"Version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
+                            this.Logger.LogWarning($"version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
 
                             // there is no valid version available for the node, dependencies are incompatible,
                         }
@@ -208,12 +208,12 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private class PythonResolverState
         {
-            public readonly IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap
+            public IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap { get; }
                 = new Dictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>>(StringComparer.OrdinalIgnoreCase);
 
-            public readonly Queue<(string, PipDependencySpecification)> ProcessingQueue = new Queue<(string, PipDependencySpecification)>();
+            public Queue<(string, PipDependencySpecification)> ProcessingQueue { get; } = new Queue<(string, PipDependencySpecification)>();
 
-            public readonly IDictionary<string, PipGraphNode> NodeReferences = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
+            public IDictionary<string, PipGraphNode> NodeReferences { get; } = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
 
             public IList<PipGraphNode> Roots { get; } = new List<PipGraphNode>();
         }

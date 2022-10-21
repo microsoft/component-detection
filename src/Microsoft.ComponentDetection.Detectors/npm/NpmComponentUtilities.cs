@@ -50,7 +50,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
             if (!SemanticVersion.TryParse(version, out var result) && !TryParseNpmVersion(npmRegistryHost, name, version, out result))
             {
-                logger.LogInfo($"Version string {version} for component {name} is invalid or unsupported and a component will not be recorded.");
+                logger.LogInfo($"version string {version} for component {name} is invalid or unsupported and a component will not be recorded.");
                 return null;
             }
 

@@ -4,14 +4,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 {
     public class CargoDependencyData
     {
-        public HashSet<string> CargoWorkspaces;
-
-        public HashSet<string> CargoWorkspaceExclusions;
-
-        public IList<DependencySpecification> NonDevDependencies;
-
-        public IList<DependencySpecification> DevDependencies;
-
         public CargoDependencyData()
         {
             this.CargoWorkspaces = new HashSet<string>();
@@ -19,5 +11,13 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             this.NonDevDependencies = new List<DependencySpecification>();
             this.DevDependencies = new List<DependencySpecification>();
         }
+
+        public HashSet<string> CargoWorkspaces { get; set; }
+
+        public HashSet<string> CargoWorkspaceExclusions { get; set; }
+
+        public IList<DependencySpecification> NonDevDependencies { get; set; }
+
+        public IList<DependencySpecification> DevDependencies { get; set; }
     }
 }

@@ -15,10 +15,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 {
     internal class Comparator : IEquatable<Comparator>
     {
-        public readonly Operator ComparatorType;
-
-        public readonly SemVersion Version;
-
         private const string RangePattern = @"
             \s*
             ([=<>]*)                # Comparator type (can be empty)
@@ -119,6 +115,10 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             GreaterThan,
             GreaterThanOrEqual,
         }
+
+        public Operator ComparatorType { get; set; }
+
+        public SemVersion Version { get; set; }
 
         public static Tuple<int, Comparator> TryParse(string input)
         {

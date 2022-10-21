@@ -467,10 +467,6 @@ dotnet_diagnostic.SA1200.severity = suggestion
 #  Using directives should be ordered alphabetically by the namespaces
 dotnet_diagnostic.SA1210.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1401.md
-# Field should be private
-dotnet_diagnostic.SA1401.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
 # Tuple types in signatures should have element names
 dotnet_diagnostic.SA1414.severity = suggestion
