@@ -70,10 +70,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             }
         }
 
-        private ComparatorSet(IEnumerable<Comparator> comparators)
-        {
-            this.comparators = comparators.ToList();
-        }
+        private ComparatorSet(IEnumerable<Comparator> comparators) => this.comparators = comparators.ToList();
 
         public bool IsSatisfied(SemVersion version)
         {

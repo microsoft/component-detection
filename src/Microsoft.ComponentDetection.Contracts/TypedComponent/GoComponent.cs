@@ -40,8 +40,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override bool Equals(object other)
         {
-            var otherComponent = other as GoComponent;
-            return otherComponent != null && this.Equals(otherComponent);
+            return other is GoComponent otherComponent && this.Equals(otherComponent);
         }
 
         public bool Equals(GoComponent other)

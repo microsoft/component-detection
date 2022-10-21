@@ -763,10 +763,10 @@ dotnet_diagnostic.IDE0090.severity = suggestion
 dotnet_diagnostic.IDE0065.severity = suggestion
 
 # IDE0021: Use expression body for constructors
-dotnet_diagnostic.IDE0021.severity = suggestion
+#dotnet_diagnostic.IDE0021.severity = suggestion
 
 # IDE0019: Use pattern matching to avoid 'as' followed by a 'null' check
-dotnet_diagnostic.IDE0019.severity = suggestion
+#dotnet_diagnostic.IDE0019.severity = suggestion
 
 # IDE0160 and IDE0161: Namespace declaration preferences
 dotnet_diagnostic.IDE0160.severity = suggestion
@@ -818,7 +818,7 @@ dotnet_diagnostic.IDE0027.severity = suggestion
 dotnet_diagnostic.IDE0120.severity = suggestion
 
 # IDE0037: Member name can be simplified
-dotnet_diagnostic.IDE0037.severity = suggestion
+#dotnet_diagnostic.IDE0037.severity = suggestion
 
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion

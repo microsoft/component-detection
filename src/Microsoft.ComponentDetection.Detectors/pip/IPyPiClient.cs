@@ -57,14 +57,11 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         /// </summary>
         private MemoryCache cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
 
-        public PyPiClient()
+        public PyPiClient() => this.cacheTelemetry = new PypiCacheTelemetryRecord()
         {
-            this.cacheTelemetry = new PypiCacheTelemetryRecord()
-            {
-                NumCacheHits = 0,
-                FinalCacheSize = 0,
-            };
-        }
+            NumCacheHits = 0,
+            FinalCacheSize = 0,
+        };
 
         ~PyPiClient()
         {

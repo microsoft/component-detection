@@ -9,10 +9,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     /// </summary>
     public class PipGraphNode
     {
-        public PipGraphNode(PipComponent value)
-        {
-            this.Value = value;
-        }
+        public PipGraphNode(PipComponent value) => this.Value = value;
 
         public PipComponent Value { get; set; }
 

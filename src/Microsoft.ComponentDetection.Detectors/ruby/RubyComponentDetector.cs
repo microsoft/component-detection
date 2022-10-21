@@ -44,10 +44,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
         private static readonly Regex DependencyDefinitionRegex = new Regex("^ {4}[A-Za-z-]+", RegexOptions.Compiled);
         private static readonly Regex SubDependencyRegex = new Regex("^ {6}[A-Za-z-]+", RegexOptions.Compiled);
 
-        public RubyComponentDetector()
-        {
-            this.NeedsAutomaticRootDependencyCalculation = true;
-        }
+        public RubyComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
 
         private enum SectionType
         {
