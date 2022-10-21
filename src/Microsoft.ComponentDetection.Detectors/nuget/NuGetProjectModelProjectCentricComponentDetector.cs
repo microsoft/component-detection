@@ -213,7 +213,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
                 var frameworkComponents = this.GetFrameworkComponents(lockFile);
                 var explicitReferencedDependencies = this.GetTopLevelLibraries(lockFile)
-                    .Select(x => this.GetLibraryComponentWithDependencyLookup(lockFile.Libraries, x.name, x.version, x.versionRange))
+                    .Select(x => this.GetLibraryComponentWithDependencyLookup(lockFile.Libraries, x.Name, x.Version, x.VersionRange))
                     .ToList();
                 var explicitlyReferencedComponentIds =
                     explicitReferencedDependencies
@@ -308,16 +308,16 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             return isAFrameworkComponent;
         }
 
-        private List<(string name, Version version, VersionRange versionRange)> GetTopLevelLibraries(LockFile lockFile)
+        private List<(string Name, Version Version, VersionRange VersionRange)> GetTopLevelLibraries(LockFile lockFile)
         {
             // First, populate target frameworks -- This is the base level authoritative list of nuget packages a project has dependencies on.
-            var toBeFilled = new List<(string name, Version version, VersionRange versionRange)>();
+            var toBeFilled = new List<(string Name, Version Version, VersionRange VersionRange)>();
 
             foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
             {
                 foreach (var dependency in framework.Dependencies)
                 {
-                    toBeFilled.Add((name: dependency.Name, version: null, versionRange: dependency.LibraryRange.VersionRange));
+                    toBeFilled.Add((dependency.Name, Version: null, dependency.LibraryRange.VersionRange));
                 }
             }
 

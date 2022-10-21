@@ -471,10 +471,6 @@ dotnet_diagnostic.SA1210.severity = suggestion
 # Using static directives should be placed at the correct location
 dotnet_diagnostic.SA1216.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1316.md
-# Tuple element names should use correct casing
-dotnet_diagnostic.SA1316.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1401.md
 # Field should be private
 dotnet_diagnostic.SA1401.severity = suggestion

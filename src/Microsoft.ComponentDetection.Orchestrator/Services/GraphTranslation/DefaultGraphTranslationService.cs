@@ -33,7 +33,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
                 ComponentsFound = mergedComponents.Select(x => this.ConvertToContract(x)).ToList(),
                 ContainerDetailsMap = detectorProcessingResult.ContainersDetailsMap,
                 DependencyGraphs = GraphTranslationUtility.AccumulateAndConvertToContract(recorderDetectorPairs
-                                                                    .Select(tuple => tuple.recorder)
+                                                                    .Select(tuple => tuple.Recorder)
                                                                     .Where(x => x != null)
                                                                     .Select(x => x.GetDependencyGraphsByLocation())),
                 SourceDirectory = detectionArguments.SourceDirectory.ToString(),
@@ -54,14 +54,14 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation
             });
         }
 
-        private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector detector, ComponentRecorder recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory)
+        private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector Detector, ComponentRecorder Recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory)
         {
             return recorderDetectorPairs
-                .Where(recorderDetectorPair => recorderDetectorPair.recorder != null)
+                .Where(recorderDetectorPair => recorderDetectorPair.Recorder != null)
                 .SelectMany(recorderDetectorPair =>
             {
-                var detector = recorderDetectorPair.detector;
-                var componentRecorder = recorderDetectorPair.recorder;
+                var detector = recorderDetectorPair.Detector;
+                var componentRecorder = recorderDetectorPair.Recorder;
                 var detectedComponents = componentRecorder.GetDetectedComponents();
                 var dependencyGraphsByLocation = componentRecorder.GetDependencyGraphsByLocation();
 

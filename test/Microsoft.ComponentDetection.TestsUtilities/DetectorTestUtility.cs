@@ -14,7 +14,7 @@ namespace Microsoft.ComponentDetection.TestsUtilities
     public class DetectorTestUtility<T>
         where T : FileComponentDetector, new()
     {
-        private readonly List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)> filesToAdd = new List<(string Name, Stream Contents, string Location, IEnumerable<string> searchPatterns)>();
+        private readonly List<(string Name, Stream Contents, string Location, IEnumerable<string> SearchPatterns)> filesToAdd = new List<(string Name, Stream Contents, string Location, IEnumerable<string> SearchPatterns)>();
 
         private Mock<ILogger> mockLogger = new Mock<ILogger>();
 
@@ -156,7 +156,7 @@ namespace Microsoft.ComponentDetection.TestsUtilities
                     .Returns(Enumerable.Empty<ComponentStream>());
             }
 
-            var filesGroupedBySearchPattern = this.filesToAdd.GroupBy(filesToAdd => filesToAdd.searchPatterns, new EnumerableStringComparer());
+            var filesGroupedBySearchPattern = this.filesToAdd.GroupBy(filesToAdd => filesToAdd.SearchPatterns, new EnumerableStringComparer());
             foreach (var group in filesGroupedBySearchPattern)
             {
                 var searchPatterns = group.Key;

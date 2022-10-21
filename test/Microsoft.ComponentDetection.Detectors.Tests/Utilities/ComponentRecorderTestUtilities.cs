@@ -40,9 +40,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
             bool? existingDevDepValue = null;
             recorder.ForOneComponent(componentId, grouping =>
             {
-                foreach (var graph in grouping.FoundInGraphs)
+                foreach (var (manifestFile, graph) in grouping.FoundInGraphs)
                 {
-                    var devDepValue = graph.graph.IsDevelopmentDependency(componentId);
+                    var devDepValue = graph.IsDevelopmentDependency(componentId);
                     if (!existingDevDepValue.HasValue)
                     {
                         existingDevDepValue = devDepValue;
@@ -137,7 +137,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
 
         public class ComponentOrientedGrouping
         {
-            public IEnumerable<(string manifestFile, IDependencyGraph graph)> FoundInGraphs { get; set; }
+            public IEnumerable<(string ManifestFile, IDependencyGraph Graph)> FoundInGraphs { get; set; }
 
             public string ComponentId { get; set; }
 

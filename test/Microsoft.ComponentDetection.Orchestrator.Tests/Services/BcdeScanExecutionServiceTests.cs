@@ -489,8 +489,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var componentDWithDevDepTrueCopy = new DetectedComponent(new NpmComponent("testD", "1.0.0"), detector: npmDetector);
 
             // The hint for reading this test is to know that each "column" you see visually is what's being merged, so componentAWithNoDevDep is being merged "down" into componentAWithDevDepTrue.
-#pragma warning disable IDE0007 // Use implicit type
-            foreach ((DetectedComponent component, bool? isDevDep) component in new[]
+            foreach ((var component, var isDevDep) in new[]
             {
                 (componentAWithNoDevDep, null), (componentAWithDevDepTrue, true),
                 (componentBWithNoDevDep, (bool?)null), (componentBWithDevDepFalse, false),
@@ -498,9 +497,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 (componentDWithDevDepTrue, true), (componentDWithDevDepTrueCopy, true),
             })
             {
-                firstRecorder.RegisterUsage(component.component, isDevelopmentDependency: component.isDevDep);
+                firstRecorder.RegisterUsage(component, isDevelopmentDependency: isDevDep);
             }
-#pragma warning restore IDE0007 // Use implicit type
 
             var results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
 
