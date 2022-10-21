@@ -709,8 +709,6 @@ dotnet_diagnostic.CA1829.severity = suggestion
 # CA2234: Pass system uri objects instead of strings
 dotnet_diagnostic.CA2234.severity = suggestion
 
-# rbhansali
-
 # SA1101: Prefix local calls with this
 dotnet_diagnostic.SA1101.severity = suggestion
 

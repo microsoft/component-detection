@@ -37,13 +37,15 @@ function main()
     dotnet restore
     Set-Location ((Get-Item  $repoPath).FullName + "\src\Microsoft.ComponentDetection")
     dotnet run scan --SourceDirectory $verificationTestRepo --Output $output `
-                    --DockerImagesToScan $dockerImagesToScan
+                    --DockerImagesToScan $dockerImagesToScan `
+                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff
 
     Set-Location $CDRelease
     dotnet restore
     Set-Location ($CDRelease + "\src\Microsoft.ComponentDetection")
     dotnet run scan --SourceDirectory $verificationTestRepo --Output $releaseOutput `
-                    --DockerImagesToScan $dockerImagesToScan    
+                    --DockerImagesToScan $dockerImagesToScan `
+                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff
 
     $env:GITHUB_OLD_ARTIFACTS_DIR = $releaseOutput
     $env:GITHUB_NEW_ARTIFACTS_DIR = $output
