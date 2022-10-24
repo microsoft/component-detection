@@ -21,17 +21,17 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.Spdx;
 
-        public string RootElementId { get; }
+        public string RootElementId { get; set; }
 
-        public string Name { get; }
+        public string Name { get; set; }
 
-        public string SpdxVersion { get; }
+        public string SpdxVersion { get; set; }
 
-        public Uri DocumentNamespace { get; }
+        public Uri DocumentNamespace { get; set; }
 
-        public string Checksum { get; }
+        public string Checksum { get; set; }
 
-        public string Path { get; }
+        public string Path { get; set; }
 
         public override string Id => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
     }

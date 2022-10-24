@@ -32,7 +32,7 @@ namespace Microsoft.ComponentDetection.Contracts
             }
             else if (string.IsNullOrEmpty(tag))
             {
-                if (string.IsNullOrEmpty(digest))
+                if (!string.IsNullOrEmpty(digest))
                 {
                     return new CanonicalReference
                     {

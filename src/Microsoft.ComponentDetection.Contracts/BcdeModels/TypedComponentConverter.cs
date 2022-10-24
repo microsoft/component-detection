@@ -25,6 +25,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             { ComponentType.Conda, typeof(CondaComponent) },
             { ComponentType.DockerReference, typeof(DockerReferenceComponent) },
             { ComponentType.Vcpkg, typeof(VcpkgComponent) },
+            { ComponentType.Spdx, typeof(SpdxComponent) },
         };
 
         public override bool CanWrite
