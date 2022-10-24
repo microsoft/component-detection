@@ -116,9 +116,9 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             GreaterThanOrEqual,
         }
 
-        public Operator ComparatorType { get; set; }
+        public Operator ComparatorType { get; }
 
-        public SemVersion Version { get; set; }
+        public SemVersion Version { get; }
 
         public static Tuple<int, Comparator> TryParse(string input)
         {
