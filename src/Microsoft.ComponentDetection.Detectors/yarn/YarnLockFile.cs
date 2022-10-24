@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Microsoft.ComponentDetection.Detectors.Yarn
 {
     public class YarnLockFile
     {
         /// <summary>
-        /// Gets or sets the declared Yarn Lock version.
+        /// Gets or sets the declared Yarn Lock Version.
         /// </summary>
         public YarnLockVersion LockVersion { get; set; }
 

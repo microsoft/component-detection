@@ -362,7 +362,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             LockFileLibrary matchingLibrary;
             if (version != null)
             {
-                // .version.version ensures we get to a nuget normalized 4 part version
+                // .Version.Version ensures we get to a nuget normalized 4 part version
                 matchingLibrary = matchingLibraryNames.FirstOrDefault(x => x.Version.Version.Equals(version));
             }
             else

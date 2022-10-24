@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -87,7 +87,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                         // The currently selected version is invalid, try to see if there is another valid version available
                         if (!await this.InvalidateAndReprocessAsync(state, node, dependencyNode))
                         {
-                            this.Logger.LogWarning($"version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
+                            this.Logger.LogWarning($"Version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
 
                             // there is no valid version available for the node, dependencies are incompatible,
                         }

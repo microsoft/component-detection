@@ -19,7 +19,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
     {
         private const string CargoLockSearchPattern = "Cargo.lock";
 
-        ////  PkgName[ version][ (Source)]
+        ////  PkgName[ Version][ (Source)]
         private static readonly Regex DependencyFormatRegex = new Regex(
            @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
            RegexOptions.Compiled);
