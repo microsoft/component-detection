@@ -16,6 +16,8 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
     [Export(typeof(IComponentDetector))]
     public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
     {
+        private readonly HashSet<string> projectRoots = new HashSet<string>();
+
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
@@ -31,8 +33,6 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.DockerReference };
 
         public override int Version => 1;
-
-        private HashSet<string> projectRoots = new HashSet<string>();
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {

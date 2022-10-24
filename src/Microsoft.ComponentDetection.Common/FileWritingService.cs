@@ -10,10 +10,10 @@ namespace Microsoft.ComponentDetection.Common
     [Shared]
     public class FileWritingService : IFileWritingService
     {
-        public const string TimestampFormatString = "yyyyMMddHHmmss";
+        public const string TimestampFormatString = "yyyyMMddHHmmssfff";
 
-        private object lockObject = new object();
-        private string timestamp = DateTime.Now.ToString(TimestampFormatString);
+        private readonly object lockObject = new object();
+        private readonly string timestamp = DateTime.Now.ToString(TimestampFormatString);
 
         public string BasePath { get; private set; }
 

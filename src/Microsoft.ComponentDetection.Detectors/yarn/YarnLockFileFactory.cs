@@ -8,12 +8,12 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn
 {
     public static class YarnLockFileFactory
     {
-        public static IList<IYarnLockParser> Parsers { get; }
-
         static YarnLockFileFactory()
         {
             Parsers = new List<IYarnLockParser> { new YarnLockParser() };
         }
+
+        public static IList<IYarnLockParser> Parsers { get; }
 
         public static async Task<YarnLockFile> ParseYarnLockFileAsync(Stream file, ILogger logger)
         {

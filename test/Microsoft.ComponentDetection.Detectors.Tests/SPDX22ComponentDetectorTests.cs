@@ -19,8 +19,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     [TestCategory("Governance/ComponentDetection")]
     public class Spdx22ComponentDetectorTests
     {
+        private readonly string tempPath = Path.GetTempPath();
         private DetectorTestUtility<Spdx22ComponentDetector> detectorTestUtility;
-        private string tempPath = Path.GetTempPath();
 
         [TestInitialize]
         public void TestInitialize()

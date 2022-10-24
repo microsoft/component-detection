@@ -29,16 +29,13 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     [Export(typeof(IPyPiClient))]
     public class PyPiClient : IPyPiClient
     {
-        [Import]
-        public ILogger Logger { get; set; }
+        private static readonly HttpClientHandler HttpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
 
-        [Import]
-        public IEnvironmentVariableService EnvironmentVariableService { get; set; }
-
-        private static HttpClientHandler httpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
+        // Keep telemetry on how the cache is being used for future refinements
+        private readonly PypiCacheTelemetryRecord cacheTelemetry;
 
         [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:ElementsMustBeOrderedByAccess", Justification = "Field needs to be declared before use so order can not follow Access Levels.")]
-        internal static HttpClient HttpClient = new HttpClient(httpClientHandler);
+        internal static HttpClient HttpClient = new HttpClient(HttpClientHandler);
 
         // time to wait before retrying a failed call to pypi.org
         private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
@@ -60,8 +57,26 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         /// </summary>
         private MemoryCache cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
 
-        // Keep telemetry on how the cache is being used for future refinements
-        private PypiCacheTelemetryRecord cacheTelemetry;
+        public PyPiClient()
+        {
+            this.cacheTelemetry = new PypiCacheTelemetryRecord()
+            {
+                NumCacheHits = 0,
+                FinalCacheSize = 0,
+            };
+        }
+
+        ~PyPiClient()
+        {
+            this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
+            this.cacheTelemetry.Dispose();
+        }
+
+        [Import]
+        public ILogger Logger { get; set; }
+
+        [Import]
+        public IEnvironmentVariableService EnvironmentVariableService { get; set; }
 
         public async Task<IList<PipDependencySpecification>> FetchPackageDependencies(string name, string version, PythonProjectRelease release)
         {
@@ -193,21 +208,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             }
 
             return versions;
-        }
-
-        public PyPiClient()
-        {
-            this.cacheTelemetry = new PypiCacheTelemetryRecord()
-            {
-                NumCacheHits = 0,
-                FinalCacheSize = 0,
-            };
-        }
-
-        ~PyPiClient()
-        {
-            this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
-            this.cacheTelemetry.Dispose();
         }
 
         /// <summary>

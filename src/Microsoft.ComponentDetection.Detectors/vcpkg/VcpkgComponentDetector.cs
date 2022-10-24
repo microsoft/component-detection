@@ -15,6 +15,8 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
     [Export(typeof(IComponentDetector))]
     public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
     {
+        private readonly HashSet<string> projectRoots = new HashSet<string>();
+
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
@@ -31,14 +33,12 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
 
         public override int Version => 2;
 
-        private HashSet<string> projectRoots = new HashSet<string>();
-
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
-            this.Logger.LogWarning($"vcpkg detector found {file}");
+            this.Logger.LogInfo($"vcpkg detector found {file}");
 
             var projectRootDirectory = Directory.GetParent(file.Location);
             if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
@@ -78,7 +78,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg
                         continue;
                     }
 
-                    this.Logger.LogWarning($"parsed package {item.Name}");
+                    this.Logger.LogVerbose($"vcpkg parsed package {item.Name}");
                     if (item.SPDXID == "SPDXRef-port")
                     {
                         var split = item.VersionInfo.Split('#');

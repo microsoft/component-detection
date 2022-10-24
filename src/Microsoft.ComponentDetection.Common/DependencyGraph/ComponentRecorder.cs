@@ -94,17 +94,11 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
         {
             private readonly ILogger log;
 
-            public string ManifestFileLocation { get; }
-
-            IDependencyGraph ISingleFileComponentRecorder.DependencyGraph => this.DependencyGraph;
-
-            internal DependencyGraph DependencyGraph { get; }
-
             private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new ConcurrentDictionary<string, DetectedComponent>();
 
             private readonly ComponentRecorder recorder;
 
-            private object registerUsageLock = new object();
+            private readonly object registerUsageLock = new object();
 
             public SingleFileComponentRecorder(string location, ComponentRecorder recorder, bool enableManualTrackingOfExplicitReferences, ILogger log)
             {
@@ -113,6 +107,12 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 this.log = log;
                 this.DependencyGraph = new DependencyGraph(enableManualTrackingOfExplicitReferences);
             }
+
+            public string ManifestFileLocation { get; }
+
+            IDependencyGraph ISingleFileComponentRecorder.DependencyGraph => this.DependencyGraph;
+
+            internal DependencyGraph DependencyGraph { get; }
 
             public DetectedComponent GetComponent(string componentId)
             {

@@ -40,10 +40,25 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <summary>Gets the version of this component detector. </summary>
         public abstract int Version { get; }
 
+        /// <summary>
+        /// Gets the folder names that will be skipped by the Component Detector.
+        /// </summary>
+        protected virtual IList<string> SkippedFolders => new List<string> { };
+
+        /// <summary>
+        /// Gets or sets the active scan request -- only populated after a ScanDirectoryAsync is invoked. If ScanDirectoryAsync is overridden,
+        ///  the overrider should ensure this property is populated.
+        /// </summary>
+        protected ScanRequest CurrentScanRequest { get; set; }
+
         [Import]
         public IObservableDirectoryWalkerFactory Scanner { get; set; }
 
         public bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
+
+        protected Dictionary<string, string> Telemetry { get; set; } = new Dictionary<string, string>();
+
+        protected IObservable<IComponentStream> ComponentStreams { get; private set; }
 
         /// <inheritdoc />
         public async virtual Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
@@ -62,8 +77,6 @@ namespace Microsoft.ComponentDetection.Contracts
             this.Logger?.LogVerbose($"Registered {this.GetType().FullName}");
             return this.ProcessAsync(filteredObservable, request.DetectorArgs);
         }
-
-        protected Dictionary<string, string> Telemetry { get; set; } = new Dictionary<string, string>();
 
         /// <summary>
         /// Gets the file streams for the Detector's declared <see cref="SearchPatterns"/> as an <see cref="IEnumerable{IComponentStream}"/>.
@@ -97,8 +110,6 @@ namespace Microsoft.ComponentDetection.Contracts
             };
         }
 
-        protected IObservable<IComponentStream> ComponentStreams { get; private set; }
-
         protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
         {
             return Task.FromResult(processRequests);
@@ -110,16 +121,5 @@ namespace Microsoft.ComponentDetection.Contracts
         {
             return Task.CompletedTask;
         }
-
-        /// <summary>
-        /// Gets the folder names that will be skipped by the Component Detector.
-        /// </summary>
-        protected virtual IList<string> SkippedFolders => new List<string> { };
-
-        /// <summary>
-        /// Gets or sets the active scan request -- only populated after a ScanDirectoryAsync is invoked. If ScanDirectoryAsync is overridden,
-        ///  the overrider should ensure this property is populated.
-        /// </summary>
-        protected ScanRequest CurrentScanRequest { get; set; }
     }
 }

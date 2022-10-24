@@ -148,7 +148,7 @@ NUGET
     log4net (1.2.10)
             ";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("paket.lock", paketLock)
                                                     .ExecuteDetector();
 

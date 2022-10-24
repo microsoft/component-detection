@@ -16,15 +16,17 @@ namespace Microsoft.ComponentDetection.Detectors.Go
     [Export(typeof(IComponentDetector))]
     public class GoComponentDetector : FileComponentDetector
     {
+        private static readonly Regex GoSumRegex = new Regex(
+            @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
+            RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
+
+        private readonly HashSet<string> projectRoots = new HashSet<string>();
+
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
         [Import]
         public IEnvironmentVariableService EnvVarService { get; set; }
-
-        private static readonly Regex GoSumRegex = new Regex(
-            @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
-            RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
         public override string Id { get; } = "Go";
 
@@ -35,8 +37,6 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
         public override int Version => 6;
-
-        private HashSet<string> projectRoots = new HashSet<string>();
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
@@ -243,11 +243,8 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                     continue;
                 }
 
-                GoComponent parentComponent;
-                GoComponent childComponent;
-
-                var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out parentComponent);
-                var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out childComponent);
+                var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out var parentComponent);
+                var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out var childComponent);
 
                 if (!isParentParsed)
                 {
@@ -277,8 +274,10 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
             var goBuildModules = new List<GoBuildModule>();
-            var reader = new JsonTextReader(new StringReader(goListOutput));
-            reader.SupportMultipleContent = true;
+            var reader = new JsonTextReader(new StringReader(goListOutput))
+            {
+                SupportMultipleContent = true,
+            };
 
             while (reader.Read())
             {

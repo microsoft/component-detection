@@ -1,10 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+    <PropertyGroup Label="Build">
+      <IsPackable>true</IsPackable>
+    </PropertyGroup>
+
     <ItemGroup Label="Project References">
         <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Detectors\Microsoft.ComponentDetection.Detectors.csproj"/>
         <PackageReference Include="System.Reactive"/>
     </ItemGroup>
-    <PropertyGroup>
-        <IsPackable>true</IsPackable>
-    </PropertyGroup>
+
 </Project>

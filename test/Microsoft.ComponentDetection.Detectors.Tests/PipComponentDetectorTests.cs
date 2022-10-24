@@ -112,7 +112,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             foreach (var item in setupPyRoots)
             {
-                var reference = (PipComponent)item.Value;
+                var reference = item.Value;
 
                 Assert.AreEqual(reference.Version, ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == reference.Name).Component).Version);
             }

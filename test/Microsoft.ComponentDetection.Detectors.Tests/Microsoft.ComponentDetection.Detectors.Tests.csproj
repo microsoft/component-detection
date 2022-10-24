@@ -4,7 +4,8 @@
         <ProjectReference Include="..\Microsoft.ComponentDetection.TestsUtilities\Microsoft.ComponentDetection.TestsUtilities.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Label="Package References">
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
         <PackageReference Include="NuGet.Versioning" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="packageurl-dotnet" />

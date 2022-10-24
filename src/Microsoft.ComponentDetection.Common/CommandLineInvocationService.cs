@@ -15,7 +15,7 @@ namespace Microsoft.ComponentDetection.Common
     [Export(typeof(ICommandLineInvocationService))]
     public class CommandLineInvocationService : ICommandLineInvocationService
     {
-        private IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
+        private readonly IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
 
         public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
         {
@@ -57,13 +57,13 @@ namespace Microsoft.ComponentDetection.Common
             if (!isCommandLocatable)
             {
                 throw new InvalidOperationException(
-                    $"{nameof(ExecuteCommand)} was called with a command that could not be located: `{command}`!");
+                    $"{nameof(this.ExecuteCommand)} was called with a command that could not be located: `{command}`!");
             }
 
             if (workingDirectory != null && !Directory.Exists(workingDirectory.FullName))
             {
                 throw new InvalidOperationException(
-                    $"{nameof(ExecuteCommand)} was called with a working directory that could not be located: `{workingDirectory.FullName}`");
+                    $"{nameof(this.ExecuteCommand)} was called with a working directory that could not be located: `{workingDirectory.FullName}`");
             }
 
             using var record = new CommandLineInvocationTelemetryRecord();

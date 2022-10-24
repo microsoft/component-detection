@@ -23,7 +23,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             this.comparators = new List<Comparator> { };
 
             spec = spec.Trim();
-            if (spec == string.Empty)
+            if (string.IsNullOrEmpty(spec))
             {
                 spec = "*";
             }
@@ -78,16 +78,16 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         public bool IsSatisfied(SemVersion version)
         {
             var satisfied = this.comparators.All(c => c.IsSatisfied(version));
-            if (version.Prerelease != string.Empty)
+            if (!string.IsNullOrEmpty(version.Prerelease))
             {
                 // If the version is a pre-release, then one of the
                 // comparators must have the same version and also include
                 // a pre-release tag.
                 return satisfied && this.comparators.Any(c =>
-                        c.Version.Prerelease != string.Empty &&
-                        c.Version.Major == version.Major &&
-                        c.Version.Minor == version.Minor &&
-                        c.Version.Patch == version.Patch);
+                    !string.IsNullOrEmpty(c.Version.Prerelease) &&
+                    c.Version.Major == version.Major &&
+                    c.Version.Minor == version.Minor &&
+                    c.Version.Patch == version.Patch);
             }
             else
             {
@@ -97,19 +97,19 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public ComparatorSet Intersect(ComparatorSet other)
         {
-            Func<Comparator, bool> operatorIsGreaterThan = c =>
+            static bool OperatorIsGreaterThan(Comparator c) =>
                 c.ComparatorType == Comparator.Operator.GreaterThan ||
                 c.ComparatorType == Comparator.Operator.GreaterThanOrEqual;
-            Func<Comparator, bool> operatorIsLessThan = c =>
+            static bool OperatorIsLessThan(Comparator c) =>
                 c.ComparatorType == Comparator.Operator.LessThan ||
                 c.ComparatorType == Comparator.Operator.LessThanOrEqual;
             var maxOfMins =
                 this.comparators.Concat(other.comparators)
-                .Where(operatorIsGreaterThan)
+                .Where(OperatorIsGreaterThan)
                 .OrderByDescending(c => c.Version).FirstOrDefault();
             var minOfMaxs =
                 this.comparators.Concat(other.comparators)
-                .Where(operatorIsLessThan)
+                .Where(OperatorIsLessThan)
                 .OrderBy(c => c.Version).FirstOrDefault();
             if (maxOfMins != null && minOfMaxs != null && !maxOfMins.Intersects(minOfMaxs))
             {
@@ -165,7 +165,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public bool Equals(ComparatorSet other)
         {
-            if (ReferenceEquals(other, null))
+            if (other is null)
             {
                 return false;
             }

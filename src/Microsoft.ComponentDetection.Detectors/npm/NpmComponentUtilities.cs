@@ -20,7 +20,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
         public static void TraverseAndRecordComponents(JProperty currentDependency, ISingleFileComponentRecorder singleFileComponentRecorder, TypedComponent component, TypedComponent explicitReferencedDependency, string parentComponentId = null)
         {
             var devJValue = currentDependency.Value["dev"] as JValue;
-            var isDevDependency = devJValue == null ? false : (bool)devJValue;
+            var isDevDependency = devJValue != null && (bool)devJValue;
             AddOrUpdateDetectedComponent(singleFileComponentRecorder, component, isDevDependency, parentComponentId, isExplicitReferencedDependency: string.Equals(component.Id, explicitReferencedDependency.Id));
         }
 

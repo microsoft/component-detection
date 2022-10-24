@@ -4,6 +4,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class OtherComponent : TypedComponent
     {
+        private OtherComponent()
+        {
+            /* Reserved for deserialization */
+        }
+
         public OtherComponent(string name, string version, Uri downloadUrl, string hash)
         {
             this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Other));
@@ -23,10 +28,5 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         public override ComponentType Type => ComponentType.Other;
 
         public override string Id => $"{this.Name} {this.Version} {this.DownloadUrl} - {this.Type}";
-
-        private OtherComponent()
-        {
-            /* Reserved for deserialization */
-        }
     }
 }

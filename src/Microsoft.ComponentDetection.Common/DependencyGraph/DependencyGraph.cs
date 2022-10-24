@@ -13,17 +13,17 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 {
     internal class DependencyGraph : IDependencyGraph
     {
-        private ConcurrentDictionary<string, ComponentRefNode> componentNodes;
+        private readonly ConcurrentDictionary<string, ComponentRefNode> componentNodes;
 
-        internal ConcurrentDictionary<string, byte> AdditionalRelatedFiles { get; } = new ConcurrentDictionary<string, byte>();
-
-        private bool enableManualTrackingOfExplicitReferences;
+        private readonly bool enableManualTrackingOfExplicitReferences;
 
         public DependencyGraph(bool enableManualTrackingOfExplicitReferences)
         {
             this.componentNodes = new ConcurrentDictionary<string, ComponentRefNode>();
             this.enableManualTrackingOfExplicitReferences = enableManualTrackingOfExplicitReferences;
         }
+
+        internal ConcurrentDictionary<string, byte> AdditionalRelatedFiles { get; } = new ConcurrentDictionary<string, byte>();
 
         public void AddComponent(ComponentRefNode componentNode, string parentComponentId = null)
         {
@@ -134,27 +134,6 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
             return this.IsExplicitReferencedDependency(this.componentNodes[componentId]);
         }
 
-        internal class ComponentRefNode
-        {
-            internal bool IsExplicitReferencedDependency { get; set; }
-
-            internal string Id { get; set; }
-
-            internal ISet<string> DependencyIds { get; private set; }
-
-            internal ISet<string> DependedOnByIds { get; private set; }
-
-            internal bool? IsDevelopmentDependency { get; set; }
-
-            internal DependencyScope? DependencyScope { get; set; }
-
-            internal ComponentRefNode()
-            {
-                this.DependencyIds = new HashSet<string>();
-                this.DependedOnByIds = new HashSet<string>();
-            }
-        }
-
         private void GetExplicitReferencedDependencies(ComponentRefNode component, IList<string> explicitReferencedDependencyIds, ISet<string> visited)
         {
             if (this.IsExplicitReferencedDependency(component))
@@ -193,6 +172,27 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
             parentComponentRefNode.DependencyIds.Add(componentId);
             this.componentNodes[componentId].DependedOnByIds.Add(parentComponentId);
+        }
+
+        internal class ComponentRefNode
+        {
+            internal ComponentRefNode()
+            {
+                this.DependencyIds = new HashSet<string>();
+                this.DependedOnByIds = new HashSet<string>();
+            }
+
+            internal bool IsExplicitReferencedDependency { get; set; }
+
+            internal string Id { get; set; }
+
+            internal ISet<string> DependencyIds { get; private set; }
+
+            internal ISet<string> DependedOnByIds { get; private set; }
+
+            internal bool? IsDevelopmentDependency { get; set; }
+
+            internal DependencyScope? DependencyScope { get; set; }
         }
     }
 }

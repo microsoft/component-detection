@@ -27,9 +27,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         {
             var parser = new YarnLockParser();
 
-            Action action = () => parser.Parse(null, this.loggerMock.Object);
+            void Action() => parser.Parse(null, this.loggerMock.Object);
 
-            Assert.ThrowsException<ArgumentNullException>(action);
+            Assert.ThrowsException<ArgumentNullException>(Action);
         }
 
         [TestMethod]

@@ -197,8 +197,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private bool CompareGraphs(PipGraphNode a, PipGraphNode b)
         {
-            var componentA = (PipComponent)a.Value;
-            var componentB = (PipComponent)b.Value;
+            var componentA = a.Value;
+            var componentB = b.Value;
 
             if (!string.Equals(componentA.Name, componentB.Name, StringComparison.OrdinalIgnoreCase) ||
                 !string.Equals(componentA.Version, componentB.Version, StringComparison.OrdinalIgnoreCase))

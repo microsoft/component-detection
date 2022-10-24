@@ -64,7 +64,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.detectors = this.detectors.Union(new[] { defaultOffDetectorMock.Object as IComponentDetector }).ToArray();
             var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
             restrictedDetectors
-                .Should().NotContain(defaultOffDetectorMock.Object as IComponentDetector);
+                .Should().NotContain(defaultOffDetectorMock.Object);
         }
 
         [TestMethod]
@@ -77,7 +77,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             r.ExplicitlyEnabledDetectorIds = new[] { "defaultOffDetector" };
             var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
             restrictedDetectors
-                .Should().Contain(defaultOffDetectorMock.Object as IComponentDetector);
+                .Should().Contain(defaultOffDetectorMock.Object);
         }
 
         [TestMethod]
@@ -182,10 +182,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             var mockDetector = new Mock<IComponentDetector>();
             mockDetector.SetupGet(x => x.Id).Returns($"{detectorName}");
-            if (categories == null)
-            {
-                categories = new[] { $"{detectorName}Category", "AllCategory" };
-            }
+            categories ??= new[] { $"{detectorName}Category", "AllCategory" };
 
             mockDetector.SetupGet(x => x.Categories).Returns(categories);
             return mockDetector;

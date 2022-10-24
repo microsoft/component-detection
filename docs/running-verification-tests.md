@@ -1,7 +1,19 @@
 # Running Verification Tests On Your Local Machine
 Verification tests are used to confirm that no detectors are lost when changes are made to the project. The tests are run on every PR build. They work by comparing the detection results from the main branch to detection results from the new changes on your PR. You can follow the steps below to run them locally.
 
-## Step 1 : Run Detection on the main branch
+An automation script is created to setup the  test artifact and execute the verification test. Ensure that your local changes builds and execute following powershell script **from repository root**.
+
+```
+.\test\Microsoft.ComponentDetection.VerificationTests\resources\VerificationTest.ps1
+```
+
+### Debug using visual studio
+The automation script above will output variables that needs to be replaced in `ComponentDetectionIntegrationTests.cs` file. Then, verification test can be debugged through Test Explorer by opening `\test\Microsoft.ComponentDetection.VerificationTests\Microsoft.DependencyDetective.VerificationTests.csproj` in visual studio. 
+
+
+## Manual setup
+
+### Step 1 : Run Detection on the main branch
 
 - Checkout the main branch in your local repo
 - Create a folder to store detection results (e.g C:\old-output-folder)
@@ -14,7 +26,7 @@ For Example:
 ```dotnet run scan --Verbosity Verbose --SourceDirectory C:\componentdetection --Output C:\old-output-folder```
 
 
-## Step 2 : Run Detection on your new branch
+### Step 2 : Run Detection on your new branch
 
 - Checkout the branch with the new changes you are trying to merge
 - Create a folder to store detection results. This folder should be seperate from the one you used in Step 1 (e.g C:\new-output-folder)
@@ -26,7 +38,7 @@ For Example:
 
 ```dotnet run scan --Verbosity Verbose --SourceDirectory C:\componentdetection --Output C:\new-output-folder```
 
-## Step 3 : Update variables in the test
+### Step 3 : Update variables in the test
 
 - Open the Microsoft.ComponentDetection.VerificationTests project in VS Studio
 - Navigate to  `GatherResources()`  in `ComponentDetectionIntegrationTests.cs`
@@ -36,7 +48,7 @@ For Example:
     - `allowedTimeDriftRatioString`:  This should be ".75"
 
 
-## Step 4: Run The tests
+### Step 4: Run The tests
 You can run the tests in two ways:
 - Run or Debug the tests in test explorer.
 - Use the command line to navigate to the Microsoft.ComponentDetection.VerificationTests folder, and run `dotnet test`.

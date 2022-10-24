@@ -49,10 +49,6 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         private int fileLineIndex = 0;
 
-        public string VersionHeader { get; set; }
-
-        public YarnLockVersion YarnLockVersion { get; set; }
-
         private YarnBlockFile(IList<string> parsedFileLines)
         {
             this.fileLines = parsedFileLines;
@@ -67,6 +63,10 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                 this.YarnLockVersion = YarnLockVersion.Invalid;
             }
         }
+
+        public string VersionHeader { get; set; }
+
+        public YarnLockVersion YarnLockVersion { get; set; }
 
         public static async Task<YarnBlockFile> CreateBlockFileAsync(Stream stream)
         {

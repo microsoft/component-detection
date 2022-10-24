@@ -921,9 +921,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 if (component.Dependencies.Any())
                 {
                     builder.AppendLine($"  dependencies:");
-                    foreach (var dependency in component.Dependencies)
+                    foreach (var (name, requestedVersion) in component.Dependencies)
                     {
-                        builder.AppendLine($"    {dependency.Name} \"{dependency.RequestedVersion}\"");
+                        builder.AppendLine($"    {name} \"{requestedVersion}\"");
                     }
                 }
 
@@ -954,9 +954,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 if (component.Dependencies.Any())
                 {
                     builder.AppendLine($"  dependencies:");
-                    foreach (var dependency in component.Dependencies)
+                    foreach (var (name, requestedVersion) in component.Dependencies)
                     {
-                        builder.AppendLine($"    {dependency.Name}: {dependency.RequestedVersion}");
+                        builder.AppendLine($"    {name}: {requestedVersion}");
                     }
                 }
 

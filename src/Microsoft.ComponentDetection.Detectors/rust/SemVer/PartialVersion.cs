@@ -18,14 +18,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
     // number, for use in ranges like "^1.2" or "2.x"
     internal class PartialVersion
     {
-        public int? Major { get; set; }
-
-        public int? Minor { get; set; }
-
-        public int? Patch { get; set; }
-
-        public string PreRelease { get; set; }
-
         private static readonly Regex VersionRegex = new Regex(
             @"^
                 [v=\s]*
@@ -47,7 +39,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         {
             string[] xValues = { "X", "x", "*" };
 
-            if (input.Trim() == string.Empty)
+            if (string.IsNullOrEmpty(input.Trim()))
             {
                 // Empty input means any version
                 return;
@@ -97,6 +89,14 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 this.PreRelease = match.Groups[7].Value;
             }
         }
+
+        public int? Major { get; set; }
+
+        public int? Minor { get; set; }
+
+        public int? Patch { get; set; }
+
+        public string PreRelease { get; set; }
 
         public SemVersion ToZeroVersion()
         {

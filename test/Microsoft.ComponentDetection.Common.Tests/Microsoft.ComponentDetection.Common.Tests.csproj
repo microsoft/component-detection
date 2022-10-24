@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <ItemGroup>
+    <ItemGroup Label="Project References">
         <ProjectReference Include="..\Microsoft.ComponentDetection.TestsUtilities\Microsoft.ComponentDetection.TestsUtilities.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup Label="Package References">
+      <PackageReference Include="Microsoft.NET.Test.Sdk"/>
     </ItemGroup>
 
 </Project>
