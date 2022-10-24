@@ -10,10 +10,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 
         private bool disposedValue = false;
 
-        protected BaseDetectionTelemetryRecord()
-        {
-            this.stopwatch.Start();
-        }
+        protected BaseDetectionTelemetryRecord() => this.stopwatch.Start();
 
         public abstract string RecordName { get; }
 
