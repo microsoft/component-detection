@@ -237,12 +237,12 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             return individualDetectorScanResult;
         }
 
-        private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult result, ComponentRecorder recorder, IComponentDetector detector)> results, ProcessingResultCode exitCode)
+        private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult Result, ComponentRecorder Recorder, IComponentDetector Detector)> results, ProcessingResultCode exitCode)
         {
             return new DetectorProcessingResult
             {
-                ComponentRecorders = results.Select(tuple => (tuple.detector, tuple.recorder)),
-                ContainersDetailsMap = results.SelectMany(x => x.result.ContainerDetails).ToDictionary(x => x.Id),
+                ComponentRecorders = results.Select(tuple => (tuple.Detector, tuple.Recorder)),
+                ContainersDetailsMap = results.SelectMany(x => x.Result.ContainerDetails).ToDictionary(x => x.Id),
                 ResultCode = exitCode,
             };
         }

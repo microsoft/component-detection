@@ -463,25 +463,9 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Using directive should appear within a namespace declaration
 dotnet_diagnostic.SA1200.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1203.md
-# 'public' members should come before 'private' members
-dotnet_diagnostic.SA1203.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1210.md
 #  Using directives should be ordered alphabetically by the namespaces
 dotnet_diagnostic.SA1210.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1216.md
-# Using static directives should be placed at the correct location
-dotnet_diagnostic.SA1216.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1316.md
-# Tuple element names should use correct casing
-dotnet_diagnostic.SA1316.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1401.md
-# Field should be private
-dotnet_diagnostic.SA1401.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
 # Tuple types in signatures should have element names
@@ -797,26 +781,8 @@ dotnet_diagnostic.IDE0078.severity = suggestion
 # IDE0083: Use pattern matchin
 dotnet_diagnostic.IDE0083.severity = suggestion
 
-# IDE0032: Use auto property
-dotnet_diagnostic.IDE0032.severity = suggestion
-
-# IDE0052: Private member 'TabularStringFormat.totalWidth' can be removed as the value assigned to it is never read
-dotnet_diagnostic.IDE0052.severity = suggestion
-
-# IDE0054: Use compound assignment
-dotnet_diagnostic.IDE0054.severity = suggestion
-
-# IDE0071: Interpolation can be simplified
-dotnet_diagnostic.IDE0071.severity = suggestion
-
 # IDE0027: Use expression body for accessors
 dotnet_diagnostic.IDE0027.severity = suggestion
-
-# IDE0120: Simplify LINQ expression
-dotnet_diagnostic.IDE0120.severity = suggestion
-
-# IDE0037: Member name can be simplified
-dotnet_diagnostic.IDE0037.severity = suggestion
 
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion

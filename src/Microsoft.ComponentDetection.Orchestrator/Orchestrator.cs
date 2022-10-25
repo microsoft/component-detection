@@ -153,7 +153,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
                     telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
                     FileWritingService.Init(argumentSet.Output);
                     Logger.Init(argumentSet.Verbosity);
-                    Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId.ToString()}");
+                    Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
 
                     return await this.Dispatch(argumentSet, cancellationToken);
                 });
