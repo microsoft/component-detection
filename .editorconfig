@@ -790,6 +790,9 @@ dotnet_diagnostic.CA1724.severity = suggestion
 # IL3000: always returns an empty string for assemblies embedded in a single-file app.
 dotnet_diagnostic.IL3000.severity = suggestion
 
+# IDE0052: Remove unread private member
+dotnet_diagnostic.IDE0052.severity = suggestion
+
 # IDE0053: Use expression body for lambdas
 dotnet_diagnostic.IDE0053.severity = suggestion
 
