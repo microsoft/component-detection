@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -10,12 +10,9 @@ namespace Microsoft.ComponentDetection.Common.Tests
     [TestCategory("Governance/ComponentDetection")]
     public class ConsoleWritingServiceTests
     {
-        private static TestContext testContext;
-
         [AssemblyInitialize]
         public static void AssemblyInitialize(TestContext inputTestContext)
         {
-            testContext = inputTestContext;
         }
 
         [TestMethod]

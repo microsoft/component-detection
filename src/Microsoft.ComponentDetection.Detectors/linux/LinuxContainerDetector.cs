@@ -175,7 +175,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
                     var layers = await this.LinuxScanner.ScanLinuxAsync(kvp.Value.ImageId, internalContainerDetails.Layers, baseImageLayerCount, cancellationToken);
 
-                    var components = layers.SelectMany(layer => layer.LinuxComponents.Select(linuxComponent => new DetectedComponent(linuxComponent,  null, internalContainerDetails.Id, layer.DockerLayer.LayerIndex)));
+                    var components = layers.SelectMany(layer => layer.LinuxComponents.Select(linuxComponent => new DetectedComponent(linuxComponent, null, internalContainerDetails.Id, layer.DockerLayer.LayerIndex)));
                     internalContainerDetails.Layers = layers.Select(layer => layer.DockerLayer);
                     var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(kvp.Value.ImageId);
                     components.ToList().ForEach(detectedComponent => singleFileComponentRecorder.RegisterUsage(detectedComponent, true));
