@@ -25,14 +25,14 @@ namespace Microsoft.ComponentDetection.Common
             {
                 if (pattern.StartsWith("*"))
                 {
-                    var match = Expression.Constant(pattern.Substring(1), typeof(string));
+                    var match = Expression.Constant(pattern[1..], typeof(string));
                     var right = Expression.Call(null, asSpan, match);
                     var combine = Expression.Call(null, endsWith, left, right, ordinalComparison);
                     predicates.Add(combine);
                 }
                 else if (pattern.EndsWith("*"))
                 {
-                    var match = Expression.Constant(pattern.Substring(0, pattern.Length - 1), typeof(string));
+                    var match = Expression.Constant(pattern[..^1], typeof(string));
                     var right = Expression.Call(null, asSpan, match);
                     var combine = Expression.Call(null, startsWith, left, right, ordinalComparison);
                     predicates.Add(combine);

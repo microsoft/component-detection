@@ -78,11 +78,11 @@ namespace Microsoft.ComponentDetection.Common
 
         public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
         {
-            if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern.Substring(1), StringComparison.OrdinalIgnoreCase))
+            if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern[1..], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
-            else if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern.Substring(0, searchPattern.Length - 1), StringComparison.OrdinalIgnoreCase))
+            else if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern[..^1], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -112,11 +112,11 @@ namespace Microsoft.ComponentDetection.Common
 
         public bool MatchesPattern(string searchPattern, string fileName)
         {
-            if (searchPattern.StartsWith("*") && fileName.EndsWith(searchPattern.Substring(1), StringComparison.OrdinalIgnoreCase))
+            if (searchPattern.StartsWith("*") && fileName.EndsWith(searchPattern[1..], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
-            else if (searchPattern.EndsWith("*") && fileName.StartsWith(searchPattern.Substring(0, searchPattern.Length - 1), StringComparison.OrdinalIgnoreCase))
+            else if (searchPattern.EndsWith("*") && fileName.StartsWith(searchPattern[..^1], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -187,7 +187,7 @@ namespace Microsoft.ComponentDetection.Common
 
             var result = resultBuilder.ToString();
 
-            result = result.StartsWith(LongPathPrefix) ? result.Substring(LongPathPrefix.Length) : result;
+            result = result.StartsWith(LongPathPrefix) ? result[LongPathPrefix.Length..] : result;
 
             this.resolvedPaths.TryAdd(path, result);
 

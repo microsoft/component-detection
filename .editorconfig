@@ -772,9 +772,6 @@ dotnet_diagnostic.IDE1006.severity = suggestion
 # IDE0060: Remove unused parameter
 dotnet_diagnostic.IDE0060.severity = suggestion
 
-# IDE0055: Formatting rule
-#dotnet_diagnostic.IDE0055.severity = suggestion
-
 # IDE0025: Use expression body for properties
 dotnet_diagnostic.IDE0025.severity = suggestion
 
@@ -783,9 +780,6 @@ dotnet_diagnostic.IDE0034.severity = suggestion
 
 # IDE0036: Modifiers are not ordered
 dotnet_diagnostic.IDE0036.severity = suggestion
-
-# IDE0057: Substring can be simplified
-dotnet_diagnostic.IDE0057.severity = suggestion
 
 # IDE0078: Use pattern matching (may change code meaning)
 dotnet_diagnostic.IDE0078.severity = suggestion
