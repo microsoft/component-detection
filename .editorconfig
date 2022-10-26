@@ -463,25 +463,9 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Using directive should appear within a namespace declaration
 dotnet_diagnostic.SA1200.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1203.md
-# 'public' members should come before 'private' members
-dotnet_diagnostic.SA1203.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1210.md
 #  Using directives should be ordered alphabetically by the namespaces
 dotnet_diagnostic.SA1210.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1216.md
-# Using static directives should be placed at the correct location
-dotnet_diagnostic.SA1216.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1316.md
-# Tuple element names should use correct casing
-dotnet_diagnostic.SA1316.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1401.md
-# Field should be private
-dotnet_diagnostic.SA1401.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
 # Tuple types in signatures should have element names
@@ -709,8 +693,6 @@ dotnet_diagnostic.CA1829.severity = suggestion
 # CA2234: Pass system uri objects instead of strings
 dotnet_diagnostic.CA2234.severity = suggestion
 
-# rbhansali
-
 # SA1101: Prefix local calls with this
 dotnet_diagnostic.SA1101.severity = suggestion
 
@@ -772,9 +754,6 @@ dotnet_diagnostic.IDE1006.severity = suggestion
 # IDE0060: Remove unused parameter
 dotnet_diagnostic.IDE0060.severity = suggestion
 
-# IDE0055: Formatting rule
-dotnet_diagnostic.IDE0055.severity = suggestion
-
 # IDE0025: Use expression body for properties
 dotnet_diagnostic.IDE0025.severity = suggestion
 
@@ -784,9 +763,6 @@ dotnet_diagnostic.IDE0034.severity = suggestion
 # IDE0036: Modifiers are not ordered
 dotnet_diagnostic.IDE0036.severity = suggestion
 
-# IDE0057: Substring can be simplified
-dotnet_diagnostic.IDE0057.severity = suggestion
-
 # IDE0078: Use pattern matching (may change code meaning)
 dotnet_diagnostic.IDE0078.severity = suggestion
 
@@ -795,9 +771,6 @@ dotnet_diagnostic.IDE0083.severity = suggestion
 
 # IDE0032: Use auto property
 dotnet_diagnostic.IDE0032.severity = suggestion
-
-# IDE0052: Private member 'TabularStringFormat.totalWidth' can be removed as the value assigned to it is never read
-dotnet_diagnostic.IDE0052.severity = suggestion
 
 # IDE0054: Use compound assignment
 dotnet_diagnostic.IDE0054.severity = suggestion
@@ -816,3 +789,21 @@ dotnet_diagnostic.CA1724.severity = suggestion
 
 # IL3000: always returns an empty string for assemblies embedded in a single-file app.
 dotnet_diagnostic.IL3000.severity = suggestion
+
+# IDE0052: Remove unread private member
+dotnet_diagnostic.IDE0052.severity = suggestion
+
+# IDE0053: Use expression body for lambdas
+dotnet_diagnostic.IDE0053.severity = suggestion
+
+# IDE0200: Lambda expression can be removed
+dotnet_diagnostic.IDE0200.severity = suggestion
+
+# CA1311: Use ToLowerInvariant/ToUpperInvariant
+dotnet_diagnostic.CA1311.severity = suggestion
+
+# CA1852: Type can be sealed
+dotnet_diagnostic.CA1852.severity = suggestion
+
+# CA1854: Prefer the IDictionary.TryGetValue(TKey, out TValue) method
+dotnet_diagnostic.CA1854.severity = suggestion

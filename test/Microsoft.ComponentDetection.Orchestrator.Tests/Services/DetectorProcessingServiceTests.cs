@@ -145,7 +145,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             {
                 var componentId = discoveredComponent.Component.Id;
                 var isMatched = false;
-                foreach (var graph in results.ComponentRecorders.Select(componentRecorder => componentRecorder.recorder.GetDependencyGraphsByLocation()).SelectMany(x => x.Values))
+                foreach (var graph in results.ComponentRecorders.Select(componentRecorder => componentRecorder.Recorder.GetDependencyGraphsByLocation()).SelectMany(x => x.Values))
                 {
                     isMatched |= graph.GetComponents().Contains(componentId);
                 }
@@ -545,7 +545,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             return detectorProcessingResult
                         .ComponentRecorders
-                        .Select(componentRecorder => componentRecorder.recorder.GetDetectedComponents())
+                        .Select(componentRecorder => componentRecorder.Recorder.GetDetectedComponents())
                         .SelectMany(x => x);
         }
 

@@ -9,8 +9,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         /// <summary>
         /// Determine if the version is valid for all specs.
         /// </summary>
-        /// <param name="version">Version.</param>
-        /// <param name="specs">Version specifications.</param>
+        /// <param name="version">version.</param>
+        /// <param name="specs">version specifications.</param>
         /// <returns>True if the version is valid for all specs, otherwise false. </returns>
         /// <exception cref="ArgumentException">The version or any of the specs are an invalid python version.</exception>
         public static bool VersionValidForSpec(string version, IList<string> specs)
@@ -94,10 +94,10 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 i++;
             }
 
-            var op = spec.Substring(0, i);
+            var op = spec[..i];
 
             var targetVer = new PythonVersion(version);
-            var specVer = new PythonVersion(spec.Substring(i));
+            var specVer = new PythonVersion(spec[i..]);
 
             if (!targetVer.Valid)
             {
@@ -106,7 +106,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
             if (!specVer.Valid)
             {
-                throw new ArgumentException($"The version specification {spec.Substring(i)} is not a valid python version");
+                throw new ArgumentException($"The version specification {spec[i..]} is not a valid python version");
             }
 
             return op switch
@@ -118,7 +118,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 "<=" => specVer >= targetVer,
                 ">=" => targetVer >= specVer,
                 "!=" => targetVer.CompareTo(specVer) != 0,
-                "~=" => CheckEquality(version, spec.Substring(i), true),
+                "~=" => CheckEquality(version, spec[i..], true),
                 _ => false,
             };
         }

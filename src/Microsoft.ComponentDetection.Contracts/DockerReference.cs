@@ -32,7 +32,7 @@ namespace Microsoft.ComponentDetection.Contracts
             }
             else if (string.IsNullOrEmpty(tag))
             {
-                if (string.IsNullOrEmpty(digest))
+                if (!string.IsNullOrEmpty(digest))
                 {
                     return new CanonicalReference
                     {
@@ -91,7 +91,7 @@ namespace Microsoft.ComponentDetection.Contracts
     // sha256:abc123...
     public class DigestReference : DockerReference
     {
-        public string Digest;
+        public string Digest { get; set; }
 
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Digest;
 
@@ -112,11 +112,11 @@ namespace Microsoft.ComponentDetection.Contracts
     // docker.io/library/ubuntu@sha256:abc123...
     public class CanonicalReference : DockerReference
     {
-        public string Domain;
+        public string Domain { get; set; }
 
-        public string Repository;
+        public string Repository { get; set; }
 
-        public string Digest;
+        public string Digest { get; set; }
 
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Canonical;
 
@@ -139,9 +139,9 @@ namespace Microsoft.ComponentDetection.Contracts
     // docker.io/library/ubuntu
     public class RepositoryReference : DockerReference
     {
-        public string Domain;
+        public string Domain { get; set; }
 
-        public string Repository;
+        public string Repository { get; set; }
 
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Repository;
 
@@ -163,11 +163,11 @@ namespace Microsoft.ComponentDetection.Contracts
     // docker.io/library/ubuntu:latest
     public class TaggedReference : DockerReference
     {
-        public string Domain;
+        public string Domain { get; set; }
 
-        public string Repository;
+        public string Repository { get; set; }
 
-        public string Tag;
+        public string Tag { get; set; }
 
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Tagged;
 
@@ -190,13 +190,13 @@ namespace Microsoft.ComponentDetection.Contracts
     // docker.io/library/ubuntu:latest@sha256:abc123...
     public class DualReference : DockerReference
     {
-        public string Domain;
+        public string Domain { get; set; }
 
-        public string Repository;
+        public string Repository { get; set; }
 
-        public string Tag;
+        public string Tag { get; set; }
 
-        public string Digest;
+        public string Digest { get; set; }
 
         public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Dual;
 

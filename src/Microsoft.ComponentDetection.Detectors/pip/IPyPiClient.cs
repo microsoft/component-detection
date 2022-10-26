@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Composition;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -29,24 +28,23 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     [Export(typeof(IPyPiClient))]
     public class PyPiClient : IPyPiClient
     {
+        // Values used for cache creation
+        private const long CACHEINTERVALSECONDS = 60;
+
+        private const long DEFAULTCACHEENTRIES = 128;
+
+        // max number of retries allowed, to cap the total delay period
+        private const long MAXRETRIES = 15;
+
         private static readonly HttpClientHandler HttpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
-
-        // Keep telemetry on how the cache is being used for future refinements
-        private readonly PypiCacheTelemetryRecord cacheTelemetry;
-
-        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:ElementsMustBeOrderedByAccess", Justification = "Field needs to be declared before use so order can not follow Access Levels.")]
-        internal static HttpClient HttpClient = new HttpClient(HttpClientHandler);
 
         // time to wait before retrying a failed call to pypi.org
         private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
 
-        // Values used for cache creation
-        private const long CACHEINTERVALSECONDS = 60;
-        private const long DEFAULTCACHEENTRIES = 128;
-        private bool checkedMaxEntriesVariable = false;
+        // Keep telemetry on how the cache is being used for future refinements
+        private readonly PypiCacheTelemetryRecord cacheTelemetry;
 
-        // max number of retries allowed, to cap the total delay period
-        private const long MAXRETRIES = 15;
+        private bool checkedMaxEntriesVariable = false;
 
         // retries used so far for calls to pypi.org
         private long retries = 0;
@@ -68,6 +66,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
             this.cacheTelemetry.Dispose();
         }
+
+        public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);
 
         [Import]
         public ILogger Logger { get; set; }

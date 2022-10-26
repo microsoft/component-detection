@@ -58,14 +58,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             var (component, isDevelopmentDependency, dependencyScope) = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT");
             var topLevelComponent = component;
-            var mavenCoreTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-core:jar:3.6.1-SNAPSHOT:compile");
-            var mavenCore = mavenCoreTuple.Component;
-            var guiceTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("com.google.inject:guice:jar:no_aop:4.2.1:compile");
-            var guice = guiceTuple.Component;
-            var guavaTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("com.google.guava:guava:jar:25.1-android:compile");
-            var guava = guavaTuple.Component;
-            var animalSnifferAnnotationsTuple = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.codehaus.mojo:animal-sniffer-annotations:jar:1.14:compile");
-            var animalSnifferAnnotations = animalSnifferAnnotationsTuple.Component;
+            var mavenCore = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-core:jar:3.6.1-SNAPSHOT:compile").Component;
+            var guice = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("com.google.inject:guice:jar:no_aop:4.2.1:compile").Component;
+            var guava = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("com.google.guava:guava:jar:25.1-android:compile").Component;
+            var animalSnifferAnnotations = MavenParsingUtilities.GenerateDetectedComponentAndMetadataFromMavenString("org.codehaus.mojo:animal-sniffer-annotations:jar:1.14:compile").Component;
 
             var topLevelComponentDependencies = dependencyGraph.GetDependenciesForComponent(topLevelComponent.Component.Id);
             topLevelComponentDependencies.Should().HaveCount(20);

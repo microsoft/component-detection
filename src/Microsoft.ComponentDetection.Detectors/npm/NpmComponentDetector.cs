@@ -122,11 +122,11 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                 authorName = authorToken["name"]?.ToString();
                 authorEmail = authorToken["email"]?.ToString();
 
-            /*
-             *  for parsing author in single string format.
-             *  for e.g.
-             *  "author": "John Doe <johdoe@outlook.com> https://jd.com"
-             */
+                /*
+                 *  for parsing author in single string format.
+                 *  for e.g.
+                 *  "author": "John Doe <johdoe@outlook.com> https://jd.com"
+                 */
             }
             else if (authorMatch.Success)
             {

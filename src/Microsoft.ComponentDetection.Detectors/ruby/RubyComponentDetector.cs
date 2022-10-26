@@ -178,14 +178,14 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                 lines.RemoveAt(0);
                 if (line.StartsWith("remote:"))
                 {
-                    remote = line.Substring(8);
+                    remote = line[8..];
 
                     // revision is only used for Git components.
                     revision = string.Empty;
                 }
                 else if (line.StartsWith("revision:"))
                 {
-                    revision = line.Substring(10);
+                    revision = line[10..];
                 }
                 else if (line.StartsWith("specs:"))
                 {
@@ -209,7 +209,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                             wasParentDependencyExcluded = false;
                             var splits = line.Trim().Split(" ");
                             name = splits[0].Trim();
-                            var version = splits[1].Substring(1, splits[1].Length - 2);
+                            var version = splits[1][1..^1];
                             TypedComponent newComponent;
 
                             if (this.IsVersionRelative(version))

@@ -157,7 +157,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             var currentLevelDelimiter = "  ";
             for (var i = 0; i < level; i++)
             {
-                currentLevelDelimiter = currentLevelDelimiter + "  ";
+                currentLevelDelimiter += "  ";
             }
 
             // Assuming the pointer has been set up to a block

@@ -41,9 +41,9 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
     {
         internal const string PrimaryCommand = "ant.bat";
 
-        internal static readonly string[] AdditionalValidCommands = { "ant" };
-
         internal const string AntVersionArgument = "-version";
+
+        internal static readonly string[] AdditionalValidCommands = { "ant" };
 
         public override string Id => "Ivy";
 

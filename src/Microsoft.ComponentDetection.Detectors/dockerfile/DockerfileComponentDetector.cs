@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -16,8 +16,6 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
     [Export(typeof(IComponentDetector))]
     public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
     {
-        private readonly HashSet<string> projectRoots = new HashSet<string>();
-
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 

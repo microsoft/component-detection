@@ -68,7 +68,7 @@ namespace Microsoft.ComponentDetection.Detectors.Gradle
         {
             var equalsSeparatorIndex = line.IndexOf('=');
             var isSingleLockfilePerProjectFormat = equalsSeparatorIndex != -1;
-            var componentDescriptor = isSingleLockfilePerProjectFormat ? line.Substring(0, equalsSeparatorIndex) : line;
+            var componentDescriptor = isSingleLockfilePerProjectFormat ? line[..equalsSeparatorIndex] : line;
             var splits = componentDescriptor.Trim().Split(":");
             var groupId = splits[0];
             var artifactId = splits[1];

@@ -19,8 +19,8 @@ namespace Microsoft.ComponentDetection.Common
 
         public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
         {
-            additionalCandidateCommands = additionalCandidateCommands ?? Enumerable.Empty<string>();
-            parameters = parameters ?? new string[0];
+            additionalCandidateCommands ??= Enumerable.Empty<string>();
+            parameters ??= new string[0];
             var allCommands = new[] { command }.Concat(additionalCandidateCommands);
             if (!this.commandLocatableCache.TryGetValue(command, out var validCommand))
             {
