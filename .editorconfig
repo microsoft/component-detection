@@ -769,20 +769,8 @@ dotnet_diagnostic.IDE0078.severity = suggestion
 # IDE0083: Use pattern matchin
 dotnet_diagnostic.IDE0083.severity = suggestion
 
-# IDE0032: Use auto property
-dotnet_diagnostic.IDE0032.severity = suggestion
-
-# IDE0054: Use compound assignment
-dotnet_diagnostic.IDE0054.severity = suggestion
-
-# IDE0071: Interpolation can be simplified
-dotnet_diagnostic.IDE0071.severity = suggestion
-
 # IDE0027: Use expression body for accessors
 dotnet_diagnostic.IDE0027.severity = suggestion
-
-# IDE0120: Simplify LINQ expression
-dotnet_diagnostic.IDE0120.severity = suggestion
 
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion
