@@ -12,9 +12,6 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
     /// </summary>
     public sealed class TelemetryRelay
     {
-
-        private static readonly TelemetryRelay InternalInstance = new TelemetryRelay();
-
         // For things not populating the telemetry services collection, let's not throw.
         private TelemetryRelay() => TelemetryServices = Enumerable.Empty<ITelemetryService>();
 

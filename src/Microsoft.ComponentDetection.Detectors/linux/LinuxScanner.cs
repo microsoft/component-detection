@@ -122,8 +122,8 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                 syftTelemetryRecord.LinuxComponents = JsonConvert.SerializeObject(linuxComponentsWithLayers.Select(linuxComponentWithLayer =>
                     new LinuxComponentRecord
                     {
-                        linuxComponentWithLayer.Component.Name,
-                        linuxComponentWithLayer.Component.Version,
+                        Name = linuxComponentWithLayer.Component.Name,
+                        Version = linuxComponentWithLayer.Component.Version,
                     }));
 
                 return layerMappedLinuxComponents;
