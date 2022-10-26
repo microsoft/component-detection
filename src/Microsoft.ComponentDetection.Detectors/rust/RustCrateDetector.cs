@@ -72,7 +72,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 var seenAsDependency = new HashSet<CargoPackage>();
 
                 // Pass 1: Create typed components and allow lookup by name.
-                var packagesByName = new Dictionary<string, List<(CargoPackage package, CargoComponent component)>>();
+                var packagesByName = new Dictionary<string, List<(CargoPackage Package, CargoComponent Component)>>();
                 if (cargoLock.Package != null)
                 {
                     foreach (var cargoPackage in cargoLock.Package)
@@ -84,7 +84,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                             packageList = new List<(CargoPackage, CargoComponent)>();
                             packagesByName.Add(cargoPackage.name, packageList);
                         }
-                        else if (packageList.Any(p => p.package.Equals(cargoPackage)))
+                        else if (packageList.Any(p => p.Package.Equals(cargoPackage)))
                         {
                             // Ignore duplicate packages
                             continue;
@@ -150,7 +150,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             IComponentStream cargoLockFile,
             ISingleFileComponentRecorder singleFileComponentRecorder,
             HashSet<CargoPackage> seenAsDependency,
-            Dictionary<string, List<(CargoPackage package, CargoComponent component)>> packagesByName,
+            Dictionary<string, List<(CargoPackage Package, CargoComponent Component)>> packagesByName,
             CargoPackage parentPackage,
             CargoComponent parentComponent,
             string dependency)

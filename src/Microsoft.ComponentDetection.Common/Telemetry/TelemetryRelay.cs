@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -12,6 +12,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
     /// </summary>
     public sealed class TelemetryRelay
     {
+
         private static readonly TelemetryRelay InternalInstance = new TelemetryRelay();
 
         // For things not populating the telemetry services collection, let's not throw.
@@ -28,13 +29,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
         /// <summary>
         /// Gets the singleton.
         /// </summary>
-        public static TelemetryRelay Instance
-        {
-            get
-            {
-                return InternalInstance;
-            }
-        }
+        public static TelemetryRelay Instance { get; } = new TelemetryRelay();
 
         /// <summary>
         /// Post a given telemetry record to all telemetry services.

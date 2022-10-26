@@ -5,19 +5,19 @@ namespace Microsoft.ComponentDetection.Common
 {
     public class DockerRegex
     {
-        public static Regex AlphaNumericRegexp = new Regex("[a-z0-9]+");
-        public static Regex SeparatorRegexp = new Regex("(?:[._]|__|[-]*)");
+        public static readonly Regex AlphaNumericRegexp = new Regex("[a-z0-9]+");
+        public static readonly Regex SeparatorRegexp = new Regex("(?:[._]|__|[-]*)");
 
-        public static Regex DomainComponentRegexp = new Regex("(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])");
-        public static Regex TagRegexp = new Regex(@"[\w][\w.-]{0,127}");
-        public static Regex DigestRegexp = new Regex("[a-zA-Z][a-zA-Z0-9]*(?:[-_+.][a-zA-Z][a-zA-Z0-9]*)*[:][a-fA-F0-9]{32,}");
-        public static Regex IdentifierRegexp = new Regex("[a-f0-9]{64}");
+        public static readonly Regex DomainComponentRegexp = new Regex("(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])");
+        public static readonly Regex TagRegexp = new Regex(@"[\w][\w.-]{0,127}");
+        public static readonly Regex DigestRegexp = new Regex("[a-zA-Z][a-zA-Z0-9]*(?:[-_+.][a-zA-Z][a-zA-Z0-9]*)*[:][a-fA-F0-9]{32,}");
+        public static readonly Regex IdentifierRegexp = new Regex("[a-f0-9]{64}");
 
-        public static Regex NameComponentRegexp = Expression(
+        public static readonly Regex NameComponentRegexp = Expression(
              AlphaNumericRegexp,
              Optional(Repeated(SeparatorRegexp, AlphaNumericRegexp)));
 
-        public static Regex DomainRegexp = Expression(
+        public static readonly Regex DomainRegexp = Expression(
             DomainComponentRegexp,
             Optional(
                 Repeated(
@@ -27,9 +27,9 @@ namespace Microsoft.ComponentDetection.Common
                 new Regex(":"),
                 new Regex("[0-9]+")));
 
-        public static Regex AnchoredDigestRegexp = Anchored(DigestRegexp);
+        public static readonly Regex AnchoredDigestRegexp = Anchored(DigestRegexp);
 
-        public static Regex NameRegexp = Expression(
+        public static readonly Regex NameRegexp = Expression(
             Optional(
                 DomainRegexp,
                 new Regex(@"\/")),
@@ -39,7 +39,7 @@ namespace Microsoft.ComponentDetection.Common
                     new Regex(@"\/"),
                     NameComponentRegexp)));
 
-        public static Regex AnchoredNameRegexp = Anchored(
+        public static readonly Regex AnchoredNameRegexp = Anchored(
             Optional(
                 Capture(DomainRegexp),
                 new Regex(@"\/")),
@@ -50,12 +50,12 @@ namespace Microsoft.ComponentDetection.Common
                         new Regex(@"\/"),
                         NameComponentRegexp))));
 
-        public static Regex ReferenceRegexp = Anchored(
+        public static readonly Regex ReferenceRegexp = Anchored(
             Capture(NameRegexp),
             Optional(new Regex(":"), Capture(TagRegexp)),
             Optional(new Regex("@"), Capture(DigestRegexp)));
 
-        public static Regex AnchoredIdentifierRegexp = Anchored(IdentifierRegexp);
+        public static readonly Regex AnchoredIdentifierRegexp = Anchored(IdentifierRegexp);
 
         /// <summary>
         /// expression defines a full expression, where each regular expression must follow the previous.
@@ -74,7 +74,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> <see cref="Regex"/> of the non-capturing group. </returns>
         public static Regex Group(params Regex[] regexps)
         {
-            return new Regex($"(?:{Expression(regexps).ToString()})");
+            return new Regex($"(?:{Expression(regexps)})");
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> The wrapped <see cref="Regex"/>. </returns>
         public static Regex Optional(params Regex[] regexps)
         {
-            return new Regex($"{Group(regexps).ToString()}?");
+            return new Regex($"{Group(regexps)}?");
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> The wrapped <see cref="Regex"/>. </returns>
         public static Regex Repeated(params Regex[] regexps)
         {
-            return new Regex($"{Group(regexps).ToString()}+");
+            return new Regex($"{Group(regexps)}+");
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> The anchored <see cref="Regex"/>. </returns>
         public static Regex Anchored(params Regex[] regexps)
         {
-            return new Regex($"^{Expression(regexps).ToString()}$");
+            return new Regex($"^{Expression(regexps)}$");
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Microsoft.ComponentDetection.Common
         /// <returns> The captured <see cref="Regex"/>. </returns>
         public static Regex Capture(params Regex[] regexps)
         {
-            return new Regex($"({Expression(regexps).ToString()})");
+            return new Regex($"({Expression(regexps)})");
         }
     }
 }

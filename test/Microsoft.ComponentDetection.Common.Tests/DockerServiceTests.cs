@@ -12,11 +12,11 @@ namespace Microsoft.ComponentDetection.Common.Tests
     [TestCategory("Governance/ComponentDetection")]
     public class DockerServiceTests
     {
-        private DockerService dockerService;
-
         private const string TestImage = "governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest";
 
         private const string TestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
+
+        private DockerService dockerService;
 
         [TestInitialize]
         public void TestInitialize()

@@ -11,6 +11,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         public Dictionary<int, ContainerDetails> ContainersDetailsMap { get; set; }
 
-        public IEnumerable<(IComponentDetector detector, ComponentRecorder recorder)> ComponentRecorders { get; set; }
+        public IEnumerable<(IComponentDetector Detector, ComponentRecorder Recorder)> ComponentRecorders { get; set; }
     }
 }

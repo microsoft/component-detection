@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
         public TypedComponent GetComponent(string componentId)
         {
-            return this.singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).Where(x => x != null).FirstOrDefault();
+            return this.singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).FirstOrDefault(x => x != null);
         }
 
         public IEnumerable<DetectedComponent> GetDetectedComponents()

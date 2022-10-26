@@ -57,7 +57,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
             return deserializer.Deserialize<PodfileLock>(input);
         }
 
-        private static (Pod pod, string key, DetectedComponent detectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
+        private static (Pod Pod, string Key, DetectedComponent DetectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
         {
             return podfileLock.Pods.Select(pod =>
             {

@@ -123,8 +123,8 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
             var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
             dependencyGraphs.Keys.Count().Should().Be(2);
 
-            var graph1 = dependencyGraphs.Values.Where(dependencyGraph => dependencyGraph.GetComponents().Count() == 3).Single();
-            var graph2 = dependencyGraphs.Values.Where(dependencyGraph => dependencyGraph.GetComponents().Count() == 5).Single();
+            var graph1 = dependencyGraphs.Values.Single(dependencyGraph => dependencyGraph.GetComponents().Count() == 3);
+            var graph2 = dependencyGraphs.Values.Single(dependencyGraph => dependencyGraph.GetComponents().Count() == 5);
 
             var expectedComponents = new List<string>
             {
