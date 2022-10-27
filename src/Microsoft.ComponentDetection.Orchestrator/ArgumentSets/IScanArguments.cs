@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Common;
@@ -10,6 +10,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
         IEnumerable<DirectoryInfo> AdditionalPluginDirectories { get; set; }
 
         IEnumerable<string> AdditionalDITargets { get; set; }
+
+        bool SkipPluginsDirectory { get; set; }
 
         Guid CorrelationId { get; set; }
 

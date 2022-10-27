@@ -30,7 +30,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
         public async Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments)
         {
             this.Logger.LogCreateLoggingGroup();
-            var initialDetectors = this.DetectorRegistryService.GetDetectors(detectionArguments.AdditionalPluginDirectories, detectionArguments.AdditionalDITargets).ToImmutableList();
+            var initialDetectors = this.DetectorRegistryService.GetDetectors(detectionArguments.AdditionalPluginDirectories, detectionArguments.AdditionalDITargets, detectionArguments.SkipPluginsDirectory).ToImmutableList();
 
             if (!initialDetectors.Any())
             {
