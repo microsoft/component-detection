@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Composition;
 using System.IO;
 using System.Linq;
@@ -116,8 +117,8 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
                             directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
                             {
                                 Name = currentDir,
-                                Files = new List<IComponentStream>(),
-                                Directories = new List<DirectoryItemFacade>(),
+                                Files = new Collection<IComponentStream>(),
+                                Directories = new Collection<DirectoryItemFacade>(),
                             };
                         }
 

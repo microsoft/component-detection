@@ -191,7 +191,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             rootA.Children.Add(red);
             rootB.Children.Add(green);
-            rootC.Children.AddRange(new[] { red, blue, });
+            rootC.Children.ToList().AddRange(new[] { red, blue });
             rootD.Children.Add(cat);
             green.Children.Add(cat);
             cat.Children.Add(lion);
@@ -308,7 +308,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private void CheckChild(IComponentRecorder recorder, string childId, string[] parentIds)
         {
-            recorder.AssertAllExplicitlyReferencedComponents<PipComponent>(
+            recorder.AssertAllExplicitlyReferencedComponents(
                 childId,
                 parentIds.Select(parentId => new Func<PipComponent, bool>(x => x.Id == parentId)).ToArray());
         }

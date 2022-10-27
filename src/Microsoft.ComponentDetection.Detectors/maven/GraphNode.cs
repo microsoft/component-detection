@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.ObjectModel;
 
 namespace Microsoft.ComponentDetection.Detectors.Maven
 {
@@ -15,8 +15,8 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
 
         public T Value { get; set; }
 
-        public List<GraphNode<T>> Children { get; } = new List<GraphNode<T>>();
+        public Collection<GraphNode<T>> Children { get; } = new Collection<GraphNode<T>>();
 
-        public List<GraphNode<T>> Parents { get; } = new List<GraphNode<T>>();
+        public Collection<GraphNode<T>> Parents { get; } = new Collection<GraphNode<T>>();
     }
 }
