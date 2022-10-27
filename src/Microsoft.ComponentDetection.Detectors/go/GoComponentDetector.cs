@@ -75,9 +75,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 }
                 else
                 {
-                    #pragma warning disable CA1308
                     var fileExtension = Path.GetExtension(file.Location).ToLowerInvariant();
-                    #pragma warning restore CA1308
                     switch (fileExtension)
                     {
                         case ".mod":

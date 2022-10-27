@@ -174,10 +174,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 return -1;
             }
 
-            #pragma warning disable CA1308
             var aLabelWeight = PreReleaseMapping[a.PreReleaseLabel.ToLowerInvariant()];
             var bLabelWeight = PreReleaseMapping[b.PreReleaseLabel.ToLowerInvariant()];
-            #pragma warning restore CA1308
 
             if (aLabelWeight > bLabelWeight)
             {

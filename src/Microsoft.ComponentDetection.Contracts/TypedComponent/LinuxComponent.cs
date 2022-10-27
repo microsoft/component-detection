@@ -53,14 +53,31 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
             }
         }
 
-        private bool IsUbuntu() => this.Distribution.ToUpperInvariant() == "UBUNTU";
+        private bool IsUbuntu()
+        {
+#pragma warning disable CA1308 // Normalize strings to uppercase
+            return this.Distribution.ToLowerInvariant() == "ubuntu";
+#pragma warning restore CA1308 // Normalize strings to uppercase
+        }
 
-        private bool IsDebian() => this.Distribution.ToUpperInvariant() == "DEBIAN";
+        private bool IsDebian()
+        {
+            return this.Distribution.ToLowerInvariant() == "debian";
+        }
 
-        private bool IsCentOS() => this.Distribution.ToUpperInvariant() == "CENTOS";
+        private bool IsCentOS()
+        {
+            return this.Distribution.ToLowerInvariant() == "centos";
+        }
 
-        private bool IsFedora() => this.Distribution.ToUpperInvariant() == "FEDORA";
+        private bool IsFedora()
+        {
+            return this.Distribution.ToLowerInvariant() == "fedora";
+        }
 
-        private bool IsRHEL() => this.Distribution.ToUpperInvariant() == "RED HAT ENTERPRISE LINUX";
+        private bool IsRHEL()
+        {
+            return this.Distribution.ToLowerInvariant() == "red hat enterprise linux";
+        }
     }
 }

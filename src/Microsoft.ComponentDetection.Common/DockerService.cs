@@ -36,11 +36,7 @@ namespace Microsoft.ComponentDetection.Common
             }
             catch (Exception e)
             {
-                if (this.Logger != null)
-                {
-                    this.Logger.LogException(e, false);
-                }
-
+                this.Logger.LogException(e, false);
                 return false;
             }
         }
