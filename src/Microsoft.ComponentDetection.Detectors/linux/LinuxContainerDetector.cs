@@ -40,9 +40,11 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
 
         public async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
         {
+            #pragma warning disable CA1308
             var imagesToProcess = request.ImagesToScan?.Where(image => !string.IsNullOrWhiteSpace(image))
                 .Select(image => image.ToLowerInvariant())
                 .ToList();
+            #pragma warning restore CA1308
 
             if (imagesToProcess == null || !imagesToProcess.Any())
             {

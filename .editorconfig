@@ -573,9 +573,6 @@ dotnet_diagnostic.CA1825.severity = suggestion
 # CA1310: Specify StringComparison for correctness
 dotnet_diagnostic.CA1310.severity = suggestion
 
-# CA1002: Do not expose generic lists
-#dotnet_diagnostic.CA1002.severity = suggestion
-
 # IDE0008: Use explicit type
 dotnet_diagnostic.IDE0008.severity = suggestion
 
@@ -608,9 +605,6 @@ dotnet_diagnostic.CA1304.severity = suggestion
 
 # CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = suggestion
-
-# CA1308: Normalize strings to uppercase
-dotnet_diagnostic.CA1308.severity = suggestion
 
 # CA1307: Specify StringComparison for clarity
 dotnet_diagnostic.CA1307.severity = suggestion
