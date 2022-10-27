@@ -630,7 +630,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
             };
 
-            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>()))
+            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
                 .Returns(registeredDetectors);
             this.detectorRestrictionServiceMock.Setup(
                 x => x.ApplyRestrictions(
@@ -688,7 +688,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
             };
 
-            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>()))
+            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
                 .Returns(registeredDetectors);
             this.detectorRestrictionServiceMock.Setup(
                 x => x.ApplyRestrictions(
