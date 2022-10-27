@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 namespace Microsoft.ComponentDetection.Detectors.Pip
@@ -16,8 +16,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         public PipComponent Value { get; set; }
 
-        public Collection<PipGraphNode> Children { get; } = new Collection<PipGraphNode>();
+        public List<PipGraphNode> Children { get; } = new List<PipGraphNode>();
 
-        public Collection<PipGraphNode> Parents { get; } = new Collection<PipGraphNode>();
+        public List<PipGraphNode> Parents { get; } = new List<PipGraphNode>();
     }
 }

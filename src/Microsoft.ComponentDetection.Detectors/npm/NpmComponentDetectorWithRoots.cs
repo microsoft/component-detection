@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Composition;
 using System.IO;
 using System.Linq;
@@ -43,7 +42,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
         public override int Version { get; } = 2;
 
-        public Collection<ProcessRequest> LernaFiles { get; set; } = new Collection<ProcessRequest>();
+        public List<ProcessRequest> LernaFiles { get; set; } = new List<ProcessRequest>();
 
         /// <inheritdoc />
         protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
@@ -211,8 +210,8 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                             directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
                             {
                                 Name = currentDir,
-                                Files = new Collection<IComponentStream>(),
-                                Directories = new Collection<DirectoryItemFacade>(),
+                                Files = new List<IComponentStream>(),
+                                Directories = new List<DirectoryItemFacade>(),
                             };
                         }
 

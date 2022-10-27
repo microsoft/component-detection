@@ -55,9 +55,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         private bool IsUbuntu()
         {
-#pragma warning disable CA1308 // Normalize strings to uppercase
             return this.Distribution.ToLowerInvariant() == "ubuntu";
-#pragma warning restore CA1308 // Normalize strings to uppercase
         }
 
         private bool IsDebian()

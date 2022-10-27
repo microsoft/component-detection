@@ -574,7 +574,7 @@ dotnet_diagnostic.CA1825.severity = suggestion
 dotnet_diagnostic.CA1310.severity = suggestion
 
 # CA1002: Do not expose generic lists
-#dotnet_diagnostic.CA1002.severity = suggestion
+dotnet_diagnostic.CA1002.severity = suggestion
 
 # IDE0008: Use explicit type
 dotnet_diagnostic.IDE0008.severity = suggestion
