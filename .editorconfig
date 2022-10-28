@@ -720,9 +720,6 @@ dotnet_diagnostic.CA1837.severity = suggestion
 # CA1024: Use properties where appropriate
 dotnet_diagnostic.CA1024.severity = suggestion
 
-# CA1834: Consider using 'StringBuilder.Append(char)' when applicable
-dotnet_diagnostic.CA1834.severity = suggestion
-
 # SA1202: Elements should be ordered by access
 dotnet_diagnostic.SA1202.severity = suggestion
 

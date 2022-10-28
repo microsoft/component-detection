@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -859,7 +859,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         private string CreatePackageJsonFileContent(IList<YarnTestComponentDefinition> components)
         {
             var builder = new StringBuilder();
-            builder.Append("{");
+            builder.Append('{');
             builder.Append(@"""name"": ""test"",");
             builder.Append(@"""version"": ""0.0.0"",");
             builder.Append(@"""dependencies"": {");
@@ -877,11 +877,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 }
             }
 
-            builder.Append("}");
+            builder.Append('}');
 
             if (components.Any(component => component.IsDevDependency))
             {
-                builder.Append(",");
+                builder.Append(',');
                 builder.Append(@"""devDependencies"": {");
 
                 var dependencyComponents = components.Where(c => c.IsDevDependency).ToList();
@@ -899,8 +899,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 }
             }
 
-            builder.Append("}");
-            builder.Append("}");
+            builder.Append('}');
+            builder.Append('}');
 
             return builder.ToString();
         }
