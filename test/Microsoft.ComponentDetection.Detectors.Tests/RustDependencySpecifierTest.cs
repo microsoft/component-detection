@@ -49,7 +49,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                     di.Add(specifierName, specifierRange);
                 }
 
-                di.MatchesPackage(new CargoPackage { name = "some-cargo-package", version = "1.2.3" })
+                di.MatchesPackage(new CargoPackage { Name = "some-cargo-package", Version = "1.2.3" })
                     .Should().Be(shouldMatch, caseName);
             }
         }

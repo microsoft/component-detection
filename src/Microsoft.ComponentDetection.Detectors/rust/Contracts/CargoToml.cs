@@ -1,10 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
 {
     public class CargoToml
     {
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public CargoPackage package { get; set; }
+        [DataMember(Name = "package")]
+        public CargoPackage Package { get; set; }
     }
 }

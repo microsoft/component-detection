@@ -53,7 +53,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             return match.Success;
         }
 
-        private static bool IsLocalPackage(CargoPackage package) => package.source == null;
+        private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
 
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
@@ -78,11 +78,11 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     foreach (var cargoPackage in cargoLock.Package)
                     {
                         // Get or create the list of packages with this name
-                        if (!packagesByName.TryGetValue(cargoPackage.name, out var packageList))
+                        if (!packagesByName.TryGetValue(cargoPackage.Name, out var packageList))
                         {
                             // First package with this name
                             packageList = new List<(CargoPackage, CargoComponent)>();
-                            packagesByName.Add(cargoPackage.name, packageList);
+                            packagesByName.Add(cargoPackage.Name, packageList);
                         }
                         else if (packageList.Any(p => p.Package.Equals(cargoPackage)))
                         {
@@ -94,7 +94,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                         CargoComponent cargoComponent = null;
                         if (!IsLocalPackage(cargoPackage))
                         {
-                            cargoComponent = new CargoComponent(cargoPackage.name, cargoPackage.version);
+                            cargoComponent = new CargoComponent(cargoPackage.Name, cargoPackage.Version);
                             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(cargoComponent));
                         }
 
@@ -108,14 +108,14 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                         // Get the parent package and component
                         foreach (var (parentPackage, parentComponent) in packageList)
                         {
-                            if (parentPackage.dependencies == null)
+                            if (parentPackage.Dependencies == null)
                             {
                                 // This package has no dependency edges to contribute.
                                 continue;
                             }
 
                             // Process each dependency
-                            foreach (var dependency in parentPackage.dependencies)
+                            foreach (var dependency in parentPackage.Dependencies)
                             {
                                 this.ProcessDependency(cargoLockFile, singleFileComponentRecorder, seenAsDependency, packagesByName, parentPackage, parentComponent, dependency);
                             }
@@ -174,13 +174,13 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 CargoComponent childComponent = null;
                 foreach (var (candidatePackage, candidateComponent) in candidatePackages)
                 {
-                    if (childVersion != null && candidatePackage.version != childVersion)
+                    if (childVersion != null && candidatePackage.Version != childVersion)
                     {
                         // This does not have the requested version
                         continue;
                     }
 
-                    if (childSource != null && candidatePackage.source != childSource)
+                    if (childSource != null && candidatePackage.Source != childSource)
                     {
                         // This does not have the requested source
                         continue;
@@ -230,7 +230,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
             {
                 using var record = new RustCrateDetectorTelemetryRecord();
 
-                record.PackageInfo = $"{parentPackage.name}, {parentPackage.version}, {parentPackage.source}";
+                record.PackageInfo = $"{parentPackage.Name}, {parentPackage.Version}, {parentPackage.Source}";
                 record.Dependencies = dependency;
 
                 this.Logger.LogFailedReadingFile(cargoLockFile.Location, e);
