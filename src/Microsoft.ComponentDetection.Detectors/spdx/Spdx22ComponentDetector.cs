@@ -91,14 +91,10 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
             var name = document["name"]?.ToString();
             var spdxVersion = document["spdxVersion"]?.ToString();
 
-            if (rootElements == null || rootElements.Length <= 1)
-            {
-            }
-            else
+            if (rootElements.Length > 1)
             {
                 this.Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} has more than one element in documentDescribes, first will be selected as root element.");
             }
-
             if (rootElements != null && rootElements.Any())
             {
                 this.Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} does not have root elements in documentDescribes section, considering SPDXRef-Document as a root element.");
