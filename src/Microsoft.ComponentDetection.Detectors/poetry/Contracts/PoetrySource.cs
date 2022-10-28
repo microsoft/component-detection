@@ -14,6 +14,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts
         public string reference { get; set; }
 
         [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
+        [SuppressMessage("Naming", "CA1707:IdentifiersShouldNotContainUnderscores", Justification = "Deserialization contract. Casing cannot be overwritten.")]
         public string resolved_reference { get; set; }
     }
 }
