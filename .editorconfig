@@ -687,9 +687,6 @@ dotnet_diagnostic.CA1508.severity = suggestion
 # CA1823: Avoid unused private fields
 dotnet_diagnostic.CA1823.severity = suggestion
 
-# CA1829: Use Length/Count property instead of Count() when available
-dotnet_diagnostic.CA1829.severity = suggestion
-
 # CA2234: Pass system uri objects instead of strings
 dotnet_diagnostic.CA2234.severity = suggestion
 

@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNlohmann()
         {
-            var spdxFile = @"{
+            var spdxFile = /*lang=json,strict*/ @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
     ""documentNamespace"":
         ""https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84"",
@@ -64,7 +64,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 throw new AssertFailedException($"{nameof(sbomComponent)} is null");
             }
 
-            Assert.AreEqual(1, components.Count());
+            Assert.AreEqual(1, components.Count);
             Assert.AreEqual("nlohmann-json", sbomComponent.Name);
             Assert.AreEqual("3.10.4", sbomComponent.Version);
             Assert.AreEqual(5, sbomComponent.PortVersion);
@@ -76,7 +76,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestTinyxmlAndResource()
         {
-            var spdxFile = @"{
+            var spdxFile = /*lang=json,strict*/ @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
     ""documentNamespace"":
         ""https://spdx.org/spdxdocs/tinyxml2-x64-linux-9.0.0-c99e4f03-5275-458b-8a69-b5f8dfa45f18"",
@@ -117,7 +117,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var detectedComponents = componentRecorder.GetDetectedComponents();
             var components = detectedComponents.ToList();
 
-            Assert.AreEqual(2, components.Count());
+            Assert.AreEqual(2, components.Count);
             var sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c?.Component).SPDXID.Equals("SPDXRef-binary")).Component;
             Assert.IsNotNull(sbomComponent);
             Assert.AreEqual("tinyxml2:x64-linux", sbomComponent.Name);
