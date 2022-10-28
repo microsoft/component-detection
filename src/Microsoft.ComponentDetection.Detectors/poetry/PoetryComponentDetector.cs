@@ -41,9 +41,9 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
             {
                 var isDevelopmentDependency = package.Category != "main";
 
-                if (package.Source != null && package.Source.type == "git")
+                if (package.Source != null && package.Source.Type == "git")
                 {
-                    var component = new DetectedComponent(new GitComponent(new Uri(package.Source.url), package.Source.resolved_reference));
+                    var component = new DetectedComponent(new GitComponent(new Uri(package.Source.Url), package.Source.ResolvedReference));
                     singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
                 }
                 else

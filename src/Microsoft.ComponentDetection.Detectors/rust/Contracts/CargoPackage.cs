@@ -1,47 +1,47 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
 {
     public class CargoPackage
     {
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public string name { get; set; }
+        [DataMember(Name = "name")]
+        public string Name { get; set; }
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public string version { get; set; }
+        [DataMember(Name = "version")]
+        public string Version { get; set; }
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public string author { get; set; }
+        [DataMember(Name = "author")]
+        public string Author { get; set; }
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public string source { get; set; }
+        [DataMember(Name = "source")]
+        public string Source { get; set; }
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public string checksum { get; set; }
+        [DataMember(Name = "checksum")]
+        public string Checksum { get; set; }
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public string[] dependencies { get; set; }
+        [DataMember(Name = "dependencies")]
+        public string[] Dependencies { get; set; }
 
         // Get hash code and equals are IDE generated
         // Manually added some casing handling
         public override bool Equals(object obj)
         {
             return obj is CargoPackage package &&
-                   string.Equals(this.name, package.name) &&
-                   string.Equals(this.version, package.version, StringComparison.OrdinalIgnoreCase) &&
-                   string.Equals(this.source, package.source) &&
-                   string.Equals(this.checksum, package.checksum);
+                   string.Equals(this.Name, package.Name) &&
+                   string.Equals(this.Version, package.Version, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(this.Source, package.Source) &&
+                   string.Equals(this.Checksum, package.Checksum);
         }
 
         public override int GetHashCode()
         {
             return HashCode.Combine(
-                EqualityComparer<string>.Default.GetHashCode(this.name),
-                EqualityComparer<string>.Default.GetHashCode(this.version.ToLowerInvariant()),
-                EqualityComparer<string>.Default.GetHashCode(this.source),
-                EqualityComparer<string>.Default.GetHashCode(this.checksum));
+                EqualityComparer<string>.Default.GetHashCode(this.Name),
+                EqualityComparer<string>.Default.GetHashCode(this.Version.ToLowerInvariant()),
+                EqualityComparer<string>.Default.GetHashCode(this.Source),
+                EqualityComparer<string>.Default.GetHashCode(this.Checksum));
         }
     }
 }
