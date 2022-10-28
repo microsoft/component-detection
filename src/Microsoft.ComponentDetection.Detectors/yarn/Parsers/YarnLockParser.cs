@@ -117,7 +117,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             //    resolved "https://registry.Yarnpkg.com/nyc/-/nyc-10.0.0.tgz#95bd4a2c3487f33e1e78f213c6d5a53d88074ce6"
             return blockTitleMember =>
             {
-                if (blockTitleMember.Contains("@"))
+                if (blockTitleMember.Contains('@'))
                 {
                     return blockTitleMember;
                 }
@@ -140,7 +140,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             workingString = workingString.TrimEnd(':');
             workingString = workingString.Trim('\"');
             var startsWithAtSign = false;
-            if (workingString.StartsWith("@"))
+            if (workingString.StartsWith('@'))
             {
                 startsWithAtSign = true;
                 workingString = workingString.TrimStart('@');

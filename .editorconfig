@@ -624,9 +624,6 @@ dotnet_diagnostic.CA1725.severity = suggestion
 # CA1805: Do not initialize unnecessarily
 dotnet_diagnostic.CA1805.severity = suggestion
 
-# CA1846: Prefer 'AsSpan' over 'Substring'
-dotnet_diagnostic.CA1846.severity = suggestion
-
 # CA1806: Do not ignore method results
 dotnet_diagnostic.CA1806.severity = suggestion
 
@@ -698,9 +695,6 @@ dotnet_diagnostic.CA2219.severity = suggestion
 
 # CA2201: Exception type System.Exception is not sufficiently specific
 dotnet_diagnostic.CA2201.severity = suggestion
-
-# CA1847: Use char literal for a single character lookup
-dotnet_diagnostic.CA1847.severity = suggestion
 
 # CA1835: Prefer the 'Memory'-based overloads for 'ReadAsync' and 'WriteAsync'
 dotnet_diagnostic.CA1835.severity = suggestion
