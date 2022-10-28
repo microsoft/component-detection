@@ -12,10 +12,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
     [Export(typeof(IComponentDetector))]
     public class PnpmComponentDetector : FileComponentDetector
     {
-        public PnpmComponentDetector()
-        {
-            this.NeedsAutomaticRootDependencyCalculation = true;
-        }
+        public PnpmComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
 
         public override string Id { get; } = "Pnpm";
 

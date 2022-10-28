@@ -11,10 +11,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
     {
         private readonly IDictionary<string, ISet<ISet<Range>>> dependencies;
 
-        public DependencySpecification()
-        {
-            this.dependencies = new Dictionary<string, ISet<ISet<Range>>>();
-        }
+        public DependencySpecification() => this.dependencies = new Dictionary<string, ISet<ISet<Range>>>();
 
         public void Add(string name, string cargoVersionSpecifier)
         {

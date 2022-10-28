@@ -103,8 +103,8 @@ namespace Microsoft.ComponentDetection.Common
             }
             else
             {
-                domain = name.Substring(0, indexOfSlash);
-                reminder = name.Substring(indexOfSlash + 1);
+                domain = name[..indexOfSlash];
+                reminder = name[(indexOfSlash + 1)..];
             }
 
             if (domain == LEGACYDEFAULTDOMAIN)
@@ -133,7 +133,7 @@ namespace Microsoft.ComponentDetection.Common
             var tagSeparatorIndex = remainder.IndexOf(':');
             if (tagSeparatorIndex > -1)
             {
-                remoteName = remainder.Substring(0, tagSeparatorIndex);
+                remoteName = remainder[..tagSeparatorIndex];
             }
             else
             {

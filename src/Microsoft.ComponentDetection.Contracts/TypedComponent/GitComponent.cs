@@ -11,10 +11,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         }
 
         public GitComponent(Uri repositoryUrl, string commitHash, string tag)
-            : this(repositoryUrl, commitHash)
-        {
-            this.Tag = tag;
-        }
+            : this(repositoryUrl, commitHash) => this.Tag = tag;
 
         private GitComponent()
         {

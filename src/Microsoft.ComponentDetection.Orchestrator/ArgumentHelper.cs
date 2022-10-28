@@ -9,10 +9,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
     [Export(typeof(IArgumentHelper))]
     public class ArgumentHelper : IArgumentHelper
     {
-        public ArgumentHelper()
-        {
-            this.ArgumentSets = Enumerable.Empty<IScanArguments>();
-        }
+        public ArgumentHelper() => this.ArgumentSets = Enumerable.Empty<IScanArguments>();
 
         [ImportMany]
         public IEnumerable<IScanArguments> ArgumentSets { get; set; }
