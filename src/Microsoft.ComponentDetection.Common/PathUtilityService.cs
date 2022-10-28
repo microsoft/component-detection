@@ -78,11 +78,11 @@ namespace Microsoft.ComponentDetection.Common
 
         public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
         {
-            if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern[1..], StringComparison.OrdinalIgnoreCase))
+            if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern.AsSpan()[1..], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
-            else if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern[..^1], StringComparison.OrdinalIgnoreCase))
+            else if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern.AsSpan()[..^1], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
