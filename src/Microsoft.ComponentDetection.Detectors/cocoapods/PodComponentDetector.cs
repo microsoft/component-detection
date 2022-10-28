@@ -404,11 +404,9 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     {
                         // CocoaPods specs are stored in a git repo but depending on settings/CocoaPods version
                         // the repo is shown differently in the Podfile.lock
-#pragma warning disable CA1308
-                        return repository.Key.ToLowerInvariant() switch
-#pragma warning restore CA1308
+                        return repository.Key.ToUpperInvariant() switch
                         {
-                            "trunk" or "https://github.com/cocoapods/specs.git" => "trunk",
+                            "TRUNK" or "https://github.com/cocoapods/specs.git" => "TRUNK",
                             _ => repository.Key,
                         };
                     }

@@ -75,19 +75,17 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 }
                 else
                 {
-#pragma warning disable CA1308
-                    var fileExtension = Path.GetExtension(file.Location).ToLowerInvariant();
-#pragma warning restore CA1308
+                    var fileExtension = Path.GetExtension(file.Location).ToUpperInvariant();
                     switch (fileExtension)
                     {
-                        case ".mod":
+                        case ".MOD":
                         {
                             this.Logger.LogVerbose("Found Go.mod: " + file.Location);
                             this.ParseGoModFile(singleFileComponentRecorder, file);
                             break;
                         }
 
-                        case ".sum":
+                        case ".SUM":
                         {
                             this.Logger.LogVerbose("Found Go.sum: " + file.Location);
                             this.ParseGoSumFile(singleFileComponentRecorder, file);

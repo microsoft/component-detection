@@ -35,13 +35,12 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
                    string.Equals(this.checksum, package.checksum);
         }
 
+        [SuppressMessage("Usage", "CA1308:Normalize String to Uppercase", Justification = "Casing cannot be overwritten.")]
         public override int GetHashCode()
         {
             return HashCode.Combine(
                 EqualityComparer<string>.Default.GetHashCode(this.name),
-#pragma warning disable CA1308
                 EqualityComparer<string>.Default.GetHashCode(this.version.ToLowerInvariant()),
-#pragma warning restore CA1308
                 EqualityComparer<string>.Default.GetHashCode(this.source),
                 EqualityComparer<string>.Default.GetHashCode(this.checksum));
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -149,6 +150,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             return devNumberComparison;
         }
 
+        [SuppressMessage("Usage", "CA1308:Normalize String to Uppercase", Justification = "Casing cannot be overwritten.")]
         private static int ComparePreRelease(PythonVersion a, PythonVersion b)
         {
             if (string.IsNullOrEmpty(a.PreReleaseLabel) && string.IsNullOrEmpty(b.PreReleaseLabel))
@@ -174,10 +176,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 return -1;
             }
 
-#pragma warning disable CA1308
             var aLabelWeight = PreReleaseMapping[a.PreReleaseLabel.ToLowerInvariant()];
             var bLabelWeight = PreReleaseMapping[b.PreReleaseLabel.ToLowerInvariant()];
-#pragma warning restore CA1308
 
             if (aLabelWeight > bLabelWeight)
             {

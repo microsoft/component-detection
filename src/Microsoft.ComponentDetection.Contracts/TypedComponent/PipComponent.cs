@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
@@ -21,9 +22,8 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         public override ComponentType Type => ComponentType.Pip;
 
-#pragma warning disable CA1308
+        [SuppressMessage("Usage", "CA1308:Normalize String to Uppercase", Justification = "Casing cannot be overwritten.")]
         public override string Id => $"{this.Name} {this.Version} - {this.Type}".ToLowerInvariant();
-#pragma warning restore CA1308
 
         public override PackageURL PackageUrl => new PackageURL("pypi", null, this.Name, this.Version, null, null);
     }
