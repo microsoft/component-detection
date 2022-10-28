@@ -46,7 +46,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                     Desugarer.StarRange,
                 })
                 {
-                    var result = desugarer(spec.Substring(position));
+                    var result = desugarer(spec[position..]);
                     if (result != null)
                     {
                         position += result.Item1;
@@ -55,7 +55,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 }
 
                 // Check for standard comparator with operator and version:
-                var comparatorResult = Comparator.TryParse(spec.Substring(position));
+                var comparatorResult = Comparator.TryParse(spec[position..]);
                 if (comparatorResult != null)
                 {
                     position += comparatorResult.Item1;
@@ -70,10 +70,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             }
         }
 
-        private ComparatorSet(IEnumerable<Comparator> comparators)
-        {
-            this.comparators = comparators.ToList();
-        }
+        private ComparatorSet(IEnumerable<Comparator> comparators) => this.comparators = comparators.ToList();
 
         public bool IsSatisfied(SemVersion version)
         {

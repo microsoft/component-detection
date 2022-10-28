@@ -7,10 +7,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
     [Export]
     public class CommandLineArgumentsExporter
     {
-        public CommandLineArgumentsExporter()
-        {
-            this.DelayedInjectionLazy = new Lazy<IScanArguments>(() => ArgumentsForDelayedInjection);
-        }
+        public CommandLineArgumentsExporter() => this.DelayedInjectionLazy = new Lazy<IScanArguments>(() => ArgumentsForDelayedInjection);
 
         public static IScanArguments ArgumentsForDelayedInjection { get; set; }
 

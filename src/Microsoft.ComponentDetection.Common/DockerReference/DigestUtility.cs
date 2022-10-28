@@ -26,7 +26,7 @@ namespace Microsoft.ComponentDetection.Common
                 return false;
             }
 
-            var algorithm = digest.Substring(0, indexOfColon);
+            var algorithm = digest[..indexOfColon];
 
             if (!AlgorithmsSizes.ContainsKey(algorithm))
             {

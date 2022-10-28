@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -12,11 +12,9 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
     /// </summary>
     public sealed class TelemetryRelay
     {
-        private TelemetryRelay()
-        {
-            // For things not populating the telemetry services collection, let's not throw.
+        // For things not populating the telemetry services collection, let's not throw.
+        private TelemetryRelay() =>
             TelemetryServices = Enumerable.Empty<ITelemetryService>();
-        }
 
         [ImportMany]
         public static IEnumerable<ITelemetryService> TelemetryServices { get; set; }
