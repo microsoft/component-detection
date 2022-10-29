@@ -51,8 +51,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             try
             {
                 var initialPackages = await this.PythonCommandService.ParseFile(file.Location, pythonExePath);
-                var listedPackage = initialPackages.Where(tuple => tuple.Item1 != null)
-                    .Select(tuple => tuple.Item1)
+                var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
+                    .Select(tuple => tuple.PackageString)
                     .Where(x => !string.IsNullOrWhiteSpace(x))
                     .Select(x => new PipDependencySpecification(x))
                     .Where(x => !x.PackageIsUnsafe())
@@ -64,8 +64,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                     singleFileComponentRecorder,
                     roots);
 
-                initialPackages.Where(tuple => tuple.Item2 != null)
-                                .Select(tuple => new DetectedComponent(tuple.Item2))
+                initialPackages.Where(tuple => tuple.Component != null)
+                                .Select(tuple => new DetectedComponent(tuple.Component))
                                 .ToList()
                                 .ForEach(gitComponent => singleFileComponentRecorder.RegisterUsage(gitComponent, isExplicitReferencedDependency: true));
             }

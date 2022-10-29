@@ -211,11 +211,11 @@ other=2.1";
             {
                 parseResult.Count.Should().Be(1);
 
-                var tuple = parseResult.Single();
-                tuple.Item1.Should().BeNull();
-                tuple.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.Single();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent = tuple.Item2;
+                var gitComponent = component;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
             });
@@ -228,11 +228,11 @@ other=2.1";
             {
                 parseResult.Count.Should().Be(1);
 
-                var tuple = parseResult.Single();
-                tuple.Item1.Should().BeNull();
-                tuple.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.Single();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent = tuple.Item2;
+                var gitComponent = component;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
             });
@@ -245,11 +245,11 @@ other=2.1";
             {
                 parseResult.Count.Should().Be(1);
 
-                var tuple = parseResult.Single();
-                tuple.Item1.Should().BeNull();
-                tuple.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.Single();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent = tuple.Item2;
+                var gitComponent = component;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
             });
@@ -262,11 +262,11 @@ other=2.1";
             {
                 parseResult.Count.Should().Be(1);
 
-                var tuple = parseResult.Single();
-                tuple.Item1.Should().BeNull();
-                tuple.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.Single();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent = tuple.Item2;
+                var gitComponent = component;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
             });
@@ -306,19 +306,19 @@ other=2.1";
             {
                 parseResult.Count.Should().Be(2);
 
-                var tuple1 = parseResult.First();
-                tuple1.Item1.Should().BeNull();
-                tuple1.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.First();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent1 = tuple1.Item2;
+                var gitComponent1 = component;
                 gitComponent1.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent1.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
 
-                var tuple2 = parseResult.Skip(1).First();
-                tuple2.Item1.Should().BeNull();
-                tuple2.Item2.Should().NotBeNull();
+                var (packageString2, component2) = parseResult.Skip(1).First();
+                packageString2.Should().BeNull();
+                component2.Should().NotBeNull();
 
-                var gitComponent2 = tuple2.Item2;
+                var gitComponent2 = component2;
                 gitComponent2.RepositoryUrl.Should().Be("https://github.com/path/to/package-two");
                 gitComponent2.CommitHash.Should().Be("41b95ec");
             });
@@ -331,31 +331,31 @@ other=2.1";
             {
                 parseResult.Count.Should().Be(3);
 
-                var tuple1 = parseResult.First();
-                tuple1.Item1.Should().NotBeNull();
-                tuple1.Item2.Should().BeNull();
+                var (packageString, component) = parseResult.First();
+                packageString.Should().NotBeNull();
+                component.Should().BeNull();
 
-                var regularComponent1 = tuple1.Item1;
+                var regularComponent1 = packageString;
                 regularComponent1.Should().Be("something=1.3");
 
-                var tuple2 = parseResult.Skip(1).First();
-                tuple2.Item1.Should().BeNull();
-                tuple2.Item2.Should().NotBeNull();
+                var (packageString2, component2) = parseResult.Skip(1).First();
+                packageString2.Should().BeNull();
+                component2.Should().NotBeNull();
 
-                var gitComponent = tuple2.Item2;
+                var gitComponent = component2;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/path/to/package-two");
                 gitComponent.CommitHash.Should().Be("41b95ec");
 
-                var tuple3 = parseResult.ToArray()[2];
-                tuple3.Item1.Should().NotBeNull();
-                tuple3.Item2.Should().BeNull();
+                var (packageString3, component3) = parseResult.ToArray()[2];
+                packageString3.Should().NotBeNull();
+                component3.Should().BeNull();
 
-                var regularComponent2 = tuple3.Item1;
+                var regularComponent2 = packageString3;
                 regularComponent2.Should().Be("other=2.1");
             });
         }
 
-        private async Task<int> SetupAndParseReqsTxt(string fileToParse, Action<IList<(string, GitComponent)>> verificationFunction)
+        private async Task<int> SetupAndParseReqsTxt(string fileToParse, Action<IList<(string PackageString, GitComponent Component)>> verificationFunction)
         {
             var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 

@@ -87,10 +87,10 @@ namespace Microsoft.ComponentDetection.Common
             return CreateDockerReference(reference);
         }
 
-        public static (string, string) SplitDockerDomain(string name)
+        public static (string Domain, string Remainder) SplitDockerDomain(string name)
         {
             string domain;
-            string reminder;
+            string remainder;
 
             var indexOfSlash = name.IndexOf('/');
             if (indexOfSlash == -1 || !(
@@ -99,12 +99,12 @@ namespace Microsoft.ComponentDetection.Common
                 name.StartsWith("localhost/")))
             {
                 domain = DEFAULTDOMAIN;
-                reminder = name;
+                remainder = name;
             }
             else
             {
                 domain = name[..indexOfSlash];
-                reminder = name[(indexOfSlash + 1)..];
+                remainder = name[(indexOfSlash + 1)..];
             }
 
             if (domain == LEGACYDEFAULTDOMAIN)
@@ -112,12 +112,12 @@ namespace Microsoft.ComponentDetection.Common
                 domain = DEFAULTDOMAIN;
             }
 
-            if (domain == DEFAULTDOMAIN && reminder.IndexOf('/') == -1)
+            if (domain == DEFAULTDOMAIN && remainder.IndexOf('/') == -1)
             {
-                reminder = $"{OFFICIALREPOSITORYNAME}/{reminder}";
+                remainder = $"{OFFICIALREPOSITORYNAME}/{remainder}";
             }
 
-            return (domain, reminder);
+            return (domain, remainder);
         }
 
         public static DockerReference ParseFamiliarName(string name)

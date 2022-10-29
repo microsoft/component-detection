@@ -252,7 +252,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             }
         }
 
-        private void TraverseRequirementAndDependencyTree(IEnumerable<(JProperty, TypedComponent)> topLevelDependencies, IDictionary<string, JProperty> dependencyLookup, ISingleFileComponentRecorder singleFileComponentRecorder)
+        private void TraverseRequirementAndDependencyTree(IEnumerable<(JProperty Dependency, TypedComponent ParentComponent)> topLevelDependencies, IDictionary<string, JProperty> dependencyLookup, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
             // iterate through everything for a top level dependency with a single explicitReferencedDependency value
             foreach (var (currentDependency, _) in topLevelDependencies)
@@ -292,7 +292,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             }
         }
 
-        private void EnqueueDependencies(Queue<(JProperty, TypedComponent)> queue, JToken dependencies, TypedComponent parentComponent)
+        private void EnqueueDependencies(Queue<(JProperty Dependency, TypedComponent ParentComponent)> queue, JToken dependencies, TypedComponent parentComponent)
         {
             if (dependencies != null)
             {
@@ -306,7 +306,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             }
         }
 
-        private bool TryEnqueueFirstLevelDependencies(Queue<(JProperty, TypedComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, Queue<TypedComponent> parentComponentQueue = null, TypedComponent parentComponent = null, bool skipValidation = false)
+        private bool TryEnqueueFirstLevelDependencies(Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, Queue<TypedComponent> parentComponentQueue = null, TypedComponent parentComponent = null, bool skipValidation = false)
         {
             var isValid = true;
             if (dependencies != null)
