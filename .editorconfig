@@ -492,10 +492,6 @@ dotnet_diagnostic.SA1642.severity = suggestion
 # https://github.com/Microsoft/vs-threading
 ##########################################
 
-# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD103.md
-# Result synchronously blocks. Use await instead.
-dotnet_diagnostic.VSTHRD103.severity = suggestion
-
 # https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD101.md
 # Avoid using async lambda for a void returning delegate type, because any exceptions not handled by the delegate will crash the process
 dotnet_diagnostic.VSTHRD101.severity = suggestion
