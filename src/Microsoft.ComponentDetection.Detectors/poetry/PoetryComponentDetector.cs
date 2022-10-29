@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Composition;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.IO;
-using Tomlyn;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
+using Tomlyn;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry
 {

@@ -463,10 +463,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Using directive should appear within a namespace declaration
 dotnet_diagnostic.SA1200.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1210.md
-#  Using directives should be ordered alphabetically by the namespaces
-dotnet_diagnostic.SA1210.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
 # Tuple types in signatures should have element names
 dotnet_diagnostic.SA1414.severity = suggestion
