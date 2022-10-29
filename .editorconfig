@@ -496,10 +496,6 @@ dotnet_diagnostic.SA1642.severity = suggestion
 # Avoid using async lambda for a void returning delegate type, because any exceptions not handled by the delegate will crash the process
 dotnet_diagnostic.VSTHRD101.severity = suggestion
 
-# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD104.md
-# Expose an async version of this method that does not synchronously block. Then simplify this method to call that async method within a JoinableTaskFactory.Run delegate.
-dotnet_diagnostic.VSTHRD104.severity = suggestion
-
 # https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD111.md
 # Add .ConfigureAwait(bool) to your await expression
 dotnet_diagnostic.VSTHRD111.severity = suggestion
