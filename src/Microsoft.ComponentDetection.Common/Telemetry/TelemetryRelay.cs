@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 namespace Microsoft.ComponentDetection.Common.Telemetry
@@ -51,7 +52,8 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
         /// <summary>
         /// Disables the sending of telemetry and flushes any messages out of the queue for each service.
         /// </summary>
-        public void Shutdown()
+        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task ShutdownAsync()
         {
             Active = false;
 
@@ -60,10 +62,10 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
                 try
                 {
                     // Set a timeout for services that flush synchronously.
-                    AsyncExecution.ExecuteVoidWithTimeoutAsync(
+                    await AsyncExecution.ExecuteVoidWithTimeoutAsync(
                         () => service.Flush(),
                         TimeSpan.FromSeconds(20),
-                        CancellationToken.None).Wait();
+                        CancellationToken.None);
                 }
                 catch
                 {

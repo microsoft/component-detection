@@ -46,7 +46,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
                 record.Dispose();
                 if (terminalRecord && !(record.Command?.Equals("help", StringComparison.InvariantCultureIgnoreCase) ?? false))
                 {
-                    TelemetryRelay.Instance.Shutdown();
+                    await TelemetryRelay.Instance.ShutdownAsync();
                 }
             }
         }
