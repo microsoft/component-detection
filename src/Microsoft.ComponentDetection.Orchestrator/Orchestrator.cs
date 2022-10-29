@@ -202,8 +202,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
                         return string.Join(Environment.NewLine, aptListResult.Split(Environment.NewLine).Where(x => x.Contains("libssl")));
                     });
-
-                    if (!getLibSslPackages.Wait(taskTimeout))
+                    if (await Task.WhenAny(getLibSslPackages, Task.Delay(taskTimeout)) != getLibSslPackages)
                     {
                         throw new TimeoutException($"The execution did not complete in the alotted time ({taskTimeout} seconds) and has been terminated prior to completion");
                     }

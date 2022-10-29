@@ -424,10 +424,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             // Now exercise the exclusion code
             args.DirectoryExclusionListObsolete = new[] { Path.Combine("Child"), Path.Combine("..", "bin") };
-            this.serviceUnderTest.ProcessDetectorsAsync(
+            await this.serviceUnderTest.ProcessDetectorsAsync(
                 args,
                 new[] { this.firstFileComponentDetectorMock.Object },
-                new DetectorRestrictions()).Wait();
+                new DetectorRestrictions());
 
             this.directoryWalkerFactory.Reset();
 

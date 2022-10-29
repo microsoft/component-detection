@@ -147,10 +147,10 @@ other=2.1";
             {
                 using (var writer = File.CreateText(testPath))
                 {
-                    writer.WriteLine("knack==0.4.1");
-                    writer.WriteLine("vsts-cli-common==0.1.3    \\      ");
-                    writer.WriteLine("    --hash=sha256:856476331f3e26598017290fd65bebe81c960e806776f324093a46b76fb2d1c0");
-                    writer.Flush();
+                    await writer.WriteLineAsync("knack==0.4.1");
+                    await writer.WriteLineAsync("vsts-cli-common==0.1.3    \\      ");
+                    await writer.WriteLineAsync("    --hash=sha256:856476331f3e26598017290fd65bebe81c960e806776f324093a46b76fb2d1c0");
+                    await writer.FlushAsync();
                 }
 
                 var result = await service.ParseFile(testPath);
@@ -184,9 +184,9 @@ other=2.1";
             {
                 using (var writer = File.CreateText(testPath))
                 {
-                    writer.WriteLine("#this is a comment");
-                    writer.WriteLine("knack==0.4.1 #this is another comment");
-                    writer.Flush();
+                    await writer.WriteLineAsync("#this is a comment");
+                    await writer.WriteLineAsync("knack==0.4.1 #this is another comment");
+                    await writer.FlushAsync();
                 }
 
                 var result = await service.ParseFile(testPath);
@@ -364,8 +364,8 @@ other=2.1";
 
             using (var writer = File.CreateText(testPath))
             {
-                writer.WriteLine(fileToParse);
-                writer.Flush();
+                await writer.WriteLineAsync(fileToParse);
+                await writer.FlushAsync();
             }
 
             var result = await service.ParseFile(testPath);
