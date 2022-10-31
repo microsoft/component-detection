@@ -777,3 +777,6 @@ dotnet_diagnostic.CA1852.severity = suggestion
 
 # CA1854: Prefer the IDictionary.TryGetValue(TKey, out TValue) method
 dotnet_diagnostic.CA1854.severity = suggestion
+
+# JSON002: Probable JSON string detected
+dotnet_diagnostic.JSON002.severity = suggestion
