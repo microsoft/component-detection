@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
@@ -35,6 +36,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
                    string.Equals(this.Checksum, package.Checksum);
         }
 
+        [SuppressMessage("Usage", "CA1308:Normalize String to Uppercase", Justification = "Casing cannot be overwritten.")]
         public override int GetHashCode()
         {
             return HashCode.Combine(

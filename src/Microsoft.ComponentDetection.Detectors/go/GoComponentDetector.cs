@@ -75,17 +75,17 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 }
                 else
                 {
-                    var fileExtension = Path.GetExtension(file.Location).ToLowerInvariant();
+                    var fileExtension = Path.GetExtension(file.Location).ToUpperInvariant();
                     switch (fileExtension)
                     {
-                        case ".mod":
+                        case ".MOD":
                         {
                             this.Logger.LogVerbose("Found Go.mod: " + file.Location);
                             this.ParseGoModFile(singleFileComponentRecorder, file);
                             break;
                         }
 
-                        case ".sum":
+                        case ".SUM":
                         {
                             this.Logger.LogVerbose("Found Go.sum: " + file.Location);
                             this.ParseGoSumFile(singleFileComponentRecorder, file);
