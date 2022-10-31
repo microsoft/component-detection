@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestNlohmann()
         {
-            var spdxFile = @"{
+            var spdxFile = /*lang=json,strict*/ @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
     ""documentNamespace"":
         ""https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84"",
@@ -76,7 +76,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestTinyxmlAndResource()
         {
-            var spdxFile = @"{
+            var spdxFile = /*lang=json,strict*/ @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
     ""documentNamespace"":
         ""https://spdx.org/spdxdocs/tinyxml2-x64-linux-9.0.0-c99e4f03-5275-458b-8a69-b5f8dfa45f18"",
