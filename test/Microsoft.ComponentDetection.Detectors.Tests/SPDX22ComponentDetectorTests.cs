@@ -118,7 +118,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350
 
-            Assert.AreEqual(1, components.Count());
+            Assert.AreEqual(1, components.Count);
             Assert.AreEqual(sbomComponent.Name, "Test 1.0.0");
             Assert.AreEqual(sbomComponent.RootElementId, "SPDXRef-RootPackage");
             Assert.AreEqual(sbomComponent.DocumentNamespace, new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
