@@ -32,8 +32,6 @@ namespace Microsoft.ComponentDetection.Contracts
             }
         }
 
-        private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
-
         /// <summary>
         /// Gets or sets the detector that detected this component.
         /// </summary>
@@ -60,6 +58,8 @@ namespace Microsoft.ComponentDetection.Contracts
 
         /// <summary> Gets or sets Dependency Scope of the component.</summary>
         public DependencyScope? DependencyScope { get; set; }
+
+        private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
 
         /// <summary>Adds a filepath to the FilePaths hashset for this detected component.</summary>
         /// <param name="filePath">The file path to add to the hashset.</param>

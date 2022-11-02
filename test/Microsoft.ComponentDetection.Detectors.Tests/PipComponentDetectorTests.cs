@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -112,7 +112,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             foreach (var item in setupPyRoots)
             {
-                var reference = (PipComponent)item.Value;
+                var reference = item.Value;
 
                 Assert.AreEqual(reference.Version, ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == reference.Name).Component).Version);
             }
@@ -313,7 +313,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 parentIds.Select(parentId => new Func<PipComponent, bool>(x => x.Id == parentId)).ToArray());
         }
 
-        private List<(string, GitComponent)> ToGitTuple(IList<string> components)
+        private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)
         {
             return components.Select<string, (string, GitComponent)>(dep => (dep, null)).ToList();
         }

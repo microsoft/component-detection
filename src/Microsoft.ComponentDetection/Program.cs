@@ -29,7 +29,7 @@
 
                 var orchestrator = new Orchestrator.Orchestrator();
 
-                var result = orchestrator.Load(args);
+                var result = await orchestrator.LoadAsync(args);
 
                 var exitCode = (int)result.ResultCode;
                 if (result.ResultCode == ProcessingResultCode.Error || result.ResultCode == ProcessingResultCode.InputError)

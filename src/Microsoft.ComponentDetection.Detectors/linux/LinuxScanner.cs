@@ -9,7 +9,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
-using MoreLinq.Extensions;
 using Newtonsoft.Json;
 
 namespace Microsoft.ComponentDetection.Detectors.Linux
@@ -121,7 +120,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                 });
 
                 syftTelemetryRecord.LinuxComponents = JsonConvert.SerializeObject(linuxComponentsWithLayers.Select(linuxComponentWithLayer =>
-                    new
+                    new LinuxComponentRecord
                     {
                         Name = linuxComponentWithLayer.Component.Name,
                         Version = linuxComponentWithLayer.Component.Version,
@@ -134,6 +133,13 @@ namespace Microsoft.ComponentDetection.Detectors.Linux
                 record.FailedDeserializingScannerOutput = e.ToString();
                 return null;
             }
+        }
+
+        internal sealed class LinuxComponentRecord
+        {
+            public string Name { get; set; }
+
+            public string Version { get; set; }
         }
     }
 }

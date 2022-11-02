@@ -8,6 +8,7 @@
         <OutputPath>./bin</OutputPath>
         <RootNamespace>Microsoft.ComponentDetection.VerificationTests</RootNamespace>
         <AssemblyName>Microsoft.ComponentDetection.VerificationTests</AssemblyName>
+        <NoWarn>$(NoWarn);NU1504;NU1105</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>

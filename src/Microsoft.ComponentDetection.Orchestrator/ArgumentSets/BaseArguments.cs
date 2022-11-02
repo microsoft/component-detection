@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,6 +21,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
         public IEnumerable<DirectoryInfo> AdditionalPluginDirectories { get; set; }
 
         public IEnumerable<string> AdditionalPluginDirectoriesSerialized => this.AdditionalPluginDirectories?.Select(x => x.ToString()) ?? new List<string>();
+
+        [Option("SkipPluginsDirectory", Required = false, Default = false, HelpText = "Skip searching of /Plugins directory for additional component detectors.")]
+        public bool SkipPluginsDirectory { get; set; }
 
         [Option("CorrelationId", Required = false, HelpText = "Identifier used to correlate all telemetry for a given execution. If not provided, a new GUID will be generated.")]
         public Guid CorrelationId { get; set; }

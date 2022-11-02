@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -150,6 +150,12 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             dependencyGraph.IsDevelopmentDependency(d3Id).Should().BeFalse();
         }
 
+        protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
+        {
+            result.Should<T>().BeEquivalentTo(expected);
+            return true;
+        }
+
         private void IvyHappyPath(string content)
         {
             this.commandLineMock.Setup(x => x.CanCommandBeLocated(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
@@ -178,12 +184,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 {
                     ExitCode = 0,
                 });
-        }
-
-        protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
-        {
-            result.Should<T>().BeEquivalentTo(expected);
-            return true;
         }
     }
 }

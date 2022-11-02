@@ -13,6 +13,8 @@ namespace Microsoft.ComponentDetection.Detectors.Gradle
     [Export(typeof(IComponentDetector))]
     public class GradleComponentDetector : FileComponentDetector, IComponentDetector
     {
+        private static readonly Regex StartsWithLetterRegex = new Regex("^[A-Za-z]", RegexOptions.Compiled);
+
         public override string Id { get; } = "Gradle";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
@@ -22,8 +24,6 @@ namespace Microsoft.ComponentDetection.Detectors.Gradle
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Maven };
 
         public override int Version { get; } = 2;
-
-        private static readonly Regex StartsWithLetterRegex = new Regex("^[A-Za-z]", RegexOptions.Compiled);
 
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
@@ -68,7 +68,7 @@ namespace Microsoft.ComponentDetection.Detectors.Gradle
         {
             var equalsSeparatorIndex = line.IndexOf('=');
             var isSingleLockfilePerProjectFormat = equalsSeparatorIndex != -1;
-            var componentDescriptor = isSingleLockfilePerProjectFormat ? line.Substring(0, equalsSeparatorIndex) : line;
+            var componentDescriptor = isSingleLockfilePerProjectFormat ? line[..equalsSeparatorIndex] : line;
             var splits = componentDescriptor.Trim().Split(":");
             var groupId = splits[0];
             var artifactId = splits[1];

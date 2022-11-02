@@ -9,12 +9,9 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 {
     public class DependencySpecification
     {
-        private IDictionary<string, ISet<ISet<Range>>> dependencies;
+        private readonly IDictionary<string, ISet<ISet<Range>>> dependencies;
 
-        public DependencySpecification()
-        {
-            this.dependencies = new Dictionary<string, ISet<ISet<Range>>>();
-        }
+        public DependencySpecification() => this.dependencies = new Dictionary<string, ISet<ISet<Range>>>();
 
         public void Add(string name, string cargoVersionSpecifier)
         {
@@ -35,17 +32,17 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
         public bool MatchesPackage(CargoPackage package)
         {
-            if (!this.dependencies.ContainsKey(package.name))
+            if (!this.dependencies.ContainsKey(package.Name))
             {
                 return false;
             }
 
-            foreach (var ranges in this.dependencies[package.name])
+            foreach (var ranges in this.dependencies[package.Name])
             {
                 var allSatisfied = true;
                 foreach (var range in ranges)
                 {
-                    if (SemVersion.TryParse(package.version, out var sv))
+                    if (SemVersion.TryParse(package.Version, out var sv))
                     {
                         if (!range.IsSatisfied(sv))
                         {
@@ -54,7 +51,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                     }
                     else
                     {
-                        throw new FormatException($"Could not parse {package.version} into a valid Semver");
+                        throw new FormatException($"Could not parse {package.Version} into a valid Semver");
                     }
                 }
 

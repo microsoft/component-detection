@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,12 +15,12 @@ namespace Microsoft.ComponentDetection.Common
     [Export(typeof(ICommandLineInvocationService))]
     public class CommandLineInvocationService : ICommandLineInvocationService
     {
-        private IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
+        private readonly IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
 
         public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
         {
-            additionalCandidateCommands = additionalCandidateCommands ?? Enumerable.Empty<string>();
-            parameters = parameters ?? new string[0];
+            additionalCandidateCommands ??= Enumerable.Empty<string>();
+            parameters ??= new string[0];
             var allCommands = new[] { command }.Concat(additionalCandidateCommands);
             if (!this.commandLocatableCache.TryGetValue(command, out var validCommand))
             {
@@ -57,13 +57,13 @@ namespace Microsoft.ComponentDetection.Common
             if (!isCommandLocatable)
             {
                 throw new InvalidOperationException(
-                    $"{nameof(ExecuteCommand)} was called with a command that could not be located: `{command}`!");
+                    $"{nameof(this.ExecuteCommand)} was called with a command that could not be located: `{command}`!");
             }
 
             if (workingDirectory != null && !Directory.Exists(workingDirectory.FullName))
             {
                 throw new InvalidOperationException(
-                    $"{nameof(ExecuteCommand)} was called with a working directory that could not be located: `{workingDirectory.FullName}`");
+                    $"{nameof(this.ExecuteCommand)} was called with a working directory that could not be located: `{workingDirectory.FullName}`");
             }
 
             using var record = new CommandLineInvocationTelemetryRecord();
@@ -86,6 +86,16 @@ namespace Microsoft.ComponentDetection.Common
         public bool IsCommandLineExecution()
         {
             return true;
+        }
+
+        public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
+        {
+            return await this.CanCommandBeLocated(command, additionalCandidateCommands, workingDirectory: null, parameters);
+        }
+
+        public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
+        {
+            return await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters);
         }
 
         private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
@@ -143,16 +153,6 @@ namespace Microsoft.ComponentDetection.Common
             t2.Start();
 
             return tcs.Task;
-        }
-
-        public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
-        {
-            return await this.CanCommandBeLocated(command, additionalCandidateCommands, workingDirectory: null, parameters);
-        }
-
-        public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
-        {
-            return await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters);
         }
     }
 }

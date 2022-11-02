@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -8,8 +8,6 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 {
     public class YarnLockParser : IYarnLockParser
     {
-        private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
-
         private const string VersionString = "version";
 
         private const string Resolved = "resolved";
@@ -18,8 +16,15 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         private const string OptionalDependencies = "optionalDependencies";
 
+        private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
+
         [Import]
         public ILogger Logger { get; set; }
+
+        public static string NormalizeVersion(string version)
+        {
+            return version.StartsWith("npm:") ? version : $"npm:{version}";
+        }
 
         public bool CanParse(YarnLockVersion yarnLockVersion)
         {
@@ -112,7 +117,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             //    resolved "https://registry.Yarnpkg.com/nyc/-/nyc-10.0.0.tgz#95bd4a2c3487f33e1e78f213c6d5a53d88074ce6"
             return blockTitleMember =>
             {
-                if (blockTitleMember.Contains("@"))
+                if (blockTitleMember.Contains('@'))
                 {
                     return blockTitleMember;
                 }
@@ -135,7 +140,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             workingString = workingString.TrimEnd(':');
             workingString = workingString.Trim('\"');
             var startsWithAtSign = false;
-            if (workingString.StartsWith("@"))
+            if (workingString.StartsWith('@'))
             {
                 startsWithAtSign = true;
                 workingString = workingString.TrimStart('@');
@@ -153,11 +158,6 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
             output = new Tuple<string, string>(name, parts[1]);
             return true;
-        }
-
-        public static string NormalizeVersion(string version)
-        {
-            return version.StartsWith("npm:") ? version : $"npm:{version}";
         }
     }
 }

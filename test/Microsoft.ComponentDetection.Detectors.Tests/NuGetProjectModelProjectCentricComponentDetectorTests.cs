@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -21,8 +21,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     [TestCategory("Governance/ComponentDetection")]
     public class NuGetProjectModelProjectCentricComponentDetectorTests
     {
-        private DetectorTestUtility<NuGetProjectModelProjectCentricComponentDetector> detectorTestUtility;
         private readonly string projectAssetsJsonFileName = "project.assets.json";
+        private DetectorTestUtility<NuGetProjectModelProjectCentricComponentDetector> detectorTestUtility;
 
         [TestInitialize]
         public void TestInitialize()

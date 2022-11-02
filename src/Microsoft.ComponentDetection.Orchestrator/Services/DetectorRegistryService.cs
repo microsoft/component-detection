@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Composition;
 using System.Composition.Hosting;
 using System.IO;
@@ -22,12 +22,17 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         private IEnumerable<IComponentDetector> ComponentDetectors { get; set; }
 
-        public IEnumerable<IComponentDetector> GetDetectors(IEnumerable<DirectoryInfo> additionalSearchDirectories, IEnumerable<string> extraDetectorAssemblies)
+        public IEnumerable<IComponentDetector> GetDetectors(IEnumerable<DirectoryInfo> additionalSearchDirectories, IEnumerable<string> extraDetectorAssemblies, bool skipPluginsDirectory = false)
         {
-            var executableLocation = Assembly.GetEntryAssembly().Location;
-            var searchPath = Path.Combine(Path.GetDirectoryName(executableLocation), "Plugins");
+            var directoriesToSearch = new List<DirectoryInfo>();
 
-            var directoriesToSearch = new List<DirectoryInfo> { new DirectoryInfo(searchPath) };
+            // Checking Plugins directory is not required when skip argument is provided
+            if (!skipPluginsDirectory)
+            {
+                var executableLocation = Assembly.GetEntryAssembly().Location;
+                var searchPath = Path.Combine(Path.GetDirectoryName(executableLocation), "Plugins");
+                directoriesToSearch.Add(new DirectoryInfo(searchPath));
+            }
 
             if (additionalSearchDirectories != null)
             {
@@ -38,7 +43,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
             if (!this.ComponentDetectors.Any())
             {
-                this.Logger.LogError($"No component detectors were found in {searchPath} or other provided search paths.");
+                this.Logger.LogError($"No component detectors were found in {directoriesToSearch.FirstOrDefault()} or other provided search paths.");
             }
 
             return this.ComponentDetectors;

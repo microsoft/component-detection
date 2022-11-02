@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 namespace Microsoft.ComponentDetection.Common.Telemetry
@@ -12,37 +13,27 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
     /// </summary>
     public sealed class TelemetryRelay
     {
+        // For things not populating the telemetry services collection, let's not throw.
+        private TelemetryRelay() =>
+            TelemetryServices = Enumerable.Empty<ITelemetryService>();
+
         [ImportMany]
         public static IEnumerable<ITelemetryService> TelemetryServices { get; set; }
-
-        private static readonly TelemetryRelay InternalInstance = new TelemetryRelay();
 
         /// <summary>
         /// Gets a value indicating whether or not the telemetry relay has been shutdown.
         /// </summary>
         public static bool Active { get; private set; } = true;
 
-        private TelemetryRelay()
-        {
-            // For things not populating the telemetry services collection, let's not throw.
-            TelemetryServices = Enumerable.Empty<ITelemetryService>();
-        }
-
         /// <summary>
         /// Gets the singleton.
         /// </summary>
-        public static TelemetryRelay Instance
-        {
-            get
-            {
-                return InternalInstance;
-            }
-        }
+        public static TelemetryRelay Instance { get; } = new TelemetryRelay();
 
         /// <summary>
         /// Post a given telemetry record to all telemetry services.
         /// </summary>
-        /// <param name="record"></param>
+        /// <param name="record">Record to post. </param>
         public void PostTelemetryRecord(IDetectionTelemetryRecord record)
         {
             foreach (var service in TelemetryServices)
@@ -61,7 +52,8 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
         /// <summary>
         /// Disables the sending of telemetry and flushes any messages out of the queue for each service.
         /// </summary>
-        public void Shutdown()
+        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task ShutdownAsync()
         {
             Active = false;
 
@@ -70,10 +62,10 @@ namespace Microsoft.ComponentDetection.Common.Telemetry
                 try
                 {
                     // Set a timeout for services that flush synchronously.
-                    AsyncExecution.ExecuteVoidWithTimeoutAsync(
+                    await AsyncExecution.ExecuteVoidWithTimeoutAsync(
                         () => service.Flush(),
                         TimeSpan.FromSeconds(20),
-                        CancellationToken.None).Wait();
+                        CancellationToken.None);
                 }
                 catch
                 {

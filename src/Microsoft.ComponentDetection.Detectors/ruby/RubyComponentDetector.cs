@@ -44,6 +44,15 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
         private static readonly Regex DependencyDefinitionRegex = new Regex("^ {4}[A-Za-z-]+", RegexOptions.Compiled);
         private static readonly Regex SubDependencyRegex = new Regex("^ {6}[A-Za-z-]+", RegexOptions.Compiled);
 
+        public RubyComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
+
+        private enum SectionType
+        {
+            GEM,
+            GIT,
+            PATH,
+        }
+
         public override string Id { get; } = "Ruby";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems) };
@@ -53,33 +62,6 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.RubyGems };
 
         public override int Version { get; } = 3;
-
-        private enum SectionType
-        {
-            GEM,
-            GIT,
-            PATH,
-        }
-
-        private class Dependency
-        {
-            public string Name { get; }
-
-            public string Location { get; }
-
-            public string Id => $"{this.Name}:{this.Location}";
-
-            public Dependency(string name, string location)
-            {
-                this.Name = name;
-                this.Location = location;
-            }
-        }
-
-        public RubyComponentDetector()
-        {
-            this.NeedsAutomaticRootDependencyCalculation = true;
-        }
 
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
@@ -196,14 +178,14 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                 lines.RemoveAt(0);
                 if (line.StartsWith("remote:"))
                 {
-                    remote = line.Substring(8);
+                    remote = line[8..];
 
                     // revision is only used for Git components.
                     revision = string.Empty;
                 }
                 else if (line.StartsWith("revision:"))
                 {
-                    revision = line.Substring(10);
+                    revision = line[10..];
                 }
                 else if (line.StartsWith("specs:"))
                 {
@@ -211,7 +193,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                     {
                         line = lines[0].TrimEnd();
                         lines.RemoveAt(0);
-                        if (line.Trim().Equals(string.Empty))
+                        if (string.IsNullOrEmpty(line.Trim()))
                         {
                             break;
                         }
@@ -227,7 +209,7 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
                             wasParentDependencyExcluded = false;
                             var splits = line.Trim().Split(" ");
                             name = splits[0].Trim();
-                            var version = splits[1].Substring(1, splits[1].Length - 2);
+                            var version = splits[1][1..^1];
                             TypedComponent newComponent;
 
                             if (this.IsVersionRelative(version))
@@ -267,6 +249,21 @@ namespace Microsoft.ComponentDetection.Detectors.Ruby
         private bool IsVersionRelative(string version)
         {
             return version.StartsWith("~") || version.StartsWith("=");
+        }
+
+        private class Dependency
+        {
+            public Dependency(string name, string location)
+            {
+                this.Name = name;
+                this.Location = location;
+            }
+
+            public string Name { get; }
+
+            public string Location { get; }
+
+            public string Id => $"{this.Name}:{this.Location}";
         }
     }
 }

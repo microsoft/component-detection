@@ -8,7 +8,7 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
 {
     public class TypedComponentConverter : JsonConverter
     {
-        private Dictionary<ComponentType, Type> componentTypesToTypes = new Dictionary<ComponentType, Type>
+        private readonly Dictionary<ComponentType, Type> componentTypesToTypes = new Dictionary<ComponentType, Type>
         {
             { ComponentType.Other, typeof(OtherComponent) },
             { ComponentType.NuGet, typeof(NuGetComponent) },
@@ -24,8 +24,14 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             { ComponentType.Linux, typeof(LinuxComponent) },
             { ComponentType.Conda, typeof(CondaComponent) },
             { ComponentType.DockerReference, typeof(DockerReferenceComponent) },
-            { ComponentType.Vcpkg, typeof(VcpkgComponent) }
+            { ComponentType.Vcpkg, typeof(VcpkgComponent) },
+            { ComponentType.Spdx, typeof(SpdxComponent) },
         };
+
+        public override bool CanWrite
+        {
+            get { return false; }
+        }
 
         public override bool CanConvert(Type objectType)
         {
@@ -43,11 +49,6 @@ namespace Microsoft.ComponentDetection.Contracts.BcdeModels
             serializer.Populate(jo.CreateReader(), instanceOfTypedComponent);
 
             return instanceOfTypedComponent;
-        }
-
-        public override bool CanWrite
-        {
-            get { return false; }
         }
 
         public override void WriteJson(

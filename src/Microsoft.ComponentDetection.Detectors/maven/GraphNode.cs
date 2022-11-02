@@ -8,10 +8,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
     /// <typeparam name="T">Node type.</typeparam>
     public class GraphNode<T>
     {
-        public GraphNode(T value)
-        {
-            this.Value = value;
-        }
+        public GraphNode(T value) => this.Value = value;
 
         public T Value { get; set; }
 

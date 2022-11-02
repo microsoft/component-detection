@@ -1,4 +1,4 @@
-﻿using PackageUrl;
+using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {

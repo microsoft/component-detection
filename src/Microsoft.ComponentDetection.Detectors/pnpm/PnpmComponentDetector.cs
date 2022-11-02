@@ -12,6 +12,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
     [Export(typeof(IComponentDetector))]
     public class PnpmComponentDetector : FileComponentDetector
     {
+        public PnpmComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
+
         public override string Id { get; } = "Pnpm";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
@@ -24,11 +26,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm
 
         /// <inheritdoc />
         protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
-
-        public PnpmComponentDetector()
-        {
-            this.NeedsAutomaticRootDependencyCalculation = true;
-        }
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {

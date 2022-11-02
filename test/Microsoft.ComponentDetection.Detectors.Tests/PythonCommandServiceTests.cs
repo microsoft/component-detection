@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,6 +17,36 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     [TestCategory("Governance/ComponentDetection")]
     public class PythonCommandServiceTests
     {
+        private readonly string requirementstxtBasicGitComponent = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553";
+
+        private readonly string requirementstxtGitComponentAndEnvironmentMarker = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= ""3.6""";
+
+        private readonly string requirementstxtGitComponentAndComment = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 # this is a comment";
+
+        private readonly string requirementstxtGitComponentAndCommentAndEnvironmentMarker = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= {""3.6""  # via -r requirements.in";
+
+        private readonly string requirementstxtGitComponentBranchInsteadOfCommitId = @"
+git+git://github.com/path/to/package-two@master#egg=package-two";
+
+        private readonly string requirementstxtGitComponentReleaseInsteadOfCommitId = @"
+git+git://github.com/path/to/package-two@0.1#egg=package-two";
+
+        private readonly string requirementstxtGitComponentCommitIdWrongLength = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d6755300000000000";
+
+        private readonly string requirementstxtDoubleGitComponents = @"
+git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= {""3.6""  # via -r requirements.in
+git+git://github.com/path/to/package-two@41b95ec#egg=package-two";
+
+        private readonly string requirementstxtGitComponentWrappedinRegularComponents = @"
+something=1.3
+git+git://github.com/path/to/package-two@41b95ec#egg=package-two
+other=2.1";
+
         private Mock<ICommandLineInvocationService> commandLineInvokationService;
 
         [TestInitialize]
@@ -117,10 +147,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 using (var writer = File.CreateText(testPath))
                 {
-                    writer.WriteLine("knack==0.4.1");
-                    writer.WriteLine("vsts-cli-common==0.1.3    \\      ");
-                    writer.WriteLine("    --hash=sha256:856476331f3e26598017290fd65bebe81c960e806776f324093a46b76fb2d1c0");
-                    writer.Flush();
+                    await writer.WriteLineAsync("knack==0.4.1");
+                    await writer.WriteLineAsync("vsts-cli-common==0.1.3    \\      ");
+                    await writer.WriteLineAsync("    --hash=sha256:856476331f3e26598017290fd65bebe81c960e806776f324093a46b76fb2d1c0");
+                    await writer.FlushAsync();
                 }
 
                 var result = await service.ParseFile(testPath);
@@ -154,9 +184,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 using (var writer = File.CreateText(testPath))
                 {
-                    writer.WriteLine("#this is a comment");
-                    writer.WriteLine("knack==0.4.1 #this is another comment");
-                    writer.Flush();
+                    await writer.WriteLineAsync("#this is a comment");
+                    await writer.WriteLineAsync("knack==0.4.1 #this is another comment");
+                    await writer.FlushAsync();
                 }
 
                 var result = await service.ParseFile(testPath);
@@ -181,11 +211,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 parseResult.Count.Should().Be(1);
 
-                var tuple = parseResult.Single();
-                tuple.Item1.Should().BeNull();
-                tuple.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.Single();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent = tuple.Item2;
+                var gitComponent = component;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
             });
@@ -198,11 +228,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 parseResult.Count.Should().Be(1);
 
-                var tuple = parseResult.Single();
-                tuple.Item1.Should().BeNull();
-                tuple.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.Single();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent = tuple.Item2;
+                var gitComponent = component;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
             });
@@ -215,11 +245,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 parseResult.Count.Should().Be(1);
 
-                var tuple = parseResult.Single();
-                tuple.Item1.Should().BeNull();
-                tuple.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.Single();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent = tuple.Item2;
+                var gitComponent = component;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
             });
@@ -232,11 +262,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 parseResult.Count.Should().Be(1);
 
-                var tuple = parseResult.Single();
-                tuple.Item1.Should().BeNull();
-                tuple.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.Single();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent = tuple.Item2;
+                var gitComponent = component;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
             });
@@ -276,19 +306,19 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 parseResult.Count.Should().Be(2);
 
-                var tuple1 = parseResult.First();
-                tuple1.Item1.Should().BeNull();
-                tuple1.Item2.Should().NotBeNull();
+                var (packageString, component) = parseResult.First();
+                packageString.Should().BeNull();
+                component.Should().NotBeNull();
 
-                var gitComponent1 = tuple1.Item2;
+                var gitComponent1 = component;
                 gitComponent1.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
                 gitComponent1.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
 
-                var tuple2 = parseResult.Skip(1).First();
-                tuple2.Item1.Should().BeNull();
-                tuple2.Item2.Should().NotBeNull();
+                var (packageString2, component2) = parseResult.Skip(1).First();
+                packageString2.Should().BeNull();
+                component2.Should().NotBeNull();
 
-                var gitComponent2 = tuple2.Item2;
+                var gitComponent2 = component2;
                 gitComponent2.RepositoryUrl.Should().Be("https://github.com/path/to/package-two");
                 gitComponent2.CommitHash.Should().Be("41b95ec");
             });
@@ -301,31 +331,31 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 parseResult.Count.Should().Be(3);
 
-                var tuple1 = parseResult.First();
-                tuple1.Item1.Should().NotBeNull();
-                tuple1.Item2.Should().BeNull();
+                var (packageString, component) = parseResult.First();
+                packageString.Should().NotBeNull();
+                component.Should().BeNull();
 
-                var regularComponent1 = tuple1.Item1;
+                var regularComponent1 = packageString;
                 regularComponent1.Should().Be("something=1.3");
 
-                var tuple2 = parseResult.Skip(1).First();
-                tuple2.Item1.Should().BeNull();
-                tuple2.Item2.Should().NotBeNull();
+                var (packageString2, component2) = parseResult.Skip(1).First();
+                packageString2.Should().BeNull();
+                component2.Should().NotBeNull();
 
-                var gitComponent = tuple2.Item2;
+                var gitComponent = component2;
                 gitComponent.RepositoryUrl.Should().Be("https://github.com/path/to/package-two");
                 gitComponent.CommitHash.Should().Be("41b95ec");
 
-                var tuple3 = parseResult.ToArray()[2];
-                tuple3.Item1.Should().NotBeNull();
-                tuple3.Item2.Should().BeNull();
+                var (packageString3, component3) = parseResult.ToArray()[2];
+                packageString3.Should().NotBeNull();
+                component3.Should().BeNull();
 
-                var regularComponent2 = tuple3.Item1;
+                var regularComponent2 = packageString3;
                 regularComponent2.Should().Be("other=2.1");
             });
         }
 
-        private async Task<int> SetupAndParseReqsTxt(string fileToParse, Action<IList<(string, GitComponent)>> verificationFunction)
+        private async Task<int> SetupAndParseReqsTxt(string fileToParse, Action<IList<(string PackageString, GitComponent Component)>> verificationFunction)
         {
             var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
@@ -334,8 +364,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             using (var writer = File.CreateText(testPath))
             {
-                writer.WriteLine(fileToParse);
-                writer.Flush();
+                await writer.WriteLineAsync(fileToParse);
+                await writer.FlushAsync();
             }
 
             var result = await service.ParseFile(testPath);
@@ -347,35 +377,5 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
             return 0;
         }
-
-        private readonly string requirementstxtBasicGitComponent = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553";
-
-        private readonly string requirementstxtGitComponentAndEnvironmentMarker = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= ""3.6""";
-
-        private readonly string requirementstxtGitComponentAndComment = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 # this is a comment";
-
-        private readonly string requirementstxtGitComponentAndCommentAndEnvironmentMarker = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= {""3.6""  # via -r requirements.in";
-
-        private readonly string requirementstxtGitComponentBranchInsteadOfCommitId = @"
-git+git://github.com/path/to/package-two@master#egg=package-two";
-
-        private readonly string requirementstxtGitComponentReleaseInsteadOfCommitId = @"
-git+git://github.com/path/to/package-two@0.1#egg=package-two";
-
-        private readonly string requirementstxtGitComponentCommitIdWrongLength = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d6755300000000000";
-
-        private readonly string requirementstxtDoubleGitComponents = @"
-git+git://github.com/vscode-python/jedi-language-server@42823a2598d4b6369e9273c5ad237a48c5d67553 ; python_version >= {""3.6""  # via -r requirements.in
-git+git://github.com/path/to/package-two@41b95ec#egg=package-two";
-
-        private readonly string requirementstxtGitComponentWrappedinRegularComponents = @"
-something=1.3
-git+git://github.com/path/to/package-two@41b95ec#egg=package-two
-other=2.1";
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -31,8 +31,6 @@ namespace Microsoft.ComponentDetection.Detectors.Dockerfile
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.DockerReference };
 
         public override int Version => 1;
-
-        private HashSet<string> projectRoots = new HashSet<string>();
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {

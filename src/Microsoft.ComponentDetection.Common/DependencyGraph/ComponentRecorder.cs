@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
 
         public TypedComponent GetComponent(string componentId)
         {
-            return this.singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).Where(x => x != null).FirstOrDefault();
+            return this.singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).FirstOrDefault(x => x != null);
         }
 
         public IEnumerable<DetectedComponent> GetDetectedComponents()
@@ -79,32 +79,26 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
             return matching;
         }
 
-        internal DependencyGraph GetDependencyGraphForLocation(string location)
-        {
-            return this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
-        }
-
         public IReadOnlyDictionary<string, IDependencyGraph> GetDependencyGraphsByLocation()
         {
             return this.singleFileRecorders.Where(x => x.DependencyGraph.HasComponents())
                 .ToImmutableDictionary(x => x.ManifestFileLocation, x => x.DependencyGraph as IDependencyGraph);
         }
 
+        internal DependencyGraph GetDependencyGraphForLocation(string location)
+        {
+            return this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
+        }
+
         public class SingleFileComponentRecorder : ISingleFileComponentRecorder
         {
             private readonly ILogger log;
-
-            public string ManifestFileLocation { get; }
-
-            internal DependencyGraph DependencyGraph { get; }
-
-            IDependencyGraph ISingleFileComponentRecorder.DependencyGraph => this.DependencyGraph;
 
             private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new ConcurrentDictionary<string, DetectedComponent>();
 
             private readonly ComponentRecorder recorder;
 
-            private object registerUsageLock = new object();
+            private readonly object registerUsageLock = new object();
 
             public SingleFileComponentRecorder(string location, ComponentRecorder recorder, bool enableManualTrackingOfExplicitReferences, ILogger log)
             {
@@ -113,6 +107,12 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph
                 this.log = log;
                 this.DependencyGraph = new DependencyGraph(enableManualTrackingOfExplicitReferences);
             }
+
+            public string ManifestFileLocation { get; }
+
+            IDependencyGraph ISingleFileComponentRecorder.DependencyGraph => this.DependencyGraph;
+
+            internal DependencyGraph DependencyGraph { get; }
 
             public DetectedComponent GetComponent(string componentId)
             {

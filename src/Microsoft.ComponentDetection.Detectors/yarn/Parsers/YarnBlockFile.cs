@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -45,13 +45,9 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
 
         private static readonly Regex YarnV2Regex = new Regex("(.*):\\s\"?(.*)", RegexOptions.Compiled);
 
-        private int fileLineIndex = 0;
-
         private readonly IList<string> fileLines = new List<string>();
 
-        public string VersionHeader { get; set; }
-
-        public YarnLockVersion YarnLockVersion { get; set; }
+        private int fileLineIndex = 0;
 
         private YarnBlockFile(IList<string> parsedFileLines)
         {
@@ -67,6 +63,10 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                 this.YarnLockVersion = YarnLockVersion.Invalid;
             }
         }
+
+        public string VersionHeader { get; set; }
+
+        public YarnLockVersion YarnLockVersion { get; set; }
 
         public static async Task<YarnBlockFile> CreateBlockFileAsync(Stream stream)
         {
@@ -95,6 +95,11 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             }
 
             yield break;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
         }
 
         private void ReadVersionHeader()
@@ -145,14 +150,14 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         /// <summary>
         /// Parses a block and its sub-blocks into <see cref="YarnBlock"/>.
         /// </summary>
-        /// <param name="level"></param>
-        /// <returns></returns>
+        /// <param name="level"> Level to get block from in YarnBlock file. </param>
+        /// <returns>Yarnblock <see cref="YarnBlock"/> gotten from the parsed block. </returns>
         private YarnBlock ParseBlock(int level = 0)
         {
             var currentLevelDelimiter = "  ";
             for (var i = 0; i < level; i++)
             {
-                currentLevelDelimiter = currentLevelDelimiter + "  ";
+                currentLevelDelimiter += "  ";
             }
 
             // Assuming the pointer has been set up to a block
@@ -178,7 +183,8 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
                     // Match on the specified version
                     var matches = this.YarnLockVersion == YarnLockVersion.V1 ? YarnV1Regex.Match(toParse) : YarnV2Regex.Match(toParse);
 
-                    if (matches.Groups.Count != 3) // Whole group + two captures
+                    // Whole group + two captures
+                    if (matches.Groups.Count != 3)
                     {
                         continue;
                     }
@@ -195,15 +201,10 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
             return block;
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
-        }
-
         /// <summary>
         /// Increments the internal pointer so that it is at the next block.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if the pointer was succesfully incremented.</returns>
         private bool ReadToNextMajorBlock()
         {
             string line;
@@ -233,7 +234,7 @@ namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers
         /// <summary>
         /// Checks to see if any lines are left in the file contents.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if there are any lines left in the file.</returns>
         private bool Peek()
         {
             if (this.fileLineIndex >= this.fileLines.Count)

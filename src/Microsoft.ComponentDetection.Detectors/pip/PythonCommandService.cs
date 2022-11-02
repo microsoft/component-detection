@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             return !string.IsNullOrEmpty(await this.ResolvePython(pythonPath));
         }
 
-        public async Task<IList<(string, GitComponent)>> ParseFile(string filePath, string pythonPath = null)
+        public async Task<IList<(string PackageString, GitComponent Component)>> ParseFile(string filePath, string pythonPath = null)
         {
             if (string.IsNullOrEmpty(filePath))
             {
@@ -69,7 +69,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
         }
 
-        private IList<(string, GitComponent)> ParseRequirementsTextFile(string path)
+        private IList<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
         {
             var items = new List<(string, GitComponent)>();
             foreach (var line in File.ReadAllLines(path).Select(x => x.Trim().TrimEnd('\\')).Where(x => !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))

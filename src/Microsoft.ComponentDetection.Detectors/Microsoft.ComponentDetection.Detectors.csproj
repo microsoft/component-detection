@@ -1,9 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
         <PackageReference Include="DotNet.Glob" />
         <PackageReference Include="morelinq" />
-        <PackageReference Include="Nett" />
         <PackageReference Include="NuGet.ProjectModel" />
         <PackageReference Include="NuGet.Versioning" />
         <PackageReference Include="Polly" />
@@ -18,6 +17,7 @@
         <PackageReference Include="System.Composition.TypedParts" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
+        <PackageReference Include="Tomlyn"/>
         <PackageReference Include="Valleysoft.DockerfileModel " />
     </ItemGroup>
 

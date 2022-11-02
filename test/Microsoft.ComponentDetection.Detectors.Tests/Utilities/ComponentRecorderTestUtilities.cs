@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
@@ -40,9 +40,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
             bool? existingDevDepValue = null;
             recorder.ForOneComponent(componentId, grouping =>
             {
-                foreach (var graph in grouping.FoundInGraphs)
+                foreach (var (manifestFile, graph) in grouping.FoundInGraphs)
                 {
-                    var devDepValue = graph.graph.IsDevelopmentDependency(componentId);
+                    var devDepValue = graph.IsDevelopmentDependency(componentId);
                     if (!existingDevDepValue.HasValue)
                     {
                         existingDevDepValue = devDepValue;
@@ -88,9 +88,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
                 var assertionIndex = 0;
                 foreach (var predicate in locatingPredicatesForParentExplicitReference)
                 {
-                    var dependencyModel = recorder.GetDetectedComponents().Select(x => x.Component).OfType<TTypedComponent>()
-                                                                           .FirstOrDefault(predicate) as TypedComponent;
-                    if (dependencyModel == null)
+                    if (recorder.GetDetectedComponents().Select(x => x.Component).OfType<TTypedComponent>()
+                                                                           .FirstOrDefault(predicate) is not TypedComponent dependencyModel)
                     {
                         throw new InvalidOperationException($"One of the predicates (index {assertionIndex}) failed to find a valid component in the Scan Result's discovered components.");
                     }
@@ -137,7 +136,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
 
         public class ComponentOrientedGrouping
         {
-            public IEnumerable<(string manifestFile, IDependencyGraph graph)> FoundInGraphs { get; set; }
+            public IEnumerable<(string ManifestFile, IDependencyGraph Graph)> FoundInGraphs { get; set; }
 
             public string ComponentId { get; set; }
 

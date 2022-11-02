@@ -1,15 +1,16 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Nett;
-
 namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
 {
+    using System.Collections.Generic;
+    using System.Runtime.Serialization;
+
     // Represents Cargo.Lock file structure.
+    [DataContract]
     public class CargoLock
     {
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public CargoPackage[] package { get; set; }
+        [DataMember(Name = "package")]
+        public List<CargoPackage> Package { get; set; }
 
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Deserialization contract. Casing cannot be overwritten.")]
-        public TomlTable metadata { get; set; }
+        [DataMember(Name = "metadata")]
+        public Dictionary<string, object> Metadata { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -148,12 +148,13 @@ NUGET
     log4net (1.2.10)
             ";
 
-            var (scanResult, componentRecorder) = await detectorTestUtility
+            var (scanResult, componentRecorder) = await this.detectorTestUtility
                                                     .WithFile("paket.lock", paketLock)
                                                     .ExecuteDetector();
 
             Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-            // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches. 
+
+            // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches.
             Assert.AreEqual(11, componentRecorder.GetDetectedComponents().Count());
         }
 

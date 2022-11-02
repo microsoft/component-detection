@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -16,15 +16,17 @@ namespace Microsoft.ComponentDetection.Detectors.Go
     [Export(typeof(IComponentDetector))]
     public class GoComponentDetector : FileComponentDetector
     {
+        private static readonly Regex GoSumRegex = new Regex(
+            @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
+            RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
+
+        private readonly HashSet<string> projectRoots = new HashSet<string>();
+
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
         [Import]
         public IEnvironmentVariableService EnvVarService { get; set; }
-
-        private static readonly Regex GoSumRegex = new Regex(
-            @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
-            RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
         public override string Id { get; } = "Go";
 
@@ -35,8 +37,6 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
         public override int Version => 6;
-
-        private HashSet<string> projectRoots = new HashSet<string>();
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
@@ -75,27 +75,27 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 }
                 else
                 {
-                    var fileExtension = Path.GetExtension(file.Location).ToLowerInvariant();
+                    var fileExtension = Path.GetExtension(file.Location).ToUpperInvariant();
                     switch (fileExtension)
                     {
-                        case ".mod":
-                            {
-                                this.Logger.LogVerbose("Found Go.mod: " + file.Location);
-                                this.ParseGoModFile(singleFileComponentRecorder, file);
-                                break;
-                            }
+                        case ".MOD":
+                        {
+                            this.Logger.LogVerbose("Found Go.mod: " + file.Location);
+                            this.ParseGoModFile(singleFileComponentRecorder, file);
+                            break;
+                        }
 
-                        case ".sum":
-                            {
-                                this.Logger.LogVerbose("Found Go.sum: " + file.Location);
-                                this.ParseGoSumFile(singleFileComponentRecorder, file);
-                                break;
-                            }
+                        case ".SUM":
+                        {
+                            this.Logger.LogVerbose("Found Go.sum: " + file.Location);
+                            this.ParseGoSumFile(singleFileComponentRecorder, file);
+                            break;
+                        }
 
                         default:
-                            {
-                                throw new Exception("Unexpected file type detected in go detector");
-                            }
+                        {
+                            throw new Exception("Unexpected file type detected in go detector");
+                        }
                     }
                 }
             }
@@ -121,7 +121,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go
             this.Logger.LogInfo("Go CLI was found in system and will be used to generate dependency graph. " +
                                 "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
                                 "But, it will introduce noise into the detected components.");
-            var goDependenciesProcess = await this.CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-m", "-json", "all" });
+            var goDependenciesProcess = await this.CommandLineInvocationService.ExecuteCommand("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-mod=readonly", "-m", "-json", "all" });
             if (goDependenciesProcess.ExitCode != 0)
             {
                 this.Logger.LogError($"Go CLI command \"go list -m -json all\" failed with error:\n {goDependenciesProcess.StdErr}");
@@ -243,11 +243,8 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                     continue;
                 }
 
-                GoComponent parentComponent;
-                GoComponent childComponent;
-
-                var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out parentComponent);
-                var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out childComponent);
+                var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out var parentComponent);
+                var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out var childComponent);
 
                 if (!isParentParsed)
                 {
@@ -277,8 +274,10 @@ namespace Microsoft.ComponentDetection.Detectors.Go
         private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
         {
             var goBuildModules = new List<GoBuildModule>();
-            var reader = new JsonTextReader(new StringReader(goListOutput));
-            reader.SupportMultipleContent = true;
+            var reader = new JsonTextReader(new StringReader(goListOutput))
+            {
+                SupportMultipleContent = true,
+            };
 
             while (reader.Read())
             {

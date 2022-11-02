@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -50,7 +51,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void RunComponentDetection()
+        public async Task RunComponentDetection()
         {
             var args = new BcdeArguments();
 
@@ -59,9 +60,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 BcdeScanExecutionService = this.scanExecutionServiceMock.Object,
             };
 
-            var result = this.serviceUnderTest.Handle(args);
-            result.Result.ResultCode.Should().Be(ProcessingResultCode.Success);
-            result.Result.SourceDirectory.Should().Be("D:\\test\\directory");
+            var result = await this.serviceUnderTest.Handle(args);
+            result.ResultCode.Should().Be(ProcessingResultCode.Success);
+            result.SourceDirectory.Should().Be("D:\\test\\directory");
         }
     }
 }

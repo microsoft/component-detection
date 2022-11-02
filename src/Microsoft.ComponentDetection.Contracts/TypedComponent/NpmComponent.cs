@@ -1,4 +1,4 @@
-﻿using Microsoft.ComponentDetection.Contracts.Internal;
+using Microsoft.ComponentDetection.Contracts.Internal;
 using PackageUrl;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent

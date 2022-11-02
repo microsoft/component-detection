@@ -1,12 +1,7 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class CondaComponent : TypedComponent
     {
-        private CondaComponent()
-        {
-            /* Reserved for deserialization */
-        }
-
         public CondaComponent(string name, string version, string build, string channel, string subdir, string @namespace, string url, string md5)
         {
             this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Conda));
@@ -17,6 +12,11 @@
             this.Namespace = @namespace;
             this.Url = url;
             this.MD5 = md5;
+        }
+
+        private CondaComponent()
+        {
+            /* Reserved for deserialization */
         }
 
         public string Build { get; set; }

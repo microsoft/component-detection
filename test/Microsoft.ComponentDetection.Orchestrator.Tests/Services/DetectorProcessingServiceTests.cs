@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -21,17 +23,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
     [TestCategory("Governance/ComponentDetection")]
     public class DetectorProcessingServiceTests
     {
-        private Mock<ILogger> loggerMock;
-        private DetectorProcessingService serviceUnderTest;
-        private FastDirectoryWalkerFactory directoryWalkerFactory;
-
-        private Mock<FileComponentDetector> firstFileComponentDetectorMock;
-        private Mock<FileComponentDetector> secondFileComponentDetectorMock;
-        private Mock<IComponentDetector> firstCommandComponentDetectorMock;
-        private Mock<IComponentDetector> secondCommandComponentDetectorMock;
-        private Mock<FileComponentDetector> experimentalFileComponentDetectorMock;
-
-        private IEnumerable<IComponentDetector> detectorsToUse;
+        private static readonly DirectoryInfo DefaultSourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
+        private static readonly BcdeArguments DefaultArgs = new BcdeArguments { SourceDirectory = DefaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
 
         private readonly Dictionary<string, DetectedComponent> componentDictionary = new Dictionary<string, DetectedComponent>()
         {
@@ -42,6 +35,19 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             { "experimentalFileDetectorId", new DetectedComponent(new NuGetComponent("experimentalDetectorName", "experimentalDetectorVersion")) },
         };
 
+        private IEnumerable<IComponentDetector> detectorsToUse;
+        private Mock<ILogger> loggerMock;
+        private DetectorProcessingService serviceUnderTest;
+        private FastDirectoryWalkerFactory directoryWalkerFactory;
+
+        private Mock<FileComponentDetector> firstFileComponentDetectorMock;
+        private Mock<FileComponentDetector> secondFileComponentDetectorMock;
+        private Mock<IComponentDetector> firstCommandComponentDetectorMock;
+        private Mock<IComponentDetector> secondCommandComponentDetectorMock;
+        private Mock<FileComponentDetector> experimentalFileComponentDetectorMock;
+
+        private bool isWin;
+
         private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId)
         {
             return new IndividualDetectorScanResult
@@ -50,11 +56,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 ResultCode = ProcessingResultCode.Success,
             };
         }
-
-        private static DirectoryInfo defaultSourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
-        private static BcdeArguments defaultArgs = new BcdeArguments { SourceDirectory = defaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
-
-        private bool isWin;
 
         [TestInitialize]
         public void TestInit()
@@ -84,88 +85,18 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.isWin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         }
 
-        private Mock<FileComponentDetector> SetupFileDetectorMock(string id)
-        {
-            var mockFileDetector = new Mock<FileComponentDetector>();
-            mockFileDetector.SetupAllProperties();
-            mockFileDetector.SetupGet(x => x.Id).Returns(id);
-
-            var sourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "Some", "Source", "Directory"));
-            this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
-
-            var expectedResult = this.ExpectedResultForDetector(id);
-
-            mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
-                (ScanRequest request) =>
-                {
-                    return mockFileDetector.Object.ExecuteDetectorAsync(request).Result;
-                }).Verifiable();
-            mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
-                (ScanRequest request) =>
-                {
-                    this.serviceUnderTest.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
-                    this.FillComponentRecorder(request.ComponentRecorder, id);
-                    return expectedResult;
-                }).Verifiable();
-
-            return mockFileDetector;
-        }
-
-        private IEnumerable<DetectedComponent> GetDiscoveredComponentsFromDetectorProcessingResult(DetectorProcessingResult detectorProcessingResult)
-        {
-            return detectorProcessingResult
-                        .ComponentRecorders
-                        .Select(componentRecorder => componentRecorder.Item2.GetDetectedComponents())
-                        .SelectMany(x => x);
-        }
-
-        private void FillComponentRecorder(IComponentRecorder componentRecorder, string id)
-        {
-            var singleFileRecorder = componentRecorder.CreateSingleFileComponentRecorder("/mock/location");
-            singleFileRecorder.RegisterUsage(this.componentDictionary[id], false);
-        }
-
-        private void ValidateExpectedComponents(DetectorProcessingResult result, IEnumerable<IComponentDetector> detectorsRan)
-        {
-            var shouldBePresent = detectorsRan.Where(detector => !(detector is IExperimentalDetector))
-                .Select(detector => this.componentDictionary[detector.Id]);
-            var isPresent = this.GetDiscoveredComponentsFromDetectorProcessingResult(result);
-
-            var check = isPresent.Select(i => i.GetType());
-
-            isPresent.All(discovered => shouldBePresent.Contains(discovered));
-            shouldBePresent.Should().HaveCount(isPresent.Count());
-        }
-
-        private Mock<IComponentDetector> SetupCommandDetectorMock(string id)
-        {
-            var mockCommandDetector = new Mock<IComponentDetector>();
-            mockCommandDetector.SetupAllProperties();
-            mockCommandDetector.SetupGet(x => x.Id).Returns(id);
-
-            this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
-
-            mockCommandDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && !request.DetectorArgs.Any()))).ReturnsAsync(
-                (ScanRequest request) =>
-                {
-                    this.FillComponentRecorder(request.ComponentRecorder, id);
-                    return this.ExpectedResultForDetector(id);
-                }).Verifiable();
-
-            return mockCommandDetector;
-        }
-
         [TestMethod]
-        public void ProcessDetectorsAsync_HappyPathReturnsDetectedComponents()
+        public async Task ProcessDetectorsAsync_HappyPathReturnsDetectedComponents()
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
-            var results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
 
-            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
+            var results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
+
+            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
 
             this.ValidateExpectedComponents(results, this.detectorsToUse);
             this.GetDiscoveredComponentsFromDetectorProcessingResult(results).FirstOrDefault(x => x.Component?.Type == ComponentType.Npm).Component
@@ -177,7 +108,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void ProcessDetectorsAsync_NullDetectedComponentsReturnIsCoalesced()
+        public async Task ProcessDetectorsAsync_NullDetectedComponentsReturnIsCoalesced()
         {
             var mockComponentDetector = new Mock<IComponentDetector>();
             mockComponentDetector.Setup(d => d.Id).Returns("test");
@@ -194,28 +125,29 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 });
 
             this.detectorsToUse = new[] { mockComponentDetector.Object };
-            var results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
+            var results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
             results.ResultCode.Should().Be(ProcessingResultCode.Success);
         }
 
         [TestMethod]
-        public void ProcessDetectorsAsync_HappyPathReturns_DependencyGraph()
+        public async Task ProcessDetectorsAsync_HappyPathReturns_DependencyGraph()
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
-            var results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
 
-            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
+            var results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
+
+            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
 
             foreach (var discoveredComponent in this.GetDiscoveredComponentsFromDetectorProcessingResult(results))
             {
                 var componentId = discoveredComponent.Component.Id;
                 var isMatched = false;
-                foreach (var graph in results.ComponentRecorders.Select(componentRecorder => componentRecorder.Item2.GetDependencyGraphsByLocation()).SelectMany(x => x.Values))
+                foreach (var graph in results.ComponentRecorders.Select(componentRecorder => componentRecorder.Recorder.GetDependencyGraphsByLocation()).SelectMany(x => x.Values))
                 {
                     isMatched |= graph.GetComponents().Contains(componentId);
                 }
@@ -229,11 +161,12 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
-            var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
+
+            var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(async () =>
             {
-                this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Wait();
+                await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
             });
 
             foreach (var record in records)
@@ -244,18 +177,20 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
+        [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
         public void ProcessDetectorsAsync_ExperimentalDetectorsDoNotReturnComponents()
         {
             this.detectorsToUse = new[]
             {
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-                this.experimentalFileComponentDetectorMock.Object
+
+                this.experimentalFileComponentDetectorMock.Object,
             };
 
             DetectorProcessingResult results = null;
             var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
             {
-                results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
+                results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
             });
 
             var experimentalDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.experimentalFileComponentDetectorMock.Object.Id);
@@ -274,25 +209,27 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 .Should().BeTrue("Experimental component should not be in component list");
             results.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.experimentalFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
+            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.experimentalFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
         }
 
         [TestMethod]
+        [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
         public void ProcessDetectorsAsync_ExperimentalDetectorsDoNormalStuffIfExplicitlyEnabled()
         {
             this.detectorsToUse = new[]
             {
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-                this.experimentalFileComponentDetectorMock.Object
+                this.experimentalFileComponentDetectorMock.Object,
             };
+
             var experimentalDetectorId = this.experimentalFileComponentDetectorMock.Object.Id;
 
             DetectorProcessingResult results = null;
             var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
             {
-                results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions { ExplicitlyEnabledDetectorIds = new[] { experimentalDetectorId } }).Result;
+                results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions { ExplicitlyEnabledDetectorIds = new[] { experimentalDetectorId } }).Result;
             });
 
             // We should have all components except the ones that came from our experimental detector
@@ -301,27 +238,28 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 .Should().NotBeNull();
             results.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.experimentalFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
+            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.experimentalFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
         }
 
         [TestMethod]
+        [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
         public void ProcessDetectorsAsync_ExperimentalDetectorsThrowingDoesntKillDetection()
         {
             this.detectorsToUse = new[]
             {
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-                this.experimentalFileComponentDetectorMock.Object
+                this.experimentalFileComponentDetectorMock.Object,
             };
 
-            this.experimentalFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)))
+            this.experimentalFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)))
                 .Throws(new InvalidOperationException("Simulated experimental failure"));
 
             DetectorProcessingResult results = null;
             var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
             {
-                results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
+                results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
             });
 
             var experimentalDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.experimentalFileComponentDetectorMock.Object.Id);
@@ -335,17 +273,18 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Count().Should().Be(records.Sum(x => x.DetectedComponentCount));
             results.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
+            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
         }
 
         [TestMethod]
-        public void ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpected()
+        public async Task ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpected()
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object,
             };
+
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Assert.Inconclusive("Test is platform specific and fails on non-windows");
@@ -359,28 +298,28 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 .ReturnsAsync(this.ExpectedResultForDetector(this.firstFileComponentDetectorMock.Object.Id))
                 .Callback<ScanRequest>(request => capturedRequest = request);
 
-            this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Wait();
+            await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
             this.directoryWalkerFactory.Reset();
 
             // Base case should match all directories.
-            capturedRequest.DirectoryExclusionPredicate(defaultArgs.SourceDirectory.Name, defaultArgs.SourceDirectory.Parent.Name).Should().BeFalse();
+            capturedRequest.DirectoryExclusionPredicate(DefaultArgs.SourceDirectory.Name, DefaultArgs.SourceDirectory.Parent.Name).Should().BeFalse();
             capturedRequest.DirectoryExclusionPredicate(d1.Name, d1.Parent.FullName).Should().BeFalse();
 
             var argsWithExclusion = new BcdeArguments()
             {
-                SourceDirectory = defaultSourceDirectory,
+                SourceDirectory = DefaultSourceDirectory,
                 DetectorArgs = Enumerable.Empty<string>(),
                 DirectoryExclusionList = new[] { Path.Combine("**", "SomeSource", "**"), Path.Combine("**", "shouldExclude", "**") },
             };
 
             // Now exercise the exclusion code
-            this.serviceUnderTest.ProcessDetectorsAsync(argsWithExclusion, this.detectorsToUse, new DetectorRestrictions()).Wait();
+            await this.serviceUnderTest.ProcessDetectorsAsync(argsWithExclusion, this.detectorsToUse, new DetectorRestrictions());
 
             this.directoryWalkerFactory.Reset();
 
             // Previous two tests should now exclude
-            capturedRequest.DirectoryExclusionPredicate(defaultArgs.SourceDirectory.Name, defaultArgs.SourceDirectory.Parent.FullName).Should().BeTrue();
+            capturedRequest.DirectoryExclusionPredicate(DefaultArgs.SourceDirectory.Name, DefaultArgs.SourceDirectory.Parent.FullName).Should().BeTrue();
             capturedRequest.DirectoryExclusionPredicate(d1.Name, d1.Parent.FullName).Should().BeTrue();
 
             // Some other directory should still match
@@ -447,14 +386,15 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpectedForObsolete()
+        public async Task ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpectedForObsolete()
         {
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object,
             };
-            var sourceDirectory = defaultSourceDirectory;
-            var args = defaultArgs;
+
+            var sourceDirectory = DefaultSourceDirectory;
+            var args = DefaultArgs;
             var d1 = new DirectoryInfo(Path.Combine(sourceDirectory.FullName, "Child"));
             var d2 = new DirectoryInfo(Path.Combine(sourceDirectory.FullName, "..", "bin"));
             var d3 = new DirectoryInfo(Path.Combine(sourceDirectory.FullName, "OtherChild"));
@@ -474,7 +414,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 .ReturnsAsync(this.ExpectedResultForDetector(this.firstFileComponentDetectorMock.Object.Id))
                 .Callback<ScanRequest>(request => capturedRequest = request);
 
-            this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions()).Wait();
+            await this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions());
 
             this.directoryWalkerFactory.Reset();
 
@@ -484,10 +424,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             // Now exercise the exclusion code
             args.DirectoryExclusionListObsolete = new[] { Path.Combine("Child"), Path.Combine("..", "bin") };
-            this.serviceUnderTest.ProcessDetectorsAsync(
+            await this.serviceUnderTest.ProcessDetectorsAsync(
                 args,
                 new[] { this.firstFileComponentDetectorMock.Object },
-                new DetectorRestrictions()).Wait();
+                new DetectorRestrictions());
 
             this.directoryWalkerFactory.Reset();
 
@@ -499,13 +439,15 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             capturedRequest.DirectoryExclusionPredicate(d3.Name.AsSpan(), d3.Parent.FullName.AsSpan()).Should().BeFalse();
         }
 
+        [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
         [TestMethod]
         public void ProcessDetectorsAsync_CapturesTelemetry()
         {
-            var args = defaultArgs;
+            var args = DefaultArgs;
+
             this.detectorsToUse = new[]
             {
-                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object
+                this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             };
 
             var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
@@ -514,7 +456,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             });
 
             records.Should().Contain(x => x is DetectorExecutionTelemetryRecord);
-            records.Count(x => x is DetectorExecutionTelemetryRecord)
+            records.Count(x => x is not null)
                 .Should().Be(2);
             var firstDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.firstFileComponentDetectorMock.Object.Id);
             firstDetectorRecord.Should().NotBeNull();
@@ -523,58 +465,131 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var secondDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.secondFileComponentDetectorMock.Object.Id);
             secondDetectorRecord.Should().NotBeNull();
 
-            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
+            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
         }
 
         [TestMethod]
+        [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
         public void ProcessDetectorsAsync_ExecutesMixedCommandAndFileDetectors()
         {
             this.detectorsToUse = new[]
             {
                 this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
                 this.firstCommandComponentDetectorMock.Object,
-                this.secondCommandComponentDetectorMock.Object
+
+                this.secondCommandComponentDetectorMock.Object,
             };
 
             DetectorProcessingResult results = null;
             var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
             {
-                results = this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
+                results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
             });
 
             results.Should().NotBeNull("Detector processing failed");
 
             records.Should().Contain(x => x is DetectorExecutionTelemetryRecord);
 
-            records.Count(x => x is DetectorExecutionTelemetryRecord)
+            records.Count(x => x is not null)
                 .Should().Be(4);
 
             this.ValidateExpectedComponents(results, this.detectorsToUse);
 
-            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.firstCommandComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
-            this.secondCommandComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory)));
+            this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.firstCommandComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+            this.secondCommandComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
         }
 
         [TestMethod]
-        public void ProcessDetectorsAsync_HandlesDetectorArgs()
+        public async Task ProcessDetectorsAsync_HandlesDetectorArgs()
         {
             ScanRequest capturedRequest = null;
             this.firstFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>()))
                 .ReturnsAsync(this.ExpectedResultForDetector(this.firstFileComponentDetectorMock.Object.Id))
                 .Callback<ScanRequest>(request => capturedRequest = request);
 
-            var args = defaultArgs;
+            var args = DefaultArgs;
             args.DetectorArgs = new string[] { "arg1=val1", "arg2", "arg3=val3" };
 
-            this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, new[] { this.firstFileComponentDetectorMock.Object }, new DetectorRestrictions()).Wait();
+            await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, new[] { this.firstFileComponentDetectorMock.Object }, new DetectorRestrictions());
 
             capturedRequest.DetectorArgs
                 .Should().Contain("arg1", "val1")
                 .And.NotContainKey("arg2")
                 .And.Contain("arg3", "val3");
+        }
+
+        private Mock<FileComponentDetector> SetupFileDetectorMock(string id)
+        {
+            var mockFileDetector = new Mock<FileComponentDetector>();
+            mockFileDetector.SetupAllProperties();
+            mockFileDetector.SetupGet(x => x.Id).Returns(id);
+
+            var sourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "Some", "Source", "Directory"));
+            this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
+
+            var expectedResult = this.ExpectedResultForDetector(id);
+
+            mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null))).Returns(
+                (ScanRequest request) =>
+                {
+                    return mockFileDetector.Object.ExecuteDetectorAsync(request);
+                }).Verifiable();
+            mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
+                (ScanRequest request) =>
+                {
+                    this.serviceUnderTest.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
+                    this.FillComponentRecorder(request.ComponentRecorder, id);
+                    return expectedResult;
+                }).Verifiable();
+
+            return mockFileDetector;
+        }
+
+        private IEnumerable<DetectedComponent> GetDiscoveredComponentsFromDetectorProcessingResult(DetectorProcessingResult detectorProcessingResult)
+        {
+            return detectorProcessingResult
+                        .ComponentRecorders
+                        .Select(componentRecorder => componentRecorder.Recorder.GetDetectedComponents())
+                        .SelectMany(x => x);
+        }
+
+        private void FillComponentRecorder(IComponentRecorder componentRecorder, string id)
+        {
+            var singleFileRecorder = componentRecorder.CreateSingleFileComponentRecorder("/mock/location");
+            singleFileRecorder.RegisterUsage(this.componentDictionary[id], false);
+        }
+
+        private void ValidateExpectedComponents(DetectorProcessingResult result, IEnumerable<IComponentDetector> detectorsRan)
+        {
+            var shouldBePresent = detectorsRan.Where(detector => !(detector is IExperimentalDetector))
+                .Select(detector => this.componentDictionary[detector.Id]);
+            var isPresent = this.GetDiscoveredComponentsFromDetectorProcessingResult(result);
+
+            var check = isPresent.Select(i => i.GetType());
+
+            isPresent.All(discovered => shouldBePresent.Contains(discovered));
+            shouldBePresent.Should().HaveCount(isPresent.Count());
+        }
+
+        private Mock<IComponentDetector> SetupCommandDetectorMock(string id)
+        {
+            var mockCommandDetector = new Mock<IComponentDetector>();
+            mockCommandDetector.SetupAllProperties();
+            mockCommandDetector.SetupGet(x => x.Id).Returns(id);
+
+            this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
+
+            mockCommandDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && !request.DetectorArgs.Any()))).ReturnsAsync(
+                (ScanRequest request) =>
+                {
+                    this.FillComponentRecorder(request.ComponentRecorder, id);
+                    return this.ExpectedResultForDetector(id);
+                }).Verifiable();
+
+            return mockCommandDetector;
         }
     }
 }

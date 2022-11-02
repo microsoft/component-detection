@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -39,6 +39,12 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
     [Export(typeof(IComponentDetector))]
     public class IvyDetector : FileComponentDetector, IExperimentalDetector
     {
+        internal const string PrimaryCommand = "ant.bat";
+
+        internal const string AntVersionArgument = "-version";
+
+        internal static readonly string[] AdditionalValidCommands = { "ant" };
+
         public override string Id => "Ivy";
 
         public override IList<string> SearchPatterns => new List<string> { "ivy.xml" };
@@ -49,27 +55,8 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
 
-        internal const string PrimaryCommand = "ant.bat";
-
-        internal static readonly string[] AdditionalValidCommands = { "ant" };
-
-        internal const string AntVersionArgument = "-version";
-
         [Import]
         public ICommandLineInvocationService CommandLineInvocationService { get; set; }
-
-        private static MavenComponent JsonGavToComponent(JToken gav)
-        {
-            if (gav == null)
-            {
-                return null;
-            }
-
-            return new MavenComponent(
-                gav.Value<string>("g"),
-                gav.Value<string>("a"),
-                gav.Value<string>("v"));
-        }
 
         protected override async Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
         {
@@ -106,6 +93,19 @@ namespace Microsoft.ComponentDetection.Detectors.Ivy
             {
                 this.Logger.LogError($"File {ivyXmlFile.Location} passed to OnFileFound, but does not exist!");
             }
+        }
+
+        private static MavenComponent JsonGavToComponent(JToken gav)
+        {
+            if (gav == null)
+            {
+                return null;
+            }
+
+            return new MavenComponent(
+                gav.Value<string>("g"),
+                gav.Value<string>("a"),
+                gav.Value<string>("v"));
         }
 
         private async Task ProcessIvyAndIvySettingsFilesAsync(

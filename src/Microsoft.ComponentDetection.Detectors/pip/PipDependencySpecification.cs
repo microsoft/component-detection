@@ -11,17 +11,10 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class PipDependencySpecification
     {
-        private string DebuggerDisplay => $"{this.Name} ({string.Join(';', this.DependencySpecifiers)})";
-
-        /// <summary>
-        /// Gets or sets the package <see cref="Name"/> (ex: pyyaml).
-        /// </summary>
-        public string Name { get; set; }
-
-        /// <summary>
-        /// Gets or sets the set of dependency specifications that constrain the overall dependency request (ex: ==1.0, >=2.0).
-        /// </summary>
-        public IList<string> DependencySpecifiers { get; set; } = new List<string>();
+        // Extracts name and version from a Requires-Dist string that is found in a metadata file
+        public static readonly Regex RequiresDistRegex = new Regex(
+            @"Requires-Dist:\s*(?:(.*?)\s*\((.*?)\)|([^\s;]*))",
+            RegexOptions.Compiled);
 
         /// <summary>
         /// These are packages that we don't want to evaluate in our graph as they are generally python builtins.
@@ -46,20 +39,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         private static readonly Regex PipVersionExtractionRegex = new Regex(
             @"((?=<)|(?=>)|(?=>=)|(?=<=)|(?===)|(?=!=)|(?=~=)|(?====))(.*)",
             RegexOptions.Compiled);
-
-        // Extracts name and version from a Requires-Dist string that is found in a metadata file
-        public static readonly Regex RequiresDistRegex = new Regex(
-            @"Requires-Dist:\s*(?:(.*?)\s*\((.*?)\)|([^\s;]*))",
-            RegexOptions.Compiled);
-
-        /// <summary>
-        /// Whether or not the package is safe to resolve based on the packagesToIgnore.
-        /// </summary>
-        /// <returns></returns>
-        public bool PackageIsUnsafe()
-        {
-            return PackagesToIgnore.Contains(this.Name);
-        }
 
         /// <summary>
         /// This constructor is used in test code.
@@ -117,6 +96,27 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             }
 
             this.DependencySpecifiers = this.DependencySpecifiers.Where(x => !x.Contains("python_version")).ToList();
+        }
+
+        /// <summary>
+        /// Gets or sets the package <see cref="Name"/> (ex: pyyaml).
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the set of dependency specifications that constrain the overall dependency request (ex: ==1.0, >=2.0).
+        /// </summary>
+        public IList<string> DependencySpecifiers { get; set; } = new List<string>();
+
+        private string DebuggerDisplay => $"{this.Name} ({string.Join(';', this.DependencySpecifiers)})";
+
+        /// <summary>
+        /// Whether or not the package is safe to resolve based on the packagesToIgnore.
+        /// </summary>
+        /// <returns> True if the package is unsafe, otherwise false. </returns>
+        public bool PackageIsUnsafe()
+        {
+            return PackagesToIgnore.Contains(this.Name);
         }
     }
 }

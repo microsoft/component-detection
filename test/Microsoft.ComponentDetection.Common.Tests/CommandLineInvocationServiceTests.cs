@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -56,12 +56,14 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var isLocated = await this.commandLineService.CanCommandBeLocated("cmd.exe", default, "/C");
             Assert.IsTrue(isLocated);
             var largeStringBuilder = new StringBuilder();
-            while (largeStringBuilder.Length < 8100) // Cmd.exe command limit is in the 8100s
+
+            // Cmd.exe command limit is in the 8100s
+            while (largeStringBuilder.Length < 8100)
             {
                 largeStringBuilder.Append("Some sample text");
             }
 
-            var taskResult = await this.commandLineService.ExecuteCommand("cmd.exe", default, $"/C echo {largeStringBuilder.ToString()}");
+            var taskResult = await this.commandLineService.ExecuteCommand("cmd.exe", default, $"/C echo {largeStringBuilder}");
             Assert.AreEqual(0, taskResult.ExitCode);
             Assert.AreEqual(string.Empty, taskResult.StdErr);
             Assert.IsTrue(taskResult.StdOut.Length > 8099, taskResult.StdOut.Length < 100 ? $"Stdout was '{taskResult.StdOut}', which is shorter than 8100 chars" : $"Length was {taskResult.StdOut.Length}, which is less than 8100");
@@ -73,12 +75,14 @@ namespace Microsoft.ComponentDetection.Common.Tests
             var isLocated = await this.commandLineService.CanCommandBeLocated("cmd.exe", default, "/C");
             Assert.IsTrue(isLocated);
             var largeStringBuilder = new StringBuilder();
-            while (largeStringBuilder.Length < 9000) // Pick a command that is "too big" for cmd.
+
+            // Pick a command that is "too big" for cmd.
+            while (largeStringBuilder.Length < 9000)
             {
                 largeStringBuilder.Append("Some sample text");
             }
 
-            var taskResult = await this.commandLineService.ExecuteCommand("cmd.exe", default, $"/C echo {largeStringBuilder.ToString()}");
+            var taskResult = await this.commandLineService.ExecuteCommand("cmd.exe", default, $"/C echo {largeStringBuilder}");
             Assert.AreEqual(1, taskResult.ExitCode);
             Assert.IsTrue(taskResult.StdErr.Contains("too long"), $"Expected '{taskResult.StdErr}' to contain 'too long'");
             Assert.AreEqual(string.Empty, taskResult.StdOut);

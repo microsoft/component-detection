@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -197,8 +197,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
 
         private bool CompareGraphs(PipGraphNode a, PipGraphNode b)
         {
-            var componentA = (PipComponent)a.Value;
-            var componentB = (PipComponent)b.Value;
+            var componentA = a.Value;
+            var componentB = b.Value;
 
             if (!string.Equals(componentA.Name, componentB.Name, StringComparison.OrdinalIgnoreCase) ||
                 !string.Equals(componentA.Version, componentB.Version, StringComparison.OrdinalIgnoreCase))
@@ -229,7 +229,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             {
                 toReturn.Add(version, new List<PythonProjectRelease>
                 {
-                    this.CreatePythonProjectRelease()
+                    this.CreatePythonProjectRelease(),
                 });
             }
 

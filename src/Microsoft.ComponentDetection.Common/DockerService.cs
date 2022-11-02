@@ -17,16 +17,15 @@ namespace Microsoft.ComponentDetection.Common
     [Export(typeof(IDockerService))]
     public class DockerService : IDockerService
     {
-        private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
+        // Base image annotations from ADO dockerTask
+        private const string BaseImageRefAnnotation = "image.base.ref.name";
+        private const string BaseImageDigestAnnotation = "image.base.digest";
 
+        private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
         private static int incrementingContainerId;
 
         [Import]
         public ILogger Logger { get; set; }
-
-        // Base image annotations from ADO dockerTask
-        private const string BaseImageRefAnnotation = "image.base.ref.name";
-        private const string BaseImageDigestAnnotation = "image.base.digest";
 
         public async Task<bool> CanPingDockerAsync(CancellationToken cancellationToken = default)
         {
@@ -158,7 +157,7 @@ namespace Microsoft.ComponentDetection.Common
             }
         }
 
-        public async Task<(string stdout, string stderr)> CreateAndRunContainerAsync(string image, IList<string> command, CancellationToken cancellationToken = default)
+        public async Task<(string Stdout, string Stderr)> CreateAndRunContainerAsync(string image, IList<string> command, CancellationToken cancellationToken = default)
         {
             using var record = new DockerServiceTelemetryRecord
             {

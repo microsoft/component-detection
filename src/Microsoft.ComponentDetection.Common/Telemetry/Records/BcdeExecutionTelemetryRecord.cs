@@ -2,6 +2,9 @@
 
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 {
+    using System.Threading;
+    using System.Threading.Tasks;
+
     public class BcdeExecutionTelemetryRecord : BaseDetectionTelemetryRecord
     {
         public override string RecordName => "BcdeExecution";
@@ -22,13 +25,16 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
 
         public string AgentOSDescription { get; set; }
 
-        public static TReturn Track<TReturn>(Func<BcdeExecutionTelemetryRecord, TReturn> functionToTrack, bool terminalRecord = false)
+        public static async Task<TReturn> TrackAsync<TReturn>(
+            Func<BcdeExecutionTelemetryRecord, CancellationToken, Task<TReturn>> functionToTrack,
+            bool terminalRecord = false,
+            CancellationToken cancellationToken = default)
         {
             using var record = new BcdeExecutionTelemetryRecord();
 
             try
             {
-                return functionToTrack(record);
+                return await functionToTrack(record, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -40,7 +46,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records
                 record.Dispose();
                 if (terminalRecord && !(record.Command?.Equals("help", StringComparison.InvariantCultureIgnoreCase) ?? false))
                 {
-                    TelemetryRelay.Instance.Shutdown();
+                    await TelemetryRelay.Instance.ShutdownAsync();
                 }
             }
         }

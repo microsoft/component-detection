@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -12,29 +13,9 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         private static readonly Regex PythonVersionRegex =
             new Regex(@"(?:(?<epoch>[0-9]+)!)?(?<release>[0-9]+(?:\.[0-9]+)*)(?<pre>[-_\.]?(?<pre_l>(a|b|c|rc|alpha|beta|pre|preview))[-_\.]?(?<pre_n>[0-9]+)?)?(?<post>(?:-(?<post_n1>[0-9]+))|(?:[-_\.]?(?<post_l>post|rev|r)[-_\.]?(?<post_n2>[0-9]+)?))?(?<dev>[-_\.]?(?<dev_l>dev)[-_\.]?(?<dev_n>[0-9]+)?)?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-        private static Dictionary<string, int> preReleaseMapping = new Dictionary<string, int> { { "a", 0 }, { "alpha", 0 }, { "b", 1 }, { "beta", 1 }, { "c", 2 }, { "rc", 2 }, { "pre", 2 }, { "preview", 2 } };
+        private static readonly Dictionary<string, int> PreReleaseMapping = new Dictionary<string, int> { { "a", 0 }, { "alpha", 0 }, { "b", 1 }, { "beta", 1 }, { "c", 2 }, { "rc", 2 }, { "pre", 2 }, { "preview", 2 } };
 
-        public bool Valid { get; set; }
-
-        public bool IsReleasedPackage => string.IsNullOrEmpty(this.PreReleaseLabel) && !this.PreReleaseNumber.HasValue && !this.DevNumber.HasValue;
-
-        public int Epoch { get; set; }
-
-        public string Release { get; set; }
-
-        public string PreReleaseLabel { get; set; }
-
-        public int? PreReleaseNumber { get; set; }
-
-        public int? PostNumber { get; set; }
-
-        public string DevLabel { get; set; }
-
-        public int? DevNumber { get; set; }
-
-        public bool Floating { get; set; } = false;
-
-        private Match match;
+        private readonly Match match;
 
         public PythonVersion(string version)
         {
@@ -97,25 +78,33 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             this.Valid = true;
         }
 
-        public static bool operator >(PythonVersion operand1, PythonVersion operand2)
-        {
-            return operand1.CompareTo(operand2) == 1;
-        }
+        public bool Valid { get; set; }
 
-        public static bool operator <(PythonVersion operand1, PythonVersion operand2)
-        {
-            return operand1.CompareTo(operand2) == -1;
-        }
+        public bool IsReleasedPackage => string.IsNullOrEmpty(this.PreReleaseLabel) && !this.PreReleaseNumber.HasValue && !this.DevNumber.HasValue;
 
-        public static bool operator >=(PythonVersion operand1, PythonVersion operand2)
-        {
-            return operand1.CompareTo(operand2) >= 0;
-        }
+        public int Epoch { get; set; }
 
-        public static bool operator <=(PythonVersion operand1, PythonVersion operand2)
-        {
-            return operand1.CompareTo(operand2) <= 0;
-        }
+        public string Release { get; set; }
+
+        public string PreReleaseLabel { get; set; }
+
+        public int? PreReleaseNumber { get; set; }
+
+        public int? PostNumber { get; set; }
+
+        public string DevLabel { get; set; }
+
+        public int? DevNumber { get; set; }
+
+        public bool Floating { get; set; } = false;
+
+        public static bool operator >(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) == 1;
+
+        public static bool operator <(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) == -1;
+
+        public static bool operator >=(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) >= 0;
+
+        public static bool operator <=(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) <= 0;
 
         public int CompareTo(PythonVersion other)
         {
@@ -161,6 +150,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             return devNumberComparison;
         }
 
+        [SuppressMessage("Usage", "CA1308:Normalize String to Uppercase", Justification = "Casing cannot be overwritten.")]
         private static int ComparePreRelease(PythonVersion a, PythonVersion b)
         {
             if (string.IsNullOrEmpty(a.PreReleaseLabel) && string.IsNullOrEmpty(b.PreReleaseLabel))
@@ -186,8 +176,8 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 return -1;
             }
 
-            var aLabelWeight = preReleaseMapping[a.PreReleaseLabel.ToLowerInvariant()];
-            var bLabelWeight = preReleaseMapping[b.PreReleaseLabel.ToLowerInvariant()];
+            var aLabelWeight = PreReleaseMapping[a.PreReleaseLabel.ToLowerInvariant()];
+            var bLabelWeight = PreReleaseMapping[b.PreReleaseLabel.ToLowerInvariant()];
 
             if (aLabelWeight > bLabelWeight)
             {

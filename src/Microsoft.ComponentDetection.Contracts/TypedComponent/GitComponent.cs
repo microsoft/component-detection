@@ -1,14 +1,9 @@
-﻿using System;
+using System;
 
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 {
     public class GitComponent : TypedComponent
     {
-        private GitComponent()
-        {
-            /* Reserved for deserialization */
-        }
-
         public GitComponent(Uri repositoryUrl, string commitHash)
         {
             this.RepositoryUrl = this.ValidateRequiredInput(repositoryUrl, nameof(this.RepositoryUrl), nameof(ComponentType.Git));
@@ -16,9 +11,11 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
         }
 
         public GitComponent(Uri repositoryUrl, string commitHash, string tag)
-            : this(repositoryUrl, commitHash)
+            : this(repositoryUrl, commitHash) => this.Tag = tag;
+
+        private GitComponent()
         {
-            this.Tag = tag;
+            /* Reserved for deserialization */
         }
 
         public Uri RepositoryUrl { get; set; }

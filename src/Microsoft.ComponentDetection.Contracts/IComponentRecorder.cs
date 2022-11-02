@@ -18,6 +18,8 @@ namespace Microsoft.ComponentDetection.Contracts
     {
         string ManifestFileLocation { get; }
 
+        IDependencyGraph DependencyGraph { get; }
+
         /// <summary>
         /// Add or Update a component. In case that a parent componentId is specified
         /// an edge is created between those components in the dependency graph.
@@ -27,7 +29,6 @@ namespace Microsoft.ComponentDetection.Contracts
         /// <param name="parentComponentId">Id of the parent component.</param>
         /// <param name="isDevelopmentDependency">Boolean value indicating whether or not a component is a development-time dependency. Null implies that the value is unknown.</param>
         /// <param name="dependencyScope">Enum value indicating scope of the component. </param>
-        /// <returns>DetectedComponent added or updated.</returns>
         void RegisterUsage(
             DetectedComponent detectedComponent,
             bool isExplicitReferencedDependency = false,
@@ -42,8 +43,6 @@ namespace Microsoft.ComponentDetection.Contracts
         IReadOnlyDictionary<string, DetectedComponent> GetDetectedComponents();
 
         IComponentRecorder GetParentComponentRecorder();
-
-        IDependencyGraph DependencyGraph { get; }
     }
 
     public interface IDependencyGraph
@@ -90,6 +89,7 @@ namespace Microsoft.ComponentDetection.Contracts
         /// Null can be returned if a detector doesn't have the scope infromation.
         /// </summary>
         /// <param name="componentId">The componentId to check.</param>
+        /// <returns> DependencyScope <see cref="DependencyScope"/> for the given componentId. </returns>
         DependencyScope? GetDependencyScope(string componentId);
 
         /// <summary>

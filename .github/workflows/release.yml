@@ -17,7 +17,6 @@ jobs:
         rid: [win-x64, linux-x64, osx-x64]
 
     env:
-      OFFICIAL_BUILD: 'True'
       # Set the build number in MinVer.
       MINVERBUILDMETADATA: build.${{github.run_number}}
 
@@ -28,18 +27,16 @@ jobs:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: 3.1.x
+        uses: actions/setup-dotnet@v3
 
       - name: Restore packages
         run: dotnet restore
 
       - name: Build CLI tool
-        run: dotnet publish --configuration Release --output ./bin --self-contained --runtime ${{ matrix.rid }} -p:PublishSingleFile=true -p:DebugType=None -p:PublishTrimmed=true ./src/Microsoft.ComponentDetection
+        run: dotnet publish --configuration Release --output ./bin --self-contained --runtime ${{ matrix.rid }} -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:DebugType=None -p:PublishTrimmed=false ./src/Microsoft.ComponentDetection
 
       - name: Publish CLI tool
-        uses: shogo82148/actions-upload-release-asset@v1.6.2
+        uses: shogo82148/actions-upload-release-asset@v1.6.3
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/*

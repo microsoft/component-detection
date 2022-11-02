@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -20,18 +20,18 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
     [Export(typeof(IComponentDetector))]
     public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
     {
-        public override string Id => "SPDX22SBOM";
+        private readonly IEnumerable<string> supportedSPDXVersions = new List<string> { "SPDX-2.2" };
 
         public override IEnumerable<string> Categories =>
             new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Spdx) };
+
+        public override string Id => "SPDX22SBOM";
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Spdx };
 
         public override int Version => 1;
 
         public override IList<string> SearchPatterns { get; } = new List<string> { "*.spdx.json" };
-
-        private readonly IEnumerable<string> supportedSPDXVersions = new List<string> { "SPDX-2.2" };
 
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
@@ -91,7 +91,7 @@ namespace Microsoft.ComponentDetection.Detectors.Spdx
             var name = document["name"]?.ToString();
             var spdxVersion = document["spdxVersion"]?.ToString();
 
-            if (rootElements != null && rootElements.Count() > 1)
+            if (rootElements?.Length > 1)
             {
                 this.Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} has more than one element in documentDescribes, first will be selected as root element.");
             }

@@ -32,25 +32,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
         [Import]
         public IObservableDirectoryWalkerFactory Scanner { get; set; }
 
-        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
-        {
-            var detectorArgs = new Dictionary<string, string>();
-
-            foreach (var arg in detectorArgsList)
-            {
-                var keyValue = arg.Split('=');
-
-                if (keyValue.Length != 2)
-                {
-                    continue;
-                }
-
-                detectorArgs.Add(keyValue[0], keyValue[1]);
-            }
-
-            return detectorArgs;
-        }
-
         public async Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions)
         {
             this.Logger.LogCreateLoggingGroup();
@@ -147,102 +128,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             return detectorProcessingResult;
         }
 
-        private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
-        {
-            if (individualDetectorScanResult == null)
-            {
-                individualDetectorScanResult = new IndividualDetectorScanResult();
-            }
-
-            if (individualDetectorScanResult.ContainerDetails == null)
-            {
-                individualDetectorScanResult.ContainerDetails = Enumerable.Empty<ContainerDetails>();
-            }
-
-            // Additional telemetry details can safely be null
-            return individualDetectorScanResult;
-        }
-
-        private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult result, ComponentRecorder recorder, IComponentDetector detector)> results, ProcessingResultCode exitCode)
-        {
-            return new DetectorProcessingResult
-            {
-                ComponentRecorders = results.Select(tuple => (tuple.detector, tuple.recorder)),
-                ContainersDetailsMap = results.SelectMany(x => x.result.ContainerDetails).ToDictionary(x => x.Id),
-                ResultCode = exitCode,
-            };
-        }
-
-        private async Task<IndividualDetectorScanResult> WithExperimentalScanGuards(Func<Task<IndividualDetectorScanResult>> detectionTaskGenerator, bool isExperimentalDetector, DetectorExecutionTelemetryRecord telemetryRecord)
-        {
-            if (!isExperimentalDetector)
-            {
-                return await Task.Run(detectionTaskGenerator);
-            }
-
-            try
-            {
-                return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(4), CancellationToken.None);
-            }
-            catch (TimeoutException)
-            {
-                return new IndividualDetectorScanResult
-                {
-                    ResultCode = ProcessingResultCode.TimeoutError,
-                };
-            }
-            catch (Exception ex)
-            {
-                telemetryRecord.ExperimentalInformation = ex.ToString();
-                return new IndividualDetectorScanResult
-                {
-                    ResultCode = ProcessingResultCode.InputError,
-                };
-            }
-        }
-
-        private bool IsOSLinuxOrMac()
-        {
-            return OSVersion.Platform == PlatformID.MacOSX || OSVersion.Platform == PlatformID.Unix;
-        }
-
-        private void LogTabularOutput(ILogger logger, ConcurrentDictionary<string, DetectorRunResult> providerElapsedTime, double totalElapsedTime)
-        {
-            var tsf = new TabularStringFormat(new Column[]
-                        {
-                            new Column { Header = "Component Detector Id", Width = 30 },
-                            new Column { Header = "Detection Time", Width = 30, Format = "{0:g2} seconds" },
-                            new Column { Header = "# Components Found", Width = 30, },
-                            new Column { Header = "# Explicitly Referenced", Width = 40 },
-                        });
-
-            var rows = providerElapsedTime.OrderBy(a => a.Key).Select(x =>
-            {
-                var componentResult = x.Value;
-                return new object[]
-                {
-                    x.Key,
-                    componentResult.ExecutionTime.TotalSeconds,
-                    componentResult.ComponentsFoundCount,
-                    componentResult.ExplicitlyReferencedComponentCount,
-                };
-            }).ToList();
-
-            rows.Add(new object[]
-            {
-                "Total",
-                totalElapsedTime,
-                providerElapsedTime.Sum(x => x.Value.ComponentsFoundCount),
-                providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount),
-            });
-
-            foreach (var line in tsf.GenerateString(rows)
-                                    .Split(new string[] { NewLine }, StringSplitOptions.None))
-            {
-                this.Logger.LogInfo(line);
-            }
-        }
-
         public ExcludeDirectoryPredicate GenerateDirectoryExclusionPredicate(string originalSourceDirectory, IEnumerable<string> directoryExclusionList, IEnumerable<string> directoryExclusionListObsolete, bool allowWindowsPaths, bool ignoreCase = true)
         {
             if (directoryExclusionListObsolete?.Any() != true && directoryExclusionList?.Any() != true)
@@ -321,6 +206,115 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                     return false;
                 });
             };
+        }
+
+        private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
+        {
+            var detectorArgs = new Dictionary<string, string>();
+
+            foreach (var arg in detectorArgsList)
+            {
+                var keyValue = arg.Split('=');
+
+                if (keyValue.Length != 2)
+                {
+                    continue;
+                }
+
+                detectorArgs.Add(keyValue[0], keyValue[1]);
+            }
+
+            return detectorArgs;
+        }
+
+        private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
+        {
+            individualDetectorScanResult ??= new IndividualDetectorScanResult();
+
+            individualDetectorScanResult.ContainerDetails ??= Enumerable.Empty<ContainerDetails>();
+
+            // Additional telemetry details can safely be null
+            return individualDetectorScanResult;
+        }
+
+        private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult Result, ComponentRecorder Recorder, IComponentDetector Detector)> results, ProcessingResultCode exitCode)
+        {
+            return new DetectorProcessingResult
+            {
+                ComponentRecorders = results.Select(tuple => (tuple.Detector, tuple.Recorder)),
+                ContainersDetailsMap = results.SelectMany(x => x.Result.ContainerDetails).ToDictionary(x => x.Id),
+                ResultCode = exitCode,
+            };
+        }
+
+        private async Task<IndividualDetectorScanResult> WithExperimentalScanGuards(Func<Task<IndividualDetectorScanResult>> detectionTaskGenerator, bool isExperimentalDetector, DetectorExecutionTelemetryRecord telemetryRecord)
+        {
+            if (!isExperimentalDetector)
+            {
+                return await Task.Run(detectionTaskGenerator);
+            }
+
+            try
+            {
+                return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(4), CancellationToken.None);
+            }
+            catch (TimeoutException)
+            {
+                return new IndividualDetectorScanResult
+                {
+                    ResultCode = ProcessingResultCode.TimeoutError,
+                };
+            }
+            catch (Exception ex)
+            {
+                telemetryRecord.ExperimentalInformation = ex.ToString();
+                return new IndividualDetectorScanResult
+                {
+                    ResultCode = ProcessingResultCode.InputError,
+                };
+            }
+        }
+
+        private bool IsOSLinuxOrMac()
+        {
+            return OSVersion.Platform == PlatformID.MacOSX || OSVersion.Platform == PlatformID.Unix;
+        }
+
+        private void LogTabularOutput(ILogger logger, ConcurrentDictionary<string, DetectorRunResult> providerElapsedTime, double totalElapsedTime)
+        {
+            var tsf = new TabularStringFormat(new Column[]
+                        {
+                            new Column { Header = "Component Detector Id", Width = 30 },
+                            new Column { Header = "Detection Time", Width = 30, Format = "{0:g2} seconds" },
+                            new Column { Header = "# Components Found", Width = 30, },
+                            new Column { Header = "# Explicitly Referenced", Width = 40 },
+                        });
+
+            var rows = providerElapsedTime.OrderBy(a => a.Key).Select(x =>
+            {
+                var componentResult = x.Value;
+                return new object[]
+                {
+                    x.Key,
+                    componentResult.ExecutionTime.TotalSeconds,
+                    componentResult.ComponentsFoundCount,
+                    componentResult.ExplicitlyReferencedComponentCount,
+                };
+            }).ToList();
+
+            rows.Add(new object[]
+            {
+                "Total",
+                totalElapsedTime,
+                providerElapsedTime.Sum(x => x.Value.ComponentsFoundCount),
+                providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount),
+            });
+
+            foreach (var line in tsf.GenerateString(rows)
+                                    .Split(new string[] { NewLine }, StringSplitOptions.None))
+            {
+                this.Logger.LogInfo(line);
+            }
         }
     }
 }

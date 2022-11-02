@@ -20,6 +20,10 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
     {
         private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
 
+        public const string NugetConfigFileName = "nuget.config";
+
+        private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
+
         public override string Id { get; } = "NuGet";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
@@ -29,10 +33,6 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.NuGet };
 
         public override int Version { get; } = 2;
-
-        public const string NugetConfigFileName = "nuget.config";
-
-        private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
@@ -95,7 +95,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                 }
                 else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
                 {
-                    ParsePaketLock(processRequest);
+                    this.ParsePaketLock(processRequest);
                 }
                 else
                 {
@@ -140,17 +140,17 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var stream = processRequest.ComponentStream;
 
-            using StreamReader reader = new StreamReader(stream.Stream);
+            using var reader = new StreamReader(stream.Stream);
 
             string line;
             while ((line = reader.ReadLine()) != null)
             {
                 var matches = Regex.Matches(line, @"\s*([a-zA-Z0-9-.]*) \([<>=]*[ ]*([0-9a-zA-Z-.]*)\)", RegexOptions.Singleline);
-                foreach (Match match in matches)
+                foreach (var match in matches.Cast<Match>())
                 {
-                    string name = match.Groups[1].Value;
-                    string version = match.Groups[2].Value;
-                    NuGetComponent component = new NuGetComponent(name, version);
+                    var name = match.Groups[1].Value;
+                    var version = match.Groups[2].Value;
+                    var component = new NuGetComponent(name, version);
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
                 }
             }
@@ -222,8 +222,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         /// <summary>
         /// Checks to make sure a path is valid (does not have to exist).
         /// </summary>
-        /// <param name="potentialPath"></param>
-        /// <returns></returns>
+        /// <param name="potentialPath"> The path to validate. </param>
+        /// <returns>True if path is valid, otherwise it retuns false. </returns>
         private bool IsValidPath(string potentialPath)
         {
             FileInfo fileInfo = null;

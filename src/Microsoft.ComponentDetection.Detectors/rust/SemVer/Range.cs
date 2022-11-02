@@ -23,6 +23,37 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         private readonly string rangeSpec;
 
+        /// <summary>
+        /// Construct a new range from a range specification.
+        /// </summary>
+        /// <param name="rangeSpec">The range specification string.</param>
+        /// <param name="loose">When true, be more forgiving of some invalid version specifications.</param>
+        /// <exception cref="System.ArgumentException">Thrown when the range specification is invalid.</exception>
+        public Range(string rangeSpec, bool loose = false)
+        {
+            this.rangeSpec = rangeSpec;
+            var comparatorSetSpecs = rangeSpec.Split(new[] { "||" }, StringSplitOptions.None);
+            this.comparatorSets = comparatorSetSpecs.Select(s => new ComparatorSet(s)).ToArray();
+        }
+
+        private Range(IEnumerable<ComparatorSet> comparatorSets)
+        {
+            this.comparatorSets = comparatorSets.ToArray();
+            this.rangeSpec = string.Join(" || ", comparatorSets.Select(cs => cs.ToString()).ToArray());
+        }
+
+        public static bool operator ==(Range a, Range b)
+        {
+            if (a is null)
+            {
+                return b is null;
+            }
+
+            return a.Equals(b);
+        }
+
+        public static bool operator !=(Range a, Range b) => !(a == b);
+
         // Static convenience methods
 
         /// <summary>
@@ -85,25 +116,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                     yield return version;
                 }
             }
-        }
-
-        /// <summary>
-        /// Construct a new range from a range specification.
-        /// </summary>
-        /// <param name="rangeSpec">The range specification string.</param>
-        /// <param name="loose">When true, be more forgiving of some invalid version specifications.</param>
-        /// <exception cref="System.ArgumentException">Thrown when the range specification is invalid.</exception>
-        public Range(string rangeSpec, bool loose = false)
-        {
-            this.rangeSpec = rangeSpec;
-            var comparatorSetSpecs = rangeSpec.Split(new[] { "||" }, StringSplitOptions.None);
-            this.comparatorSets = comparatorSetSpecs.Select(s => new ComparatorSet(s)).ToArray();
-        }
-
-        private Range(IEnumerable<ComparatorSet> comparatorSets)
-        {
-            this.comparatorSets = comparatorSets.ToArray();
-            this.rangeSpec = string.Join(" || ", comparatorSets.Select(cs => cs.ToString()).ToArray());
         }
 
         /// <summary>
@@ -178,7 +190,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         {
             var versions = this.ValidVersions(versionStrings, loose);
             var maxVersion = this.MaxSatisfying(versions);
-            return maxVersion == null ? null : maxVersion.ToString();
+            return maxVersion?.ToString();
         }
 
         /// <summary>
@@ -211,7 +223,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public bool Equals(Range other)
         {
-            if (ReferenceEquals(other, null))
+            if (other is null)
             {
                 return false;
             }
@@ -223,21 +235,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         public override bool Equals(object other)
         {
             return this.Equals(other as Range);
-        }
-
-        public static bool operator ==(Range a, Range b)
-        {
-            if (ReferenceEquals(a, null))
-            {
-                return ReferenceEquals(b, null);
-            }
-
-            return a.Equals(b);
-        }
-
-        public static bool operator !=(Range a, Range b)
-        {
-            return !(a == b);
         }
 
         public override int GetHashCode()

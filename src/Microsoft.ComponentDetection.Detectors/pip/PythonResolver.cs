@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -74,7 +74,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
                 {
                     // if we have already seen the dependency and the version we have is valid, just add the dependency to the graph
                     if (state.NodeReferences.TryGetValue(dependencyNode.Name, out var node) &&
-                        PythonVersionUtilities.VersionValidForSpec(((PipComponent)node.Value).Version, dependencyNode.DependencySpecifiers))
+                        PythonVersionUtilities.VersionValidForSpec(node.Value.Version, dependencyNode.DependencySpecifiers))
                     {
                         state.NodeReferences[currentNode.Name].Children.Add(node);
                         node.Parents.Add(state.NodeReferences[currentNode.Name]);
@@ -123,10 +123,10 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             PipGraphNode node,
             PipDependencySpecification newSpec)
         {
-            var pipComponent = (PipComponent)node.Value;
+            var pipComponent = node.Value;
 
             var oldVersions = state.ValidVersionMap[pipComponent.Name].Keys.ToList();
-            var currentSelectedVersion = ((PipComponent)node.Value).Version;
+            var currentSelectedVersion = node.Value.Version;
             var currentReleases = state.ValidVersionMap[pipComponent.Name][currentSelectedVersion];
             foreach (var version in oldVersions)
             {
@@ -151,7 +151,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             var toRemove = new List<PipGraphNode>();
             foreach (var child in node.Children)
             {
-                var pipChild = (PipComponent)child.Value;
+                var pipChild = child.Value;
 
                 if (!dependencies.TryGetValue(pipChild.Name, out var newDependency))
                 {
@@ -178,7 +178,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             PythonResolverState state,
             PipDependencySpecification spec)
         {
-            var candidateVersion = ((PipComponent)state.NodeReferences[spec.Name].Value).Version;
+            var candidateVersion = state.NodeReferences[spec.Name].Value.Version;
 
             var packageToFetch = state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_wheel", x.PackageType, StringComparison.OrdinalIgnoreCase)) ??
                                  state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
@@ -208,14 +208,14 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private class PythonResolverState
         {
-            public readonly IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap
+            public IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap { get; }
                 = new Dictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>>(StringComparer.OrdinalIgnoreCase);
 
-            public readonly Queue<(string, PipDependencySpecification)> ProcessingQueue = new Queue<(string, PipDependencySpecification)>();
+            public Queue<(string PackageName, PipDependencySpecification Package)> ProcessingQueue { get; } = new Queue<(string, PipDependencySpecification)>();
+
+            public IDictionary<string, PipGraphNode> NodeReferences { get; } = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
 
             public IList<PipGraphNode> Roots { get; } = new List<PipGraphNode>();
-
-            public readonly IDictionary<string, PipGraphNode> NodeReferences = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
         }
     }
 }

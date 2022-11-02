@@ -1,4 +1,4 @@
-﻿// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
+// This file was copied from the SemanticVersioning package found at https://github.com/adamreeve/semver.net.
 // The range logic from SemanticVersioning is needed in the Rust detector to supplement the Semver versioning package
 // that is used elsewhere in this project.
 //
@@ -15,10 +15,6 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 {
     internal class Comparator : IEquatable<Comparator>
     {
-        public readonly Operator ComparatorType;
-
-        public readonly SemVersion Version;
-
         private const string RangePattern = @"
             \s*
             ([=<>]*)                # Comparator type (can be empty)
@@ -88,6 +84,10 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                         }
 
                         break;
+
+                    case Operator.Equal:
+                    case Operator.LessThan:
+                    case Operator.GreaterThanOrEqual:
                     default:
                         // <1.2.x means <1.2.0
                         // >=1.2.x means >=1.2.0
@@ -103,14 +103,22 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
 
         public Comparator(Operator comparatorType, SemVersion comparatorVersion)
         {
-            if (comparatorVersion == null)
-            {
-                throw new NullReferenceException("Null comparator version");
-            }
-
             this.ComparatorType = comparatorType;
-            this.Version = comparatorVersion;
+            this.Version = comparatorVersion ?? throw new NullReferenceException("Null comparator version");
         }
+
+        public enum Operator
+        {
+            Equal = 0,
+            LessThan,
+            LessThanOrEqual,
+            GreaterThan,
+            GreaterThanOrEqual,
+        }
+
+        public Operator ComparatorType { get; }
+
+        public SemVersion Version { get; }
 
         public static Tuple<int, Comparator> TryParse(string input)
         {
@@ -123,72 +131,46 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
                 : null;
         }
 
-        private static Operator ParseComparatorType(string input)
-        {
-            switch (input)
-            {
-                case "":
-                case "=":
-                    return Operator.Equal;
-                case "<":
-                    return Operator.LessThan;
-                case "<=":
-                    return Operator.LessThanOrEqual;
-                case ">":
-                    return Operator.GreaterThan;
-                case ">=":
-                    return Operator.GreaterThanOrEqual;
-                default:
-                    throw new ArgumentException(string.Format("Invalid comparator type: {0}", input));
-            }
-        }
-
         public bool IsSatisfied(SemVersion version)
         {
-            switch (this.ComparatorType)
+            return this.ComparatorType switch
             {
-                case Operator.Equal:
-                    return version == this.Version;
-                case Operator.LessThan:
-                    return version < this.Version;
-                case Operator.LessThanOrEqual:
-                    return version <= this.Version;
-                case Operator.GreaterThan:
-                    return version > this.Version;
-                case Operator.GreaterThanOrEqual:
-                    return version >= this.Version;
-                default:
-                    throw new InvalidOperationException("Comparator type not recognised.");
-            }
+                Operator.Equal => version == this.Version,
+                Operator.LessThan => version < this.Version,
+                Operator.LessThanOrEqual => version <= this.Version,
+                Operator.GreaterThan => version > this.Version,
+                Operator.GreaterThanOrEqual => version >= this.Version,
+                _ => throw new InvalidOperationException("Comparator type not recognised."),
+            };
         }
 
         public bool Intersects(Comparator other)
         {
-            Func<Comparator, bool> operatorIsGreaterThan = c =>
+            static bool OperatorIsGreaterThan(Comparator c) =>
                 c.ComparatorType == Operator.GreaterThan ||
                 c.ComparatorType == Operator.GreaterThanOrEqual;
-            Func<Comparator, bool> operatorIsLessThan = c =>
+            static bool OperatorIsLessThan(Comparator c) =>
                 c.ComparatorType == Operator.LessThan ||
                 c.ComparatorType == Operator.LessThanOrEqual;
-            Func<Comparator, bool> operatorIncludesEqual = c =>
+            static bool OperatorIncludesEqual(Comparator c) =>
                 c.ComparatorType == Operator.GreaterThanOrEqual ||
                 c.ComparatorType == Operator.Equal ||
                 c.ComparatorType == Operator.LessThanOrEqual;
 
-            if (this.Version > other.Version && (operatorIsLessThan(this) || operatorIsGreaterThan(other)))
+            if (this.Version > other.Version && (OperatorIsLessThan(this) || OperatorIsGreaterThan(other)))
             {
                 return true;
             }
 
-            if (this.Version < other.Version && (operatorIsGreaterThan(this) || operatorIsLessThan(other)))
+            if (this.Version < other.Version && (OperatorIsGreaterThan(this) || OperatorIsLessThan(other)))
             {
                 return true;
             }
 
             if (this.Version == other.Version && (
-                (operatorIncludesEqual(this) && operatorIncludesEqual(other)) ||
-                (operatorIsLessThan(this) && operatorIsLessThan(other)) ||
-                (operatorIsGreaterThan(this) && operatorIsGreaterThan(other))))
+                (OperatorIncludesEqual(this) && OperatorIncludesEqual(other)) ||
+                (OperatorIsLessThan(this) && OperatorIsLessThan(other)) ||
+                (OperatorIsGreaterThan(this) && OperatorIsGreaterThan(other))))
             {
                 return true;
             }
@@ -196,45 +178,24 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
             return false;
         }
 
-        public enum Operator
-        {
-            Equal = 0,
-            LessThan,
-            LessThanOrEqual,
-            GreaterThan,
-            GreaterThanOrEqual,
-        }
-
         public override string ToString()
         {
             string operatorString = null;
-            switch (this.ComparatorType)
+            operatorString = this.ComparatorType switch
             {
-                case Operator.Equal:
-                    operatorString = "=";
-                    break;
-                case Operator.LessThan:
-                    operatorString = "<";
-                    break;
-                case Operator.LessThanOrEqual:
-                    operatorString = "<=";
-                    break;
-                case Operator.GreaterThan:
-                    operatorString = ">";
-                    break;
-                case Operator.GreaterThanOrEqual:
-                    operatorString = ">=";
-                    break;
-                default:
-                    throw new InvalidOperationException("Comparator type not recognised.");
-            }
-
+                Operator.Equal => "=",
+                Operator.LessThan => "<",
+                Operator.LessThanOrEqual => "<=",
+                Operator.GreaterThan => ">",
+                Operator.GreaterThanOrEqual => ">=",
+                _ => throw new InvalidOperationException("Comparator type not recognised."),
+            };
             return string.Format("{0}{1}", operatorString, this.Version);
         }
 
         public bool Equals(Comparator other)
         {
-            if (ReferenceEquals(other, null))
+            if (other is null)
             {
                 return false;
             }
@@ -250,6 +211,19 @@ namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer
         public override int GetHashCode()
         {
             return this.ToString().GetHashCode();
+        }
+
+        private static Operator ParseComparatorType(string input)
+        {
+            return input switch
+            {
+                "" or "=" => Operator.Equal,
+                "<" => Operator.LessThan,
+                "<=" => Operator.LessThanOrEqual,
+                ">" => Operator.GreaterThan,
+                ">=" => Operator.GreaterThanOrEqual,
+                _ => throw new ArgumentException(string.Format("Invalid comparator type: {0}", input)),
+            };
         }
     }
 }

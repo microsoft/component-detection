@@ -9,8 +9,6 @@ namespace Microsoft.ComponentDetection.Common
 {
     public class SafeFileEnumerable : IEnumerable<MatchedFile>
     {
-        private HashSet<string> enumeratedDirectories;
-
         private readonly IEnumerable<string> searchPatterns;
         private readonly ExcludeDirectoryPredicate directoryExclusionPredicate;
         private readonly DirectoryInfo directory;
@@ -20,6 +18,8 @@ namespace Microsoft.ComponentDetection.Common
         private readonly Func<FileInfo, bool> fileMatchingPredicate;
 
         private readonly EnumerationOptions enumerationOptions;
+
+        private readonly HashSet<string> enumeratedDirectories;
 
         public SafeFileEnumerable(DirectoryInfo directory, IEnumerable<string> searchPatterns, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
         {
@@ -41,10 +41,7 @@ namespace Microsoft.ComponentDetection.Common
         }
 
         public SafeFileEnumerable(DirectoryInfo directory, Func<FileInfo, bool> fileMatchingPredicate, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
-            : this(directory, new List<string> { "*" }, logger, pathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories, previouslyEnumeratedDirectories)
-        {
-            this.fileMatchingPredicate = fileMatchingPredicate;
-        }
+            : this(directory, new List<string> { "*" }, logger, pathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories, previouslyEnumeratedDirectories) => this.fileMatchingPredicate = fileMatchingPredicate;
 
         public IEnumerator<MatchedFile> GetEnumerator()
         {

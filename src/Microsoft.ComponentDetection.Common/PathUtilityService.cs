@@ -17,42 +17,6 @@ namespace Microsoft.ComponentDetection.Common
     [Shared]
     public class PathUtilityService : IPathUtilityService
     {
-        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern SafeFileHandle CreateFile(
-            [In] string lpFileName,
-            [In] uint dwDesiredAccess,
-            [In] uint dwShareMode,
-            [In] IntPtr lpSecurityAttributes,
-            [In] uint dwCreationDisposition,
-            [In] uint dwFlagsAndAttributes,
-            [In] IntPtr hTemplateFile);
-
-        [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
-
-        /// <summary>
-        /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
-        /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
-        /// using FreeMemoryLinux otherwise things will get very leaky.
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="output"></param>
-        /// <returns></returns>
-        [DllImport("libc", EntryPoint = "realpath")]
-        public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
-
-        /// <summary>
-        /// Use this function to free memory and prevent memory leaks.
-        /// However, beware.... Improper usage of this function will cause segfaults and other nasty double-free errors.
-        /// THIS WILL CRASH THE CLR IF YOU USE IT WRONG.
-        /// </summary>
-        /// <param name="toFree"></param>
-        [DllImport("libc", EntryPoint = "free")]
-        public static extern void FreeMemoryLinux([In] IntPtr toFree);
-
-        [Import]
-        public ILogger Logger { get; set; }
-
         public const uint CreationDispositionRead = 0x3;
 
         public const uint FileFlagBackupSemantics = 0x02000000;
@@ -61,7 +25,14 @@ namespace Microsoft.ComponentDetection.Common
 
         public const string LongPathPrefix = "\\\\?\\";
 
+        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        private static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
         private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
+
+        private readonly object isRunningOnWindowsContainerLock = new object();
+        private bool? isRunningOnWindowsContainer = null;
 
         public bool IsRunningOnWindowsContainer
         {
@@ -82,19 +53,36 @@ namespace Microsoft.ComponentDetection.Common
             }
         }
 
-        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+        [Import]
+        public ILogger Logger { get; set; }
 
-        private object isRunningOnWindowsContainerLock = new object();
-        private bool? isRunningOnWindowsContainer = null;
+        /// <summary>
+        /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
+        /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
+        /// using FreeMemoryLinux otherwise things will get very leaky.
+        /// </summary>
+        /// <param name="path"> The path to resolve. </param>
+        /// <param name="output"> The pointer output. </param>
+        /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
+        [DllImport("libc", EntryPoint = "realpath")]
+        public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
+
+        /// <summary>
+        /// Use this function to free memory and prevent memory leaks.
+        /// However, beware.... Improper usage of this function will cause segfaults and other nasty double-free errors.
+        /// THIS WILL CRASH THE CLR IF YOU USE IT WRONG.
+        /// </summary>
+        /// <param name="toFree">Pointer to the memory space to free. </param>
+        [DllImport("libc", EntryPoint = "free")]
+        public static extern void FreeMemoryLinux([In] IntPtr toFree);
 
         public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
         {
-            if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern.Substring(1), StringComparison.OrdinalIgnoreCase))
+            if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern.AsSpan()[1..], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
-            else if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern.Substring(0, searchPattern.Length - 1), StringComparison.OrdinalIgnoreCase))
+            else if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern.AsSpan()[..^1], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -124,11 +112,11 @@ namespace Microsoft.ComponentDetection.Common
 
         public bool MatchesPattern(string searchPattern, string fileName)
         {
-            if (searchPattern.StartsWith("*") && fileName.EndsWith(searchPattern.Substring(1), StringComparison.OrdinalIgnoreCase))
+            if (searchPattern.StartsWith("*") && fileName.EndsWith(searchPattern[1..], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
-            else if (searchPattern.EndsWith("*") && fileName.StartsWith(searchPattern.Substring(0, searchPattern.Length - 1), StringComparison.OrdinalIgnoreCase))
+            else if (searchPattern.EndsWith("*") && fileName.StartsWith(searchPattern[..^1], StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -148,9 +136,9 @@ namespace Microsoft.ComponentDetection.Common
             {
                 return this.ResolvePhysicalPathWindows(path);
             }
-            else if (IsLinux)
+            else if (IsLinux || IsMacOS)
             {
-                return this.ResolvePhysicalPathLinux(path);
+                return this.ResolvePhysicalPathLibC(path);
             }
 
             return path;
@@ -199,16 +187,16 @@ namespace Microsoft.ComponentDetection.Common
 
             var result = resultBuilder.ToString();
 
-            result = result.StartsWith(LongPathPrefix) ? result.Substring(LongPathPrefix.Length) : result;
+            result = result.StartsWith(LongPathPrefix) ? result[LongPathPrefix.Length..] : result;
 
             this.resolvedPaths.TryAdd(path, result);
 
             return result;
         }
 
-        public string ResolvePhysicalPathLinux(string path)
+        public string ResolvePhysicalPathLibC(string path)
         {
-            if (!IsLinux)
+            if (!IsLinux && !IsMacOS)
             {
                 throw new PlatformNotSupportedException("Attempted to call a function that makes linux-only library calls");
             }
@@ -241,6 +229,19 @@ namespace Microsoft.ComponentDetection.Common
                 }
             }
         }
+
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern SafeFileHandle CreateFile(
+            [In] string lpFileName,
+            [In] uint dwDesiredAccess,
+            [In] uint dwShareMode,
+            [In] IntPtr lpSecurityAttributes,
+            [In] uint dwCreationDisposition,
+            [In] uint dwFlagsAndAttributes,
+            [In] IntPtr hTemplateFile);
+
+        [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
 
         private bool CheckIfRunningOnWindowsContainer()
         {

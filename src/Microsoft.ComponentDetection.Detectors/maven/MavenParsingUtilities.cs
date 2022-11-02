@@ -18,22 +18,22 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
             { "runtime", DependencyScope.MavenRuntime },
         };
 
-        public static (DetectedComponent Component, bool? IsDevelopmentDependency, DependencyScope? dependencyScope) GenerateDetectedComponentAndMetadataFromMavenString(string key)
+        public static (DetectedComponent Component, bool? IsDevelopmentDependency, DependencyScope? DependencyScope) GenerateDetectedComponentAndMetadataFromMavenString(string key)
         {
-            var componentAndMetaData = GetMavenComponentAndIsDevDependencyAndScope(key);
+            var (component, isDevDependency, dependencyScope) = GetMavenComponentAndIsDevDependencyAndScope(key);
 
-            var detectedComponent = new DetectedComponent(componentAndMetaData.component);
+            var detectedComponent = new DetectedComponent(component);
 
-            return (detectedComponent, componentAndMetaData.isDevDependency, componentAndMetaData.dependencyScope);
+            return (detectedComponent, isDevDependency, dependencyScope);
         }
 
-        private static (MavenComponent component, bool? isDevDependency, DependencyScope? dependencyScope) GetMavenComponentAndIsDevDependencyAndScope(string componentString)
+        private static (MavenComponent Component, bool? IsDevDependency, DependencyScope? DependencyScope) GetMavenComponentAndIsDevDependencyAndScope(string componentString)
         {
-            var info = GetMavenComponentStringInfo(componentString);
-            return (new MavenComponent(info.groupId, info.artifactId, info.version), info.isDevelopmentDependency, info.dependencyScope);
+            var (groupId, artifactId, version, isDevelopmentDependency, dependencyScope) = GetMavenComponentStringInfo(componentString);
+            return (new MavenComponent(groupId, artifactId, version), isDevelopmentDependency, dependencyScope);
         }
 
-        private static (string groupId, string artifactId, string version, bool? isDevelopmentDependency, DependencyScope dependencyScope)
+        private static (string GroupId, string ArtifactId, string Version, bool? IsDevelopmentDependency, DependencyScope DependencyScope)
             GetMavenComponentStringInfo(string mavenComponentString)
         {
             var results = mavenComponentString.Split(':');

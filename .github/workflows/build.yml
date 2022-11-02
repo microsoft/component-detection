@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      OFFICIAL_BUILD: 'True'
       # Set the build number in MinVer.
       MINVERBUILDMETADATA: build.${{github.run_number}}
 
@@ -24,9 +23,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: 3.1.x
+        uses: actions/setup-dotnet@v3
 
       - name: Restore packages
         run: dotnet restore

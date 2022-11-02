@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -15,6 +15,11 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
     [Export(typeof(IComponentDetector))]
     public class NpmComponentDetector : FileComponentDetector
     {
+        /// <summary>Common delegate for Package.json JToken processing.</summary>
+        /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
+        /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
+        protected delegate bool JTokenProcessingDelegate(JToken token);
+
         public override string Id { get; } = "Npm";
 
         public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
@@ -24,11 +29,6 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
         public override int Version { get; } = 2;
-
-        /// <summary>Common delegate for Package.json JToken processing.</summary>
-        /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
-        /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
-        protected delegate bool JTokenProcessingDelegate(JToken token);
 
         protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
@@ -56,21 +56,6 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
             });
         }
 
-        private async Task SafeProcessAllPackageJTokens(string sourceFilePath, string contents, JTokenProcessingDelegate jtokenProcessor)
-        {
-            try
-            {
-                await this.ProcessAllPackageJTokensAsync(contents, jtokenProcessor);
-            }
-            catch (Exception e)
-            {
-                // If something went wrong, just ignore the component
-                this.Logger.LogBuildWarning($"Could not parse Jtokens from file {sourceFilePath}.");
-                this.Logger.LogFailedReadingFile(sourceFilePath, e);
-                return;
-            }
-        }
-
         protected virtual Task ProcessAllPackageJTokensAsync(string contents, JTokenProcessingDelegate jtokenProcessor)
         {
             var o = JToken.Parse(contents);
@@ -94,6 +79,21 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
 
             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(npmComponent));
             return true;
+        }
+
+        private async Task SafeProcessAllPackageJTokens(string sourceFilePath, string contents, JTokenProcessingDelegate jtokenProcessor)
+        {
+            try
+            {
+                await this.ProcessAllPackageJTokensAsync(contents, jtokenProcessor);
+            }
+            catch (Exception e)
+            {
+                // If something went wrong, just ignore the component
+                this.Logger.LogInfo($"Could not parse Jtokens from file {sourceFilePath}.");
+                this.Logger.LogFailedReadingFile(sourceFilePath, e);
+                return;
+            }
         }
 
         private NpmAuthor GetAuthor(JToken authorToken, string packageName, string filePath)
@@ -122,11 +122,11 @@ namespace Microsoft.ComponentDetection.Detectors.Npm
                 authorName = authorToken["name"]?.ToString();
                 authorEmail = authorToken["email"]?.ToString();
 
-            /*
-             *  for parsing author in single string format.
-             *  for e.g.
-             *  "author": "John Doe <johdoe@outlook.com> https://jd.com"
-             */
+                /*
+                 *  for parsing author in single string format.
+                 *  for e.g.
+                 *  "author": "John Doe <johdoe@outlook.com> https://jd.com"
+                 */
             }
             else if (authorMatch.Success)
             {

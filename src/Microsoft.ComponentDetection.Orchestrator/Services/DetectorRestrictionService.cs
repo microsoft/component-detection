@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -10,11 +10,11 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
     [Export(typeof(IDetectorRestrictionService))]
     public class DetectorRestrictionService : IDetectorRestrictionService
     {
+        private readonly IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
+        private readonly string newDetectorId = "NpmWithRoots";
+
         [Import]
         public ILogger Logger { get; set; }
-
-        private IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
-        private string newDetectorId = "NpmWithRoots";
 
         public IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions argSpecifiedRestrictions, IEnumerable<IComponentDetector> detectors)
         {
@@ -28,11 +28,11 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
                 var allowedIds = argSpecifiedRestrictions.AllowedDetectorIds;
 
                 // If we have retired detectors in the arg specified list and don't have the new detector, add the new detector
-                if (allowedIds.Where(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)).Any() && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
+                if (allowedIds.Any(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)) && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
                 {
                     allowedIds = allowedIds.Concat(new string[]
                     {
-                        this.newDetectorId
+                        this.newDetectorId,
                     });
                 }
 
@@ -70,7 +70,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
                     return false;
                 }).ToList();
-                if (detectors.Count() == 0)
+                if (!detectors.Any())
                 {
                     throw new InvalidDetectorCategoriesException($"Categories {string.Join(",", detectorCategories)} did not match any available detectors.");
                 }
