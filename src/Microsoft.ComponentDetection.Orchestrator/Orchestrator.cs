@@ -202,9 +202,10 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
                         return string.Join(Environment.NewLine, aptListResult.Split(Environment.NewLine).Where(x => x.Contains("libssl")));
                     });
-                    if (await Task.WhenAny(getLibSslPackages, Task.Delay(taskTimeout)) != getLibSslPackages)
+                    await getLibSslPackages.WaitAsync(taskTimeout);
+                    if (getLibSslPackages.IsFaulted)
                     {
-                        throw new TimeoutException($"The execution did not complete in the alotted time ({taskTimeout} seconds) and has been terminated prior to completion");
+                        throw new TimeoutException($"The execution did not complete in the alloted time ({taskTimeout} seconds) and has been terminated prior to completion");
                     }
 
                     agentOSMeaningfulDetails[LibSslDetailsKey] = await getLibSslPackages;
