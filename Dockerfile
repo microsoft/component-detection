@@ -12,7 +12,7 @@ RUN dotnet publish -c Release -o out \
     -p:TrimUnusedDependencies=true \
     ./src/Microsoft.ComponentDetection
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:3.1-cbl-mariner1.0 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-cbl-mariner1.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/out ./
 
