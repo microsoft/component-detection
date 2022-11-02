@@ -211,7 +211,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
             public IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap { get; }
                 = new Dictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>>(StringComparer.OrdinalIgnoreCase);
 
-            public Queue<(string, PipDependencySpecification)> ProcessingQueue { get; } = new Queue<(string, PipDependencySpecification)>();
+            public Queue<(string PackageName, PipDependencySpecification Package)> ProcessingQueue { get; } = new Queue<(string, PipDependencySpecification)>();
 
             public IDictionary<string, PipGraphNode> NodeReferences { get; } = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
 

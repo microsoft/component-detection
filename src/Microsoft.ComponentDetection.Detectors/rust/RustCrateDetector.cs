@@ -55,7 +55,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
 
         private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
 
-        protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var cargoLockFile = processRequest.ComponentStream;
@@ -67,7 +67,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 {
                     IgnoreMissingProperties = true,
                 };
-                var cargoLock = Toml.ToModel<CargoLock>(reader.ReadToEnd(), options: options);
+                var cargoLock = Toml.ToModel<CargoLock>(await reader.ReadToEndAsync(), options: options);
 
                 var seenAsDependency = new HashSet<CargoPackage>();
 
@@ -143,7 +143,7 @@ namespace Microsoft.ComponentDetection.Detectors.Rust
                 this.Logger.LogFailedReadingFile(cargoLockFile.Location, e);
             }
 
-            return Task.CompletedTask;
+            await Task.CompletedTask;
         }
 
         private void ProcessDependency(

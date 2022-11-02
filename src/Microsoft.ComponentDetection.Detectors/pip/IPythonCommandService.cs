@@ -8,6 +8,6 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
     {
         Task<bool> PythonExists(string pythonPath = null);
 
-        Task<IList<(string, GitComponent)>> ParseFile(string path, string pythonPath = null);
+        Task<IList<(string PackageString, GitComponent Component)>> ParseFile(string path, string pythonPath = null);
     }
 }

@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.TestsUtilities
 
         private T detector;
 
-        public async Task<(IndividualDetectorScanResult, IComponentRecorder)> ExecuteDetector()
+        public async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetector()
         {
             if (this.scanRequest == null)
             {

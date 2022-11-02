@@ -313,7 +313,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 parentIds.Select(parentId => new Func<PipComponent, bool>(x => x.Id == parentId)).ToArray());
         }
 
-        private List<(string, GitComponent)> ToGitTuple(IList<string> components)
+        private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)
         {
             return components.Select<string, (string, GitComponent)>(dep => (dep, null)).ToList();
         }

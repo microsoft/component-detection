@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Common
                 throw new TimeoutException($"The execution did not complete in the alotted time ({timeout.TotalSeconds} seconds) and has been terminated prior to completion");
             }
 
-            return work.Result;
+            return await work;
         }
 
         public static async Task ExecuteVoidWithTimeoutAsync(Action toExecute, TimeSpan timeout, CancellationToken cancellationToken)

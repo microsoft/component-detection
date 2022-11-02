@@ -463,14 +463,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Using directive should appear within a namespace declaration
 dotnet_diagnostic.SA1200.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1210.md
-#  Using directives should be ordered alphabetically by the namespaces
-dotnet_diagnostic.SA1210.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
-# Tuple types in signatures should have element names
-dotnet_diagnostic.SA1414.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented
 dotnet_diagnostic.SA1600.severity = suggestion
@@ -500,21 +492,9 @@ dotnet_diagnostic.SA1642.severity = suggestion
 # https://github.com/Microsoft/vs-threading
 ##########################################
 
-# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD002.md
-# Synchronously waiting on tasks or awaiters may cause deadlocks. Use await or JoinableTaskFactory.Run instead.
-dotnet_diagnostic.VSTHRD002.severity = suggestion
-
-# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD103.md
-# Result synchronously blocks. Use await instead.
-dotnet_diagnostic.VSTHRD103.severity = suggestion
-
 # https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD101.md
 # Avoid using async lambda for a void returning delegate type, because any exceptions not handled by the delegate will crash the process
 dotnet_diagnostic.VSTHRD101.severity = suggestion
-
-# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD104.md
-# Expose an async version of this method that does not synchronously block. Then simplify this method to call that async method within a JoinableTaskFactory.Run delegate.
-dotnet_diagnostic.VSTHRD104.severity = suggestion
 
 # https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD111.md
 # Add .ConfigureAwait(bool) to your await expression
@@ -659,9 +639,6 @@ dotnet_diagnostic.CA1056.severity = suggestion
 
 # CA1838: Avoid 'StringBuilder' parameters for P/Invokes
 dotnet_diagnostic.CA1838.severity = suggestion
-
-# CA1849: Call async methods when in an async method
-dotnet_diagnostic.CA1849.severity = suggestion
 
 # CA2000: Dispose objects before losing scope
 dotnet_diagnostic.CA2000.severity = suggestion
