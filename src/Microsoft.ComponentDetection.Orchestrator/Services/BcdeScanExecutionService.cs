@@ -41,7 +41,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             var detectors = this.DetectorRestrictionService.ApplyRestrictions(detectorRestrictions, initialDetectors).ToImmutableList();
 
             this.Logger.LogVerbose($"Finished applying restrictions to detectors.");
-            this.Logger.LogCreateLoggingGroup();
 
             var processingResult = await this.DetectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
 
