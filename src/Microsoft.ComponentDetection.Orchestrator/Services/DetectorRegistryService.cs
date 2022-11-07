@@ -56,7 +56,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             var loadedDetectors = this.LoadComponentDetectorsFromAssemblies(new List<Assembly> { assemblyToSearch }, extraDetectorAssemblies);
 
             var pluralPhrase = loadedDetectors.Count == 1 ? "detector was" : "detectors were";
-            this.Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {assemblyToSearch.FullName}\n");
+            this.Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {assemblyToSearch.FullName}");
 
             return loadedDetectors;
         }
