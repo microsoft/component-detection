@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.NuGet
+namespace Microsoft.ComponentDetection.Detectors.NuGet
 {
     using System;
     using System.Collections.Generic;
@@ -10,7 +10,7 @@
     using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
     [Export(typeof(IComponentDetector))]
-    public class NuGetPackagesConfigDetector : FileComponentDetector, IExperimentalDetector
+    public class NuGetPackagesConfigDetector : FileComponentDetector
     {
         public override IList<string> SearchPatterns => new[] { "packages.config" };
 
