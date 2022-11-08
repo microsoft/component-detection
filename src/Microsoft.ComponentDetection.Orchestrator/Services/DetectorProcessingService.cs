@@ -137,9 +137,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
             if (directoryExclusionListObsolete?.Any() == true)
             {
+                // Note: directory info will *automatically* parent relative paths to the working directory of the current assembly. Hold on to your rear.
                 var directories = directoryExclusionListObsolete
-
-                    // Note: directory info will *automatically* parent relative paths to the working directory of the current assembly. Hold on to your rear.
                     .Select(relativeOrAbsoluteExclusionPath => new DirectoryInfo(relativeOrAbsoluteExclusionPath))
                     .Select(exclusionDirectoryInfo => new
                     {
