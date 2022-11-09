@@ -26,16 +26,23 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var packagesConfig = new PackagesConfigReader(processRequest.ComponentStream.Stream);
-            foreach (var package in packagesConfig.GetPackages(allowDuplicatePackageIds: true))
+            try
             {
-                processRequest.SingleFileComponentRecorder.RegisterUsage(
-                    new DetectedComponent(
-                        new NuGetComponent(
-                            package.PackageIdentity.Id,
-                            package.PackageIdentity.Version.ToNormalizedString())),
-                    true,
-                    null,
-                    package.IsDevelopmentDependency);
+                foreach (var package in packagesConfig.GetPackages(allowDuplicatePackageIds: true))
+                {
+                    processRequest.SingleFileComponentRecorder.RegisterUsage(
+                        new DetectedComponent(
+                            new NuGetComponent(
+                                package.PackageIdentity.Id,
+                                package.PackageIdentity.Version.ToNormalizedString())),
+                        true,
+                        null,
+                        package.IsDevelopmentDependency);
+                }
+            }
+            catch (PackagesConfigReaderException e)
+            {
+                this.Logger.LogFailedReadingFile(processRequest.ComponentStream.Location, e);
             }
 
             return Task.CompletedTask;
