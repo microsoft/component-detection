@@ -7,6 +7,7 @@
     <ItemGroup Label="Project References">
         <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Detectors\Microsoft.ComponentDetection.Detectors.csproj"/>
         <PackageReference Include="System.Reactive"/>
+        <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
 
 </Project>
