@@ -26,7 +26,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var packagesConfig = new PackagesConfigReader(processRequest.ComponentStream.Stream);
-            foreach (var package in packagesConfig.GetPackages())
+            foreach (var package in packagesConfig.GetPackages(allowDuplicatePackageIds: true))
             {
                 processRequest.SingleFileComponentRecorder.RegisterUsage(
                     new DetectedComponent(
