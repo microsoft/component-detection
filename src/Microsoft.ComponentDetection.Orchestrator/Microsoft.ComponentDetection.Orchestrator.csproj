@@ -3,6 +3,7 @@
     <ItemGroup>
         <PackageReference Include="CommandLineParser" />
         <PackageReference Include="DotNet.Glob" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="Polly" />
         <PackageReference Include="System.Runtime.Loader" />
