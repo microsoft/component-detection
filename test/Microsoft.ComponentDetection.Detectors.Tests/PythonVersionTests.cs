@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
@@ -42,8 +42,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void TestPythonVersionComplexComparisons()
         {
-            // This is a list of versions supplied by PEP440 for testing (minus local versions)
-            var versions = new List<string>
+            // This is a list of versions supplied by PEP440 for testing + a few other valid versions missing in their examples (namely "v" prefix and local version using "+")
+            var versionItems = new List<string>
             {
                 "1.0.dev",
                 "1.0.dev456",
@@ -64,11 +64,19 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 "1.1.dev",
                 "1.1.dev1",
                 "1.1",
-            }.Select(x => new PythonVersion(x)).ToList();
+                "1.1.1.dev17+gcae73d8.d20200403",
+                "1.1.1.dev18",
+                "1.1.1",
+                "2.10.0.dev1",
+                "v2.10.0.dev2",
+                "v2.10.0",
+            }.Select(x => new { Raw = x, Version = new PythonVersion(x) }).ToList();
 
-            for (var i = 1; i < versions.Count; i++)
+            for (var i = 1; i < versionItems.Count; i++)
             {
-                Assert.IsTrue(versions[i - 1] < versions[i]);
+                var versionItem = versionItems[i];
+                versionItem.Version.Valid.Should().BeTrue($"Version should be correctly parsed. Version={versionItem.Raw}");
+                versionItem.Version.Should().BeGreaterThan(versionItems[i - 1].Version);
             }
         }
 
@@ -83,6 +91,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 (new List<string> { ">=1.0", "<=1.4" }, new List<string> { "1.0", "1.1", "1.4" }, new List<string> { "0.9", "1.5" }),
                 (new List<string> { ">1.0", "<1.4" }, new List<string> { "1.1", "1.3" }, new List<string> { "0.9", "1.5", "1.0", "1.4" }),
                 (new List<string> { ">1.0", "<1.4", "!=1.2" }, new List<string> { "1.1", "1.3" }, new List<string> { "0.9", "1.5", "1.0", "1.4", "1.2" }),
+                (new List<string> { "==1.1.1.dev17+gcae73d8.d20200403" }, new List<string> { "1.1.1.dev17", "v1.1.1.dev17", "1.1.1.dev17+gcae73d8.d20200403" }, new List<string> { "1.1.1.dev18", "1.0.1", "1.1.1" }),
             };
 
             foreach (var (specs, validVersions, invalidVersions) in testCases)
@@ -93,16 +102,19 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         }
 
         [TestMethod]
-        public void TestVersionValidForSpec_VersionIsNotValid_ArgumentExpcetionIsThrown()
+        public void TestVersionValidForSpec_VersionIsNotValid_ArgumentExceptionIsThrown()
         {
             Action action = () => PythonVersionUtilities.VersionValidForSpec("notvalid", new List<string> { "==1.0" });
             action.Should().Throw<ArgumentException>();
         }
 
         [TestMethod]
-        public void TestVersionValidForSpec_SomeSpecIsNotValid_ArgumentExpcetionIsThrown()
+        public void TestVersionValidForSpec_SomeSpecIsNotValid_ArgumentExceptionIsThrown()
         {
             Action action = () => PythonVersionUtilities.VersionValidForSpec("1.0.0", new List<string> { "==notvalid" });
+            action.Should().Throw<ArgumentException>();
+
+            action = () => PythonVersionUtilities.VersionValidForSpec("1.0.0", new List<string> { "==1.1+gcae73d8.d20200403+1.0" });
             action.Should().Throw<ArgumentException>();
         }
     }

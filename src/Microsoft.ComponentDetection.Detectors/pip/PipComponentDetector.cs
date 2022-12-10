@@ -21,7 +21,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-        public override int Version { get; } = 5;
+        public override int Version { get; } = 6;
 
         [Import]
         public IPythonCommandService PythonCommandService { get; set; }
