@@ -25,10 +25,13 @@ namespace Microsoft.ComponentDetection.Common
 
         private bool WriteToFile { get; set; }
 
-        public void Init(VerbosityMode verbosity)
+        private bool WriteLinePrefix { get; set; }
+
+        public void Init(VerbosityMode verbosity, bool writeLinePrefix = true)
         {
             this.WriteToFile = true;
             this.Verbosity = verbosity;
+            this.WriteLinePrefix = writeLinePrefix;
             try
             {
                 this.FileWritingService.WriteFile(LogRelativePath, string.Empty);
@@ -144,7 +147,7 @@ namespace Microsoft.ComponentDetection.Common
 
         private void LogInternal(string prefix, string message, VerbosityMode verbosity = VerbosityMode.Normal)
         {
-            var formattedPrefix = string.IsNullOrWhiteSpace(prefix) ? string.Empty : $"[{prefix}] ";
+            var formattedPrefix = (!this.WriteLinePrefix || string.IsNullOrWhiteSpace(prefix)) ? string.Empty : $"[{prefix}] ";
             var text = $"{formattedPrefix}{message} {NewLine}";
 
             this.PrintToConsole(text, verbosity);

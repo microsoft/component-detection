@@ -6,6 +6,10 @@
         <RootProjectDirectory>$(MSBuildThisFileDirectory)..\..\</RootProjectDirectory>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="System.Threading.Tasks.Dataflow" />
+    </ItemGroup>
+
     <ItemGroup Label="Package References">
         <ProjectReference Include="..\Microsoft.ComponentDetection.Common\Microsoft.ComponentDetection.Common.csproj" />
         <ProjectReference Include="..\Microsoft.ComponentDetection.Contracts\Microsoft.ComponentDetection.Contracts.csproj" />

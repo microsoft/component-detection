@@ -13,10 +13,10 @@
         <PackageVersion Include="Docker.DotNet" Version="3.125.12"/>
         <PackageVersion Include="FluentAssertions" Version="6.8.0"/>
         <PackageVersion Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9"/>
-        <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
-        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.3.2"/>
+        <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.4.0"/>
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1"/>
-        <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.3.48"/>
+        <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.4.27"/>
         <PackageVersion Include="DotNet.Glob" Version="2.1.1"/>
         <PackageVersion Include="MinVer" Version="4.2.0"/>
         <PackageVersion Include="Moq" Version="4.18.2"/>
@@ -30,15 +30,15 @@
         <PackageVersion Include="Polly" Version="7.2.3"/>
         <PackageVersion Include="Semver" Version="2.2.0"/>
         <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.435"/>
-        <PackageVersion Include="System.Composition.AttributedModel" Version="6.0.0"/>
-        <PackageVersion Include="System.Composition.Convention" Version="6.0.0"/>
-        <PackageVersion Include="System.Composition.Hosting" Version="6.0.0"/>
-        <PackageVersion Include="System.Composition.Runtime" Version="6.0.0"/>
-        <PackageVersion Include="System.Composition.TypedParts" Version="6.0.0"/>
+        <PackageVersion Include="System.Composition.AttributedModel" Version="7.0.0"/>
+        <PackageVersion Include="System.Composition.Convention" Version="7.0.0"/>
+        <PackageVersion Include="System.Composition.Hosting" Version="7.0.0"/>
+        <PackageVersion Include="System.Composition.Runtime" Version="7.0.0"/>
+        <PackageVersion Include="System.Composition.TypedParts" Version="7.0.0"/>
         <PackageVersion Include="System.Memory" Version="4.5.5"/>
         <PackageVersion Include="System.Reactive" Version="5.0.0"/>
         <PackageVersion Include="System.Runtime.Loader" Version="4.3.0"/>
-        <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="6.0.0"/>
+        <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="7.0.0"/>
         <PackageVersion Include="Tomlyn" Version="0.16.1"/>
         <PackageVersion Include="yamldotnet" Version="11.2.1"/>
         <PackageVersion Include="Faker.net" Version="2.0.154"/>
