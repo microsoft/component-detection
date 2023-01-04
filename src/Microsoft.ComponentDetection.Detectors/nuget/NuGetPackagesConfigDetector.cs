@@ -4,6 +4,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
     using System.Collections.Generic;
     using System.Composition;
     using System.Threading.Tasks;
+    using System.Xml;
     using global::NuGet.Packaging;
     using Microsoft.ComponentDetection.Contracts;
     using Microsoft.ComponentDetection.Contracts.Internal;
@@ -25,9 +26,9 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
 
         protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
-            var packagesConfig = new PackagesConfigReader(processRequest.ComponentStream.Stream);
             try
             {
+                var packagesConfig = new PackagesConfigReader(processRequest.ComponentStream.Stream);
                 foreach (var package in packagesConfig.GetPackages(allowDuplicatePackageIds: true))
                 {
                     processRequest.SingleFileComponentRecorder.RegisterUsage(
@@ -40,7 +41,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
                         package.IsDevelopmentDependency);
                 }
             }
-            catch (PackagesConfigReaderException e)
+            catch (Exception e) when (e is PackagesConfigReaderException or XmlException)
             {
                 this.Logger.LogFailedReadingFile(processRequest.ComponentStream.Location, e);
             }
