@@ -24,11 +24,12 @@ jobs:
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: curl https://archive.apache.org/dist/ant/ivy/2.5.0/apache-ivy-2.5.0-bin.tar.gz | tar xOz apache-ivy-2.5.0/ivy-2.5.0.jar > /usr/share/ant/lib/ivy.jar
+        run: sudo apt install ivy
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'windows-latest' }}
-        run: choco install ivy
+        shell: bash
+        run: curl https://downloads.apache.org/ant/ivy/2.5.1/apache-ivy-2.5.1-bin.tar.gz | tar xOz apache-ivy-2.5.1/ivy-2.5.1.jar > "$ANT_HOME/lib/ivy.jar"
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'macos-latest' }}

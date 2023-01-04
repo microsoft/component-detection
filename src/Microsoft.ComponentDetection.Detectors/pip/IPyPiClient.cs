@@ -31,7 +31,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
         // Values used for cache creation
         private const long CACHEINTERVALSECONDS = 60;
 
-        private const long DEFAULTCACHEENTRIES = 128;
+        private const long DEFAULTCACHEENTRIES = 4096;
 
         // max number of retries allowed, to cap the total delay period
         private const long MAXRETRIES = 15;
