@@ -37,6 +37,24 @@
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test",
+            "command": "dotnet",
+            "type": "process",
+            "isBackground": true, 
+            "args": [
+                "test"
+            ],
+            "options": 
+            { 
+                "env": 
+                { 
+                    "VSTEST_HOST_DEBUG": "1" 
+                }, 
+            }, 
+            "problemMatcher": [
+            ]
         }
     ]
 }

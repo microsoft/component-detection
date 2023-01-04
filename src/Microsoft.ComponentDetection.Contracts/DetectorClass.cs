@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts
+namespace Microsoft.ComponentDetection.Contracts
 {
     /// <summary>Class of detector, the names of which are converted into categories for all default detectors.</summary>
     public enum DetectorClass
@@ -41,6 +41,9 @@
 
         /// <summary>Indicates a detector applies to Vcpkg packages.</summary>
         Vcpkg,
+
+        /// <summary>Indicates a detector applies to Pub packages.</summary>
+        Pub,
 
         /// <summary>Indicates a detector applies to Docker references.</summary>
         DockerReference,
