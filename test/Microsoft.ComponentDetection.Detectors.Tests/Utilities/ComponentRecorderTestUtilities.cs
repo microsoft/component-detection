@@ -1,148 +1,147 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities
+namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+
+public static class ComponentRecorderTestUtilities
 {
-    public static class ComponentRecorderTestUtilities
+    public static void ForAllComponents(this IComponentRecorder recorder, Action<ComponentOrientedGrouping> forEachComponent)
     {
-        public static void ForAllComponents(this IComponentRecorder recorder, Action<ComponentOrientedGrouping> forEachComponent)
+        var allComponents = recorder.GetDetectedComponents();
+        var graphs = recorder.GetDependencyGraphsByLocation();
+
+        // This magic grouping is a flattening of "occurrences" of components across single file recorders. This allows aggregate operations
+        //  per component id, which is logical for most tests.
+        var graphsAndLocationsByComponentId = GroupByComponentId(graphs);
+
+        foreach (var item in graphsAndLocationsByComponentId)
         {
-            var allComponents = recorder.GetDetectedComponents();
-            var graphs = recorder.GetDependencyGraphsByLocation();
+            forEachComponent(TupleToObject(item));
+        }
+    }
 
-            // This magic grouping is a flattening of "occurrences" of components across single file recorders. This allows aggregate operations
-            //  per component id, which is logical for most tests.
-            var graphsAndLocationsByComponentId = GroupByComponentId(graphs);
+    public static void ForOneComponent(this IComponentRecorder recorder, string componentId, Action<ComponentOrientedGrouping> forOneComponent)
+    {
+        var allComponents = recorder.GetDetectedComponents();
+        var graphs = recorder.GetDependencyGraphsByLocation();
 
-            foreach (var item in graphsAndLocationsByComponentId)
+        // This magic grouping is a flattening of "occurrences" of components across single file recorders. This allows aggregate operations
+        //  per component id, which is logical for most tests.
+        var graphsAndLocationsByComponentId = GroupByComponentId(graphs);
+
+        forOneComponent(TupleToObject(graphsAndLocationsByComponentId.First(x => x.Key == componentId)));
+    }
+
+    public static bool? GetEffectiveDevDependencyValue(this IComponentRecorder recorder, string componentId)
+    {
+        bool? existingDevDepValue = null;
+        recorder.ForOneComponent(componentId, grouping =>
+        {
+            foreach (var (manifestFile, graph) in grouping.FoundInGraphs)
             {
-                forEachComponent(TupleToObject(item));
+                var devDepValue = graph.IsDevelopmentDependency(componentId);
+                if (!existingDevDepValue.HasValue)
+                {
+                    existingDevDepValue = devDepValue;
+                }
+                else if (devDepValue.HasValue)
+                {
+                    existingDevDepValue &= devDepValue;
+                }
             }
-        }
+        });
 
-        public static void ForOneComponent(this IComponentRecorder recorder, string componentId, Action<ComponentOrientedGrouping> forOneComponent)
+        return existingDevDepValue;
+    }
+
+    public static bool IsDependencyOfExplicitlyReferencedComponents<TTypedComponent>(
+        this IComponentRecorder recorder,
+        string componentIdToValidate,
+        params Func<TTypedComponent, bool>[] locatingPredicatesForParentExplicitReference)
+    {
+        var isDependency = false;
+        recorder.ForOneComponent(componentIdToValidate, grouping =>
         {
-            var allComponents = recorder.GetDetectedComponents();
-            var graphs = recorder.GetDependencyGraphsByLocation();
-
-            // This magic grouping is a flattening of "occurrences" of components across single file recorders. This allows aggregate operations
-            //  per component id, which is logical for most tests.
-            var graphsAndLocationsByComponentId = GroupByComponentId(graphs);
-
-            forOneComponent(TupleToObject(graphsAndLocationsByComponentId.First(x => x.Key == componentId)));
-        }
-
-        public static bool? GetEffectiveDevDependencyValue(this IComponentRecorder recorder, string componentId)
-        {
-            bool? existingDevDepValue = null;
-            recorder.ForOneComponent(componentId, grouping =>
+            isDependency = true;
+            foreach (var predicate in locatingPredicatesForParentExplicitReference)
             {
-                foreach (var (manifestFile, graph) in grouping.FoundInGraphs)
-                {
-                    var devDepValue = graph.IsDevelopmentDependency(componentId);
-                    if (!existingDevDepValue.HasValue)
-                    {
-                        existingDevDepValue = devDepValue;
-                    }
-                    else if (devDepValue.HasValue)
-                    {
-                        existingDevDepValue &= devDepValue;
-                    }
-                }
-            });
+                var dependencyModel = recorder.GetDetectedComponents().Select(x => x.Component).OfType<TTypedComponent>()
+                    .FirstOrDefault(predicate) as TypedComponent;
+                isDependency &= grouping.ParentComponentIdsThatAreExplicitReferences.Contains(dependencyModel.Id);
+            }
+        });
 
-            return existingDevDepValue;
-        }
+        return isDependency;
+    }
 
-        public static bool IsDependencyOfExplicitlyReferencedComponents<TTypedComponent>(
-            this IComponentRecorder recorder,
-            string componentIdToValidate,
-            params Func<TTypedComponent, bool>[] locatingPredicatesForParentExplicitReference)
+    public static void AssertAllExplicitlyReferencedComponents<TTypedComponent>(
+        this IComponentRecorder recorder,
+        string componentIdToValidate,
+        params Func<TTypedComponent, bool>[] locatingPredicatesForParentExplicitReference)
+    {
+        recorder.ForOneComponent(componentIdToValidate, grouping =>
         {
-            var isDependency = false;
-            recorder.ForOneComponent(componentIdToValidate, grouping =>
+            var explicitReferrers = new HashSet<string>(grouping.ParentComponentIdsThatAreExplicitReferences);
+            var assertionIndex = 0;
+            foreach (var predicate in locatingPredicatesForParentExplicitReference)
             {
-                isDependency = true;
-                foreach (var predicate in locatingPredicatesForParentExplicitReference)
+                if (recorder.GetDetectedComponents().Select(x => x.Component).OfType<TTypedComponent>()
+                        .FirstOrDefault(predicate) is not TypedComponent dependencyModel)
                 {
-                    var dependencyModel = recorder.GetDetectedComponents().Select(x => x.Component).OfType<TTypedComponent>()
-                                                                           .FirstOrDefault(predicate) as TypedComponent;
-                    isDependency &= grouping.ParentComponentIdsThatAreExplicitReferences.Contains(dependencyModel.Id);
-                }
-            });
-
-            return isDependency;
-        }
-
-        public static void AssertAllExplicitlyReferencedComponents<TTypedComponent>(
-            this IComponentRecorder recorder,
-            string componentIdToValidate,
-            params Func<TTypedComponent, bool>[] locatingPredicatesForParentExplicitReference)
-        {
-            recorder.ForOneComponent(componentIdToValidate, grouping =>
-            {
-                var explicitReferrers = new HashSet<string>(grouping.ParentComponentIdsThatAreExplicitReferences);
-                var assertionIndex = 0;
-                foreach (var predicate in locatingPredicatesForParentExplicitReference)
-                {
-                    if (recorder.GetDetectedComponents().Select(x => x.Component).OfType<TTypedComponent>()
-                                                                           .FirstOrDefault(predicate) is not TypedComponent dependencyModel)
-                    {
-                        throw new InvalidOperationException($"One of the predicates (index {assertionIndex}) failed to find a valid component in the Scan Result's discovered components.");
-                    }
-
-                    if (!grouping.ParentComponentIdsThatAreExplicitReferences.Contains(dependencyModel.Id))
-                    {
-                        throw new InvalidOperationException($"Expected component Id {componentIdToValidate} to have {dependencyModel.Id} as a parent explicit reference, but did not.");
-                    }
-
-                    explicitReferrers.Remove(dependencyModel.Id);
-                    assertionIndex++;
+                    throw new InvalidOperationException($"One of the predicates (index {assertionIndex}) failed to find a valid component in the Scan Result's discovered components.");
                 }
 
-                if (explicitReferrers.Count > 0)
+                if (!grouping.ParentComponentIdsThatAreExplicitReferences.Contains(dependencyModel.Id))
                 {
-                    throw new InvalidOperationException($"Component Id {componentIdToValidate} had parent explicit references ({string.Join(',', explicitReferrers)}) that were not verified via submitted delegates.");
+                    throw new InvalidOperationException($"Expected component Id {componentIdToValidate} to have {dependencyModel.Id} as a parent explicit reference, but did not.");
                 }
-            });
-        }
 
-        private static ComponentOrientedGrouping TupleToObject(IEnumerable<(string Location, IDependencyGraph Graph, string ComponentId)> x)
-        {
-            var additionalRelatedFiles = new List<string>(x.SelectMany(y => y.Graph.GetAdditionalRelatedFiles()));
-            additionalRelatedFiles.AddRange(x.Select(y => y.Location));
+                explicitReferrers.Remove(dependencyModel.Id);
+                assertionIndex++;
+            }
 
-            return new ComponentOrientedGrouping
+            if (explicitReferrers.Count > 0)
             {
-                ComponentId = x.First().ComponentId,
-                FoundInGraphs = x.Select(y => (y.Location, y.Graph)).ToList(),
-                AllFileLocations = additionalRelatedFiles.Distinct().ToList(),
-                ParentComponentIdsThatAreExplicitReferences = x.SelectMany(y => y.Graph.GetExplicitReferencedDependencyIds(x.First().ComponentId)).Distinct().ToList(),
-            };
-        }
+                throw new InvalidOperationException($"Component Id {componentIdToValidate} had parent explicit references ({string.Join(',', explicitReferrers)}) that were not verified via submitted delegates.");
+            }
+        });
+    }
 
-        private static List<IGrouping<string, (string Location, IDependencyGraph Graph, string ComponentId)>> GroupByComponentId(IReadOnlyDictionary<string, IDependencyGraph> graphs)
+    private static ComponentOrientedGrouping TupleToObject(IEnumerable<(string Location, IDependencyGraph Graph, string ComponentId)> x)
+    {
+        var additionalRelatedFiles = new List<string>(x.SelectMany(y => y.Graph.GetAdditionalRelatedFiles()));
+        additionalRelatedFiles.AddRange(x.Select(y => y.Location));
+
+        return new ComponentOrientedGrouping
         {
-            return graphs
-                            .Select(x => (Location: x.Key, Graph: x.Value))
-                            .SelectMany(x => x.Graph.GetComponents()
-                                                .Select(componentId => (x.Location, x.Graph, ComponentId: componentId)))
-                            .GroupBy(x => x.ComponentId)
-                            .ToList();
-        }
+            ComponentId = x.First().ComponentId,
+            FoundInGraphs = x.Select(y => (y.Location, y.Graph)).ToList(),
+            AllFileLocations = additionalRelatedFiles.Distinct().ToList(),
+            ParentComponentIdsThatAreExplicitReferences = x.SelectMany(y => y.Graph.GetExplicitReferencedDependencyIds(x.First().ComponentId)).Distinct().ToList(),
+        };
+    }
 
-        public class ComponentOrientedGrouping
-        {
-            public IEnumerable<(string ManifestFile, IDependencyGraph Graph)> FoundInGraphs { get; set; }
+    private static List<IGrouping<string, (string Location, IDependencyGraph Graph, string ComponentId)>> GroupByComponentId(IReadOnlyDictionary<string, IDependencyGraph> graphs)
+    {
+        return graphs
+            .Select(x => (Location: x.Key, Graph: x.Value))
+            .SelectMany(x => x.Graph.GetComponents()
+                .Select(componentId => (x.Location, x.Graph, ComponentId: componentId)))
+            .GroupBy(x => x.ComponentId)
+            .ToList();
+    }
 
-            public string ComponentId { get; set; }
+    public class ComponentOrientedGrouping
+    {
+        public IEnumerable<(string ManifestFile, IDependencyGraph Graph)> FoundInGraphs { get; set; }
 
-            public IEnumerable<string> AllFileLocations { get; set; }
+        public string ComponentId { get; set; }
 
-            public IEnumerable<string> ParentComponentIdsThatAreExplicitReferences { get; internal set; }
-        }
+        public IEnumerable<string> AllFileLocations { get; set; }
+
+        public IEnumerable<string> ParentComponentIdsThatAreExplicitReferences { get; internal set; }
     }
 }

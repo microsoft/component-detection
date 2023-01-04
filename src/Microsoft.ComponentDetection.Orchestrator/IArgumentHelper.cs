@@ -1,9 +1,8 @@
 ﻿using CommandLine;
 
-namespace Microsoft.ComponentDetection.Orchestrator
+namespace Microsoft.ComponentDetection.Orchestrator;
+
+public interface IArgumentHelper
 {
-    public interface IArgumentHelper
-    {
-        ParserResult<object> ParseArguments(string[] args);
-    }
+    ParserResult<object> ParseArguments(string[] args);
 }

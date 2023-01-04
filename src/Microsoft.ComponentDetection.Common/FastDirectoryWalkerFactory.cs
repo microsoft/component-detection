@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Composition;
@@ -13,137 +13,137 @@ using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 
-namespace Microsoft.ComponentDetection.Common
+namespace Microsoft.ComponentDetection.Common;
+
+[Export(typeof(IObservableDirectoryWalkerFactory))]
+[Export(typeof(FastDirectoryWalkerFactory))]
+[Shared]
+public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 {
-    [Export(typeof(IObservableDirectoryWalkerFactory))]
-    [Export(typeof(FastDirectoryWalkerFactory))]
-    [Shared]
-    public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
+    private readonly ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>> pendingScans = new ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>>();
+
+    [Import]
+    public ILogger Logger { get; set; }
+
+    [Import]
+    public IPathUtilityService PathUtilityService { get; set; }
+
+    public IObservable<FileSystemInfo> GetDirectoryScanner(DirectoryInfo root, ConcurrentDictionary<string, bool> scannedDirectories, ExcludeDirectoryPredicate directoryExclusionPredicate, IEnumerable<string> filePatterns = null, bool recurse = true)
     {
-        private readonly ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>> pendingScans = new ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>>();
-
-        [Import]
-        public ILogger Logger { get; set; }
-
-        [Import]
-        public IPathUtilityService PathUtilityService { get; set; }
-
-        public IObservable<FileSystemInfo> GetDirectoryScanner(DirectoryInfo root, ConcurrentDictionary<string, bool> scannedDirectories, ExcludeDirectoryPredicate directoryExclusionPredicate, IEnumerable<string> filePatterns = null, bool recurse = true)
+        return Observable.Create<FileSystemInfo>(s =>
         {
-            return Observable.Create<FileSystemInfo>(s =>
+            if (!root.Exists)
             {
-                if (!root.Exists)
+                this.Logger?.LogError($"Root directory doesn't exist: {root.FullName}");
+                s.OnCompleted();
+                return Task.CompletedTask;
+            }
+
+            PatternMatchingUtility.FilePatternMatcher fileIsMatch = null;
+
+            if (filePatterns == null || !filePatterns.Any())
+            {
+                fileIsMatch = span => true;
+            }
+            else
+            {
+                fileIsMatch = PatternMatchingUtility.GetFilePatternMatcher(filePatterns);
+            }
+
+            var sw = Stopwatch.StartNew();
+
+            this.Logger?.LogInfo($"Starting enumeration of {root.FullName}");
+
+            var fileCount = 0;
+            var directoryCount = 0;
+
+            var shouldRecurse = new FileSystemEnumerable<FileSystemInfo>.FindPredicate((ref FileSystemEntry entry) =>
+            {
+                if (!recurse)
                 {
-                    this.Logger?.LogError($"Root directory doesn't exist: {root.FullName}");
-                    s.OnCompleted();
-                    return Task.CompletedTask;
+                    return false;
                 }
 
-                PatternMatchingUtility.FilePatternMatcher fileIsMatch = null;
-
-                if (filePatterns == null || !filePatterns.Any())
+                if (!(entry.ToFileSystemInfo() is DirectoryInfo di))
                 {
-                    fileIsMatch = span => true;
-                }
-                else
-                {
-                    fileIsMatch = PatternMatchingUtility.GetFilePatternMatcher(filePatterns);
+                    return false;
                 }
 
-                var sw = Stopwatch.StartNew();
+                var realDirectory = di;
 
-                this.Logger?.LogInfo($"Starting enumeration of {root.FullName}");
-
-                var fileCount = 0;
-                var directoryCount = 0;
-
-                var shouldRecurse = new FileSystemEnumerable<FileSystemInfo>.FindPredicate((ref FileSystemEntry entry) =>
+                if (di.Attributes.HasFlag(FileAttributes.ReparsePoint))
                 {
-                    if (!recurse)
-                    {
-                        return false;
-                    }
+                    var realPath = this.PathUtilityService.ResolvePhysicalPath(di.FullName);
 
-                    if (!(entry.ToFileSystemInfo() is DirectoryInfo di))
-                    {
-                        return false;
-                    }
-
-                    var realDirectory = di;
-
-                    if (di.Attributes.HasFlag(FileAttributes.ReparsePoint))
-                    {
-                        var realPath = this.PathUtilityService.ResolvePhysicalPath(di.FullName);
-
-                        realDirectory = new DirectoryInfo(realPath);
-                    }
-
-                    if (!scannedDirectories.TryAdd(realDirectory.FullName, true))
-                    {
-                        return false;
-                    }
-
-                    if (directoryExclusionPredicate != null)
-                    {
-                        return !directoryExclusionPredicate(entry.FileName.ToString(), entry.Directory.ToString());
-                    }
-
-                    return true;
-                });
-
-                var initialIterator = new FileSystemEnumerable<FileSystemInfo>(root.FullName, this.Transform, new EnumerationOptions()
-                {
-                    RecurseSubdirectories = false,
-                    IgnoreInaccessible = true,
-                    ReturnSpecialDirectories = false,
-                })
-                {
-                    ShouldIncludePredicate = (ref FileSystemEntry entry) =>
-                    {
-                        if (!entry.IsDirectory && fileIsMatch(entry.FileName))
-                        {
-                            return true;
-                        }
-
-                        return shouldRecurse(ref entry);
-                    },
-                };
-
-                var observables = new List<IObservable<FileSystemInfo>>();
-
-                var initialFiles = new List<FileInfo>();
-                var initialDirectories = new List<DirectoryInfo>();
-
-                foreach (var fileSystemInfo in initialIterator)
-                {
-                    if (fileSystemInfo is FileInfo fi)
-                    {
-                        initialFiles.Add(fi);
-                    }
-                    else if (fileSystemInfo is DirectoryInfo di)
-                    {
-                        initialDirectories.Add(di);
-                    }
+                    realDirectory = new DirectoryInfo(realPath);
                 }
 
-                observables.Add(Observable.Create<FileSystemInfo>(sub =>
+                if (!scannedDirectories.TryAdd(realDirectory.FullName, true))
                 {
-                    foreach (var fileInfo in initialFiles)
+                    return false;
+                }
+
+                if (directoryExclusionPredicate != null)
+                {
+                    return !directoryExclusionPredicate(entry.FileName.ToString(), entry.Directory.ToString());
+                }
+
+                return true;
+            });
+
+            var initialIterator = new FileSystemEnumerable<FileSystemInfo>(root.FullName, this.Transform, new EnumerationOptions()
+            {
+                RecurseSubdirectories = false,
+                IgnoreInaccessible = true,
+                ReturnSpecialDirectories = false,
+            })
+            {
+                ShouldIncludePredicate = (ref FileSystemEntry entry) =>
+                {
+                    if (!entry.IsDirectory && fileIsMatch(entry.FileName))
                     {
-                        sub.OnNext(fileInfo);
+                        return true;
                     }
 
-                    sub.OnCompleted();
+                    return shouldRecurse(ref entry);
+                },
+            };
 
-                    return Task.CompletedTask;
-                }));
+            var observables = new List<IObservable<FileSystemInfo>>();
 
-                if (recurse)
+            var initialFiles = new List<FileInfo>();
+            var initialDirectories = new List<DirectoryInfo>();
+
+            foreach (var fileSystemInfo in initialIterator)
+            {
+                if (fileSystemInfo is FileInfo fi)
                 {
-                    observables.Add(Observable.Create<FileSystemInfo>(async observer =>
-                    {
-                        var scan = new ActionBlock<DirectoryInfo>(
-                            di =>
+                    initialFiles.Add(fi);
+                }
+                else if (fileSystemInfo is DirectoryInfo di)
+                {
+                    initialDirectories.Add(di);
+                }
+            }
+
+            observables.Add(Observable.Create<FileSystemInfo>(sub =>
+            {
+                foreach (var fileInfo in initialFiles)
+                {
+                    sub.OnNext(fileInfo);
+                }
+
+                sub.OnCompleted();
+
+                return Task.CompletedTask;
+            }));
+
+            if (recurse)
+            {
+                observables.Add(Observable.Create<FileSystemInfo>(async observer =>
+                {
+                    var scan = new ActionBlock<DirectoryInfo>(
+                        di =>
                         {
                             var enumerator = new FileSystemEnumerable<FileSystemInfo>(di.FullName, this.Transform, new EnumerationOptions()
                             {
@@ -160,21 +160,21 @@ namespace Microsoft.ComponentDetection.Common
                                 observer.OnNext(fileSystemInfo);
                             }
                         },
-                            new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount });
+                        new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount });
 
-                        foreach (var directoryInfo in initialDirectories)
-                        {
-                            scan.Post(directoryInfo);
-                        }
+                    foreach (var directoryInfo in initialDirectories)
+                    {
+                        scan.Post(directoryInfo);
+                    }
 
-                        scan.Complete();
-                        await scan.Completion;
-                        observer.OnCompleted();
-                    }));
-                }
+                    scan.Complete();
+                    await scan.Completion;
+                    observer.OnCompleted();
+                }));
+            }
 
-                return observables.Concat().Subscribe(
-                    info =>
+            return observables.Concat().Subscribe(
+                info =>
                 {
                     if (info is FileInfo)
                     {
@@ -187,56 +187,56 @@ namespace Microsoft.ComponentDetection.Common
 
                     s.OnNext(info);
                 },
-                    () =>
+                () =>
                 {
                     sw.Stop();
                     this.Logger?.LogInfo($"Enumerated {fileCount} files and {directoryCount} directories in {sw.Elapsed}");
                     s.OnCompleted();
                 });
-            });
-        }
+        });
+    }
 
-        /// <summary>
-        /// Initialized an observable file enumerator.
-        /// </summary>
-        /// <param name="root">Root directory to scan.</param>
-        /// <param name="directoryExclusionPredicate">predicate for excluding directories.</param>
-        /// <param name="minimumConnectionCount">Number of observers that need to subscribe before the observable connects and starts enumerating.</param>
-        /// <param name="filePatterns">Pattern used to filter files.</param>
-        public void Initialize(DirectoryInfo root, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns = null)
+    /// <summary>
+    /// Initialized an observable file enumerator.
+    /// </summary>
+    /// <param name="root">Root directory to scan.</param>
+    /// <param name="directoryExclusionPredicate">predicate for excluding directories.</param>
+    /// <param name="minimumConnectionCount">Number of observers that need to subscribe before the observable connects and starts enumerating.</param>
+    /// <param name="filePatterns">Pattern used to filter files.</param>
+    public void Initialize(DirectoryInfo root, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns = null)
+    {
+        this.pendingScans.GetOrAdd(root, new Lazy<IObservable<FileSystemInfo>>(() => this.CreateDirectoryWalker(root, directoryExclusionPredicate, minimumConnectionCount, filePatterns)));
+    }
+
+    public IObservable<FileSystemInfo> Subscribe(DirectoryInfo root, IEnumerable<string> patterns)
+    {
+        var patternArray = patterns.ToArray();
+
+        if (this.pendingScans.TryGetValue(root, out var scannerObservable))
         {
-            this.pendingScans.GetOrAdd(root, new Lazy<IObservable<FileSystemInfo>>(() => this.CreateDirectoryWalker(root, directoryExclusionPredicate, minimumConnectionCount, filePatterns)));
-        }
+            this.Logger.LogVerbose(string.Join(":", patterns));
 
-        public IObservable<FileSystemInfo> Subscribe(DirectoryInfo root, IEnumerable<string> patterns)
-        {
-            var patternArray = patterns.ToArray();
-
-            if (this.pendingScans.TryGetValue(root, out var scannerObservable))
+            var inner = scannerObservable.Value.Where(fsi =>
             {
-                this.Logger.LogVerbose(string.Join(":", patterns));
-
-                var inner = scannerObservable.Value.Where(fsi =>
+                if (fsi is FileInfo fi)
                 {
-                    if (fsi is FileInfo fi)
-                    {
-                        return this.MatchesAnyPattern(fi, patternArray);
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                });
+                    return this.MatchesAnyPattern(fi, patternArray);
+                }
+                else
+                {
+                    return true;
+                }
+            });
 
-                return inner;
-            }
-
-            throw new InvalidOperationException("Subscribe called without initializing scanner");
+            return inner;
         }
 
-        public IObservable<ProcessRequest> GetFilteredComponentStreamObservable(DirectoryInfo root, IEnumerable<string> patterns, IComponentRecorder componentRecorder)
-        {
-            var observable = this.Subscribe(root, patterns).OfType<FileInfo>().SelectMany(f => patterns.Select(sp => new
+        throw new InvalidOperationException("Subscribe called without initializing scanner");
+    }
+
+    public IObservable<ProcessRequest> GetFilteredComponentStreamObservable(DirectoryInfo root, IEnumerable<string> patterns, IComponentRecorder componentRecorder)
+    {
+        var observable = this.Subscribe(root, patterns).OfType<FileInfo>().SelectMany(f => patterns.Select(sp => new
             {
                 SearchPattern = sp,
                 File = f,
@@ -257,38 +257,37 @@ namespace Microsoft.ComponentDetection.Common
                 };
             });
 
-            return observable;
-        }
+        return observable;
+    }
 
-        public void StartScan(DirectoryInfo root)
+    public void StartScan(DirectoryInfo root)
+    {
+        if (this.pendingScans.TryRemove(root, out var scannerObservable))
         {
-            if (this.pendingScans.TryRemove(root, out var scannerObservable))
-            {
-                // scannerObservable.Connect();
-            }
-
-            throw new InvalidOperationException("StartScan called without initializing scanner");
+            // scannerObservable.Connect();
         }
 
-        public void Reset()
-        {
-            this.pendingScans.Clear();
-        }
+        throw new InvalidOperationException("StartScan called without initializing scanner");
+    }
 
-        private FileSystemInfo Transform(ref FileSystemEntry entry)
-        {
-            return entry.ToFileSystemInfo();
-        }
+    public void Reset()
+    {
+        this.pendingScans.Clear();
+    }
 
-        private IObservable<FileSystemInfo> CreateDirectoryWalker(DirectoryInfo di, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns)
-        {
-            return this.GetDirectoryScanner(di, new ConcurrentDictionary<string, bool>(), directoryExclusionPredicate, filePatterns, true).Replay() // Returns a replay subject which will republish anything found to new subscribers.
-                .AutoConnect(minimumConnectionCount); // Specifies that this connectable observable should start when minimumConnectionCount subscribe.
-        }
+    private FileSystemInfo Transform(ref FileSystemEntry entry)
+    {
+        return entry.ToFileSystemInfo();
+    }
 
-        private bool MatchesAnyPattern(FileInfo fi, params string[] searchPatterns)
-        {
-            return searchPatterns != null && searchPatterns.Any(sp => this.PathUtilityService.MatchesPattern(sp, fi.Name));
-        }
+    private IObservable<FileSystemInfo> CreateDirectoryWalker(DirectoryInfo di, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns)
+    {
+        return this.GetDirectoryScanner(di, new ConcurrentDictionary<string, bool>(), directoryExclusionPredicate, filePatterns, true).Replay() // Returns a replay subject which will republish anything found to new subscribers.
+            .AutoConnect(minimumConnectionCount); // Specifies that this connectable observable should start when minimumConnectionCount subscribe.
+    }
+
+    private bool MatchesAnyPattern(FileInfo fi, params string[] searchPatterns)
+    {
+        return searchPatterns != null && searchPatterns.Any(sp => this.PathUtilityService.MatchesPattern(sp, fi.Name));
     }
 }

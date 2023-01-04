@@ -1,55 +1,55 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Enumeration;
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Common
+namespace Microsoft.ComponentDetection.Common;
+
+public class SafeFileEnumerable : IEnumerable<MatchedFile>
 {
-    public class SafeFileEnumerable : IEnumerable<MatchedFile>
+    private readonly IEnumerable<string> searchPatterns;
+    private readonly ExcludeDirectoryPredicate directoryExclusionPredicate;
+    private readonly DirectoryInfo directory;
+    private readonly ILogger logger;
+    private readonly IPathUtilityService pathUtilityService;
+    private readonly bool recursivelyScanDirectories;
+    private readonly Func<FileInfo, bool> fileMatchingPredicate;
+
+    private readonly EnumerationOptions enumerationOptions;
+
+    private readonly HashSet<string> enumeratedDirectories;
+
+    public SafeFileEnumerable(DirectoryInfo directory, IEnumerable<string> searchPatterns, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
     {
-        private readonly IEnumerable<string> searchPatterns;
-        private readonly ExcludeDirectoryPredicate directoryExclusionPredicate;
-        private readonly DirectoryInfo directory;
-        private readonly ILogger logger;
-        private readonly IPathUtilityService pathUtilityService;
-        private readonly bool recursivelyScanDirectories;
-        private readonly Func<FileInfo, bool> fileMatchingPredicate;
+        this.directory = directory;
+        this.logger = logger;
+        this.searchPatterns = searchPatterns;
+        this.directoryExclusionPredicate = directoryExclusionPredicate;
+        this.recursivelyScanDirectories = recursivelyScanDirectories;
+        this.pathUtilityService = pathUtilityService;
+        this.enumeratedDirectories = previouslyEnumeratedDirectories;
 
-        private readonly EnumerationOptions enumerationOptions;
-
-        private readonly HashSet<string> enumeratedDirectories;
-
-        public SafeFileEnumerable(DirectoryInfo directory, IEnumerable<string> searchPatterns, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
+        this.enumerationOptions = new EnumerationOptions()
         {
-            this.directory = directory;
-            this.logger = logger;
-            this.searchPatterns = searchPatterns;
-            this.directoryExclusionPredicate = directoryExclusionPredicate;
-            this.recursivelyScanDirectories = recursivelyScanDirectories;
-            this.pathUtilityService = pathUtilityService;
-            this.enumeratedDirectories = previouslyEnumeratedDirectories;
+            IgnoreInaccessible = true,
+            RecurseSubdirectories = this.recursivelyScanDirectories,
+            ReturnSpecialDirectories = false,
+            MatchType = MatchType.Simple,
+        };
+    }
 
-            this.enumerationOptions = new EnumerationOptions()
-            {
-                IgnoreInaccessible = true,
-                RecurseSubdirectories = this.recursivelyScanDirectories,
-                ReturnSpecialDirectories = false,
-                MatchType = MatchType.Simple,
-            };
-        }
+    public SafeFileEnumerable(DirectoryInfo directory, Func<FileInfo, bool> fileMatchingPredicate, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
+        : this(directory, new List<string> { "*" }, logger, pathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories, previouslyEnumeratedDirectories) => this.fileMatchingPredicate = fileMatchingPredicate;
 
-        public SafeFileEnumerable(DirectoryInfo directory, Func<FileInfo, bool> fileMatchingPredicate, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
-            : this(directory, new List<string> { "*" }, logger, pathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories, previouslyEnumeratedDirectories) => this.fileMatchingPredicate = fileMatchingPredicate;
+    public IEnumerator<MatchedFile> GetEnumerator()
+    {
+        var previouslyEnumeratedDirectories = this.enumeratedDirectories ?? new HashSet<string>();
 
-        public IEnumerator<MatchedFile> GetEnumerator()
-        {
-            var previouslyEnumeratedDirectories = this.enumeratedDirectories ?? new HashSet<string>();
-
-            var fse = new FileSystemEnumerable<MatchedFile>(
-                this.directory.FullName,
-                (ref FileSystemEntry entry) =>
+        var fse = new FileSystemEnumerable<MatchedFile>(
+            this.directory.FullName,
+            (ref FileSystemEntry entry) =>
             {
                 if (!(entry.ToFileSystemInfo() is FileInfo fi))
                 {
@@ -67,83 +67,82 @@ namespace Microsoft.ComponentDetection.Common
 
                 return new MatchedFile() { File = fi, Pattern = foundPattern };
             },
-                this.enumerationOptions)
+            this.enumerationOptions)
+        {
+            ShouldIncludePredicate = (ref FileSystemEntry entry) =>
             {
-                ShouldIncludePredicate = (ref FileSystemEntry entry) =>
+                if (entry.IsDirectory)
                 {
-                    if (entry.IsDirectory)
-                    {
-                        return false;
-                    }
-
-                    foreach (var searchPattern in this.searchPatterns)
-                    {
-                        if (PathUtilityService.MatchesPattern(searchPattern, ref entry))
-                        {
-                            return true;
-                        }
-                    }
-
                     return false;
-                },
-                ShouldRecursePredicate = (ref FileSystemEntry entry) =>
-                {
-                    if (!this.recursivelyScanDirectories)
-                    {
-                        return false;
-                    }
-
-                    var targetPath = entry.ToFullPath();
-
-                    var seenPreviously = false;
-
-                    if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
-                    {
-                        var realPath = this.pathUtilityService.ResolvePhysicalPath(targetPath);
-
-                        seenPreviously = previouslyEnumeratedDirectories.Contains(realPath);
-                        previouslyEnumeratedDirectories.Add(realPath);
-
-                        if (realPath.StartsWith(targetPath))
-                        {
-                            return false;
-                        }
-                    }
-                    else if (previouslyEnumeratedDirectories.Contains(targetPath))
-                    {
-                        seenPreviously = true;
-                    }
-
-                    previouslyEnumeratedDirectories.Add(targetPath);
-
-                    if (seenPreviously)
-                    {
-                        this.logger.LogVerbose($"Encountered real path {targetPath} before. Short-Circuiting directory traversal");
-                        return false;
-                    }
-
-                    // This is actually a *directory* name (not FileName) and the directory containing that directory.
-                    if (entry.IsDirectory && this.directoryExclusionPredicate != null && this.directoryExclusionPredicate(entry.FileName, entry.Directory))
-                    {
-                        return false;
-                    }
-
-                    return true;
-                },
-            };
-
-            foreach (var file in fse)
-            {
-                if (this.fileMatchingPredicate == null || this.fileMatchingPredicate(file.File))
-                {
-                    yield return file;
                 }
+
+                foreach (var searchPattern in this.searchPatterns)
+                {
+                    if (PathUtilityService.MatchesPattern(searchPattern, ref entry))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            },
+            ShouldRecursePredicate = (ref FileSystemEntry entry) =>
+            {
+                if (!this.recursivelyScanDirectories)
+                {
+                    return false;
+                }
+
+                var targetPath = entry.ToFullPath();
+
+                var seenPreviously = false;
+
+                if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                {
+                    var realPath = this.pathUtilityService.ResolvePhysicalPath(targetPath);
+
+                    seenPreviously = previouslyEnumeratedDirectories.Contains(realPath);
+                    previouslyEnumeratedDirectories.Add(realPath);
+
+                    if (realPath.StartsWith(targetPath))
+                    {
+                        return false;
+                    }
+                }
+                else if (previouslyEnumeratedDirectories.Contains(targetPath))
+                {
+                    seenPreviously = true;
+                }
+
+                previouslyEnumeratedDirectories.Add(targetPath);
+
+                if (seenPreviously)
+                {
+                    this.logger.LogVerbose($"Encountered real path {targetPath} before. Short-Circuiting directory traversal");
+                    return false;
+                }
+
+                // This is actually a *directory* name (not FileName) and the directory containing that directory.
+                if (entry.IsDirectory && this.directoryExclusionPredicate != null && this.directoryExclusionPredicate(entry.FileName, entry.Directory))
+                {
+                    return false;
+                }
+
+                return true;
+            },
+        };
+
+        foreach (var file in fse)
+        {
+            if (this.fileMatchingPredicate == null || this.fileMatchingPredicate(file.File))
+            {
+                yield return file;
             }
         }
+    }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
-        }
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return this.GetEnumerator();
     }
 }

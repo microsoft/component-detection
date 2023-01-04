@@ -1,45 +1,44 @@
-namespace Microsoft.ComponentDetection.Detectors.Tests.NuGet
+namespace Microsoft.ComponentDetection.Detectors.Tests.NuGet;
+
+using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.NuGet;
+using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+[TestClass]
+public class NuGetPackagesConfigDetectorTests
 {
-    using System.Threading.Tasks;
-    using FluentAssertions;
-    using Microsoft.ComponentDetection.Contracts;
-    using Microsoft.ComponentDetection.Contracts.TypedComponent;
-    using Microsoft.ComponentDetection.Detectors.NuGet;
-    using Microsoft.ComponentDetection.TestsUtilities;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    private DetectorTestUtility<NuGetPackagesConfigDetector> detectorTestUtility;
 
-    [TestClass]
-    public class NuGetPackagesConfigDetectorTests
+    [TestInitialize]
+    public void TestInitialize()
     {
-        private DetectorTestUtility<NuGetPackagesConfigDetector> detectorTestUtility;
+        var detector = new NuGetPackagesConfigDetector();
+        this.detectorTestUtility = new DetectorTestUtility<NuGetPackagesConfigDetector>().WithDetector(detector);
+    }
 
-        [TestInitialize]
-        public void TestInitialize()
-        {
-            var detector = new NuGetPackagesConfigDetector();
-            this.detectorTestUtility = new DetectorTestUtility<NuGetPackagesConfigDetector>().WithDetector(detector);
-        }
-
-        [TestMethod]
-        public async Task Should_Work()
-        {
-            var packagesConfig =
-                @"<?xml version=""1.0"" encoding=""utf-8""?>
+    [TestMethod]
+    public async Task Should_Work()
+    {
+        var packagesConfig =
+            @"<?xml version=""1.0"" encoding=""utf-8""?>
                 <packages>
                     <package id=""jQuery"" version=""3.1.1"" targetFramework=""net46"" />
                     <package id=""NLog"" version=""4.3.10"" targetFramework=""net46"" />
                 </packages>";
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                .WithFile("packages.config", packagesConfig)
-                .ExecuteDetector()
-                .ConfigureAwait(true);
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("packages.config", packagesConfig)
+            .ExecuteDetector()
+            .ConfigureAwait(true);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
-            detectedComponents.Should().NotBeEmpty()
-                .And.HaveCount(2)
-                .And.ContainEquivalentOf(new DetectedComponent(new NuGetComponent("jQuery", "3.1.1")))
-                .And.ContainEquivalentOf(new DetectedComponent(new NuGetComponent("NLog", "4.3.10")));
-        }
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().NotBeEmpty()
+            .And.HaveCount(2)
+            .And.ContainEquivalentOf(new DetectedComponent(new NuGetComponent("jQuery", "3.1.1")))
+            .And.ContainEquivalentOf(new DetectedComponent(new NuGetComponent("NLog", "4.3.10")));
     }
 }

@@ -1,9 +1,8 @@
-﻿namespace Microsoft.ComponentDetection.Contracts
-{
-    public class KillSwitchConfiguration
-    {
-        public bool IsDetectionStopped { get; set; }
+﻿namespace Microsoft.ComponentDetection.Contracts;
 
-        public string ReasonForStoppingDetection { get; set; }
-    }
+public class KillSwitchConfiguration
+{
+    public bool IsDetectionStopped { get; set; }
+
+    public string ReasonForStoppingDetection { get; set; }
 }

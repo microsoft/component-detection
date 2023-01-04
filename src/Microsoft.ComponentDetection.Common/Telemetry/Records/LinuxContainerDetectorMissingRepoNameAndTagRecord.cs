@@ -1,7 +1,6 @@
-﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+
+public class LinuxContainerDetectorMissingRepoNameAndTagRecord : BaseDetectionTelemetryRecord
 {
-    public class LinuxContainerDetectorMissingRepoNameAndTagRecord : BaseDetectionTelemetryRecord
-    {
-        public override string RecordName => "MissingRepoNameAndTag";
-    }
+    public override string RecordName => "MissingRepoNameAndTag";
 }

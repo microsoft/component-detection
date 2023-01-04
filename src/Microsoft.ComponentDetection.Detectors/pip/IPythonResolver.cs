@@ -1,15 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Microsoft.ComponentDetection.Detectors.Pip
+namespace Microsoft.ComponentDetection.Detectors.Pip;
+
+public interface IPythonResolver
 {
-    public interface IPythonResolver
-    {
-        /// <summary>
-        /// Resolves the root Python packages from the initial list of packages.
-        /// </summary>
-        /// <param name="initialPackages">The initial list of packages.</param>
-        /// <returns>The root packages, with dependencies associated as children.</returns>
-        Task<IList<PipGraphNode>> ResolveRoots(IList<PipDependencySpecification> initialPackages);
-    }
+    /// <summary>
+    /// Resolves the root Python packages from the initial list of packages.
+    /// </summary>
+    /// <param name="initialPackages">The initial list of packages.</param>
+    /// <returns>The root packages, with dependencies associated as children.</returns>
+    Task<IList<PipGraphNode>> ResolveRoots(IList<PipDependencySpecification> initialPackages);
 }

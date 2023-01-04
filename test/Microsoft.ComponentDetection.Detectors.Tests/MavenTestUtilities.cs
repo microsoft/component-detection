@@ -1,18 +1,18 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+public static class MavenTestUtilities
 {
-    public static class MavenTestUtilities
+    public static string GetMalformedPomFile()
     {
-        public static string GetMalformedPomFile()
-        {
-            var pomFile = @"<?THISISWRONG!?>
+        var pomFile = @"<?THISISWRONG!?>
             ";
 
-            return pomFile;
-        }
+        return pomFile;
+    }
 
-        public static string GetPomFileNoDependencies()
-        {
-            var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+    public static string GetPomFileNoDependencies()
+    {
+        var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
             <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
                 <modelVersion>4.0.0</modelVersion>
                 <properties>
@@ -24,12 +24,12 @@
             </project>
             ";
 
-            return pomFile;
-        }
+        return pomFile;
+    }
 
-        public static string GetPomFileWithDependencyToResolveAsProperty(string groupId, string artifactId, string version)
-        {
-            var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+    public static string GetPomFileWithDependencyToResolveAsProperty(string groupId, string artifactId, string version)
+    {
+        var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
             <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
                 <modelVersion>4.0.0</modelVersion>
                 <properties>
@@ -45,13 +45,13 @@
                 </dependencies>
             </project>
             ";
-            var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
-            return pomFileTemplate;
-        }
+        var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
+        return pomFileTemplate;
+    }
 
-        public static string GetPomFileWithDependencyToResolveAsProjectVar(string groupId, string artifactId, string version)
-        {
-            var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+    public static string GetPomFileWithDependencyToResolveAsProjectVar(string groupId, string artifactId, string version)
+    {
+        var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
             <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
                 <myproperty.version>{2}</myproperty.version>
                 <dependencies>
@@ -63,13 +63,13 @@
                 </dependencies>
             </project>
             ";
-            var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
-            return pomFileTemplate;
-        }
+        var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
+        return pomFileTemplate;
+    }
 
-        public static string GetPomFileWithDependencyFailToResolve(string groupId, string artifactId, string version)
-        {
-            var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+    public static string GetPomFileWithDependencyFailToResolve(string groupId, string artifactId, string version)
+    {
+        var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
             <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
                 <modelVersion>4.0.0</modelVersion>
                 <properties>
@@ -85,14 +85,14 @@
                 </dependencies>
             </project>
             ";
-            var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
+        var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
 
-            return pomFileTemplate;
-        }
+        return pomFileTemplate;
+    }
 
-        public static string GetPomFileWithDependency(string groupId, string artifactId, string version)
-        {
-            var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+    public static string GetPomFileWithDependency(string groupId, string artifactId, string version)
+    {
+        var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
             <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
                 <modelVersion>4.0.0</modelVersion>
 
@@ -105,13 +105,13 @@
                 </dependencies>
             </project>
             ";
-            var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
-            return pomFileTemplate;
-        }
+        var pomFileTemplate = string.Format(pomFile, groupId, artifactId, version);
+        return pomFileTemplate;
+    }
 
-        public static string GetPomFileWithDependencyNoVersion(string groupId, string artifactId)
-        {
-            var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+    public static string GetPomFileWithDependencyNoVersion(string groupId, string artifactId)
+    {
+        var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
             <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
                 <modelVersion>4.0.0</modelVersion>
 
@@ -124,8 +124,7 @@
             </project>
             ";
 
-            var pomFileTemplate = string.Format(pomFile, groupId, artifactId);
-            return pomFileTemplate;
-        }
+        var pomFileTemplate = string.Format(pomFile, groupId, artifactId);
+        return pomFileTemplate;
     }
 }

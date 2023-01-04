@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
+public interface IDetectorRestrictionService
 {
-    public interface IDetectorRestrictionService
-    {
-        IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions restrictions, IEnumerable<IComponentDetector> detectors);
-    }
+    IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions restrictions, IEnumerable<IComponentDetector> detectors);
 }

@@ -1,6 +1,5 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets
+﻿namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+
+public interface IListDetectionArgs : IScanArguments
 {
-    public interface IListDetectionArgs : IScanArguments
-    {
-    }
 }

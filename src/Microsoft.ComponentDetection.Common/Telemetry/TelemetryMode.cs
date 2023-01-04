@@ -1,11 +1,10 @@
-﻿namespace Microsoft.ComponentDetection.Common.Telemetry
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry;
+
+public enum TelemetryMode
 {
-    public enum TelemetryMode
-    {
-        Disabled = 0,
+    Disabled = 0,
 
-        Debug = 1,
+    Debug = 1,
 
-        Production = 2,
-    }
+    Production = 2,
 }

@@ -1,44 +1,43 @@
-using System.Composition;
+﻿using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
+[Export(typeof(IArgumentHandlingService))]
+public class DetectorListingCommandService : ServiceBase, IArgumentHandlingService
 {
-    [Export(typeof(IArgumentHandlingService))]
-    public class DetectorListingCommandService : ServiceBase, IArgumentHandlingService
+    [Import]
+    public IDetectorRegistryService DetectorRegistryService { get; set; }
+
+    public bool CanHandle(IScanArguments arguments)
     {
-        [Import]
-        public IDetectorRegistryService DetectorRegistryService { get; set; }
+        return arguments is ListDetectionArgs;
+    }
 
-        public bool CanHandle(IScanArguments arguments)
+    public async Task<ScanResult> Handle(IScanArguments arguments)
+    {
+        await this.ListDetectorsAsync(arguments as IListDetectionArgs);
+        return new ScanResult()
         {
-            return arguments is ListDetectionArgs;
-        }
+            ResultCode = ProcessingResultCode.Success,
+        };
+    }
 
-        public async Task<ScanResult> Handle(IScanArguments arguments)
+    private async Task<ProcessingResultCode> ListDetectorsAsync(IScanArguments listArguments)
+    {
+        var detectors = this.DetectorRegistryService.GetDetectors(listArguments.AdditionalPluginDirectories, listArguments.AdditionalDITargets, listArguments.SkipPluginsDirectory);
+        if (detectors.Any())
         {
-            await this.ListDetectorsAsync(arguments as IListDetectionArgs);
-            return new ScanResult()
+            foreach (var detector in detectors)
             {
-                ResultCode = ProcessingResultCode.Success,
-            };
-        }
-
-        private async Task<ProcessingResultCode> ListDetectorsAsync(IScanArguments listArguments)
-        {
-            var detectors = this.DetectorRegistryService.GetDetectors(listArguments.AdditionalPluginDirectories, listArguments.AdditionalDITargets, listArguments.SkipPluginsDirectory);
-            if (detectors.Any())
-            {
-                foreach (var detector in detectors)
-                {
-                    this.Logger.LogInfo($"{detector.Id}");
-                }
+                this.Logger.LogInfo($"{detector.Id}");
             }
-
-            return await Task.FromResult(ProcessingResultCode.Success);
         }
+
+        return await Task.FromResult(ProcessingResultCode.Success);
     }
 }

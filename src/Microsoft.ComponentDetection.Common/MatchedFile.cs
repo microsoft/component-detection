@@ -1,11 +1,10 @@
 ﻿using System.IO;
 
-namespace Microsoft.ComponentDetection.Common
-{
-    public class MatchedFile
-    {
-        public FileInfo File { get; set; }
+namespace Microsoft.ComponentDetection.Common;
 
-        public string Pattern { get; set; }
-    }
+public class MatchedFile
+{
+    public FileInfo File { get; set; }
+
+    public string Pattern { get; set; }
 }

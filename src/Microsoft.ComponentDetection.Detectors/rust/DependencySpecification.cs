@@ -5,63 +5,62 @@ using Semver;
 
 using Range = Microsoft.ComponentDetection.Detectors.Rust.SemVer.Range;
 
-namespace Microsoft.ComponentDetection.Detectors.Rust
+namespace Microsoft.ComponentDetection.Detectors.Rust;
+
+public class DependencySpecification
 {
-    public class DependencySpecification
+    private readonly IDictionary<string, ISet<ISet<Range>>> dependencies;
+
+    public DependencySpecification() => this.dependencies = new Dictionary<string, ISet<ISet<Range>>>();
+
+    public void Add(string name, string cargoVersionSpecifier)
     {
-        private readonly IDictionary<string, ISet<ISet<Range>>> dependencies;
-
-        public DependencySpecification() => this.dependencies = new Dictionary<string, ISet<ISet<Range>>>();
-
-        public void Add(string name, string cargoVersionSpecifier)
+        ISet<Range> ranges = new HashSet<Range>();
+        var specifiers = cargoVersionSpecifier.Split(new char[] { ',' });
+        foreach (var specifier in specifiers)
         {
-            ISet<Range> ranges = new HashSet<Range>();
-            var specifiers = cargoVersionSpecifier.Split(new char[] { ',' });
-            foreach (var specifier in specifiers)
-            {
-                ranges.Add(new Range(specifier.Trim()));
-            }
-
-            if (!this.dependencies.ContainsKey(name))
-            {
-                this.dependencies.Add(name, new HashSet<ISet<Range>>());
-            }
-
-            this.dependencies[name].Add(ranges);
+            ranges.Add(new Range(specifier.Trim()));
         }
 
-        public bool MatchesPackage(CargoPackage package)
+        if (!this.dependencies.ContainsKey(name))
         {
-            if (!this.dependencies.ContainsKey(package.Name))
-            {
-                return false;
-            }
+            this.dependencies.Add(name, new HashSet<ISet<Range>>());
+        }
 
-            foreach (var ranges in this.dependencies[package.Name])
-            {
-                var allSatisfied = true;
-                foreach (var range in ranges)
-                {
-                    if (SemVersion.TryParse(package.Version, out var sv))
-                    {
-                        if (!range.IsSatisfied(sv))
-                        {
-                            allSatisfied = false;
-                        }
-                    }
-                    else
-                    {
-                        throw new FormatException($"Could not parse {package.Version} into a valid Semver");
-                    }
-                }
+        this.dependencies[name].Add(ranges);
+    }
 
-                if (allSatisfied)
-                {
-                    return true;
-                }
-            }
-
+    public bool MatchesPackage(CargoPackage package)
+    {
+        if (!this.dependencies.ContainsKey(package.Name))
+        {
             return false;
         }
+
+        foreach (var ranges in this.dependencies[package.Name])
+        {
+            var allSatisfied = true;
+            foreach (var range in ranges)
+            {
+                if (SemVersion.TryParse(package.Version, out var sv))
+                {
+                    if (!range.IsSatisfied(sv))
+                    {
+                        allSatisfied = false;
+                    }
+                }
+                else
+                {
+                    throw new FormatException($"Could not parse {package.Version} into a valid Semver");
+                }
+            }
+
+            if (allSatisfied)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

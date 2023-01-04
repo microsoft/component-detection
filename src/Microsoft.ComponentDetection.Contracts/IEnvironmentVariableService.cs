@@ -1,11 +1,10 @@
-namespace Microsoft.ComponentDetection.Contracts
+namespace Microsoft.ComponentDetection.Contracts;
+
+public interface IEnvironmentVariableService
 {
-    public interface IEnvironmentVariableService
-    {
-        bool DoesEnvironmentVariableExist(string name);
+    bool DoesEnvironmentVariableExist(string name);
 
-        string GetEnvironmentVariable(string name);
+    string GetEnvironmentVariable(string name);
 
-        bool IsEnvironmentVariableValueTrue(string name);
-    }
+    bool IsEnvironmentVariableValueTrue(string name);
 }

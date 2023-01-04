@@ -9,60 +9,59 @@ using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
+
+[TestClass]
+[TestCategory("Governance/All")]
+[TestCategory("Governance/ComponentDetection")]
+public class BcdeDevCommandServiceTests
 {
-    [TestClass]
-    [TestCategory("Governance/All")]
-    [TestCategory("Governance/ComponentDetection")]
-    public class BcdeDevCommandServiceTests
+    private Mock<IBcdeScanExecutionService> scanExecutionServiceMock;
+
+    private BcdeDevCommandService serviceUnderTest;
+
+    private ScannedComponent[] scannedComponents;
+
+    [TestInitialize]
+    public void InitializeTest()
     {
-        private Mock<IBcdeScanExecutionService> scanExecutionServiceMock;
+        this.scanExecutionServiceMock = new Mock<IBcdeScanExecutionService>();
+        this.serviceUnderTest = new BcdeDevCommandService();
 
-        private BcdeDevCommandService serviceUnderTest;
-
-        private ScannedComponent[] scannedComponents;
-
-        [TestInitialize]
-        public void InitializeTest()
+        this.scannedComponents = new ScannedComponent[]
         {
-            this.scanExecutionServiceMock = new Mock<IBcdeScanExecutionService>();
-            this.serviceUnderTest = new BcdeDevCommandService();
-
-            this.scannedComponents = new ScannedComponent[]
+            new ScannedComponent
             {
-                new ScannedComponent
-                {
-                    Component = new NpmComponent("some-npm-component", "1.2.3"),
-                    IsDevelopmentDependency = false,
-                },
-            };
+                Component = new NpmComponent("some-npm-component", "1.2.3"),
+                IsDevelopmentDependency = false,
+            },
+        };
 
-            var executeScanAsyncResult = new ScanResult
-            {
-                DetectorsInScan = new List<Detector>(),
-                ComponentsFound = this.scannedComponents,
-                ContainerDetailsMap = new Dictionary<int, ContainerDetails>(),
-                ResultCode = ProcessingResultCode.Success,
-                SourceDirectory = "D:\\test\\directory",
-            };
-
-            this.scanExecutionServiceMock.Setup(x => x.ExecuteScanAsync(It.IsAny<IDetectionArguments>()))
-                .ReturnsAsync(executeScanAsyncResult);
-        }
-
-        [TestMethod]
-        public async Task RunComponentDetection()
+        var executeScanAsyncResult = new ScanResult
         {
-            var args = new BcdeArguments();
+            DetectorsInScan = new List<Detector>(),
+            ComponentsFound = this.scannedComponents,
+            ContainerDetailsMap = new Dictionary<int, ContainerDetails>(),
+            ResultCode = ProcessingResultCode.Success,
+            SourceDirectory = "D:\\test\\directory",
+        };
 
-            this.serviceUnderTest = new BcdeDevCommandService
-            {
-                BcdeScanExecutionService = this.scanExecutionServiceMock.Object,
-            };
+        this.scanExecutionServiceMock.Setup(x => x.ExecuteScanAsync(It.IsAny<IDetectionArguments>()))
+            .ReturnsAsync(executeScanAsyncResult);
+    }
 
-            var result = await this.serviceUnderTest.Handle(args);
-            result.ResultCode.Should().Be(ProcessingResultCode.Success);
-            result.SourceDirectory.Should().Be("D:\\test\\directory");
-        }
+    [TestMethod]
+    public async Task RunComponentDetection()
+    {
+        var args = new BcdeArguments();
+
+        this.serviceUnderTest = new BcdeDevCommandService
+        {
+            BcdeScanExecutionService = this.scanExecutionServiceMock.Object,
+        };
+
+        var result = await this.serviceUnderTest.Handle(args);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        result.SourceDirectory.Should().Be("D:\\test\\directory");
     }
 }

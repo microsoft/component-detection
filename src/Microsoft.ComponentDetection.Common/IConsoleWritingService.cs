@@ -1,7 +1,6 @@
-﻿namespace Microsoft.ComponentDetection.Common
+﻿namespace Microsoft.ComponentDetection.Common;
+
+public interface IConsoleWritingService
 {
-    public interface IConsoleWritingService
-    {
-        void Write(string content);
-    }
+    void Write(string content);
 }

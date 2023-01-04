@@ -1,81 +1,80 @@
-using PackageUrl;
+﻿using PackageUrl;
 
-namespace Microsoft.ComponentDetection.Contracts.TypedComponent
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+
+public class LinuxComponent : TypedComponent
 {
-    public class LinuxComponent : TypedComponent
+    private LinuxComponent()
     {
-        private LinuxComponent()
+        /* Reserved for deserialization */
+    }
+
+    public LinuxComponent(string distribution, string release, string name, string version)
+    {
+        this.Distribution = this.ValidateRequiredInput(distribution, nameof(this.Distribution), nameof(ComponentType.Linux));
+        this.Release = this.ValidateRequiredInput(release, nameof(this.Release), nameof(ComponentType.Linux));
+        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Linux));
+        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Linux));
+    }
+
+    public string Distribution { get; set; }
+
+    public string Release { get; set; }
+
+    public string Name { get; set; }
+
+    public string Version { get; set; }
+
+    public override ComponentType Type => ComponentType.Linux;
+
+    public override string Id => $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
+
+    public override PackageURL PackageUrl
+    {
+        get
         {
-            /* Reserved for deserialization */
-        }
+            string packageType = null;
 
-        public LinuxComponent(string distribution, string release, string name, string version)
-        {
-            this.Distribution = this.ValidateRequiredInput(distribution, nameof(this.Distribution), nameof(ComponentType.Linux));
-            this.Release = this.ValidateRequiredInput(release, nameof(this.Release), nameof(ComponentType.Linux));
-            this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Linux));
-            this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Linux));
-        }
-
-        public string Distribution { get; set; }
-
-        public string Release { get; set; }
-
-        public string Name { get; set; }
-
-        public string Version { get; set; }
-
-        public override ComponentType Type => ComponentType.Linux;
-
-        public override string Id => $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
-
-        public override PackageURL PackageUrl
-        {
-            get
+            if (this.IsUbuntu() || this.IsDebian())
             {
-                string packageType = null;
-
-                if (this.IsUbuntu() || this.IsDebian())
-                {
-                    packageType = "deb";
-                }
-                else if (this.IsCentOS() || this.IsFedora() || this.IsRHEL())
-                {
-                    packageType = "rpm";
-                }
-
-                if (packageType != null)
-                {
-                    return new PackageURL(packageType, this.Distribution, this.Name, this.Version, null, null);
-                }
-
-                return null;
+                packageType = "deb";
             }
-        }
+            else if (this.IsCentOS() || this.IsFedora() || this.IsRHEL())
+            {
+                packageType = "rpm";
+            }
 
-        private bool IsUbuntu()
-        {
-            return this.Distribution.ToUpperInvariant() == "UBUNTU";
-        }
+            if (packageType != null)
+            {
+                return new PackageURL(packageType, this.Distribution, this.Name, this.Version, null, null);
+            }
 
-        private bool IsDebian()
-        {
-            return this.Distribution.ToUpperInvariant() == "DEBIAN";
+            return null;
         }
+    }
 
-        private bool IsCentOS()
-        {
-            return this.Distribution.ToUpperInvariant() == "CENTOS";
-        }
+    private bool IsUbuntu()
+    {
+        return this.Distribution.ToUpperInvariant() == "UBUNTU";
+    }
 
-        private bool IsFedora()
-        {
-            return this.Distribution.ToUpperInvariant() == "FEDORA";
-        }
+    private bool IsDebian()
+    {
+        return this.Distribution.ToUpperInvariant() == "DEBIAN";
+    }
 
-        private bool IsRHEL()
-        {
-            return this.Distribution.ToUpperInvariant() == "RED HAT ENTERPRISE LINUX";
-        }
+    private bool IsCentOS()
+    {
+        return this.Distribution.ToUpperInvariant() == "CENTOS";
+    }
+
+    private bool IsFedora()
+    {
+        return this.Distribution.ToUpperInvariant() == "FEDORA";
+    }
+
+    private bool IsRHEL()
+    {
+        return this.Distribution.ToUpperInvariant() == "RED HAT ENTERPRISE LINUX";
     }
 }

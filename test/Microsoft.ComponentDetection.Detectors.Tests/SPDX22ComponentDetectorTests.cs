@@ -12,28 +12,28 @@ using Microsoft.ComponentDetection.Detectors.Spdx;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests
+namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+[TestClass]
+[TestCategory("Governance/All")]
+[TestCategory("Governance/ComponentDetection")]
+public class Spdx22ComponentDetectorTests
 {
-    [TestClass]
-    [TestCategory("Governance/All")]
-    [TestCategory("Governance/ComponentDetection")]
-    public class Spdx22ComponentDetectorTests
+    private readonly string tempPath = Path.GetTempPath();
+    private DetectorTestUtility<Spdx22ComponentDetector> detectorTestUtility;
+
+    [TestInitialize]
+    public void TestInitialize()
     {
-        private readonly string tempPath = Path.GetTempPath();
-        private DetectorTestUtility<Spdx22ComponentDetector> detectorTestUtility;
+        var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
+        this.detectorTestUtility = DetectorTestUtilityCreator.Create<Spdx22ComponentDetector>()
+            .WithScanRequest(new ScanRequest(new DirectoryInfo(this.tempPath), null, null, new Dictionary<string, string>(), null, componentRecorder));
+    }
 
-        [TestInitialize]
-        public void TestInitialize()
-        {
-            var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-            this.detectorTestUtility = DetectorTestUtilityCreator.Create<Spdx22ComponentDetector>()
-                                    .WithScanRequest(new ScanRequest(new DirectoryInfo(this.tempPath), null, null, new Dictionary<string, string>(), null, componentRecorder));
-        }
-
-        [TestMethod]
-        public async Task TestSbomDetector_SimpleSbom()
-        {
-            var spdxFile = /*lang=json,strict*/ @"{
+    [TestMethod]
+    public async Task TestSbomDetector_SimpleSbom()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
     ""files"": [{
         ""fileName"": ""./.eslintrc.js"",
         ""SPDXID"": ""SPDXRef-File--.eslintrc.js-76586927C59544FB23BE1CF4D269882217EE21AB"",
@@ -97,66 +97,65 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     ]
 }";
 
-            var spdxFileName = "manifest.spdx.json";
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile(spdxFileName, spdxFile)
-                                                    .ExecuteDetector();
+        var spdxFileName = "manifest.spdx.json";
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(spdxFileName, spdxFile)
+            .ExecuteDetector();
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
-            var components = detectedComponents.ToList();
-            var sbomComponent = (SpdxComponent)components.FirstOrDefault()?.Component;
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var components = detectedComponents.ToList();
+        var sbomComponent = (SpdxComponent)components.FirstOrDefault()?.Component;
 
-            if (sbomComponent is null)
-            {
-                throw new AssertFailedException($"{nameof(sbomComponent)} is null");
-            }
+        if (sbomComponent is null)
+        {
+            throw new AssertFailedException($"{nameof(sbomComponent)} is null");
+        }
 
 #pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
-            var checksum = BitConverter.ToString(SHA1.Create().ComputeHash(
-                Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
+        var checksum = BitConverter.ToString(SHA1.Create().ComputeHash(
+            Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350
 
-            Assert.AreEqual(1, components.Count);
-            Assert.AreEqual(sbomComponent.Name, "Test 1.0.0");
-            Assert.AreEqual(sbomComponent.RootElementId, "SPDXRef-RootPackage");
-            Assert.AreEqual(sbomComponent.DocumentNamespace, new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
-            Assert.AreEqual(sbomComponent.SpdxVersion, "SPDX-2.2");
-            Assert.AreEqual(sbomComponent.Checksum, checksum);
-            Assert.AreEqual(sbomComponent.Path, Path.Combine(this.tempPath, spdxFileName));
-        }
+        Assert.AreEqual(1, components.Count);
+        Assert.AreEqual(sbomComponent.Name, "Test 1.0.0");
+        Assert.AreEqual(sbomComponent.RootElementId, "SPDXRef-RootPackage");
+        Assert.AreEqual(sbomComponent.DocumentNamespace, new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
+        Assert.AreEqual(sbomComponent.SpdxVersion, "SPDX-2.2");
+        Assert.AreEqual(sbomComponent.Checksum, checksum);
+        Assert.AreEqual(sbomComponent.Path, Path.Combine(this.tempPath, spdxFileName));
+    }
 
-        [TestMethod]
-        public async Task TestSbomDetector_BlankJson()
-        {
-            var spdxFile = "{}";
+    [TestMethod]
+    public async Task TestSbomDetector_BlankJson()
+    {
+        var spdxFile = "{}";
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                .WithFile("manifest.spdx.json", spdxFile)
-                .ExecuteDetector();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetector();
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
-            var components = detectedComponents.ToList();
-            Assert.IsFalse(components.Any());
-        }
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var components = detectedComponents.ToList();
+        Assert.IsFalse(components.Any());
+    }
 
-        [TestMethod]
-        public async Task TestSbomDetector_InvalidFile()
-        {
-            var spdxFile = "invalidspdxfile";
+    [TestMethod]
+    public async Task TestSbomDetector_InvalidFile()
+    {
+        var spdxFile = "invalidspdxfile";
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                .WithFile("manifest.spdx.json", spdxFile)
-                .ExecuteDetector();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("manifest.spdx.json", spdxFile)
+            .ExecuteDetector();
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
-            var components = detectedComponents.ToList();
-            Assert.IsFalse(components.Any());
-        }
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var components = detectedComponents.ToList();
+        Assert.IsFalse(components.Any());
     }
 }
