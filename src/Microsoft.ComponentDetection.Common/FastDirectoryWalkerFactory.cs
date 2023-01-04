@@ -237,10 +237,10 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
     public IObservable<ProcessRequest> GetFilteredComponentStreamObservable(DirectoryInfo root, IEnumerable<string> patterns, IComponentRecorder componentRecorder)
     {
         var observable = this.Subscribe(root, patterns).OfType<FileInfo>().SelectMany(f => patterns.Select(sp => new
-            {
-                SearchPattern = sp,
-                File = f,
-            })).Where(x =>
+        {
+            SearchPattern = sp,
+            File = f,
+        })).Where(x =>
             {
                 var searchPattern = x.SearchPattern;
                 var fileName = x.File.Name;
