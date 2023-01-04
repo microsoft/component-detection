@@ -16,7 +16,7 @@
         <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.4.1"/>
         <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1"/>
-        <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.4.27"/>
+        <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.4.33"/>
         <PackageVersion Include="DotNet.Glob" Version="2.1.1"/>
         <PackageVersion Include="MinVer" Version="4.2.0"/>
         <PackageVersion Include="Moq" Version="4.18.2"/>
