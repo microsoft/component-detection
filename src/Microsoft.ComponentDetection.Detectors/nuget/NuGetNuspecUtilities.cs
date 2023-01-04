@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Contracts;
+using NuGet.Packaging;
 
 namespace Microsoft.ComponentDetection.Detectors.NuGet
 {
@@ -12,31 +14,75 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
         // source: https://en.wikipedia.org/wiki/Zip_(file_format)#Limits
         public const int MinimumLengthForZipArchive = 22;
 
-        public static async Task<byte[]> GetNuspecBytesAsync(Stream nupkgStream)
+        public static (string Name, string Version, string[] Authors, HashSet<string> TargetFrameworks) GetNuGetPackageDataFromNupkg(IComponentStream nupkgComponentStream)
         {
             try
             {
-                if (nupkgStream.Length < MinimumLengthForZipArchive)
+                if (nupkgComponentStream.Stream.Length < MinimumLengthForZipArchive)
                 {
                     throw new ArgumentException("nupkg is too small");
                 }
 
-                using var archive = new ZipArchive(nupkgStream, ZipArchiveMode.Read, true);
+                string packageName = null;
+                string packageVersion = null;
+                string[] authors = null;
+                HashSet<string> targetFrameworks = null;
 
-                // get the first entry ending in .nuspec at the root of the package
-                var nuspecEntry =
-                    archive.Entries.FirstOrDefault(x =>
-                        x.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase)
-                        && x.FullName.IndexOf('/') == -1);
+                using var archive = new ZipArchive(nupkgComponentStream.Stream, ZipArchiveMode.Read, true);
+                var nuspecFound = false;
+                foreach (var entry in archive.Entries)
+                {
+                    if (entry.Name.EndsWith(".nuspec", StringComparison.CurrentCulture) && entry.FullName.IndexOf('/') == -1)
+                    {
+                        // if we've already found an entry that matches this condition, ignore it.
+                        // this matches the semantics of previous use of .FirstOrDefault()
+                        if (nuspecFound)
+                        {
+                            continue;
+                        }
 
-                if (nuspecEntry == null)
+                        // note that we've found the nuspec
+                        nuspecFound = true;
+
+                        // this is the nuspec file, process it to get the data we need
+                        var nuSpecStream = entry.Open();
+                        (packageName, packageVersion, authors, var nuspecFrameworks) = GetNuspecDataFromNuspecStream(nuSpecStream);
+
+                        // add any frameworks found in the nuspec
+                        if (targetFrameworks is null)
+                        {
+                            // It should be common to come across the .nuspec before processing other entries,
+                            // so opportunistically use the hashset we just got
+                            targetFrameworks = nuspecFrameworks;
+                        }
+                        else
+                        {
+                            // add the frameworks to what we already had
+                            targetFrameworks.AddRange(nuspecFrameworks);
+                        }
+                    }
+                    else
+                    {
+                        // process any other entries to get framework names according to the rules of NuGet
+                        var frameworkName = FrameworkNameUtility.ParseFrameworkNameFromFilePath(entry.FullName, out _);
+                        if (frameworkName == null)
+                        {
+                            continue;
+                        }
+
+                        targetFrameworks ??= new HashSet<string>();
+
+                        targetFrameworks.Add(frameworkName.FullName);
+                    }
+                }
+
+                if (!nuspecFound)
                 {
                     throw new FileNotFoundException("No nuspec file was found");
                 }
 
-                using var nuspecStream = nuspecEntry.Open();
-
-                return await GetNuspecBytesFromNuspecStream(nuspecStream, nuspecEntry.Length);
+                // TODO: what if we couldn't find the data in nuspec, or some other error. Need to match previous behavior
+                return (packageName, packageVersion, authors, targetFrameworks);
             }
             catch (InvalidDataException ex)
             {
@@ -45,20 +91,68 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet
             finally
             {
                 // make sure that no matter what we put the stream back to the beginning
-                nupkgStream.Seek(0, SeekOrigin.Begin);
+                nupkgComponentStream.Stream.Seek(0, SeekOrigin.Begin);
             }
         }
 
-        public static async Task<byte[]> GetNuspecBytesFromNuspecStream(Stream nuspecStream, long nuspecLength)
+        public static (string Name, string Version, string[] Authors, HashSet<string> TargetFrameworks) GetNuspecDataFromNuspecStream(Stream sourceStream)
         {
-            var nuspecBytes = new byte[nuspecLength];
-            var bytesReadSoFar = 0;
-            while (bytesReadSoFar < nuspecBytes.Length)
+            // The stream we get here may not support the operations we need
+            // copy it to a more flexible MemoryStream
+            // TODO: detect whether this is necessary
+            using var nuspecStream = new MemoryStream();
+            sourceStream.CopyTo(nuspecStream);
+            nuspecStream.Position = 0;
+
+            if (nuspecStream.Length == 0)
             {
-                bytesReadSoFar += await nuspecStream.ReadAsync(nuspecBytes, bytesReadSoFar, nuspecBytes.Length - bytesReadSoFar);
+                throw new ArgumentException("The provided stream was empty.", nameof(sourceStream));
             }
 
-            return nuspecBytes;
+            var reader = new NuspecReader(nuspecStream);
+
+            var authors = reader.GetAuthors().Split(",").Select(author => author.Trim()).ToArray();
+
+            var targetFrameworks = new HashSet<string>();
+
+            foreach (var dependencyGroup in reader.GetDependencyGroups())
+            {
+                if (dependencyGroup.TargetFramework != null)
+                {
+                    targetFrameworks.Add(dependencyGroup.TargetFramework.DotNetFrameworkName);
+                }
+            }
+
+            return (reader.GetId(), reader.GetVersion().OriginalVersion, authors, targetFrameworks);
+        }
+
+        public static (string Name, string Version, string[] Authors, HashSet<string> TargetFrameworks) GetNuGetPackageDataFromNuspec(IComponentStream nuspecComponentStream)
+        {
+            var (name, version, authors, targetFrameworks) = GetNuspecDataFromNuspecStream(nuspecComponentStream.Stream);
+
+            // since we found a loose .nuspec file, attempt to interpret the surrounding directory as an unzipped NuGet package
+            var unzippedPackageLocation = Path.GetFullPath(Path.GetDirectoryName(nuspecComponentStream.Location)) + "\\";
+            foreach (var path in Directory.EnumerateFiles(unzippedPackageLocation, "*", new EnumerationOptions { RecurseSubdirectories = true }))
+            {
+                // Ignore any paths that somehow don't start with the unzipped location.
+                // This will make the operation below safe
+                if (!path.StartsWith(unzippedPackageLocation, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // get relative path
+                var relativePath = path[unzippedPackageLocation.Length..];
+
+                // process this according to the rules of packages
+                var frameworkName = FrameworkNameUtility.ParseFrameworkNameFromFilePath(relativePath, out _);
+                if (frameworkName != null)
+                {
+                    targetFrameworks.Add(frameworkName.FullName);
+                }
+            }
+
+            return (name, version, authors, targetFrameworks);
         }
     }
 }

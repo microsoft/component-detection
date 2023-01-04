@@ -1,7 +1,9 @@
+﻿using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Moq;
@@ -9,6 +11,8 @@ using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityE
 
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
+    using System.Linq;
+
     public static class NugetTestUtilities
     {
         public static string GetRandomValidNuSpecComponent()
@@ -55,9 +59,9 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             return template;
         }
 
-        public static string GetValidNuspec(string componentName, string version, string[] authors)
+        public static string GetValidNuspec(string componentName, string version, string[] authors, IEnumerable<string> targetFrameworks = null)
         {
-            return GetTemplatedNuspec(componentName, version, authors);
+            return GetTemplatedNuspec(componentName, version, authors, targetFrameworks);
         }
 
         public static async Task<Stream> ZipNupkgComponent(string filename, string content)
@@ -86,25 +90,33 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             return template;
         }
 
-        private static string GetTemplatedNuspec(string id, string version, string[] authors)
+        private static string GetTemplatedNuspec(string id, string version, string[] authors, IEnumerable<string> targetFrameworks = null)
         {
-            var nuspec = @"<?xml version=""1.0"" encoding=""utf-8""?>
+            var nuspec = $@"<?xml version=""1.0"" encoding=""utf-8""?>
                             <package xmlns=""http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd"">
                                 <metadata>
                                     <!-- Required elements-->
-                                    <id>{0}</id>
-                                    <version>{1}</version>
+                                    <id>{id}</id>
+                                    <version>{version}</version>
                                     <description></description>
-                                    <authors>{2}</authors>
+                                    <authors>{string.Join(",", authors)}</authors>
 
                                     <!-- Optional elements -->
                                     <!-- ... -->
+                                    {(targetFrameworks is null ? string.Empty : GenerateTargetFrameworksSection(targetFrameworks))}
                                 </metadata>
                                 <!-- Optional 'files' node -->
                             </package>";
 
             return string.Format(nuspec, id, version, string.Join(",", authors));
         }
+
+        private static string GenerateTargetFrameworksSection(IEnumerable<string> targetFrameworks) => new XElement(
+            "dependencies",
+            targetFrameworks.Select(tf => new XElement(
+                "group",
+                new XAttribute("targetFramework", tf),
+                new XElement("dependency", new XAttribute("id", "Test"), new XAttribute("version", "1.2.3"))))).ToString();
 
         private static string GetTemplatedNuGetConfig(string repositoryPath)
         {
