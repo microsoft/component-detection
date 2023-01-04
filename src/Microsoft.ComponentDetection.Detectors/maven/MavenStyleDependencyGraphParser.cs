@@ -136,10 +136,7 @@ namespace Microsoft.ComponentDetection.Detectors.Maven
         private class GraphNodeAtLevel<T> : GraphNode<T>
         {
             public GraphNodeAtLevel(int level, T value)
-                : base(value)
-            {
-                this.ParseLevel = level;
-            }
+                : base(value) => this.ParseLevel = level;
 
             public int ParseLevel { get; }
         }

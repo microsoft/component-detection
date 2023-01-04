@@ -33,7 +33,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public async Task TestSbomDetector_SimpleSbom()
         {
-            var spdxFile = @"{
+            var spdxFile = /*lang=json,strict*/ @"{
     ""files"": [{
         ""fileName"": ""./.eslintrc.js"",
         ""SPDXID"": ""SPDXRef-File--.eslintrc.js-76586927C59544FB23BE1CF4D269882217EE21AB"",
@@ -118,10 +118,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350
 
-            Assert.AreEqual(1, components.Count());
+            Assert.AreEqual(1, components.Count);
             Assert.AreEqual(sbomComponent.Name, "Test 1.0.0");
             Assert.AreEqual(sbomComponent.RootElementId, "SPDXRef-RootPackage");
-            Assert.AreEqual(sbomComponent.DocumentNamespace,  new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
+            Assert.AreEqual(sbomComponent.DocumentNamespace, new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
             Assert.AreEqual(sbomComponent.SpdxVersion, "SPDX-2.2");
             Assert.AreEqual(sbomComponent.Checksum, checksum);
             Assert.AreEqual(sbomComponent.Path, Path.Combine(this.tempPath, spdxFileName));

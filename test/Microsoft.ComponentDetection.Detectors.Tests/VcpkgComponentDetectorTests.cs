@@ -64,7 +64,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                 throw new AssertFailedException($"{nameof(sbomComponent)} is null");
             }
 
-            Assert.AreEqual(1, components.Count());
+            Assert.AreEqual(1, components.Count);
             Assert.AreEqual("nlohmann-json", sbomComponent.Name);
             Assert.AreEqual("3.10.4", sbomComponent.Version);
             Assert.AreEqual(5, sbomComponent.PortVersion);
@@ -117,7 +117,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             var detectedComponents = componentRecorder.GetDetectedComponents();
             var components = detectedComponents.ToList();
 
-            Assert.AreEqual(2, components.Count());
+            Assert.AreEqual(2, components.Count);
             var sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c?.Component).SPDXID.Equals("SPDXRef-binary")).Component;
             Assert.IsNotNull(sbomComponent);
             Assert.AreEqual("tinyxml2:x64-linux", sbomComponent.Name);

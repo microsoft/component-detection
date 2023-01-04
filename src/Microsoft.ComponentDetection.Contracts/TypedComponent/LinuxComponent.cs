@@ -55,27 +55,27 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent
 
         private bool IsUbuntu()
         {
-            return this.Distribution.ToLowerInvariant() == "ubuntu";
+            return this.Distribution.ToUpperInvariant() == "UBUNTU";
         }
 
         private bool IsDebian()
         {
-            return this.Distribution.ToLowerInvariant() == "debian";
+            return this.Distribution.ToUpperInvariant() == "DEBIAN";
         }
 
         private bool IsCentOS()
         {
-            return this.Distribution.ToLowerInvariant() == "centos";
+            return this.Distribution.ToUpperInvariant() == "CENTOS";
         }
 
         private bool IsFedora()
         {
-            return this.Distribution.ToLowerInvariant() == "fedora";
+            return this.Distribution.ToUpperInvariant() == "FEDORA";
         }
 
         private bool IsRHEL()
         {
-            return this.Distribution.ToLowerInvariant() == "red hat enterprise linux";
+            return this.Distribution.ToUpperInvariant() == "RED HAT ENTERPRISE LINUX";
         }
     }
 }

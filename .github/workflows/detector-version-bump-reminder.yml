@@ -8,7 +8,7 @@ jobs:
   comment:
     runs-on: ubuntu-latest
     steps:
-      - uses: mshick/add-pr-comment@v1
+      - uses: mshick/add-pr-comment@v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           message: |

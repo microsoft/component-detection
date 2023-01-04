@@ -152,8 +152,8 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
                     telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
                     FileWritingService.Init(argumentSet.Output);
-                    Logger.Init(argumentSet.Verbosity);
-                    Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId.ToString()}");
+                    Logger.Init(argumentSet.Verbosity, writeLinePrefix: true);
+                    Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
 
                     return await this.Dispatch(argumentSet, cancellationToken);
                 });
@@ -202,11 +202,7 @@ namespace Microsoft.ComponentDetection.Orchestrator
 
                         return string.Join(Environment.NewLine, aptListResult.Split(Environment.NewLine).Where(x => x.Contains("libssl")));
                     });
-
-                    if (!getLibSslPackages.Wait(taskTimeout))
-                    {
-                        throw new TimeoutException($"The execution did not complete in the alotted time ({taskTimeout} seconds) and has been terminated prior to completion");
-                    }
+                    await getLibSslPackages.WaitAsync(taskTimeout);
 
                     agentOSMeaningfulDetails[LibSslDetailsKey] = await getLibSslPackages;
                 }

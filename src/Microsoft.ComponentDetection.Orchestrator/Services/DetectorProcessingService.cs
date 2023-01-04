@@ -143,9 +143,8 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
             if (directoryExclusionListObsolete?.Any() == true)
             {
+                // Note: directory info will *automatically* parent relative paths to the working directory of the current assembly. Hold on to your rear.
                 var directories = directoryExclusionListObsolete
-
-                    // Note: directory info will *automatically* parent relative paths to the working directory of the current assembly. Hold on to your rear.
                     .Select(relativeOrAbsoluteExclusionPath => new DirectoryInfo(relativeOrAbsoluteExclusionPath))
                     .Select(exclusionDirectoryInfo => new
                     {
@@ -243,12 +242,12 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             return individualDetectorScanResult;
         }
 
-        private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult result, ComponentRecorder recorder, IComponentDetector detector)> results, ProcessingResultCode exitCode)
+        private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult Result, ComponentRecorder Recorder, IComponentDetector Detector)> results, ProcessingResultCode exitCode)
         {
             return new DetectorProcessingResult
             {
-                ComponentRecorders = results.Select(tuple => (tuple.detector, tuple.recorder)),
-                ContainersDetailsMap = results.SelectMany(x => x.result.ContainerDetails).ToDictionary(x => x.Id),
+                ComponentRecorders = results.Select(tuple => (tuple.Detector, tuple.Recorder)),
+                ContainersDetailsMap = results.SelectMany(x => x.Result.ContainerDetails).ToDictionary(x => x.Id),
                 ResultCode = exitCode,
             };
         }

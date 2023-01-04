@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
@@ -14,7 +14,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         [TestMethod]
         public void DoesntMatch_WhenNoDependencyAdded()
         {
-            var testCases = new List<(bool shouldMatch, string caseName, string specifierName, string specifierRange)>
+            var testCases = new List<(bool ShouldMatch, string CaseName, string SpecifierName, string SpecifierRange)>
             {
                 (false, "DoesntMatch_WhenNoDependencyAdded", null, null),
                 (false, "DoesntMatch_WhenDependencyAddedForDifferentPackage", "some-other-package", "1.2.3"),
@@ -39,7 +39,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
             this.DoAllTheTests(testCases);
         }
 
-        public void DoAllTheTests(IEnumerable<(bool shouldMatch, string caseName, string specifierName, string specifierRange)> testCases)
+        public void DoAllTheTests(IEnumerable<(bool ShouldMatch, string CaseName, string SpecifierName, string SpecifierRange)> testCases)
         {
             foreach (var (shouldMatch, caseName, specifierName, specifierRange) in testCases)
             {
@@ -49,7 +49,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
                     di.Add(specifierName, specifierRange);
                 }
 
-                di.MatchesPackage(new CargoPackage { name = "some-cargo-package", version = "1.2.3" })
+                di.MatchesPackage(new CargoPackage { Name = "some-cargo-package", Version = "1.2.3" })
                     .Should().Be(shouldMatch, caseName);
             }
         }

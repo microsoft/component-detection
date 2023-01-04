@@ -8,6 +8,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
         <PackageReference Include="NuGet.Versioning" />
         <PackageReference Include="System.Reactive" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="packageurl-dotnet" />
     </ItemGroup>
 

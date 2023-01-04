@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
@@ -25,17 +24,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
         private readonly string packageLockJsonFileName = "package-lock.json";
         private readonly string packageJsonFileName = "package.json";
         private readonly List<string> packageJsonSearchPattern = new List<string> { "package.json" };
-        private ComponentRecorder componentRecorder;
-        private Mock<ILogger> loggerMock;
         private Mock<IPathUtilityService> pathUtilityService;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            this.loggerMock = new Mock<ILogger>();
             this.pathUtilityService = new Mock<IPathUtilityService>();
             this.pathUtilityService.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns((string path) => Path.GetDirectoryName(path));
-            this.componentRecorder = new ComponentRecorder();
         }
 
         [TestMethod]

@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
@@ -20,17 +19,13 @@ namespace Microsoft.ComponentDetection.Detectors.Tests
     {
         private readonly DetectorTestUtility<NpmComponentDetector> detectorTestUtility = DetectorTestUtilityCreator.Create<NpmComponentDetector>();
         private readonly List<string> packageJsonSearchPattern = new List<string> { "package.json" };
-        private Mock<ILogger> loggerMock;
         private Mock<IPathUtilityService> pathUtilityService;
-        private ComponentRecorder componentRecorder;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            this.loggerMock = new Mock<ILogger>();
             this.pathUtilityService = new Mock<IPathUtilityService>();
             this.pathUtilityService.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns((string path) => Path.GetDirectoryName(path));
-            this.componentRecorder = new ComponentRecorder();
         }
 
         [TestMethod]

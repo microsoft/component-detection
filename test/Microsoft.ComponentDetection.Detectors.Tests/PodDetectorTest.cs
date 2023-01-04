@@ -478,18 +478,18 @@ COCOAPODS: 1.8.4";
             this.AssertGitComponentHashAndUrl(detectedComponents, "0d4db53890c664fb8605666e6fbccd14912ff821", "https://github.com/SVGKit/SVGKit.git");
             this.AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
 
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.1"), root: (name: "AzureCore", version: "0.5.1"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureMobile", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
-            this.AssertGitComponentHasGitComponentDependencyRoot(componentRecorder, component: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureCore", Version: "0.5.1"), root: (Name: "AzureCore", Version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureData", Version: "0.5.0"), root: (Name: "AzureData", Version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureMobile", Version: "0.5.0"), root: (Name: "AzureMobile", Version: "0.5.0"));
+            this.AssertGitComponentHasGitComponentDependencyRoot(componentRecorder, component: (Commit: "0d4db53890c664fb8605666e6fbccd14912ff821", Repo: "https://github.com/SVGKit/SVGKit.git"), root: (Commit: "0d4db53890c664fb8605666e6fbccd14912ff821", Repo: "https://github.com/SVGKit/SVGKit.git"));
 
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
-            this.AssertPodComponentHasGitComponentDependencyRoot(componentRecorder, component: (name: "CocoaLumberjack", version: "3.6.0"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureCore", version: "0.5.1"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureData", version: "0.5.0"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureCore", version: "0.5.1"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureCore", Version: "0.5.0"), root: (Name: "AzureData", Version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureData", Version: "0.5.0"), root: (Name: "AzureMobile", Version: "0.5.0"));
+            this.AssertPodComponentHasGitComponentDependencyRoot(componentRecorder, component: (Name: "CocoaLumberjack", Version: "3.6.0"), root: (Commit: "0d4db53890c664fb8605666e6fbccd14912ff821", Repo: "https://github.com/SVGKit/SVGKit.git"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "KeychainAccess", Version: "3.2.1"), root: (Name: "AzureCore", Version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "KeychainAccess", Version: "3.2.1"), root: (Name: "AzureData", Version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "Willow", Version: "5.2.1"), root: (Name: "AzureCore", Version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "Willow", Version: "5.2.1"), root: (Name: "AzureData", Version: "0.5.0"));
         }
 
         [TestMethod]
@@ -575,18 +575,18 @@ COCOAPODS: 1.8.4";
             this.AssertGitComponentHashAndUrl(detectedComponents, "0d4db53890c664fb8605666e6fbccd14912ff821", "https://github.com/SVGKit/SVGKit.git");
             this.AssertPodComponentNameAndVersion(detectedComponents, "Willow", "5.2.1");
 
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.1"), root: (name: "AzureCore", version: "0.5.1"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureMobile", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
-            this.AssertGitComponentHasGitComponentDependencyRoot(componentRecorder, component: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureCore", Version: "0.5.1"), root: (Name: "AzureCore", Version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureData", Version: "0.5.0"), root: (Name: "AzureData", Version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureMobile", Version: "0.5.0"), root: (Name: "AzureMobile", Version: "0.5.0"));
+            this.AssertGitComponentHasGitComponentDependencyRoot(componentRecorder, component: (Commit: "0d4db53890c664fb8605666e6fbccd14912ff821", Repo: "https://github.com/SVGKit/SVGKit.git"), root: (Commit: "0d4db53890c664fb8605666e6fbccd14912ff821", Repo: "https://github.com/SVGKit/SVGKit.git"));
 
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureCore", version: "0.5.0"), root: (name: "AzureData", version: "0.5.0"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "AzureData", version: "0.5.0"), root: (name: "AzureMobile", version: "0.5.0"));
-            this.AssertPodComponentHasGitComponentDependencyRoot(componentRecorder, component: (name: "CocoaLumberjack", version: "3.6.0"), root: (commit: "0d4db53890c664fb8605666e6fbccd14912ff821", repo: "https://github.com/SVGKit/SVGKit.git"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureCore", version: "0.5.1"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "KeychainAccess", version: "3.2.1"), root: (name: "AzureData", version: "0.5.0"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureCore", version: "0.5.1"));
-            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (name: "Willow", version: "5.2.1"), root: (name: "AzureData", version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureCore", Version: "0.5.0"), root: (Name: "AzureData", Version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "AzureData", Version: "0.5.0"), root: (Name: "AzureMobile", Version: "0.5.0"));
+            this.AssertPodComponentHasGitComponentDependencyRoot(componentRecorder, component: (Name: "CocoaLumberjack", Version: "3.6.0"), root: (Commit: "0d4db53890c664fb8605666e6fbccd14912ff821", Repo: "https://github.com/SVGKit/SVGKit.git"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "KeychainAccess", Version: "3.2.1"), root: (Name: "AzureCore", Version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "KeychainAccess", Version: "3.2.1"), root: (Name: "AzureData", Version: "0.5.0"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "Willow", Version: "5.2.1"), root: (Name: "AzureCore", Version: "0.5.1"));
+            this.AssertPodComponentHasPodComponentDependencyRoot(componentRecorder, component: (Name: "Willow", Version: "5.2.1"), root: (Name: "AzureData", Version: "0.5.0"));
         }
 
         [TestMethod]
@@ -718,25 +718,25 @@ COCOAPODS: 1.8.4";
                 $"Component with commit hash {commitHash} and repository url {repositoryUrl} was not found");
         }
 
-        private void AssertPodComponentHasPodComponentDependencyRoot(IComponentRecorder recorder, (string name, string version) component, (string name, string version) root)
+        private void AssertPodComponentHasPodComponentDependencyRoot(IComponentRecorder recorder, (string Name, string Version) component, (string Name, string Version) root)
         {
             Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<PodComponent>(
-                new PodComponent(component.name, component.version).Id,
-                x => x.Id == new PodComponent(root.name, root.version).Id));
+                new PodComponent(component.Name, component.Version).Id,
+                x => x.Id == new PodComponent(root.Name, root.Version).Id));
         }
 
-        private void AssertPodComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string name, string version) component, (string commit, string repo) root)
+        private void AssertPodComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string Name, string Version) component, (string Commit, string Repo) root)
         {
             Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
-                new PodComponent(component.name, component.version).Id,
-                x => x.Id == new GitComponent(new Uri(root.repo), root.commit).Id));
+                new PodComponent(component.Name, component.Version).Id,
+                x => x.Id == new GitComponent(new Uri(root.Repo), root.Commit).Id));
         }
 
-        private void AssertGitComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string commit, string repo) component, (string commit, string repo) root)
+        private void AssertGitComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string Commit, string Repo) component, (string Commit, string Repo) root)
         {
             Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
-                new GitComponent(new Uri(component.repo), component.commit).Id,
-                x => x.Id == new GitComponent(new Uri(root.repo), root.commit).Id));
+                new GitComponent(new Uri(component.Repo), component.Commit).Id,
+                x => x.Id == new GitComponent(new Uri(root.Repo), root.Commit).Id));
         }
     }
 }

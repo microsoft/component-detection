@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Composition;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.IO;
-using Tomlyn;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
+using Tomlyn;
 
 namespace Microsoft.ComponentDetection.Detectors.Poetry
 {
@@ -25,7 +25,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
 
         public override IEnumerable<string> Categories => new List<string> { "Python" };
 
-        protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var poetryLockFile = processRequest.ComponentStream;
@@ -36,14 +36,14 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
             {
                 IgnoreMissingProperties = true,
             };
-            var poetryLock = Toml.ToModel<PoetryLock>(reader.ReadToEnd(), options: options);
+            var poetryLock = Toml.ToModel<PoetryLock>(await reader.ReadToEndAsync(), options: options);
             poetryLock.Package.ToList().ForEach(package =>
             {
                 var isDevelopmentDependency = package.Category != "main";
 
-                if (package.Source != null && package.Source.type == "git")
+                if (package.Source != null && package.Source.Type == "git")
                 {
-                    var component = new DetectedComponent(new GitComponent(new Uri(package.Source.url), package.Source.resolved_reference));
+                    var component = new DetectedComponent(new GitComponent(new Uri(package.Source.Url), package.Source.ResolvedReference));
                     singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
                 }
                 else
@@ -52,7 +52,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry
                     singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
                 }
             });
-            return Task.CompletedTask;
+            await Task.CompletedTask;
         }
     }
 }

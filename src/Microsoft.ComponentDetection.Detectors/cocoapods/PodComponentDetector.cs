@@ -57,7 +57,7 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
             return deserializer.Deserialize<PodfileLock>(input);
         }
 
-        private static (Pod pod, string key, DetectedComponent detectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
+        private static (Pod Pod, string Key, DetectedComponent DetectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
         {
             return podfileLock.Pods.Select(pod =>
             {
@@ -404,9 +404,9 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                     {
                         // CocoaPods specs are stored in a git repo but depending on settings/CocoaPods version
                         // the repo is shown differently in the Podfile.lock
-                        return repository.Key.ToLowerInvariant() switch
+                        return repository.Key.ToUpperInvariant() switch
                         {
-                            "trunk" or "https://github.com/cocoapods/specs.git" => "trunk",
+                            "TRUNK" or "https://github.com/cocoapods/specs.git" => "TRUNK",
                             _ => repository.Key,
                         };
                     }

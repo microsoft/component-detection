@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
@@ -36,7 +37,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         private BcdeScanExecutionService serviceUnderTest;
 
         private DirectoryInfo sourceDirectory;
-        private Dictionary<string, string> contentByFileInfo;
 
         [TestInitialize]
         public void InitializeTest()
@@ -53,8 +53,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             {
                 Logger = this.loggerMock.Object,
             };
-
-            this.contentByFileInfo = new Dictionary<string, string>();
 
             this.detectedComponents = new[]
             {
@@ -96,7 +94,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void DetectComponents_HappyPath()
+        public async Task DetectComponents_HappyPath()
         {
             var componentRecorder = new ComponentRecorder();
             var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/some/file/path"));
@@ -124,7 +122,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
                 SourceDirectory = this.sourceDirectory,
             };
-            var result = this.DetectComponentsHappyPath(
+            var result = await this.DetectComponentsHappyPathAsync(
                 args,
                 restrictions =>
             {
@@ -154,7 +152,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void DetectComponents_DetectOnlyWithIdAndCategoryRestrictions()
+        public async Task DetectComponents_DetectOnlyWithIdAndCategoryRestrictions()
         {
             var args = new BcdeArguments
             {
@@ -169,7 +167,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0]);
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1]);
 
-            var result = this.DetectComponentsHappyPath(
+            var result = await this.DetectComponentsHappyPathAsync(
                 args,
                 restrictions =>
             {
@@ -183,7 +181,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void DetectComponents_DetectOnlyWithNoUrl()
+        public async Task DetectComponents_DetectOnlyWithNoUrl()
         {
             var args = new BcdeArguments
             {
@@ -196,7 +194,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0]);
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1]);
 
-            var result = this.DetectComponentsHappyPath(
+            var result = await this.DetectComponentsHappyPathAsync(
                 args,
                 restrictions =>
             {
@@ -208,7 +206,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void DetectComponents_ReturnsExperimentalDetectorInformation()
+        public async Task DetectComponents_ReturnsExperimentalDetectorInformation()
         {
             this.componentDetector2Mock.As<IExperimentalDetector>();
             this.componentDetector3Mock.As<IExperimentalDetector>();
@@ -224,7 +222,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0]);
             singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1]);
 
-            var result = this.DetectComponentsHappyPath(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
+            var result = await this.DetectComponentsHappyPathAsync(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
             result.Result.Should().Be(ProcessingResultCode.Success);
             this.ValidateDetectedComponents(result.DetectedComponents);
@@ -232,7 +230,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void DetectComponents_Graph_Happy_Path()
+        public async Task DetectComponents_Graph_Happy_Path()
         {
             var mockGraphLocation = "/some/dependency/graph";
 
@@ -263,7 +261,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             mockDependencyGraphA.Setup(x => x.IsDevelopmentDependency(this.detectedComponents[0].Component.Id)).Returns(true);
             mockDependencyGraphA.Setup(x => x.IsDevelopmentDependency(this.detectedComponents[1].Component.Id)).Returns(false);
 
-            var result = this.DetectComponentsHappyPath(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
+            var result = await this.DetectComponentsHappyPathAsync(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
             result.SourceDirectory.Should().NotBeNull();
             result.SourceDirectory.Should().Be(this.sourceDirectory.ToString());
@@ -290,7 +288,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void DetectComponents_Graph_AccumulatesGraphsOnSameLocation()
+        public async Task DetectComponents_Graph_AccumulatesGraphsOnSameLocation()
         {
             var mockGraphLocation = "/some/dependency/graph";
 
@@ -338,7 +336,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorderB.RegisterUsage(this.detectedComponents[1], isExplicitReferencedDependency: true);
             singleFileComponentRecorderB.RegisterUsage(this.detectedComponents[0], parentComponentId: this.detectedComponents[1].Component.Id);
 
-            var result = this.DetectComponentsHappyPath(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
+            var result = await this.DetectComponentsHappyPathAsync(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
             result.SourceDirectory.Should().NotBeNull();
             result.SourceDirectory.Should().Be(this.sourceDirectory.ToString());
@@ -361,7 +359,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void VerifyTranslation_ComponentsAreReturnedWithDevDependencyInfo()
+        public async Task VerifyTranslation_ComponentsAreReturnedWithDevDependencyInfo()
         {
             var componentRecorder = new ComponentRecorder();
             var npmDetector = new NpmComponentDetectorWithRoots();
@@ -380,7 +378,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(detectedComponent2, isDevelopmentDependency: false);
             singleFileComponentRecorder.RegisterUsage(detectedComponent3);
 
-            var results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
+            var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
 
             var detectedComponents = results.ComponentsFound;
 
@@ -395,7 +393,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void VerifyTranslation_RootsFromMultipleLocationsAreAgregated()
+        public async Task VerifyTranslation_RootsFromMultipleLocationsAreAgregated()
         {
             var componentRecorder = new ComponentRecorder();
             var npmDetector = new NpmComponentDetectorWithRoots();
@@ -416,7 +414,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var detectedComponent2NewLocation = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector);
             singleFileComponentRecorder.RegisterUsage(detectedComponent2NewLocation, isExplicitReferencedDependency: true);
 
-            var results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
+            var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
 
             var detectedComponents = results.ComponentsFound;
 
@@ -431,7 +429,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void VerifyTranslation_ComponentsAreReturnedWithRoots()
+        public async Task VerifyTranslation_ComponentsAreReturnedWithRoots()
         {
             var componentRecorder = new ComponentRecorder();
             var npmDetector = new NpmComponentDetectorWithRoots();
@@ -448,7 +446,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             singleFileComponentRecorder.RegisterUsage(detectedComponent1, isExplicitReferencedDependency: true);
             singleFileComponentRecorder.RegisterUsage(detectedComponent2, parentComponentId: detectedComponent1.Component.Id);
 
-            var results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
+            var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
 
             var detectedComponents = results.ComponentsFound;
 
@@ -462,7 +460,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void VerifyTranslation_DevDependenciesAreMergedWhenSameComponentInDifferentFiles()
+        public async Task VerifyTranslation_DevDependenciesAreMergedWhenSameComponentInDifferentFiles()
         {
             var componentRecorder = new ComponentRecorder();
             var npmDetector = new NpmComponentDetectorWithRoots();
@@ -492,8 +490,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             var componentDWithDevDepTrueCopy = new DetectedComponent(new NpmComponent("testD", "1.0.0"), detector: npmDetector);
 
             // The hint for reading this test is to know that each "column" you see visually is what's being merged, so componentAWithNoDevDep is being merged "down" into componentAWithDevDepTrue.
-#pragma warning disable IDE0007 // Use implicit type
-            foreach ((DetectedComponent component, bool? isDevDep) component in new[]
+            foreach ((var component, var isDevDep) in new[]
             {
                 (componentAWithNoDevDep, null), (componentAWithDevDepTrue, true),
                 (componentBWithNoDevDep, (bool?)null), (componentBWithDevDepFalse, false),
@@ -501,11 +498,10 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 (componentDWithDevDepTrue, true), (componentDWithDevDepTrueCopy, true),
             })
             {
-                firstRecorder.RegisterUsage(component.component, isDevelopmentDependency: component.isDevDep);
+                firstRecorder.RegisterUsage(component, isDevelopmentDependency: isDevDep);
             }
-#pragma warning restore IDE0007 // Use implicit type
 
-            var results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
+            var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
 
             var components = results.ComponentsFound;
 
@@ -516,7 +512,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void VerifyTranslation_LocationsAreMergedWhenSameComponentInDifferentFiles()
+        public async Task VerifyTranslation_LocationsAreMergedWhenSameComponentInDifferentFiles()
         {
             var componentRecorder = new ComponentRecorder();
             var npmDetector = new NpmComponentDetectorWithRoots();
@@ -537,7 +533,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             firstRecorder.RegisterUsage(firstComponent);
             secondRecorder.RegisterUsage(secondComponent);
 
-            var results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
+            var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
 
             var actualComponent = results.ComponentsFound.Single();
 
@@ -557,7 +553,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void VerifyTranslation_RootsAreMergedWhenSameComponentInDifferentFiles()
+        public async Task VerifyTranslation_RootsAreMergedWhenSameComponentInDifferentFiles()
         {
             var componentRecorder = new ComponentRecorder();
             var npmDetector = new NpmComponentDetectorWithRoots();
@@ -582,7 +578,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             secondRecorder.RegisterUsage(root2, isExplicitReferencedDependency: true);
             secondRecorder.RegisterUsage(secondComponent, parentComponentId: root2.Component.Id);
 
-            var results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
+            var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
 
             var actualComponent = results.ComponentsFound.First(c => c.Component.Id == firstComponent.Component.Id);
             actualComponent.TopLevelReferrers.Count().Should().Be(2);
@@ -595,7 +591,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
         }
 
         [TestMethod]
-        public void VerifyTranslation_DetectedComponentExist_UpdateFunctionIsApplied()
+        public async Task VerifyTranslation_DetectedComponentExist_UpdateFunctionIsApplied()
         {
             var componentRecorder = new ComponentRecorder();
             var npmDetector = new NpmComponentDetectorWithRoots();
@@ -610,16 +606,16 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
 
             singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: true);
 
-            var results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
-            results.ComponentsFound.Where(component => component.Component.Id == detectedComponent.Component.Id).Single().IsDevelopmentDependency.Should().BeTrue();
+            var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
+            results.ComponentsFound.Single(component => component.Component.Id == detectedComponent.Component.Id).IsDevelopmentDependency.Should().BeTrue();
 
             singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: false);
 
-            results = this.SetupRecorderBasedScanning(args, new List<ComponentRecorder> { componentRecorder });
-            results.ComponentsFound.Where(component => component.Component.Id == detectedComponent.Component.Id).Single().IsDevelopmentDependency.Should().BeFalse();
+            results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
+            results.ComponentsFound.Single(component => component.Component.Id == detectedComponent.Component.Id).IsDevelopmentDependency.Should().BeFalse();
         }
 
-        private TestOutput DetectComponentsHappyPath(
+        private async Task<TestOutput> DetectComponentsHappyPathAsync(
             BcdeArguments args,
             Action<DetectorRestrictions> restrictionAsserter = null,
             IEnumerable<ComponentRecorder> componentRecorders = null)
@@ -635,7 +631,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
             };
 
-            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>()))
+            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
                 .Returns(registeredDetectors);
             this.detectorRestrictionServiceMock.Setup(
                 x => x.ApplyRestrictions(
@@ -668,7 +664,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                    Match.Create<DetectorRestrictions>(restriction => true)))
                 .ReturnsAsync(processingResult);
 
-            var result = this.serviceUnderTest.ExecuteScanAsync(args).Result;
+            var result = await this.serviceUnderTest.ExecuteScanAsync(args);
             result.ResultCode.Should().Be(ProcessingResultCode.Success);
             result.SourceDirectory.Should().NotBeNull();
             result.SourceDirectory.Should().Be(args.SourceDirectorySerialized);
@@ -678,7 +674,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
             return testOutput;
         }
 
-        private ScanResult SetupRecorderBasedScanning(
+        private async Task<ScanResult> SetupRecorderBasedScanningAsync(
             BcdeArguments args,
             IEnumerable<ComponentRecorder> componentRecorders)
         {
@@ -693,7 +689,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
             };
 
-            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>()))
+            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
                 .Returns(registeredDetectors);
             this.detectorRestrictionServiceMock.Setup(
                 x => x.ApplyRestrictions(
@@ -724,7 +720,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                    Match.Create<DetectorRestrictions>(restriction => true)))
                 .ReturnsAsync(processingResult);
 
-            var result = this.serviceUnderTest.ExecuteScanAsync(args).Result;
+            var result = await this.serviceUnderTest.ExecuteScanAsync(args);
             result.ResultCode.Should().Be(ProcessingResultCode.Success);
             result.SourceDirectory.Should().NotBeNull();
             result.SourceDirectory.Should().Be(args.SourceDirectorySerialized);

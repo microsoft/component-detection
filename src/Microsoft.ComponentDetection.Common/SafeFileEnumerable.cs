@@ -41,10 +41,7 @@ namespace Microsoft.ComponentDetection.Common
         }
 
         public SafeFileEnumerable(DirectoryInfo directory, Func<FileInfo, bool> fileMatchingPredicate, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
-            : this(directory, new List<string> { "*" }, logger, pathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories, previouslyEnumeratedDirectories)
-        {
-            this.fileMatchingPredicate = fileMatchingPredicate;
-        }
+            : this(directory, new List<string> { "*" }, logger, pathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories, previouslyEnumeratedDirectories) => this.fileMatchingPredicate = fileMatchingPredicate;
 
         public IEnumerator<MatchedFile> GetEnumerator()
         {

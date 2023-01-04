@@ -463,30 +463,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Using directive should appear within a namespace declaration
 dotnet_diagnostic.SA1200.severity = suggestion
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1203.md
-# 'public' members should come before 'private' members
-dotnet_diagnostic.SA1203.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1210.md
-#  Using directives should be ordered alphabetically by the namespaces
-dotnet_diagnostic.SA1210.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1216.md
-# Using static directives should be placed at the correct location
-dotnet_diagnostic.SA1216.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1316.md
-# Tuple element names should use correct casing
-dotnet_diagnostic.SA1316.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1401.md
-# Field should be private
-dotnet_diagnostic.SA1401.severity = suggestion
-
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1414.md
-# Tuple types in signatures should have element names
-dotnet_diagnostic.SA1414.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented
 dotnet_diagnostic.SA1600.severity = suggestion
@@ -516,21 +492,9 @@ dotnet_diagnostic.SA1642.severity = suggestion
 # https://github.com/Microsoft/vs-threading
 ##########################################
 
-# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD002.md
-# Synchronously waiting on tasks or awaiters may cause deadlocks. Use await or JoinableTaskFactory.Run instead.
-dotnet_diagnostic.VSTHRD002.severity = suggestion
-
-# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD103.md
-# Result synchronously blocks. Use await instead.
-dotnet_diagnostic.VSTHRD103.severity = suggestion
-
 # https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD101.md
 # Avoid using async lambda for a void returning delegate type, because any exceptions not handled by the delegate will crash the process
 dotnet_diagnostic.VSTHRD101.severity = suggestion
-
-# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD104.md
-# Expose an async version of this method that does not synchronously block. Then simplify this method to call that async method within a JoinableTaskFactory.Run delegate.
-dotnet_diagnostic.VSTHRD104.severity = suggestion
 
 # https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD111.md
 # Add .ConfigureAwait(bool) to your await expression
@@ -625,9 +589,6 @@ dotnet_diagnostic.CA1304.severity = suggestion
 # CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = suggestion
 
-# CA1308: Normalize strings to uppercase
-dotnet_diagnostic.CA1308.severity = suggestion
-
 # CA1307: Specify StringComparison for clarity
 dotnet_diagnostic.CA1307.severity = suggestion
 
@@ -639,9 +600,6 @@ dotnet_diagnostic.CA1725.severity = suggestion
 
 # CA1805: Do not initialize unnecessarily
 dotnet_diagnostic.CA1805.severity = suggestion
-
-# CA1846: Prefer 'AsSpan' over 'Substring'
-dotnet_diagnostic.CA1846.severity = suggestion
 
 # CA1806: Do not ignore method results
 dotnet_diagnostic.CA1806.severity = suggestion
@@ -682,9 +640,6 @@ dotnet_diagnostic.CA1056.severity = suggestion
 # CA1838: Avoid 'StringBuilder' parameters for P/Invokes
 dotnet_diagnostic.CA1838.severity = suggestion
 
-# CA1849: Call async methods when in an async method
-dotnet_diagnostic.CA1849.severity = suggestion
-
 # CA2000: Dispose objects before losing scope
 dotnet_diagnostic.CA2000.severity = suggestion
 
@@ -703,9 +658,6 @@ dotnet_diagnostic.CA1508.severity = suggestion
 # CA1823: Avoid unused private fields
 dotnet_diagnostic.CA1823.severity = suggestion
 
-# CA1829: Use Length/Count property instead of Count() when available
-dotnet_diagnostic.CA1829.severity = suggestion
-
 # CA2234: Pass system uri objects instead of strings
 dotnet_diagnostic.CA2234.severity = suggestion
 
@@ -718,17 +670,8 @@ dotnet_diagnostic.CA2219.severity = suggestion
 # CA2201: Exception type System.Exception is not sufficiently specific
 dotnet_diagnostic.CA2201.severity = suggestion
 
-# CA1847: Use char literal for a single character lookup
-dotnet_diagnostic.CA1847.severity = suggestion
-
 # CA1835: Prefer the 'Memory'-based overloads for 'ReadAsync' and 'WriteAsync'
 dotnet_diagnostic.CA1835.severity = suggestion
-
-# CA1707: Identifiers should not contain underscores
-dotnet_diagnostic.CA1707.severity = suggestion
-
-# CA1040: Avoid empty interfaces
-dotnet_diagnostic.CA1040.severity = suggestion
 
 # CA1036: Override methods on comparable types
 dotnet_diagnostic.CA1036.severity = suggestion
@@ -745,9 +688,6 @@ dotnet_diagnostic.CA1837.severity = suggestion
 # CA1024: Use properties where appropriate
 dotnet_diagnostic.CA1024.severity = suggestion
 
-# CA1834: Consider using 'StringBuilder.Append(char)' when applicable
-dotnet_diagnostic.CA1834.severity = suggestion
-
 # SA1202: Elements should be ordered by access
 dotnet_diagnostic.SA1202.severity = suggestion
 
@@ -760,12 +700,6 @@ dotnet_diagnostic.IDE0090.severity = suggestion
 # IDE0065: 'using' directive placement
 dotnet_diagnostic.IDE0065.severity = suggestion
 
-# IDE0021: Use expression body for constructors
-dotnet_diagnostic.IDE0021.severity = suggestion
-
-# IDE0019: Use pattern matching to avoid 'as' followed by a 'null' check
-dotnet_diagnostic.IDE0019.severity = suggestion
-
 # IDE0160 and IDE0161: Namespace declaration preferences
 dotnet_diagnostic.IDE0160.severity = suggestion
 dotnet_diagnostic.IDE0161.severity = suggestion
@@ -776,9 +710,6 @@ dotnet_diagnostic.IDE1006.severity = suggestion
 # IDE0060: Remove unused parameter
 dotnet_diagnostic.IDE0060.severity = suggestion
 
-# IDE0055: Formatting rule
-dotnet_diagnostic.IDE0055.severity = suggestion
-
 # IDE0025: Use expression body for properties
 dotnet_diagnostic.IDE0025.severity = suggestion
 
@@ -788,38 +719,38 @@ dotnet_diagnostic.IDE0034.severity = suggestion
 # IDE0036: Modifiers are not ordered
 dotnet_diagnostic.IDE0036.severity = suggestion
 
-# IDE0057: Substring can be simplified
-dotnet_diagnostic.IDE0057.severity = suggestion
-
 # IDE0078: Use pattern matching (may change code meaning)
 dotnet_diagnostic.IDE0078.severity = suggestion
 
 # IDE0083: Use pattern matchin
 dotnet_diagnostic.IDE0083.severity = suggestion
 
-# IDE0032: Use auto property
-dotnet_diagnostic.IDE0032.severity = suggestion
-
-# IDE0052: Private member 'TabularStringFormat.totalWidth' can be removed as the value assigned to it is never read
-dotnet_diagnostic.IDE0052.severity = suggestion
-
-# IDE0054: Use compound assignment
-dotnet_diagnostic.IDE0054.severity = suggestion
-
-# IDE0071: Interpolation can be simplified
-dotnet_diagnostic.IDE0071.severity = suggestion
-
 # IDE0027: Use expression body for accessors
 dotnet_diagnostic.IDE0027.severity = suggestion
-
-# IDE0120: Simplify LINQ expression
-dotnet_diagnostic.IDE0120.severity = suggestion
-
-# IDE0037: Member name can be simplified
-dotnet_diagnostic.IDE0037.severity = suggestion
 
 # CA1724: Type names should not match namespaces
 dotnet_diagnostic.CA1724.severity = suggestion
 
 # IL3000: always returns an empty string for assemblies embedded in a single-file app.
 dotnet_diagnostic.IL3000.severity = suggestion
+
+# IDE0052: Remove unread private member
+dotnet_diagnostic.IDE0052.severity = suggestion
+
+# IDE0053: Use expression body for lambdas
+dotnet_diagnostic.IDE0053.severity = suggestion
+
+# IDE0200: Lambda expression can be removed
+dotnet_diagnostic.IDE0200.severity = suggestion
+
+# CA1311: Use ToLowerInvariant/ToUpperInvariant
+dotnet_diagnostic.CA1311.severity = suggestion
+
+# CA1852: Type can be sealed
+dotnet_diagnostic.CA1852.severity = suggestion
+
+# CA1854: Prefer the IDictionary.TryGetValue(TKey, out TValue) method
+dotnet_diagnostic.CA1854.severity = suggestion
+
+# JSON002: Probable JSON string detected
+dotnet_diagnostic.JSON002.severity = suggestion

@@ -1,4 +1,4 @@
-﻿using System.Composition;
+using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -29,7 +29,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
 
         private async Task<ProcessingResultCode> ListDetectorsAsync(IScanArguments listArguments)
         {
-            var detectors = this.DetectorRegistryService.GetDetectors(listArguments.AdditionalPluginDirectories, listArguments.AdditionalDITargets);
+            var detectors = this.DetectorRegistryService.GetDetectors(listArguments.AdditionalPluginDirectories, listArguments.AdditionalDITargets, listArguments.SkipPluginsDirectory);
             if (detectors.Any())
             {
                 foreach (var detector in detectors)

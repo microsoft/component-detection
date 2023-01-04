@@ -30,7 +30,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
         public async Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments)
         {
             this.Logger.LogCreateLoggingGroup();
-            var initialDetectors = this.DetectorRegistryService.GetDetectors(detectionArguments.AdditionalPluginDirectories, detectionArguments.AdditionalDITargets).ToImmutableList();
+            var initialDetectors = this.DetectorRegistryService.GetDetectors(detectionArguments.AdditionalPluginDirectories, detectionArguments.AdditionalDITargets, detectionArguments.SkipPluginsDirectory).ToImmutableList();
 
             if (!initialDetectors.Any())
             {
@@ -41,7 +41,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services
             var detectors = this.DetectorRestrictionService.ApplyRestrictions(detectorRestrictions, initialDetectors).ToImmutableList();
 
             this.Logger.LogVerbose($"Finished applying restrictions to detectors.");
-            this.Logger.LogCreateLoggingGroup();
 
             var processingResult = await this.DetectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
 

@@ -57,7 +57,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services
                 this.versionedComponentDetector1Mock.Object,
             };
 
-            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(It.IsAny<IEnumerable<DirectoryInfo>>(), It.IsAny<IEnumerable<string>>()))
+            this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(It.IsAny<IEnumerable<DirectoryInfo>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
                 .Returns(registeredDetectors);
         }
 

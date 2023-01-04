@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -208,12 +208,12 @@ namespace Microsoft.ComponentDetection.Detectors.Pip
 
         private class PythonResolverState
         {
-            public readonly IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap
+            public IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap { get; }
                 = new Dictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>>(StringComparer.OrdinalIgnoreCase);
 
-            public readonly Queue<(string, PipDependencySpecification)> ProcessingQueue = new Queue<(string, PipDependencySpecification)>();
+            public Queue<(string PackageName, PipDependencySpecification Package)> ProcessingQueue { get; } = new Queue<(string, PipDependencySpecification)>();
 
-            public readonly IDictionary<string, PipGraphNode> NodeReferences = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
+            public IDictionary<string, PipGraphNode> NodeReferences { get; } = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
 
             public IList<PipGraphNode> Roots { get; } = new List<PipGraphNode>();
         }

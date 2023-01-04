@@ -75,27 +75,27 @@ namespace Microsoft.ComponentDetection.Detectors.Go
                 }
                 else
                 {
-                    var fileExtension = Path.GetExtension(file.Location).ToLowerInvariant();
+                    var fileExtension = Path.GetExtension(file.Location).ToUpperInvariant();
                     switch (fileExtension)
                     {
-                        case ".mod":
-                            {
-                                this.Logger.LogVerbose("Found Go.mod: " + file.Location);
-                                this.ParseGoModFile(singleFileComponentRecorder, file);
-                                break;
-                            }
+                        case ".MOD":
+                        {
+                            this.Logger.LogVerbose("Found Go.mod: " + file.Location);
+                            this.ParseGoModFile(singleFileComponentRecorder, file);
+                            break;
+                        }
 
-                        case ".sum":
-                            {
-                                this.Logger.LogVerbose("Found Go.sum: " + file.Location);
-                                this.ParseGoSumFile(singleFileComponentRecorder, file);
-                                break;
-                            }
+                        case ".SUM":
+                        {
+                            this.Logger.LogVerbose("Found Go.sum: " + file.Location);
+                            this.ParseGoSumFile(singleFileComponentRecorder, file);
+                            break;
+                        }
 
                         default:
-                            {
-                                throw new Exception("Unexpected file type detected in go detector");
-                            }
+                        {
+                            throw new Exception("Unexpected file type detected in go detector");
+                        }
                     }
                 }
             }
