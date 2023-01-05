@@ -1,16 +1,15 @@
-namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts
+﻿namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts;
+
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+
+// Represents Cargo.Lock file structure.
+[DataContract]
+public class CargoLock
 {
-    using System.Collections.Generic;
-    using System.Runtime.Serialization;
+    [DataMember(Name = "package")]
+    public List<CargoPackage> Package { get; set; }
 
-    // Represents Cargo.Lock file structure.
-    [DataContract]
-    public class CargoLock
-    {
-        [DataMember(Name = "package")]
-        public List<CargoPackage> Package { get; set; }
-
-        [DataMember(Name = "metadata")]
-        public Dictionary<string, object> Metadata { get; set; }
-    }
+    [DataMember(Name = "metadata")]
+    public Dictionary<string, object> Metadata { get; set; }
 }

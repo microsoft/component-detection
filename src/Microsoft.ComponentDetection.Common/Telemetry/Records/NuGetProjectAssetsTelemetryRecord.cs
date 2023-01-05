@@ -1,35 +1,34 @@
-using System;
+﻿using System;
 
-namespace Microsoft.ComponentDetection.Common.Telemetry.Records
+namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+
+public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDisposable
 {
-    public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDisposable
+    private bool disposedValue = false;
+
+    public string RecordName => "NuGetProjectAssets";
+
+    public string FoundTargets { get; set; }
+
+    public string UnhandledException { get; set; }
+
+    public string Frameworks { get; set; }
+
+    public void Dispose()
     {
-        private bool disposedValue = false;
+        this.Dispose(true);
+    }
 
-        public string RecordName => "NuGetProjectAssets";
-
-        public string FoundTargets { get; set; }
-
-        public string UnhandledException { get; set; }
-
-        public string Frameworks { get; set; }
-
-        public void Dispose()
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!this.disposedValue)
         {
-            this.Dispose(true);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!this.disposedValue)
+            if (disposing)
             {
-                if (disposing)
-                {
-                    TelemetryRelay.Instance.PostTelemetryRecord(this);
-                }
-
-                this.disposedValue = true;
+                TelemetryRelay.Instance.PostTelemetryRecord(this);
             }
+
+            this.disposedValue = true;
         }
     }
 }

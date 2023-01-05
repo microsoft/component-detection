@@ -1,8 +1,7 @@
 ﻿using System;
 
-namespace Microsoft.ComponentDetection.Detectors.Pip
+namespace Microsoft.ComponentDetection.Detectors.Pip;
+
+public class PythonNotFoundException : Exception
 {
-    public class PythonNotFoundException : Exception
-    {
-    }
 }

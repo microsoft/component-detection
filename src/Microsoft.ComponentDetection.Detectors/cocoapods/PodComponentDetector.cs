@@ -12,54 +12,54 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-namespace Microsoft.ComponentDetection.Detectors.CocoaPods
+namespace Microsoft.ComponentDetection.Detectors.CocoaPods;
+
+[Export(typeof(IComponentDetector))]
+public class PodComponentDetector : FileComponentDetector
 {
-    [Export(typeof(IComponentDetector))]
-    public class PodComponentDetector : FileComponentDetector
+    public override string Id { get; } = "CocoaPods";
+
+    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods) };
+
+    public override IList<string> SearchPatterns { get; } = new List<string> { "Podfile.lock" };
+
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pod, ComponentType.Git };
+
+    public override int Version { get; } = 2;
+
+    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
-        public override string Id { get; } = "CocoaPods";
+        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+        var file = processRequest.ComponentStream;
 
-        public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods) };
+        this.Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
 
-        public override IList<string> SearchPatterns { get; } = new List<string> { "Podfile.lock" };
-
-        public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pod, ComponentType.Git };
-
-        public override int Version { get; } = 2;
-
-        protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+        try
         {
-            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-            var file = processRequest.ComponentStream;
+            var podfileLock = await ParsePodfileLock(file);
 
-            this.Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
-
-            try
-            {
-                var podfileLock = await ParsePodfileLock(file);
-
-                this.ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
-            }
-            catch (Exception e)
-            {
-                this.Logger.LogFailedReadingFile(file.Location, e);
-            }
+            this.ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
         }
-
-        private static async Task<PodfileLock> ParsePodfileLock(IComponentStream file)
+        catch (Exception e)
         {
-            var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
-            var input = new StringReader(fileContent);
-            var deserializer = new DeserializerBuilder()
-                    .IgnoreUnmatchedProperties()
-                    .Build();
-
-            return deserializer.Deserialize<PodfileLock>(input);
+            this.Logger.LogFailedReadingFile(file.Location, e);
         }
+    }
 
-        private static (Pod Pod, string Key, DetectedComponent DetectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
-        {
-            return podfileLock.Pods.Select(pod =>
+    private static async Task<PodfileLock> ParsePodfileLock(IComponentStream file)
+    {
+        var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
+        var input = new StringReader(fileContent);
+        var deserializer = new DeserializerBuilder()
+            .IgnoreUnmatchedProperties()
+            .Build();
+
+        return deserializer.Deserialize<PodfileLock>(input);
+    }
+
+    private static (Pod Pod, string Key, DetectedComponent DetectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
+    {
+        return podfileLock.Pods.Select(pod =>
             {
                 // Find the spec repository URL for this pod
                 var specRepository = podfileLock.GetSpecRepositoryOfSpec(pod.Podspec) ?? string.Empty;
@@ -88,332 +88,331 @@ namespace Microsoft.ComponentDetection.Detectors.CocoaPods
                 return (pod, key, detectedComponent);
             })
             .ToArray();
+    }
+
+    private static string NormalizePodfileGitUri(string gitOption)
+    {
+        // Podfiles can be built using git@ references to .git files, but this is not a valid Uri
+        // schema. Normalize to https:// so Uri creation doesn't fail
+        if (gitOption.StartsWith("git@", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"https://{gitOption[4..]}";
         }
 
-        private static string NormalizePodfileGitUri(string gitOption)
-        {
-            // Podfiles can be built using git@ references to .git files, but this is not a valid Uri
-            // schema. Normalize to https:// so Uri creation doesn't fail
-            if (gitOption.StartsWith("git@", StringComparison.OrdinalIgnoreCase))
-            {
-                return $"https://{gitOption[4..]}";
-            }
+        return gitOption;
+    }
 
-            return gitOption;
+    private void ProcessPodfileLock(
+        ISingleFileComponentRecorder singleFileComponentRecorder,
+        PodfileLock podfileLock)
+    {
+        if (podfileLock.Pods.Count == 0)
+        {
+            return;
         }
 
-        private void ProcessPodfileLock(
-            ISingleFileComponentRecorder singleFileComponentRecorder,
-            PodfileLock podfileLock)
+        // Create a set of root podspecs
+        var rootPodspecs = new HashSet<string>(podfileLock.Dependencies.Select(p => p.Podspec));
+
+        var podKeyDetectedComponents = ReadPodfileLock(podfileLock);
+        var rootComponents = new Dictionary<string, DetectedComponent>();
+        var nonRootComponents = new Dictionary<string, DetectedComponent>();
+
+        foreach (var (pod, key, detectedComponent) in podKeyDetectedComponents)
         {
-            if (podfileLock.Pods.Count == 0)
+            // Check if the pod is a root component and add it to the list of discovered components
+            if (rootPodspecs.Contains(pod.Podspec))
             {
-                return;
-            }
-
-            // Create a set of root podspecs
-            var rootPodspecs = new HashSet<string>(podfileLock.Dependencies.Select(p => p.Podspec));
-
-            var podKeyDetectedComponents = ReadPodfileLock(podfileLock);
-            var rootComponents = new Dictionary<string, DetectedComponent>();
-            var nonRootComponents = new Dictionary<string, DetectedComponent>();
-
-            foreach (var (pod, key, detectedComponent) in podKeyDetectedComponents)
-            {
-                // Check if the pod is a root component and add it to the list of discovered components
-                if (rootPodspecs.Contains(pod.Podspec))
+                if (nonRootComponents.TryGetValue(key, out var existingComponent))
                 {
-                    if (nonRootComponents.TryGetValue(key, out var existingComponent))
-                    {
-                        rootComponents.TryAdd(key, existingComponent);
-                        nonRootComponents.Remove(key);
-                    }
-                    else
-                    {
-                        rootComponents.TryAdd(key, detectedComponent);
-                    }
-                }
-                else if (!rootComponents.ContainsKey(key))
-                {
-                    nonRootComponents.TryAdd(key, detectedComponent);
+                    rootComponents.TryAdd(key, existingComponent);
+                    nonRootComponents.Remove(key);
                 }
                 else
                 {
-                    // Ignore current element, it will be recovered later via a root or non-root!
+                    rootComponents.TryAdd(key, detectedComponent);
                 }
             }
-
-            var dependenciesMap = new Dictionary<string, HashSet<string>>();
-
-            // Map a pod ID to the list of the pod's dependencies
-            var podDependencies = new Dictionary<string, List<PodDependency>>();
-
-            // Map a podspec to the pod ID
-            var podSpecs = new Dictionary<string, string>();
-
-            foreach (var pod in podfileLock.Pods)
+            else if (!rootComponents.ContainsKey(key))
             {
-                // Find the spec repository URL for this pod
-                var specRepository = podfileLock.GetSpecRepositoryOfSpec(pod.Podspec) ?? string.Empty;
+                nonRootComponents.TryAdd(key, detectedComponent);
+            }
+            else
+            {
+                // Ignore current element, it will be recovered later via a root or non-root!
+            }
+        }
 
-                // Check if the Podspec comes from a git repository or not
-                TypedComponent typedComponent;
-                string key;
-                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
-                    && checkoutOptions.TryGetValue(":git", out var gitOption)
-                    && checkoutOptions.TryGetValue(":commit", out var commitOption))
+        var dependenciesMap = new Dictionary<string, HashSet<string>>();
+
+        // Map a pod ID to the list of the pod's dependencies
+        var podDependencies = new Dictionary<string, List<PodDependency>>();
+
+        // Map a podspec to the pod ID
+        var podSpecs = new Dictionary<string, string>();
+
+        foreach (var pod in podfileLock.Pods)
+        {
+            // Find the spec repository URL for this pod
+            var specRepository = podfileLock.GetSpecRepositoryOfSpec(pod.Podspec) ?? string.Empty;
+
+            // Check if the Podspec comes from a git repository or not
+            TypedComponent typedComponent;
+            string key;
+            if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
+                && checkoutOptions.TryGetValue(":git", out var gitOption)
+                && checkoutOptions.TryGetValue(":commit", out var commitOption))
+            {
+                // Create the Git component
+                gitOption = NormalizePodfileGitUri(gitOption);
+                typedComponent = new GitComponent(new Uri(gitOption), commitOption);
+                key = $"{commitOption}@{gitOption}";
+            }
+            else
+            {
+                // Create the Pod component
+                typedComponent = new PodComponent(pod.Podspec, pod.Version, specRepository);
+                key = $"{pod.Podspec}:{pod.Version}@{specRepository}";
+            }
+
+            var detectedComponent = new DetectedComponent(typedComponent)
+            {
+                DependencyRoots = new HashSet<TypedComponent>(new ComponentComparer()),
+            };
+
+            // Check if the pod is a root component and add it to the list of discovered components
+            if (rootPodspecs.Contains(pod.Podspec))
+            {
+                if (nonRootComponents.TryGetValue(key, out var existingComponent))
                 {
-                    // Create the Git component
-                    gitOption = NormalizePodfileGitUri(gitOption);
-                    typedComponent = new GitComponent(new Uri(gitOption), commitOption);
-                    key = $"{commitOption}@{gitOption}";
+                    rootComponents.TryAdd(key, existingComponent);
+                    nonRootComponents.Remove(key);
                 }
                 else
                 {
-                    // Create the Pod component
-                    typedComponent = new PodComponent(pod.Podspec, pod.Version, specRepository);
-                    key = $"{pod.Podspec}:{pod.Version}@{specRepository}";
+                    rootComponents.TryAdd(key, detectedComponent);
                 }
+            }
+            else if (!rootComponents.ContainsKey(key))
+            {
+                nonRootComponents.TryAdd(key, detectedComponent);
+            }
 
-                var detectedComponent = new DetectedComponent(typedComponent)
-                {
-                    DependencyRoots = new HashSet<TypedComponent>(new ComponentComparer()),
-                };
+            // Update the podspec map
+            podSpecs.TryAdd(pod.Podspec, key);
 
-                // Check if the pod is a root component and add it to the list of discovered components
-                if (rootPodspecs.Contains(pod.Podspec))
+            // Update the pod dependencies map
+            if (podDependencies.TryGetValue(key, out var dependencies))
+            {
+                dependencies.AddRange(pod.Dependencies);
+            }
+            else
+            {
+                podDependencies.TryAdd(key, new List<PodDependency>(pod.Dependencies));
+            }
+        }
+
+        foreach (var pod in podDependencies)
+        {
+            // Add all the dependencies to the map, without duplicates
+            dependenciesMap.TryAdd(pod.Key, new HashSet<string>());
+
+            foreach (var dependency in pod.Value)
+            {
+                if (podSpecs.TryGetValue(dependency.Podspec, out var dependencyKey))
                 {
-                    if (nonRootComponents.TryGetValue(key, out var existingComponent))
+                    if (dependencyKey != pod.Key)
                     {
-                        rootComponents.TryAdd(key, existingComponent);
-                        nonRootComponents.Remove(key);
+                        var temp = podSpecs[dependency.Podspec];
+                        dependenciesMap[pod.Key].Add(podSpecs[dependency.Podspec]);
                     }
-                    else
-                    {
-                        rootComponents.TryAdd(key, detectedComponent);
-                    }
-                }
-                else if (!rootComponents.ContainsKey(key))
-                {
-                    nonRootComponents.TryAdd(key, detectedComponent);
-                }
-
-                // Update the podspec map
-                podSpecs.TryAdd(pod.Podspec, key);
-
-                // Update the pod dependencies map
-                if (podDependencies.TryGetValue(key, out var dependencies))
-                {
-                    dependencies.AddRange(pod.Dependencies);
                 }
                 else
                 {
-                    podDependencies.TryAdd(key, new List<PodDependency>(pod.Dependencies));
+                    this.Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
                 }
             }
+        }
 
-            foreach (var pod in podDependencies)
+        foreach (var rootComponent in rootComponents)
+        {
+            singleFileComponentRecorder.RegisterUsage(
+                rootComponent.Value,
+                isExplicitReferencedDependency: true);
+
+            // Check if this component has any dependencies
+            if (!dependenciesMap.ContainsKey(rootComponent.Key))
             {
-                // Add all the dependencies to the map, without duplicates
-                dependenciesMap.TryAdd(pod.Key, new HashSet<string>());
-
-                foreach (var dependency in pod.Value)
-                {
-                    if (podSpecs.TryGetValue(dependency.Podspec, out var dependencyKey))
-                    {
-                        if (dependencyKey != pod.Key)
-                        {
-                            var temp = podSpecs[dependency.Podspec];
-                            dependenciesMap[pod.Key].Add(podSpecs[dependency.Podspec]);
-                        }
-                    }
-                    else
-                    {
-                        this.Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
-                    }
-                }
+                continue;
             }
 
-            foreach (var rootComponent in rootComponents)
+            // Traverse the dependencies graph for this component and stop if there is a cycle
+            // or if we find another root component
+            var dependencies = new Queue<string>(dependenciesMap[rootComponent.Key]);
+            while (dependencies.Count > 0)
             {
-                singleFileComponentRecorder.RegisterUsage(
-                    rootComponent.Value,
-                    isExplicitReferencedDependency: true);
+                var dependency = dependencies.Dequeue();
 
-                // Check if this component has any dependencies
-                if (!dependenciesMap.ContainsKey(rootComponent.Key))
+                if (rootComponents.TryGetValue(dependency, out var detectedRootComponent))
                 {
-                    continue;
+                    // Found another root component
+                    singleFileComponentRecorder.RegisterUsage(
+                        detectedRootComponent,
+                        isExplicitReferencedDependency: true,
+                        parentComponentId: rootComponent.Value.Component.Id);
                 }
-
-                // Traverse the dependencies graph for this component and stop if there is a cycle
-                // or if we find another root component
-                var dependencies = new Queue<string>(dependenciesMap[rootComponent.Key]);
-                while (dependencies.Count > 0)
+                else if (nonRootComponents.TryGetValue(dependency, out var detectedComponent))
                 {
-                    var dependency = dependencies.Dequeue();
+                    singleFileComponentRecorder.RegisterUsage(
+                        detectedComponent,
+                        isExplicitReferencedDependency: true,
+                        parentComponentId: rootComponent.Value.Component.Id);
 
-                    if (rootComponents.TryGetValue(dependency, out var detectedRootComponent))
+                    // Add the new dependecies to the queue
+                    if (dependenciesMap.TryGetValue(dependency, out var newDependencies))
                     {
-                        // Found another root component
-                        singleFileComponentRecorder.RegisterUsage(
-                            detectedRootComponent,
-                            isExplicitReferencedDependency: true,
-                            parentComponentId: rootComponent.Value.Component.Id);
-                    }
-                    else if (nonRootComponents.TryGetValue(dependency, out var detectedComponent))
-                    {
-                        singleFileComponentRecorder.RegisterUsage(
-                            detectedComponent,
-                            isExplicitReferencedDependency: true,
-                            parentComponentId: rootComponent.Value.Component.Id);
-
-                        // Add the new dependecies to the queue
-                        if (dependenciesMap.TryGetValue(dependency, out var newDependencies))
-                        {
-                            newDependencies.ToList().ForEach(dependencies.Enqueue);
-                        }
-                        else
-                        {
-                            // Do nothing!
-                        }
+                        newDependencies.ToList().ForEach(dependencies.Enqueue);
                     }
                     else
                     {
                         // Do nothing!
                     }
                 }
-            }
-
-            foreach (var component in nonRootComponents)
-            {
-                singleFileComponentRecorder.RegisterUsage(
-                    component.Value,
-                    isExplicitReferencedDependency: true);
-            }
-        }
-
-        private class Pod : IYamlConvertible
-        {
-            public string Name { get; set; }
-
-            public string Version { get; set; }
-
-            public IList<PodDependency> Dependencies { get; set; }
-
-            public string Podspec => this.Name.Split('/', 2)[0];
-
-            public bool IsSubspec => this.Name != this.Podspec;
-
-            public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
-            {
-                var hasDependencies = parser.Accept<MappingStart>(out _);
-                if (hasDependencies)
-                {
-                    parser.Consume<MappingStart>();
-                }
-
-                var podInfo = parser.Consume<Scalar>();
-                var components = podInfo.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
-                this.Name = components[0].Trim();
-                this.Version = components[1].Trim();
-
-                if (hasDependencies)
-                {
-                    this.Dependencies = (IList<PodDependency>)nestedObjectDeserializer(typeof(IList<PodDependency>));
-
-                    parser.Consume<MappingEnd>();
-                }
                 else
                 {
-                    this.Dependencies = Array.Empty<PodDependency>();
+                    // Do nothing!
                 }
             }
-
-            public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
-            {
-                throw new NotImplementedException();
-            }
         }
 
-        private class PodDependency : IYamlConvertible
+        foreach (var component in nonRootComponents)
         {
-            public string PodName { get; set; }
-
-            public string PodVersion { get; set; }
-
-            public string Podspec => this.PodName.Split('/', 2)[0];
-
-            public bool IsSubspec => this.PodName != this.Podspec;
-
-            public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
-            {
-                var scalar = parser.Consume<Scalar>();
-                var components = scalar.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
-                this.PodName = components[0].Trim();
-                this.PodVersion = components.Length > 1 ? components[1].Trim() : null;
-            }
-
-            public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
-            {
-                throw new NotImplementedException();
-            }
+            singleFileComponentRecorder.RegisterUsage(
+                component.Value,
+                isExplicitReferencedDependency: true);
         }
+    }
 
-        private class PodfileLock
+    private class Pod : IYamlConvertible
+    {
+        public string Name { get; set; }
+
+        public string Version { get; set; }
+
+        public IList<PodDependency> Dependencies { get; set; }
+
+        public string Podspec => this.Name.Split('/', 2)[0];
+
+        public bool IsSubspec => this.Name != this.Podspec;
+
+        public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
         {
-            public PodfileLock()
+            var hasDependencies = parser.Accept<MappingStart>(out _);
+            if (hasDependencies)
+            {
+                parser.Consume<MappingStart>();
+            }
+
+            var podInfo = parser.Consume<Scalar>();
+            var components = podInfo.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+            this.Name = components[0].Trim();
+            this.Version = components[1].Trim();
+
+            if (hasDependencies)
+            {
+                this.Dependencies = (IList<PodDependency>)nestedObjectDeserializer(typeof(IList<PodDependency>));
+
+                parser.Consume<MappingEnd>();
+            }
+            else
             {
                 this.Dependencies = Array.Empty<PodDependency>();
-                this.PodspecRepositories = new Dictionary<string, IList<string>>();
-                this.PodspecChecksums = new Dictionary<string, string>();
-                this.ExternalSources = new Dictionary<string, IDictionary<string, string>>();
-                this.CheckoutOptions = new Dictionary<string, IDictionary<string, string>>();
-                this.Pods = Array.Empty<Pod>();
             }
+        }
 
-            [YamlMember(Alias = "PODFILE CHECKSUM", ApplyNamingConventions = false)]
-            public string Checksum { get; set; }
+        public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
-            [YamlMember(Alias = "COCOAPODS", ApplyNamingConventions = false)]
-            public string CocoapodsVersion { get; set; }
+    private class PodDependency : IYamlConvertible
+    {
+        public string PodName { get; set; }
 
-            [YamlMember(Alias = "DEPENDENCIES", ApplyNamingConventions = false)]
-            public IList<PodDependency> Dependencies { get; set; }
+        public string PodVersion { get; set; }
 
-            [YamlMember(Alias = "SPEC REPOS", ApplyNamingConventions = false)]
-            public IDictionary<string, IList<string>> PodspecRepositories { get; set; }
+        public string Podspec => this.PodName.Split('/', 2)[0];
 
-            [YamlMember(Alias = "SPEC CHECKSUMS", ApplyNamingConventions = false)]
-            public IDictionary<string, string> PodspecChecksums { get; set; }
+        public bool IsSubspec => this.PodName != this.Podspec;
 
-            [YamlMember(Alias = "EXTERNAL SOURCES", ApplyNamingConventions = false)]
-            public IDictionary<string, IDictionary<string, string>> ExternalSources { get; set; }
+        public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
+        {
+            var scalar = parser.Consume<Scalar>();
+            var components = scalar.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+            this.PodName = components[0].Trim();
+            this.PodVersion = components.Length > 1 ? components[1].Trim() : null;
+        }
 
-            [YamlMember(Alias = "CHECKOUT OPTIONS", ApplyNamingConventions = false)]
-            public IDictionary<string, IDictionary<string, string>> CheckoutOptions { get; set; }
+        public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
-            [YamlMember(Alias = "PODS", ApplyNamingConventions = false)]
-            public IList<Pod> Pods { get; set; }
+    private class PodfileLock
+    {
+        public PodfileLock()
+        {
+            this.Dependencies = Array.Empty<PodDependency>();
+            this.PodspecRepositories = new Dictionary<string, IList<string>>();
+            this.PodspecChecksums = new Dictionary<string, string>();
+            this.ExternalSources = new Dictionary<string, IDictionary<string, string>>();
+            this.CheckoutOptions = new Dictionary<string, IDictionary<string, string>>();
+            this.Pods = Array.Empty<Pod>();
+        }
 
-            public string GetSpecRepositoryOfSpec(string specName)
+        [YamlMember(Alias = "PODFILE CHECKSUM", ApplyNamingConventions = false)]
+        public string Checksum { get; set; }
+
+        [YamlMember(Alias = "COCOAPODS", ApplyNamingConventions = false)]
+        public string CocoapodsVersion { get; set; }
+
+        [YamlMember(Alias = "DEPENDENCIES", ApplyNamingConventions = false)]
+        public IList<PodDependency> Dependencies { get; set; }
+
+        [YamlMember(Alias = "SPEC REPOS", ApplyNamingConventions = false)]
+        public IDictionary<string, IList<string>> PodspecRepositories { get; set; }
+
+        [YamlMember(Alias = "SPEC CHECKSUMS", ApplyNamingConventions = false)]
+        public IDictionary<string, string> PodspecChecksums { get; set; }
+
+        [YamlMember(Alias = "EXTERNAL SOURCES", ApplyNamingConventions = false)]
+        public IDictionary<string, IDictionary<string, string>> ExternalSources { get; set; }
+
+        [YamlMember(Alias = "CHECKOUT OPTIONS", ApplyNamingConventions = false)]
+        public IDictionary<string, IDictionary<string, string>> CheckoutOptions { get; set; }
+
+        [YamlMember(Alias = "PODS", ApplyNamingConventions = false)]
+        public IList<Pod> Pods { get; set; }
+
+        public string GetSpecRepositoryOfSpec(string specName)
+        {
+            foreach (var repository in this.PodspecRepositories)
             {
-                foreach (var repository in this.PodspecRepositories)
+                if (repository.Value.Contains(specName))
                 {
-                    if (repository.Value.Contains(specName))
+                    // CocoaPods specs are stored in a git repo but depending on settings/CocoaPods version
+                    // the repo is shown differently in the Podfile.lock
+                    return repository.Key.ToUpperInvariant() switch
                     {
-                        // CocoaPods specs are stored in a git repo but depending on settings/CocoaPods version
-                        // the repo is shown differently in the Podfile.lock
-                        return repository.Key.ToUpperInvariant() switch
-                        {
-                            "TRUNK" or "https://github.com/cocoapods/specs.git" => "TRUNK",
-                            _ => repository.Key,
-                        };
-                    }
+                        "TRUNK" or "https://github.com/cocoapods/specs.git" => "TRUNK",
+                        _ => repository.Key,
+                    };
                 }
-
-                return null;
             }
+
+            return null;
         }
     }
 }

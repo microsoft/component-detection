@@ -8,25 +8,25 @@ using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests
+namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+[TestClass]
+[TestCategory("Governance/All")]
+[TestCategory("Governance/ComponentDetection")]
+public class PoetryComponentDetectorTests
 {
-    [TestClass]
-    [TestCategory("Governance/All")]
-    [TestCategory("Governance/ComponentDetection")]
-    public class PoetryComponentDetectorTests
+    private DetectorTestUtility<PoetryComponentDetector> detectorTestUtility;
+
+    [TestInitialize]
+    public void TestInitialize()
     {
-        private DetectorTestUtility<PoetryComponentDetector> detectorTestUtility;
+        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PoetryComponentDetector>();
+    }
 
-        [TestInitialize]
-        public void TestInitialize()
-        {
-            this.detectorTestUtility = DetectorTestUtilityCreator.Create<PoetryComponentDetector>();
-        }
-
-        [TestMethod]
-        public async Task TestPoetryDetector_TestCustomSource()
-        {
-            var poetryLockContent = @"[[package]]
+    [TestMethod]
+    public async Task TestPoetryDetector_TestCustomSource()
+    {
+        var poetryLockContent = @"[[package]]
 name = ""certifi""
 version = ""2021.10.8""
 description = ""Python package for providing Mozilla's CA Bundle.""
@@ -40,24 +40,24 @@ url = ""https://pypi.custom.com//simple""
 reference = ""custom""
 ";
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile("poetry.lock", poetryLockContent)
-                                                    .ExecuteDetector();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("poetry.lock", poetryLockContent)
+            .ExecuteDetector();
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
-            Assert.AreEqual(1, detectedComponents.Count());
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        Assert.AreEqual(1, detectedComponents.Count());
 
-            this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
-            var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
-            Assert.IsFalse(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
-        }
+        this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
+        var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
+        Assert.IsFalse(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
+    }
 
-        [TestMethod]
-        public async Task TestPoetryDetector_TestDevDependency()
-        {
-            var poetryLockContent = @"[[package]]
+    [TestMethod]
+    public async Task TestPoetryDetector_TestDevDependency()
+    {
+        var poetryLockContent = @"[[package]]
 name = ""certifi""
 version = ""2021.10.8""
 description = ""Python package for providing Mozilla's CA Bundle.""
@@ -66,25 +66,25 @@ optional = false
 python-versions = ""*""
 ";
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile("poetry.lock", poetryLockContent)
-                                                    .ExecuteDetector();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("poetry.lock", poetryLockContent)
+            .ExecuteDetector();
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
-            Assert.AreEqual(1, detectedComponents.Count());
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        Assert.AreEqual(1, detectedComponents.Count());
 
-            this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
+        this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
 
-            var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
-            Assert.IsTrue(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
-        }
+        var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
+        Assert.IsTrue(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
+    }
 
-        [TestMethod]
-        public async Task TestPoetryDetector_TestGitDependency()
-        {
-            var poetryLockContent = @"[[package]]
+    [TestMethod]
+    public async Task TestPoetryDetector_TestGitDependency()
+    {
+        var poetryLockContent = @"[[package]]
 name = ""certifi""
 version = ""2021.10.8""
 description = ""Python package for providing Mozilla's CA Bundle.""
@@ -117,34 +117,33 @@ url = ""https://github.com/requests/requests.git""
 reference = ""master""
 resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile("poetry.lock", poetryLockContent)
-                                                    .ExecuteDetector();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("poetry.lock", poetryLockContent)
+            .ExecuteDetector();
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            var detectedComponents = componentRecorder.GetDetectedComponents();
-            Assert.AreEqual(2, detectedComponents.Count());
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        Assert.AreEqual(2, detectedComponents.Count());
 
-            this.AssertGitComponentHashAndUrl(detectedComponents, "232a5596424c98d11c3cf2e29b2f6a6c591c2ff3", "https://github.com/requests/requests.git");
-        }
+        this.AssertGitComponentHashAndUrl(detectedComponents, "232a5596424c98d11c3cf2e29b2f6a6c591c2ff3", "https://github.com/requests/requests.git");
+    }
 
-        private void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
-        {
-            Assert.IsNotNull(
-                detectedComponents.SingleOrDefault(c =>
-            c.Component is PipComponent component &&
-            component.Name.Equals(name) &&
-            component.Version.Equals(version)),
-                $"Component with name {name} and version {version} was not found");
-        }
+    private void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
+    {
+        Assert.IsNotNull(
+            detectedComponents.SingleOrDefault(c =>
+                c.Component is PipComponent component &&
+                component.Name.Equals(name) &&
+                component.Version.Equals(version)),
+            $"Component with name {name} and version {version} was not found");
+    }
 
-        private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
-        {
-            Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
+    private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
+    {
+        Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
             c.Component is GitComponent component &&
             component.CommitHash.Equals(commitHash) &&
             component.RepositoryUrl.Equals(repositoryUrl)));
-        }
     }
 }

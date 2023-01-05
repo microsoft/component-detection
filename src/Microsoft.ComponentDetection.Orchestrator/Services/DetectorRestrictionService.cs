@@ -1,87 +1,86 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Exceptions;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
+[Export(typeof(IDetectorRestrictionService))]
+public class DetectorRestrictionService : IDetectorRestrictionService
 {
-    [Export(typeof(IDetectorRestrictionService))]
-    public class DetectorRestrictionService : IDetectorRestrictionService
+    private readonly IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
+    private readonly string newDetectorId = "NpmWithRoots";
+
+    [Import]
+    public ILogger Logger { get; set; }
+
+    public IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions argSpecifiedRestrictions, IEnumerable<IComponentDetector> detectors)
     {
-        private readonly IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
-        private readonly string newDetectorId = "NpmWithRoots";
+        // Get a list of our default off detectors beforehand so that they can always be considered
+        var defaultOffDetectors = detectors.Where(x => x is IDefaultOffComponentDetector).ToList();
+        detectors = detectors.Where(x => !(x is IDefaultOffComponentDetector)).ToList();
 
-        [Import]
-        public ILogger Logger { get; set; }
-
-        public IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions argSpecifiedRestrictions, IEnumerable<IComponentDetector> detectors)
+        // If someone specifies an "allow list", use it, otherwise assume everything is allowed
+        if (argSpecifiedRestrictions.AllowedDetectorIds != null && argSpecifiedRestrictions.AllowedDetectorIds.Any())
         {
-            // Get a list of our default off detectors beforehand so that they can always be considered
-            var defaultOffDetectors = detectors.Where(x => x is IDefaultOffComponentDetector).ToList();
-            detectors = detectors.Where(x => !(x is IDefaultOffComponentDetector)).ToList();
+            var allowedIds = argSpecifiedRestrictions.AllowedDetectorIds;
 
-            // If someone specifies an "allow list", use it, otherwise assume everything is allowed
-            if (argSpecifiedRestrictions.AllowedDetectorIds != null && argSpecifiedRestrictions.AllowedDetectorIds.Any())
+            // If we have retired detectors in the arg specified list and don't have the new detector, add the new detector
+            if (allowedIds.Any(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)) && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
             {
-                var allowedIds = argSpecifiedRestrictions.AllowedDetectorIds;
-
-                // If we have retired detectors in the arg specified list and don't have the new detector, add the new detector
-                if (allowedIds.Any(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)) && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
+                allowedIds = allowedIds.Concat(new string[]
                 {
-                    allowedIds = allowedIds.Concat(new string[]
-                    {
-                        this.newDetectorId,
-                    });
-                }
+                    this.newDetectorId,
+                });
+            }
 
-                detectors = detectors.Where(d => allowedIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase)).ToList();
+            detectors = detectors.Where(d => allowedIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase)).ToList();
 
-                foreach (var id in allowedIds)
+            foreach (var id in allowedIds)
+            {
+                if (!detectors.Select(d => d.Id).Contains(id, StringComparer.OrdinalIgnoreCase))
                 {
-                    if (!detectors.Select(d => d.Id).Contains(id, StringComparer.OrdinalIgnoreCase))
+                    if (!this.oldDetectorIds.Contains(id, StringComparer.OrdinalIgnoreCase))
                     {
-                        if (!this.oldDetectorIds.Contains(id, StringComparer.OrdinalIgnoreCase))
-                        {
-                            throw new InvalidDetectorFilterException($"Detector '{id}' was not found");
-                        }
-                        else
-                        {
-                            this.Logger.LogWarning($"The detector '{id}' has been phased out, we will run the '{this.newDetectorId}' detector which replaced its functionality.");
-                        }
+                        throw new InvalidDetectorFilterException($"Detector '{id}' was not found");
+                    }
+                    else
+                    {
+                        this.Logger.LogWarning($"The detector '{id}' has been phased out, we will run the '{this.newDetectorId}' detector which replaced its functionality.");
                     }
                 }
             }
-
-            var allCategoryName = Enum.GetName(typeof(DetectorClass), DetectorClass.All);
-            var detectorCategories = argSpecifiedRestrictions.AllowedDetectorCategories;
-
-            // If someone specifies an "allow list", use it, otherwise assume everything is allowed
-            if (detectorCategories != null && detectorCategories.Any() && !detectorCategories.Contains(allCategoryName))
-            {
-                detectors = detectors.Where(x =>
-                {
-                    if (x.Categories != null)
-                    {
-                        // If a detector specifies the "All" category or its categories intersect with the requested categories.
-                        return x.Categories.Contains(allCategoryName) || detectorCategories.Intersect(x.Categories).Any();
-                    }
-
-                    return false;
-                }).ToList();
-                if (!detectors.Any())
-                {
-                    throw new InvalidDetectorCategoriesException($"Categories {string.Join(",", detectorCategories)} did not match any available detectors.");
-                }
-            }
-
-            if (argSpecifiedRestrictions.ExplicitlyEnabledDetectorIds != null && argSpecifiedRestrictions.ExplicitlyEnabledDetectorIds.Any())
-            {
-                detectors = detectors.Union(defaultOffDetectors.Where(x => argSpecifiedRestrictions.ExplicitlyEnabledDetectorIds.Contains(x.Id))).ToList();
-            }
-
-            return detectors;
         }
+
+        var allCategoryName = Enum.GetName(typeof(DetectorClass), DetectorClass.All);
+        var detectorCategories = argSpecifiedRestrictions.AllowedDetectorCategories;
+
+        // If someone specifies an "allow list", use it, otherwise assume everything is allowed
+        if (detectorCategories != null && detectorCategories.Any() && !detectorCategories.Contains(allCategoryName))
+        {
+            detectors = detectors.Where(x =>
+            {
+                if (x.Categories != null)
+                {
+                    // If a detector specifies the "All" category or its categories intersect with the requested categories.
+                    return x.Categories.Contains(allCategoryName) || detectorCategories.Intersect(x.Categories).Any();
+                }
+
+                return false;
+            }).ToList();
+            if (!detectors.Any())
+            {
+                throw new InvalidDetectorCategoriesException($"Categories {string.Join(",", detectorCategories)} did not match any available detectors.");
+            }
+        }
+
+        if (argSpecifiedRestrictions.ExplicitlyEnabledDetectorIds != null && argSpecifiedRestrictions.ExplicitlyEnabledDetectorIds.Any())
+        {
+            detectors = detectors.Union(defaultOffDetectors.Where(x => argSpecifiedRestrictions.ExplicitlyEnabledDetectorIds.Contains(x.Id))).ToList();
+        }
+
+        return detectors;
     }
 }

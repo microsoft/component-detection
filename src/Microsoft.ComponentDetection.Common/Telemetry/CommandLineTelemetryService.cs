@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Composition;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
@@ -7,49 +7,48 @@ using Microsoft.ComponentDetection.Contracts;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Microsoft.ComponentDetection.Common.Telemetry
+namespace Microsoft.ComponentDetection.Common.Telemetry;
+
+[Export(typeof(ITelemetryService))]
+[TelemetryService(nameof(CommandLineTelemetryService))]
+internal class CommandLineTelemetryService : ITelemetryService
 {
-    [Export(typeof(ITelemetryService))]
-    [TelemetryService(nameof(CommandLineTelemetryService))]
-    internal class CommandLineTelemetryService : ITelemetryService
+    private static readonly ConcurrentQueue<JObject> Records = new ConcurrentQueue<JObject>();
+
+    public const string TelemetryRelativePath = "ScanTelemetry_{timestamp}.json";
+
+    private TelemetryMode telemetryMode = TelemetryMode.Production;
+
+    [Import]
+    public ILogger Logger { get; set; }
+
+    [Import]
+    public IFileWritingService FileWritingService { get; set; }
+
+    public void Flush()
     {
-        private static readonly ConcurrentQueue<JObject> Records = new ConcurrentQueue<JObject>();
+        this.FileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(Records));
+    }
 
-        public const string TelemetryRelativePath = "ScanTelemetry_{timestamp}.json";
-
-        private TelemetryMode telemetryMode = TelemetryMode.Production;
-
-        [Import]
-        public ILogger Logger { get; set; }
-
-        [Import]
-        public IFileWritingService FileWritingService { get; set; }
-
-        public void Flush()
+    public void PostRecord(IDetectionTelemetryRecord record)
+    {
+        if (this.telemetryMode != TelemetryMode.Disabled)
         {
-            this.FileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(Records));
-        }
+            var jsonRecord = JObject.FromObject(record);
+            jsonRecord.Add("Timestamp", DateTime.UtcNow);
+            jsonRecord.Add("CorrelationId", TelemetryConstants.CorrelationId);
 
-        public void PostRecord(IDetectionTelemetryRecord record)
-        {
-            if (this.telemetryMode != TelemetryMode.Disabled)
+            Records.Enqueue(jsonRecord);
+
+            if (this.telemetryMode == TelemetryMode.Debug)
             {
-                var jsonRecord = JObject.FromObject(record);
-                jsonRecord.Add("Timestamp", DateTime.UtcNow);
-                jsonRecord.Add("CorrelationId", TelemetryConstants.CorrelationId);
-
-                Records.Enqueue(jsonRecord);
-
-                if (this.telemetryMode == TelemetryMode.Debug)
-                {
-                    this.Logger.LogInfo(jsonRecord.ToString());
-                }
+                this.Logger.LogInfo(jsonRecord.ToString());
             }
         }
+    }
 
-        public void SetMode(TelemetryMode mode)
-        {
-            this.telemetryMode = mode;
-        }
+    public void SetMode(TelemetryMode mode)
+    {
+        this.telemetryMode = mode;
     }
 }

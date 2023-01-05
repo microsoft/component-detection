@@ -1,9 +1,8 @@
 ﻿using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Detectors.Maven
+namespace Microsoft.ComponentDetection.Detectors.Maven;
+
+public interface IMavenStyleDependencyGraphParserService
 {
-    public interface IMavenStyleDependencyGraphParserService
-    {
-        void Parse(string[] lines, ISingleFileComponentRecorder singleFileComponentRecorder);
-    }
+    void Parse(string[] lines, ISingleFileComponentRecorder singleFileComponentRecorder);
 }

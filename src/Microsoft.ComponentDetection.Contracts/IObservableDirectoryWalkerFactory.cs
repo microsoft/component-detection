@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts.Internal;
 
-namespace Microsoft.ComponentDetection.Contracts
+namespace Microsoft.ComponentDetection.Contracts;
+
+public delegate bool ExcludeDirectoryPredicate(ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider);
+
+public interface IObservableDirectoryWalkerFactory
 {
-    public delegate bool ExcludeDirectoryPredicate(ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider);
+    void Initialize(DirectoryInfo root, ExcludeDirectoryPredicate directoryExclusionPredicate, int count, IEnumerable<string> filePatterns = null);
 
-    public interface IObservableDirectoryWalkerFactory
-    {
-        void Initialize(DirectoryInfo root, ExcludeDirectoryPredicate directoryExclusionPredicate, int count, IEnumerable<string> filePatterns = null);
-
-        IObservable<ProcessRequest> GetFilteredComponentStreamObservable(DirectoryInfo root, IEnumerable<string> patterns, IComponentRecorder componentRecorder);
-    }
+    IObservable<ProcessRequest> GetFilteredComponentStreamObservable(DirectoryInfo root, IEnumerable<string> patterns, IComponentRecorder componentRecorder);
 }

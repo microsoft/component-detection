@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -6,216 +6,215 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-namespace Microsoft.ComponentDetection.Detectors.Pip
+namespace Microsoft.ComponentDetection.Detectors.Pip;
+
+[Export(typeof(IPythonResolver))]
+public class PythonResolver : IPythonResolver
 {
-    [Export(typeof(IPythonResolver))]
-    public class PythonResolver : IPythonResolver
+    [Import]
+    public IPyPiClient PypiClient { get; set; }
+
+    [Import]
+    public ILogger Logger { get; set; }
+
+    /// <summary>
+    /// Resolves the root Python packages from the initial list of packages.
+    /// </summary>
+    /// <param name="initialPackages">The initial list of packages.</param>
+    /// <returns>The root packages, with dependencies associated as children.</returns>
+    public async Task<IList<PipGraphNode>> ResolveRoots(IList<PipDependencySpecification> initialPackages)
     {
-        [Import]
-        public IPyPiClient PypiClient { get; set; }
+        var state = new PythonResolverState();
 
-        [Import]
-        public ILogger Logger { get; set; }
-
-        /// <summary>
-        /// Resolves the root Python packages from the initial list of packages.
-        /// </summary>
-        /// <param name="initialPackages">The initial list of packages.</param>
-        /// <returns>The root packages, with dependencies associated as children.</returns>
-        public async Task<IList<PipGraphNode>> ResolveRoots(IList<PipDependencySpecification> initialPackages)
+        // Fill the dictionary with valid packages for the roots
+        foreach (var rootPackage in initialPackages)
         {
-            var state = new PythonResolverState();
-
-            // Fill the dictionary with valid packages for the roots
-            foreach (var rootPackage in initialPackages)
+            // If we have it, we probably just want to skip at this phase as this indicates duplicates
+            if (!state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
             {
-                // If we have it, we probably just want to skip at this phase as this indicates duplicates
-                if (!state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
+                var result = await this.PypiClient.GetReleases(rootPackage);
+
+                if (result.Keys.Any())
                 {
-                    var result = await this.PypiClient.GetReleases(rootPackage);
+                    state.ValidVersionMap[rootPackage.Name] = result;
+
+                    // Grab the latest version as our candidate version
+                    var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
+                        ? state.ValidVersionMap[rootPackage.Name].Keys.Last() : null;
+
+                    var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion));
+
+                    state.NodeReferences[rootPackage.Name] = node;
+
+                    state.Roots.Add(node);
+
+                    state.ProcessingQueue.Enqueue((rootPackage.Name, rootPackage));
+                }
+                else
+                {
+                    this.Logger.LogWarning($"Root dependency {rootPackage.Name} not found on pypi. Skipping package.");
+                }
+            }
+        }
+
+        // Now queue packages for processing
+        return await this.ProcessQueue(state) ?? new List<PipGraphNode>();
+    }
+
+    private async Task<IList<PipGraphNode>> ProcessQueue(PythonResolverState state)
+    {
+        while (state.ProcessingQueue.Count > 0)
+        {
+            var (root, currentNode) = state.ProcessingQueue.Dequeue();
+
+            // gather all dependencies for the current node
+            var dependencies = (await this.FetchPackageDependencies(state, currentNode)).Where(x => !x.PackageIsUnsafe());
+
+            foreach (var dependencyNode in dependencies)
+            {
+                // if we have already seen the dependency and the version we have is valid, just add the dependency to the graph
+                if (state.NodeReferences.TryGetValue(dependencyNode.Name, out var node) &&
+                    PythonVersionUtilities.VersionValidForSpec(node.Value.Version, dependencyNode.DependencySpecifiers))
+                {
+                    state.NodeReferences[currentNode.Name].Children.Add(node);
+                    node.Parents.Add(state.NodeReferences[currentNode.Name]);
+                }
+                else if (node != null)
+                {
+                    this.Logger.LogWarning($"Candidate version ({node.Value.Id}) for {dependencyNode.Name} already exists in map and the version is NOT valid.");
+                    this.Logger.LogWarning($"Specifiers: {string.Join(',', dependencyNode.DependencySpecifiers)} for package {currentNode.Name} caused this.");
+
+                    // The currently selected version is invalid, try to see if there is another valid version available
+                    if (!await this.InvalidateAndReprocessAsync(state, node, dependencyNode))
+                    {
+                        this.Logger.LogWarning($"Version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
+
+                        // there is no valid version available for the node, dependencies are incompatible,
+                    }
+                }
+                else
+                {
+                    // We haven't encountered this package before, so let's fetch it and find a candidate
+                    var result = await this.PypiClient.GetReleases(dependencyNode);
 
                     if (result.Keys.Any())
                     {
-                        state.ValidVersionMap[rootPackage.Name] = result;
+                        state.ValidVersionMap[dependencyNode.Name] = result;
+                        var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
+                            ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
 
-                        // Grab the latest version as our candidate version
-                        var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
-                            ? state.ValidVersionMap[rootPackage.Name].Keys.Last() : null;
+                        this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
 
-                        var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion));
-
-                        state.NodeReferences[rootPackage.Name] = node;
-
-                        state.Roots.Add(node);
-
-                        state.ProcessingQueue.Enqueue((rootPackage.Name, rootPackage));
+                        state.ProcessingQueue.Enqueue((root, dependencyNode));
                     }
                     else
                     {
-                        this.Logger.LogWarning($"Root dependency {rootPackage.Name} not found on pypi. Skipping package.");
+                        this.Logger.LogWarning($"Dependency Package {dependencyNode.Name} not found in Pypi. Skipping package");
                     }
                 }
             }
-
-            // Now queue packages for processing
-            return await this.ProcessQueue(state) ?? new List<PipGraphNode>();
         }
 
-        private async Task<IList<PipGraphNode>> ProcessQueue(PythonResolverState state)
+        return state.Roots;
+    }
+
+    private async Task<bool> InvalidateAndReprocessAsync(
+        PythonResolverState state,
+        PipGraphNode node,
+        PipDependencySpecification newSpec)
+    {
+        var pipComponent = node.Value;
+
+        var oldVersions = state.ValidVersionMap[pipComponent.Name].Keys.ToList();
+        var currentSelectedVersion = node.Value.Version;
+        var currentReleases = state.ValidVersionMap[pipComponent.Name][currentSelectedVersion];
+        foreach (var version in oldVersions)
         {
-            while (state.ProcessingQueue.Count > 0)
+            if (!PythonVersionUtilities.VersionValidForSpec(version, newSpec.DependencySpecifiers))
             {
-                var (root, currentNode) = state.ProcessingQueue.Dequeue();
+                state.ValidVersionMap[pipComponent.Name].Remove(version);
+            }
+        }
 
-                // gather all dependencies for the current node
-                var dependencies = (await this.FetchPackageDependencies(state, currentNode)).Where(x => !x.PackageIsUnsafe());
+        if (state.ValidVersionMap[pipComponent.Name].Count == 0)
+        {
+            state.ValidVersionMap[pipComponent.Name][currentSelectedVersion] = currentReleases;
+            return false;
+        }
 
-                foreach (var dependencyNode in dependencies)
+        var candidateVersion = state.ValidVersionMap[pipComponent.Name].Keys.Any() ? state.ValidVersionMap[pipComponent.Name].Keys.Last() : null;
+
+        node.Value = new PipComponent(pipComponent.Name, candidateVersion);
+
+        var dependencies = (await this.FetchPackageDependencies(state, newSpec)).ToDictionary(x => x.Name, x => x);
+
+        var toRemove = new List<PipGraphNode>();
+        foreach (var child in node.Children)
+        {
+            var pipChild = child.Value;
+
+            if (!dependencies.TryGetValue(pipChild.Name, out var newDependency))
+            {
+                toRemove.Add(child);
+            }
+            else if (!PythonVersionUtilities.VersionValidForSpec(pipChild.Version, newDependency.DependencySpecifiers))
+            {
+                if (!await this.InvalidateAndReprocessAsync(state, child, newDependency))
                 {
-                    // if we have already seen the dependency and the version we have is valid, just add the dependency to the graph
-                    if (state.NodeReferences.TryGetValue(dependencyNode.Name, out var node) &&
-                        PythonVersionUtilities.VersionValidForSpec(node.Value.Version, dependencyNode.DependencySpecifiers))
-                    {
-                        state.NodeReferences[currentNode.Name].Children.Add(node);
-                        node.Parents.Add(state.NodeReferences[currentNode.Name]);
-                    }
-                    else if (node != null)
-                    {
-                        this.Logger.LogWarning($"Candidate version ({node.Value.Id}) for {dependencyNode.Name} already exists in map and the version is NOT valid.");
-                        this.Logger.LogWarning($"Specifiers: {string.Join(',', dependencyNode.DependencySpecifiers)} for package {currentNode.Name} caused this.");
-
-                        // The currently selected version is invalid, try to see if there is another valid version available
-                        if (!await this.InvalidateAndReprocessAsync(state, node, dependencyNode))
-                        {
-                            this.Logger.LogWarning($"Version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
-
-                            // there is no valid version available for the node, dependencies are incompatible,
-                        }
-                    }
-                    else
-                    {
-                        // We haven't encountered this package before, so let's fetch it and find a candidate
-                        var result = await this.PypiClient.GetReleases(dependencyNode);
-
-                        if (result.Keys.Any())
-                        {
-                            state.ValidVersionMap[dependencyNode.Name] = result;
-                            var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
-                                ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
-
-                            this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
-
-                            state.ProcessingQueue.Enqueue((root, dependencyNode));
-                        }
-                        else
-                        {
-                            this.Logger.LogWarning($"Dependency Package {dependencyNode.Name} not found in Pypi. Skipping package");
-                        }
-                    }
+                    return false;
                 }
             }
-
-            return state.Roots;
         }
 
-        private async Task<bool> InvalidateAndReprocessAsync(
-            PythonResolverState state,
-            PipGraphNode node,
-            PipDependencySpecification newSpec)
+        foreach (var remove in toRemove)
         {
-            var pipComponent = node.Value;
-
-            var oldVersions = state.ValidVersionMap[pipComponent.Name].Keys.ToList();
-            var currentSelectedVersion = node.Value.Version;
-            var currentReleases = state.ValidVersionMap[pipComponent.Name][currentSelectedVersion];
-            foreach (var version in oldVersions)
-            {
-                if (!PythonVersionUtilities.VersionValidForSpec(version, newSpec.DependencySpecifiers))
-                {
-                    state.ValidVersionMap[pipComponent.Name].Remove(version);
-                }
-            }
-
-            if (state.ValidVersionMap[pipComponent.Name].Count == 0)
-            {
-                state.ValidVersionMap[pipComponent.Name][currentSelectedVersion] = currentReleases;
-                return false;
-            }
-
-            var candidateVersion = state.ValidVersionMap[pipComponent.Name].Keys.Any() ? state.ValidVersionMap[pipComponent.Name].Keys.Last() : null;
-
-            node.Value = new PipComponent(pipComponent.Name, candidateVersion);
-
-            var dependencies = (await this.FetchPackageDependencies(state, newSpec)).ToDictionary(x => x.Name, x => x);
-
-            var toRemove = new List<PipGraphNode>();
-            foreach (var child in node.Children)
-            {
-                var pipChild = child.Value;
-
-                if (!dependencies.TryGetValue(pipChild.Name, out var newDependency))
-                {
-                    toRemove.Add(child);
-                }
-                else if (!PythonVersionUtilities.VersionValidForSpec(pipChild.Version, newDependency.DependencySpecifiers))
-                {
-                    if (!await this.InvalidateAndReprocessAsync(state, child, newDependency))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            foreach (var remove in toRemove)
-            {
-                node.Children.Remove(remove);
-            }
-
-            return true;
+            node.Children.Remove(remove);
         }
 
-        private async Task<IList<PipDependencySpecification>> FetchPackageDependencies(
-            PythonResolverState state,
-            PipDependencySpecification spec)
+        return true;
+    }
+
+    private async Task<IList<PipDependencySpecification>> FetchPackageDependencies(
+        PythonResolverState state,
+        PipDependencySpecification spec)
+    {
+        var candidateVersion = state.NodeReferences[spec.Name].Value.Version;
+
+        var packageToFetch = state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_wheel", x.PackageType, StringComparison.OrdinalIgnoreCase)) ??
+                             state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
+        if (packageToFetch == null)
         {
-            var candidateVersion = state.NodeReferences[spec.Name].Value.Version;
-
-            var packageToFetch = state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_wheel", x.PackageType, StringComparison.OrdinalIgnoreCase)) ??
-                                 state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
-            if (packageToFetch == null)
-            {
-                return new List<PipDependencySpecification>();
-            }
-
-            return await this.PypiClient.FetchPackageDependencies(spec.Name, candidateVersion, packageToFetch);
+            return new List<PipDependencySpecification>();
         }
 
-        private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
+        return await this.PypiClient.FetchPackageDependencies(spec.Name, candidateVersion, packageToFetch);
+    }
+
+    private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
+    {
+        if (state.NodeReferences.TryGetValue(name, out var value))
         {
-            if (state.NodeReferences.TryGetValue(name, out var value))
-            {
-                parent.Children.Add(value);
-                value.Parents.Add(parent);
-            }
-            else
-            {
-                var node = new PipGraphNode(new PipComponent(name, version));
-                state.NodeReferences[name] = node;
-                parent.Children.Add(node);
-                node.Parents.Add(parent);
-            }
+            parent.Children.Add(value);
+            value.Parents.Add(parent);
         }
-
-        private class PythonResolverState
+        else
         {
-            public IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap { get; }
-                = new Dictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>>(StringComparer.OrdinalIgnoreCase);
-
-            public Queue<(string PackageName, PipDependencySpecification Package)> ProcessingQueue { get; } = new Queue<(string, PipDependencySpecification)>();
-
-            public IDictionary<string, PipGraphNode> NodeReferences { get; } = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
-
-            public IList<PipGraphNode> Roots { get; } = new List<PipGraphNode>();
+            var node = new PipGraphNode(new PipComponent(name, version));
+            state.NodeReferences[name] = node;
+            parent.Children.Add(node);
+            node.Parents.Add(parent);
         }
+    }
+
+    private class PythonResolverState
+    {
+        public IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap { get; }
+            = new Dictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>>(StringComparer.OrdinalIgnoreCase);
+
+        public Queue<(string PackageName, PipDependencySpecification Package)> ProcessingQueue { get; } = new Queue<(string, PipDependencySpecification)>();
+
+        public IDictionary<string, PipGraphNode> NodeReferences { get; } = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
+
+        public IList<PipGraphNode> Roots { get; } = new List<PipGraphNode>();
     }
 }

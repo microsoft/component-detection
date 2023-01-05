@@ -1,11 +1,10 @@
-﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+
+public class RustCrateDetectorTelemetryRecord : BaseDetectionTelemetryRecord
 {
-    public class RustCrateDetectorTelemetryRecord : BaseDetectionTelemetryRecord
-    {
-        public override string RecordName => "RustCrateMalformedDependencies";
+    public override string RecordName => "RustCrateMalformedDependencies";
 
-        public string PackageInfo { get; set; }
+    public string PackageInfo { get; set; }
 
-        public string Dependencies { get; set; }
-    }
+    public string Dependencies { get; set; }
 }

@@ -4,18 +4,17 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace Microsoft.ComponentDetection.Contracts.BcdeModels
+namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+
+[JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
+public class Detector
 {
-    [JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class Detector
-    {
-        public string DetectorId { get; set; }
+    public string DetectorId { get; set; }
 
-        public bool IsExperimental { get; set; }
+    public bool IsExperimental { get; set; }
 
-        public int Version { get; set; }
+    public int Version { get; set; }
 
-        [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
-        public IEnumerable<ComponentType> SupportedComponentTypes { get; set; }
-    }
+    [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
+    public IEnumerable<ComponentType> SupportedComponentTypes { get; set; }
 }

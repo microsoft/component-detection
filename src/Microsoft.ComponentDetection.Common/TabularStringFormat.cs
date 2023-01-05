@@ -1,102 +1,101 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.ComponentDetection.Common
+namespace Microsoft.ComponentDetection.Common;
+
+public class TabularStringFormat
 {
-    public class TabularStringFormat
+    public const char DefaultVerticalLineChar = '|';
+    public const char DefaultHorizontalLineChar = '_';
+
+    private readonly IList<Column> columns;
+    private readonly char horizontalLineChar;
+    private readonly char verticalLineChar;
+    private readonly string tableTitle;
+
+    public TabularStringFormat(IList<Column> columns, char horizontalLineChar = DefaultHorizontalLineChar, char verticalLineChar = DefaultVerticalLineChar, string tableTitle = null)
     {
-        public const char DefaultVerticalLineChar = '|';
-        public const char DefaultHorizontalLineChar = '_';
+        this.columns = columns;
+        this.horizontalLineChar = horizontalLineChar;
+        this.verticalLineChar = verticalLineChar;
+        this.tableTitle = tableTitle;
+    }
 
-        private readonly IList<Column> columns;
-        private readonly char horizontalLineChar;
-        private readonly char verticalLineChar;
-        private readonly string tableTitle;
-
-        public TabularStringFormat(IList<Column> columns, char horizontalLineChar = DefaultHorizontalLineChar, char verticalLineChar = DefaultVerticalLineChar, string tableTitle = null)
+    public string GenerateString(IEnumerable<IList<object>> rows)
+    {
+        var sb = new StringBuilder();
+        if (!string.IsNullOrWhiteSpace(this.tableTitle))
         {
-            this.columns = columns;
-            this.horizontalLineChar = horizontalLineChar;
-            this.verticalLineChar = verticalLineChar;
-            this.tableTitle = tableTitle;
+            this.PrintTitleSection(sb);
+        }
+        else
+        {
+            this.WriteFlatLine(sb, false);
         }
 
-        public string GenerateString(IEnumerable<IList<object>> rows)
+        sb.Append(this.verticalLineChar);
+        foreach (var column in this.columns)
         {
-            var sb = new StringBuilder();
-            if (!string.IsNullOrWhiteSpace(this.tableTitle))
+            sb.Append(column.Header.PadRight(column.Width));
+            sb.Append(this.verticalLineChar);
+        }
+
+        this.WriteFlatLine(sb);
+        foreach (var row in rows)
+        {
+            sb.Append(this.verticalLineChar);
+            if (row.Count != this.columns.Count)
             {
-                this.PrintTitleSection(sb);
-            }
-            else
-            {
-                this.WriteFlatLine(sb, false);
+                throw new InvalidOperationException("All rows must have length equal to the number of columns present.");
             }
 
-            sb.Append(this.verticalLineChar);
-            foreach (var column in this.columns)
+            for (var i = 0; i < this.columns.Count; i++)
             {
-                sb.Append(column.Header.PadRight(column.Width));
+                var dataString = this.columns[i].Format != null ? string.Format(this.columns[i].Format, row[i]) : row[i].ToString();
+                sb.Append(dataString.PadRight(this.columns[i].Width));
                 sb.Append(this.verticalLineChar);
             }
 
             this.WriteFlatLine(sb);
-            foreach (var row in rows)
-            {
-                sb.Append(this.verticalLineChar);
-                if (row.Count != this.columns.Count)
-                {
-                    throw new InvalidOperationException("All rows must have length equal to the number of columns present.");
-                }
-
-                for (var i = 0; i < this.columns.Count; i++)
-                {
-                    var dataString = this.columns[i].Format != null ? string.Format(this.columns[i].Format, row[i]) : row[i].ToString();
-                    sb.Append(dataString.PadRight(this.columns[i].Width));
-                    sb.Append(this.verticalLineChar);
-                }
-
-                this.WriteFlatLine(sb);
-            }
-
-            return sb.ToString();
         }
 
-        private void PrintTitleSection(StringBuilder sb)
+        return sb.ToString();
+    }
+
+    private void PrintTitleSection(StringBuilder sb)
+    {
+        this.WriteFlatLine(sb, false);
+        var tableWidth = this.columns.Sum(column => column.Width);
+        sb.Append(this.verticalLineChar);
+        sb.Append(this.tableTitle.PadRight(tableWidth + this.columns.Count - 1));
+        sb.Append(this.verticalLineChar);
+
+        sb.AppendLine();
+        sb.Append(this.verticalLineChar);
+        for (var i = 0; i < this.columns.Count - 1; i++)
         {
-            this.WriteFlatLine(sb, false);
-            var tableWidth = this.columns.Sum(column => column.Width);
-            sb.Append(this.verticalLineChar);
-            sb.Append(this.tableTitle.PadRight(tableWidth + this.columns.Count - 1));
-            sb.Append(this.verticalLineChar);
-
-            sb.AppendLine();
-            sb.Append(this.verticalLineChar);
-            for (var i = 0; i < this.columns.Count - 1; i++)
-            {
-                sb.Append(string.Empty.PadRight(this.columns[i].Width, this.horizontalLineChar));
-                sb.Append(this.horizontalLineChar);
-            }
-
-            sb.Append(string.Empty.PadRight(this.columns[this.columns.Count - 1].Width, this.horizontalLineChar));
-            sb.Append(this.verticalLineChar);
-            sb.AppendLine();
+            sb.Append(string.Empty.PadRight(this.columns[i].Width, this.horizontalLineChar));
+            sb.Append(this.horizontalLineChar);
         }
 
-        private void WriteFlatLine(StringBuilder sb, bool withPipes = true)
+        sb.Append(string.Empty.PadRight(this.columns[this.columns.Count - 1].Width, this.horizontalLineChar));
+        sb.Append(this.verticalLineChar);
+        sb.AppendLine();
+    }
+
+    private void WriteFlatLine(StringBuilder sb, bool withPipes = true)
+    {
+        var splitCharacter = withPipes ? this.verticalLineChar : this.horizontalLineChar;
+        sb.AppendLine();
+        sb.Append(splitCharacter);
+        for (var i = 0; i < this.columns.Count; i++)
         {
-            var splitCharacter = withPipes ? this.verticalLineChar : this.horizontalLineChar;
-            sb.AppendLine();
+            sb.Append(string.Empty.PadRight(this.columns[i].Width, this.horizontalLineChar));
             sb.Append(splitCharacter);
-            for (var i = 0; i < this.columns.Count; i++)
-            {
-                sb.Append(string.Empty.PadRight(this.columns[i].Width, this.horizontalLineChar));
-                sb.Append(splitCharacter);
-            }
-
-            sb.AppendLine();
         }
+
+        sb.AppendLine();
     }
 }

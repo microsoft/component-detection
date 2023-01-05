@@ -1,18 +1,17 @@
 ﻿using System.IO;
 
-namespace Microsoft.ComponentDetection.Contracts
+namespace Microsoft.ComponentDetection.Contracts;
+
+/// <summary>
+/// Wraps some common file operations for easier testability. This interface is *only used by the command line driven app*.
+/// </summary>
+public interface IFileUtilityService
 {
-    /// <summary>
-    /// Wraps some common file operations for easier testability. This interface is *only used by the command line driven app*.
-    /// </summary>
-    public interface IFileUtilityService
-    {
-        string ReadAllText(string filePath);
+    string ReadAllText(string filePath);
 
-        string ReadAllText(FileInfo file);
+    string ReadAllText(FileInfo file);
 
-        bool Exists(string fileName);
+    bool Exists(string fileName);
 
-        Stream MakeFileStream(string fileName);
-    }
+    Stream MakeFileStream(string fileName);
 }

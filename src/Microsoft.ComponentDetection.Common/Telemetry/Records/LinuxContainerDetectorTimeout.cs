@@ -1,7 +1,6 @@
-﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+
+public class LinuxContainerDetectorTimeout : BaseDetectionTelemetryRecord
 {
-    public class LinuxContainerDetectorTimeout : BaseDetectionTelemetryRecord
-    {
-        public override string RecordName => "LinuxContainerDetectorTimeout";
-    }
+    public override string RecordName => "LinuxContainerDetectorTimeout";
 }

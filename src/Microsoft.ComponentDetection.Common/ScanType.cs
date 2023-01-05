@@ -1,9 +1,8 @@
-﻿namespace Microsoft.ComponentDetection.Common
+﻿namespace Microsoft.ComponentDetection.Common;
+
+public enum ScanType
 {
-    public enum ScanType
-    {
-        Invalid = 0,
-        Register = 1,
-        LogOnly = 2,
-    }
+    Invalid = 0,
+    Register = 1,
+    LogOnly = 2,
 }
