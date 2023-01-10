@@ -146,6 +146,6 @@ public class PythonCommandService : IPythonCommandService
 
     private async Task<bool> CanCommandBeLocated(string pythonPath)
     {
-        return await this.CommandLineInvocationService.CanCommandBeLocated(pythonPath, new List<string> { "python3", "python" }, "--version");
+        return await this.CommandLineInvocationService.CanCommandBeLocated(pythonPath, new List<string> { "python3", "python2" }, "--version");
     }
 }
