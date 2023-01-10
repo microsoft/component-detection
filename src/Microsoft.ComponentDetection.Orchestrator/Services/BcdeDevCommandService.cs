@@ -5,33 +5,32 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
+[Export(typeof(IArgumentHandlingService))]
+public class BcdeDevCommandService : ServiceBase, IArgumentHandlingService
 {
-    [Export(typeof(IArgumentHandlingService))]
-    public class BcdeDevCommandService : ServiceBase, IArgumentHandlingService
+    [Import]
+    public IBcdeScanExecutionService BcdeScanExecutionService { get; set; }
+
+    public bool CanHandle(IScanArguments arguments)
     {
-        [Import]
-        public IBcdeScanExecutionService BcdeScanExecutionService { get; set; }
+        return arguments is BcdeDevArguments;
+    }
 
-        public bool CanHandle(IScanArguments arguments)
+    public async Task<ScanResult> Handle(IScanArguments arguments)
+    {
+        // Run BCDE with the given arguments
+        var detectionArguments = arguments as BcdeArguments;
+
+        var result = await this.BcdeScanExecutionService.ExecuteScanAsync(detectionArguments);
+        var detectedComponents = result.ComponentsFound.ToList();
+        foreach (var detectedComponent in detectedComponents)
         {
-            return arguments is BcdeDevArguments;
+            Console.WriteLine(detectedComponent.Component.Id);
         }
 
-        public async Task<ScanResult> Handle(IScanArguments arguments)
-        {
-            // Run BCDE with the given arguments
-            var detectionArguments = arguments as BcdeArguments;
-
-            var result = await this.BcdeScanExecutionService.ExecuteScanAsync(detectionArguments);
-            var detectedComponents = result.ComponentsFound.ToList();
-            foreach (var detectedComponent in detectedComponents)
-            {
-                Console.WriteLine(detectedComponent.Component.Id);
-            }
-
-            // TODO: Get vulnerabilities from GH Advisories
-            return result;
-        }
+        // TODO: Get vulnerabilities from GH Advisories
+        return result;
     }
 }

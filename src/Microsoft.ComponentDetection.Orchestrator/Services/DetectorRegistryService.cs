@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Composition;
 using System.Composition.Hosting;
 using System.IO;
@@ -10,155 +10,154 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Detectors;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
+// Note : This class isn't unit testable in a meaningful way. Be careful when making changes that you're sure you can test them manually. This class should remain very simple to help prevent future bugs.
+[Export(typeof(IDetectorRegistryService))]
+[Shared]
+public class DetectorRegistryService : ServiceBase, IDetectorRegistryService
 {
-    // Note : This class isn't unit testable in a meaningful way. Be careful when making changes that you're sure you can test them manually. This class should remain very simple to help prevent future bugs.
-    [Export(typeof(IDetectorRegistryService))]
-    [Shared]
-    public class DetectorRegistryService : ServiceBase, IDetectorRegistryService
+    [Import]
+    public IDetectorDependencies DetectorDependencies { get; set; }
+
+    private IEnumerable<IComponentDetector> ComponentDetectors { get; set; }
+
+    public IEnumerable<IComponentDetector> GetDetectors(IEnumerable<DirectoryInfo> additionalSearchDirectories, IEnumerable<string> extraDetectorAssemblies, bool skipPluginsDirectory = false)
     {
-        [Import]
-        public IDetectorDependencies DetectorDependencies { get; set; }
+        var directoriesToSearch = new List<DirectoryInfo>();
 
-        private IEnumerable<IComponentDetector> ComponentDetectors { get; set; }
-
-        public IEnumerable<IComponentDetector> GetDetectors(IEnumerable<DirectoryInfo> additionalSearchDirectories, IEnumerable<string> extraDetectorAssemblies, bool skipPluginsDirectory = false)
+        // Checking Plugins directory is not required when skip argument is provided
+        if (!skipPluginsDirectory)
         {
-            var directoriesToSearch = new List<DirectoryInfo>();
-
-            // Checking Plugins directory is not required when skip argument is provided
-            if (!skipPluginsDirectory)
-            {
-                var executableLocation = Assembly.GetEntryAssembly().Location;
-                var searchPath = Path.Combine(Path.GetDirectoryName(executableLocation), "Plugins");
-                directoriesToSearch.Add(new DirectoryInfo(searchPath));
-            }
-
-            if (additionalSearchDirectories != null)
-            {
-                directoriesToSearch.AddRange(additionalSearchDirectories);
-            }
-
-            this.ComponentDetectors = this.GetComponentDetectors(directoriesToSearch, extraDetectorAssemblies);
-
-            if (!this.ComponentDetectors.Any())
-            {
-                this.Logger.LogError($"No component detectors were found in {directoriesToSearch.FirstOrDefault()} or other provided search paths.");
-            }
-
-            return this.ComponentDetectors;
+            var executableLocation = Assembly.GetEntryAssembly().Location;
+            var searchPath = Path.Combine(Path.GetDirectoryName(executableLocation), "Plugins");
+            directoriesToSearch.Add(new DirectoryInfo(searchPath));
         }
 
-        public IEnumerable<IComponentDetector> GetDetectors(Assembly assemblyToSearch, IEnumerable<string> extraDetectorAssemblies)
+        if (additionalSearchDirectories != null)
         {
-            this.Logger.LogInfo($"Attempting to load component detectors from {assemblyToSearch.FullName}");
+            directoriesToSearch.AddRange(additionalSearchDirectories);
+        }
 
-            var loadedDetectors = this.LoadComponentDetectorsFromAssemblies(new List<Assembly> { assemblyToSearch }, extraDetectorAssemblies);
+        this.ComponentDetectors = this.GetComponentDetectors(directoriesToSearch, extraDetectorAssemblies);
+
+        if (!this.ComponentDetectors.Any())
+        {
+            this.Logger.LogError($"No component detectors were found in {directoriesToSearch.FirstOrDefault()} or other provided search paths.");
+        }
+
+        return this.ComponentDetectors;
+    }
+
+    public IEnumerable<IComponentDetector> GetDetectors(Assembly assemblyToSearch, IEnumerable<string> extraDetectorAssemblies)
+    {
+        this.Logger.LogInfo($"Attempting to load component detectors from {assemblyToSearch.FullName}");
+
+        var loadedDetectors = this.LoadComponentDetectorsFromAssemblies(new List<Assembly> { assemblyToSearch }, extraDetectorAssemblies);
+
+        var pluralPhrase = loadedDetectors.Count == 1 ? "detector was" : "detectors were";
+        this.Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {assemblyToSearch.FullName}");
+
+        return loadedDetectors;
+    }
+
+    private IList<IComponentDetector> GetComponentDetectors(IEnumerable<DirectoryInfo> searchPaths, IEnumerable<string> extraDetectorAssemblies)
+    {
+        var detectors = new List<IComponentDetector>();
+
+        using (var record = new LoadComponentDetectorsTelemetryRecord())
+        {
+            this.Logger.LogInfo($"Attempting to load default detectors");
+
+            var assembly = Assembly.GetAssembly(typeof(IComponentGovernanceOwnedDetectors));
+
+            var loadedDetectors = this.LoadComponentDetectorsFromAssemblies(new[] { assembly }, extraDetectorAssemblies);
 
             var pluralPhrase = loadedDetectors.Count == 1 ? "detector was" : "detectors were";
-            this.Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {assemblyToSearch.FullName}");
+            this.Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {assembly.GetName().Name}\n");
 
-            return loadedDetectors;
+            detectors.AddRange(loadedDetectors);
+
+            record.DetectorIds = string.Join(",", loadedDetectors.Select(x => x.Id));
         }
 
-        private IList<IComponentDetector> GetComponentDetectors(IEnumerable<DirectoryInfo> searchPaths, IEnumerable<string> extraDetectorAssemblies)
+        foreach (var searchPath in searchPaths)
         {
-            var detectors = new List<IComponentDetector>();
-
-            using (var record = new LoadComponentDetectorsTelemetryRecord())
+            if (!searchPath.Exists)
             {
-                this.Logger.LogInfo($"Attempting to load default detectors");
-
-                var assembly = Assembly.GetAssembly(typeof(IComponentGovernanceOwnedDetectors));
-
-                var loadedDetectors = this.LoadComponentDetectorsFromAssemblies(new[] { assembly }, extraDetectorAssemblies);
-
-                var pluralPhrase = loadedDetectors.Count == 1 ? "detector was" : "detectors were";
-                this.Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {assembly.GetName().Name}\n");
-
-                detectors.AddRange(loadedDetectors);
-
-                record.DetectorIds = string.Join(",", loadedDetectors.Select(x => x.Id));
+                this.Logger.LogWarning($"Provided search path {searchPath.FullName} does not exist.");
+                continue;
             }
 
-            foreach (var searchPath in searchPaths)
+            using var record = new LoadComponentDetectorsTelemetryRecord();
+
+            this.Logger.LogInfo($"Attempting to load component detectors from {searchPath}");
+
+            var assemblies = this.SafeLoadAssemblies(searchPath.GetFiles("*.dll", SearchOption.AllDirectories).Select(x => x.FullName));
+
+            var loadedDetectors = this.LoadComponentDetectorsFromAssemblies(assemblies, extraDetectorAssemblies);
+
+            var pluralPhrase = loadedDetectors.Count == 1 ? "detector was" : "detectors were";
+            this.Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {searchPath}\n");
+
+            detectors.AddRange(loadedDetectors);
+
+            record.DetectorIds = string.Join(",", loadedDetectors.Select(x => x.Id));
+        }
+
+        return detectors;
+    }
+
+    private IList<IComponentDetector> LoadComponentDetectorsFromAssemblies(IEnumerable<Assembly> assemblies, IEnumerable<string> extraDetectorAssemblies)
+    {
+        new InjectionParameters(this.DetectorDependencies);
+        var configuration = new ContainerConfiguration()
+            .WithAssemblies(assemblies);
+
+        foreach (var detectorAssemblyPath in extraDetectorAssemblies)
+        {
+            var detectorAssembly = Assembly.LoadFrom(detectorAssemblyPath);
+            var detectorTypes = detectorAssembly.GetTypes().Where(x => typeof(IComponentDetector).IsAssignableFrom(x));
+            foreach (var detectorType in detectorTypes)
             {
-                if (!searchPath.Exists)
+                configuration = configuration.WithPart(detectorType);
+            }
+        }
+
+        configuration = configuration
+            .WithPart(typeof(InjectionParameters));
+
+        using var container = configuration.CreateContainer();
+
+        return container.GetExports<IComponentDetector>().ToList();
+    }
+
+    // Plugin producers may include files we have already loaded
+    private IList<Assembly> SafeLoadAssemblies(IEnumerable<string> files)
+    {
+        var assemblyList = new List<Assembly>();
+
+        foreach (var file in files)
+        {
+            try
+            {
+                var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(file);
+
+                assemblyList.Add(assembly);
+            }
+            catch (FileLoadException ex)
+            {
+                if (ex.Message == "Assembly with same name is already loaded")
                 {
-                    this.Logger.LogWarning($"Provided search path {searchPath.FullName} does not exist.");
                     continue;
                 }
-
-                using var record = new LoadComponentDetectorsTelemetryRecord();
-
-                this.Logger.LogInfo($"Attempting to load component detectors from {searchPath}");
-
-                var assemblies = this.SafeLoadAssemblies(searchPath.GetFiles("*.dll", SearchOption.AllDirectories).Select(x => x.FullName));
-
-                var loadedDetectors = this.LoadComponentDetectorsFromAssemblies(assemblies, extraDetectorAssemblies);
-
-                var pluralPhrase = loadedDetectors.Count == 1 ? "detector was" : "detectors were";
-                this.Logger.LogInfo($"{loadedDetectors.Count} {pluralPhrase} found in {searchPath}\n");
-
-                detectors.AddRange(loadedDetectors);
-
-                record.DetectorIds = string.Join(",", loadedDetectors.Select(x => x.Id));
-            }
-
-            return detectors;
-        }
-
-        private IList<IComponentDetector> LoadComponentDetectorsFromAssemblies(IEnumerable<Assembly> assemblies, IEnumerable<string> extraDetectorAssemblies)
-        {
-            new InjectionParameters(this.DetectorDependencies);
-            var configuration = new ContainerConfiguration()
-                .WithAssemblies(assemblies);
-
-            foreach (var detectorAssemblyPath in extraDetectorAssemblies)
-            {
-                var detectorAssembly = Assembly.LoadFrom(detectorAssemblyPath);
-                var detectorTypes = detectorAssembly.GetTypes().Where(x => typeof(IComponentDetector).IsAssignableFrom(x));
-                foreach (var detectorType in detectorTypes)
+                else
                 {
-                    configuration = configuration.WithPart(detectorType);
+                    throw;
                 }
             }
-
-            configuration = configuration
-                .WithPart(typeof(InjectionParameters));
-
-            using var container = configuration.CreateContainer();
-
-            return container.GetExports<IComponentDetector>().ToList();
         }
 
-        // Plugin producers may include files we have already loaded
-        private IList<Assembly> SafeLoadAssemblies(IEnumerable<string> files)
-        {
-            var assemblyList = new List<Assembly>();
-
-            foreach (var file in files)
-            {
-                try
-                {
-                    var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(file);
-
-                    assemblyList.Add(assembly);
-                }
-                catch (FileLoadException ex)
-                {
-                    if (ex.Message == "Assembly with same name is already loaded")
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }
-
-            return assemblyList;
-        }
+        return assemblyList;
     }
 }

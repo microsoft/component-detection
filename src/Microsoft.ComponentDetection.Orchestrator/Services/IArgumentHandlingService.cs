@@ -2,12 +2,11 @@
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
-{
-    public interface IArgumentHandlingService
-    {
-        bool CanHandle(IScanArguments arguments);
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
-        Task<ScanResult> Handle(IScanArguments arguments);
-    }
+public interface IArgumentHandlingService
+{
+    bool CanHandle(IScanArguments arguments);
+
+    Task<ScanResult> Handle(IScanArguments arguments);
 }

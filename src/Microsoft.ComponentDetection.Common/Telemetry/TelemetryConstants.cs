@@ -3,28 +3,27 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Orchestrator")]
 
-namespace Microsoft.ComponentDetection.Common.Telemetry
+namespace Microsoft.ComponentDetection.Common.Telemetry;
+
+public static class TelemetryConstants
 {
-    public static class TelemetryConstants
+    private static Guid correlationId;
+
+    public static Guid CorrelationId
     {
-        private static Guid correlationId;
-
-        public static Guid CorrelationId
+        get
         {
-            get
+            if (correlationId == Guid.Empty)
             {
-                if (correlationId == Guid.Empty)
-                {
-                    correlationId = Guid.NewGuid();
-                }
-
-                return correlationId;
+                correlationId = Guid.NewGuid();
             }
 
-            set // This is temporarily public, but once a process boundary exists it will be internal and initialized by Orchestrator in BCDE
-            {
-                correlationId = value;
-            }
+            return correlationId;
+        }
+
+        set // This is temporarily public, but once a process boundary exists it will be internal and initialized by Orchestrator in BCDE
+        {
+            correlationId = value;
         }
     }
 }

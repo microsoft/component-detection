@@ -1,21 +1,20 @@
-﻿namespace Microsoft.ComponentDetection.Contracts
+﻿namespace Microsoft.ComponentDetection.Contracts;
+
+public interface IDetectorDependencies
 {
-    public interface IDetectorDependencies
-    {
-        ILogger Logger { get; set; }
+    ILogger Logger { get; set; }
 
-        IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
+    IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
 
-        IPathUtilityService PathUtilityService { get; set; }
+    IPathUtilityService PathUtilityService { get; set; }
 
-        ICommandLineInvocationService CommandLineInvocationService { get; set; }
+    ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
-        IFileUtilityService FileUtilityService { get; set; }
+    IFileUtilityService FileUtilityService { get; set; }
 
-        IObservableDirectoryWalkerFactory DirectoryWalkerFactory { get; set; }
+    IObservableDirectoryWalkerFactory DirectoryWalkerFactory { get; set; }
 
-        IDockerService DockerService { get; set; }
+    IDockerService DockerService { get; set; }
 
-        IEnvironmentVariableService EnvironmentVariableService { get; set; }
-    }
+    IEnvironmentVariableService EnvironmentVariableService { get; set; }
 }

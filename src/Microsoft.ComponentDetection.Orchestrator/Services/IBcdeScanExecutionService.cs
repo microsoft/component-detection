@@ -2,10 +2,9 @@
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
+public interface IBcdeScanExecutionService
 {
-    public interface IBcdeScanExecutionService
-    {
-        Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments);
-    }
+    Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments);
 }

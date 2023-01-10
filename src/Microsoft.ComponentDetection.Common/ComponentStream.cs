@@ -1,14 +1,13 @@
 ﻿using System.IO;
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Common
+namespace Microsoft.ComponentDetection.Common;
+
+public class ComponentStream : IComponentStream
 {
-    public class ComponentStream : IComponentStream
-    {
-        public Stream Stream { get; set; }
+    public Stream Stream { get; set; }
 
-        public string Pattern { get; set; }
+    public string Pattern { get; set; }
 
-        public string Location { get; set; }
-    }
+    public string Location { get; set; }
 }

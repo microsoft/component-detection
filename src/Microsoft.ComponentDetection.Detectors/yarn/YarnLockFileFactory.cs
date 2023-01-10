@@ -4,27 +4,26 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 
-namespace Microsoft.ComponentDetection.Detectors.Yarn
+namespace Microsoft.ComponentDetection.Detectors.Yarn;
+
+public static class YarnLockFileFactory
 {
-    public static class YarnLockFileFactory
+    static YarnLockFileFactory() => Parsers = new List<IYarnLockParser> { new YarnLockParser() };
+
+    public static IList<IYarnLockParser> Parsers { get; }
+
+    public static async Task<YarnLockFile> ParseYarnLockFileAsync(Stream file, ILogger logger)
     {
-        static YarnLockFileFactory() => Parsers = new List<IYarnLockParser> { new YarnLockParser() };
+        var blockFile = await YarnBlockFile.CreateBlockFileAsync(file);
 
-        public static IList<IYarnLockParser> Parsers { get; }
-
-        public static async Task<YarnLockFile> ParseYarnLockFileAsync(Stream file, ILogger logger)
+        foreach (var parser in Parsers)
         {
-            var blockFile = await YarnBlockFile.CreateBlockFileAsync(file);
-
-            foreach (var parser in Parsers)
+            if (parser.CanParse(blockFile.YarnLockVersion))
             {
-                if (parser.CanParse(blockFile.YarnLockVersion))
-                {
-                    return parser.Parse(blockFile, logger);
-                }
+                return parser.Parse(blockFile, logger);
             }
-
-            throw new InvalidYarnLockFileException();
         }
+
+        throw new InvalidYarnLockFileException();
     }
 }

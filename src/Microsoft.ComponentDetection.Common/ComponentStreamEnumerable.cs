@@ -4,63 +4,62 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Common
+namespace Microsoft.ComponentDetection.Common;
+
+public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
 {
-    public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
+    public ComponentStreamEnumerable(IEnumerable<MatchedFile> fileEnumerable, ILogger logger)
     {
-        public ComponentStreamEnumerable(IEnumerable<MatchedFile> fileEnumerable, ILogger logger)
+        this.ToEnumerate = fileEnumerable;
+        this.Logger = logger;
+    }
+
+    private IEnumerable<MatchedFile> ToEnumerate { get; }
+
+    private ILogger Logger { get; }
+
+    public IEnumerator<IComponentStream> GetEnumerator()
+    {
+        foreach (var filePairing in this.ToEnumerate)
         {
-            this.ToEnumerate = fileEnumerable;
-            this.Logger = logger;
+            if (!filePairing.File.Exists)
+            {
+                this.Logger.LogWarning($"File {filePairing.File.FullName} does not exist on disk.");
+                yield break;
+            }
+
+            using var stream = this.SafeOpenFile(filePairing.File);
+
+            if (stream == null)
+            {
+                yield break;
+            }
+
+            yield return new ComponentStream { Stream = stream, Pattern = filePairing.Pattern, Location = filePairing.File.FullName };
         }
+    }
 
-        private IEnumerable<MatchedFile> ToEnumerate { get; }
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return this.GetEnumerator();
+    }
 
-        private ILogger Logger { get; }
-
-        public IEnumerator<IComponentStream> GetEnumerator()
+    private Stream SafeOpenFile(FileInfo file)
+    {
+        try
         {
-            foreach (var filePairing in this.ToEnumerate)
-            {
-                if (!filePairing.File.Exists)
-                {
-                    this.Logger.LogWarning($"File {filePairing.File.FullName} does not exist on disk.");
-                    yield break;
-                }
-
-                using var stream = this.SafeOpenFile(filePairing.File);
-
-                if (stream == null)
-                {
-                    yield break;
-                }
-
-                yield return new ComponentStream { Stream = stream, Pattern = filePairing.Pattern, Location = filePairing.File.FullName };
-            }
+            return file.OpenRead();
         }
-
-        IEnumerator IEnumerable.GetEnumerator()
+        catch (UnauthorizedAccessException)
         {
-            return this.GetEnumerator();
+            this.Logger.LogWarning($"Unauthorized access exception caught when trying to open {file.FullName}");
+            return null;
         }
-
-        private Stream SafeOpenFile(FileInfo file)
+        catch (Exception e)
         {
-            try
-            {
-                return file.OpenRead();
-            }
-            catch (UnauthorizedAccessException)
-            {
-                this.Logger.LogWarning($"Unauthorized access exception caught when trying to open {file.FullName}");
-                return null;
-            }
-            catch (Exception e)
-            {
-                this.Logger.LogWarning($"Unhandled exception caught when trying to open {file.FullName}");
-                this.Logger.LogException(e, isError: false);
-                return null;
-            }
+            this.Logger.LogWarning($"Unhandled exception caught when trying to open {file.FullName}");
+            this.Logger.LogException(e, isError: false);
+            return null;
         }
     }
 }

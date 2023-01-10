@@ -3,26 +3,25 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace Microsoft.ComponentDetection.Contracts.BcdeModels
+namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+
+[JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
+public class ScannedComponent
 {
-    [JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class ScannedComponent
-    {
-        public IEnumerable<string> LocationsFoundAt { get; set; }
+    public IEnumerable<string> LocationsFoundAt { get; set; }
 
-        public TypedComponent.TypedComponent Component { get; set; }
+    public TypedComponent.TypedComponent Component { get; set; }
 
-        public string DetectorId { get; set; }
+    public string DetectorId { get; set; }
 
-        public bool? IsDevelopmentDependency { get; set; }
+    public bool? IsDevelopmentDependency { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        public DependencyScope? DependencyScope { get; set; }
+    [JsonConverter(typeof(StringEnumConverter))]
+    public DependencyScope? DependencyScope { get; set; }
 
-        public IEnumerable<TypedComponent.TypedComponent> TopLevelReferrers { get; set; }
+    public IEnumerable<TypedComponent.TypedComponent> TopLevelReferrers { get; set; }
 
-        public IEnumerable<int> ContainerDetailIds { get; set; }
+    public IEnumerable<int> ContainerDetailIds { get; set; }
 
-        public IDictionary<int, IEnumerable<int>> ContainerLayerIds { get; set; }
-    }
+    public IDictionary<int, IEnumerable<int>> ContainerLayerIds { get; set; }
 }

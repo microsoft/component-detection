@@ -7,75 +7,74 @@ using System.Runtime.Serialization;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Microsoft.ComponentDetection.Common.Tests
+namespace Microsoft.ComponentDetection.Common.Tests;
+
+[TestClass]
+[TestCategory("Governance/All")]
+[TestCategory("Governance/ComponentDetection")]
+public class BaseDetectionTelemetryRecordTests
 {
-    [TestClass]
-    [TestCategory("Governance/All")]
-    [TestCategory("Governance/ComponentDetection")]
-    public class BaseDetectionTelemetryRecordTests
+    private Type[] recordTypes;
+
+    [TestInitialize]
+    public void Initialize()
     {
-        private Type[] recordTypes;
+        // this only discovers types in a single assembly, since that's the current situation!
+        this.recordTypes = typeof(BaseDetectionTelemetryRecord).Assembly.GetTypes()
+            .Where(type => typeof(BaseDetectionTelemetryRecord).IsAssignableFrom(type))
+            .Where(type => !type.IsAbstract)
+            .ToArray();
+    }
 
-        [TestInitialize]
-        public void Initialize()
+    [TestMethod]
+    public void UniqueRecordNames()
+    {
+        var dic = new Dictionary<string, Type>();
+
+        foreach (var type in this.recordTypes)
         {
-            // this only discovers types in a single assembly, since that's the current situation!
-            this.recordTypes = typeof(BaseDetectionTelemetryRecord).Assembly.GetTypes()
-                .Where(type => typeof(BaseDetectionTelemetryRecord).IsAssignableFrom(type))
-                .Where(type => !type.IsAbstract)
-                .ToArray();
-        }
+            var inst = Activator.CreateInstance(type) as IDetectionTelemetryRecord;
+            Assert.IsNotNull(inst);
 
-        [TestMethod]
-        public void UniqueRecordNames()
-        {
-            var dic = new Dictionary<string, Type>();
+            var recordName = inst.RecordName;
 
-            foreach (var type in this.recordTypes)
+            Assert.IsTrue(!string.IsNullOrEmpty(recordName), $"RecordName not set for {type.FullName}!");
+
+            if (dic.ContainsKey(recordName))
             {
-                var inst = Activator.CreateInstance(type) as IDetectionTelemetryRecord;
-                Assert.IsNotNull(inst);
-
-                var recordName = inst.RecordName;
-
-                Assert.IsTrue(!string.IsNullOrEmpty(recordName), $"RecordName not set for {type.FullName}!");
-
-                if (dic.ContainsKey(recordName))
-                {
-                    Assert.Fail($"Duplicate RecordName:`{recordName}` found for {type.FullName} and {dic[recordName].FullName}!");
-                }
-                else
-                {
-                    dic.Add(recordName, type);
-                }
+                Assert.Fail($"Duplicate RecordName:`{recordName}` found for {type.FullName} and {dic[recordName].FullName}!");
+            }
+            else
+            {
+                dic.Add(recordName, type);
             }
         }
+    }
 
-        [TestMethod]
-        public void SerializableProperties()
+    [TestMethod]
+    public void SerializableProperties()
+    {
+        var serializableTypes = new HashSet<Type>(new[]
         {
-            var serializableTypes = new HashSet<Type>(new[]
-            {
-                typeof(string),
-                typeof(string[]),
-                typeof(bool),
-                typeof(int),
-                typeof(int?),
-                typeof(TimeSpan?),
-                typeof(HttpStatusCode),
-            });
+            typeof(string),
+            typeof(string[]),
+            typeof(bool),
+            typeof(int),
+            typeof(int?),
+            typeof(TimeSpan?),
+            typeof(HttpStatusCode),
+        });
 
-            foreach (var type in this.recordTypes)
+        foreach (var type in this.recordTypes)
+        {
+            foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                if (!serializableTypes.Contains(property.PropertyType) &&
+                    Attribute.GetCustomAttribute(property.PropertyType, typeof(DataContractAttribute)) == null)
                 {
-                    if (!serializableTypes.Contains(property.PropertyType) &&
-                        Attribute.GetCustomAttribute(property.PropertyType, typeof(DataContractAttribute)) == null)
-                    {
-                        Assert.Fail(
-                            $"Type {property.PropertyType} on {type.Name}.{property.Name} is not allowed! " +
-                            "Add it to the list if it serializes properly to JSON!");
-                    }
+                    Assert.Fail(
+                        $"Type {property.PropertyType} on {type.Name}.{property.Name} is not allowed! " +
+                        "Add it to the list if it serializes properly to JSON!");
                 }
             }
         }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,110 +13,110 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests
+namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+using FluentAssertions;
+
+[TestClass]
+[TestCategory("Governance/All")]
+[TestCategory("Governance/ComponentDetection")]
+public class NuGetComponentDetectorTests
 {
-    using FluentAssertions;
+    private Mock<ILogger> loggerMock;
+    private DetectorTestUtility<NuGetComponentDetector> detectorTestUtility;
 
-    [TestClass]
-    [TestCategory("Governance/All")]
-    [TestCategory("Governance/ComponentDetection")]
-    public class NuGetComponentDetectorTests
+    [TestInitialize]
+    public void TestInitialize()
     {
-        private Mock<ILogger> loggerMock;
-        private DetectorTestUtility<NuGetComponentDetector> detectorTestUtility;
+        this.loggerMock = new Mock<ILogger>();
+        this.detectorTestUtility = DetectorTestUtilityCreator.Create<NuGetComponentDetector>();
+    }
 
-        [TestInitialize]
-        public void TestInitialize()
-        {
-            this.loggerMock = new Mock<ILogger>();
-            this.detectorTestUtility = DetectorTestUtilityCreator.Create<NuGetComponentDetector>();
-        }
+    [TestMethod]
+    public async Task TestNuGetDetectorWithNoFiles_ReturnsSuccessfully()
+    {
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
 
-        [TestMethod]
-        public async Task TestNuGetDetectorWithNoFiles_ReturnsSuccessfully()
-        {
-            var (scanResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+    }
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-            Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
-        }
+    [TestMethod]
+    public async Task TestNugetDetector_ReturnsValidNuspecComponent()
+    {
+        var testComponentName = "TestComponentName";
+        var testVersion = "1.2.3";
+        var testAuthors = new string[] { "author 1", "author 2" };
+        var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors);
 
-        [TestMethod]
-        public async Task TestNugetDetector_ReturnsValidNuspecComponent()
-        {
-            var testComponentName = "TestComponentName";
-            var testVersion = "1.2.3";
-            var testAuthors = new string[] { "author 1", "author 2" };
-            var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors);
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("*.nuspec", nuspec)
+            .ExecuteDetector();
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile("*.nuspec", nuspec)
-                                                    .ExecuteDetector();
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
+        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
+        var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
+        Assert.AreEqual(ComponentType.NuGet, detectedComponent.Type);
+        var nuGetComponent = (NuGetComponent)detectedComponent;
+        Assert.AreEqual(testComponentName, nuGetComponent.Name, "Component name does not match.");
+        Assert.AreEqual(testVersion, nuGetComponent.Version, "Component version does not match.");
+        CollectionAssert.AreEqual(testAuthors, nuGetComponent.Authors, "Authors does not match.");
+    }
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
-            Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
-            var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
-            Assert.AreEqual(ComponentType.NuGet, detectedComponent.Type);
-            var nuGetComponent = (NuGetComponent)detectedComponent;
-            Assert.AreEqual(testComponentName, nuGetComponent.Name, "Component name does not match.");
-            Assert.AreEqual(testVersion, nuGetComponent.Version, "Component version does not match.");
-            CollectionAssert.AreEqual(testAuthors, nuGetComponent.Authors, "Authors does not match.");
-        }
+    [TestMethod]
+    public async Task TestNugetDetector_ReturnsValidNuspecComponent_SingleAuthor()
+    {
+        var testComponentName = "TestComponentName";
+        var testVersion = "1.2.3";
+        var testAuthors = new string[] { "author 1" };
+        var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors);
 
-        [TestMethod]
-        public async Task TestNugetDetector_ReturnsValidNuspecComponent_SingleAuthor()
-        {
-            var testComponentName = "TestComponentName";
-            var testVersion = "1.2.3";
-            var testAuthors = new string[] { "author 1" };
-            var nuspec = NugetTestUtilities.GetValidNuspec(testComponentName, testVersion, testAuthors);
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("*.nuspec", nuspec)
+            .ExecuteDetector();
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile("*.nuspec", nuspec)
-                                                    .ExecuteDetector();
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
+        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
+        var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
+        Assert.AreEqual(ComponentType.NuGet, detectedComponent.Type);
+        var nuGetComponent = (NuGetComponent)detectedComponent;
+        Assert.AreEqual(testComponentName, nuGetComponent.Name, "Component name does not match.");
+        Assert.AreEqual(testVersion, nuGetComponent.Version, "Component version does not match.");
+        CollectionAssert.AreEqual(testAuthors, nuGetComponent.Authors, "Authors does not match.");
+    }
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
-            Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
-            var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
-            Assert.AreEqual(ComponentType.NuGet, detectedComponent.Type);
-            var nuGetComponent = (NuGetComponent)detectedComponent;
-            Assert.AreEqual(testComponentName, nuGetComponent.Name, "Component name does not match.");
-            Assert.AreEqual(testVersion, nuGetComponent.Version, "Component version does not match.");
-            CollectionAssert.AreEqual(testAuthors, nuGetComponent.Authors, "Authors does not match.");
-        }
+    [TestMethod]
+    public async Task TestNugetDetector_ReturnsValidNupkgComponent()
+    {
+        var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
 
-        [TestMethod]
-        public async Task TestNugetDetector_ReturnsValidNupkgComponent()
-        {
-            var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("test.nupkg", nupkg)
+            .ExecuteDetector();
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile("test.nupkg", nupkg)
-                                                    .ExecuteDetector();
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+    }
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-            Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
-        }
+    [TestMethod]
+    public async Task TestNugetDetector_ReturnsValidMixedComponent()
+    {
+        var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
+        var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
 
-        [TestMethod]
-        public async Task TestNugetDetector_ReturnsValidMixedComponent()
-        {
-            var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
-            var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("test.nuspec", nuspec)
+            .WithFile("test.nupkg", nupkg)
+            .ExecuteDetector();
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile("test.nuspec", nuspec)
-                                                    .WithFile("test.nupkg", nupkg)
-                                                    .ExecuteDetector();
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
+    }
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-            Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
-        }
-
-        [TestMethod]
-        public async Task TestNugetDetector_ReturnsValidPaketComponent()
-        {
-            var paketLock = @"
+    [TestMethod]
+    public async Task TestNugetDetector_ReturnsValidPaketComponent()
+    {
+        var paketLock = @"
 NUGET
   remote: https://nuget.org/api/v2
     Castle.Core (3.3.0)
@@ -148,137 +148,136 @@ NUGET
     log4net (1.2.10)
             ";
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithFile("paket.lock", paketLock)
-                                                    .ExecuteDetector();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetector();
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
-            // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches.
-            Assert.AreEqual(11, componentRecorder.GetDetectedComponents().Count());
-        }
+        // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches.
+        Assert.AreEqual(11, componentRecorder.GetDetectedComponents().Count());
+    }
 
-        [TestMethod]
-        public async Task TestNugetDetector_HandlesMalformedComponentsInComponentList()
-        {
-            var validNupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
-            var malformedNupkg = await NugetTestUtilities.ZipNupkgComponent("malformed.nupkg", NugetTestUtilities.GetRandomMalformedNuPkgComponent());
-            var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
+    [TestMethod]
+    public async Task TestNugetDetector_HandlesMalformedComponentsInComponentList()
+    {
+        var validNupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
+        var malformedNupkg = await NugetTestUtilities.ZipNupkgComponent("malformed.nupkg", NugetTestUtilities.GetRandomMalformedNuPkgComponent());
+        var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
 
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                                                    .WithLogger(this.loggerMock)
-                                                    .WithFile("test.nuspec", nuspec)
-                                                    .WithFile("test.nupkg", validNupkg)
-                                                    .WithFile("malformed.nupkg", malformedNupkg)
-                                                    .ExecuteDetector();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithLogger(this.loggerMock)
+            .WithFile("test.nuspec", nuspec)
+            .WithFile("test.nupkg", validNupkg)
+            .WithFile("malformed.nupkg", malformedNupkg)
+            .ExecuteDetector();
 
-            this.loggerMock.Verify(x => x.LogFailedReadingFile(Path.Join(Path.GetTempPath(), "malformed.nupkg"), It.IsAny<Exception>()));
+        this.loggerMock.Verify(x => x.LogFailedReadingFile(Path.Join(Path.GetTempPath(), "malformed.nupkg"), It.IsAny<Exception>()));
 
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-            Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
-        }
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
+    }
 
-        [TestMethod]
-        public async Task TestNugetDetector_AdditionalDirectories()
-        {
-            var component1 = NugetTestUtilities.GetRandomValidNuSpecComponentStream();
-            var streamsDetectedInNormalPass = new List<IComponentStream> { component1 };
+    [TestMethod]
+    public async Task TestNugetDetector_AdditionalDirectories()
+    {
+        var component1 = NugetTestUtilities.GetRandomValidNuSpecComponentStream();
+        var streamsDetectedInNormalPass = new List<IComponentStream> { component1 };
 
-            var additionalDirectory = this.CreateTemporaryDirectory();
-            var nugetConfigComponent = NugetTestUtilities.GetValidNuGetConfig(additionalDirectory);
-            var streamsDetectedInAdditionalDirectoryPass = new List<IComponentStream> { nugetConfigComponent };
+        var additionalDirectory = this.CreateTemporaryDirectory();
+        var nugetConfigComponent = NugetTestUtilities.GetValidNuGetConfig(additionalDirectory);
+        var streamsDetectedInAdditionalDirectoryPass = new List<IComponentStream> { nugetConfigComponent };
 
-            var componentRecorder = new ComponentRecorder();
-            var detector = new NuGetComponentDetector();
-            var sourceDirectoryPath = this.CreateTemporaryDirectory();
+        var componentRecorder = new ComponentRecorder();
+        var detector = new NuGetComponentDetector();
+        var sourceDirectoryPath = this.CreateTemporaryDirectory();
 
-            detector.Logger = this.loggerMock.Object;
+        detector.Logger = this.loggerMock.Object;
 
-            // Use strict mock evaluation because we're doing some "fun" stuff with this mock.
-            var componentStreamEnumerableFactoryMock = new Mock<IComponentStreamEnumerableFactory>(MockBehavior.Strict);
-            var directoryWalkerMock = new Mock<IObservableDirectoryWalkerFactory>(MockBehavior.Strict);
+        // Use strict mock evaluation because we're doing some "fun" stuff with this mock.
+        var componentStreamEnumerableFactoryMock = new Mock<IComponentStreamEnumerableFactory>(MockBehavior.Strict);
+        var directoryWalkerMock = new Mock<IObservableDirectoryWalkerFactory>(MockBehavior.Strict);
 
-            directoryWalkerMock.Setup(x => x.Initialize(It.IsAny<DirectoryInfo>(), It.IsAny<ExcludeDirectoryPredicate>(), It.IsAny<int>(), It.IsAny<IEnumerable<string>>()));
+        directoryWalkerMock.Setup(x => x.Initialize(It.IsAny<DirectoryInfo>(), It.IsAny<ExcludeDirectoryPredicate>(), It.IsAny<int>(), It.IsAny<IEnumerable<string>>()));
 
-            // First setup is for the invocation of stream enumerable factory used to find NuGet.Configs -- a special case the detector supports to locate repos located outside the source dir
-            //  We return a nuget config that targets a different temp folder that is NOT in a subtree of the sourcedirectory.
-            componentStreamEnumerableFactoryMock.Setup(
+        // First setup is for the invocation of stream enumerable factory used to find NuGet.Configs -- a special case the detector supports to locate repos located outside the source dir
+        //  We return a nuget config that targets a different temp folder that is NOT in a subtree of the sourcedirectory.
+        componentStreamEnumerableFactoryMock.Setup(
                 x => x.GetComponentStreams(
                     Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
                     Match.Create<IEnumerable<string>>(stuff => stuff.Contains(NuGetComponentDetector.NugetConfigFileName)),
                     It.IsAny<ExcludeDirectoryPredicate>(),
                     It.IsAny<bool>()))
-                .Returns(streamsDetectedInAdditionalDirectoryPass);
+            .Returns(streamsDetectedInAdditionalDirectoryPass);
 
-            // Normal detection setup here -- we have it returning empty.
-            componentStreamEnumerableFactoryMock.Setup(
+        // Normal detection setup here -- we have it returning empty.
+        componentStreamEnumerableFactoryMock.Setup(
                 x => x.GetComponentStreams(
                     Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
                     Match.Create<IEnumerable<string>>(stuff => detector.SearchPatterns.Intersect(stuff).Count() == detector.SearchPatterns.Count),
                     It.IsAny<ExcludeDirectoryPredicate>(),
                     It.IsAny<bool>()))
-                .Returns(Enumerable.Empty<IComponentStream>());
+            .Returns(Enumerable.Empty<IComponentStream>());
 
-            // This is matching the additional directory that is ONLY sourced in the nuget.config. If this works, we would see the component in our results.
-            componentStreamEnumerableFactoryMock.Setup(
+        // This is matching the additional directory that is ONLY sourced in the nuget.config. If this works, we would see the component in our results.
+        componentStreamEnumerableFactoryMock.Setup(
                 x => x.GetComponentStreams(
                     Match.Create<DirectoryInfo>(info => info.FullName.Contains(additionalDirectory)),
                     Match.Create<IEnumerable<string>>(stuff => detector.SearchPatterns.Intersect(stuff).Count() == detector.SearchPatterns.Count),
                     It.IsAny<ExcludeDirectoryPredicate>(),
                     It.IsAny<bool>()))
-                .Returns(streamsDetectedInNormalPass);
+            .Returns(streamsDetectedInNormalPass);
 
-            // Normal detection setup here -- we have it returning empty.
-            directoryWalkerMock.Setup(
+        // Normal detection setup here -- we have it returning empty.
+        directoryWalkerMock.Setup(
                 x => x.GetFilteredComponentStreamObservable(
                     Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
                     It.IsAny<IEnumerable<string>>(),
                     It.IsAny<IComponentRecorder>()))
-                .Returns(() => streamsDetectedInAdditionalDirectoryPass.Select(cs => new ProcessRequest { ComponentStream = cs, SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location) }).ToObservable());
+            .Returns(() => streamsDetectedInAdditionalDirectoryPass.Select(cs => new ProcessRequest { ComponentStream = cs, SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location) }).ToObservable());
 
-            // This is matching the additional directory that is ONLY sourced in the nuget.config. If this works, we would see the component in our results.
-            directoryWalkerMock.Setup(
+        // This is matching the additional directory that is ONLY sourced in the nuget.config. If this works, we would see the component in our results.
+        directoryWalkerMock.Setup(
                 x => x.GetFilteredComponentStreamObservable(
                     Match.Create<DirectoryInfo>(info => info.FullName.Contains(additionalDirectory)),
                     It.IsAny<IEnumerable<string>>(),
                     It.IsAny<ComponentRecorder>()))
-                .Returns(() => streamsDetectedInNormalPass.Select(cs => new ProcessRequest { ComponentStream = cs, SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location) }).ToObservable());
+            .Returns(() => streamsDetectedInNormalPass.Select(cs => new ProcessRequest { ComponentStream = cs, SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location) }).ToObservable());
 
-            detector.ComponentStreamEnumerableFactory = componentStreamEnumerableFactoryMock.Object;
-            detector.Scanner = directoryWalkerMock.Object;
+        detector.ComponentStreamEnumerableFactory = componentStreamEnumerableFactoryMock.Object;
+        detector.Scanner = directoryWalkerMock.Object;
 
-            var scanResult = await detector.ExecuteDetectorAsync(new ScanRequest(new DirectoryInfo(sourceDirectoryPath), (name, directoryName) => false, null, new Dictionary<string, string>(), null, componentRecorder));
+        var scanResult = await detector.ExecuteDetectorAsync(new ScanRequest(new DirectoryInfo(sourceDirectoryPath), (name, directoryName) => false, null, new Dictionary<string, string>(), null, componentRecorder));
 
-            directoryWalkerMock.VerifyAll();
-            Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-            Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
-        }
+        directoryWalkerMock.VerifyAll();
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+    }
 
-        [TestMethod]
-        public async Task TestNugetDetector_LowConfidencePackages()
+    [TestMethod]
+    public async Task TestNugetDetector_LowConfidencePackages()
+    {
+        var nupkg = await NugetTestUtilities.ZipNupkgComponent("Newtonsoft.Json.nupkg", NugetTestUtilities.GetValidNuspec("Newtonsoft.Json", "9.0.1", new[] { "JamesNK" }));
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile("Newtonsoft.Json.nupkg", nupkg)
+            .ExecuteDetector();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty()
+            .And.HaveCount(0);
+    }
+
+    private string CreateTemporaryDirectory()
+    {
+        string path;
+        do
         {
-            var nupkg = await NugetTestUtilities.ZipNupkgComponent("Newtonsoft.Json.nupkg", NugetTestUtilities.GetValidNuspec("Newtonsoft.Json", "9.0.1", new[] { "JamesNK" }));
-
-            var (scanResult, componentRecorder) = await this.detectorTestUtility
-                .WithFile("Newtonsoft.Json.nupkg", nupkg)
-                .ExecuteDetector();
-
-            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-            componentRecorder.GetDetectedComponents().Should().BeEmpty()
-                .And.HaveCount(0);
+            path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         }
+        while (Directory.Exists(path) || File.Exists(path));
 
-        private string CreateTemporaryDirectory()
-        {
-            string path;
-            do
-            {
-                path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            }
-            while (Directory.Exists(path) || File.Exists(path));
-
-            Directory.CreateDirectory(path);
-            return path;
-        }
+        Directory.CreateDirectory(path);
+        return path;
     }
 }

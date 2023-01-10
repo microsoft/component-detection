@@ -1,12 +1,11 @@
 ﻿using System;
 
-namespace Microsoft.ComponentDetection.Common.Telemetry.Records
+namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+
+public interface IDetectionTelemetryRecord : IDisposable
 {
-    public interface IDetectionTelemetryRecord : IDisposable
-    {
-        /// <summary>
-        /// Gets the name of the record to be logged.
-        /// </summary>
-        string RecordName { get; }
-    }
+    /// <summary>
+    /// Gets the name of the record to be logged.
+    /// </summary>
+    string RecordName { get; }
 }

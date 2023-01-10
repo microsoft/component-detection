@@ -1,54 +1,53 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using CommandLine;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.Orchestrator
+namespace Microsoft.ComponentDetection.Orchestrator;
+
+[Export(typeof(IArgumentHelper))]
+public class ArgumentHelper : IArgumentHelper
 {
-    [Export(typeof(IArgumentHelper))]
-    public class ArgumentHelper : IArgumentHelper
+    public ArgumentHelper() => this.ArgumentSets = Enumerable.Empty<IScanArguments>();
+
+    [ImportMany]
+    public IEnumerable<IScanArguments> ArgumentSets { get; set; }
+
+    public static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
     {
-        public ArgumentHelper() => this.ArgumentSets = Enumerable.Empty<IScanArguments>();
+        var detectorArgs = new Dictionary<string, string>();
 
-        [ImportMany]
-        public IEnumerable<IScanArguments> ArgumentSets { get; set; }
-
-        public static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
+        foreach (var arg in detectorArgsList)
         {
-            var detectorArgs = new Dictionary<string, string>();
+            var keyValue = arg.Split('=');
 
-            foreach (var arg in detectorArgsList)
+            if (keyValue.Length != 2)
             {
-                var keyValue = arg.Split('=');
-
-                if (keyValue.Length != 2)
-                {
-                    continue;
-                }
-
-                detectorArgs.Add(keyValue[0], keyValue[1]);
+                continue;
             }
 
-            return detectorArgs;
+            detectorArgs.Add(keyValue[0], keyValue[1]);
         }
 
-        public ParserResult<object> ParseArguments(string[] args)
+        return detectorArgs;
+    }
+
+    public ParserResult<object> ParseArguments(string[] args)
+    {
+        return Parser.Default.ParseArguments(args, this.ArgumentSets.Select(x => x.GetType()).ToArray());
+    }
+
+    public ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
+    {
+        var p = new Parser(x =>
         {
-            return Parser.Default.ParseArguments(args, this.ArgumentSets.Select(x => x.GetType()).ToArray());
-        }
+            x.IgnoreUnknownArguments = ignoreInvalidArgs;
 
-        public ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
-        {
-            var p = new Parser(x =>
-            {
-                x.IgnoreUnknownArguments = ignoreInvalidArgs;
+            // This is not the main argument dispatch, so we don't want console output.
+            x.HelpWriter = null;
+        });
 
-                // This is not the main argument dispatch, so we don't want console output.
-                x.HelpWriter = null;
-            });
-
-            return p.ParseArguments<T>(args);
-        }
+        return p.ParseArguments<T>(args);
     }
 }

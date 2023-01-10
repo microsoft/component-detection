@@ -4,85 +4,84 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Microsoft.ComponentDetection.Detectors.Maven.MavenParsingUtilities;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests
+namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+[TestClass]
+[TestCategory("Governance/All")]
+[TestCategory("Governance/ComponentDetection")]
+public class MavenParsingUtilitiesTests
 {
-    [TestClass]
-    [TestCategory("Governance/All")]
-    [TestCategory("Governance/ComponentDetection")]
-    public class MavenParsingUtilitiesTests
+    [TestMethod]
+    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_HappyPath()
     {
-        [TestMethod]
-        public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_HappyPath()
-        {
-            var componentAndMetaData =
-                GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided");
+        var componentAndMetaData =
+            GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided");
 
-            Assert.IsNotNull(componentAndMetaData);
-            Assert.IsNotNull(componentAndMetaData.Component);
-            Assert.IsNotNull(componentAndMetaData.IsDevelopmentDependency);
-            Assert.IsNotNull(componentAndMetaData.DependencyScope);
+        Assert.IsNotNull(componentAndMetaData);
+        Assert.IsNotNull(componentAndMetaData.Component);
+        Assert.IsNotNull(componentAndMetaData.IsDevelopmentDependency);
+        Assert.IsNotNull(componentAndMetaData.DependencyScope);
 
-            var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
-            Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
+        var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
+        Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
 
-            var expectedComponent = new MavenComponent("org.apache.maven", "maven-artifact", "3.6.1-SNAPSHOT");
+        var expectedComponent = new MavenComponent("org.apache.maven", "maven-artifact", "3.6.1-SNAPSHOT");
 
-            Assert.AreEqual(expectedComponent.ArtifactId, actualComponent.ArtifactId);
-            Assert.AreEqual(expectedComponent.GroupId, actualComponent.GroupId);
-            Assert.AreEqual(expectedComponent.Version, actualComponent.Version);
+        Assert.AreEqual(expectedComponent.ArtifactId, actualComponent.ArtifactId);
+        Assert.AreEqual(expectedComponent.GroupId, actualComponent.GroupId);
+        Assert.AreEqual(expectedComponent.Version, actualComponent.Version);
 
-            Assert.IsFalse(componentAndMetaData.IsDevelopmentDependency);
-            Assert.AreEqual(DependencyScope.MavenProvided, componentAndMetaData.DependencyScope);
-        }
+        Assert.IsFalse(componentAndMetaData.IsDevelopmentDependency);
+        Assert.AreEqual(DependencyScope.MavenProvided, componentAndMetaData.DependencyScope);
+    }
 
-        [TestMethod]
-        public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DefaultScopeCompile()
-        {
-            var componentAndMetaData =
-                GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT");
+    [TestMethod]
+    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DefaultScopeCompile()
+    {
+        var componentAndMetaData =
+            GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT");
 
-            Assert.IsNotNull(componentAndMetaData);
-            Assert.IsNotNull(componentAndMetaData.DependencyScope);
+        Assert.IsNotNull(componentAndMetaData);
+        Assert.IsNotNull(componentAndMetaData.DependencyScope);
 
-            var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
-            Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
-            Assert.AreEqual(DependencyScope.MavenCompile, componentAndMetaData.DependencyScope);
-        }
+        var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
+        Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
+        Assert.AreEqual(DependencyScope.MavenCompile, componentAndMetaData.DependencyScope);
+    }
 
-        [TestMethod]
-        public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DiscardLeftoverStringWhileParsingScope()
-        {
-            var componentAndMetaData =
-                GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided (optional)");
+    [TestMethod]
+    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DiscardLeftoverStringWhileParsingScope()
+    {
+        var componentAndMetaData =
+            GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided (optional)");
 
-            Assert.IsNotNull(componentAndMetaData);
-            Assert.IsNotNull(componentAndMetaData.DependencyScope);
+        Assert.IsNotNull(componentAndMetaData);
+        Assert.IsNotNull(componentAndMetaData.DependencyScope);
 
-            var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
-            Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
-            Assert.AreEqual(DependencyScope.MavenProvided, componentAndMetaData.DependencyScope);
-        }
+        var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
+        Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
+        Assert.AreEqual(DependencyScope.MavenProvided, componentAndMetaData.DependencyScope);
+    }
 
-        [TestMethod]
-        public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DevelopmentDependencyTrue()
-        {
-            var componentAndMetaData =
-                GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:test");
+    [TestMethod]
+    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DevelopmentDependencyTrue()
+    {
+        var componentAndMetaData =
+            GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:test");
 
-            Assert.IsNotNull(componentAndMetaData);
-            Assert.IsNotNull(componentAndMetaData.IsDevelopmentDependency);
+        Assert.IsNotNull(componentAndMetaData);
+        Assert.IsNotNull(componentAndMetaData.IsDevelopmentDependency);
 
-            var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
-            Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
-            Assert.IsTrue(componentAndMetaData.IsDevelopmentDependency);
-        }
+        var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
+        Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
+        Assert.IsTrue(componentAndMetaData.IsDevelopmentDependency);
+    }
 
-        [TestMethod]
-        public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_InvalidScope()
-        {
-            var ex = Assert.ThrowsException<InvalidOperationException>(
-                () => GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:invalidScope"));
-            Assert.IsTrue(ex.Message.Contains("invalid scope", StringComparison.OrdinalIgnoreCase));
-        }
+    [TestMethod]
+    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_InvalidScope()
+    {
+        var ex = Assert.ThrowsException<InvalidOperationException>(
+            () => GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:invalidScope"));
+        Assert.IsTrue(ex.Message.Contains("invalid scope", StringComparison.OrdinalIgnoreCase));
     }
 }

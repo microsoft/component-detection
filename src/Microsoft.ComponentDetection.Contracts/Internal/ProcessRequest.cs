@@ -1,9 +1,8 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.Internal
-{
-    public class ProcessRequest
-    {
-        public IComponentStream ComponentStream { get; set; }
+﻿namespace Microsoft.ComponentDetection.Contracts.Internal;
 
-        public ISingleFileComponentRecorder SingleFileComponentRecorder { get; set; }
-    }
+public class ProcessRequest
+{
+    public IComponentStream ComponentStream { get; set; }
+
+    public ISingleFileComponentRecorder SingleFileComponentRecorder { get; set; }
 }
