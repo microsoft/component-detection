@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -65,6 +65,12 @@ public class PythonCommandService : IPythonCommandService
         var result = command.StdOut;
 
         result = result.Trim('[', ']', '\r', '\n').Trim();
+
+        // For Python2 if there are no packages (Result: "None") skip any parsing
+        if (result.Equals("None", StringComparison.OrdinalIgnoreCase) && !command.StdOut.StartsWith('['))
+        {
+            return new List<string>();
+        }
 
         return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
     }
@@ -140,6 +146,6 @@ public class PythonCommandService : IPythonCommandService
 
     private async Task<bool> CanCommandBeLocated(string pythonPath)
     {
-        return await this.CommandLineInvocationService.CanCommandBeLocated(pythonPath, new List<string> { "python3", "python2" }, "--version");
+        return await this.CommandLineInvocationService.CanCommandBeLocated(pythonPath, new List<string> { "python3", "python" }, "--version");
     }
 }

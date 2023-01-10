@@ -113,6 +113,41 @@ other=2.1";
     }
 
     [TestMethod]
+    public async Task PythonCommandService_ParsesEmptySetupPyOutputCorrectly_Python27()
+    {
+        var fakePath = @"c:\the\fake\path.py";
+        var fakePathAsPassedToPython = fakePath.Replace("\\", "/");
+
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommand("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "None", StdErr = string.Empty });
+
+        var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+
+        var result = await service.ParseFile(fakePath);
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task PythonCommandService_ParsesSetupPyOutputCorrectly_Python27NonePkg()
+    {
+        var fakePath = @"c:\the\fake\path.py";
+        var fakePathAsPassedToPython = fakePath.Replace("\\", "/");
+
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocated("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommand("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "['None']", StdErr = string.Empty });
+
+        var service = new PythonCommandService { CommandLineInvocationService = this.commandLineInvokationService.Object };
+
+        var result = await service.ParseFile(fakePath);
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("None", result.First().PackageString);
+    }
+
+    [TestMethod]
     public async Task PythonCommandService_ParsesRegularSetupPyOutputCorrectly()
     {
         var fakePath = @"c:\the\fake\path.py";
