@@ -9,6 +9,18 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 [Export(typeof(IArgumentHandlingService))]
 public class DetectorListingCommandService : ServiceBase, IArgumentHandlingService
 {
+    public DetectorListingCommandService()
+    {
+    }
+
+    public DetectorListingCommandService(
+        IDetectorRegistryService detectorRegistryService,
+        ILogger logger)
+    {
+        this.DetectorRegistryService = detectorRegistryService;
+        this.Logger = logger;
+    }
+
     [Import]
     public IDetectorRegistryService DetectorRegistryService { get; set; }
 

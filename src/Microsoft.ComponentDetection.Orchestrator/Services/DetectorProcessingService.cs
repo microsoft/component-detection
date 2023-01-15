@@ -22,11 +22,17 @@ using static System.Environment;
 [Shared]
 public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
 {
-    /// <summary>
-    /// Gets or sets the factory for handing back component streams to File detectors. Injected automatically by MEF composition.
-    /// </summary>
-    [Import]
-    public IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
+    public DetectorProcessingService()
+    {
+    }
+
+    public DetectorProcessingService(
+        IObservableDirectoryWalkerFactory scanner,
+        ILogger logger)
+    {
+        this.Scanner = scanner;
+        this.Logger = logger;
+    }
 
     [Import]
     public IObservableDirectoryWalkerFactory Scanner { get; set; }

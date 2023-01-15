@@ -44,6 +44,22 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     internal static readonly string[] AdditionalValidCommands = { "ant" };
 
+    public IvyDetector()
+    {
+    }
+
+    public IvyDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.CommandLineInvocationService = commandLineInvocationService;
+        this.Logger = logger;
+    }
+
     public override string Id => "Ivy";
 
     public override IList<string> SearchPatterns => new List<string> { "ivy.xml" };

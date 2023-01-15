@@ -14,6 +14,20 @@ using Tomlyn;
 [Export(typeof(IComponentDetector))]
 public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
 {
+    public PoetryComponentDetector()
+    {
+    }
+
+    public PoetryComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override string Id => "Poetry";
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "poetry.lock" };

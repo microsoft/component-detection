@@ -15,6 +15,24 @@ using Valleysoft.DockerfileModel;
 [Export(typeof(IComponentDetector))]
 public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
+    public DockerfileComponentDetector()
+    {
+    }
+
+    public DockerfileComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        IEnvironmentVariableService envVarService,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.CommandLineInvocationService = commandLineInvocationService;
+        this.EnvVarService = envVarService;
+        this.Logger = logger;
+    }
+
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 

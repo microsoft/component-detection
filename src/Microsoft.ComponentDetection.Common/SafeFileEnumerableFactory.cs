@@ -8,6 +8,16 @@ using Microsoft.ComponentDetection.Contracts;
 [Shared]
 public class SafeFileEnumerableFactory : ISafeFileEnumerableFactory
 {
+    public SafeFileEnumerableFactory()
+    {
+    }
+
+    public SafeFileEnumerableFactory(IPathUtilityService pathUtilityService, ILogger logger)
+    {
+        this.PathUtilityService = pathUtilityService;
+        this.Logger = logger;
+    }
+
     [Import]
     public ILogger Logger { get; set; }
 

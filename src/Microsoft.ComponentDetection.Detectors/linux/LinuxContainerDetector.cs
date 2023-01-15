@@ -18,6 +18,17 @@ using Microsoft.ComponentDetection.Detectors.Linux.Exceptions;
 [Export(typeof(IComponentDetector))]
 public class LinuxContainerDetector : IComponentDetector
 {
+    public LinuxContainerDetector()
+    {
+    }
+
+    public LinuxContainerDetector(ILinuxScanner linuxScanner, IDockerService dockerService, ILogger logger)
+    {
+        this.LinuxScanner = linuxScanner;
+        this.DockerService = dockerService;
+        this.Logger = logger;
+    }
+
     [Import]
     public ILogger Logger { get; set; }
 

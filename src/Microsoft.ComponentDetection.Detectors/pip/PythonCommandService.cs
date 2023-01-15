@@ -12,6 +12,13 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 [Export(typeof(IPythonCommandService))]
 public class PythonCommandService : IPythonCommandService
 {
+    public PythonCommandService()
+    {
+    }
+
+    public PythonCommandService(ICommandLineInvocationService commandLineInvocationService) =>
+        this.CommandLineInvocationService = commandLineInvocationService;
+
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 

@@ -9,6 +9,16 @@ using Microsoft.ComponentDetection.Contracts;
 [Shared]
 public class ComponentStreamEnumerableFactory : IComponentStreamEnumerableFactory
 {
+    public ComponentStreamEnumerableFactory()
+    {
+    }
+
+    public ComponentStreamEnumerableFactory(IPathUtilityService pathUtilityService, ILogger logger)
+    {
+        this.PathUtilityService = pathUtilityService;
+        this.Logger = logger;
+    }
+
     [Import]
     public ILogger Logger { get; set; }
 

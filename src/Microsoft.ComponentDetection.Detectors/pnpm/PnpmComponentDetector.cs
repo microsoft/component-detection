@@ -13,6 +13,18 @@ public class PnpmComponentDetector : FileComponentDetector
 {
     public PnpmComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
 
+    public PnpmComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.NeedsAutomaticRootDependencyCalculation = true;
+        this.Logger = logger;
+    }
+
+
     public override string Id { get; } = "Pnpm";
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };

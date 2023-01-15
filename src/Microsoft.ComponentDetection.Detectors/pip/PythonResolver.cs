@@ -10,6 +10,16 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 [Export(typeof(IPythonResolver))]
 public class PythonResolver : IPythonResolver
 {
+    public PythonResolver()
+    {
+    }
+
+    public PythonResolver(IPyPiClient pypiClient, ILogger logger)
+    {
+        this.PypiClient = pypiClient;
+        this.Logger = logger;
+    }
+
     [Import]
     public IPyPiClient PypiClient { get; set; }
 

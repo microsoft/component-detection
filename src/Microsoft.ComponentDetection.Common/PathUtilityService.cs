@@ -33,6 +33,12 @@ public class PathUtilityService : IPathUtilityService
     private readonly object isRunningOnWindowsContainerLock = new object();
     private bool? isRunningOnWindowsContainer;
 
+    public PathUtilityService()
+    {
+    }
+
+    public PathUtilityService(ILogger logger) => this.Logger = logger;
+
     public bool IsRunningOnWindowsContainer
     {
         get

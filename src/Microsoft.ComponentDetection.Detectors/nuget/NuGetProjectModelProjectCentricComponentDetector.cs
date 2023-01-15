@@ -187,6 +187,22 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         "System.Xml.XPath.XDocument",
     };
 
+    public NuGetProjectModelProjectCentricComponentDetector()
+    {
+    }
+
+    public NuGetProjectModelProjectCentricComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IFileUtilityService fileUtilityService,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.FileUtilityService = fileUtilityService;
+        this.Logger = logger;
+    }
+
     public override string Id { get; } = "NuGetProjectCentric";
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };

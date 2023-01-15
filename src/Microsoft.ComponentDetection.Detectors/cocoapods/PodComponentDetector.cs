@@ -16,6 +16,20 @@ using YamlDotNet.Serialization;
 [Export(typeof(IComponentDetector))]
 public class PodComponentDetector : FileComponentDetector
 {
+    public PodComponentDetector()
+    {
+    }
+
+    public PodComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override string Id { get; } = "CocoaPods";
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods) };

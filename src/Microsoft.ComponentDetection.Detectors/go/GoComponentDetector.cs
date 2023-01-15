@@ -21,6 +21,24 @@ public class GoComponentDetector : FileComponentDetector
 
     private readonly HashSet<string> projectRoots = new HashSet<string>();
 
+    public GoComponentDetector()
+    {
+    }
+
+    public GoComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        IEnvironmentVariableService envVarService,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.CommandLineInvocationService = commandLineInvocationService;
+        this.EnvVarService = envVarService;
+        this.Logger = logger;
+    }
+
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 

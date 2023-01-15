@@ -16,6 +16,24 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
 {
     private readonly HashSet<string> projectRoots = new HashSet<string>();
 
+    public VcpkgComponentDetector()
+    {
+    }
+
+    public VcpkgComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        IEnvironmentVariableService environmentVariableService,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.CommandLineInvocationService = commandLineInvocationService;
+        this.EnvVarService = environmentVariableService;
+        this.Logger = logger;
+    }
+
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 

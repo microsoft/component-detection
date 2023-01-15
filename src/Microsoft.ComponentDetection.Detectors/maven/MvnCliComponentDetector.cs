@@ -16,6 +16,22 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 [Export(typeof(IComponentDetector))]
 public class MvnCliComponentDetector : FileComponentDetector
 {
+    public MvnCliComponentDetector()
+    {
+    }
+
+    public MvnCliComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IMavenCommandService mavenCommandService,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.MavenCommandService = mavenCommandService;
+        this.Logger = logger;
+    }
+
     public override string Id => "MvnCli";
 
     public override IList<string> SearchPatterns => new List<string> { "pom.xml" };

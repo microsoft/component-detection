@@ -15,6 +15,20 @@ using Microsoft.ComponentDetection.Detectors.Npm;
 [Export(typeof(IComponentDetector))]
 public class YarnLockComponentDetector : FileComponentDetector
 {
+    public YarnLockComponentDetector()
+    {
+    }
+
+    public YarnLockComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override string Id { get; } = "Yarn";
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "yarn.lock" };

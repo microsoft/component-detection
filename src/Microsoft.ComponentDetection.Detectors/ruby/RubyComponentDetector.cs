@@ -45,6 +45,18 @@ public class RubyComponentDetector : FileComponentDetector
 
     public RubyComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
 
+    public RubyComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.NeedsAutomaticRootDependencyCalculation = true;
+        this.Logger = logger;
+    }
+
+
     private enum SectionType
     {
         GEM,

@@ -13,6 +13,20 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 [Export(typeof(IComponentDetector))]
 public class NuGetPackagesConfigDetector : FileComponentDetector
 {
+    public NuGetPackagesConfigDetector()
+    {
+    }
+
+    public NuGetPackagesConfigDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override IList<string> SearchPatterns => new[] { "packages.config" };
 
     public override string Id => "NuGetPackagesConfig";

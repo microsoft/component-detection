@@ -21,6 +21,16 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 {
     private readonly ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>> pendingScans = new ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>>();
 
+    public FastDirectoryWalkerFactory()
+    {
+    }
+
+    public FastDirectoryWalkerFactory(IPathUtilityService pathUtilityService, ILogger logger)
+    {
+        this.PathUtilityService = pathUtilityService;
+        this.Logger = logger;
+    }
+
     [Import]
     public ILogger Logger { get; set; }
 

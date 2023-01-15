@@ -1,8 +1,10 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
 using System.Composition;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Newtonsoft.Json;
@@ -11,6 +13,20 @@ using Newtonsoft.Json;
 public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
 {
     public const string ManifestRelativePath = "ScanManifest_{timestamp}.json";
+
+    public BcdeScanCommandService()
+    {
+    }
+
+    public BcdeScanCommandService(
+        IFileWritingService fileWritingService,
+        IBcdeScanExecutionService bcdeScanExecutionService,
+        ILogger logger)
+    {
+        this.FileWritingService = fileWritingService;
+        this.BcdeScanExecutionService = bcdeScanExecutionService;
+        this.Logger = logger;
+    }
 
     [Import]
     public IFileWritingService FileWritingService { get; set; }

@@ -23,6 +23,12 @@ public class DockerService : IDockerService
     private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
     private static int incrementingContainerId;
 
+    public DockerService()
+    {
+    }
+
+    public DockerService(ILogger logger) => this.Logger = logger;
+
     [Import]
     public ILogger Logger { get; set; }
 

@@ -12,6 +12,24 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 [Export(typeof(IComponentDetector))]
 public class PipComponentDetector : FileComponentDetector
 {
+    public PipComponentDetector()
+    {
+    }
+
+    public PipComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IPythonCommandService pythonCommandService,
+        IPythonResolver pythonResolver,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.PythonCommandService = pythonCommandService;
+        this.PythonResolver = pythonResolver;
+        this.Logger = logger;
+    }
+
     public override string Id => "Pip";
 
     public override IList<string> SearchPatterns => new List<string> { "setup.py", "requirements.txt" };

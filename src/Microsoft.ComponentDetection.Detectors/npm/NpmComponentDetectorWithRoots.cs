@@ -22,6 +22,24 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     public const string LernaSearchPattern = "lerna.json";
 
+    public NpmComponentDetectorWithRoots()
+    {
+    }
+
+    public NpmComponentDetectorWithRoots(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IPathUtilityService pathUtilityService,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.PathUtilityService = pathUtilityService;
+        this.Logger = logger;
+    }
+
+    public NpmComponentDetectorWithRoots(IPathUtilityService pathUtilityService) => this.PathUtilityService = pathUtilityService;
+
     /// <summary>Common delegate for Package.json JToken processing.</summary>
     /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>

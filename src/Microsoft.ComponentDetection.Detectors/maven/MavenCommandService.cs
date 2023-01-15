@@ -15,6 +15,20 @@ public class MavenCommandService : IMavenCommandService
 
     internal static readonly string[] AdditionalValidCommands = new[] { "mvn.cmd" };
 
+    public MavenCommandService()
+    {
+    }
+
+    public MavenCommandService(
+        ICommandLineInvocationService commandLineInvocationService,
+        IMavenStyleDependencyGraphParserService parserService,
+        ILogger logger)
+    {
+        this.CommandLineInvocationService = commandLineInvocationService;
+        this.ParserService = parserService;
+        this.Logger = logger;
+    }
+
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 

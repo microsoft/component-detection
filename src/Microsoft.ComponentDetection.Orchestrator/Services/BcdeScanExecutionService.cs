@@ -14,6 +14,24 @@ using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 [Export(typeof(IBcdeScanExecutionService))]
 public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
 {
+    public BcdeScanExecutionService()
+    {
+    }
+
+    public BcdeScanExecutionService(
+        IDetectorRegistryService detectorRegistryService,
+        IDetectorProcessingService detectorProcessingService,
+        IDetectorRestrictionService detectorRestrictionService,
+        IEnumerable<Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>> graphTranslationServices,
+        ILogger logger)
+    {
+        this.DetectorRegistryService = detectorRegistryService;
+        this.DetectorProcessingService = detectorProcessingService;
+        this.DetectorRestrictionService = detectorRestrictionService;
+        this.GraphTranslationServices = graphTranslationServices;
+        this.Logger = logger;
+    }
+
     [Import]
     public IDetectorRegistryService DetectorRegistryService { get; set; }
 

@@ -23,6 +23,20 @@ public class RustCrateDetector : FileComponentDetector
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
 
+    public RustCrateDetector()
+    {
+    }
+
+    public RustCrateDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override string Id => "RustCrateDetector";
 
     public override IList<string> SearchPatterns => new List<string> { CargoLockSearchPattern };

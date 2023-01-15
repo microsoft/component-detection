@@ -12,6 +12,12 @@ public class DetectorRestrictionService : IDetectorRestrictionService
     private readonly IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
     private readonly string newDetectorId = "NpmWithRoots";
 
+    public DetectorRestrictionService()
+    {
+    }
+
+    public DetectorRestrictionService(ILogger logger) => this.Logger = logger;
+
     [Import]
     public ILogger Logger { get; set; }
 

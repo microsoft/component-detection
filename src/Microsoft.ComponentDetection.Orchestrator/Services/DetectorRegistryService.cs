@@ -16,6 +16,18 @@ using Microsoft.ComponentDetection.Detectors;
 [Shared]
 public class DetectorRegistryService : ServiceBase, IDetectorRegistryService
 {
+    public DetectorRegistryService()
+    {
+    }
+
+    public DetectorRegistryService(
+        IDetectorDependencies detectorDependencies,
+        ILogger logger)
+    {
+        this.DetectorDependencies = detectorDependencies;
+        this.Logger = logger;
+    }
+
     [Import]
     public IDetectorDependencies DetectorDependencies { get; set; }
 

@@ -17,6 +17,12 @@ public class YarnLockParser : IYarnLockParser
 
     private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
 
+    public YarnLockParser(ILogger logger) => this.Logger = logger;
+
+    public YarnLockParser()
+    {
+    }
+
     [Import]
     public ILogger Logger { get; set; }
 

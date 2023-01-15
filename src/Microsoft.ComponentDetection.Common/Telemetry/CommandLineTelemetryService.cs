@@ -18,6 +18,16 @@ internal class CommandLineTelemetryService : ITelemetryService
 
     private TelemetryMode telemetryMode = TelemetryMode.Production;
 
+    public CommandLineTelemetryService()
+    {
+    }
+
+    public CommandLineTelemetryService(ILogger logger, IFileWritingService fileWritingService)
+    {
+        this.Logger = logger;
+        this.FileWritingService = fileWritingService;
+    }
+
     [Import]
     public ILogger Logger { get; set; }
 

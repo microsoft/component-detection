@@ -28,6 +28,16 @@ public class LinuxScanner : ILinuxScanner
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(TimeSpan.FromHours(1).TotalMilliseconds);
 
+    public LinuxScanner()
+    {
+    }
+
+    public LinuxScanner(IDockerService dockerService, ILogger logger)
+    {
+        this.DockerService = dockerService;
+        this.Logger = logger;
+    }
+
     [Import]
     public ILogger Logger { get; set; }
 

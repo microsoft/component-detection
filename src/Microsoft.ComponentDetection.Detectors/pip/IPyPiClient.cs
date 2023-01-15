@@ -61,6 +61,17 @@ public class PyPiClient : IPyPiClient
         FinalCacheSize = 0,
     };
 
+    public PyPiClient(IEnvironmentVariableService environmentVariableService, ILogger logger)
+    {
+        this.EnvironmentVariableService = environmentVariableService;
+        this.cacheTelemetry = new PypiCacheTelemetryRecord
+        {
+            NumCacheHits = 0,
+            FinalCacheSize = 0,
+        };
+        this.Logger = logger;
+    }
+
     ~PyPiClient()
     {
         this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;

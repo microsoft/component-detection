@@ -14,6 +14,16 @@ public class Logger : ILogger
 {
     public const string LogRelativePath = "GovCompDisc_Log_{timestamp}.log";
 
+    public Logger()
+    {
+    }
+
+    public Logger(IFileWritingService fileWritingService, IConsoleWritingService consoleWriter)
+    {
+        this.FileWritingService = fileWritingService;
+        this.ConsoleWriter = consoleWriter;
+    }
+
     [Import]
     public IFileWritingService FileWritingService { get; set; }
 

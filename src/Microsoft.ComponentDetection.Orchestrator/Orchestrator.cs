@@ -26,17 +26,33 @@ public class Orchestrator
 {
     private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
+    public Orchestrator()
+    {
+    }
+
+    public Orchestrator(
+        IEnumerable<IArgumentHandlingService> argumentHandlers,
+        FileWritingService fileWritingService,
+        IArgumentHelper argumentHelper,
+        Logger logger)
+    {
+        this.ArgumentHandlers = argumentHandlers;
+        this.FileWritingService = fileWritingService;
+        this.ArgumentHelper = argumentHelper;
+        this.Logger = logger;
+    }
+
     [ImportMany]
-    private static IEnumerable<IArgumentHandlingService> ArgumentHandlers { get; set; }
+    private IEnumerable<IArgumentHandlingService> ArgumentHandlers { get; set; }
 
     [Import]
-    private static Logger Logger { get; set; }
+    private Logger Logger { get; set; }
 
     [Import]
-    private static FileWritingService FileWritingService { get; set; }
+    private FileWritingService FileWritingService { get; set; }
 
     [Import]
-    private static IArgumentHelper ArgumentHelper { get; set; }
+    private IArgumentHelper ArgumentHelper { get; set; }
 
     public async Task<ScanResult> LoadAsync(string[] args, CancellationToken cancellationToken = default)
     {
@@ -94,7 +110,7 @@ public class Orchestrator
         // The order of these things is a little weird, but done this way mostly to prevent any of the logic inside if blocks from being duplicated
         if (shouldFailureBeSuppressed)
         {
-            Logger.LogInfo("The scan had some detections complete while others encountered errors. The log file should indicate any issues that happened during the scan.");
+            this.Logger.LogInfo("The scan had some detections complete while others encountered errors. The log file should indicate any issues that happened during the scan.");
         }
 
         if (returnResult.ResultCode == ProcessingResultCode.TimeoutError)
@@ -136,7 +152,7 @@ public class Orchestrator
             ResultCode = ProcessingResultCode.Error,
         };
 
-        var parsedArguments = ArgumentHelper.ParseArguments(args);
+        var parsedArguments = this.ArgumentHelper.ParseArguments(args);
         await parsedArguments.WithParsedAsync<IScanArguments>(async argumentSet =>
         {
             CommandLineArgumentsExporter.ArgumentsForDelayedInjection = argumentSet;
@@ -150,9 +166,9 @@ public class Orchestrator
                 await this.GenerateEnvironmentSpecificTelemetryAsync(telemetryRecord);
 
                 telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
-                FileWritingService.Init(argumentSet.Output);
-                Logger.Init(argumentSet.Verbosity, writeLinePrefix: true);
-                Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
+                this.FileWritingService.Init(argumentSet.Output);
+                this.Logger.Init(argumentSet.Verbosity, writeLinePrefix: true);
+                this.Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
 
                 return await this.DispatchAsync(argumentSet, cancellationToken);
             });
@@ -229,13 +245,13 @@ public class Orchestrator
             ResultCode = ProcessingResultCode.Error,
         };
 
-        if (ArgumentHandlers == null)
+        if (this.ArgumentHandlers == null)
         {
-            Logger.LogError("No argument handling services were registered.");
+            this.Logger.LogError("No argument handling services were registered.");
             return scanResult;
         }
 
-        foreach (var handler in ArgumentHandlers)
+        foreach (var handler in this.ArgumentHandlers)
         {
             if (handler.CanHandle(arguments))
             {
@@ -246,7 +262,7 @@ public class Orchestrator
                 }
                 catch (TimeoutException timeoutException)
                 {
-                    Logger.LogError(timeoutException.Message);
+                    this.Logger.LogError(timeoutException.Message);
                     scanResult.ResultCode = ProcessingResultCode.TimeoutError;
                 }
 
@@ -254,7 +270,7 @@ public class Orchestrator
             }
         }
 
-        Logger.LogError("No handlers for the provided Argument Set were found.");
+        this.Logger.LogError("No handlers for the provided Argument Set were found.");
         return scanResult;
     }
 
@@ -274,8 +290,8 @@ public class Orchestrator
             var e = ae.GetBaseException();
             if (e is InvalidUserInputException)
             {
-                Logger.LogError($"Something bad happened, is everything configured correctly?");
-                Logger.LogException(e, isError: true, printException: true);
+                this.Logger.LogError($"Something bad happened, is everything configured correctly?");
+                this.Logger.LogException(e, isError: true, printException: true);
 
                 record.ErrorMessage = e.ToString();
                 result.ResultCode = ProcessingResultCode.InputError;
@@ -285,8 +301,8 @@ public class Orchestrator
             else
             {
                 // On an exception, return error to dotnet core
-                Logger.LogError($"There was an unexpected error: ");
-                Logger.LogException(e, isError: true);
+                this.Logger.LogError($"There was an unexpected error: ");
+                this.Logger.LogException(e, isError: true);
 
                 var errorMessage = new StringBuilder();
                 errorMessage.AppendLine(e.ToString());
@@ -295,7 +311,7 @@ public class Orchestrator
                     foreach (var loaderException in refEx.LoaderExceptions)
                     {
                         var loaderExceptionString = loaderException.ToString();
-                        Logger.LogError(loaderExceptionString);
+                        this.Logger.LogError(loaderExceptionString);
                         errorMessage.AppendLine(loaderExceptionString);
                     }
                 }
