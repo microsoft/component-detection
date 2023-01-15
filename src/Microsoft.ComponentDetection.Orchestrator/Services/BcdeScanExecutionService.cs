@@ -8,32 +8,30 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-using Microsoft.ComponentDetection.Orchestrator.Exceptions;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 
 [Export(typeof(IBcdeScanExecutionService))]
 public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
 {
+    private readonly IEnumerable<IComponentDetector> detectors;
+
     public BcdeScanExecutionService()
     {
     }
 
     public BcdeScanExecutionService(
-        IDetectorRegistryService detectorRegistryService,
+        IEnumerable<IComponentDetector> detectors,
         IDetectorProcessingService detectorProcessingService,
         IDetectorRestrictionService detectorRestrictionService,
         IEnumerable<Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>> graphTranslationServices,
         ILogger logger)
     {
-        this.DetectorRegistryService = detectorRegistryService;
+        this.detectors = detectors;
         this.DetectorProcessingService = detectorProcessingService;
         this.DetectorRestrictionService = detectorRestrictionService;
         this.GraphTranslationServices = graphTranslationServices;
         this.Logger = logger;
     }
-
-    [Import]
-    public IDetectorRegistryService DetectorRegistryService { get; set; }
 
     [Import]
     public IDetectorProcessingService DetectorProcessingService { get; set; }
@@ -47,15 +45,9 @@ public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
     public async Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments)
     {
         this.Logger.LogCreateLoggingGroup();
-        var initialDetectors = this.DetectorRegistryService.GetDetectors(detectionArguments.AdditionalPluginDirectories, detectionArguments.AdditionalDITargets, detectionArguments.SkipPluginsDirectory).ToImmutableList();
-
-        if (!initialDetectors.Any())
-        {
-            throw new NoDetectorsFoundException();
-        }
 
         var detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
-        var detectors = this.DetectorRestrictionService.ApplyRestrictions(detectorRestrictions, initialDetectors).ToImmutableList();
+        var detectors = this.DetectorRestrictionService.ApplyRestrictions(detectorRestrictions, this.detectors).ToImmutableList();
 
         this.Logger.LogVerbose($"Finished applying restrictions to detectors.");
 

@@ -23,7 +23,7 @@ using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.DependencyInjection;
 
-internal static class ServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Register Component Detection services.
@@ -58,7 +58,6 @@ internal static class ServiceCollectionExtensions
         services.AddSingleton<IArgumentHandlingService, DetectorListingCommandService>();
         services.AddSingleton<IBcdeScanExecutionService, BcdeScanExecutionService>();
         services.AddSingleton<IDetectorProcessingService, DetectorProcessingService>();
-        services.AddSingleton<IDetectorRegistryService, DetectorRegistryService>();
         services.AddSingleton<IDetectorRestrictionService, DetectorRestrictionService>();
         services.AddSingleton<IArgumentHelper, ArgumentHelper>();
 

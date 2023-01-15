@@ -2,7 +2,6 @@ namespace Microsoft.ComponentDetection.Orchestrator;
 using System;
 using System.Collections.Generic;
 using System.Composition;
-using System.Composition.Hosting;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -19,22 +18,17 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
-using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Newtonsoft.Json;
 
 public class Orchestrator
 {
     private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
-    public Orchestrator()
-    {
-    }
-
     public Orchestrator(
         IEnumerable<IArgumentHandlingService> argumentHandlers,
-        FileWritingService fileWritingService,
+        IFileWritingService fileWritingService,
         IArgumentHelper argumentHelper,
-        Logger logger)
+        ILogger logger)
     {
         this.ArgumentHandlers = argumentHandlers;
         this.FileWritingService = fileWritingService;
@@ -46,45 +40,23 @@ public class Orchestrator
     private IEnumerable<IArgumentHandlingService> ArgumentHandlers { get; set; }
 
     [Import]
-    private Logger Logger { get; set; }
+    private ILogger Logger { get; set; }
 
     [Import]
-    private FileWritingService FileWritingService { get; set; }
+    private IFileWritingService FileWritingService { get; set; }
 
     [Import]
     private IArgumentHelper ArgumentHelper { get; set; }
 
     public async Task<ScanResult> LoadAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        var argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
         BaseArguments baseArguments = null;
-        var parserResult = argumentHelper.ParseArguments<BaseArguments>(args, true);
+        var parserResult = this.ArgumentHelper.ParseArguments<BaseArguments>(args, true);
         parserResult.WithParsed(x => baseArguments = x);
         if (parserResult.Tag == ParserResultType.NotParsed)
         {
             // Blank args for this part of the loader, all things are optional and default to false / empty / null
             baseArguments = new BaseArguments();
-        }
-
-        var additionalDITargets = baseArguments.AdditionalDITargets ?? Enumerable.Empty<string>();
-
-        // Load all types from Common (where Logger lives) and our executing assembly.
-        var configuration = new ContainerConfiguration()
-            .WithAssembly(typeof(Logger).Assembly)
-            .WithAssembly(Assembly.GetExecutingAssembly());
-
-        foreach (var assemblyPath in additionalDITargets)
-        {
-            var assemblies = Assembly.LoadFrom(assemblyPath);
-
-            AddAssembliesWithType<ITelemetryService>(assemblies, configuration);
-            AddAssembliesWithType<IGraphTranslationService>(assemblies, configuration);
-        }
-
-        using (var container = configuration.CreateContainer())
-        {
-            container.SatisfyImports(this);
-            container.SatisfyImports(TelemetryRelay.Instance);
         }
 
         TelemetryRelay.Instance.SetTelemetryMode(baseArguments.DebugTelemetry ? TelemetryMode.Debug : TelemetryMode.Production);
@@ -133,13 +105,6 @@ public class Orchestrator
         }
 
         return returnResult;
-    }
-
-    private static void AddAssembliesWithType<T>(Assembly assembly, ContainerConfiguration containerConfiguration)
-    {
-        assembly.GetTypes()
-            .Where(x => typeof(T).IsAssignableFrom(x)).ToList()
-            .ForEach(service => containerConfiguration = containerConfiguration.WithPart(service));
     }
 
     public async Task<ScanResult> HandleCommandAsync(

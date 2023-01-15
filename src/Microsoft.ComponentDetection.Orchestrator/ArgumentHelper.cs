@@ -8,6 +8,8 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 [Export(typeof(IArgumentHelper))]
 public class ArgumentHelper : IArgumentHelper
 {
+    public ArgumentHelper(IEnumerable<IScanArguments> argumentSets) => this.ArgumentSets = argumentSets;
+
     public ArgumentHelper() => this.ArgumentSets = Enumerable.Empty<IScanArguments>();
 
     [ImportMany]

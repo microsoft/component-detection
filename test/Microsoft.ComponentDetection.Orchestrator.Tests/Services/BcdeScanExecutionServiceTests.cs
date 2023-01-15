@@ -24,7 +24,7 @@ public class BcdeScanExecutionServiceTests
 {
     private Mock<ILogger> loggerMock;
     private Mock<IDetectorProcessingService> detectorProcessingServiceMock;
-    private Mock<IDetectorRegistryService> detectorRegistryServiceMock;
+    private Mock<IEnumerable<IComponentDetector>> detectorsMock;
     private Mock<IDetectorRestrictionService> detectorRestrictionServiceMock;
     private Mock<IComponentDetector> componentDetector2Mock;
     private Mock<IComponentDetector> componentDetector3Mock;
@@ -42,7 +42,7 @@ public class BcdeScanExecutionServiceTests
     {
         this.loggerMock = new Mock<ILogger>();
         this.detectorProcessingServiceMock = new Mock<IDetectorProcessingService>();
-        this.detectorRegistryServiceMock = new Mock<IDetectorRegistryService>();
+        this.detectorsMock = new Mock<IEnumerable<IComponentDetector>>();
         this.detectorRestrictionServiceMock = new Mock<IDetectorRestrictionService>();
         this.componentDetector2Mock = new Mock<IComponentDetector>();
         this.componentDetector3Mock = new Mock<IComponentDetector>();
@@ -60,7 +60,7 @@ public class BcdeScanExecutionServiceTests
         };
 
         this.serviceUnderTest = new BcdeScanExecutionService(
-            this.detectorRegistryServiceMock.Object,
+            this.detectorsMock.Object,
             this.detectorProcessingServiceMock.Object,
             this.detectorRestrictionServiceMock.Object,
             new List<Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>>
@@ -79,7 +79,7 @@ public class BcdeScanExecutionServiceTests
     public void CleanupTests()
     {
         this.detectorProcessingServiceMock.VerifyAll();
-        this.detectorRegistryServiceMock.VerifyAll();
+        this.detectorsMock.VerifyAll();
         this.detectorRestrictionServiceMock.VerifyAll();
 
         try
@@ -618,7 +618,7 @@ public class BcdeScanExecutionServiceTests
         Action<DetectorRestrictions> restrictionAsserter = null,
         IEnumerable<ComponentRecorder> componentRecorders = null)
     {
-        var registeredDetectors = new[]
+        IEnumerable<IComponentDetector> registeredDetectors = new[]
         {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
 
@@ -629,12 +629,12 @@ public class BcdeScanExecutionServiceTests
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
         };
 
-        this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
-            .Returns(registeredDetectors);
+        this.detectorsMock.Setup(x => x.GetEnumerator())
+            .Returns(registeredDetectors.GetEnumerator());
         this.detectorRestrictionServiceMock.Setup(
                 x => x.ApplyRestrictions(
                     It.IsAny<DetectorRestrictions>(),
-                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => registeredDetectors.Intersect(inputDetectors).Count() == registeredDetectors.Length)))
+                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => registeredDetectors.Intersect(inputDetectors).Count() == registeredDetectors.Count())))
             .Returns(restrictedDetectors)
             .Callback<DetectorRestrictions, IEnumerable<IComponentDetector>>(
                 (restrictions, detectors) => restrictionAsserter?.Invoke(restrictions));
@@ -676,7 +676,7 @@ public class BcdeScanExecutionServiceTests
         BcdeArguments args,
         IEnumerable<ComponentRecorder> componentRecorders)
     {
-        var registeredDetectors = new[]
+        IEnumerable<IComponentDetector> registeredDetectors = new[]
         {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
 
@@ -687,12 +687,12 @@ public class BcdeScanExecutionServiceTests
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
         };
 
-        this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(Enumerable.Empty<DirectoryInfo>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
-            .Returns(registeredDetectors);
+        this.detectorsMock.Setup(x => x.GetEnumerator())
+            .Returns(registeredDetectors.GetEnumerator());
         this.detectorRestrictionServiceMock.Setup(
                 x => x.ApplyRestrictions(
                     It.IsAny<DetectorRestrictions>(),
-                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => registeredDetectors.Intersect(inputDetectors).Count() == registeredDetectors.Length)))
+                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => registeredDetectors.Intersect(inputDetectors).Count() == registeredDetectors.Count())))
             .Returns(restrictedDetectors);
 
         // We initialize detected component's DetectedBy here because of a Moq constraint -- certain operations (Adding interfaces) have to happen before .Object

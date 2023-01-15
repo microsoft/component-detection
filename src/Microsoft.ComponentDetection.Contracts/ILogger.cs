@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 /// <summary>Simple abstraction around console/output file logging for component detection.</summary>
 public interface ILogger
 {
+    void Init(VerbosityMode verbosity, bool writeLinePrefix = true);
+
     /// <summary>Creates a logical separation (e.g. newline) between different log messages.</summary>
     void LogCreateLoggingGroup();
 

@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 using System;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
