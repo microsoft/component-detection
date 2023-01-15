@@ -7,22 +7,13 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Gradle;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class GradleComponentDetectorTests
+public class GradleComponentDetectorTests : BaseDetectorTest<GradleComponentDetector>
 {
-    private DetectorTestUtility<GradleComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<GradleComponentDetector>();
-    }
-
     [TestMethod]
     public async Task TestGradleDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {

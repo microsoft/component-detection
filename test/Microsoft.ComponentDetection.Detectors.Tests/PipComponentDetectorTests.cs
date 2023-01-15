@@ -9,52 +9,41 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
 
 [TestClass]
-public class PipComponentDetectorTests
+public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 {
     private Mock<IPythonCommandService> pythonCommandService;
     private Mock<IPythonResolver> pythonResolver;
-    private Mock<ILogger> loggerMock;
 
-    private DetectorTestUtility<PipComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
+    public PipComponentDetectorTests()
     {
         this.pythonCommandService = new Mock<IPythonCommandService>();
+        this.detectorTestUtility.AddServiceMock(this.pythonCommandService);
+
         this.pythonResolver = new Mock<IPythonResolver>();
-        this.loggerMock = new Mock<ILogger>();
-
-        var detector = new PipComponentDetector
-        {
-            PythonCommandService = this.pythonCommandService.Object,
-            PythonResolver = this.pythonResolver.Object,
-            Logger = this.loggerMock.Object,
-        };
-
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PipComponentDetector>()
-            .WithDetector(detector);
+        this.detectorTestUtility.AddServiceMock(this.pythonResolver);
     }
 
     [TestMethod]
     public async Task TestPipDetector_PythonNotInstalledAsync()
     {
+        var mockLogger = new Mock<ILogger>();
+        mockLogger.Setup(x => x.LogInfo(It.Is<string>(l => l.Contains("No python found"))));
+        this.detectorTestUtility.AddServiceMock(mockLogger);
+
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
 
-        this.loggerMock.Setup(x => x.LogInfo(It.Is<string>(l => l.Contains("No python found"))));
 
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("setup.py", string.Empty)
-            .WithLogger(this.loggerMock)
             .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        this.loggerMock.VerifyAll();
+        mockLogger.VerifyAll();
     }
 
     [TestMethod]

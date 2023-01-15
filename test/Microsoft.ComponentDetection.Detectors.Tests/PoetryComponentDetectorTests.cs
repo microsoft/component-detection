@@ -6,22 +6,13 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class PoetryComponentDetectorTests
+public class PoetryComponentDetectorTests : BaseDetectorTest<PoetryComponentDetector>
 {
-    private DetectorTestUtility<PoetryComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PoetryComponentDetector>();
-    }
-
     [TestMethod]
     public async Task TestPoetryDetector_TestCustomSourceAsync()
     {

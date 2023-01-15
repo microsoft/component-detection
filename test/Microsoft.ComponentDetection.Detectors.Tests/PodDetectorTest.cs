@@ -8,22 +8,13 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class PodDetectorTest
+public class PodDetectorTest : BaseDetectorTest<PodComponentDetector>
 {
-    private DetectorTestUtility<PodComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PodComponentDetector>();
-    }
-
     [TestMethod]
     public async Task TestPodDetector_EmptyPodfileLockAsync()
     {

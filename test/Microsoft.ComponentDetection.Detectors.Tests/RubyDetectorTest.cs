@@ -9,36 +9,24 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class RubyDetectorTest
+public class RubyDetectorTest : BaseDetectorTest<RubyComponentDetector>
 {
-    private Mock<ILogger> loggerMock;
-    private RubyComponentDetector rubyDetector;
-    private DetectorTestUtility<RubyComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
+    public RubyDetectorTest()
     {
-        this.loggerMock = new Mock<ILogger>();
-        this.rubyDetector = new RubyComponentDetector
-        {
-            Logger = this.loggerMock.Object,
-        };
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<RubyComponentDetector>()
-            .WithScanRequest(new ScanRequest(
+        var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
+        this.detectorTestUtility.WithScanRequest(
+            new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
                 null,
-                new Dictionary<string,
-                    string>(),
+                new Dictionary<string, string>(),
                 null,
-                new ComponentRecorder(enableManualTrackingOfExplicitReferences: !this.rubyDetector.NeedsAutomaticRootDependencyCalculation)));
+                componentRecorder));
     }
 
     [TestMethod]

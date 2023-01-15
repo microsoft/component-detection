@@ -1,57 +1,34 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Go;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class GoComponentDetectorTests
+public class GoComponentDetectorTests : BaseDetectorTest<GoComponentDetector>
 {
-    private DetectorTestUtility<GoComponentDetector> detectorTestUtility;
     private Mock<ICommandLineInvocationService> commandLineMock;
-
     private Mock<IEnvironmentVariableService> envVarService;
-    private ScanRequest scanRequest;
 
-    [TestInitialize]
-    public void TestInitialize()
+    public GoComponentDetectorTests()
     {
         this.commandLineMock = new Mock<ICommandLineInvocationService>();
-        this.envVarService = new Mock<IEnvironmentVariableService>();
-
-        var loggerMock = new Mock<ILogger>();
-
-        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
-
-        var detector = new GoComponentDetector
-        {
-            CommandLineInvocationService = this.commandLineMock.Object,
-            Logger = loggerMock.Object,
-            EnvVarService = this.envVarService.Object,
-        };
-
-        var tempPath = Path.GetTempPath();
-        var detectionPath = Path.Combine(tempPath, Guid.NewGuid().ToString());
-        Directory.CreateDirectory(detectionPath);
-
-        this.scanRequest = new ScanRequest(new DirectoryInfo(detectionPath), (name, directoryName) => false, loggerMock.Object, null, null, new ComponentRecorder());
-
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<GoComponentDetector>()
-            .WithScanRequest(this.scanRequest)
-            .WithDetector(detector);
-
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(false);
+        this.detectorTestUtility.AddServiceMock(this.commandLineMock);
+
+        this.envVarService = new Mock<IEnvironmentVariableService>();
+        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
+        this.detectorTestUtility.AddServiceMock(this.envVarService);
     }
 
     [TestMethod]

@@ -7,22 +7,34 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class VcpkgComponentDetectorTests
+public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetector>
 {
-    private DetectorTestUtility<VcpkgComponentDetector> detectorTestUtility;
+    private readonly Mock<ICommandLineInvocationService> mockCommandLineInvocationService;
+    private readonly Mock<IEnvironmentVariableService> mockEnvironmentVariableService;
 
-    [TestInitialize]
-    public void TestInitialize()
+    public VcpkgComponentDetectorTests()
     {
+        this.mockCommandLineInvocationService = new Mock<ICommandLineInvocationService>();
+        this.detectorTestUtility.AddServiceMock(this.mockCommandLineInvocationService);
+
+        this.mockEnvironmentVariableService = new Mock<IEnvironmentVariableService>();
+        this.detectorTestUtility.AddServiceMock(this.mockEnvironmentVariableService);
+
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<VcpkgComponentDetector>()
-            .WithScanRequest(new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder));
+        this.detectorTestUtility.WithScanRequest(
+            new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                null,
+                null,
+                new Dictionary<string, string>(),
+                null,
+                componentRecorder));
     }
 
     [TestMethod]

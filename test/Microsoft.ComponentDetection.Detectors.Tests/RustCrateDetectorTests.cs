@@ -10,13 +10,12 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class RustCrateDetectorTests
+public class RustCrateDetectorTests : BaseDetectorTest<RustCrateDetector>
 {
     private readonly string testCargoLockString = @"
 [[package]]
@@ -228,14 +227,6 @@ name = ""test_package""
 version = ""2.0.0""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
-
-    private DetectorTestUtility<RustCrateDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<RustCrateDetector>();
-    }
 
     [TestMethod]
     public async Task TestGraphIsCorrectAsync()

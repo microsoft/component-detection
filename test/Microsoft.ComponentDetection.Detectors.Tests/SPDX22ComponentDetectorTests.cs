@@ -10,23 +10,24 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Spdx;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class Spdx22ComponentDetectorTests
+public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDetector>
 {
-    private readonly string tempPath = Path.GetTempPath();
-    private DetectorTestUtility<Spdx22ComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
+    public Spdx22ComponentDetectorTests()
     {
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<Spdx22ComponentDetector>()
-            .WithScanRequest(new ScanRequest(new DirectoryInfo(this.tempPath), null, null, new Dictionary<string, string>(), null, componentRecorder));
+        this.detectorTestUtility.WithScanRequest(
+            new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                null,
+                null,
+                new Dictionary<string, string>(),
+                null,
+                componentRecorder));
     }
 
     [TestMethod]
@@ -113,8 +114,7 @@ public class Spdx22ComponentDetectorTests
         }
 
 #pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
-        var checksum = BitConverter.ToString(SHA1.Create().ComputeHash(
-            Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
+        var checksum = BitConverter.ToString(SHA1.HashData(Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350
 
         Assert.AreEqual(1, components.Count);
@@ -123,7 +123,7 @@ public class Spdx22ComponentDetectorTests
         Assert.AreEqual(sbomComponent.DocumentNamespace, new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
         Assert.AreEqual(sbomComponent.SpdxVersion, "SPDX-2.2");
         Assert.AreEqual(sbomComponent.Checksum, checksum);
-        Assert.AreEqual(sbomComponent.Path, Path.Combine(this.tempPath, spdxFileName));
+        Assert.AreEqual(sbomComponent.Path, Path.Combine(Path.GetTempPath(), spdxFileName));
     }
 
     [TestMethod]

@@ -12,25 +12,14 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class NuGetComponentDetectorTests
+public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetector>
 {
-    private Mock<ILogger> loggerMock;
-    private DetectorTestUtility<NuGetComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.loggerMock = new Mock<ILogger>();
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<NuGetComponentDetector>();
-    }
-
     [TestMethod]
     public async Task TestNuGetDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
@@ -164,14 +153,16 @@ NUGET
         var malformedNupkg = await NugetTestUtilities.ZipNupkgComponentAsync("malformed.nupkg", NugetTestUtilities.GetRandomMalformedNuPkgComponent());
         var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
 
+        var mockLogger = new Mock<ILogger>();
+
         var (scanResult, componentRecorder) = await this.detectorTestUtility
-            .WithLogger(this.loggerMock)
             .WithFile("test.nuspec", nuspec)
             .WithFile("test.nupkg", validNupkg)
             .WithFile("malformed.nupkg", malformedNupkg)
+            .AddServiceMock(mockLogger)
             .ExecuteDetectorAsync();
 
-        this.loggerMock.Verify(x => x.LogFailedReadingFile(Path.Join(Path.GetTempPath(), "malformed.nupkg"), It.IsAny<Exception>()));
+        mockLogger.Verify(x => x.LogFailedReadingFile(Path.Join(Path.GetTempPath(), "malformed.nupkg"), It.IsAny<Exception>()));
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
@@ -188,10 +179,11 @@ NUGET
         var streamsDetectedInAdditionalDirectoryPass = new List<IComponentStream> { nugetConfigComponent };
 
         var componentRecorder = new ComponentRecorder();
+        var mockLogger = new Mock<ILogger>();
         var detector = new NuGetComponentDetector();
         var sourceDirectoryPath = this.CreateTemporaryDirectory();
 
-        detector.Logger = this.loggerMock.Object;
+        detector.Logger = mockLogger.Object;
 
         // Use strict mock evaluation because we're doing some "fun" stuff with this mock.
         var componentStreamEnumerableFactoryMock = new Mock<IComponentStreamEnumerableFactory>(MockBehavior.Strict);

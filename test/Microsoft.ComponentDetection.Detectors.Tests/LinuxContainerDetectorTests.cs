@@ -36,8 +36,7 @@ public class LinuxContainerDetectorTests
     private Mock<ILogger> mockLogger;
     private Mock<ILinuxScanner> mockSyftLinuxScanner;
 
-    [TestInitialize]
-    public void TestInitialize()
+    public LinuxContainerDetectorTests()
     {
         this.mockDockerService = new Mock<IDockerService>();
         this.mockDockerService.Setup(service => service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>()))

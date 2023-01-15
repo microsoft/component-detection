@@ -9,22 +9,24 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pnpm;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class PnpmDetectorTests
+public class PnpmDetectorTests : BaseDetectorTest<PnpmComponentDetector>
 {
-    private DetectorTestUtility<PnpmComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
+    public PnpmDetectorTests()
     {
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PnpmComponentDetector>()
-            .WithScanRequest(new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder));
+        this.detectorTestUtility.WithScanRequest(
+            new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                null,
+                null,
+                new Dictionary<string, string>(),
+                null,
+                componentRecorder));
     }
 
     [TestMethod]
