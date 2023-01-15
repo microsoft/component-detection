@@ -111,7 +111,7 @@ public class DetectorTestUtilityBuilder<T>
 
     private static string FindMatchingPattern(string fileName, IEnumerable<string> searchPatterns)
     {
-        var foundPattern = searchPatterns.FirstOrDefault(searchPattern => new PathUtilityService().MatchesPattern(searchPattern, fileName));
+        var foundPattern = searchPatterns.FirstOrDefault(searchPattern => new PathUtilityService(null).MatchesPattern(searchPattern, fileName));
 
         return foundPattern ?? fileName;
     }

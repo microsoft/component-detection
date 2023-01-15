@@ -33,11 +33,9 @@ public class DetectorListingCommandServiceTests
         this.componentDetector3Mock = new Mock<IComponentDetector>();
         this.versionedComponentDetector1Mock = new Mock<IComponentDetector>();
 
-        this.serviceUnderTest = new DetectorListingCommandService
-        {
-            DetectorRegistryService = this.detectorRegistryServiceMock.Object,
-            Logger = this.loggerMock.Object,
-        };
+        this.serviceUnderTest = new DetectorListingCommandService(
+            this.detectorRegistryServiceMock.Object,
+            this.loggerMock.Object);
 
         this.logOutput = new List<string>();
         this.loggerMock.Setup(x => x.LogInfo(It.IsAny<string>())).Callback<string>(loggedString =>

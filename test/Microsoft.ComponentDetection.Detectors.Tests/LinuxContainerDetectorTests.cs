@@ -60,12 +60,10 @@ public class LinuxContainerDetectorTests
 
         var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage }, componentRecorder);
 
-        var linuxContainerDetector = new LinuxContainerDetector
-        {
-            LinuxScanner = this.mockSyftLinuxScanner.Object,
-            Logger = this.mockLogger.Object,
-            DockerService = this.mockDockerService.Object,
-        };
+        var linuxContainerDetector = new LinuxContainerDetector(
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerService.Object,
+            this.mockLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -90,12 +88,10 @@ public class LinuxContainerDetectorTests
         this.mockDockerService.Setup(service => service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var linuxContainerDetector = new LinuxContainerDetector
-        {
-            LinuxScanner = this.mockSyftLinuxScanner.Object,
-            Logger = this.mockLogger.Object,
-            DockerService = this.mockDockerService.Object,
-        };
+        var linuxContainerDetector = new LinuxContainerDetector(
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerService.Object,
+            this.mockLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -114,12 +110,10 @@ public class LinuxContainerDetectorTests
 
         var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, null, componentRecorder);
 
-        var linuxContainerDetector = new LinuxContainerDetector
-        {
-            LinuxScanner = this.mockSyftLinuxScanner.Object,
-            Logger = this.mockLogger.Object,
-            DockerService = this.mockDockerService.Object,
-        };
+        var linuxContainerDetector = new LinuxContainerDetector(
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerService.Object,
+            this.mockLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -138,12 +132,10 @@ public class LinuxContainerDetectorTests
 
         var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { "UPPERCASE" }, componentRecorder);
 
-        var linuxContainerDetector = new LinuxContainerDetector
-        {
-            LinuxScanner = this.mockSyftLinuxScanner.Object,
-            Logger = this.mockLogger.Object,
-            DockerService = this.mockDockerService.Object,
-        };
+        var linuxContainerDetector = new LinuxContainerDetector(
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerService.Object,
+            this.mockLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -163,12 +155,10 @@ public class LinuxContainerDetectorTests
 
         var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage, NodeLatestDigest }, componentRecorder);
 
-        var linuxContainerDetector = new LinuxContainerDetector
-        {
-            LinuxScanner = this.mockSyftLinuxScanner.Object,
-            Logger = this.mockLogger.Object,
-            DockerService = this.mockDockerService.Object,
-        };
+        var linuxContainerDetector = new LinuxContainerDetector(
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerService.Object,
+            this.mockLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -188,12 +178,10 @@ public class LinuxContainerDetectorTests
         var detectorArgs = new Dictionary<string, string> { { "Linux.ScanningTimeoutSec", "2" } };
         var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, detectorArgs, new List<string> { NodeLatestImage }, new ComponentRecorder());
 
-        var linuxContainerDetector = new LinuxContainerDetector
-        {
-            LinuxScanner = this.mockSyftLinuxScanner.Object,
-            Logger = this.mockLogger.Object,
-            DockerService = this.mockDockerService.Object,
-        };
+        var linuxContainerDetector = new LinuxContainerDetector(
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerService.Object,
+            this.mockLogger.Object);
 
         Func<Task> action = async () => await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
         await action.Should().NotThrowAsync<OperationCanceledException>();

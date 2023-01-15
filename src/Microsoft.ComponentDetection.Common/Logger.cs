@@ -18,10 +18,10 @@ public class Logger : ILogger
     {
     }
 
-    public Logger(IFileWritingService fileWritingService, IConsoleWritingService consoleWriter)
+    public Logger(IConsoleWritingService consoleWriter, IFileWritingService fileWritingService)
     {
-        this.FileWritingService = fileWritingService;
         this.ConsoleWriter = consoleWriter;
+        this.FileWritingService = fileWritingService;
     }
 
     [Import]

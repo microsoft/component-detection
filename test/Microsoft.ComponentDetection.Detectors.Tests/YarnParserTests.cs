@@ -13,18 +13,14 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class YarnParserTests
 {
-    private Mock<ILogger> loggerMock;
+    private readonly Mock<ILogger> loggerMock;
 
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.loggerMock = new Mock<ILogger>();
-    }
+    public YarnParserTests() => this.loggerMock = new Mock<ILogger>();
 
     [TestMethod]
     public void YarnLockParserWithNullBlockFile_Fails()
     {
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         void Action() => parser.Parse(null, this.loggerMock.Object);
 
@@ -36,7 +32,7 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V1;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blockFile = new Mock<IYarnBlockFile>();
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
@@ -49,7 +45,7 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V2;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blockFile = new Mock<IYarnBlockFile>();
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
@@ -62,7 +58,7 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V1;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blocks = Enumerable.Empty<YarnBlock>();
         var blockFile = new Mock<IYarnBlockFile>();
@@ -80,7 +76,7 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V1;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blocks = new List<YarnBlock>
         {
@@ -117,7 +113,7 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V1;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blocks = new List<YarnBlock>
         {

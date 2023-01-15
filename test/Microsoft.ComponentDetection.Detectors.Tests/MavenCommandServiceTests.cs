@@ -21,20 +21,18 @@ public class MavenCommandServiceTests
     private Mock<IMavenStyleDependencyGraphParserService> parserServiceMock;
     private MavenCommandService mavenCommandService;
 
-    [TestInitialize]
-    public void InitializeTests()
+    public MavenCommandServiceTests()
     {
         this.commandLineMock = new Mock<ICommandLineInvocationService>();
         var loggerMock = new Mock<ILogger>();
 
         this.parserServiceMock = new Mock<IMavenStyleDependencyGraphParserService>();
 
-        this.mavenCommandService = new MavenCommandService
-        {
-            CommandLineInvocationService = this.commandLineMock.Object,
-            ParserService = this.parserServiceMock.Object,
-            Logger = loggerMock.Object,
-        };
+        this.mavenCommandService = new MavenCommandService(
+            this.commandLineMock.Object,
+            this.parserServiceMock.Object,
+            loggerMock.Object
+        );
     }
 
     [TestMethod]

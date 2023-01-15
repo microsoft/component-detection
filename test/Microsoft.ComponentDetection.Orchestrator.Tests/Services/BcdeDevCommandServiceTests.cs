@@ -15,17 +15,18 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class BcdeDevCommandServiceTests
 {
-    private Mock<IBcdeScanExecutionService> scanExecutionServiceMock;
+    private readonly Mock<IBcdeScanExecutionService> scanExecutionServiceMock;
+    private readonly Mock<ILogger> loggerMock;
 
     private BcdeDevCommandService serviceUnderTest;
 
     private ScannedComponent[] scannedComponents;
 
-    [TestInitialize]
-    public void InitializeTest()
+    public BcdeDevCommandServiceTests()
     {
         this.scanExecutionServiceMock = new Mock<IBcdeScanExecutionService>();
-        this.serviceUnderTest = new BcdeDevCommandService();
+        this.loggerMock = new Mock<ILogger>();
+        this.serviceUnderTest = new BcdeDevCommandService(this.scanExecutionServiceMock.Object, this.loggerMock.Object);
 
         this.scannedComponents = new ScannedComponent[]
         {
@@ -54,10 +55,9 @@ public class BcdeDevCommandServiceTests
     {
         var args = new BcdeArguments();
 
-        this.serviceUnderTest = new BcdeDevCommandService
-        {
-            BcdeScanExecutionService = this.scanExecutionServiceMock.Object,
-        };
+        this.serviceUnderTest = new BcdeDevCommandService(
+                this.scanExecutionServiceMock.Object,
+                this.loggerMock.Object);
 
         var result = await this.serviceUnderTest.HandleAsync(args);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);

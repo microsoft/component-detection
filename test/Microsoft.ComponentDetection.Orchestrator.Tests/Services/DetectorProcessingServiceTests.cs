@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -35,15 +34,15 @@ public class DetectorProcessingServiceTests
     };
 
     private IEnumerable<IComponentDetector> detectorsToUse;
-    private Mock<ILogger> loggerMock;
-    private DetectorProcessingService serviceUnderTest;
-    private FastDirectoryWalkerFactory directoryWalkerFactory;
+    private readonly Mock<ILogger> loggerMock;
+    private readonly DetectorProcessingService serviceUnderTest;
+    private readonly Mock<IObservableDirectoryWalkerFactory> directoryWalkerFactory;
 
-    private Mock<FileComponentDetector> firstFileComponentDetectorMock;
-    private Mock<FileComponentDetector> secondFileComponentDetectorMock;
-    private Mock<IComponentDetector> firstCommandComponentDetectorMock;
-    private Mock<IComponentDetector> secondCommandComponentDetectorMock;
-    private Mock<FileComponentDetector> experimentalFileComponentDetectorMock;
+    private readonly Mock<FileComponentDetector> firstFileComponentDetectorMock;
+    private readonly Mock<FileComponentDetector> secondFileComponentDetectorMock;
+    private readonly Mock<IComponentDetector> firstCommandComponentDetectorMock;
+    private readonly Mock<IComponentDetector> secondCommandComponentDetectorMock;
+    private readonly Mock<FileComponentDetector> experimentalFileComponentDetectorMock;
 
     private bool isWin;
 
@@ -56,22 +55,12 @@ public class DetectorProcessingServiceTests
         };
     }
 
-    [TestInitialize]
-    public void TestInit()
+    public DetectorProcessingServiceTests()
     {
         this.loggerMock = new Mock<ILogger>();
-        this.serviceUnderTest = new DetectorProcessingService
-        {
-            Logger = this.loggerMock.Object,
-        };
-
-        this.directoryWalkerFactory = new FastDirectoryWalkerFactory()
-        {
-            Logger = this.loggerMock.Object,
-            PathUtilityService = new PathUtilityService(),
-        };
-
-        this.serviceUnderTest.Scanner = this.directoryWalkerFactory;
+        this.directoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
+        this.serviceUnderTest =
+            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.loggerMock.Object);
 
         this.firstFileComponentDetectorMock = this.SetupFileDetectorMock("firstFileDetectorId");
         this.secondFileComponentDetectorMock = this.SetupFileDetectorMock("secondFileDetectorId");

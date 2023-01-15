@@ -23,7 +23,7 @@ public class FileEnumerationTests
 
         var loggerMock = new Mock<ILogger>();
 
-        var pathUtility = new PathUtilityService();
+        var pathUtility = new PathUtilityService(loggerMock.Object);
         var sfe = new SafeFileEnumerable(new DirectoryInfo(Path.Combine(testDirectory, "root")), new[] { "*" }, loggerMock.Object, pathUtility, (name, directoryName) => false, true);
 
         var foundFiles = new List<string>();

@@ -35,11 +35,11 @@ public class LinuxScannerTests
                 ]
             }";
 
-    private LinuxScanner linuxScanner;
-    private Mock<IDockerService> mockDockerService;
+    private readonly LinuxScanner linuxScanner;
+    private readonly Mock<IDockerService> mockDockerService;
+    private readonly Mock<ILogger> mockLogger;
 
-    [TestInitialize]
-    public void TestInitialize()
+    public LinuxScannerTests()
     {
         this.mockDockerService = new Mock<IDockerService>();
         this.mockDockerService.Setup(service => service.CanPingDockerAsync(It.IsAny<CancellationToken>()))
@@ -48,7 +48,9 @@ public class LinuxScannerTests
         this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((SyftOutput, string.Empty));
 
-        this.linuxScanner = new LinuxScanner { DockerService = this.mockDockerService.Object };
+        this.mockLogger = new Mock<ILogger>();
+
+        this.linuxScanner = new LinuxScanner(this.mockDockerService.Object, this.mockLogger.Object);
     }
 
     [TestMethod]

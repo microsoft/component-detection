@@ -3,8 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -15,13 +17,10 @@ public class DockerServiceTests
 
     private const string TestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
 
-    private DockerService dockerService;
+    private readonly Mock<ILogger> loggerMock = new();
+    private readonly DockerService dockerService;
 
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.dockerService = new DockerService();
-    }
+    public DockerServiceTests() => this.dockerService = new DockerService(this.loggerMock.Object);
 
     [TestMethod]
     public async Task DockerService_CanPingDockerAsync()
@@ -62,7 +61,7 @@ public class DockerServiceTests
         details.Should().NotBeNull();
         details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag");
         var expectedImageId = "sha256:5edc12e9a797b59b9209354ff99d8550e7a1f90ca924c103fa3358e1a9ce15fe";
-        var expectedCreatedAt = DateTime.Parse("2021-09-23T23:47:57.442225064Z");
+        var expectedCreatedAt = DateTime.Parse("2021-09-23T23:47:57.442225064Z").ToUniversalTime();
 
         details.Should().NotBeNull();
         details.Id.Should().BeGreaterThan(0);

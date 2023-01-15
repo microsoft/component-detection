@@ -20,6 +20,9 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetector>
 {
+    private static readonly IEnumerable<string> DetectorSearchPattern =
+        new List<string> { "*.nupkg", "*.nuspec", "nuget.config", "paket.lock" };
+
     [TestMethod]
     public async Task TestNuGetDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
@@ -180,10 +183,7 @@ NUGET
 
         var componentRecorder = new ComponentRecorder();
         var mockLogger = new Mock<ILogger>();
-        var detector = new NuGetComponentDetector();
         var sourceDirectoryPath = this.CreateTemporaryDirectory();
-
-        detector.Logger = mockLogger.Object;
 
         // Use strict mock evaluation because we're doing some "fun" stuff with this mock.
         var componentStreamEnumerableFactoryMock = new Mock<IComponentStreamEnumerableFactory>(MockBehavior.Strict);
@@ -205,7 +205,7 @@ NUGET
         componentStreamEnumerableFactoryMock.Setup(
                 x => x.GetComponentStreams(
                     Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
-                    Match.Create<IEnumerable<string>>(stuff => detector.SearchPatterns.Intersect(stuff).Count() == detector.SearchPatterns.Count),
+                    Match.Create<IEnumerable<string>>(stuff => DetectorSearchPattern.Intersect(stuff).Count() == DetectorSearchPattern.Count()),
                     It.IsAny<ExcludeDirectoryPredicate>(),
                     It.IsAny<bool>()))
             .Returns(Enumerable.Empty<IComponentStream>());
@@ -214,7 +214,7 @@ NUGET
         componentStreamEnumerableFactoryMock.Setup(
                 x => x.GetComponentStreams(
                     Match.Create<DirectoryInfo>(info => info.FullName.Contains(additionalDirectory)),
-                    Match.Create<IEnumerable<string>>(stuff => detector.SearchPatterns.Intersect(stuff).Count() == detector.SearchPatterns.Count),
+                    Match.Create<IEnumerable<string>>(stuff => DetectorSearchPattern.Intersect(stuff).Count() == DetectorSearchPattern.Count()),
                     It.IsAny<ExcludeDirectoryPredicate>(),
                     It.IsAny<bool>()))
             .Returns(streamsDetectedInNormalPass);
@@ -235,8 +235,10 @@ NUGET
                     It.IsAny<ComponentRecorder>()))
             .Returns(() => streamsDetectedInNormalPass.Select(cs => new ProcessRequest { ComponentStream = cs, SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location) }).ToObservable());
 
-        detector.ComponentStreamEnumerableFactory = componentStreamEnumerableFactoryMock.Object;
-        detector.Scanner = directoryWalkerMock.Object;
+        var detector = new NuGetComponentDetector(
+            componentStreamEnumerableFactoryMock.Object,
+            directoryWalkerMock.Object,
+            mockLogger.Object);
 
         var scanResult = await detector.ExecuteDetectorAsync(new ScanRequest(new DirectoryInfo(sourceDirectoryPath), (name, directoryName) => false, null, new Dictionary<string, string>(), null, componentRecorder));
 

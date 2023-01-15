@@ -42,7 +42,7 @@ public class DetectorRestrictionServiceTests
             this.newNpmDetector.Object,
         };
 
-        this.serviceUnderTest = new DetectorRestrictionService() { Logger = this.logger.Object };
+        this.serviceUnderTest = new DetectorRestrictionService(this.logger.Object);
     }
 
     [TestMethod]

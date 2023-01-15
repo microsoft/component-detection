@@ -59,17 +59,16 @@ public class BcdeScanExecutionServiceTests
             new DetectedComponent(new NuGetComponent("SomeNugetComponent", "1.2.3.4")),
         };
 
-        this.serviceUnderTest = new BcdeScanExecutionService
-        {
-            DetectorProcessingService = this.detectorProcessingServiceMock.Object,
-            DetectorRegistryService = this.detectorRegistryServiceMock.Object,
-            DetectorRestrictionService = this.detectorRestrictionServiceMock.Object,
-            Logger = this.loggerMock.Object,
-            GraphTranslationServices = new List<Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>>
+        this.serviceUnderTest = new BcdeScanExecutionService(
+            this.detectorRegistryServiceMock.Object,
+            this.detectorProcessingServiceMock.Object,
+            this.detectorRestrictionServiceMock.Object,
+            new List<Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>>
             {
-                new Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>(() => defaultGraphTranslationService, new GraphTranslationServiceMetadata()),
+                new(() => defaultGraphTranslationService, new GraphTranslationServiceMetadata()),
             },
-        };
+            this.loggerMock.Object
+        );
 
         this.sourceDirectory = new DirectoryInfo(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
 
