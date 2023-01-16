@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,10 +14,9 @@ public sealed class TelemetryRelay
 {
     // For things not populating the telemetry services collection, let's not throw.
     private TelemetryRelay() =>
-        TelemetryServices = Enumerable.Empty<ITelemetryService>();
+        this.telemetryServices = Enumerable.Empty<ITelemetryService>();
 
-    [ImportMany]
-    public static IEnumerable<ITelemetryService> TelemetryServices { get; set; }
+    private IEnumerable<ITelemetryService> telemetryServices;
 
     /// <summary>
     /// Gets a value indicating whether or not the telemetry relay has been shutdown.
@@ -30,13 +28,15 @@ public sealed class TelemetryRelay
     /// </summary>
     public static TelemetryRelay Instance { get; } = new TelemetryRelay();
 
+    public void Init(IEnumerable<ITelemetryService> telemetryServices) => this.telemetryServices = telemetryServices;
+
     /// <summary>
     /// Post a given telemetry record to all telemetry services.
     /// </summary>
     /// <param name="record">Record to post. </param>
     public void PostTelemetryRecord(IDetectionTelemetryRecord record)
     {
-        foreach (var service in TelemetryServices)
+        foreach (var service in this.telemetryServices)
         {
             try
             {
@@ -57,7 +57,7 @@ public sealed class TelemetryRelay
     {
         Active = false;
 
-        foreach (var service in TelemetryServices)
+        foreach (var service in this.telemetryServices)
         {
             try
             {
@@ -76,7 +76,7 @@ public sealed class TelemetryRelay
 
     public void SetTelemetryMode(TelemetryMode mode)
     {
-        foreach (var telemetryService in TelemetryServices ?? Enumerable.Empty<ITelemetryService>())
+        foreach (var telemetryService in this.telemetryServices ?? Enumerable.Empty<ITelemetryService>())
         {
             telemetryService.SetMode(mode);
         }
