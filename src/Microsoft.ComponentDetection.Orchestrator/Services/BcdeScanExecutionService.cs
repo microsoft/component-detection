@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -10,52 +9,38 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 
-[Export(typeof(IBcdeScanExecutionService))]
 public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
 {
     private readonly IEnumerable<IComponentDetector> detectors;
-
-    public BcdeScanExecutionService()
-    {
-    }
+    private readonly IDetectorProcessingService detectorProcessingService;
+    private readonly IDetectorRestrictionService detectorRestrictionService;
+    private readonly IGraphTranslationService graphTranslationService;
 
     public BcdeScanExecutionService(
         IEnumerable<IComponentDetector> detectors,
         IDetectorProcessingService detectorProcessingService,
         IDetectorRestrictionService detectorRestrictionService,
-        IEnumerable<Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>> graphTranslationServices,
+        IGraphTranslationService graphTranslationService,
         ILogger logger)
     {
         this.detectors = detectors;
-        this.DetectorProcessingService = detectorProcessingService;
-        this.DetectorRestrictionService = detectorRestrictionService;
-        this.GraphTranslationServices = graphTranslationServices;
+        this.detectorProcessingService = detectorProcessingService;
+        this.detectorRestrictionService = detectorRestrictionService;
+        this.graphTranslationService = graphTranslationService;
         this.Logger = logger;
     }
-
-    [Import]
-    public IDetectorProcessingService DetectorProcessingService { get; set; }
-
-    [Import]
-    public IDetectorRestrictionService DetectorRestrictionService { get; set; }
-
-    [ImportMany]
-    public IEnumerable<Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>> GraphTranslationServices { get; set; }
 
     public async Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments)
     {
         this.Logger.LogCreateLoggingGroup();
 
         var detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
-        var detectors = this.DetectorRestrictionService.ApplyRestrictions(detectorRestrictions, this.detectors).ToImmutableList();
+        var detectors = this.detectorRestrictionService.ApplyRestrictions(detectorRestrictions, this.detectors).ToImmutableList();
 
         this.Logger.LogVerbose($"Finished applying restrictions to detectors.");
 
-        var processingResult = await this.DetectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
-
-        var graphTranslationService = this.GraphTranslationServices.OrderBy(gts => gts.Metadata.Priority).Last().Value;
-
-        var scanResult = graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, detectionArguments);
+        var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
+        var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, detectionArguments);
 
         scanResult.DetectorsInScan = detectors.Select(x => ConvertToContract(x)).ToList();
         scanResult.ResultCode = processingResult.ResultCode;

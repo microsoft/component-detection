@@ -29,6 +29,7 @@ public class BcdeScanExecutionServiceTests
     private Mock<IComponentDetector> componentDetector2Mock;
     private Mock<IComponentDetector> componentDetector3Mock;
     private Mock<IComponentDetector> versionedComponentDetector1Mock;
+    private Mock<IGraphTranslationService> graphTranslationServiceMock;
 
     private DetectedComponent[] detectedComponents;
     private ContainerDetails sampleContainerDetails;
@@ -37,8 +38,7 @@ public class BcdeScanExecutionServiceTests
 
     private DirectoryInfo sourceDirectory;
 
-    [TestInitialize]
-    public void InitializeTest()
+    public BcdeScanExecutionServiceTests()
     {
         this.loggerMock = new Mock<ILogger>();
         this.detectorProcessingServiceMock = new Mock<IDetectorProcessingService>();
@@ -48,10 +48,7 @@ public class BcdeScanExecutionServiceTests
         this.componentDetector3Mock = new Mock<IComponentDetector>();
         this.versionedComponentDetector1Mock = new Mock<IComponentDetector>();
         this.sampleContainerDetails = new ContainerDetails { Id = 1 };
-        var defaultGraphTranslationService = new DefaultGraphTranslationService
-        {
-            Logger = this.loggerMock.Object,
-        };
+        this.graphTranslationServiceMock = new Mock<IGraphTranslationService>();
 
         this.detectedComponents = new[]
         {
@@ -63,12 +60,8 @@ public class BcdeScanExecutionServiceTests
             this.detectorsMock.Object,
             this.detectorProcessingServiceMock.Object,
             this.detectorRestrictionServiceMock.Object,
-            new List<Lazy<IGraphTranslationService, GraphTranslationServiceMetadata>>
-            {
-                new(() => defaultGraphTranslationService, new GraphTranslationServiceMetadata()),
-            },
-            this.loggerMock.Object
-        );
+            this.graphTranslationServiceMock.Object,
+            this.loggerMock.Object);
 
         this.sourceDirectory = new DirectoryInfo(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
 
@@ -112,7 +105,7 @@ public class BcdeScanExecutionServiceTests
         var parentPipComponent = new PipComponent("sample-root", "1.0");
         this.detectedComponents[1].DependencyRoots = new HashSet<TypedComponent>(new[] { parentPipComponent });
         this.detectedComponents[1].DevelopmentDependency = null;
-        singleFileComponentRecorder.RegisterUsage(new DetectedComponent(parentPipComponent, detector: new PipComponentDetector()), isExplicitReferencedDependency: true);
+        singleFileComponentRecorder.RegisterUsage(new DetectedComponent(parentPipComponent, detector: new Mock<PipComponentDetector>().Object), isExplicitReferencedDependency: true);
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1], parentComponentId: parentPipComponent.Id);
 
         var args = new BcdeArguments
@@ -360,7 +353,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_ComponentsAreReturnedWithDevDependencyInfoAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new NpmComponentDetectorWithRoots();
+        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -368,9 +361,9 @@ public class BcdeScanExecutionServiceTests
         };
 
         var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location");
-        var detectedComponent1 = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector);
-        var detectedComponent2 = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector);
-        var detectedComponent3 = new DetectedComponent(new NpmComponent("test", "3.0.0"), detector: npmDetector);
+        var detectedComponent1 = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
+        var detectedComponent2 = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
+        var detectedComponent3 = new DetectedComponent(new NpmComponent("test", "3.0.0"), detector: npmDetector.Object);
 
         singleFileComponentRecorder.RegisterUsage(detectedComponent1, isDevelopmentDependency: true);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2, isDevelopmentDependency: false);
@@ -394,7 +387,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_RootsFromMultipleLocationsAreAgregatedAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new NpmComponentDetectorWithRoots();
+        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -402,14 +395,14 @@ public class BcdeScanExecutionServiceTests
         };
 
         var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location1");
-        var detectedComponent1 = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector);
-        var detectedComponent2 = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector);
+        var detectedComponent1 = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
+        var detectedComponent2 = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
 
         singleFileComponentRecorder.RegisterUsage(detectedComponent1, isExplicitReferencedDependency: true);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2, parentComponentId: detectedComponent1.Component.Id);
 
         singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location2");
-        var detectedComponent2NewLocation = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector);
+        var detectedComponent2NewLocation = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2NewLocation, isExplicitReferencedDependency: true);
 
         var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
@@ -430,7 +423,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_ComponentsAreReturnedWithRootsAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new NpmComponentDetectorWithRoots();
+        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -438,8 +431,8 @@ public class BcdeScanExecutionServiceTests
         };
 
         var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location");
-        var detectedComponent1 = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector);
-        var detectedComponent2 = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector);
+        var detectedComponent1 = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
+        var detectedComponent2 = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
 
         singleFileComponentRecorder.RegisterUsage(detectedComponent1, isExplicitReferencedDependency: true);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2, parentComponentId: detectedComponent1.Component.Id);
@@ -461,7 +454,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_DevDependenciesAreMergedWhenSameComponentInDifferentFilesAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new NpmComponentDetectorWithRoots();
+        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -472,20 +465,20 @@ public class BcdeScanExecutionServiceTests
         var secondRecorder = componentRecorder.CreateSingleFileComponentRecorder("FileB");
 
         // These two merged should be true.
-        var componentAWithNoDevDep = new DetectedComponent(new NpmComponent("testA", "1.0.0"), detector: npmDetector);
-        var componentAWithDevDepTrue = new DetectedComponent(new NpmComponent("testA", "1.0.0"), detector: npmDetector);
+        var componentAWithNoDevDep = new DetectedComponent(new NpmComponent("testA", "1.0.0"), detector: npmDetector.Object);
+        var componentAWithDevDepTrue = new DetectedComponent(new NpmComponent("testA", "1.0.0"), detector: npmDetector.Object);
 
         // These two merged should be false.
-        var componentBWithNoDevDep = new DetectedComponent(new NpmComponent("testB", "1.0.0"), detector: npmDetector);
-        var componentBWithDevDepFalse = new DetectedComponent(new NpmComponent("testB", "1.0.0"), detector: npmDetector);
+        var componentBWithNoDevDep = new DetectedComponent(new NpmComponent("testB", "1.0.0"), detector: npmDetector.Object);
+        var componentBWithDevDepFalse = new DetectedComponent(new NpmComponent("testB", "1.0.0"), detector: npmDetector.Object);
 
         // These two merged should be false.
-        var componentCWithDevDepTrue = new DetectedComponent(new NpmComponent("testC", "1.0.0"), detector: npmDetector);
-        var componentCWithDevDepFalse = new DetectedComponent(new NpmComponent("testC", "1.0.0"), detector: npmDetector);
+        var componentCWithDevDepTrue = new DetectedComponent(new NpmComponent("testC", "1.0.0"), detector: npmDetector.Object);
+        var componentCWithDevDepFalse = new DetectedComponent(new NpmComponent("testC", "1.0.0"), detector: npmDetector.Object);
 
         // These two merged should be true.
-        var componentDWithDevDepTrue = new DetectedComponent(new NpmComponent("testD", "1.0.0"), detector: npmDetector);
-        var componentDWithDevDepTrueCopy = new DetectedComponent(new NpmComponent("testD", "1.0.0"), detector: npmDetector);
+        var componentDWithDevDepTrue = new DetectedComponent(new NpmComponent("testD", "1.0.0"), detector: npmDetector.Object);
+        var componentDWithDevDepTrueCopy = new DetectedComponent(new NpmComponent("testD", "1.0.0"), detector: npmDetector.Object);
 
         // The hint for reading this test is to know that each "column" you see visually is what's being merged, so componentAWithNoDevDep is being merged "down" into componentAWithDevDepTrue.
         foreach ((var component, var isDevDep) in new[]
@@ -513,7 +506,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_LocationsAreMergedWhenSameComponentInDifferentFilesAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new NpmComponentDetectorWithRoots();
+        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -525,8 +518,8 @@ public class BcdeScanExecutionServiceTests
         var secondRecorder = componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/some/other/file/path"));
         secondRecorder.AddAdditionalRelatedFile(Path.Join(this.sourceDirectory.FullName, "/some/related/file/2"));
 
-        var firstComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector);
-        var secondComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector);
+        var firstComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
+        var secondComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
 
         firstRecorder.RegisterUsage(firstComponent);
         secondRecorder.RegisterUsage(secondComponent);
@@ -554,7 +547,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_RootsAreMergedWhenSameComponentInDifferentFilesAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new NpmComponentDetectorWithRoots();
+        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -564,11 +557,11 @@ public class BcdeScanExecutionServiceTests
         var firstRecorder = componentRecorder.CreateSingleFileComponentRecorder("FileA");
         var secondRecorder = componentRecorder.CreateSingleFileComponentRecorder("FileB");
 
-        var root1 = new DetectedComponent(new NpmComponent("test1", "2.0.0"), detector: npmDetector);
-        var firstComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector);
+        var root1 = new DetectedComponent(new NpmComponent("test1", "2.0.0"), detector: npmDetector.Object);
+        var firstComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
 
-        var root2 = new DetectedComponent(new NpmComponent("test2", "3.0.0"), detector: npmDetector);
-        var secondComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector);
+        var root2 = new DetectedComponent(new NpmComponent("test2", "3.0.0"), detector: npmDetector.Object);
+        var secondComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
 
         firstRecorder.RegisterUsage(root1, isExplicitReferencedDependency: true);
         firstRecorder.RegisterUsage(firstComponent, parentComponentId: root1.Component.Id);
@@ -592,7 +585,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_DetectedComponentExist_UpdateFunctionIsAppliedAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new NpmComponentDetectorWithRoots();
+        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -600,7 +593,7 @@ public class BcdeScanExecutionServiceTests
         };
 
         var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location");
-        var detectedComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector);
+        var detectedComponent = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
 
         singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: true);
 
