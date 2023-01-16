@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
@@ -17,14 +16,9 @@ public class YarnLockParser : IYarnLockParser
 
     private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
 
-    public YarnLockParser(ILogger logger) => this.Logger = logger;
+    private readonly ILogger logger;
 
-    public YarnLockParser()
-    {
-    }
-
-    [Import]
-    public ILogger Logger { get; set; }
+    public YarnLockParser(ILogger logger) => this.logger = logger;
 
     public static string NormalizeVersion(string version)
     {
@@ -130,7 +124,7 @@ public class YarnLockParser : IYarnLockParser
             var versionValue = block.Values.FirstOrDefault(x => string.Equals(x.Key, VersionString, StringComparison.OrdinalIgnoreCase));
             if (default(KeyValuePair<string, string>).Equals(versionValue))
             {
-                this.Logger.LogWarning("Block without version detected");
+                this.logger.LogWarning("Block without version detected");
                 return blockTitleMember;
             }
 
