@@ -27,7 +27,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     public NpmDetectorWithRootsTests()
     {
         this.mockPathUtilityService = new Mock<IPathUtilityService>();
-        this.detectorTestUtility.AddServiceMock(this.mockPathUtilityService);
+        this.DetectorTestUtility.AddServiceMock(this.mockPathUtilityService);
     }
 
     [TestMethod]
@@ -39,7 +39,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
         var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName, componentName0, version0);
         var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
@@ -65,8 +65,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
         var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName);
         var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
-
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
@@ -80,7 +79,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     {
         var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(this.packageLockJsonFileName);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .ExecuteDetectorAsync();
 
@@ -111,7 +110,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -167,7 +166,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -231,7 +230,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -284,7 +283,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -346,7 +345,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         this.mockPathUtilityService.Setup(x => x.IsFileBelowAnother(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("lerna.json", "unused string", this.packageLockJsonSearchPatterns, fileLocation: lernaFileLocation)
             .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns, fileLocation: lockFileLocation)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern, fileLocation: packageJsonFileLocation)
@@ -402,7 +401,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName2, version2);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -433,7 +432,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
         var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2(lockFileName, componentName0, version0);
         var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -478,7 +477,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         var packageJsonTemplate2 = string.Format(packagejson, componentName2, version2, "test2");
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             /* Top level */
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
@@ -557,7 +556,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         var packageJsonTemplate = string.Format(packagejson, componentA.Name, componentA.Version, componentB.Name, componentB.Version);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();

@@ -14,7 +14,7 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class DetectorRestrictionServiceTests
 {
-    private Mock<Logger> logger;
+    private Mock<ILogger> logger;
     private Mock<IComponentDetector> firstDetectorMock;
     private Mock<IComponentDetector> secondDetectorMock;
     private Mock<IComponentDetector> thirdDetectorMock;
@@ -26,7 +26,7 @@ public class DetectorRestrictionServiceTests
     [TestInitialize]
     public void TestInitialize()
     {
-        this.logger = new Mock<Logger>();
+        this.logger = new Mock<ILogger>();
         this.firstDetectorMock = this.GenerateDetector("FirstDetector");
         this.secondDetectorMock = this.GenerateDetector("SecondDetector");
         this.thirdDetectorMock = this.GenerateDetector("ThirdDetector");

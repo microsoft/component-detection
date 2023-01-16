@@ -20,7 +20,7 @@ public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesCo
                     <package id=""NLog"" version=""4.3.10"" targetFramework=""net46"" />
                 </packages>";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("packages.config", packagesConfig)
             .ExecuteDetectorAsync();
 

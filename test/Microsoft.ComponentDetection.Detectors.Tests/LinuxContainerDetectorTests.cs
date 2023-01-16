@@ -32,9 +32,9 @@ public class LinuxContainerDetectorTests
         },
     };
 
-    private Mock<IDockerService> mockDockerService;
-    private Mock<ILogger> mockLogger;
-    private Mock<ILinuxScanner> mockSyftLinuxScanner;
+    private readonly Mock<IDockerService> mockDockerService;
+    private readonly Mock<ILogger> mockLogger;
+    private readonly Mock<ILinuxScanner> mockSyftLinuxScanner;
 
     public LinuxContainerDetectorTests()
     {

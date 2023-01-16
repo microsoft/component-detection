@@ -23,7 +23,7 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesForNameAndVersion(componentName, version);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -41,7 +41,7 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var authorEmail = GetRandomString();
         var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailInJsonFormat(authorName, authorEmail);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -59,7 +59,7 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailInJsonFormat(authorName, null);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -79,7 +79,7 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName, authorEmail, authroUrl);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -98,7 +98,7 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName, null, authroUrl);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -117,9 +117,8 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var authorEmail = GetRandomString();
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesMalformedAuthorAsSingleString(authorName, authorEmail, authroUrl);
-        var detector = new NpmComponentDetector();
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -136,9 +135,8 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var authroUrl = GetRandomString();
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName);
-        var detector = new NpmComponentDetector();
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
@@ -157,7 +155,7 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName, authorEmail);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
 
@@ -177,7 +175,7 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailInJsonFormat(authorName, authorEmail);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
 
@@ -196,7 +194,7 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName, authorEmail);
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
 

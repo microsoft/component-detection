@@ -19,7 +19,7 @@ public class RubyDetectorTest : BaseDetectorTest<RubyComponentDetector>
     public RubyDetectorTest()
     {
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.detectorTestUtility.WithScanRequest(
+        this.DetectorTestUtility.WithScanRequest(
             new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
@@ -63,7 +63,7 @@ BUNDLED WITH
 
 BUNDLED WITH
     1.17.3";
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .WithFile("2Gemfile.lock", gemFileLockContent2)
             .ExecuteDetectorAsync();
@@ -93,7 +93,7 @@ BUNDLED WITH
 
 BUNDLED WITH
     2.2.28";
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
@@ -126,7 +126,7 @@ BUNDLED WITH
 BUNDLED WITH
     1.17.3";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
@@ -160,7 +160,7 @@ BUNDLED WITH
     nokogiri (~> 1.8.2)
     websocket-driver (0.6.1)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
@@ -190,7 +190,7 @@ BUNDLED WITH
       mini_portile2 (~> 2.3.0)
     mini_portile2 (2.3.0)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
@@ -227,7 +227,7 @@ GEM
     nio4r (5.2.1)
     websocket-driver (0.6.1)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
@@ -279,7 +279,7 @@ GEM
     nio4r (5.2.1)
     websocket-driver (0.6.1)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
@@ -334,7 +334,7 @@ GEM
   specs:
     mini_mime (2.0.0)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
@@ -363,7 +363,7 @@ GIT
   specs:
     mail (2.7.2.edge)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
@@ -388,7 +388,7 @@ PATH
   specs:
     test2 (1.0.0)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 

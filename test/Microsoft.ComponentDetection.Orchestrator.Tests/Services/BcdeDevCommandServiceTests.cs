@@ -18,9 +18,9 @@ public class BcdeDevCommandServiceTests
     private readonly Mock<IBcdeScanExecutionService> scanExecutionServiceMock;
     private readonly Mock<ILogger> loggerMock;
 
-    private BcdeDevCommandService serviceUnderTest;
+    private readonly ScannedComponent[] scannedComponents;
 
-    private ScannedComponent[] scannedComponents;
+    private BcdeDevCommandService serviceUnderTest;
 
     public BcdeDevCommandServiceTests()
     {

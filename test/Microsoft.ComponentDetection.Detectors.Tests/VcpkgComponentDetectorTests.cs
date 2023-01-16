@@ -21,13 +21,13 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     public VcpkgComponentDetectorTests()
     {
         this.mockCommandLineInvocationService = new Mock<ICommandLineInvocationService>();
-        this.detectorTestUtility.AddServiceMock(this.mockCommandLineInvocationService);
+        this.DetectorTestUtility.AddServiceMock(this.mockCommandLineInvocationService);
 
         this.mockEnvironmentVariableService = new Mock<IEnvironmentVariableService>();
-        this.detectorTestUtility.AddServiceMock(this.mockEnvironmentVariableService);
+        this.DetectorTestUtility.AddServiceMock(this.mockEnvironmentVariableService);
 
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.detectorTestUtility.WithScanRequest(
+        this.DetectorTestUtility.WithScanRequest(
             new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
@@ -60,7 +60,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         }
     ]
 }";
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -119,7 +119,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         }
     ]
 }";
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -148,7 +148,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     {
         var spdxFile = "{}";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -164,7 +164,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     {
         var spdxFile = "invalidspdxfile";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 

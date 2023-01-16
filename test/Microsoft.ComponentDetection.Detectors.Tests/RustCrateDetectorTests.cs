@@ -231,7 +231,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     [TestMethod]
     public async Task TestGraphIsCorrectAsync()
     {
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockString)
             .ExecuteDetectorAsync();
 
@@ -277,7 +277,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         var componentRecorder = new ComponentRecorder();
         var request = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder);
 
-        var (result, _) = await this.detectorTestUtility
+        var (result, _) = await this.DetectorTestUtility
             /* v1 files */
             .WithFile("Cargo.lock", this.testCargoLockString)
             /* v2 files */
@@ -296,7 +296,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     [TestMethod]
     public async Task TestSupportsMultipleCargoV1DefinitionPairsAsync()
     {
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockString)
             .WithFile("Cargo.lock", this.testCargoLockString, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
             .ExecuteDetectorAsync();
@@ -319,7 +319,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     [TestMethod]
     public async Task TestSupportsMultipleCargoV2DefinitionPairsAsync()
     {
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockV2String)
             .WithFile("Cargo.lock", this.testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
             .ExecuteDetectorAsync();
@@ -342,7 +342,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     [TestMethod]
     public async Task TestRustDetectorAsync()
     {
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockString)
             .ExecuteDetectorAsync();
 
@@ -398,7 +398,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     [TestMethod]
     public async Task TestRustV2DetectorAsync()
     {
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockV2String)
             .ExecuteDetectorAsync();
 
@@ -523,7 +523,7 @@ version = ""2.0.0""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
 
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", testCargoLock)
             .ExecuteDetectorAsync();
 
@@ -589,7 +589,7 @@ name = ""other_dependency_dependency""
 version = ""0.1.12-alpha.6""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", testLockString)
             .ExecuteDetectorAsync();
 
@@ -622,7 +622,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
 
     private async Task TestRustDetector_WorkspacesWithTopLevelDependenciesAsync(string lockFile)
     {
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", string.Concat(this.testWorkspaceLockBaseDependency, lockFile))
             .ExecuteDetectorAsync();
 
@@ -689,7 +689,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
 
     private async Task TestRustDetector_WorkspacesNoTopLevelDependenciesAsync(string lockFile)
     {
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", lockFile)
             .ExecuteDetectorAsync();
 
@@ -711,7 +711,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
 
     private async Task TestRustDetector_WorkspacesWithSubDirectoriesAsync(string lockFile)
     {
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", lockFile)
             .ExecuteDetectorAsync();
 
@@ -752,7 +752,7 @@ dependencies = [
  ""c-ares"",
 ]
 ";
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", testLockString)
             .ExecuteDetectorAsync();
 
@@ -790,7 +790,7 @@ name = ""my_git_dep""
 version = ""0.1.0""
 source = ""git+https://github.com/microsoft/component-detection/?branch=main#abcdabcdabcdabcdabcdbacdbacdbacdabcdabcd""
 ";
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", testLockString)
             .ExecuteDetectorAsync();
 
@@ -826,7 +826,7 @@ name = ""common_name""
 version = ""0.2.0""
 source = ""registry+sparse+https://other.registry/index/""
 ";
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.lock", testLockString)
             .ExecuteDetectorAsync();
 

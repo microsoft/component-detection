@@ -16,16 +16,16 @@ using Newtonsoft.Json;
 [TestClass]
 public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 {
-    private Mock<IPythonCommandService> pythonCommandService;
-    private Mock<IPythonResolver> pythonResolver;
+    private readonly Mock<IPythonCommandService> pythonCommandService;
+    private readonly Mock<IPythonResolver> pythonResolver;
 
     public PipComponentDetectorTests()
     {
         this.pythonCommandService = new Mock<IPythonCommandService>();
-        this.detectorTestUtility.AddServiceMock(this.pythonCommandService);
+        this.DetectorTestUtility.AddServiceMock(this.pythonCommandService);
 
         this.pythonResolver = new Mock<IPythonResolver>();
-        this.detectorTestUtility.AddServiceMock(this.pythonResolver);
+        this.DetectorTestUtility.AddServiceMock(this.pythonResolver);
     }
 
     [TestMethod]
@@ -33,12 +33,11 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
     {
         var mockLogger = new Mock<ILogger>();
         mockLogger.Setup(x => x.LogInfo(It.Is<string>(l => l.Contains("No python found"))));
-        this.detectorTestUtility.AddServiceMock(mockLogger);
+        this.DetectorTestUtility.AddServiceMock(mockLogger);
 
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
 
-
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty)
             .ExecuteDetectorAsync();
 
@@ -49,7 +48,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
     [TestMethod]
     public async Task TestPipDetector_PythonInstalledNoFilesAsync()
     {
-        var (result, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
+        var (result, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
     }
@@ -85,7 +84,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "b")))).ReturnsAsync(setupPyRoots);
         this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "d")))).ReturnsAsync(requirementsTxtRoots);
 
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty)
             .WithFile("requirements.txt", string.Empty)
             .ExecuteDetectorAsync();
@@ -141,7 +140,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "h")))).ReturnsAsync(requirementsTxtRoots);
         this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "g")))).ReturnsAsync(requirementsTxtRoots2);
 
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("requirements.txt", string.Empty)
             .WithFile("requirements.txt", string.Empty, fileLocation: Path.Join(Path.GetTempPath(), "TEST", "requirements.txt"))
             .ExecuteDetectorAsync();
@@ -194,7 +193,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
                 x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "c"))))
             .ReturnsAsync(new List<PipGraphNode> { rootC, rootD, rootE, });
 
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty, fileLocation: file1)
             .WithFile("setup.py", string.Empty, fileLocation: file2)
             .ExecuteDetectorAsync();

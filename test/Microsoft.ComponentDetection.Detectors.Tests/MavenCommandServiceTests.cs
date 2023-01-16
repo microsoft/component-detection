@@ -17,9 +17,9 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class MavenCommandServiceTests
 {
-    private Mock<ICommandLineInvocationService> commandLineMock;
-    private Mock<IMavenStyleDependencyGraphParserService> parserServiceMock;
-    private MavenCommandService mavenCommandService;
+    private readonly Mock<ICommandLineInvocationService> commandLineMock;
+    private readonly Mock<IMavenStyleDependencyGraphParserService> parserServiceMock;
+    private readonly MavenCommandService mavenCommandService;
 
     public MavenCommandServiceTests()
     {
@@ -31,8 +31,7 @@ public class MavenCommandServiceTests
         this.mavenCommandService = new MavenCommandService(
             this.commandLineMock.Object,
             this.parserServiceMock.Object,
-            loggerMock.Object
-        );
+            loggerMock.Object);
     }
 
     [TestMethod]

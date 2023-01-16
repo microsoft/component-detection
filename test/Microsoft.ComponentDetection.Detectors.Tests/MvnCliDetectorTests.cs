@@ -22,7 +22,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     public MvnCliDetectorTests()
     {
         this.mavenCommandServiceMock = new Mock<IMavenCommandService>();
-        this.detectorTestUtility.AddServiceMock(this.mavenCommandServiceMock);
+        this.DetectorTestUtility.AddServiceMock(this.mavenCommandServiceMock);
     }
 
     [TestMethod]
@@ -31,7 +31,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExists())
             .ReturnsAsync(false);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
             .ExecuteDetectorAsync();
 
         Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 0);
@@ -46,7 +46,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         this.MvnCliHappyPath(content: componentString);
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) => pr.SingleFileComponentRecorder.RegisterUsage(new DetectedComponent(new MavenComponent("org.apache.maven", "maven-compat", "3.6.1-SNAPSHOT"))));
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(detectedComponents.Count(), 1);
@@ -66,7 +66,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExists())
             .ReturnsAsync(true);
 
-        Func<Task> action = async () => await this.detectorTestUtility.ExecuteDetectorAsync();
+        Func<Task> action = async () => await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         await action.Should().NotThrowAsync();
     }
@@ -98,7 +98,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
                     parentComponentId: "org.apache.maven maven-compat 3.6.1-SNAPSHOT - Maven");
             });
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(detectedComponents.Count(), 3);
@@ -157,7 +157,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
                     parentComponentId: "org.apache.maven maven-compat-parent 3.6.1-SNAPSHOT - Maven");
             });
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         componentRecorder.GetDetectedComponents().Should().HaveCount(4);
         detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -191,7 +191,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
             .Returns(bcdeMvnFileName);
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExists())
             .ReturnsAsync(true);
-        this.detectorTestUtility.WithFile("pom.xml", content)
+        this.DetectorTestUtility.WithFile("pom.xml", content)
             .WithFile("pom.xml", content, searchPatterns: new[] { bcdeMvnFileName });
     }
 }

@@ -21,7 +21,7 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
     public IvyDetectorTests()
     {
         this.commandLineMock = new Mock<ICommandLineInvocationService>();
-        this.detectorTestUtility.AddServiceMock(this.commandLineMock);
+        this.DetectorTestUtility.AddServiceMock(this.commandLineMock);
     }
 
     [TestMethod]
@@ -30,7 +30,7 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
             .ReturnsAsync(false);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 0);
         Assert.AreEqual(detectorResult.ResultCode, ProcessingResultCode.Success);
@@ -49,7 +49,7 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
 
         this.IvyHappyPath(content: registerUsageContent);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents(); // IsDevelopmentDependency = true in componentRecorder but null in detectedComponents... why?
         Assert.AreEqual(3, detectedComponents.Count());
@@ -77,7 +77,7 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
             .ReturnsAsync(true);
 
-        Func<Task> action = async () => await this.detectorTestUtility.ExecuteDetectorAsync();
+        Func<Task> action = async () => await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         await action.Should().NotThrowAsync();
     }
@@ -99,7 +99,7 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
 
         this.IvyHappyPath(content: registerUsageContent);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents(); // IsDevelopmentDependency = true in componentRecorder but null in detectedComponents... why?
         Assert.AreEqual(3, detectedComponents.Count());
@@ -127,10 +127,9 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
             .ReturnsAsync(true);
 
-
         File.WriteAllText(Path.Combine(Path.GetTempPath(), "ivy.xml"), "(dummy content)");
         File.WriteAllText(Path.Combine(Path.GetTempPath(), "ivysettings.xml"), "(dummy content)");
-        this.detectorTestUtility
+        this.DetectorTestUtility
             .WithFile("ivy.xml", "(dummy content)", fileLocation: Path.Combine(Path.GetTempPath(), "ivy.xml"));
 
         this.commandLineMock.Setup(

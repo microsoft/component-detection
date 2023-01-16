@@ -20,7 +20,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
     public Spdx22ComponentDetectorTests()
     {
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.detectorTestUtility.WithScanRequest(
+        this.DetectorTestUtility.WithScanRequest(
             new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
@@ -98,7 +98,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
 }";
 
         var spdxFileName = "manifest.spdx.json";
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(spdxFileName, spdxFile)
             .ExecuteDetectorAsync();
 
@@ -131,7 +131,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
     {
         var spdxFile = "{}";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("manifest.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -147,7 +147,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
     {
         var spdxFile = "invalidspdxfile";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("manifest.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 

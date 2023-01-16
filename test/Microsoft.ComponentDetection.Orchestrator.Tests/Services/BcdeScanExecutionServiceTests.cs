@@ -29,7 +29,7 @@ public class BcdeScanExecutionServiceTests
     private Mock<IComponentDetector> componentDetector2Mock;
     private Mock<IComponentDetector> componentDetector3Mock;
     private Mock<IComponentDetector> versionedComponentDetector1Mock;
-    private Mock<IGraphTranslationService> graphTranslationServiceMock;
+    private IGraphTranslationService graphTranslationService;
 
     private DetectedComponent[] detectedComponents;
     private ContainerDetails sampleContainerDetails;
@@ -48,7 +48,7 @@ public class BcdeScanExecutionServiceTests
         this.componentDetector3Mock = new Mock<IComponentDetector>();
         this.versionedComponentDetector1Mock = new Mock<IComponentDetector>();
         this.sampleContainerDetails = new ContainerDetails { Id = 1 };
-        this.graphTranslationServiceMock = new Mock<IGraphTranslationService>();
+        this.graphTranslationService = new DefaultGraphTranslationService(this.loggerMock.Object);
 
         this.detectedComponents = new[]
         {
@@ -60,7 +60,7 @@ public class BcdeScanExecutionServiceTests
             this.detectorsMock.Object,
             this.detectorProcessingServiceMock.Object,
             this.detectorRestrictionServiceMock.Object,
-            this.graphTranslationServiceMock.Object,
+            this.graphTranslationService,
             this.loggerMock.Object);
 
         this.sourceDirectory = new DirectoryInfo(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
@@ -105,7 +105,7 @@ public class BcdeScanExecutionServiceTests
         var parentPipComponent = new PipComponent("sample-root", "1.0");
         this.detectedComponents[1].DependencyRoots = new HashSet<TypedComponent>(new[] { parentPipComponent });
         this.detectedComponents[1].DevelopmentDependency = null;
-        singleFileComponentRecorder.RegisterUsage(new DetectedComponent(parentPipComponent, detector: new Mock<PipComponentDetector>().Object), isExplicitReferencedDependency: true);
+        singleFileComponentRecorder.RegisterUsage(new DetectedComponent(parentPipComponent, detector: new Mock<IComponentDetector>().Object), isExplicitReferencedDependency: true);
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1], parentComponentId: parentPipComponent.Id);
 
         var args = new BcdeArguments
@@ -353,7 +353,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_ComponentsAreReturnedWithDevDependencyInfoAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
+        var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -387,7 +387,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_RootsFromMultipleLocationsAreAgregatedAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
+        var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -423,7 +423,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_ComponentsAreReturnedWithRootsAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
+        var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -454,7 +454,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_DevDependenciesAreMergedWhenSameComponentInDifferentFilesAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
+        var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -506,7 +506,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_LocationsAreMergedWhenSameComponentInDifferentFilesAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
+        var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -547,7 +547,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_RootsAreMergedWhenSameComponentInDifferentFilesAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
+        var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
@@ -585,7 +585,7 @@ public class BcdeScanExecutionServiceTests
     public async Task VerifyTranslation_DetectedComponentExist_UpdateFunctionIsAppliedAsync()
     {
         var componentRecorder = new ComponentRecorder();
-        var npmDetector = new Mock<NpmComponentDetectorWithRoots>();
+        var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
             AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),

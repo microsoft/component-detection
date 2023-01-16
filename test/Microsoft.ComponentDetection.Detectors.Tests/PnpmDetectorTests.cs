@@ -19,7 +19,7 @@ public class PnpmDetectorTests : BaseDetectorTest<PnpmComponentDetector>
     public PnpmDetectorTests()
     {
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.detectorTestUtility.WithScanRequest(
+        this.DetectorTestUtility.WithScanRequest(
             new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
@@ -71,7 +71,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -172,7 +172,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .WithFile("shrinkwrap2.yaml", yamlFile2)
             .ExecuteDetectorAsync();
@@ -218,7 +218,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
@@ -247,7 +247,7 @@ shrinkwrapVersion: 3";
                   /strict-uri-encode/1.1.0:
                     dev: true";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
@@ -278,7 +278,7 @@ shrinkwrapVersion: 3";
                       shared-non-dev-dep: 0.1.2
                     dev: true";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
@@ -293,7 +293,7 @@ shrinkwrapVersion: 3";
         // This is a clearly malformed Yaml. We expect parsing it to "succeed" but find no components
         var yamlFile1 = @"dependencies";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
@@ -323,7 +323,7 @@ packages:
   /test/1.0.0:
     dev: true";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
@@ -371,7 +371,7 @@ packages:
   /nth-check/2.0.0:
     resolution: {integrity: sha1-G7T22scAcvwxPoyc0UF7UHTAoSU=} ";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
