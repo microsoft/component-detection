@@ -10,11 +10,6 @@
         <PackageReference Include="yamldotnet" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
         <PackageReference Include="Newtonsoft.Json" />
-        <PackageReference Include="System.Composition.AttributedModel" />
-        <PackageReference Include="System.Composition.Convention" />
-        <PackageReference Include="System.Composition.Hosting" />
-        <PackageReference Include="System.Composition.Runtime" />
-        <PackageReference Include="System.Composition.TypedParts" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="Tomlyn"/>
