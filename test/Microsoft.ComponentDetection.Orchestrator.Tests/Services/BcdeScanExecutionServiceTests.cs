@@ -22,21 +22,21 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class BcdeScanExecutionServiceTests
 {
-    private Mock<ILogger> loggerMock;
-    private Mock<IDetectorProcessingService> detectorProcessingServiceMock;
-    private Mock<IEnumerable<IComponentDetector>> detectorsMock;
-    private Mock<IDetectorRestrictionService> detectorRestrictionServiceMock;
-    private Mock<IComponentDetector> componentDetector2Mock;
-    private Mock<IComponentDetector> componentDetector3Mock;
-    private Mock<IComponentDetector> versionedComponentDetector1Mock;
-    private IGraphTranslationService graphTranslationService;
+    private readonly Mock<ILogger> loggerMock;
+    private readonly Mock<IDetectorProcessingService> detectorProcessingServiceMock;
+    private readonly Mock<IEnumerable<IComponentDetector>> detectorsMock;
+    private readonly Mock<IDetectorRestrictionService> detectorRestrictionServiceMock;
+    private readonly Mock<IComponentDetector> componentDetector2Mock;
+    private readonly Mock<IComponentDetector> componentDetector3Mock;
+    private readonly Mock<IComponentDetector> versionedComponentDetector1Mock;
+    private readonly IGraphTranslationService graphTranslationService;
 
-    private DetectedComponent[] detectedComponents;
-    private ContainerDetails sampleContainerDetails;
+    private readonly DetectedComponent[] detectedComponents;
+    private readonly ContainerDetails sampleContainerDetails;
 
-    private BcdeScanExecutionService serviceUnderTest;
+    private readonly BcdeScanExecutionService serviceUnderTest;
 
-    private DirectoryInfo sourceDirectory;
+    private readonly DirectoryInfo sourceDirectory;
 
     public BcdeScanExecutionServiceTests()
     {

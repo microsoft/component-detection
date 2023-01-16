@@ -48,8 +48,8 @@ public class DetectorTestUtilityBuilder<T>
     public DetectorTestUtilityBuilder<T> WithFile(string fileName, string fileContents, IEnumerable<string> searchPatterns = null, string fileLocation = null) =>
         this.WithFile(fileName, fileContents.ToStream(), searchPatterns, fileLocation);
 
-    public DetectorTestUtilityBuilder<T> AddServiceMock<U>(Mock<U> mock)
-        where U : class
+    public DetectorTestUtilityBuilder<T> AddServiceMock<TMock>(Mock<TMock> mock)
+        where TMock : class
     {
         this.serviceCollection.AddSingleton(_ => mock.Object);
         return this;

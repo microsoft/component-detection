@@ -671,3 +671,7 @@ dotnet_diagnostic.CA1854.severity = suggestion
 
 # JSON002: Probable JSON string detected
 dotnet_diagnostic.JSON002.severity = suggestion
+
+# Workaround for https://github.com/dotnet/roslyn-analyzers/issues/5628
+[Program.cs]
+dotnet_diagnostic.ca1812.severity = none

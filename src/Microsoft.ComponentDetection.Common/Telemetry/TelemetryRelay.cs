@@ -12,11 +12,11 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 /// </summary>
 public sealed class TelemetryRelay
 {
+    private IEnumerable<ITelemetryService> telemetryServices;
+
     // For things not populating the telemetry services collection, let's not throw.
     private TelemetryRelay() =>
         this.telemetryServices = Enumerable.Empty<ITelemetryService>();
-
-    private IEnumerable<ITelemetryService> telemetryServices;
 
     /// <summary>
     /// Gets a value indicating whether or not the telemetry relay has been shutdown.
