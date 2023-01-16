@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -13,7 +12,6 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-[Export(typeof(IComponentDetector))]
 public class NpmComponentDetectorWithRoots : FileComponentDetector
 {
     private const string NpmRegistryHost = "registry.npmjs.org";
@@ -22,9 +20,10 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     public const string LernaSearchPattern = "lerna.json";
 
-    public NpmComponentDetectorWithRoots()
-    {
-    }
+    /// <summary>
+    /// Gets or sets the logger for writing basic logging message to both console and file.
+    /// </summary>
+    private readonly IPathUtilityService pathUtilityService;
 
     public NpmComponentDetectorWithRoots(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -34,20 +33,16 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
-        this.PathUtilityService = pathUtilityService;
+        this.pathUtilityService = pathUtilityService;
         this.Logger = logger;
     }
 
-    public NpmComponentDetectorWithRoots(IPathUtilityService pathUtilityService) => this.PathUtilityService = pathUtilityService;
+    public NpmComponentDetectorWithRoots(IPathUtilityService pathUtilityService) => this.pathUtilityService = pathUtilityService;
 
     /// <summary>Common delegate for Package.json JToken processing.</summary>
     /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
     protected delegate bool JTokenProcessingDelegate(JToken token);
-
-    /// <summary>Gets or sets the logger for writing basic logging message to both console and file. Injected automatically by MEF composition.</summary>
-    [Import]
-    public IPathUtilityService PathUtilityService { get; set; }
 
     public override string Id { get; } = "NpmWithRoots";
 
@@ -105,7 +100,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             var lernaFile = lernaProcessRequest.ComponentStream;
 
             // We have extra validation on lock files not found below a lerna.json
-            if (this.PathUtilityService.IsFileBelowAnother(lernaFile.Location, file.Location))
+            if (this.pathUtilityService.IsFileBelowAnother(lernaFile.Location, file.Location))
             {
                 foundUnderLerna = true;
                 break;
@@ -195,7 +190,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                     DirectoryItemFacade last = null;
                     do
                     {
-                        currentDir = this.PathUtilityService.GetParentDirectory(currentDir);
+                        currentDir = this.pathUtilityService.GetParentDirectory(currentDir);
 
                         // We've reached the top / root
                         if (currentDir == null)

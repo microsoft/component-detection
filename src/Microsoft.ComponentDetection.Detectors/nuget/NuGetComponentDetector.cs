@@ -2,7 +2,6 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -15,7 +14,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-[Export(typeof(IComponentDetector))]
 public class NuGetComponentDetector : FileComponentDetector
 {
     private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
@@ -23,10 +21,6 @@ public class NuGetComponentDetector : FileComponentDetector
     public const string NugetConfigFileName = "nuget.config";
 
     private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
-
-    public NuGetComponentDetector()
-    {
-    }
 
     public NuGetComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,

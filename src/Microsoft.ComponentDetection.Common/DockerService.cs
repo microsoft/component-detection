@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Common;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -13,7 +12,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Newtonsoft.Json;
 
-[Export(typeof(IDockerService))]
 public class DockerService : IDockerService
 {
     // Base image annotations from ADO dockerTask
@@ -23,14 +21,9 @@ public class DockerService : IDockerService
     private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
     private static int incrementingContainerId;
 
-    public DockerService()
-    {
-    }
+    private readonly ILogger logger;
 
-    public DockerService(ILogger logger) => this.Logger = logger;
-
-    [Import]
-    public ILogger Logger { get; set; }
+    public DockerService(ILogger logger) => this.logger = logger;
 
     public async Task<bool> CanPingDockerAsync(CancellationToken cancellationToken = default)
     {
@@ -41,7 +34,7 @@ public class DockerService : IDockerService
         }
         catch (Exception e)
         {
-            this.Logger.LogException(e, false);
+            this.logger.LogException(e, false);
             return false;
         }
     }

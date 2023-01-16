@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Poetry;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,13 +10,8 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 using Tomlyn;
 
-[Export(typeof(IComponentDetector))]
 public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
 {
-    public PoetryComponentDetector()
-    {
-    }
-
     public PoetryComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,

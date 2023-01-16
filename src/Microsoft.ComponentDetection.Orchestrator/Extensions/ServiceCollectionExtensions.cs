@@ -18,6 +18,7 @@ using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Spdx;
 using Microsoft.ComponentDetection.Detectors.Yarn;
+using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
@@ -114,6 +115,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, Spdx22ComponentDetector>();
 
         // Yarn
+        services.AddSingleton<IYarnLockParser, YarnLockParser>();
+        services.AddSingleton<IYarnLockFileFactory, YarnLockFileFactory>();
         services.AddSingleton<IComponentDetector, YarnLockComponentDetector>();
 
         return services;

@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.CocoaPods;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,13 +12,8 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-[Export(typeof(IComponentDetector))]
 public class PodComponentDetector : FileComponentDetector
 {
-    public PodComponentDetector()
-    {
-    }
-
     public PodComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,

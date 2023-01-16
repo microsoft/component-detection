@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Common;
 using System;
 using System.Collections.Concurrent;
-using System.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Enumeration;
@@ -11,9 +10,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Win32.SafeHandles;
 
 // We may want to consider breaking this class into Win/Mac/Linux variants if it gets bigger
-[Export(typeof(IPathUtilityService))]
-[Export(typeof(PathUtilityService))]
-[Shared]
 public class PathUtilityService : IPathUtilityService
 {
     public const uint CreationDispositionRead = 0x3;
@@ -30,6 +26,8 @@ public class PathUtilityService : IPathUtilityService
 
     private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
 
+    private readonly ILogger logger;
+
     private readonly object isRunningOnWindowsContainerLock = new object();
     private bool? isRunningOnWindowsContainer;
 
@@ -37,7 +35,7 @@ public class PathUtilityService : IPathUtilityService
     {
     }
 
-    public PathUtilityService(ILogger logger) => this.Logger = logger;
+    public PathUtilityService(ILogger logger) => this.logger = logger;
 
     public bool IsRunningOnWindowsContainer
     {
@@ -57,9 +55,6 @@ public class PathUtilityService : IPathUtilityService
             return this.isRunningOnWindowsContainer.Value;
         }
     }
-
-    [Import]
-    public ILogger Logger { get; set; }
 
     /// <summary>
     /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
@@ -227,7 +222,7 @@ public class PathUtilityService : IPathUtilityService
         }
         catch (Exception ex)
         {
-            this.Logger.LogException(ex, isError: false, printException: true);
+            this.logger.LogException(ex, isError: false, printException: true);
             return path;
         }
         finally
@@ -289,7 +284,7 @@ public class PathUtilityService : IPathUtilityService
 
         if (sb.ToString().Contains("Container Execution Agent"))
         {
-            this.Logger.LogWarning("Detected execution in a Windows container. Currently windows containers < 1809 do not support symlinks well, so disabling symlink resolution/dedupe behavior");
+            this.logger.LogWarning("Detected execution in a Windows container. Currently windows containers < 1809 do not support symlinks well, so disabling symlink resolution/dedupe behavior");
             return true;
         }
         else

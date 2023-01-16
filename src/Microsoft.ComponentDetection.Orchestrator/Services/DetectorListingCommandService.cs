@@ -1,19 +1,13 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Services;
 using System.Collections.Generic;
-using System.Composition;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-[Export(typeof(IArgumentHandlingService))]
 public class DetectorListingCommandService : ServiceBase, IArgumentHandlingService
 {
     private readonly IEnumerable<IComponentDetector> detectors;
-
-    public DetectorListingCommandService()
-    {
-    }
 
     public DetectorListingCommandService(
         IEnumerable<IComponentDetector> detectors,

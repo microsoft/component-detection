@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -25,7 +24,6 @@ public interface IPyPiClient
     Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec);
 }
 
-[Export(typeof(IPyPiClient))]
 public class PyPiClient : IPyPiClient
 {
     // Values used for cache creation
@@ -43,6 +41,9 @@ public class PyPiClient : IPyPiClient
 
     // Keep telemetry on how the cache is being used for future refinements
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
+
+    private readonly IEnvironmentVariableService environmentVariableService;
+    private readonly ILogger logger;
 
     private bool checkedMaxEntriesVariable;
 
@@ -63,13 +64,13 @@ public class PyPiClient : IPyPiClient
 
     public PyPiClient(IEnvironmentVariableService environmentVariableService, ILogger logger)
     {
-        this.EnvironmentVariableService = environmentVariableService;
+        this.environmentVariableService = environmentVariableService;
         this.cacheTelemetry = new PypiCacheTelemetryRecord
         {
             NumCacheHits = 0,
             FinalCacheSize = 0,
         };
-        this.Logger = logger;
+        this.logger = logger;
     }
 
     ~PyPiClient()
@@ -80,12 +81,6 @@ public class PyPiClient : IPyPiClient
 
     public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);
 
-    [Import]
-    public ILogger Logger { get; set; }
-
-    [Import]
-    public IEnvironmentVariableService EnvironmentVariableService { get; set; }
-
     public async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release)
     {
         var dependencies = new List<PipDependencySpecification>();
@@ -95,7 +90,7 @@ public class PyPiClient : IPyPiClient
 
         if (!response.IsSuccessStatusCode)
         {
-            this.Logger.LogWarning($"Http GET at {release.Url} failed with status code {response.StatusCode}");
+            this.logger.LogWarning($"Http GET at {release.Url} failed with status code {response.StatusCode}");
             return dependencies;
         }
 
@@ -159,7 +154,7 @@ public class PyPiClient : IPyPiClient
             {
                 using var r = new PypiRetryTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = result.Result.StatusCode };
 
-                this.Logger.LogWarning($"Received {(int)result.Result.StatusCode} {result.Result.ReasonPhrase} from {requestUri}. Waiting {timeSpan} before retry attempt {retryCount}");
+                this.logger.LogWarning($"Received {(int)result.Result.StatusCode} {result.Result.ReasonPhrase} from {requestUri}. Waiting {timeSpan} before retry attempt {retryCount}");
 
                 Interlocked.Increment(ref this.retries);
             })
@@ -177,7 +172,7 @@ public class PyPiClient : IPyPiClient
         {
             using var r = new PypiMaxRetriesReachedTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray() };
 
-            this.Logger.LogWarning($"Call to pypi.org failed, but no more retries allowed!");
+            this.logger.LogWarning($"Call to pypi.org failed, but no more retries allowed!");
 
             return new SortedDictionary<string, IList<PythonProjectRelease>>();
         }
@@ -186,7 +181,7 @@ public class PyPiClient : IPyPiClient
         {
             using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
 
-            this.Logger.LogWarning($"Received {(int)request.StatusCode} {request.ReasonPhrase} from {requestUri}");
+            this.logger.LogWarning($"Received {(int)request.StatusCode} {request.ReasonPhrase} from {requestUri}");
 
             return new SortedDictionary<string, IList<PythonProjectRelease>>();
         }
@@ -209,8 +204,8 @@ public class PyPiClient : IPyPiClient
             }
             catch (ArgumentException ae)
             {
-                this.Logger.LogError($"Component {release.Key} : {JsonConvert.SerializeObject(release.Value)} could not be added to the sorted list of pip components for spec={spec.Name}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions). Error details follow:");
-                this.Logger.LogException(ae, true);
+                this.logger.LogError($"Component {release.Key} : {JsonConvert.SerializeObject(release.Value)} could not be added to the sorted list of pip components for spec={spec.Name}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions). Error details follow:");
+                this.logger.LogException(ae, true);
                 continue;
             }
         }
@@ -234,11 +229,11 @@ public class PyPiClient : IPyPiClient
         if (this.cachedResponses.TryGetValue(uri, out HttpResponseMessage result))
         {
             this.cacheTelemetry.NumCacheHits++;
-            this.Logger.LogVerbose("Retrieved cached Python data from " + uri);
+            this.logger.LogVerbose("Retrieved cached Python data from " + uri);
             return result;
         }
 
-        this.Logger.LogInfo("Getting Python data from " + uri);
+        this.logger.LogInfo("Getting Python data from " + uri);
         var response = await HttpClient.GetAsync(uri);
 
         // The `first - wins` response accepted into the cache. This might be different from the input if another caller wins the race.
@@ -256,10 +251,10 @@ public class PyPiClient : IPyPiClient
     /// </summary>
     private void InitializeNonDefaultMemoryCache()
     {
-        var maxEntriesVariable = this.EnvironmentVariableService.GetEnvironmentVariable("PyPiMaxCacheEntries");
+        var maxEntriesVariable = this.environmentVariableService.GetEnvironmentVariable("PyPiMaxCacheEntries");
         if (!string.IsNullOrEmpty(maxEntriesVariable) && long.TryParse(maxEntriesVariable, out var maxEntries))
         {
-            this.Logger.LogInfo($"Setting IPyPiClient max cache entries to {maxEntries}");
+            this.logger.LogInfo($"Setting IPyPiClient max cache entries to {maxEntries}");
             this.cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = maxEntries });
         }
 

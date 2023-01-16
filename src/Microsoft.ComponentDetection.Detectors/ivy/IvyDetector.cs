@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Ivy;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -35,7 +34,6 @@ using Newtonsoft.Json.Linq;
 /// The file written out by the custom Ant task is a simple JSON file representing a series of calls to be made to
 /// the <see cref="ISingleFileComponentRecorder.RegisterUsage(DetectedComponent, bool, string, bool?, DependencyScope?)"/> method.
 /// </remarks>
-[Export(typeof(IComponentDetector))]
 public class IvyDetector : FileComponentDetector, IExperimentalDetector
 {
     internal const string PrimaryCommand = "ant.bat";
@@ -44,9 +42,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     internal static readonly string[] AdditionalValidCommands = { "ant" };
 
-    public IvyDetector()
-    {
-    }
+    private readonly ICommandLineInvocationService commandLineInvocationService;
 
     public IvyDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -56,7 +52,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
-        this.CommandLineInvocationService = commandLineInvocationService;
+        this.commandLineInvocationService = commandLineInvocationService;
         this.Logger = logger;
     }
 
@@ -69,9 +65,6 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
     public override int Version => 2;
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
-
-    [Import]
-    public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
@@ -184,14 +177,14 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
     {
         // Note: calling CanCommandBeLocated populates a cache of valid commands.  If it is not called before ExecuteCommand,
         // ExecuteCommand calls CanCommandBeLocated with no arguments, which fails.
-        return await this.CommandLineInvocationService.CanCommandBeLocatedAsync(PrimaryCommand, AdditionalValidCommands, AntVersionArgument);
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(PrimaryCommand, AdditionalValidCommands, AntVersionArgument);
     }
 
     private async Task<bool> RunAntToDetectDependenciesAsync(string workingDirectory)
     {
         var ret = false;
         this.Logger.LogVerbose($"Executing command `ant resolve-dependencies` in directory {workingDirectory}");
-        var result = await this.CommandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, additionalCandidateCommands: AdditionalValidCommands, "-buildfile", workingDirectory, "resolve-dependencies");
+        var result = await this.commandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, additionalCandidateCommands: AdditionalValidCommands, "-buildfile", workingDirectory, "resolve-dependencies");
         if (result.ExitCode == 0)
         {
             this.Logger.LogVerbose("Ant command succeeded");

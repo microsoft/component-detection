@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,18 +11,8 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json.Linq;
 
-[Export(typeof(IComponentDetector))]
 public class NpmComponentDetector : FileComponentDetector
 {
-    /// <summary>Common delegate for Package.json JToken processing.</summary>
-    /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
-    /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
-    protected delegate bool JTokenProcessingDelegate(JToken token);
-
-    public NpmComponentDetector()
-    {
-    }
-
     public NpmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -33,6 +22,11 @@ public class NpmComponentDetector : FileComponentDetector
         this.Scanner = walkerFactory;
         this.Logger = logger;
     }
+
+    /// <summary>Common delegate for Package.json JToken processing.</summary>
+    /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
+    /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
+    protected delegate bool JTokenProcessingDelegate(JToken token);
 
     public override string Id { get; } = "Npm";
 

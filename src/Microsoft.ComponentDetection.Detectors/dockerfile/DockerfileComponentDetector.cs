@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -12,12 +11,10 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Valleysoft.DockerfileModel;
 
-[Export(typeof(IComponentDetector))]
 public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
-    public DockerfileComponentDetector()
-    {
-    }
+    private readonly ICommandLineInvocationService commandLineInvocationService;
+    private readonly IEnvironmentVariableService envVarService;
 
     public DockerfileComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -28,16 +25,10 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
-        this.CommandLineInvocationService = commandLineInvocationService;
-        this.EnvVarService = envVarService;
+        this.commandLineInvocationService = commandLineInvocationService;
+        this.envVarService = envVarService;
         this.Logger = logger;
     }
-
-    [Import]
-    public ICommandLineInvocationService CommandLineInvocationService { get; set; }
-
-    [Import]
-    public IEnvironmentVariableService EnvVarService { get; set; }
 
     public override string Id { get; } = "DockerReference";
 

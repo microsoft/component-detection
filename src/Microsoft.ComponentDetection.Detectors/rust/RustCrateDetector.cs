@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Rust;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -13,7 +12,6 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 using Tomlyn;
 
-[Export(typeof(IComponentDetector))]
 public class RustCrateDetector : FileComponentDetector
 {
     private const string CargoLockSearchPattern = "Cargo.lock";
@@ -22,10 +20,6 @@ public class RustCrateDetector : FileComponentDetector
     private static readonly Regex DependencyFormatRegex = new Regex(
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
-
-    public RustCrateDetector()
-    {
-    }
 
     public RustCrateDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,

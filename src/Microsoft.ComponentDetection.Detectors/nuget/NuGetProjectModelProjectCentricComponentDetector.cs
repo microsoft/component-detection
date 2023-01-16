@@ -3,7 +3,6 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,7 +14,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
 
-[Export(typeof(IComponentDetector))]
 public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDetector
 {
     public const string OmittedFrameworkComponentsTelemetryKey = "OmittedFrameworkComponents";
@@ -187,9 +185,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         "System.Xml.XPath.XDocument",
     };
 
-    public NuGetProjectModelProjectCentricComponentDetector()
-    {
-    }
+    private readonly IFileUtilityService fileUtilityService;
 
     public NuGetProjectModelProjectCentricComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -199,7 +195,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
-        this.FileUtilityService = fileUtilityService;
+        this.fileUtilityService = fileUtilityService;
         this.Logger = logger;
     }
 
@@ -212,9 +208,6 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.NuGet };
 
     public override int Version { get; } = 1;
-
-    [Import]
-    public IFileUtilityService FileUtilityService { get; set; }
 
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {

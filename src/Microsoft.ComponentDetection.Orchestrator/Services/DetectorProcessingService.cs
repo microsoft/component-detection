@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -18,24 +17,17 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Newtonsoft.Json;
 using static System.Environment;
 
-[Export(typeof(IDetectorProcessingService))]
-[Shared]
 public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
 {
-    public DetectorProcessingService()
-    {
-    }
+    private readonly IObservableDirectoryWalkerFactory scanner;
 
     public DetectorProcessingService(
         IObservableDirectoryWalkerFactory scanner,
         ILogger logger)
     {
-        this.Scanner = scanner;
+        this.scanner = scanner;
         this.Logger = logger;
     }
-
-    [Import]
-    public IObservableDirectoryWalkerFactory Scanner { get; set; }
 
     public async Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions)
     {

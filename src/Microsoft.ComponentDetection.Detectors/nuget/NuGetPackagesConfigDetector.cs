@@ -2,7 +2,6 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.Threading.Tasks;
 using System.Xml;
 using global::NuGet.Packaging;
@@ -10,13 +9,8 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-[Export(typeof(IComponentDetector))]
 public class NuGetPackagesConfigDetector : FileComponentDetector
 {
-    public NuGetPackagesConfigDetector()
-    {
-    }
-
     public NuGetPackagesConfigDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
