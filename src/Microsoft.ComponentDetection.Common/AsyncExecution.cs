@@ -1,8 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-
-namespace Microsoft.ComponentDetection.Common;
 
 public static class AsyncExecution
 {

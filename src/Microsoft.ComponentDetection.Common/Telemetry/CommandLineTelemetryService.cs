@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry;
+using System;
 using System.Collections.Concurrent;
 using System.Composition;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
@@ -6,8 +7,6 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Common.Telemetry;
 
 [Export(typeof(ITelemetryService))]
 [TelemetryService(nameof(CommandLineTelemetryService))]

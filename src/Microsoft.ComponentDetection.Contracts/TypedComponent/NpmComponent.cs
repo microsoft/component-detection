@@ -1,7 +1,6 @@
-﻿using Microsoft.ComponentDetection.Contracts.Internal;
+﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Contracts.Internal;
 using PackageUrl;
-
-namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 public class NpmComponent : TypedComponent
 {

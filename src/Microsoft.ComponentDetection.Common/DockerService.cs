@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Common;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -11,8 +12,6 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Newtonsoft.Json;
-
-namespace Microsoft.ComponentDetection.Common;
 
 [Export(typeof(IDockerService))]
 public class DockerService : IDockerService

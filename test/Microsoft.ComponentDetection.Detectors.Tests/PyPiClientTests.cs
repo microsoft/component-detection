@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -13,8 +14,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
 using Newtonsoft.Json;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 public class PyPiClientTests

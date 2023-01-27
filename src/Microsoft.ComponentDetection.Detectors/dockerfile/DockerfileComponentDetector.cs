@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -10,8 +11,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Valleysoft.DockerfileModel;
-
-namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 
 [Export(typeof(IComponentDetector))]
 public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector

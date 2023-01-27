@@ -1,6 +1,5 @@
-﻿using System;
-
-namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+using System;
 
 public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDisposable
 {

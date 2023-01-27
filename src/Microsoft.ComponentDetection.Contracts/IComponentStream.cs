@@ -1,6 +1,5 @@
-﻿using System.IO;
-
-namespace Microsoft.ComponentDetection.Contracts;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+using System.IO;
 
 /// <summary>
 /// Represents a component that matched a search pattern.

@@ -1,7 +1,6 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+using System;
 using System.Security.Cryptography;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 
 internal static class TestUtilityExtensions
 {

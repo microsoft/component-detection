@@ -1,6 +1,5 @@
-﻿using System.IO;
-
-namespace Microsoft.ComponentDetection.Common;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System.IO;
 
 public class MatchedFile
 {

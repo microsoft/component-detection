@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
+using System;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
@@ -7,8 +8,6 @@ using Microsoft.ComponentDetection.Orchestrator.Exceptions;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 [TestClass]
 [TestCategory("Governance/All")]

@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -11,8 +12,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 [Export(typeof(IComponentDetector))]
 public class NpmComponentDetectorWithRoots : FileComponentDetector

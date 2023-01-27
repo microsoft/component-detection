@@ -1,6 +1,5 @@
-﻿using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
-namespace Microsoft.ComponentDetection.Common;
+﻿namespace Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 /// <summary>
 /// Merges dependnecy Scope in their order of Priority.

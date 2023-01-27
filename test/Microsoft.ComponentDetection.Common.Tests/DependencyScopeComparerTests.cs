@@ -1,9 +1,8 @@
-﻿using FluentAssertions;
+﻿namespace Microsoft.ComponentDetection.Common.Tests;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Microsoft.ComponentDetection.Common.DependencyScopeComparer;
-
-namespace Microsoft.ComponentDetection.Common.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]

@@ -1,6 +1,5 @@
-﻿using System;
-
-namespace Microsoft.ComponentDetection.Common.Telemetry.Attributes;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Attributes;
+using System;
 
 public class TelemetryServiceAttribute : Attribute
 {

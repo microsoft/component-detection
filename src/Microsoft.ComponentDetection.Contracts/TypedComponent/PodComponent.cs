@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+using System.Collections.Generic;
 using PackageUrl;
-
-namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 public class PodComponent : TypedComponent
 {

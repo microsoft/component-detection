@@ -1,6 +1,5 @@
-using System.Runtime.Serialization;
-
 namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
+using System.Runtime.Serialization;
 
 public class PoetrySource
 {

@@ -7,11 +7,10 @@
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
+namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer;
 using System;
 using System.Text.RegularExpressions;
 using Semver;
-
-namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer;
 
 internal class Comparator : IEquatable<Comparator>
 {

@@ -1,10 +1,9 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+using System;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 public class TypedComponentConverter : JsonConverter
 {

@@ -1,12 +1,11 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
-
-namespace Microsoft.ComponentDetection.Common.Telemetry;
 
 /// <summary>
 /// Singleton that is responsible for relaying telemetry records to Telemetry Services.

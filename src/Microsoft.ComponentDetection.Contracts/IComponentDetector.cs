@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
 /// Basic interface required for something to satisfy component detection.

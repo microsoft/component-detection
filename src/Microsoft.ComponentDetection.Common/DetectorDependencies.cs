@@ -1,7 +1,6 @@
-﻿using System.Composition;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System.Composition;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common;
 
 [Export(typeof(IDetectorDependencies))]
 public class DetectorDependencies : IDetectorDependencies

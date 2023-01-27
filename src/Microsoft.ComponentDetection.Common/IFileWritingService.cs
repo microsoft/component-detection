@@ -1,6 +1,5 @@
-﻿using System.IO;
-
-namespace Microsoft.ComponentDetection.Common;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System.IO;
 
 // All file paths are relative and will replace occurrences of {timestamp} with the shared file timestamp.
 public interface IFileWritingService

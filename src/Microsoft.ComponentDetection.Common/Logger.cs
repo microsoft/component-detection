@@ -1,12 +1,11 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Composition;
 using System.Runtime.CompilerServices;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 
 using static System.Environment;
-
-namespace Microsoft.ComponentDetection.Common;
 
 [Export(typeof(ILogger))]
 [Export(typeof(Logger))]

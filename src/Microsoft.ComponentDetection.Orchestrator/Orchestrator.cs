@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Orchestrator;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -20,8 +21,6 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Newtonsoft.Json;
-
-namespace Microsoft.ComponentDetection.Orchestrator;
 
 public class Orchestrator
 {

@@ -1,6 +1,5 @@
-﻿using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.TestsUtilities;
+﻿namespace Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.ComponentDetection.Contracts;
 
 public class DetectorTestUtilityCreator
 {

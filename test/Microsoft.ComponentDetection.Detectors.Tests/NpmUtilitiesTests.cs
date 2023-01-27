@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
@@ -8,8 +9,6 @@ using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]

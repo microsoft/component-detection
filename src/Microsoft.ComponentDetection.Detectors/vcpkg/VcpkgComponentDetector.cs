@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -9,8 +10,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Newtonsoft.Json;
-
-namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
 
 [Export(typeof(IComponentDetector))]
 public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector

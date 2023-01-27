@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-
-namespace Microsoft.ComponentDetection.Detectors.Rust;
+﻿namespace Microsoft.ComponentDetection.Detectors.Rust;
+using System.Collections.Generic;
 
 public class CargoDependencyData
 {

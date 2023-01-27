@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Linux;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,8 +14,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 using Microsoft.ComponentDetection.Detectors.Linux.Exceptions;
-
-namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 [Export(typeof(IComponentDetector))]
 public class LinuxContainerDetector : IComponentDetector

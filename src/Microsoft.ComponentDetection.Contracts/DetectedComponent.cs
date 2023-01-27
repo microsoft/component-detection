@@ -1,8 +1,7 @@
+namespace Microsoft.ComponentDetection.Contracts;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>A detected component, found during component detection scans. This is the container for all metadata gathered during detection.</summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]

@@ -1,11 +1,10 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 public static class GradleTestUtilities
 {

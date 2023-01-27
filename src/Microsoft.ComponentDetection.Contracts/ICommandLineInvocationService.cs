@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
 /// Service for managing execution on a command line. Generally, methods on this service expect a command line environment to be

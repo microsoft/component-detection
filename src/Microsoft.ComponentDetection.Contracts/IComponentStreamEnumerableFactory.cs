@@ -1,8 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+using System;
 using System.Collections.Generic;
 using System.IO;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
 /// A factory for creating enumerable <see cref="IComponentStream"/>.
