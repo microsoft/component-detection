@@ -4,6 +4,9 @@ using System.IO;
 
 namespace Microsoft.ComponentDetection.Contracts;
 
+/// <summary>
+/// A factory for creating enumerable <see cref="IComponentStream"/>.
+/// </summary>
 public interface IComponentStreamEnumerableFactory
 {
     /// <summary>

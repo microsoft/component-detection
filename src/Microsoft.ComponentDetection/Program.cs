@@ -6,8 +6,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 
+/// <summary>
+/// The class containing the main entry point for Component Detection.
+/// </summary>
 public static class Program
 {
+    /// <summary>
+    /// The main entry point for Component Detection.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public static async Task Main(string[] args)
     {
         try

@@ -2,6 +2,9 @@
 
 namespace Microsoft.ComponentDetection.Contracts;
 
+/// <summary>
+/// Represents a component that matched a search pattern.
+/// </summary>
 public interface IComponentStream
 {
     /// <summary>
