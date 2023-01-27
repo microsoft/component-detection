@@ -40,10 +40,7 @@ public class DetectorListingCommandServiceTests
         };
 
         this.logOutput = new List<string>();
-        this.loggerMock.Setup(x => x.LogInfo(It.IsAny<string>())).Callback<string>(loggedString =>
-        {
-            this.logOutput.Add(loggedString);
-        });
+        this.loggerMock.Setup(x => x.LogInfo(It.IsAny<string>())).Callback<string>(loggedString => this.logOutput.Add(loggedString));
 
         this.componentDetector2Mock.SetupGet(x => x.Id).Returns("ComponentDetector2");
         this.componentDetector3Mock.SetupGet(x => x.Id).Returns("ComponentDetector3");

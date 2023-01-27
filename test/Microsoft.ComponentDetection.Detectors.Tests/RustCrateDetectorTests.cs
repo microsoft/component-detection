@@ -608,10 +608,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         var foundComponents = dependencyGraph.GetComponents();
         foundComponents.Count().Should().Be(2);
 
-        componentRecorder.ForOneComponent("other_dependency_dependency 0.1.12-alpha.6 - Cargo", (grouping) =>
-        {
-            grouping.ParentComponentIdsThatAreExplicitReferences.Should().BeEquivalentTo("my_dependency 1.0.0 - Cargo");
-        });
+        componentRecorder.ForOneComponent("other_dependency_dependency 0.1.12-alpha.6 - Cargo", (grouping) => grouping.ParentComponentIdsThatAreExplicitReferences.Should().BeEquivalentTo("my_dependency 1.0.0 - Cargo"));
     }
 
     [TestMethod]

@@ -161,10 +161,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
 
-        componentRecorder.ForOneComponent(componentRecorder.GetDetectedComponents().First().Component.Id, x =>
-        {
-            Enumerable.Count<string>(x.AllFileLocations).Should().Be(2);
-        });
+        componentRecorder.ForOneComponent(componentRecorder.GetDetectedComponents().First().Component.Id, x => Enumerable.Count<string>(x.AllFileLocations).Should().Be(2));
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
         dependencyGraphs.Keys.Count().Should().Be(2);

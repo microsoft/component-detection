@@ -292,22 +292,13 @@ other=2.1";
                                                                                                               });
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenBranch() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentBranchInsteadOfCommitId, parseResult =>
-                                                                                                         {
-                                                                                                             parseResult.Count.Should().Be(0);
-                                                                                                         });
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenBranch() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentBranchInsteadOfCommitId, parseResult => parseResult.Count.Should().Be(0));
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenRelease() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentReleaseInsteadOfCommitId, parseResult =>
-                                                                                                          {
-                                                                                                              parseResult.Count.Should().Be(0);
-                                                                                                          });
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenRelease() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentReleaseInsteadOfCommitId, parseResult => parseResult.Count.Should().Be(0));
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenMalformedCommitHash() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentCommitIdWrongLength, parseResult =>
-                                                                                                                      {
-                                                                                                                          parseResult.Count.Should().Be(0);
-                                                                                                                      });
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenMalformedCommitHash() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentCommitIdWrongLength, parseResult => parseResult.Count.Should().Be(0));
 
     [TestMethod]
     public async Task ParseFile_RequirementTxtHasComment_GitComponentsMultiple() => await this.SetupAndParseReqsTxt(this.requirementstxtDoubleGitComponents, parseResult =>

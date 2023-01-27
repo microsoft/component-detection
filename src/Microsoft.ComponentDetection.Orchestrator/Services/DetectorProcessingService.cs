@@ -80,10 +80,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
                     record.DetectorId = detector.Id;
                     record.DetectedComponentCount = detectedComponents.Count();
                     var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation().Values;
-                    record.ExplicitlyReferencedComponentCount = dependencyGraphs.Select(dependencyGraph =>
-                        {
-                            return dependencyGraph.GetAllExplicitlyReferencedComponents();
-                        })
+                    record.ExplicitlyReferencedComponentCount = dependencyGraphs.Select(dependencyGraph => dependencyGraph.GetAllExplicitlyReferencedComponents())
                         .SelectMany(x => x)
                         .Distinct()
                         .Count();

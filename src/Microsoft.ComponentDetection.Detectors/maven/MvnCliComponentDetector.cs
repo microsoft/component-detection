@@ -39,10 +39,7 @@ public class MvnCliComponentDetector : FileComponentDetector
 
         var processPomFile = new ActionBlock<ProcessRequest>(this.MavenCommandService.GenerateDependenciesFile);
 
-        await this.RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest =>
-        {
-            processPomFile.Post(processRequest);
-        });
+        await this.RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest => processPomFile.Post(processRequest));
 
         processPomFile.Complete();
 
@@ -83,9 +80,7 @@ public class MvnCliComponentDetector : FileComponentDetector
     {
         var directoryItemFacades = new List<DirectoryItemFacade>();
         var directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
-        return Observable.Create<ProcessRequest>(s =>
-        {
-            return componentStreams.Subscribe(
+        return Observable.Create<ProcessRequest>(s => componentStreams.Subscribe(
                 processRequest =>
                 {
                     var item = processRequest.ComponentStream;
@@ -144,7 +139,6 @@ public class MvnCliComponentDetector : FileComponentDetector
                     // Go all the way up
                     while (currentDir != null);
                 },
-                s.OnCompleted);
-        });
+                s.OnCompleted));
     }
 }

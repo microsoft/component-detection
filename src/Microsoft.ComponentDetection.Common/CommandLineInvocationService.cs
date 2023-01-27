@@ -122,14 +122,8 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         var errorText = string.Empty;
         var stdOutText = string.Empty;
 
-        var t1 = new Task(() =>
-        {
-            errorText = process.StandardError.ReadToEnd();
-        });
-        var t2 = new Task(() =>
-        {
-            stdOutText = process.StandardOutput.ReadToEnd();
-        });
+        var t1 = new Task(() => errorText = process.StandardError.ReadToEnd());
+        var t2 = new Task(() => stdOutText = process.StandardOutput.ReadToEnd());
 
         process.Exited += (sender, args) =>
         {

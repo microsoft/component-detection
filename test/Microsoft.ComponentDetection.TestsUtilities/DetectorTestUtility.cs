@@ -159,11 +159,8 @@ public class DetectorTestUtility<T>
             {
                 this.mockObservableDirectoryWalkerFactory.Setup(x =>
                         x.GetFilteredComponentStreamObservable(It.IsAny<DirectoryInfo>(), searchPatterns, It.IsAny<IComponentRecorder>()))
-                    .Returns<DirectoryInfo, IEnumerable<string>, IComponentRecorder>((directoryInfo, searchPatterns, componentRecorder) =>
-                    {
-                        return filesToSend
-                            .Select(fileToSend => this.CreateProcessRequest(this.FindMatchingPattern(fileToSend.Name, searchPatterns), fileToSend.Location, fileToSend.Contents)).ToObservable();
-                    });
+                    .Returns<DirectoryInfo, IEnumerable<string>, IComponentRecorder>((directoryInfo, searchPatterns, componentRecorder) => filesToSend
+                            .Select(fileToSend => this.CreateProcessRequest(this.FindMatchingPattern(fileToSend.Name, searchPatterns), fileToSend.Location, fileToSend.Contents)).ToObservable());
             }
 
             if (useDefaultComponentStreamEnumerableFactory)

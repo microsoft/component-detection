@@ -19,10 +19,7 @@ public static class Program
     {
         try
         {
-            AppDomain.CurrentDomain.ProcessExit += (not, used) =>
-            {
-                Console.WriteLine($"Process terminating.");
-            };
+            AppDomain.CurrentDomain.ProcessExit += (not, used) => Console.WriteLine($"Process terminating.");
 
             if (args.Any(x => string.Equals(x, "--Debug", StringComparison.OrdinalIgnoreCase)))
             {

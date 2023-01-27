@@ -94,10 +94,7 @@ public class DockerService : IDockerService
         try
         {
             var createImageProgress = new List<string>();
-            var progress = new Progress<JSONMessage>(message =>
-            {
-                createImageProgress.Add(JsonConvert.SerializeObject(message));
-            });
+            var progress = new Progress<JSONMessage>(message => createImageProgress.Add(JsonConvert.SerializeObject(message)));
             await Client.Images.CreateImageAsync(parameters, null, progress, cancellationToken);
             record.CreateImageProgress = JsonConvert.SerializeObject(createImageProgress);
             return true;

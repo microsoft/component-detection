@@ -110,14 +110,11 @@ public class DetectorProcessingServiceTests
         mockComponentDetector.Setup(d => d.Id).Returns("test");
 
         mockComponentDetector.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>()))
-            .ReturnsAsync(() =>
+            .ReturnsAsync(() => new IndividualDetectorScanResult
             {
-                return new IndividualDetectorScanResult
-                {
-                    ResultCode = ProcessingResultCode.Success,
-                    ContainerDetails = null,
-                    AdditionalTelemetryDetails = null,
-                };
+                ResultCode = ProcessingResultCode.Success,
+                ContainerDetails = null,
+                AdditionalTelemetryDetails = null,
             });
 
         this.detectorsToUse = new[] { mockComponentDetector.Object };
@@ -160,10 +157,7 @@ public class DetectorProcessingServiceTests
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
         };
 
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(async () =>
-        {
-            await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
-        });
+        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(async () => await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()));
 
         foreach (var record in records)
         {
@@ -184,10 +178,7 @@ public class DetectorProcessingServiceTests
         };
 
         DetectorProcessingResult results = null;
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
-        {
-            results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
-        });
+        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() => results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result);
 
         var experimentalDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.experimentalFileComponentDetectorMock.Object.Id);
         var experimentalComponent = this.componentDictionary[this.experimentalFileComponentDetectorMock.Object.Id].Component as NuGetComponent;
@@ -223,10 +214,7 @@ public class DetectorProcessingServiceTests
         var experimentalDetectorId = this.experimentalFileComponentDetectorMock.Object.Id;
 
         DetectorProcessingResult results = null;
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
-        {
-            results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions { ExplicitlyEnabledDetectorIds = new[] { experimentalDetectorId } }).Result;
-        });
+        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() => results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions { ExplicitlyEnabledDetectorIds = new[] { experimentalDetectorId } }).Result);
 
         // We should have all components except the ones that came from our experimental detector
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Count().Should().Be(records.Sum(x => x.DetectedComponentCount));
@@ -253,10 +241,7 @@ public class DetectorProcessingServiceTests
             .Throws(new InvalidOperationException("Simulated experimental failure"));
 
         DetectorProcessingResult results = null;
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
-        {
-            results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
-        });
+        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() => results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result);
 
         var experimentalDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.experimentalFileComponentDetectorMock.Object.Id);
         experimentalDetectorRecord.Should().NotBeNull();
@@ -446,10 +431,7 @@ public class DetectorProcessingServiceTests
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
         };
 
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
-        {
-            this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions()).Wait();
-        });
+        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() => this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions()).Wait());
 
         records.Should().Contain(x => x is DetectorExecutionTelemetryRecord);
         records.Count(x => x is not null)
@@ -478,10 +460,7 @@ public class DetectorProcessingServiceTests
         };
 
         DetectorProcessingResult results = null;
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
-        {
-            results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
-        });
+        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() => results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result);
 
         results.Should().NotBeNull("Detector processing failed");
 
@@ -529,10 +508,7 @@ public class DetectorProcessingServiceTests
         var expectedResult = this.ExpectedResultForDetector(id);
 
         mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null))).Returns(
-            (ScanRequest request) =>
-            {
-                return mockFileDetector.Object.ExecuteDetectorAsync(request);
-            }).Verifiable();
+            (ScanRequest request) => mockFileDetector.Object.ExecuteDetectorAsync(request)).Verifiable();
         mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
             (ScanRequest request) =>
             {
