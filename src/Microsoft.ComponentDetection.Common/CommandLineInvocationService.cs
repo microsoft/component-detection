@@ -19,7 +19,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
     public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
     {
         additionalCandidateCommands ??= Enumerable.Empty<string>();
-        parameters ??= new string[0];
+        parameters ??= Array.Empty<string>();
         var allCommands = new[] { command }.Concat(additionalCandidateCommands);
         if (!this.commandLocatableCache.TryGetValue(command, out var validCommand))
         {
