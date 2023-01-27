@@ -41,7 +41,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     public override int Version { get; } = 2;
 
-    public ICollection<ProcessRequest> LernaFiles { get; set; } = new List<ProcessRequest>();
+    public ICollection<ProcessRequest> LernaFiles { get; } = new List<ProcessRequest>();
 
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
