@@ -18,7 +18,7 @@ public class NpmComponentDetector : FileComponentDetector
     /// <summary>Common delegate for Package.json JToken processing.</summary>
     /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
-    protected delegate bool JTokenProcessingDelegate(JToken token);
+    protected delegate bool JTokenProcessor(JToken token);
 
     public override string Id { get; } = "Npm";
 
@@ -61,7 +61,7 @@ public class NpmComponentDetector : FileComponentDetector
         });
     }
 
-    protected virtual Task ProcessAllPackageJTokensAsync(string contents, JTokenProcessingDelegate jtokenProcessor)
+    protected virtual Task ProcessAllPackageJTokensAsync(string contents, JTokenProcessor jtokenProcessor)
     {
         if (jtokenProcessor is null)
         {
@@ -101,7 +101,7 @@ public class NpmComponentDetector : FileComponentDetector
         return true;
     }
 
-    private async Task SafeProcessAllPackageJTokens(string sourceFilePath, string contents, JTokenProcessingDelegate jtokenProcessor)
+    private async Task SafeProcessAllPackageJTokens(string sourceFilePath, string contents, JTokenProcessor jtokenProcessor)
     {
         try
         {
