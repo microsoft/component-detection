@@ -200,42 +200,6 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
     [Import]
     public IFileUtilityService FileUtilityService { get; set; }
 
-    private static List<(string Name, Version Version, VersionRange VersionRange)> GetTopLevelLibraries(LockFile lockFile)
-    {
-        // First, populate target frameworks -- This is the base level authoritative list of nuget packages a project has dependencies on.
-        var toBeFilled = new List<(string Name, Version Version, VersionRange VersionRange)>();
-
-        foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
-        {
-            foreach (var dependency in framework.Dependencies)
-            {
-                toBeFilled.Add((dependency.Name, Version: null, dependency.LibraryRange.VersionRange));
-            }
-        }
-
-        // Next, we need to resolve project references -- This is a little funky, because project references are only stored via path in
-        //  project.assets.json, so we first build a list of all paths and then compare what is top level to them to resolve their
-        //  associated library.
-        var projectDirectory = Path.GetDirectoryName(lockFile.PackageSpec.RestoreMetadata.ProjectPath);
-        var librariesWithAbsolutePath =
-            lockFile.Libraries.Where(x => x.Type == ProjectDependencyType)
-                .Select(x => (library: x, absoluteProjectPath: Path.GetFullPath(Path.Combine(projectDirectory, x.Path))))
-                .ToDictionary(x => x.absoluteProjectPath, x => x.library);
-
-        foreach (var restoreMetadataTargetFramework in lockFile.PackageSpec.RestoreMetadata.TargetFrameworks)
-        {
-            foreach (var projectReference in restoreMetadataTargetFramework.ProjectReferences)
-            {
-                if (librariesWithAbsolutePath.TryGetValue(Path.GetFullPath(projectReference.ProjectPath), out var library))
-                {
-                    toBeFilled.Add((library.Name, library.Version.Version, null));
-                }
-            }
-        }
-
-        return toBeFilled;
-    }
-
     protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         if (processRequest is null)
@@ -286,6 +250,42 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         this.Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonConvert.SerializeObject(this.frameworkComponentsThatWereOmmittedWithCount));
 
         return Task.CompletedTask;
+    }
+
+    private static List<(string Name, Version Version, VersionRange VersionRange)> GetTopLevelLibraries(LockFile lockFile)
+    {
+        // First, populate target frameworks -- This is the base level authoritative list of nuget packages a project has dependencies on.
+        var toBeFilled = new List<(string Name, Version Version, VersionRange VersionRange)>();
+
+        foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
+        {
+            foreach (var dependency in framework.Dependencies)
+            {
+                toBeFilled.Add((dependency.Name, Version: null, dependency.LibraryRange.VersionRange));
+            }
+        }
+
+        // Next, we need to resolve project references -- This is a little funky, because project references are only stored via path in
+        //  project.assets.json, so we first build a list of all paths and then compare what is top level to them to resolve their
+        //  associated library.
+        var projectDirectory = Path.GetDirectoryName(lockFile.PackageSpec.RestoreMetadata.ProjectPath);
+        var librariesWithAbsolutePath =
+            lockFile.Libraries.Where(x => x.Type == ProjectDependencyType)
+                .Select(x => (library: x, absoluteProjectPath: Path.GetFullPath(Path.Combine(projectDirectory, x.Path))))
+                .ToDictionary(x => x.absoluteProjectPath, x => x.library);
+
+        foreach (var restoreMetadataTargetFramework in lockFile.PackageSpec.RestoreMetadata.TargetFrameworks)
+        {
+            foreach (var projectReference in restoreMetadataTargetFramework.ProjectReferences)
+            {
+                if (librariesWithAbsolutePath.TryGetValue(Path.GetFullPath(projectReference.ProjectPath), out var library))
+                {
+                    toBeFilled.Add((library.Name, library.Version.Version, null));
+                }
+            }
+        }
+
+        return toBeFilled;
     }
 
     private void NavigateAndRegister(
