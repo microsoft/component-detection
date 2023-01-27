@@ -46,6 +46,51 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
 
+    private static void EnqueueDependencies(Queue<(JProperty Dependency, TypedComponent ParentComponent)> queue, JToken dependencies, TypedComponent parentComponent)
+    {
+        if (dependencies != null)
+        {
+            foreach (var dependency in dependencies.Cast<JProperty>())
+            {
+                if (dependency != null)
+                {
+                    queue.Enqueue((dependency, parentComponent));
+                }
+            }
+        }
+    }
+
+    private static bool TryEnqueueFirstLevelDependencies(Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, Queue<TypedComponent> parentComponentQueue = null, TypedComponent parentComponent = null, bool skipValidation = false)
+    {
+        var isValid = true;
+        if (dependencies != null)
+        {
+            foreach (var dependency in dependencies.Cast<JProperty>())
+            {
+                if (dependency == null || dependency.Name == null)
+                {
+                    continue;
+                }
+
+                var inLock = dependencyLookup.TryGetValue(dependency.Name, out var dependencyProperty);
+                if (inLock)
+                {
+                    queue.Enqueue((dependencyProperty, parentComponent));
+                }
+                else if (skipValidation)
+                {
+                    continue;
+                }
+                else
+                {
+                    isValid = false;
+                }
+            }
+        }
+
+        return isValid;
+    }
+
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         return Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
@@ -175,8 +220,8 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             using var reader = new JsonTextReader(file);
 
             var packageJsonToken = JToken.ReadFrom(reader);
-            var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
-            enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, skipValidation: skipValidation);
+            var enqueued = TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
+            enqueued = enqueued && TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, skipValidation: skipValidation);
             if (!enqueued)
             {
                 // This represents a mismatch between lock file and package.json, break out and do not register anything for these files
@@ -296,8 +341,8 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             var subQueue = new Queue<(JProperty, TypedComponent)>();
 
             NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder, typedComponent, explicitReferencedDependency: typedComponent);
-            this.EnqueueDependencies(subQueue, currentDependency.Value["dependencies"], parentComponent: typedComponent);
-            this.TryEnqueueFirstLevelDependencies(subQueue, currentDependency.Value["requires"], dependencyLookup, parentComponent: typedComponent);
+            EnqueueDependencies(subQueue, currentDependency.Value["dependencies"], parentComponent: typedComponent);
+            TryEnqueueFirstLevelDependencies(subQueue, currentDependency.Value["requires"], dependencyLookup, parentComponent: typedComponent);
 
             while (subQueue.Count != 0)
             {
@@ -315,54 +360,9 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
                 NpmComponentUtilities.TraverseAndRecordComponents(currentSubDependency, singleFileComponentRecorder, typedSubComponent, explicitReferencedDependency: typedComponent, parentComponent.Id);
 
-                this.EnqueueDependencies(subQueue, currentSubDependency.Value["dependencies"], parentComponent: typedSubComponent);
-                this.TryEnqueueFirstLevelDependencies(subQueue, currentSubDependency.Value["requires"], dependencyLookup, parentComponent: typedSubComponent);
+                EnqueueDependencies(subQueue, currentSubDependency.Value["dependencies"], parentComponent: typedSubComponent);
+                TryEnqueueFirstLevelDependencies(subQueue, currentSubDependency.Value["requires"], dependencyLookup, parentComponent: typedSubComponent);
             }
         }
-    }
-
-    private void EnqueueDependencies(Queue<(JProperty Dependency, TypedComponent ParentComponent)> queue, JToken dependencies, TypedComponent parentComponent)
-    {
-        if (dependencies != null)
-        {
-            foreach (var dependency in dependencies.Cast<JProperty>())
-            {
-                if (dependency != null)
-                {
-                    queue.Enqueue((dependency, parentComponent));
-                }
-            }
-        }
-    }
-
-    private bool TryEnqueueFirstLevelDependencies(Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, Queue<TypedComponent> parentComponentQueue = null, TypedComponent parentComponent = null, bool skipValidation = false)
-    {
-        var isValid = true;
-        if (dependencies != null)
-        {
-            foreach (var dependency in dependencies.Cast<JProperty>())
-            {
-                if (dependency == null || dependency.Name == null)
-                {
-                    continue;
-                }
-
-                var inLock = dependencyLookup.TryGetValue(dependency.Name, out var dependencyProperty);
-                if (inLock)
-                {
-                    queue.Enqueue((dependencyProperty, parentComponent));
-                }
-                else if (skipValidation)
-                {
-                    continue;
-                }
-                else
-                {
-                    isValid = false;
-                }
-            }
-        }
-
-        return isValid;
     }
 }
