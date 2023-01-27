@@ -91,9 +91,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         return isValid;
     }
 
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
-    {
-        return Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
+    protected override Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) => Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
             .Where(pr =>
             {
                 if (pr.ComponentStream.Pattern.Equals(LernaSearchPattern, StringComparison.Ordinal))
@@ -108,7 +106,6 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
                 return true;
             }));
-    }
 
     protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
