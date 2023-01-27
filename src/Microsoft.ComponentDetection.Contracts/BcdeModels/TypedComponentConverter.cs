@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 
 public class TypedComponentConverter : JsonConverter
 {
-    private readonly Dictionary<ComponentType, Type> componentTypesToTypes = new Dictionary<ComponentType, Type>
+    private readonly Dictionary<ComponentType, Type> componentTypesToTypes = new()
     {
         { ComponentType.Other, typeof(OtherComponent) },
         { ComponentType.NuGet, typeof(NuGetComponent) },
