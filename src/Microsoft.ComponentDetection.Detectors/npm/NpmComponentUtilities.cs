@@ -35,7 +35,7 @@ public static class NpmComponentUtilities
         }
 
         var isDevDependency = currentDependency.Value["dev"] is JValue devJValue && (bool)devJValue;
-        AddOrUpdateDetectedComponent(singleFileComponentRecorder, component, isDevDependency, parentComponentId, isExplicitReferencedDependency: string.Equals(component.Id, explicitReferencedDependency.Id));
+        AddOrUpdateDetectedComponent(singleFileComponentRecorder, component, isDevDependency, parentComponentId, isExplicitReferencedDependency: string.Equals(component.Id, explicitReferencedDependency.Id, StringComparison.Ordinal));
     }
 
     public static DetectedComponent AddOrUpdateDetectedComponent(
@@ -117,7 +117,7 @@ public static class NpmComponentUtilities
         try
         {
             var file = Path.GetFileNameWithoutExtension(versionString.LocalPath);
-            var potentialVersion = file.Replace($"{packageName}-", string.Empty);
+            var potentialVersion = file.Replace($"{packageName}-", string.Empty, StringComparison.Ordinal);
 
             return SemanticVersion.TryParse(potentialVersion, out version);
         }

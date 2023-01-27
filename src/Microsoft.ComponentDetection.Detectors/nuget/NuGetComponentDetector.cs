@@ -79,7 +79,7 @@ public class NuGetComponentDetector : FileComponentDetector
 
                     this.Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
 
-                    await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
+                    await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp, StringComparison.Ordinal)), singleFileComponentRecorder.GetParentComponentRecorder())
                         .ForEachAsync(async fi => await this.ProcessFile(fi));
                 }
             }

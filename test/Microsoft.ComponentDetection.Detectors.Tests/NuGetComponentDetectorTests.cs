@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -203,7 +203,7 @@ NUGET
         //  We return a nuget config that targets a different temp folder that is NOT in a subtree of the sourcedirectory.
         componentStreamEnumerableFactoryMock.Setup(
                 x => x.GetComponentStreams(
-                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
+                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath, StringComparison.Ordinal)),
                     Match.Create<IEnumerable<string>>(stuff => stuff.Contains(NuGetComponentDetector.NugetConfigFileName)),
                     It.IsAny<ExcludeDirectoryPredicate>(),
                     It.IsAny<bool>()))
@@ -212,7 +212,7 @@ NUGET
         // Normal detection setup here -- we have it returning empty.
         componentStreamEnumerableFactoryMock.Setup(
                 x => x.GetComponentStreams(
-                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
+                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath, StringComparison.Ordinal)),
                     Match.Create<IEnumerable<string>>(stuff => detector.SearchPatterns.Intersect(stuff).Count() == detector.SearchPatterns.Count),
                     It.IsAny<ExcludeDirectoryPredicate>(),
                     It.IsAny<bool>()))
@@ -221,7 +221,7 @@ NUGET
         // This is matching the additional directory that is ONLY sourced in the nuget.config. If this works, we would see the component in our results.
         componentStreamEnumerableFactoryMock.Setup(
                 x => x.GetComponentStreams(
-                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(additionalDirectory)),
+                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(additionalDirectory, StringComparison.Ordinal)),
                     Match.Create<IEnumerable<string>>(stuff => detector.SearchPatterns.Intersect(stuff).Count() == detector.SearchPatterns.Count),
                     It.IsAny<ExcludeDirectoryPredicate>(),
                     It.IsAny<bool>()))
@@ -230,7 +230,7 @@ NUGET
         // Normal detection setup here -- we have it returning empty.
         directoryWalkerMock.Setup(
                 x => x.GetFilteredComponentStreamObservable(
-                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
+                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath, StringComparison.Ordinal)),
                     It.IsAny<IEnumerable<string>>(),
                     It.IsAny<IComponentRecorder>()))
             .Returns(() => streamsDetectedInAdditionalDirectoryPass.Select(cs => new ProcessRequest { ComponentStream = cs, SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location) }).ToObservable());
@@ -238,7 +238,7 @@ NUGET
         // This is matching the additional directory that is ONLY sourced in the nuget.config. If this works, we would see the component in our results.
         directoryWalkerMock.Setup(
                 x => x.GetFilteredComponentStreamObservable(
-                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(additionalDirectory)),
+                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(additionalDirectory, StringComparison.Ordinal)),
                     It.IsAny<IEnumerable<string>>(),
                     It.IsAny<ComponentRecorder>()))
             .Returns(() => streamsDetectedInNormalPass.Select(cs => new ProcessRequest { ComponentStream = cs, SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location) }).ToObservable());

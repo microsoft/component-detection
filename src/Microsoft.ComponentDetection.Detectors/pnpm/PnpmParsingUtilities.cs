@@ -27,6 +27,11 @@ public static class PnpmParsingUtilities
 
     public static DetectedComponent CreateDetectedComponentFromPnpmPath(string pnpmPackagePath)
     {
+        if (pnpmPackagePath is null)
+        {
+            throw new ArgumentNullException(nameof(pnpmPackagePath));
+        }
+
         var (parentName, parentVersion) = ExtractNameAndVersionFromPnpmPackagePath(pnpmPackagePath);
         return new DetectedComponent(new NpmComponent(parentName, parentVersion));
     }
