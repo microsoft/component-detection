@@ -180,13 +180,13 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             if (!enqueued)
             {
                 // This represents a mismatch between lock file and package.json, break out and do not register anything for these files
-                throw new InvalidOperationException(string.Format("InvalidPackageJson -- There was a mismatch between the components in the package.json and the lock file at '{0}'", singleFileComponentRecorder.ManifestFileLocation));
+                throw new InvalidOperationException($"InvalidPackageJson -- There was a mismatch between the components in the package.json and the lock file at '{singleFileComponentRecorder.ManifestFileLocation}'");
             }
         }
 
         if (!packageJsonComponentStream.Any())
         {
-            throw new InvalidOperationException(string.Format("InvalidPackageJson -- There must be a package.json file at '{0}' for components to be registered", singleFileComponentRecorder.ManifestFileLocation));
+            throw new InvalidOperationException($"InvalidPackageJson -- There must be a package.json file at '{singleFileComponentRecorder.ManifestFileLocation}' for components to be registered");
         }
 
         this.TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, singleFileComponentRecorder);
