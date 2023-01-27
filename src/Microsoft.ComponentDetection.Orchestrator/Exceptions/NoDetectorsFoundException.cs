@@ -3,7 +3,7 @@ using System;
 using System.Runtime.Serialization;
 
 [Serializable]
-internal class NoDetectorsFoundException : Exception
+public class NoDetectorsFoundException : Exception
 {
     public NoDetectorsFoundException()
         : base("Unable to load any detector plugins.")
