@@ -60,7 +60,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         }
     }
 
-    private static bool TryEnqueueFirstLevelDependencies(Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, Queue<TypedComponent> parentComponentQueue = null, TypedComponent parentComponent = null, bool skipValidation = false)
+    private static bool TryEnqueueFirstLevelDependencies(Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, TypedComponent parentComponent = null, bool skipValidation = false)
     {
         var isValid = true;
         if (dependencies != null)
