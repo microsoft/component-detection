@@ -19,7 +19,7 @@ public static class Program
 
             if (args.Any(x => string.Equals(x, "--Debug", StringComparison.OrdinalIgnoreCase)))
             {
-                Console.WriteLine($"Waiting for debugger attach. PID: {Process.GetCurrentProcess().Id}");
+                Console.WriteLine($"Waiting for debugger attach. PID: {Environment.ProcessId}");
 
                 while (!Debugger.IsAttached)
                 {
