@@ -14,9 +14,11 @@ using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Pnpm;
+using Microsoft.ComponentDetection.Detectors.Poetry;
 using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Spdx;
+using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
@@ -105,6 +107,9 @@ public static class ServiceCollectionExtensions
         // pnpm
         services.AddSingleton<IComponentDetector, PnpmComponentDetector>();
 
+        // Poetry
+        services.AddSingleton<IComponentDetector, PoetryComponentDetector>();
+
         // Ruby
         services.AddSingleton<IComponentDetector, RubyComponentDetector>();
 
@@ -113,6 +118,9 @@ public static class ServiceCollectionExtensions
 
         // SPDX
         services.AddSingleton<IComponentDetector, Spdx22ComponentDetector>();
+
+        // VCPKG
+        services.AddSingleton<IComponentDetector, VcpkgComponentDetector>();
 
         // Yarn
         services.AddSingleton<IYarnLockParser, YarnLockParser>();
