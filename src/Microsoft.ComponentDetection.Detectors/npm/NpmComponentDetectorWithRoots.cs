@@ -25,7 +25,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
     /// <summary>Common delegate for Package.json JToken processing.</summary>
     /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
-    protected delegate bool JTokenProcessingDelegate(JToken token);
+    protected delegate bool JTokenProcessor(JToken token);
 
     /// <summary>Gets or sets the logger for writing basic logging message to both console and file. Injected automatically by MEF composition.</summary>
     [Import]
@@ -113,7 +113,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         });
     }
 
-    protected Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
+    protected Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessor jtokenProcessor)
     {
         if (componentStream is null)
         {
@@ -266,7 +266,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         });
     }
 
-    private async Task SafeProcessAllPackageJTokens(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
+    private async Task SafeProcessAllPackageJTokens(IComponentStream componentStream, JTokenProcessor jtokenProcessor)
     {
         try
         {
