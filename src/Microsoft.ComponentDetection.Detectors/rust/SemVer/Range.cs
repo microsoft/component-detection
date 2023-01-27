@@ -219,6 +219,7 @@ public class Range : IEquatable<Range>
     public override bool Equals(object other) => this.Equals(other as Range);
 
     public override int GetHashCode() =>
+
         // XOR is commutative, so this hash code is independent
         // of the order of comparators.
         this.comparatorSets.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());

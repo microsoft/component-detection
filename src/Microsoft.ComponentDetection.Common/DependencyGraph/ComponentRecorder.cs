@@ -116,6 +116,7 @@ public class ComponentRecorder : IComponentRecorder
         }
 
         public IReadOnlyDictionary<string, DetectedComponent> GetDetectedComponents() =>
+
             // Should this be immutable?
             this.detectedComponentsInternal;
 

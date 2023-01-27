@@ -17,6 +17,7 @@ public class BaseDetectionTelemetryRecordTests
 
     [TestInitialize]
     public void Initialize() =>
+
         // this only discovers types in a single assembly, since that's the current situation!
         this.recordTypes = typeof(BaseDetectionTelemetryRecord).Assembly.GetTypes()
             .Where(type => typeof(BaseDetectionTelemetryRecord).IsAssignableFrom(type))

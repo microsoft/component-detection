@@ -103,6 +103,7 @@ public class YarnLockParser : IYarnLockParser
     }
 
     private Func<string, string> GenerateBlockTitleNormalizer(YarnBlock block) =>
+
         // For cases where we have no version in the title, ex:
         //   nyc:
         //    version "10.0.0"

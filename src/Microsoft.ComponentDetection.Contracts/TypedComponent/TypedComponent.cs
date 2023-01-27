@@ -34,6 +34,7 @@ public abstract class TypedComponent
             : input;
 
     protected T ValidateRequiredInput<T>(T input, string fieldName, string componentType) =>
+
         // Null coalescing for generic types is not available until C# 8
         EqualityComparer<T>.Default.Equals(input, default(T)) ? throw new ArgumentNullException(fieldName, this.NullPropertyExceptionMessage(fieldName, componentType)) : input;
 

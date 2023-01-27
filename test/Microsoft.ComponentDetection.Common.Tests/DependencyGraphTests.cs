@@ -11,6 +11,7 @@ public class DependencyGraphTests
 
     [TestInitialize]
     public void TestInitializer() =>
+
         // Default value of true -- some tests will create their own, though.
         this.dependencyGraph = new DependencyGraph.DependencyGraph(true);
 

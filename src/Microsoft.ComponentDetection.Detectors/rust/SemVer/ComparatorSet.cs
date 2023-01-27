@@ -175,6 +175,7 @@ internal class ComparatorSet : IEquatable<ComparatorSet>
     public override string ToString() => string.Join(" ", this.comparators.Select(c => c.ToString()).ToArray());
 
     public override int GetHashCode() =>
+
         // XOR is commutative, so this hash code is independent
         // of the order of comparators.
         this.comparators.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());

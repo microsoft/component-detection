@@ -95,6 +95,7 @@ public class PnpmComponentDetector : FileComponentDetector
     }
 
     private bool IsLocalDependency(KeyValuePair<string, string> dependency) =>
+
         // Local dependencies are dependencies that live in the file system
         // this requires an extra parsing that is not supported yet
         dependency.Key.StartsWith("file:") || dependency.Value.StartsWith("file:") || dependency.Value.StartsWith("link:");
