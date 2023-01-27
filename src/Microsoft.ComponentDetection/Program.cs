@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection;
+namespace Microsoft.ComponentDetection;
 
 using System;
 using System.Diagnostics;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 
-public class Program
+public static class Program
 {
     public static async Task Main(string[] args)
     {
