@@ -39,7 +39,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
                         break;
                     }
                 }
-                catch (Exception ex) when (ex is Win32Exception || ex is FileNotFoundException || ex is PlatformNotSupportedException)
+                catch (Exception ex) when (ex is Win32Exception or FileNotFoundException or PlatformNotSupportedException)
                 {
                     // When we get an exception indicating the command cannot be found.
                     record.Track(ex, commandToTry, joinedParameters);
