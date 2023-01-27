@@ -40,6 +40,11 @@ public class TypedComponentConverter : JsonConverter
     public override object ReadJson(
         JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
     {
+        if (serializer is null)
+        {
+            throw new ArgumentNullException(nameof(serializer));
+        }
+
         var jo = JToken.Load(reader);
 
         var value = (ComponentType)Enum.Parse(typeof(ComponentType), (string)jo["type"]);

@@ -67,6 +67,11 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
+        if (processRequest is null)
+        {
+            throw new ArgumentNullException(nameof(processRequest));
+        }
+
         IEnumerable<string> packageJsonPattern = new List<string> { "package.json" };
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -110,6 +115,16 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     protected Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
     {
+        if (componentStream is null)
+        {
+            throw new ArgumentNullException(nameof(componentStream));
+        }
+
+        if (jtokenProcessor is null)
+        {
+            throw new ArgumentNullException(nameof(jtokenProcessor));
+        }
+
         try
         {
             if (!componentStream.Stream.CanRead)
@@ -134,6 +149,21 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
     {
+        if (singleFileComponentRecorder is null)
+        {
+            throw new ArgumentNullException(nameof(singleFileComponentRecorder));
+        }
+
+        if (packageLockJToken is null)
+        {
+            throw new ArgumentNullException(nameof(packageLockJToken));
+        }
+
+        if (packageJsonComponentStream is null)
+        {
+            throw new ArgumentNullException(nameof(packageJsonComponentStream));
+        }
+
         var dependencies = packageLockJToken["dependencies"];
         var topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
 
