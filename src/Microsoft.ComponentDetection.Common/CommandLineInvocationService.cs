@@ -86,7 +86,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
     public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.CanCommandBeLocated(command, additionalCandidateCommands, workingDirectory: null, parameters).ConfigureAwait(false);
 
-    public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters);
+    public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters).ConfigureAwait(false);
 
     private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
     {
