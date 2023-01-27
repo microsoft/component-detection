@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.Tests;
+namespace Microsoft.ComponentDetection.Contracts.Tests;
 using System;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -14,9 +14,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Other()
     {
-        TypedComponent.TypedComponent tc = new OtherComponent("SomeOtherComponent", "1.2.3", new Uri("https://sampleurl.com"), "SampleHash");
+        TypedComponent tc = new OtherComponent("SomeOtherComponent", "1.2.3", new Uri("https://sampleurl.com"), "SampleHash");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(OtherComponent));
         var otherComponent = (OtherComponent)deserializedTC;
         otherComponent.Name.Should().Be("SomeOtherComponent");
@@ -31,9 +31,9 @@ public class TypedComponentSerializationTests
         var testComponentName = "SomeNuGetComponent";
         var testVersion = "1.2.3";
         string[] testAuthors = { "John Doe", "Jane Doe" };
-        TypedComponent.TypedComponent tc = new NuGetComponent(testComponentName, testVersion, testAuthors);
+        TypedComponent tc = new NuGetComponent(testComponentName, testVersion, testAuthors);
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(NuGetComponent));
         var nugetComponent = (NuGetComponent)deserializedTC;
         nugetComponent.Name.Should().Be(testComponentName);
@@ -50,7 +50,7 @@ public class TypedComponentSerializationTests
             Author = npmAuthor,
         };
         var result = JsonConvert.SerializeObject(npmCompObj);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(NpmComponent));
         var npmComponent = (NpmComponent)deserializedTC;
         npmComponent.Name.Should().Be("SomeNpmComponent");
@@ -61,9 +61,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Npm_WithHash()
     {
-        TypedComponent.TypedComponent tc = new NpmComponent("SomeNpmComponent", "1.2.3", "sha1-placeholder");
+        TypedComponent tc = new NpmComponent("SomeNpmComponent", "1.2.3", "sha1-placeholder");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(NpmComponent));
         var npmComponent = (NpmComponent)deserializedTC;
         npmComponent.Name.Should().Be("SomeNpmComponent");
@@ -74,9 +74,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Maven()
     {
-        TypedComponent.TypedComponent tc = new MavenComponent("SomeGroupId", "SomeArtifactId", "1.2.3");
+        TypedComponent tc = new MavenComponent("SomeGroupId", "SomeArtifactId", "1.2.3");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(MavenComponent));
         var mavenComponent = (MavenComponent)deserializedTC;
         mavenComponent.GroupId.Should().Be("SomeGroupId");
@@ -87,9 +87,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Git()
     {
-        TypedComponent.TypedComponent tc = new GitComponent(new Uri("http://some.com/git/url.git"), "SomeHash");
+        TypedComponent tc = new GitComponent(new Uri("http://some.com/git/url.git"), "SomeHash");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(GitComponent));
         var gitComponent = (GitComponent)deserializedTC;
         gitComponent.RepositoryUrl.Should().Be(new Uri("http://some.com/git/url.git"));
@@ -99,9 +99,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_RubyGems()
     {
-        TypedComponent.TypedComponent tc = new RubyGemsComponent("SomeGem", "1.2.3", "SampleSource");
+        TypedComponent tc = new RubyGemsComponent("SomeGem", "1.2.3", "SampleSource");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(RubyGemsComponent));
         var rubyGemComponent = (RubyGemsComponent)deserializedTC;
         rubyGemComponent.Name.Should().Be("SomeGem");
@@ -112,9 +112,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Cargo()
     {
-        TypedComponent.TypedComponent tc = new CargoComponent("SomeCargoPackage", "1.2.3");
+        TypedComponent tc = new CargoComponent("SomeCargoPackage", "1.2.3");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(CargoComponent));
         var cargoComponent = (CargoComponent)deserializedTC;
         cargoComponent.Name.Should().Be("SomeCargoPackage");
@@ -124,9 +124,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Pip()
     {
-        TypedComponent.TypedComponent tc = new PipComponent("SomePipPackage", "1.2.3");
+        TypedComponent tc = new PipComponent("SomePipPackage", "1.2.3");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(PipComponent));
         var pipComponent = (PipComponent)deserializedTC;
         pipComponent.Name.Should().Be("SomePipPackage");
@@ -136,9 +136,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Go()
     {
-        TypedComponent.TypedComponent tc = new GoComponent("SomeGoPackage", "1.2.3", "SomeHash");
+        TypedComponent tc = new GoComponent("SomeGoPackage", "1.2.3", "SomeHash");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(GoComponent));
         var goComponent = (GoComponent)deserializedTC;
         goComponent.Name.Should().Be("SomeGoPackage");
@@ -149,9 +149,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_DockerImage()
     {
-        TypedComponent.TypedComponent tc = new DockerImageComponent("SomeImageHash", "SomeImageName", "SomeImageTag");
+        TypedComponent tc = new DockerImageComponent("SomeImageHash", "SomeImageName", "SomeImageTag");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(DockerImageComponent));
         var dockerImageComponent = (DockerImageComponent)deserializedTC;
         dockerImageComponent.Digest.Should().Be("SomeImageHash");
@@ -162,9 +162,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_PodComponent()
     {
-        TypedComponent.TypedComponent tc = new PodComponent("SomePodName", "SomePodVersion", "SomeSpecRepo");
+        TypedComponent tc = new PodComponent("SomePodName", "SomePodVersion", "SomeSpecRepo");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(PodComponent));
         var podComponent = (PodComponent)deserializedTC;
         podComponent.Name.Should().Be("SomePodName");
@@ -175,9 +175,9 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_LinuxComponent()
     {
-        TypedComponent.TypedComponent tc = new LinuxComponent("SomeLinuxDistribution", "SomeLinuxRelease", "SomeLinuxComponentName", "SomeLinuxComponentVersion");
+        TypedComponent tc = new LinuxComponent("SomeLinuxDistribution", "SomeLinuxRelease", "SomeLinuxComponentName", "SomeLinuxComponentVersion");
         var result = JsonConvert.SerializeObject(tc);
-        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent.TypedComponent>(result);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(LinuxComponent));
         var linuxComponent = (LinuxComponent)deserializedTC;
         linuxComponent.Distribution.Should().Be("SomeLinuxDistribution");
