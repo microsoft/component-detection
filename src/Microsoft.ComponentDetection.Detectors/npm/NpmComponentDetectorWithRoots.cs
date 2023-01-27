@@ -239,9 +239,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         var directoryItemFacades = new List<DirectoryItemFacade>();
         var directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
 
-        return Observable.Create<ProcessRequest>(s =>
-        {
-            return componentStreams.Subscribe(
+        return Observable.Create<ProcessRequest>(s => componentStreams.Subscribe(
                 processRequest =>
                 {
                     var item = processRequest.ComponentStream;
@@ -304,8 +302,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                     // Go all the way up
                     while (currentDir != null);
                 },
-                s.OnCompleted);
-        });
+                s.OnCompleted));
     }
 
     private async Task SafeProcessAllPackageJTokens(IComponentStream componentStream, JTokenProcessor jtokenProcessor)
