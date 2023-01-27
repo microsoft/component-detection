@@ -7,4 +7,12 @@ public class MissingContainerDetailException : Exception
         : base($"No container details information could be found for image ${imageId}")
     {
     }
+
+    public MissingContainerDetailException()
+    {
+    }
+
+    public MissingContainerDetailException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
 }
