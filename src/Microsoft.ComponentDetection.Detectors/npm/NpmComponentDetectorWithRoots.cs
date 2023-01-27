@@ -155,7 +155,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
             this.ProcessIndividualPackageJTokens(singleFileComponentRecorder, token, packageJsonComponentStream, skipValidation: foundUnderLerna);
             return true;
-        });
+        }).ConfigureAwait(true);
     }
 
     protected Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessor jtokenProcessor)
@@ -315,7 +315,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
     {
         try
         {
-            await this.ProcessAllPackageJTokensAsync(componentStream, jtokenProcessor);
+            await this.ProcessAllPackageJTokensAsync(componentStream, jtokenProcessor).ConfigureAwait(true);
         }
         catch (Exception e)
         {
