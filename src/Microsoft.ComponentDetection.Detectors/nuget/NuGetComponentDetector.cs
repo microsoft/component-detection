@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
+
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -9,10 +10,10 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using global::NuGet.Versioning;
 
 [Export(typeof(IComponentDetector))]
 public class NuGetComponentDetector : FileComponentDetector
