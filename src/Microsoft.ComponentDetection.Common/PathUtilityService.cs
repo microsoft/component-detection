@@ -28,9 +28,9 @@ public class PathUtilityService : IPathUtilityService
     private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
     private static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
-    private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
+    private readonly ConcurrentDictionary<string, string> resolvedPaths = new();
 
-    private readonly object isRunningOnWindowsContainerLock = new object();
+    private readonly object isRunningOnWindowsContainerLock = new();
     private bool? isRunningOnWindowsContainer = null;
 
     public bool IsRunningOnWindowsContainer

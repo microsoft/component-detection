@@ -7,7 +7,7 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 public class DetectedComponent
 {
-    private readonly object hashLock = new object();
+    private readonly object hashLock = new();
 
     /// <summary>Creates a new DetectedComponent.</summary>
     /// <param name="component">The typed component instance to base this detection on.</param>

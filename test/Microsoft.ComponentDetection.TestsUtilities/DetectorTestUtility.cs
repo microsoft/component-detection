@@ -13,9 +13,9 @@ using Moq;
 public class DetectorTestUtility<T>
     where T : FileComponentDetector, new()
 {
-    private readonly List<(string Name, Stream Contents, string Location, IEnumerable<string> SearchPatterns)> filesToAdd = new List<(string Name, Stream Contents, string Location, IEnumerable<string> SearchPatterns)>();
+    private readonly List<(string Name, Stream Contents, string Location, IEnumerable<string> SearchPatterns)> filesToAdd = new();
 
-    private Mock<ILogger> mockLogger = new Mock<ILogger>();
+    private Mock<ILogger> mockLogger = new();
 
     private Mock<IComponentStreamEnumerableFactory> mockComponentStreamEnumerableFactory;
 
@@ -113,7 +113,7 @@ public class DetectorTestUtility<T>
         return getFileMock.Object;
     }
 
-    private ProcessRequest CreateProcessRequest(string pattern, string filePath, Stream content) => new ProcessRequest
+    private ProcessRequest CreateProcessRequest(string pattern, string filePath, Stream content) => new()
     {
         SingleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath),
         ComponentStream = CreateComponentStreamForFile(pattern, filePath, content),

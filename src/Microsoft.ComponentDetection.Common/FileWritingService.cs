@@ -11,7 +11,7 @@ public class FileWritingService : IFileWritingService
 {
     public const string TimestampFormatString = "yyyyMMddHHmmssfff";
 
-    private readonly object lockObject = new object();
+    private readonly object lockObject = new();
     private readonly string timestamp = DateTime.Now.ToString(TimestampFormatString);
 
     public string BasePath { get; private set; }

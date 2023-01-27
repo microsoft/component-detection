@@ -40,9 +40,9 @@ using System.Threading.Tasks;
 /// </summary>
 public class YarnBlockFile : IYarnBlockFile
 {
-    private static readonly Regex YarnV1Regex = new Regex("(.*)\\s\"(.*)\"", RegexOptions.Compiled);
+    private static readonly Regex YarnV1Regex = new("(.*)\\s\"(.*)\"", RegexOptions.Compiled);
 
-    private static readonly Regex YarnV2Regex = new Regex("(.*):\\s\"?(.*)", RegexOptions.Compiled);
+    private static readonly Regex YarnV2Regex = new("(.*):\\s\"?(.*)", RegexOptions.Compiled);
 
     private readonly IList<string> fileLines = new List<string>();
 

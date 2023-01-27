@@ -19,7 +19,7 @@ public class RustCrateDetector : FileComponentDetector
     private const string CargoLockSearchPattern = "Cargo.lock";
 
     ////  PkgName[ Version][ (Source)]
-    private static readonly Regex DependencyFormatRegex = new Regex(
+    private static readonly Regex DependencyFormatRegex = new(
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
 

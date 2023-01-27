@@ -5,7 +5,7 @@ using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
 
 public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
 {
-    private readonly Stopwatch stopwatch = new Stopwatch();
+    private readonly Stopwatch stopwatch = new();
 
     private bool disposedValue = false;
 

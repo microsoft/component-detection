@@ -22,10 +22,10 @@ using Newtonsoft.Json;
 [TestCategory("Governance/ComponentDetection")]
 public class DetectorProcessingServiceTests
 {
-    private static readonly DirectoryInfo DefaultSourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
-    private static readonly BcdeArguments DefaultArgs = new BcdeArguments { SourceDirectory = DefaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
+    private static readonly DirectoryInfo DefaultSourceDirectory = new(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
+    private static readonly BcdeArguments DefaultArgs = new() { SourceDirectory = DefaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
 
-    private readonly Dictionary<string, DetectedComponent> componentDictionary = new Dictionary<string, DetectedComponent>()
+    private readonly Dictionary<string, DetectedComponent> componentDictionary = new()
     {
         { "firstFileDetectorId", new DetectedComponent(new NpmComponent($"{Guid.NewGuid()}", "FileComponentVersion1")) },
         { "secondFileDetectorId", new DetectedComponent(new NuGetComponent("FileComponentName2", "FileComponentVersion2")) },
@@ -47,7 +47,7 @@ public class DetectorProcessingServiceTests
 
     private bool isWin;
 
-    private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId) => new IndividualDetectorScanResult
+    private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId) => new()
     {
         AdditionalTelemetryDetails = new Dictionary<string, string> { { "detectorId", detectorId } },
         ResultCode = ProcessingResultCode.Success,

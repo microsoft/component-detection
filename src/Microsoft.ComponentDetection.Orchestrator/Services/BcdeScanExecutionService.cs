@@ -53,7 +53,7 @@ public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
         return scanResult;
     }
 
-    private static Detector ConvertToContract(IComponentDetector detector) => new Detector
+    private static Detector ConvertToContract(IComponentDetector detector) => new()
     {
         DetectorId = detector.Id,
         IsExperimental = detector is IExperimentalDetector,

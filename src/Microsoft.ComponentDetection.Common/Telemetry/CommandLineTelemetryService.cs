@@ -12,7 +12,7 @@ using Newtonsoft.Json.Linq;
 [TelemetryService(nameof(CommandLineTelemetryService))]
 internal class CommandLineTelemetryService : ITelemetryService
 {
-    private static readonly ConcurrentQueue<JObject> Records = new ConcurrentQueue<JObject>();
+    private static readonly ConcurrentQueue<JObject> Records = new();
 
     public const string TelemetryRelativePath = "ScanTelemetry_{timestamp}.json";
 

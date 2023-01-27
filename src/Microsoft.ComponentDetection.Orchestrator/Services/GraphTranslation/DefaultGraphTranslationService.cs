@@ -214,7 +214,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
         return relativePathSet;
     }
 
-    private ScannedComponent ConvertToContract(DetectedComponent component) => new ScannedComponent
+    private ScannedComponent ConvertToContract(DetectedComponent component) => new()
     {
         DetectorId = component.DetectedBy.Id,
         IsDevelopmentDependency = component.DevelopmentDependency,

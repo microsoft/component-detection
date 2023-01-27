@@ -17,7 +17,7 @@ using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityE
 public class NpmDetectorTests
 {
     private readonly DetectorTestUtility<NpmComponentDetector> detectorTestUtility = DetectorTestUtilityCreator.Create<NpmComponentDetector>();
-    private readonly List<string> packageJsonSearchPattern = new List<string> { "package.json" };
+    private readonly List<string> packageJsonSearchPattern = new() { "package.json" };
     private Mock<IPathUtilityService> pathUtilityService;
 
     [TestInitialize]

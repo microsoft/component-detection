@@ -39,9 +39,9 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 [Export(typeof(IComponentDetector))]
 public class RubyComponentDetector : FileComponentDetector
 {
-    private static readonly Regex HeadingRegex = new Regex("^[A-Z ]+$", RegexOptions.Compiled);
-    private static readonly Regex DependencyDefinitionRegex = new Regex("^ {4}[A-Za-z-]+", RegexOptions.Compiled);
-    private static readonly Regex SubDependencyRegex = new Regex("^ {6}[A-Za-z-]+", RegexOptions.Compiled);
+    private static readonly Regex HeadingRegex = new("^[A-Z ]+$", RegexOptions.Compiled);
+    private static readonly Regex DependencyDefinitionRegex = new("^ {4}[A-Za-z-]+", RegexOptions.Compiled);
+    private static readonly Regex SubDependencyRegex = new("^ {6}[A-Za-z-]+", RegexOptions.Compiled);
 
     public RubyComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
 

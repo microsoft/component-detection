@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 public static class MavenParsingUtilities
 {
-    private static readonly Dictionary<string, DependencyScope> MavenScopeToDependencyScopeMapping = new Dictionary<string, DependencyScope>()
+    private static readonly Dictionary<string, DependencyScope> MavenScopeToDependencyScopeMapping = new()
     {
         { "compile", DependencyScope.MavenCompile },
         { "provided", DependencyScope.MavenProvided },

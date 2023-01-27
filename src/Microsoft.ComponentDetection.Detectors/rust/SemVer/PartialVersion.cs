@@ -17,7 +17,7 @@ using Semver;
 // number, for use in ranges like "^1.2" or "2.x"
 internal class PartialVersion
 {
-    private static readonly Regex VersionRegex = new Regex(
+    private static readonly Regex VersionRegex = new(
         @"^
                 [v=\s]*
                 (\d+|[Xx\*])                      # major version
@@ -97,7 +97,7 @@ internal class PartialVersion
 
     public string PreRelease { get; set; }
 
-    public SemVersion ToZeroVersion() => new SemVersion(this.Major ?? 0, this.Minor ?? 0, this.Patch ?? 0, this.PreRelease);
+    public SemVersion ToZeroVersion() => new(this.Major ?? 0, this.Minor ?? 0, this.Patch ?? 0, this.PreRelease);
 
     public bool IsFull() => this.Major.HasValue && this.Minor.HasValue && this.Patch.HasValue;
 }

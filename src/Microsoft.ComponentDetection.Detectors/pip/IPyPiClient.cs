@@ -36,7 +36,7 @@ public class PyPiClient : IPyPiClient
     // max number of retries allowed, to cap the total delay period
     private const long MAXRETRIES = 15;
 
-    private static readonly HttpClientHandler HttpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
+    private static readonly HttpClientHandler HttpClientHandler = new() { CheckCertificateRevocationList = true };
 
     // time to wait before retrying a failed call to pypi.org
     private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
@@ -53,7 +53,7 @@ public class PyPiClient : IPyPiClient
     /// A thread safe cache implementation which contains a mapping of URI -> HttpResponseMessage
     /// and has a limited number of entries which will expire after the cache fills or a specified interval.
     /// </summary>
-    private MemoryCache cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
+    private MemoryCache cachedResponses = new(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
 
     public PyPiClient() => this.cacheTelemetry = new PypiCacheTelemetryRecord()
     {

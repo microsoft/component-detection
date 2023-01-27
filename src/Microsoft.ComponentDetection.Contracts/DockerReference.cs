@@ -94,7 +94,7 @@ public class DigestReference : DockerReference
 
     public override string ToString() => $"{this.Digest}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new(this)
     {
         Digest = this.Digest,
     };
@@ -113,7 +113,7 @@ public class CanonicalReference : DockerReference
 
     public override string ToString() => $"{this.Domain}/{this.Repository}@${this.Digest}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new(this)
     {
         Domain = this.Domain,
         Digest = this.Digest,
@@ -132,7 +132,7 @@ public class RepositoryReference : DockerReference
 
     public override string ToString() => $"{this.Repository}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new(this)
     {
         Domain = this.Domain,
         Repository = this.Repository,
@@ -152,7 +152,7 @@ public class TaggedReference : DockerReference
 
     public override string ToString() => $"{this.Domain}/{this.Repository}:${this.Tag}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new(this)
     {
         Domain = this.Domain,
         Tag = this.Tag,
@@ -175,7 +175,7 @@ public class DualReference : DockerReference
 
     public override string ToString() => $"{this.Domain}/{this.Repository}:${this.Tag}@${this.Digest}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new(this)
     {
         Domain = this.Domain,
         Digest = this.Digest,

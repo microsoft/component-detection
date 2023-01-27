@@ -232,7 +232,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         return individualDetectorScanResult;
     }
 
-    private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult Result, ComponentRecorder Recorder, IComponentDetector Detector)> results, ProcessingResultCode exitCode) => new DetectorProcessingResult
+    private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult Result, ComponentRecorder Recorder, IComponentDetector Detector)> results, ProcessingResultCode exitCode) => new()
     {
         ComponentRecorders = results.Select(tuple => (tuple.Detector, tuple.Recorder)),
         ContainersDetailsMap = results.SelectMany(x => x.Result.ContainerDetails).ToDictionary(x => x.Id),

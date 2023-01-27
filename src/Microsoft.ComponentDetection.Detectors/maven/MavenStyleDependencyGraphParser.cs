@@ -10,9 +10,9 @@ public class MavenStyleDependencyGraphParser
 
     private static readonly string[] ComponentSplitters = new[] { "+-", "\\-" };
 
-    private readonly Stack<GraphNodeAtLevel<string>> stack = new Stack<GraphNodeAtLevel<string>>();
+    private readonly Stack<GraphNodeAtLevel<string>> stack = new();
 
-    private readonly Stack<(int ParseLevel, DetectedComponent Component)> tupleStack = new Stack<(int, DetectedComponent)>();
+    private readonly Stack<(int ParseLevel, DetectedComponent Component)> tupleStack = new();
 
     private DetectedComponent topLevelComponent = null;
 

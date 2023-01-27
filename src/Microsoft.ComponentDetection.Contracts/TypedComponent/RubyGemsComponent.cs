@@ -25,5 +25,5 @@ public class RubyGemsComponent : TypedComponent
 
     public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
-    public override PackageURL PackageUrl => new PackageURL("gem", null, this.Name, this.Version, null, null);
+    public override PackageURL PackageUrl => new("gem", null, this.Name, this.Version, null, null);
 }

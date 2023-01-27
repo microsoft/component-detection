@@ -11,14 +11,14 @@ using System.Text.RegularExpressions;
 public class PipDependencySpecification
 {
     // Extracts name and version from a Requires-Dist string that is found in a metadata file
-    public static readonly Regex RequiresDistRegex = new Regex(
+    public static readonly Regex RequiresDistRegex = new(
         @"Requires-Dist:\s*(?:(.*?)\s*\((.*?)\)|([^\s;]*))",
         RegexOptions.Compiled);
 
     /// <summary>
     /// These are packages that we don't want to evaluate in our graph as they are generally python builtins.
     /// </summary>
-    private static readonly HashSet<string> PackagesToIgnore = new HashSet<string>
+    private static readonly HashSet<string> PackagesToIgnore = new()
     {
         "-markerlib",
         "pip",
@@ -30,12 +30,12 @@ public class PipDependencySpecification
     };
 
     // Extracts abcd from a string like abcd==1.*,!=1.3
-    private static readonly Regex PipNameExtractionRegex = new Regex(
+    private static readonly Regex PipNameExtractionRegex = new(
         @"^.+?((?=<)|(?=>)|(?=>=)|(?=<=)|(?===)|(?=!=)|(?=~=)|(?====))",
         RegexOptions.Compiled);
 
     // Extracts ==1.*,!=1.3 from a string like abcd==1.*,!=1.3
-    private static readonly Regex PipVersionExtractionRegex = new Regex(
+    private static readonly Regex PipVersionExtractionRegex = new(
         @"((?=<)|(?=>)|(?=>=)|(?=<=)|(?===)|(?=!=)|(?=~=)|(?====))(.*)",
         RegexOptions.Compiled);
 

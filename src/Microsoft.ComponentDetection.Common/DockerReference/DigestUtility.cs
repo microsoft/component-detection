@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class DigestUtility
 {
-    private static readonly Dictionary<string, int> AlgorithmsSizes = new Dictionary<string, int>()
+    private static readonly Dictionary<string, int> AlgorithmsSizes = new()
     {
         { "sha256", 32 },
         { "sha384", 48 },

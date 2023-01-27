@@ -12,7 +12,7 @@ public class PythonVersion : IComparable<PythonVersion>
     private static readonly Regex PythonVersionRegex =
         new(@"v?(?:(?:(?<epoch>[0-9]+)!)?(?<release>[0-9]+(?:\.[0-9]+)*)(?<pre>[-_\.]?(?<pre_l>(a|b|c|rc|alpha|beta|pre|preview))[-_\.]?(?<pre_n>[0-9]+)?)?(?<post>(?:-(?<post_n1>[0-9]+))|(?:[-_\.]?(?<post_l>post|rev|r)[-_\.]?(?<post_n2>[0-9]+)?))?(?<dev>[-_\.]?(?<dev_l>dev)[-_\.]?(?<dev_n>[0-9]+)?)?)(?:\+(?<local>[a-z0-9]+(?:[-_\.][a-z0-9]+)*))?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    private static readonly Dictionary<string, int> PreReleaseMapping = new Dictionary<string, int> { { "a", 0 }, { "alpha", 0 }, { "b", 1 }, { "beta", 1 }, { "c", 2 }, { "rc", 2 }, { "pre", 2 }, { "preview", 2 } };
+    private static readonly Dictionary<string, int> PreReleaseMapping = new() { { "a", 0 }, { "alpha", 0 }, { "b", 1 }, { "beta", 1 }, { "c", 2 }, { "rc", 2 }, { "pre", 2 }, { "preview", 2 } };
 
     private readonly Match match;
 

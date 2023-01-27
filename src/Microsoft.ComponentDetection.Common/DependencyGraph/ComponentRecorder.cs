@@ -16,7 +16,7 @@ public class ComponentRecorder : IComponentRecorder
 {
     private readonly ILogger log;
 
-    private readonly ConcurrentBag<SingleFileComponentRecorder> singleFileRecorders = new ConcurrentBag<SingleFileComponentRecorder>();
+    private readonly ConcurrentBag<SingleFileComponentRecorder> singleFileRecorders = new();
 
     private readonly bool enableManualTrackingOfExplicitReferences;
 
@@ -85,11 +85,11 @@ public class ComponentRecorder : IComponentRecorder
     {
         private readonly ILogger log;
 
-        private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new ConcurrentDictionary<string, DetectedComponent>();
+        private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new();
 
         private readonly ComponentRecorder recorder;
 
-        private readonly object registerUsageLock = new object();
+        private readonly object registerUsageLock = new();
 
         public SingleFileComponentRecorder(string location, ComponentRecorder recorder, bool enableManualTrackingOfExplicitReferences, ILogger log)
         {

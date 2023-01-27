@@ -19,7 +19,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 [Shared]
 public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 {
-    private readonly ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>> pendingScans = new ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>>();
+    private readonly ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>> pendingScans = new();
 
     [Import]
     public ILogger Logger { get; set; }

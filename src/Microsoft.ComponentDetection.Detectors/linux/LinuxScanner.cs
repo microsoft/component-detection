@@ -24,7 +24,7 @@ public class LinuxScanner : ILinuxScanner
 
     private static readonly IEnumerable<string> AllowedArtifactTypes = new[] { "apk", "deb", "rpm" };
 
-    private static readonly SemaphoreSlim DockerSemaphore = new SemaphoreSlim(2);
+    private static readonly SemaphoreSlim DockerSemaphore = new(2);
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(TimeSpan.FromHours(1).TotalMilliseconds);
 

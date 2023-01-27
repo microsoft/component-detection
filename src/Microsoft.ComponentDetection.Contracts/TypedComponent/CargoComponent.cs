@@ -22,5 +22,5 @@ public class CargoComponent : TypedComponent
 
     public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
-    public override PackageURL PackageUrl => new PackageURL("cargo", string.Empty, this.Name, this.Version, null, string.Empty);
+    public override PackageURL PackageUrl => new("cargo", string.Empty, this.Name, this.Version, null, string.Empty);
 }

@@ -13,7 +13,7 @@ using Newtonsoft.Json.Linq;
 
 public static class NpmComponentUtilities
 {
-    private static readonly Regex UnsafeCharactersRegex = new Regex(
+    private static readonly Regex UnsafeCharactersRegex = new(
         @"[?<>#%{}|`'^\\~\[\]""\s\x7f]|[\x00-\x1f]|[\x80-\xff]",
         RegexOptions.Compiled);
 

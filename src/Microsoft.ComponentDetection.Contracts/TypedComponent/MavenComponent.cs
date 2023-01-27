@@ -25,5 +25,5 @@ public class MavenComponent : TypedComponent
 
     public override string Id => $"{this.GroupId} {this.ArtifactId} {this.Version} - {this.Type}";
 
-    public override PackageURL PackageUrl => new PackageURL("maven", this.GroupId, this.ArtifactId, this.Version, null, null);
+    public override PackageURL PackageUrl => new("maven", this.GroupId, this.ArtifactId, this.Version, null, null);
 }

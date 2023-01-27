@@ -19,21 +19,21 @@ internal static class Desugarer
     // tilde and caret requirements can't also have wildcards in them
     private const string VersionCharsNoWildcard = @"[0-9a-zA-Z\-\+\.]";
 
-    private static readonly Regex TildePatternRegex = new Regex(
+    private static readonly Regex TildePatternRegex = new(
         $@"^\s*~\s*({VersionCharsNoWildcard}+)\s*$",
         RegexOptions.Compiled);
 
     // The caret is optional, as Cargo treats "x.y.z" like "^x.y.z":
     // https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#specifying-dependencies-from-cratesio
-    private static readonly Regex CaretPatternRegex = new Regex(
+    private static readonly Regex CaretPatternRegex = new(
         $@"^\s*\^?\s*({VersionCharsNoWildcard}+)\s*$",
         RegexOptions.Compiled);
 
-    private static readonly Regex HyphenPatternRegex = new Regex(
+    private static readonly Regex HyphenPatternRegex = new(
         $@"^\s*({VersionChars}+)\s+\-\s+({VersionChars}+)\s*",
         RegexOptions.Compiled);
 
-    private static readonly Regex StarPatternRegex = new Regex(
+    private static readonly Regex StarPatternRegex = new(
         $@"^\s*=?\s*({VersionChars}+)\s*",
         RegexOptions.Compiled);
 

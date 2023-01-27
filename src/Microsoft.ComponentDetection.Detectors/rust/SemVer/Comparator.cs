@@ -22,7 +22,7 @@ internal class Comparator : IEquatable<Comparator>
             \s*
             ";
 
-    private static readonly Regex RangePatternRegex = new Regex(
+    private static readonly Regex RangePatternRegex = new(
         RangePattern,
         RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 

@@ -15,11 +15,11 @@ using Newtonsoft.Json;
 [Export(typeof(IComponentDetector))]
 public class GoComponentDetector : FileComponentDetector
 {
-    private static readonly Regex GoSumRegex = new Regex(
+    private static readonly Regex GoSumRegex = new(
         @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
         RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
-    private readonly HashSet<string> projectRoots = new HashSet<string>();
+    private readonly HashSet<string> projectRoots = new();
 
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }

@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 [Export(typeof(IComponentDetector))]
 public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
 {
-    private readonly HashSet<string> projectRoots = new HashSet<string>();
+    private readonly HashSet<string> projectRoots = new();
 
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }

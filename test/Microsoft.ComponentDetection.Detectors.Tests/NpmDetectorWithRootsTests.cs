@@ -22,7 +22,7 @@ public class NpmDetectorWithRootsTests
     private readonly DetectorTestUtility<NpmComponentDetectorWithRoots> detectorTestUtility = DetectorTestUtilityCreator.Create<NpmComponentDetectorWithRoots>();
     private readonly string packageLockJsonFileName = "package-lock.json";
     private readonly string packageJsonFileName = "package.json";
-    private readonly List<string> packageJsonSearchPattern = new List<string> { "package.json" };
+    private readonly List<string> packageJsonSearchPattern = new() { "package.json" };
     private Mock<IPathUtilityService> pathUtilityService;
 
     [TestInitialize]

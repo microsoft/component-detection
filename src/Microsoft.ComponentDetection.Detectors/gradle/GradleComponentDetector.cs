@@ -12,7 +12,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 [Export(typeof(IComponentDetector))]
 public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 {
-    private static readonly Regex StartsWithLetterRegex = new Regex("^[A-Za-z]", RegexOptions.Compiled);
+    private static readonly Regex StartsWithLetterRegex = new("^[A-Za-z]", RegexOptions.Compiled);
 
     public override string Id { get; } = "Gradle";
 

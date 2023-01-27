@@ -29,5 +29,5 @@ public class NpmComponent : TypedComponent
 
     public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
-    public override PackageURL PackageUrl => new PackageURL("npm", null, this.Name, this.Version, null, null);
+    public override PackageURL PackageUrl => new("npm", null, this.Name, this.Version, null, null);
 }
