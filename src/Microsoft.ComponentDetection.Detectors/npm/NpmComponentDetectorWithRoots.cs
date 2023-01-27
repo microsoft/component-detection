@@ -18,7 +18,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 {
     private const string NpmRegistryHost = "registry.npmjs.org";
 
-    private readonly object lernaFilesLock = new object();
+    private readonly object lernaFilesLock = new();
 
     public const string LernaSearchPattern = "lerna.json";
 
