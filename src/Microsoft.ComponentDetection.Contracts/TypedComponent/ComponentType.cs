@@ -1,8 +1,11 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+
+using System;
 using System.Runtime.Serialization;
 
 // This is used in BcdeModels as well
 [DataContract]
+[Flags]
 public enum ComponentType : byte
 {
     [EnumMember]
