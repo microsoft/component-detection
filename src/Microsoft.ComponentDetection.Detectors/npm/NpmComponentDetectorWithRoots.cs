@@ -16,11 +16,11 @@ using Newtonsoft.Json.Linq;
 [Export(typeof(IComponentDetector))]
 public class NpmComponentDetectorWithRoots : FileComponentDetector
 {
+    public const string LernaSearchPattern = "lerna.json";
+
     private const string NpmRegistryHost = "registry.npmjs.org";
 
     private readonly object lernaFilesLock = new();
-
-    public const string LernaSearchPattern = "lerna.json";
 
     /// <summary>Common delegate for Package.json JToken processing.</summary>
     /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
@@ -45,51 +45,6 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
-
-    private static void EnqueueDependencies(Queue<(JProperty Dependency, TypedComponent ParentComponent)> queue, JToken dependencies, TypedComponent parentComponent)
-    {
-        if (dependencies != null)
-        {
-            foreach (var dependency in dependencies.Cast<JProperty>())
-            {
-                if (dependency != null)
-                {
-                    queue.Enqueue((dependency, parentComponent));
-                }
-            }
-        }
-    }
-
-    private static bool TryEnqueueFirstLevelDependencies(Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, TypedComponent parentComponent = null, bool skipValidation = false)
-    {
-        var isValid = true;
-        if (dependencies != null)
-        {
-            foreach (var dependency in dependencies.Cast<JProperty>())
-            {
-                if (dependency == null || dependency.Name == null)
-                {
-                    continue;
-                }
-
-                var inLock = dependencyLookup.TryGetValue(dependency.Name, out var dependencyProperty);
-                if (inLock)
-                {
-                    queue.Enqueue((dependencyProperty, parentComponent));
-                }
-                else if (skipValidation)
-                {
-                    continue;
-                }
-                else
-                {
-                    isValid = false;
-                }
-            }
-        }
-
-        return isValid;
-    }
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) => Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
             .Where(pr =>
@@ -232,6 +187,51 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         }
 
         this.TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, singleFileComponentRecorder);
+    }
+
+    private static void EnqueueDependencies(Queue<(JProperty Dependency, TypedComponent ParentComponent)> queue, JToken dependencies, TypedComponent parentComponent)
+    {
+        if (dependencies != null)
+        {
+            foreach (var dependency in dependencies.Cast<JProperty>())
+            {
+                if (dependency != null)
+                {
+                    queue.Enqueue((dependency, parentComponent));
+                }
+            }
+        }
+    }
+
+    private static bool TryEnqueueFirstLevelDependencies(Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, TypedComponent parentComponent = null, bool skipValidation = false)
+    {
+        var isValid = true;
+        if (dependencies != null)
+        {
+            foreach (var dependency in dependencies.Cast<JProperty>())
+            {
+                if (dependency == null || dependency.Name == null)
+                {
+                    continue;
+                }
+
+                var inLock = dependencyLookup.TryGetValue(dependency.Name, out var dependencyProperty);
+                if (inLock)
+                {
+                    queue.Enqueue((dependencyProperty, parentComponent));
+                }
+                else if (skipValidation)
+                {
+                    continue;
+                }
+                else
+                {
+                    isValid = false;
+                }
+            }
+        }
+
+        return isValid;
     }
 
     private IObservable<ProcessRequest> RemoveNodeModuleNestedFiles(IObservable<ProcessRequest> componentStreams)
