@@ -13,6 +13,11 @@ public static class PnpmParsingUtilities
 {
     public static async Task<PnpmYaml> DeserializePnpmYamlFile(IComponentStream file)
     {
+        if (file is null)
+        {
+            throw new ArgumentNullException(nameof(file));
+        }
+
         var text = await new StreamReader(file.Stream).ReadToEndAsync();
         var deserializer = new DeserializerBuilder()
             .IgnoreUnmatchedProperties()

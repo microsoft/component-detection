@@ -32,6 +32,11 @@ public class NpmComponentDetector : FileComponentDetector
 
     protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
+        if (processRequest is null)
+        {
+            throw new ArgumentNullException(nameof(processRequest));
+        }
+
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
@@ -58,6 +63,11 @@ public class NpmComponentDetector : FileComponentDetector
 
     protected virtual Task ProcessAllPackageJTokensAsync(string contents, JTokenProcessingDelegate jtokenProcessor)
     {
+        if (jtokenProcessor is null)
+        {
+            throw new ArgumentNullException(nameof(jtokenProcessor));
+        }
+
         var o = JToken.Parse(contents);
         jtokenProcessor(o);
         return Task.CompletedTask;
@@ -65,6 +75,16 @@ public class NpmComponentDetector : FileComponentDetector
 
     protected virtual bool ProcessIndividualPackageJTokens(string filePath, ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageJToken)
     {
+        if (singleFileComponentRecorder is null)
+        {
+            throw new ArgumentNullException(nameof(singleFileComponentRecorder));
+        }
+
+        if (packageJToken is null)
+        {
+            throw new ArgumentNullException(nameof(packageJToken));
+        }
+
         var name = packageJToken["name"].ToString();
         var version = packageJToken["version"].ToString();
         var authorToken = packageJToken["author"];

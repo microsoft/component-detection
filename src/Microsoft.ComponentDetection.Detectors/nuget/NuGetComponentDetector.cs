@@ -36,6 +36,16 @@ public class NuGetComponentDetector : FileComponentDetector
 
     protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
+        if (processRequest is null)
+        {
+            throw new ArgumentNullException(nameof(processRequest));
+        }
+
+        if (detectorArgs is null)
+        {
+            throw new ArgumentNullException(nameof(detectorArgs));
+        }
+
         var stream = processRequest.ComponentStream;
         var ignoreNugetConfig = detectorArgs.TryGetValue("NuGet.IncludeRepositoryPaths", out var includeRepositoryPathsValue) && includeRepositoryPathsValue.Equals(bool.FalseString, StringComparison.OrdinalIgnoreCase);
 

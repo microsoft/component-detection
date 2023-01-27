@@ -19,6 +19,21 @@ public static class NpmComponentUtilities
 
     public static void TraverseAndRecordComponents(JProperty currentDependency, ISingleFileComponentRecorder singleFileComponentRecorder, TypedComponent component, TypedComponent explicitReferencedDependency, string parentComponentId = null)
     {
+        if (currentDependency is null)
+        {
+            throw new ArgumentNullException(nameof(currentDependency));
+        }
+
+        if (component is null)
+        {
+            throw new ArgumentNullException(nameof(component));
+        }
+
+        if (explicitReferencedDependency is null)
+        {
+            throw new ArgumentNullException(nameof(explicitReferencedDependency));
+        }
+
         var isDevDependency = currentDependency.Value["dev"] is JValue devJValue && (bool)devJValue;
         AddOrUpdateDetectedComponent(singleFileComponentRecorder, component, isDevDependency, parentComponentId, isExplicitReferencedDependency: string.Equals(component.Id, explicitReferencedDependency.Id));
     }
@@ -30,6 +45,16 @@ public static class NpmComponentUtilities
         string parentComponentId = null,
         bool isExplicitReferencedDependency = false)
     {
+        if (singleFileComponentRecorder is null)
+        {
+            throw new ArgumentNullException(nameof(singleFileComponentRecorder));
+        }
+
+        if (component is null)
+        {
+            throw new ArgumentNullException(nameof(component));
+        }
+
         var newComponent = new DetectedComponent(component);
         singleFileComponentRecorder.RegisterUsage(newComponent, isExplicitReferencedDependency, parentComponentId, isDevDependency);
         return singleFileComponentRecorder.GetComponent(component.Id);
@@ -37,6 +62,16 @@ public static class NpmComponentUtilities
 
     public static TypedComponent GetTypedComponent(JProperty currentDependency, string npmRegistryHost, ILogger logger)
     {
+        if (currentDependency is null)
+        {
+            throw new ArgumentNullException(nameof(currentDependency));
+        }
+
+        if (logger is null)
+        {
+            throw new ArgumentNullException(nameof(logger));
+        }
+
         var name = currentDependency.Name;
         var version = currentDependency.Value["version"].ToString();
         var hash = currentDependency.Value["integrity"]?.ToString(); // https://docs.npmjs.com/configuring-npm/package-lock-json.html#integrity
@@ -74,6 +109,11 @@ public static class NpmComponentUtilities
 
     public static bool TryParseNpmRegistryVersion(string packageName, Uri versionString, out SemanticVersion version)
     {
+        if (versionString is null)
+        {
+            throw new ArgumentNullException(nameof(versionString));
+        }
+
         try
         {
             var file = Path.GetFileNameWithoutExtension(versionString.LocalPath);
