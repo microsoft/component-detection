@@ -23,13 +23,13 @@ public static class Program
 
                 while (!Debugger.IsAttached)
                 {
-                    await Task.Delay(1000);
+                    await Task.Delay(1000).ConfigureAwait(false);
                 }
             }
 
             var orchestrator = new Orchestrator.Orchestrator();
 
-            var result = await orchestrator.LoadAsync(args);
+            var result = await orchestrator.LoadAsync(args).ConfigureAwait(false);
 
             var exitCode = (int)result.ResultCode;
             if (result.ResultCode == ProcessingResultCode.Error || result.ResultCode == ProcessingResultCode.InputError)
@@ -44,7 +44,7 @@ public static class Program
         }
         catch (ArgumentException ae)
         {
-            await Console.Error.WriteLineAsync(ae.ToString());
+            await Console.Error.WriteLineAsync(ae.ToString()).ConfigureAwait(false);
             Environment.Exit(-1);
         }
     }
