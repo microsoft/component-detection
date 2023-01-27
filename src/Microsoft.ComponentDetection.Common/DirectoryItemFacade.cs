@@ -8,7 +8,7 @@ public class DirectoryItemFacade
 {
     public string Name { get; set; }
 
-    public List<DirectoryItemFacade> Directories { get; set; }
+    public ICollection<DirectoryItemFacade> Directories { get; set; }
 
-    public List<IComponentStream> Files { get; set; }
+    public ICollection<IComponentStream> Files { get; set; }
 }
