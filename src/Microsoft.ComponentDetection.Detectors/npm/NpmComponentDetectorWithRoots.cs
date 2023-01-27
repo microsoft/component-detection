@@ -51,7 +51,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         return Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
             .Where(pr =>
             {
-                if (pr.ComponentStream.Pattern.Equals(LernaSearchPattern))
+                if (pr.ComponentStream.Pattern.Equals(LernaSearchPattern, StringComparison.Ordinal))
                 {
                     // Lock LernaFiles so we don't add while we are enumerating in processFiles
                     lock (this.lernaFilesLock)
@@ -218,7 +218,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                                 directoryItemFacades.Add(last);
                             }
 
-                            var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => item.Location.Contains(folder));
+                            var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => item.Location.Contains(folder, StringComparison.Ordinal));
 
                             // When node_modules is part of the path down to a given item, we skip the item. Otherwise, we yield the item.
                             if (string.IsNullOrEmpty(skippedFolder))
