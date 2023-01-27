@@ -202,6 +202,11 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
+        if (processRequest is null)
+        {
+            throw new ArgumentNullException(nameof(processRequest));
+        }
+
         try
         {
             var lockFile = new LockFileFormat().Read(processRequest.ComponentStream.Stream, processRequest.ComponentStream.Location);
