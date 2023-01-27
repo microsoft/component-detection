@@ -2,17 +2,22 @@
 
 public static class MavenTestUtilities
 {
-    public static string GetMalformedPomFile()
+    public static string MalformedPomFile
     {
-        var pomFile = @"<?THISISWRONG!?>
+        get
+        {
+            var pomFile = @"<?THISISWRONG!?>
             ";
 
-        return pomFile;
+            return pomFile;
+        }
     }
 
-    public static string GetPomFileNoDependencies()
+    public static string PomFileNoDependencies
     {
-        var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+        get
+        {
+            var pomFile = @"<?xml version=""1.0"" encoding=""UTF-8""?>
             <project xmlns=""http://maven.apache.org/POM/4.0.0"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"">
                 <modelVersion>4.0.0</modelVersion>
                 <properties>
@@ -24,7 +29,8 @@ public static class MavenTestUtilities
             </project>
             ";
 
-        return pomFile;
+            return pomFile;
+        }
     }
 
     public static string GetPomFileWithDependencyToResolveAsProperty(string groupId, string artifactId, string version)

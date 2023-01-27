@@ -460,7 +460,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 ##########################################
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1200.md
-# Using directive should appear within a namespace declaration
 dotnet_diagnostic.SA1200.severity = suggestion
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
