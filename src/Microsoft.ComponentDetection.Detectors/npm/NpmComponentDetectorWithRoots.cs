@@ -171,7 +171,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         {
             if (!componentStream.Stream.CanRead)
             {
-                componentStream.Stream.ReadByte();
+                _ = componentStream.Stream.ReadByte();
             }
         }
         catch (Exception ex)
@@ -185,7 +185,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         using var reader = new JsonTextReader(file);
 
         var o = JToken.ReadFrom(reader);
-        jtokenProcessor(o);
+        _ = jtokenProcessor(o);
         return Task.CompletedTask;
     }
 
@@ -336,7 +336,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
             NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder, typedComponent, explicitReferencedDependency: typedComponent);
             EnqueueDependencies(subQueue, currentDependency.Value["dependencies"], parentComponent: typedComponent);
-            TryEnqueueFirstLevelDependencies(subQueue, currentDependency.Value["requires"], dependencyLookup, parentComponent: typedComponent);
+            _ = TryEnqueueFirstLevelDependencies(subQueue, currentDependency.Value["requires"], dependencyLookup, parentComponent: typedComponent);
 
             while (subQueue.Count != 0)
             {
@@ -350,12 +350,12 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                     continue;
                 }
 
-                previouslyAddedComponents.Add(typedSubComponent.Id);
+                _ = previouslyAddedComponents.Add(typedSubComponent.Id);
 
                 NpmComponentUtilities.TraverseAndRecordComponents(currentSubDependency, singleFileComponentRecorder, typedSubComponent, explicitReferencedDependency: typedComponent, parentComponent.Id);
 
                 EnqueueDependencies(subQueue, currentSubDependency.Value["dependencies"], parentComponent: typedSubComponent);
-                TryEnqueueFirstLevelDependencies(subQueue, currentSubDependency.Value["requires"], dependencyLookup, parentComponent: typedSubComponent);
+                _ = TryEnqueueFirstLevelDependencies(subQueue, currentSubDependency.Value["requires"], dependencyLookup, parentComponent: typedSubComponent);
             }
         }
     }
