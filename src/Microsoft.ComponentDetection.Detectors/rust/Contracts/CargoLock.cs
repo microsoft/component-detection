@@ -8,7 +8,7 @@ using System.Runtime.Serialization;
 public class CargoLock
 {
     [DataMember(Name = "package")]
-    public List<CargoPackage> Package { get; set; }
+    public ICollection<CargoPackage> Package { get; set; }
 
     [DataMember(Name = "metadata")]
     public Dictionary<string, object> Metadata { get; set; }

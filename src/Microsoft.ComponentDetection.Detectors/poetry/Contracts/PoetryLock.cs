@@ -7,7 +7,7 @@ using System.Runtime.Serialization;
 public class PoetryLock
 {
     [DataMember(Name = "Package")]
-    public List<PoetryPackage> Package { get; set; }
+    public ICollection<PoetryPackage> Package { get; set; }
 
     [DataMember(Name = "metadata")]
     public Dictionary<string, object> Metadata { get; set; }
