@@ -27,10 +27,7 @@ public class TypedComponentConverter : JsonConverter
         { ComponentType.Spdx, typeof(SpdxComponent) },
     };
 
-    public override bool CanWrite
-    {
-        get { return false; }
-    }
+    public override bool CanWrite => false;
 
     public override bool CanConvert(Type objectType)
     {
