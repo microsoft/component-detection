@@ -25,11 +25,11 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
 
         var mergedComponents = this.FlattenAndMergeComponents(unmergedComponents);
 
-        this.LogComponentScopeTelemetry(mergedComponents);
+        LogComponentScopeTelemetry(mergedComponents);
 
         return new DefaultGraphScanResult
         {
-            ComponentsFound = mergedComponents.Select(x => this.ConvertToContract(x)).ToList(),
+            ComponentsFound = mergedComponents.Select(x => ConvertToContract(x)).ToList(),
             ContainerDetailsMap = detectorProcessingResult.ContainersDetailsMap,
             DependencyGraphs = GraphTranslationUtility.AccumulateAndConvertToContract(recorderDetectorPairs
                 .Select(tuple => tuple.Recorder)
@@ -39,7 +39,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
         };
     }
 
-    private void LogComponentScopeTelemetry(List<DetectedComponent> components)
+    private static void LogComponentScopeTelemetry(List<DetectedComponent> components)
     {
         using var record = new DetectedComponentScopeRecord();
         Parallel.ForEach(components, x =>
@@ -76,8 +76,8 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
                         var dependencyGraph = graphKvp.Value;
 
                         // Calculate roots of the component
-                        this.AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
-                        component.DevelopmentDependency = this.MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
+                        AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        component.DevelopmentDependency = MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
                         component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
                         component.DetectedBy = detector;
 
@@ -85,7 +85,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
                         var locations = dependencyGraph.GetAdditionalRelatedFiles();
                         locations.Add(location);
 
-                        var relativePaths = this.MakeFilePathsRelative(this.Logger, rootDirectory, locations);
+                        var relativePaths = MakeFilePathsRelative(this.Logger, rootDirectory, locations);
 
                         foreach (var additionalRelatedFile in relativePaths ?? Enumerable.Empty<string>())
                         {
@@ -108,7 +108,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
         return flattenedAndMergedComponents;
     }
 
-    private bool? MergeDevDependency(bool? left, bool? right)
+    private static bool? MergeDevDependency(bool? left, bool? right)
     {
         if (left == null)
         {
@@ -145,7 +145,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
                 firstComponent.DependencyRoots.Add(root);
             }
 
-            firstComponent.DevelopmentDependency = this.MergeDevDependency(firstComponent.DevelopmentDependency, nextComponent.DevelopmentDependency);
+            firstComponent.DevelopmentDependency = MergeDevDependency(firstComponent.DevelopmentDependency, nextComponent.DevelopmentDependency);
             firstComponent.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(firstComponent.DependencyScope, nextComponent.DependencyScope);
 
             if (nextComponent.ContainerDetailIds.Count > 0)
@@ -160,7 +160,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
         return firstComponent;
     }
 
-    private void AddRootsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
+    private static void AddRootsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
     {
         detectedComponent.DependencyRoots ??= new HashSet<TypedComponent>(new ComponentComparer());
 
@@ -177,7 +177,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
         }
     }
 
-    private HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, HashSet<string> filePaths)
+    private static HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, HashSet<string> filePaths)
     {
         if (rootDirectory == null)
         {
@@ -214,7 +214,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
         return relativePathSet;
     }
 
-    private ScannedComponent ConvertToContract(DetectedComponent component) => new()
+    private static ScannedComponent ConvertToContract(DetectedComponent component) => new()
     {
         DetectorId = component.DetectedBy.Id,
         IsDevelopmentDependency = component.DevelopmentDependency,

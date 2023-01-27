@@ -39,26 +39,26 @@ internal class InjectionParameters
     }
 
     [Export(typeof(ILogger))]
-    public ILogger Logger => loggerStatic;
+    public static ILogger Logger => loggerStatic;
 
     [Export(typeof(IComponentStreamEnumerableFactory))]
-    public IComponentStreamEnumerableFactory Factory => factoryStatic;
+    public static IComponentStreamEnumerableFactory Factory => factoryStatic;
 
     [Export(typeof(IPathUtilityService))]
-    public IPathUtilityService PathUtilityService => pathUtilityServiceStatic;
+    public static IPathUtilityService PathUtilityService => pathUtilityServiceStatic;
 
     [Export(typeof(ICommandLineInvocationService))]
-    public ICommandLineInvocationService CommandLineInvocationService => commandLineInvocationServiceStatic;
+    public static ICommandLineInvocationService CommandLineInvocationService => commandLineInvocationServiceStatic;
 
     [Export(typeof(IFileUtilityService))]
-    public IFileUtilityService FileUtilityService => fileUtilityServiceStatic;
+    public static IFileUtilityService FileUtilityService => fileUtilityServiceStatic;
 
     [Export(typeof(IObservableDirectoryWalkerFactory))]
-    public IObservableDirectoryWalkerFactory ObservableDirectoryWalkerFactory => observableDirectoryWalkerFactoryServiceStatic;
+    public static IObservableDirectoryWalkerFactory ObservableDirectoryWalkerFactory => observableDirectoryWalkerFactoryServiceStatic;
 
     [Export(typeof(IDockerService))]
-    public IDockerService DockerService => dockerServiceStatic;
+    public static IDockerService DockerService => dockerServiceStatic;
 
     [Export(typeof(IEnvironmentVariableService))]
-    public IEnvironmentVariableService EnvironmentVariableService => environmentVariableServiceStatic;
+    public static IEnvironmentVariableService EnvironmentVariableService => environmentVariableServiceStatic;
 }

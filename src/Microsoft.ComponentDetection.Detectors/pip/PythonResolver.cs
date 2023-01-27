@@ -102,7 +102,7 @@ public class PythonResolver : IPythonResolver
                         var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
                             ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
 
-                        this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
+                        AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
 
                         state.ProcessingQueue.Enqueue((root, dependencyNode));
                     }
@@ -189,7 +189,7 @@ public class PythonResolver : IPythonResolver
         return await this.PypiClient.FetchPackageDependenciesAsync(spec.Name, candidateVersion, packageToFetch);
     }
 
-    private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
+    private static void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
     {
         if (state.NodeReferences.TryGetValue(name, out var value))
         {

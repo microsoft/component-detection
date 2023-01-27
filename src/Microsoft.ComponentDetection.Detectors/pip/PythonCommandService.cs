@@ -32,7 +32,7 @@ public class PythonCommandService : IPythonCommandService
         }
         else if (filePath.EndsWith(".txt"))
         {
-            return this.ParseRequirementsTextFile(filePath);
+            return ParseRequirementsTextFile(filePath);
         }
         else
         {
@@ -71,7 +71,7 @@ public class PythonCommandService : IPythonCommandService
         return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
     }
 
-    private IList<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
+    private static IList<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
     {
         var items = new List<(string, GitComponent)>();
         foreach (var line in File.ReadAllLines(path).Select(x => x.Trim().TrimEnd('\\')).Where(x => !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))

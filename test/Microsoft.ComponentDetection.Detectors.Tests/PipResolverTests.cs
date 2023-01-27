@@ -228,12 +228,12 @@ public class PipResolverTests
         {
             toReturn.Add(version, new List<PythonProjectRelease>
             {
-                this.CreatePythonProjectRelease(),
+                CreatePythonProjectRelease(),
             });
         }
 
         return toReturn;
     }
 
-    private PythonProjectRelease CreatePythonProjectRelease() => new() { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") };
+    private static PythonProjectRelease CreatePythonProjectRelease() => new() { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") };
 }

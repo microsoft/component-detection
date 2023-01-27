@@ -121,7 +121,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
                 Directory.Delete(workingDirectory, recursive: true);
             }
 
-            this.InitTemporaryAntProject(workingDirectory, ivyXmlFile, ivySettingsXmlFile);
+            InitTemporaryAntProject(workingDirectory, ivyXmlFile, ivySettingsXmlFile);
             if (await this.RunAntToDetectDependenciesAsync(workingDirectory))
             {
                 var instructionsFile = Path.Combine(workingDirectory, "target", "RegisterUsage.json");
@@ -139,7 +139,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         }
     }
 
-    private void InitTemporaryAntProject(string workingDirectory, string ivyXmlFile, string ivySettingsXmlFile)
+    private static void InitTemporaryAntProject(string workingDirectory, string ivyXmlFile, string ivySettingsXmlFile)
     {
         Directory.CreateDirectory(workingDirectory);
         File.Copy(ivyXmlFile, Path.Combine(workingDirectory, "ivy.xml"));

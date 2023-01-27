@@ -34,7 +34,7 @@ public class ArgumentHelper : IArgumentHelper
 
     public ParserResult<object> ParseArguments(string[] args) => Parser.Default.ParseArguments(args, this.ArgumentSets.Select(x => x.GetType()).ToArray());
 
-    public ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
+    public static ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
     {
         var p = new Parser(x =>
         {

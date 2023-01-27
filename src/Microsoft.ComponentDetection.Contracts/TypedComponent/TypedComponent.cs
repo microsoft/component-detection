@@ -30,13 +30,13 @@ public abstract class TypedComponent
     internal string DebuggerDisplay => $"{this.Id}";
 
     protected string ValidateRequiredInput(string input, string fieldName, string componentType) => string.IsNullOrWhiteSpace(input)
-            ? throw new ArgumentNullException(fieldName, this.NullPropertyExceptionMessage(fieldName, componentType))
+            ? throw new ArgumentNullException(fieldName, NullPropertyExceptionMessage(fieldName, componentType))
             : input;
 
     protected T ValidateRequiredInput<T>(T input, string fieldName, string componentType) =>
 
         // Null coalescing for generic types is not available until C# 8
-        EqualityComparer<T>.Default.Equals(input, default(T)) ? throw new ArgumentNullException(fieldName, this.NullPropertyExceptionMessage(fieldName, componentType)) : input;
+        EqualityComparer<T>.Default.Equals(input, default(T)) ? throw new ArgumentNullException(fieldName, NullPropertyExceptionMessage(fieldName, componentType)) : input;
 
-    protected string NullPropertyExceptionMessage(string propertyName, string componentType) => $"Property {propertyName} of component type {componentType} is required";
+    protected static string NullPropertyExceptionMessage(string propertyName, string componentType) => $"Property {propertyName} of component type {componentType} is required";
 }

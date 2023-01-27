@@ -211,7 +211,7 @@ public class RubyComponentDetector : FileComponentDetector
                         var version = splits[1][1..^1];
                         TypedComponent newComponent;
 
-                        if (this.IsVersionRelative(version))
+                        if (IsVersionRelative(version))
                         {
                             this.Logger.LogWarning($"Found component with invalid version, name = {name} and version = {version}");
                             wasParentDependencyExcluded = true;
@@ -245,7 +245,7 @@ public class RubyComponentDetector : FileComponentDetector
         }
     }
 
-    private bool IsVersionRelative(string version) => version.StartsWith("~") || version.StartsWith("=");
+    private static bool IsVersionRelative(string version) => version.StartsWith("~") || version.StartsWith("=");
 
     private class Dependency
     {

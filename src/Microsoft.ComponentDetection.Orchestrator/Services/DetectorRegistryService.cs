@@ -92,7 +92,7 @@ public class DetectorRegistryService : ServiceBase, IDetectorRegistryService
 
             this.Logger.LogInfo($"Attempting to load component detectors from {searchPath}");
 
-            var assemblies = this.SafeLoadAssemblies(searchPath.GetFiles("*.dll", SearchOption.AllDirectories).Select(x => x.FullName));
+            var assemblies = SafeLoadAssemblies(searchPath.GetFiles("*.dll", SearchOption.AllDirectories).Select(x => x.FullName));
 
             var loadedDetectors = this.LoadComponentDetectorsFromAssemblies(assemblies, extraDetectorAssemblies);
 
@@ -132,7 +132,7 @@ public class DetectorRegistryService : ServiceBase, IDetectorRegistryService
     }
 
     // Plugin producers may include files we have already loaded
-    private IList<Assembly> SafeLoadAssemblies(IEnumerable<string> files)
+    private static IList<Assembly> SafeLoadAssemblies(IEnumerable<string> files)
     {
         var assemblyList = new List<Assembly>();
 

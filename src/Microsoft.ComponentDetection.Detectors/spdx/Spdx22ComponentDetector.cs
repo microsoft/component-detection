@@ -39,7 +39,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
         try
         {
-            var hash = this.GetSHA1HashFromStream(file.Stream);
+            var hash = GetSHA1HashFromStream(file.Stream);
 
             // Reset buffer to starting position after hash generation.
             file.Stream.Seek(0, SeekOrigin.Begin);
@@ -107,7 +107,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
         return component;
     }
 
-    private string GetSHA1HashFromStream(Stream stream) =>
+    private static string GetSHA1HashFromStream(Stream stream) =>
 #pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
         BitConverter.ToString(SHA1.Create().ComputeHash(stream)).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350

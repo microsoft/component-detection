@@ -69,12 +69,12 @@ public class PnpmComponentDetector : FileComponentDetector
                 foreach (var dependency in packageKeyValue.Value.dependencies)
                 {
                     // Ignore local packages.
-                    if (this.IsLocalDependency(dependency))
+                    if (IsLocalDependency(dependency))
                     {
                         continue;
                     }
 
-                    var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: this.CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
+                    var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
 
                     // Older code used the root's dev dependency value. We're leaving this null until we do a second pass to look at each components' top level referrers.
                     singleFileComponentRecorder.RegisterUsage(childDetectedComponent, parentComponentId: parentDetectedComponent.Component.Id, isDevelopmentDependency: null);
@@ -94,11 +94,11 @@ public class PnpmComponentDetector : FileComponentDetector
         }
     }
 
-    private bool IsLocalDependency(KeyValuePair<string, string> dependency) =>
+    private static bool IsLocalDependency(KeyValuePair<string, string> dependency) =>
 
         // Local dependencies are dependencies that live in the file system
         // this requires an extra parsing that is not supported yet
         dependency.Key.StartsWith("file:") || dependency.Value.StartsWith("file:") || dependency.Value.StartsWith("link:");
 
-    private string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion) => dependencyVersion.Contains('/') ? dependencyVersion : $"/{dependencyName}/{dependencyVersion}";
+    private static string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion) => dependencyVersion.Contains('/') ? dependencyVersion : $"/{dependencyName}/{dependencyVersion}";
 }

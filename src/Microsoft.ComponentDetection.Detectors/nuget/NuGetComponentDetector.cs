@@ -105,7 +105,7 @@ public class NuGetComponentDetector : FileComponentDetector
             }
             else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
-                this.ParsePaketLock(processRequest);
+                ParsePaketLock(processRequest);
             }
             else
             {
@@ -145,7 +145,7 @@ public class NuGetComponentDetector : FileComponentDetector
         }
     }
 
-    private void ParsePaketLock(ProcessRequest processRequest)
+    private static void ParsePaketLock(ProcessRequest processRequest)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var stream = processRequest.ComponentStream;
@@ -210,7 +210,7 @@ public class NuGetComponentDetector : FileComponentDetector
             {
                 path = new DirectoryInfo(Path.GetFullPath(potentialPath));
             }
-            else if (this.IsValidPath(componentStream.Location))
+            else if (IsValidPath(componentStream.Location))
             {
                 path = new DirectoryInfo(Path.GetFullPath(Path.Combine(Path.GetDirectoryName(componentStream.Location), potentialPath)));
             }
@@ -234,7 +234,7 @@ public class NuGetComponentDetector : FileComponentDetector
     /// </summary>
     /// <param name="potentialPath"> The path to validate. </param>
     /// <returns>True if path is valid, otherwise it retuns false. </returns>
-    private bool IsValidPath(string potentialPath)
+    private static bool IsValidPath(string potentialPath)
     {
         FileInfo fileInfo = null;
 

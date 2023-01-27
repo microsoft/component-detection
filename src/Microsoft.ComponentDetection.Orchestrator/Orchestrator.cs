@@ -42,7 +42,7 @@ public class Orchestrator
     {
         var argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
         BaseArguments baseArguments = null;
-        var parserResult = argumentHelper.ParseArguments<BaseArguments>(args, true);
+        var parserResult = ComponentDetection.Orchestrator.ArgumentHelper.ParseArguments<BaseArguments>(args, true);
         parserResult.WithParsed(x => baseArguments = x);
         if (parserResult.Tag == ParserResultType.NotParsed)
         {
@@ -71,7 +71,7 @@ public class Orchestrator
             container.SatisfyImports(TelemetryRelay.Instance);
         }
 
-        TelemetryRelay.Instance.SetTelemetryMode(baseArguments.DebugTelemetry ? TelemetryMode.Debug : TelemetryMode.Production);
+        TelemetryRelay.SetTelemetryMode(baseArguments.DebugTelemetry ? TelemetryMode.Debug : TelemetryMode.Production);
 
         var shouldFailureBeSuppressed = false;
 
@@ -140,18 +140,18 @@ public class Orchestrator
 
             // Don't set production telemetry if we are running the build task in DevFabric. 0.36.0 is set in the task.json for the build task in development, but is calculated during deployment for production.
             TelemetryConstants.CorrelationId = argumentSet.CorrelationId;
-            telemetryRecord.Command = this.GetVerb(argumentSet);
+            telemetryRecord.Command = GetVerb(argumentSet);
 
-            scanResult = await this.SafelyExecuteAsync(telemetryRecord, async () =>
+            scanResult = await SafelyExecuteAsync(telemetryRecord, async () =>
             {
-                await this.GenerateEnvironmentSpecificTelemetryAsync(telemetryRecord);
+                await GenerateEnvironmentSpecificTelemetryAsync(telemetryRecord);
 
                 telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
                 FileWritingService.Init(argumentSet.Output);
                 Logger.Init(argumentSet.Verbosity, writeLinePrefix: true);
                 Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
 
-                return await this.DispatchAsync(argumentSet, cancellationToken);
+                return await DispatchAsync(argumentSet, cancellationToken);
             });
         });
         parsedArguments.WithNotParsed(errors =>
@@ -174,7 +174,7 @@ public class Orchestrator
         return scanResult;
     }
 
-    private async Task GenerateEnvironmentSpecificTelemetryAsync(BcdeExecutionTelemetryRecord telemetryRecord)
+    private static async Task GenerateEnvironmentSpecificTelemetryAsync(BcdeExecutionTelemetryRecord telemetryRecord)
     {
         telemetryRecord.AgentOSDescription = RuntimeInformation.OSDescription;
 
@@ -213,13 +213,13 @@ public class Orchestrator
         }
     }
 
-    private string GetVerb(IScanArguments argumentSet)
+    private static string GetVerb(IScanArguments argumentSet)
     {
         var verbAttribute = argumentSet.GetType().GetCustomAttribute<VerbAttribute>();
         return verbAttribute.Name;
     }
 
-    private async Task<ScanResult> DispatchAsync(IScanArguments arguments, CancellationToken cancellation)
+    private static async Task<ScanResult> DispatchAsync(IScanArguments arguments, CancellationToken cancellation)
     {
         var scanResult = new ScanResult()
         {
@@ -255,7 +255,7 @@ public class Orchestrator
         return scanResult;
     }
 
-    private async Task<ScanResult> SafelyExecuteAsync(BcdeExecutionTelemetryRecord record, Func<Task<ScanResult>> wrappedInvocation)
+    private static async Task<ScanResult> SafelyExecuteAsync(BcdeExecutionTelemetryRecord record, Func<Task<ScanResult>> wrappedInvocation)
     {
         try
         {

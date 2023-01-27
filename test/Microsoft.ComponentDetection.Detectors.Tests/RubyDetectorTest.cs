@@ -85,13 +85,13 @@ BUNDLED WITH
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(7, detectedComponents.Count());
 
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "actioncable", "5.2.1");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "faraday", "1.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "nio4r", "5.2.1");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "websocket-driver", "0.6.1");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "bundler", "1.17.2");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "bundler", "1.17.3");
+        AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, "actioncable", "5.2.1");
+        AssertRubyComponentNameAndVersion(detectedComponents, "faraday", "1.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, "nio4r", "5.2.1");
+        AssertRubyComponentNameAndVersion(detectedComponents, "websocket-driver", "0.6.1");
+        AssertRubyComponentNameAndVersion(detectedComponents, "bundler", "1.17.2");
+        AssertRubyComponentNameAndVersion(detectedComponents, "bundler", "1.17.3");
     }
 
     [TestMethod]
@@ -115,8 +115,8 @@ BUNDLED WITH
         Assert.AreEqual(2, detectedComponents.Count());
 
         // we do not record invalid/unknown versions
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "CFPropertyList", "3.0.4");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "bundler", "2.2.28");
+        AssertRubyComponentNameAndVersion(detectedComponents, "CFPropertyList", "3.0.4");
+        AssertRubyComponentNameAndVersion(detectedComponents, "bundler", "2.2.28");
     }
 
     [TestMethod]
@@ -147,12 +147,12 @@ BUNDLED WITH
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(6, detectedComponents.Count());
 
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "actioncable", "5.2.1");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "faraday", "1.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "nio4r", "5.2.1");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "websocket-driver", "0.6.1");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "bundler", "1.17.3");
+        AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, "actioncable", "5.2.1");
+        AssertRubyComponentNameAndVersion(detectedComponents, "faraday", "1.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, "nio4r", "5.2.1");
+        AssertRubyComponentNameAndVersion(detectedComponents, "websocket-driver", "0.6.1");
+        AssertRubyComponentNameAndVersion(detectedComponents, "bundler", "1.17.3");
     }
 
     [TestMethod]
@@ -181,11 +181,11 @@ BUNDLED WITH
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(5, detectedComponents.Count());
 
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "actioncable", "5.2.1");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "faraday", "1.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "nio4r", "5.2.1");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "websocket-driver", "0.6.1");
+        AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, "actioncable", "5.2.1");
+        AssertRubyComponentNameAndVersion(detectedComponents, "faraday", "1.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, "nio4r", "5.2.1");
+        AssertRubyComponentNameAndVersion(detectedComponents, "websocket-driver", "0.6.1");
     }
 
     [TestMethod]
@@ -211,9 +211,9 @@ BUNDLED WITH
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(3, detectedComponents.Count());
 
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "faraday", "1.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, "mini_portile2", "2.3.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, "faraday", "1.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, "mini_portile2", "2.3.0");
     }
 
     [TestMethod]
@@ -352,9 +352,9 @@ GEM
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(3, detectedComponents.Count());
-        this.AssertGitComponentHashAndUrl(detectedComponents, commitHash: "commit-hash-1", repositoryUrl: "https://github.com/test/abc.git");
-        this.AssertGitComponentHashAndUrl(detectedComponents, commitHash: "commit-hash-2", repositoryUrl: "https://github.com/mikel/mail.git");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, name: "mini_mime", version: "2.0.0");
+        AssertGitComponentHashAndUrl(detectedComponents, commitHash: "commit-hash-1", repositoryUrl: "https://github.com/test/abc.git");
+        AssertGitComponentHashAndUrl(detectedComponents, commitHash: "commit-hash-2", repositoryUrl: "https://github.com/mikel/mail.git");
+        AssertRubyComponentNameAndVersion(detectedComponents, name: "mini_mime", version: "2.0.0");
     }
 
     [TestMethod]
@@ -379,7 +379,7 @@ GIT
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
-        this.AssertGitComponentAsRootAndGitComponentAsSubDependency(componentRecorder, rootHash: "commit-hash-1", subDependencyHash: "commit-hash-2");
+        AssertGitComponentAsRootAndGitComponentAsSubDependency(componentRecorder, rootHash: "commit-hash-1", subDependencyHash: "commit-hash-2");
     }
 
     [TestMethod]
@@ -407,24 +407,24 @@ PATH
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(3, detectedComponents.Count());
 
-        this.AssertRubyComponentNameAndVersion(detectedComponents, name: "mini_mime", version: "2.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, name: "test", version: "1.0.0");
-        this.AssertRubyComponentNameAndVersion(detectedComponents, name: "test2", version: "1.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, name: "mini_mime", version: "2.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, name: "test", version: "1.0.0");
+        AssertRubyComponentNameAndVersion(detectedComponents, name: "test2", version: "1.0.0");
     }
 
-    private void AssertRubyComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version) => Assert.IsNotNull(
+    private static void AssertRubyComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version) => Assert.IsNotNull(
             detectedComponents.SingleOrDefault(c =>
                 c.Component is RubyGemsComponent component &&
                 component.Name.Equals(name) &&
                 component.Version.Equals(version)),
             $"Component with name {name} and version {version} was not found");
 
-    private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl) => Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
+    private static void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl) => Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
                                                                                                                                                       c.Component is GitComponent component &&
                                                                                                                                                       component.CommitHash.Equals(commitHash) &&
                                                                                                                                                       component.RepositoryUrl.Equals(repositoryUrl)));
 
-    private void AssertGitComponentAsRootAndGitComponentAsSubDependency(IComponentRecorder recorder, string rootHash, string subDependencyHash)
+    private static void AssertGitComponentAsRootAndGitComponentAsSubDependency(IComponentRecorder recorder, string rootHash, string subDependencyHash)
     {
         var childDep = recorder.GetDetectedComponents().First(x => (x.Component as GitComponent)?.CommitHash == subDependencyHash);
         Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(

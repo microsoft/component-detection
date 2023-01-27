@@ -35,10 +35,10 @@ public class RustDependencySpecifierTest
             (true, "Matches_-", "some-cargo-package", "1.2.0 - 1.2.5"),
             (false, "DoesntMatch_-", "some-cargo-package", "1.1.0 - 1.1.5"),
         };
-        this.DoAllTheTests(testCases);
+        DoAllTheTests(testCases);
     }
 
-    public void DoAllTheTests(IEnumerable<(bool ShouldMatch, string CaseName, string SpecifierName, string SpecifierRange)> testCases)
+    public static void DoAllTheTests(IEnumerable<(bool ShouldMatch, string CaseName, string SpecifierName, string SpecifierRange)> testCases)
     {
         foreach (var (shouldMatch, caseName, specifierName, specifierRange) in testCases)
         {

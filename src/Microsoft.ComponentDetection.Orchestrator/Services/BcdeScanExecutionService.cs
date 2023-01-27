@@ -36,7 +36,7 @@ public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
             throw new NoDetectorsFoundException();
         }
 
-        var detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
+        var detectorRestrictions = GetDetectorRestrictions(detectionArguments);
         var detectors = this.DetectorRestrictionService.ApplyRestrictions(detectorRestrictions, initialDetectors).ToImmutableList();
 
         this.Logger.LogVerbose($"Finished applying restrictions to detectors.");
@@ -61,7 +61,7 @@ public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
         SupportedComponentTypes = detector.SupportedComponentTypes,
     };
 
-    private DetectorRestrictions GetDetectorRestrictions(IDetectionArguments detectionArguments)
+    private static DetectorRestrictions GetDetectorRestrictions(IDetectionArguments detectionArguments)
     {
         var detectorRestrictions = new DetectorRestrictions
         {

@@ -50,20 +50,20 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
             var line = lines[0].Trim();
             lines.RemoveAt(0);
 
-            if (!this.StartsWithLetter(line))
+            if (!StartsWithLetter(line))
             {
                 continue;
             }
 
             if (line.Split(":").Length == 3)
             {
-                var detectedMavenComponent = new DetectedComponent(this.CreateMavenComponentFromFileLine(line));
+                var detectedMavenComponent = new DetectedComponent(CreateMavenComponentFromFileLine(line));
                 singleFileComponentRecorder.RegisterUsage(detectedMavenComponent);
             }
         }
     }
 
-    private MavenComponent CreateMavenComponentFromFileLine(string line)
+    private static MavenComponent CreateMavenComponentFromFileLine(string line)
     {
         var equalsSeparatorIndex = line.IndexOf('=');
         var isSingleLockfilePerProjectFormat = equalsSeparatorIndex != -1;
@@ -76,5 +76,5 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
         return new MavenComponent(groupId, artifactId, version);
     }
 
-    private bool StartsWithLetter(string input) => StartsWithLetterRegex.IsMatch(input);
+    private static bool StartsWithLetter(string input) => StartsWithLetterRegex.IsMatch(input);
 }

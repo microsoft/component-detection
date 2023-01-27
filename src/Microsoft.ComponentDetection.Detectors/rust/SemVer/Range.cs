@@ -96,7 +96,7 @@ public class Range : IEquatable<Range>
         return range.MaxSatisfying(versionStrings);
     }
 
-    private IEnumerable<SemVersion> ValidVersions(IEnumerable<string> versionStrings, bool loose)
+    private static IEnumerable<SemVersion> ValidVersions(IEnumerable<string> versionStrings, bool loose)
     {
         foreach (var v in versionStrings)
         {
@@ -175,7 +175,7 @@ public class Range : IEquatable<Range>
     /// <returns>The maximum satisfying version string, or null if no versions satisfied this range.</returns>
     public string MaxSatisfying(IEnumerable<string> versionStrings, bool loose = false)
     {
-        var versions = this.ValidVersions(versionStrings, loose);
+        var versions = ValidVersions(versionStrings, loose);
         var maxVersion = this.MaxSatisfying(versions);
         return maxVersion?.ToString();
     }

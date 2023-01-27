@@ -85,7 +85,7 @@ public class YarnLockComponentDetector : FileComponentDetector
         foreach (var dependency in yarnRoots)
         {
             var root = new DetectedComponent(new NpmComponent(dependency.Name, dependency.Version));
-            this.AddDetectedComponentToGraph(root, null, singleFileComponentRecorder, isRootComponent: true);
+            AddDetectedComponentToGraph(root, null, singleFileComponentRecorder, isRootComponent: true);
         }
 
         // It's important that all of the root dependencies get registered *before* we start processing any non-root
@@ -102,7 +102,7 @@ public class YarnLockComponentDetector : FileComponentDetector
             var component = new DetectedComponent(new NpmComponent(entry.Name, entry.Version));
             if (singleFileComponentRecorder.GetComponent(component.Component.Id) == null)
             {
-                this.AddDetectedComponentToGraph(component, parentComponent: null, singleFileComponentRecorder);
+                AddDetectedComponentToGraph(component, parentComponent: null, singleFileComponentRecorder);
             }
         }
     }
@@ -123,18 +123,18 @@ public class YarnLockComponentDetector : FileComponentDetector
         while (queue.Count > 0)
         {
             var (currentEntry, parentEntry) = queue.Dequeue();
-            var currentComponent = singleFileComponentRecorder.GetComponent(this.YarnEntryToComponentId(currentEntry));
-            var parentComponent = parentEntry != null ? singleFileComponentRecorder.GetComponent(this.YarnEntryToComponentId(parentEntry)) : null;
+            var currentComponent = singleFileComponentRecorder.GetComponent(YarnEntryToComponentId(currentEntry));
+            var parentComponent = parentEntry != null ? singleFileComponentRecorder.GetComponent(YarnEntryToComponentId(parentEntry)) : null;
 
             if (currentComponent != null)
             {
-                this.AddDetectedComponentToGraph(currentComponent, parentComponent, singleFileComponentRecorder, isDevDependency: root.DevDependency);
+                AddDetectedComponentToGraph(currentComponent, parentComponent, singleFileComponentRecorder, isDevDependency: root.DevDependency);
             }
             else
             {
                 // If this is the first time we've seen a component...
                 var detectedComponent = new DetectedComponent(new NpmComponent(currentEntry.Name, currentEntry.Version));
-                this.AddDetectedComponentToGraph(detectedComponent, parentComponent, singleFileComponentRecorder, isDevDependency: root.DevDependency);
+                AddDetectedComponentToGraph(detectedComponent, parentComponent, singleFileComponentRecorder, isDevDependency: root.DevDependency);
             }
 
             // Ensure that we continue to parse the tree for dependencies
@@ -248,13 +248,13 @@ public class YarnLockComponentDetector : FileComponentDetector
 
                 foreach (var dependency in combinedDependencies)
                 {
-                    this.ProcessWorkspaceDependency(dependencies, dependency);
+                    ProcessWorkspaceDependency(dependencies, dependency);
                 }
             }
         }
     }
 
-    private void ProcessWorkspaceDependency(IDictionary<string, IDictionary<string, bool>> dependencies, KeyValuePair<string, IDictionary<string, bool>> newDependency)
+    private static void ProcessWorkspaceDependency(IDictionary<string, IDictionary<string, bool>> dependencies, KeyValuePair<string, IDictionary<string, bool>> newDependency)
     {
         if (!dependencies.TryGetValue(newDependency.Key, out var existingDependency))
         {
@@ -275,7 +275,7 @@ public class YarnLockComponentDetector : FileComponentDetector
         }
     }
 
-    private void AddDetectedComponentToGraph(DetectedComponent componentToAdd, DetectedComponent parentComponent, ISingleFileComponentRecorder singleFileComponentRecorder, bool isRootComponent = false, bool? isDevDependency = null)
+    private static void AddDetectedComponentToGraph(DetectedComponent componentToAdd, DetectedComponent parentComponent, ISingleFileComponentRecorder singleFileComponentRecorder, bool isRootComponent = false, bool? isDevDependency = null)
     {
         if (parentComponent == null)
         {
@@ -287,5 +287,5 @@ public class YarnLockComponentDetector : FileComponentDetector
         }
     }
 
-    private string YarnEntryToComponentId(YarnEntry entry) => new DetectedComponent(new NpmComponent(entry.Name, entry.Version)).Component.Id;
+    private static string YarnEntryToComponentId(YarnEntry entry) => new DetectedComponent(new NpmComponent(entry.Name, entry.Version)).Component.Id;
 }

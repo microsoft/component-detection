@@ -128,7 +128,7 @@ public class GoComponentDetector : FileComponentDetector
             return false;
         }
 
-        this.RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
+        RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
 
         var generateGraphProcess = await this.CommandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, new List<string> { "mod", "graph" }.ToArray());
         if (generateGraphProcess.ExitCode == 0)
@@ -155,7 +155,7 @@ public class GoComponentDetector : FileComponentDetector
         // Stopping at the first ) restrict the detection to only the require section.
         while ((line = reader.ReadLine()) != null && !line.EndsWith(")"))
         {
-            if (this.TryToCreateGoComponentFromModLine(line, out var goComponent))
+            if (TryToCreateGoComponentFromModLine(line, out var goComponent))
             {
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
             }
@@ -166,7 +166,7 @@ public class GoComponentDetector : FileComponentDetector
         }
     }
 
-    private bool TryToCreateGoComponentFromModLine(string line, out GoComponent goComponent)
+    private static bool TryToCreateGoComponentFromModLine(string line, out GoComponent goComponent)
     {
         var lineComponents = Regex.Split(line.Trim(), @"\s+");
 
@@ -194,7 +194,7 @@ public class GoComponentDetector : FileComponentDetector
         string line;
         while ((line = reader.ReadLine()) != null)
         {
-            if (this.TryToCreateGoComponentFromSumLine(line, out var goComponent))
+            if (TryToCreateGoComponentFromSumLine(line, out var goComponent))
             {
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
             }
@@ -205,7 +205,7 @@ public class GoComponentDetector : FileComponentDetector
         }
     }
 
-    private bool TryToCreateGoComponentFromSumLine(string line, out GoComponent goComponent)
+    private static bool TryToCreateGoComponentFromSumLine(string line, out GoComponent goComponent)
     {
         var m = GoSumRegex.Match(line);
         if (m.Success)
@@ -242,8 +242,8 @@ public class GoComponentDetector : FileComponentDetector
                 continue;
             }
 
-            var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out var parentComponent);
-            var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out var childComponent);
+            var isParentParsed = TryCreateGoComponentFromRelationshipPart(components[0], out var parentComponent);
+            var isChildParsed = TryCreateGoComponentFromRelationshipPart(components[1], out var childComponent);
 
             if (!isParentParsed)
             {
@@ -253,7 +253,7 @@ public class GoComponentDetector : FileComponentDetector
 
             if (isChildParsed)
             {
-                if (this.IsModuleInBuildList(componentRecorder, parentComponent) && this.IsModuleInBuildList(componentRecorder, childComponent))
+                if (IsModuleInBuildList(componentRecorder, parentComponent) && IsModuleInBuildList(componentRecorder, childComponent))
                 {
                     componentRecorder.RegisterUsage(new DetectedComponent(childComponent), parentComponentId: parentComponent.Id);
                 }
@@ -265,9 +265,9 @@ public class GoComponentDetector : FileComponentDetector
         }
     }
 
-    private bool IsModuleInBuildList(ISingleFileComponentRecorder singleFileComponentRecorder, GoComponent component) => singleFileComponentRecorder.GetComponent(component.Id) != null;
+    private static bool IsModuleInBuildList(ISingleFileComponentRecorder singleFileComponentRecorder, GoComponent component) => singleFileComponentRecorder.GetComponent(component.Id) != null;
 
-    private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private static void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         var goBuildModules = new List<GoBuildModule>();
         var reader = new JsonTextReader(new StringReader(goListOutput))
@@ -304,7 +304,7 @@ public class GoComponentDetector : FileComponentDetector
         }
     }
 
-    private bool TryCreateGoComponentFromRelationshipPart(string relationship, out GoComponent goComponent)
+    private static bool TryCreateGoComponentFromRelationshipPart(string relationship, out GoComponent goComponent)
     {
         var componentParts = relationship.Split('@');
         if (componentParts.Length != 2)

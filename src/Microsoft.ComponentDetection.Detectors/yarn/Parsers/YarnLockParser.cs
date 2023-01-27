@@ -42,7 +42,7 @@ public class YarnLockParser : IYarnLockParser
 
             foreach (var package in satisfiedPackages)
             {
-                if (!this.TryReadNameAndSatisfiedVersion(package, out var parsed))
+                if (!TryReadNameAndSatisfiedVersion(package, out var parsed))
                 {
                     continue;
                 }
@@ -125,7 +125,7 @@ public class YarnLockParser : IYarnLockParser
             return blockTitleMember + $"@{versionValue.Value}";
         };
 
-    private bool TryReadNameAndSatisfiedVersion(string nameVersionPairing, out Tuple<string, string> output)
+    private static bool TryReadNameAndSatisfiedVersion(string nameVersionPairing, out Tuple<string, string> output)
     {
         output = null;
         var workingString = nameVersionPairing;

@@ -160,7 +160,7 @@ public class DetectorTestUtility<T>
                 this.mockObservableDirectoryWalkerFactory.Setup(x =>
                         x.GetFilteredComponentStreamObservable(It.IsAny<DirectoryInfo>(), searchPatterns, It.IsAny<IComponentRecorder>()))
                     .Returns<DirectoryInfo, IEnumerable<string>, IComponentRecorder>((directoryInfo, searchPatterns, componentRecorder) => filesToSend
-                            .Select(fileToSend => this.CreateProcessRequest(this.FindMatchingPattern(fileToSend.Name, searchPatterns), fileToSend.Location, fileToSend.Contents)).ToObservable());
+                            .Select(fileToSend => this.CreateProcessRequest(FindMatchingPattern(fileToSend.Name, searchPatterns), fileToSend.Location, fileToSend.Contents)).ToObservable());
             }
 
             if (useDefaultComponentStreamEnumerableFactory)
@@ -172,13 +172,13 @@ public class DetectorTestUtility<T>
                         if (recurse)
                         {
                             return filesToSend
-                                .Select(fileToSend => this.CreateProcessRequest(this.FindMatchingPattern(fileToSend.Name, searchPatterns), fileToSend.Location, fileToSend.Contents)).Select(pr => pr.ComponentStream);
+                                .Select(fileToSend => this.CreateProcessRequest(FindMatchingPattern(fileToSend.Name, searchPatterns), fileToSend.Location, fileToSend.Contents)).Select(pr => pr.ComponentStream);
                         }
                         else
                         {
                             return filesToSend
                                 .Where(fileToSend => Directory.GetParent(fileToSend.Location).FullName == directoryInfo.FullName)
-                                .Select(fileToSend => this.CreateProcessRequest(this.FindMatchingPattern(fileToSend.Name, searchPatterns), fileToSend.Location, fileToSend.Contents)).Select(pr => pr.ComponentStream);
+                                .Select(fileToSend => this.CreateProcessRequest(FindMatchingPattern(fileToSend.Name, searchPatterns), fileToSend.Location, fileToSend.Contents)).Select(pr => pr.ComponentStream);
                         }
                     });
             }
@@ -200,7 +200,7 @@ public class DetectorTestUtility<T>
         }
     }
 
-    private string FindMatchingPattern(string fileName, IEnumerable<string> searchPatterns)
+    private static string FindMatchingPattern(string fileName, IEnumerable<string> searchPatterns)
     {
         var foundPattern = searchPatterns.FirstOrDefault(searchPattern => new PathUtilityService().MatchesPattern(searchPattern, fileName));
 

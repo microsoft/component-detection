@@ -81,7 +81,7 @@ public class MavenCommandServiceTests
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
                 MavenCommandService.PrimaryCommand,
                 MavenCommandService.AdditionalValidCommands,
-                It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
+                It.Is<string[]>(y => ShouldBeEquivalentTo(y, cliParameters))))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
@@ -117,7 +117,7 @@ public class MavenCommandServiceTests
         Mock.Verify(this.parserServiceMock);
     }
 
-    protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
+    protected static bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
     {
         result.Should<T>().BeEquivalentTo(expected);
         return true;
