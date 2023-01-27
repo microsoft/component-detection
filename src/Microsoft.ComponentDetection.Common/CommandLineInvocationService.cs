@@ -132,7 +132,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
             process.Dispose();
         };
 
-        process.Start();
+        _ = process.Start();
         t1.Start();
         t2.Start();
 
