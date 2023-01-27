@@ -13,14 +13,17 @@ using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityE
 
 public static class NpmTestUtilities
 {
-    public static string GetPackageJsonNoDependencies()
+    public static string PackageJsonNoDependencies
     {
-        var packagejson = @"{{
+        get
+        {
+            var packagejson = @"{{
                 ""name"": ""test"",
                 ""version"": ""0.0.0""
             }}";
 
-        return packagejson;
+            return packagejson;
+        }
     }
 
     public static IComponentStream GetPackageJsonOneRootComponentStream(string componentName0, string version0)

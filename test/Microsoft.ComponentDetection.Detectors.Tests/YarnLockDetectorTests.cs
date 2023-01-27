@@ -41,7 +41,7 @@ public class YarnLockDetectorTests
     public async Task WellFormedYarnLockV1WithZeroComponents_FindsNothing()
     {
         var yarnLock = YarnTestUtilities.GetWellFormedEmptyYarnV1LockFile();
-        var packageJson = NpmTestUtilities.GetPackageJsonNoDependencies();
+        var packageJson = NpmTestUtilities.PackageJsonNoDependencies;
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
@@ -56,7 +56,7 @@ public class YarnLockDetectorTests
     public async Task WellFormedYarnLockV2WithZeroComponents_FindsNothing()
     {
         var yarnLock = YarnTestUtilities.GetWellFormedEmptyYarnV2LockFile();
-        var packageJson = NpmTestUtilities.GetPackageJsonNoDependencies();
+        var packageJson = NpmTestUtilities.PackageJsonNoDependencies;
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
