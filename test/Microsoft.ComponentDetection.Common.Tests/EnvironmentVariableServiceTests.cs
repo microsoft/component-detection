@@ -16,10 +16,7 @@ public class EnvironmentVariableServiceTests
     }
 
     [TestCleanup]
-    public void TestCleanup()
-    {
-        Environment.SetEnvironmentVariable(MyEnvVar, null);
-    }
+    public void TestCleanup() => Environment.SetEnvironmentVariable(MyEnvVar, null);
 
     [TestMethod]
     public void DoesEnvironmentVariableExist_ChecksAreCaseInsensitive()
@@ -32,10 +29,7 @@ public class EnvironmentVariableServiceTests
     }
 
     [TestMethod]
-    public void GetEnvironmentVariable_returnNullIfVariableDoesNotExist()
-    {
-        Assert.IsNull(this.testSubject.GetEnvironmentVariable("NonExistentVar"));
-    }
+    public void GetEnvironmentVariable_returnNullIfVariableDoesNotExist() => Assert.IsNull(this.testSubject.GetEnvironmentVariable("NonExistentVar"));
 
     [TestMethod]
     public void GetEnvironmentVariable_returnCorrectValue()

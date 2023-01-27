@@ -8,8 +8,5 @@ public class DetectedComponentScopeRecord : BaseDetectionTelemetryRecord
     public int? MavenProvidedScopeCount { get; set; } = 0;
 
     [MethodImpl(MethodImplOptions.Synchronized)]
-    public void IncrementProvidedScopeCount()
-    {
-        this.MavenProvidedScopeCount++;
-    }
+    public void IncrementProvidedScopeCount() => this.MavenProvidedScopeCount++;
 }

@@ -26,22 +26,16 @@ public class CargoPackage
 
     // Get hash code and equals are IDE generated
     // Manually added some casing handling
-    public override bool Equals(object obj)
-    {
-        return obj is CargoPackage package &&
+    public override bool Equals(object obj) => obj is CargoPackage package &&
                string.Equals(this.Name, package.Name) &&
                string.Equals(this.Version, package.Version, StringComparison.OrdinalIgnoreCase) &&
                string.Equals(this.Source, package.Source) &&
                string.Equals(this.Checksum, package.Checksum);
-    }
 
     [SuppressMessage("Usage", "CA1308:Normalize String to Uppercase", Justification = "Casing cannot be overwritten.")]
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(
+    public override int GetHashCode() => HashCode.Combine(
             EqualityComparer<string>.Default.GetHashCode(this.Name),
             EqualityComparer<string>.Default.GetHashCode(this.Version.ToLowerInvariant()),
             EqualityComparer<string>.Default.GetHashCode(this.Source),
             EqualityComparer<string>.Default.GetHashCode(this.Checksum));
-    }
 }

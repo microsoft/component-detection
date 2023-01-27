@@ -37,10 +37,7 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
 
     public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
-    public override bool Equals(object other)
-    {
-        return other is GoComponent otherComponent && this.Equals(otherComponent);
-    }
+    public override bool Equals(object other) => other is GoComponent otherComponent && this.Equals(otherComponent);
 
     public bool Equals(GoComponent other)
     {
@@ -52,8 +49,5 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
         return this.Name == other.Name && this.Version == other.Version && this.Hash == other.Hash;
     }
 
-    public override int GetHashCode()
-    {
-        return this.Name.GetHashCode() ^ this.Version.GetHashCode() ^ this.Hash.GetHashCode();
-    }
+    public override int GetHashCode() => this.Name.GetHashCode() ^ this.Version.GetHashCode() ^ this.Hash.GetHashCode();
 }

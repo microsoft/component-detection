@@ -15,12 +15,10 @@ public class ScanResultSerializationTests
     private ScanResult scanResultUnderTest;
 
     [TestInitialize]
-    public void TestInitialize()
+    public void TestInitialize() => this.scanResultUnderTest = new ScanResult
     {
-        this.scanResultUnderTest = new ScanResult
-        {
-            ResultCode = ProcessingResultCode.PartialSuccess,
-            ComponentsFound = new[]
+        ResultCode = ProcessingResultCode.PartialSuccess,
+        ComponentsFound = new[]
             {
                 new ScannedComponent
                 {
@@ -38,7 +36,7 @@ public class ScanResultSerializationTests
                     },
                 },
             },
-            DetectorsInScan = new[]
+        DetectorsInScan = new[]
             {
                 new Detector
                 {
@@ -51,9 +49,8 @@ public class ScanResultSerializationTests
                     Version = 2,
                 },
             },
-            SourceDirectory = "D:\\test\\directory",
-        };
-    }
+        SourceDirectory = "D:\\test\\directory",
+    };
 
     [TestMethod]
     public void ScanResultSerialization_HappyPath()

@@ -113,8 +113,5 @@ public class PipDependencySpecification
     /// Whether or not the package is safe to resolve based on the packagesToIgnore.
     /// </summary>
     /// <returns> True if the package is unsafe, otherwise false. </returns>
-    public bool PackageIsUnsafe()
-    {
-        return PackagesToIgnore.Contains(this.Name);
-    }
+    public bool PackageIsUnsafe() => PackagesToIgnore.Contains(this.Name);
 }

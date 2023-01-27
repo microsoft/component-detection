@@ -18,10 +18,7 @@ public class NpmUtilitiesTests
     private Mock<ILogger> loggerMock;
 
     [TestInitialize]
-    public void TestInitialize()
-    {
-        this.loggerMock = new Mock<ILogger>();
-    }
+    public void TestInitialize() => this.loggerMock = new Mock<ILogger>();
 
     [TestMethod]
     public void TestGetTypedComponent()

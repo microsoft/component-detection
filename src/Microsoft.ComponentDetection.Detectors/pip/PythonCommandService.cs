@@ -15,10 +15,7 @@ public class PythonCommandService : IPythonCommandService
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
-    public async Task<bool> PythonExists(string pythonPath = null)
-    {
-        return !string.IsNullOrEmpty(await this.ResolvePython(pythonPath));
-    }
+    public async Task<bool> PythonExists(string pythonPath = null) => !string.IsNullOrEmpty(await this.ResolvePython(pythonPath));
 
     public async Task<IList<(string PackageString, GitComponent Component)>> ParseFile(string filePath, string pythonPath = null)
     {
@@ -143,8 +140,5 @@ public class PythonCommandService : IPythonCommandService
         return null;
     }
 
-    private async Task<bool> CanCommandBeLocated(string pythonPath)
-    {
-        return await this.CommandLineInvocationService.CanCommandBeLocated(pythonPath, new List<string> { "python3", "python2" }, "--version");
-    }
+    private async Task<bool> CanCommandBeLocated(string pythonPath) => await this.CommandLineInvocationService.CanCommandBeLocated(pythonPath, new List<string> { "python3", "python2" }, "--version");
 }

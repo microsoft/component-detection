@@ -17,10 +17,7 @@ public class ComponentRecorderTests
     private ComponentRecorder componentRecorder;
 
     [TestInitialize]
-    public void TestInitialize()
-    {
-        this.componentRecorder = new ComponentRecorder();
-    }
+    public void TestInitialize() => this.componentRecorder = new ComponentRecorder();
 
     [TestMethod]
     public void RegisterUsage_RegisterNewDetectedComponent_NodeInTheGraphIsCreated()
@@ -117,10 +114,7 @@ public class ComponentRecorderTests
     }
 
     [TestMethod]
-    public void GetComponent_ComponentNotExist_NullIsReturned()
-    {
-        this.componentRecorder.CreateSingleFileComponentRecorder("someMockLocation").GetComponent("nonexistedcomponentId").Should().BeNull();
-    }
+    public void GetComponent_ComponentNotExist_NullIsReturned() => this.componentRecorder.CreateSingleFileComponentRecorder("someMockLocation").GetComponent("nonexistedcomponentId").Should().BeNull();
 
     [TestMethod]
     public void GetDetectedComponents_AreComponentsRegistered_ComponentsAreReturned()

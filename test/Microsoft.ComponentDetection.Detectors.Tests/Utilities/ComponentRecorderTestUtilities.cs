@@ -79,35 +79,32 @@ public static class ComponentRecorderTestUtilities
     public static void AssertAllExplicitlyReferencedComponents<TTypedComponent>(
         this IComponentRecorder recorder,
         string componentIdToValidate,
-        params Func<TTypedComponent, bool>[] locatingPredicatesForParentExplicitReference)
-    {
-        recorder.ForOneComponent(componentIdToValidate, grouping =>
-        {
-            var explicitReferrers = new HashSet<string>(grouping.ParentComponentIdsThatAreExplicitReferences);
-            var assertionIndex = 0;
-            foreach (var predicate in locatingPredicatesForParentExplicitReference)
-            {
-                if (recorder.GetDetectedComponents().Select(x => x.Component).OfType<TTypedComponent>()
-                        .FirstOrDefault(predicate) is not TypedComponent dependencyModel)
-                {
-                    throw new InvalidOperationException($"One of the predicates (index {assertionIndex}) failed to find a valid component in the Scan Result's discovered components.");
-                }
+        params Func<TTypedComponent, bool>[] locatingPredicatesForParentExplicitReference) => recorder.ForOneComponent(componentIdToValidate, grouping =>
+                                                                                                   {
+                                                                                                       var explicitReferrers = new HashSet<string>(grouping.ParentComponentIdsThatAreExplicitReferences);
+                                                                                                       var assertionIndex = 0;
+                                                                                                       foreach (var predicate in locatingPredicatesForParentExplicitReference)
+                                                                                                       {
+                                                                                                           if (recorder.GetDetectedComponents().Select(x => x.Component).OfType<TTypedComponent>()
+                                                                                                                   .FirstOrDefault(predicate) is not TypedComponent dependencyModel)
+                                                                                                           {
+                                                                                                               throw new InvalidOperationException($"One of the predicates (index {assertionIndex}) failed to find a valid component in the Scan Result's discovered components.");
+                                                                                                           }
 
-                if (!grouping.ParentComponentIdsThatAreExplicitReferences.Contains(dependencyModel.Id))
-                {
-                    throw new InvalidOperationException($"Expected component Id {componentIdToValidate} to have {dependencyModel.Id} as a parent explicit reference, but did not.");
-                }
+                                                                                                           if (!grouping.ParentComponentIdsThatAreExplicitReferences.Contains(dependencyModel.Id))
+                                                                                                           {
+                                                                                                               throw new InvalidOperationException($"Expected component Id {componentIdToValidate} to have {dependencyModel.Id} as a parent explicit reference, but did not.");
+                                                                                                           }
 
-                explicitReferrers.Remove(dependencyModel.Id);
-                assertionIndex++;
-            }
+                                                                                                           explicitReferrers.Remove(dependencyModel.Id);
+                                                                                                           assertionIndex++;
+                                                                                                       }
 
-            if (explicitReferrers.Count > 0)
-            {
-                throw new InvalidOperationException($"Component Id {componentIdToValidate} had parent explicit references ({string.Join(',', explicitReferrers)}) that were not verified via submitted delegates.");
-            }
-        });
-    }
+                                                                                                       if (explicitReferrers.Count > 0)
+                                                                                                       {
+                                                                                                           throw new InvalidOperationException($"Component Id {componentIdToValidate} had parent explicit references ({string.Join(',', explicitReferrers)}) that were not verified via submitted delegates.");
+                                                                                                       }
+                                                                                                   });
 
     private static ComponentOrientedGrouping TupleToObject(IEnumerable<(string Location, IDependencyGraph Graph, string ComponentId)> x)
     {
@@ -123,15 +120,12 @@ public static class ComponentRecorderTestUtilities
         };
     }
 
-    private static List<IGrouping<string, (string Location, IDependencyGraph Graph, string ComponentId)>> GroupByComponentId(IReadOnlyDictionary<string, IDependencyGraph> graphs)
-    {
-        return graphs
+    private static List<IGrouping<string, (string Location, IDependencyGraph Graph, string ComponentId)>> GroupByComponentId(IReadOnlyDictionary<string, IDependencyGraph> graphs) => graphs
             .Select(x => (Location: x.Key, Graph: x.Value))
             .SelectMany(x => x.Graph.GetComponents()
                 .Select(componentId => (x.Location, x.Graph, ComponentId: componentId)))
             .GroupBy(x => x.ComponentId)
             .ToList();
-    }
 
     public class ComponentOrientedGrouping
     {

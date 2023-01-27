@@ -162,8 +162,5 @@ public class DockerReferenceUtility
         return ParseFamiliarName(name);
     }
 
-    private static DockerReference CreateDockerReference(Reference options)
-    {
-        return DockerReference.CreateDockerReference(options.Repository, options.Domain, options.Digest, options.Tag);
-    }
+    private static DockerReference CreateDockerReference(Reference options) => DockerReference.CreateDockerReference(options.Repository, options.Domain, options.Digest, options.Tag);
 }

@@ -53,9 +53,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
         });
     }
 
-    private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector Detector, ComponentRecorder Recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory)
-    {
-        return recorderDetectorPairs
+    private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector Detector, ComponentRecorder Recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory) => recorderDetectorPairs
             .Where(recorderDetectorPair => recorderDetectorPair.Recorder != null)
             .SelectMany(recorderDetectorPair =>
             {
@@ -98,7 +96,6 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
 
                 return detectedComponents;
             }).ToList();
-    }
 
     private List<DetectedComponent> FlattenAndMergeComponents(IEnumerable<DetectedComponent> components)
     {
@@ -217,18 +214,15 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
         return relativePathSet;
     }
 
-    private ScannedComponent ConvertToContract(DetectedComponent component)
+    private ScannedComponent ConvertToContract(DetectedComponent component) => new ScannedComponent
     {
-        return new ScannedComponent
-        {
-            DetectorId = component.DetectedBy.Id,
-            IsDevelopmentDependency = component.DevelopmentDependency,
-            DependencyScope = component.DependencyScope,
-            LocationsFoundAt = component.FilePaths,
-            Component = component.Component,
-            TopLevelReferrers = component.DependencyRoots,
-            ContainerDetailIds = component.ContainerDetailIds,
-            ContainerLayerIds = component.ContainerLayerIds,
-        };
-    }
+        DetectorId = component.DetectedBy.Id,
+        IsDevelopmentDependency = component.DevelopmentDependency,
+        DependencyScope = component.DependencyScope,
+        LocationsFoundAt = component.FilePaths,
+        Component = component.Component,
+        TopLevelReferrers = component.DependencyRoots,
+        ContainerDetailIds = component.ContainerDetailIds,
+        ContainerLayerIds = component.ContainerLayerIds,
+    };
 }

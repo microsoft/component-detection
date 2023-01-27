@@ -56,38 +56,35 @@ public class PodComponentDetector : FileComponentDetector
         return deserializer.Deserialize<PodfileLock>(input);
     }
 
-    private static (Pod Pod, string Key, DetectedComponent DetectedComponent)[] ReadPodfileLock(PodfileLock podfileLock)
-    {
-        return podfileLock.Pods.Select(pod =>
-            {
-                // Find the spec repository URL for this pod
-                var specRepository = podfileLock.GetSpecRepositoryOfSpec(pod.Podspec) ?? string.Empty;
+    private static (Pod Pod, string Key, DetectedComponent DetectedComponent)[] ReadPodfileLock(PodfileLock podfileLock) => podfileLock.Pods.Select(pod =>
+                                                                                                                                     {
+                                                                                                                                         // Find the spec repository URL for this pod
+                                                                                                                                         var specRepository = podfileLock.GetSpecRepositoryOfSpec(pod.Podspec) ?? string.Empty;
 
-                // Check if the Podspec comes from a git repository or not
-                TypedComponent typedComponent;
-                string key;
-                if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
-                    && checkoutOptions.TryGetValue(":git", out var gitOption)
-                    && checkoutOptions.TryGetValue(":commit", out var commitOption))
-                {
-                    // Create the Git component
-                    gitOption = NormalizePodfileGitUri(gitOption);
-                    typedComponent = new GitComponent(new Uri(gitOption), commitOption);
-                    key = $"{commitOption}@{gitOption}";
-                }
-                else
-                {
-                    // Create the Pod component
-                    typedComponent = new PodComponent(pod.Podspec, pod.Version, specRepository);
-                    key = $"{pod.Podspec}:{pod.Version}@{specRepository}";
-                }
+                                                                                                                                         // Check if the Podspec comes from a git repository or not
+                                                                                                                                         TypedComponent typedComponent;
+                                                                                                                                         string key;
+                                                                                                                                         if (podfileLock.CheckoutOptions.TryGetValue(pod.Podspec, out var checkoutOptions)
+                                                                                                                                             && checkoutOptions.TryGetValue(":git", out var gitOption)
+                                                                                                                                             && checkoutOptions.TryGetValue(":commit", out var commitOption))
+                                                                                                                                         {
+                                                                                                                                             // Create the Git component
+                                                                                                                                             gitOption = NormalizePodfileGitUri(gitOption);
+                                                                                                                                             typedComponent = new GitComponent(new Uri(gitOption), commitOption);
+                                                                                                                                             key = $"{commitOption}@{gitOption}";
+                                                                                                                                         }
+                                                                                                                                         else
+                                                                                                                                         {
+                                                                                                                                             // Create the Pod component
+                                                                                                                                             typedComponent = new PodComponent(pod.Podspec, pod.Version, specRepository);
+                                                                                                                                             key = $"{pod.Podspec}:{pod.Version}@{specRepository}";
+                                                                                                                                         }
 
-                var detectedComponent = new DetectedComponent(typedComponent);
+                                                                                                                                         var detectedComponent = new DetectedComponent(typedComponent);
 
-                return (pod, key, detectedComponent);
-            })
+                                                                                                                                         return (pod, key, detectedComponent);
+                                                                                                                                     })
             .ToArray();
-    }
 
     private static string NormalizePodfileGitUri(string gitOption)
     {
@@ -329,10 +326,7 @@ public class PodComponentDetector : FileComponentDetector
             }
         }
 
-        public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
-        {
-            throw new NotImplementedException();
-        }
+        public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer) => throw new NotImplementedException();
     }
 
     private class PodDependency : IYamlConvertible
@@ -353,10 +347,7 @@ public class PodComponentDetector : FileComponentDetector
             this.PodVersion = components.Length > 1 ? components[1].Trim() : null;
         }
 
-        public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer)
-        {
-            throw new NotImplementedException();
-        }
+        public void Write(IEmitter emitter, ObjectSerializer nestedObjectSerializer) => throw new NotImplementedException();
     }
 
     private class PodfileLock

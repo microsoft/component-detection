@@ -21,14 +21,11 @@ public class PyPiClientTests
     private PyPiClient pypiClient;
 
     [TestInitialize]
-    public void Initialize()
+    public void Initialize() => this.pypiClient = new PyPiClient()
     {
-        this.pypiClient = new PyPiClient()
-        {
-            EnvironmentVariableService = new EnvironmentVariableService(),
-            Logger = new Mock<ILogger>().Object,
-        };
-    }
+        EnvironmentVariableService = new EnvironmentVariableService(),
+        Logger = new Mock<ILogger>().Object,
+    };
 
     [TestMethod]
     public async Task GetReleases_InvalidSpecVersion_NotThrow()

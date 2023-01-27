@@ -8,13 +8,7 @@ using System.Linq;
 // Normally, it compares by object reference but we need to compare by the data in the lists
 public class EnumerableStringComparer : IEqualityComparer<IEnumerable<string>>
 {
-    public bool Equals([AllowNull] IEnumerable<string> x, [AllowNull] IEnumerable<string> y)
-    {
-        return x.SequenceEqual(y);
-    }
+    public bool Equals([AllowNull] IEnumerable<string> x, [AllowNull] IEnumerable<string> y) => x.SequenceEqual(y);
 
-    public int GetHashCode([DisallowNull] IEnumerable<string> obj)
-    {
-        return obj.Aggregate(0, (a, y) => a ^ y.GetHashCode());
-    }
+    public int GetHashCode([DisallowNull] IEnumerable<string> obj) => obj.Aggregate(0, (a, y) => a ^ y.GetHashCode());
 }

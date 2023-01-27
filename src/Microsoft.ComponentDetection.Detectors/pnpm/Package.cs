@@ -14,9 +14,6 @@ public class Package
 
     public string version { get; set; }
 
-    public override string ToString()
-    {
-        return this.name;
-    }
+    public override string ToString() => this.name;
 }
 #pragma warning restore SA1300

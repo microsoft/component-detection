@@ -237,13 +237,7 @@ public class NpmDetectorTests
         Assert.IsNull(((NpmComponent)detectedComponents.First().Component).Author);
     }
 
-    private static void AssertDetectedComponentCount(IEnumerable<DetectedComponent> detectedComponents, int expectedCount)
-    {
-        Assert.AreEqual(expectedCount, detectedComponents.Count());
-    }
+    private static void AssertDetectedComponentCount(IEnumerable<DetectedComponent> detectedComponents, int expectedCount) => Assert.AreEqual(expectedCount, detectedComponents.Count());
 
-    private static void AssertNpmComponent(IEnumerable<DetectedComponent> detectedComponents)
-    {
-        Assert.AreEqual(detectedComponents.First().Component.Type, ComponentType.Npm);
-    }
+    private static void AssertNpmComponent(IEnumerable<DetectedComponent> detectedComponents) => Assert.AreEqual(detectedComponents.First().Component.Type, ComponentType.Npm);
 }

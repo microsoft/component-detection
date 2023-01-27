@@ -19,10 +19,7 @@ public class PodDetectorTest
     private DetectorTestUtility<PodComponentDetector> detectorTestUtility;
 
     [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PodComponentDetector>();
-    }
+    public void TestInitialize() => this.detectorTestUtility = DetectorTestUtilityCreator.Create<PodComponentDetector>();
 
     [TestMethod]
     public async Task TestPodDetector_EmptyPodfileLock()
@@ -697,44 +694,29 @@ COCOAPODS: 1.8.4";
         componentRecorder.ForOneComponent(firstComponent.Component.Id, grouping => Assert.AreEqual(2, Enumerable.Count<string>(grouping.AllFileLocations)));
     }
 
-    private void AssertPodComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
-    {
-        Assert.IsNotNull(
+    private void AssertPodComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version) => Assert.IsNotNull(
             detectedComponents.SingleOrDefault(component =>
                 component.Component is PodComponent &&
                 (component.Component as PodComponent).Name.Equals(name) &&
                 (component.Component as PodComponent).Version.Equals(version)),
             $"Component with name {name} and version {version} was not found");
-    }
 
-    private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
-    {
-        Assert.IsNotNull(
+    private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl) => Assert.IsNotNull(
             detectedComponents.SingleOrDefault(component =>
                 component.Component is GitComponent &&
                 (component.Component as GitComponent).CommitHash.Equals(commitHash) &&
                 (component.Component as GitComponent).RepositoryUrl.Equals(repositoryUrl)),
             $"Component with commit hash {commitHash} and repository url {repositoryUrl} was not found");
-    }
 
-    private void AssertPodComponentHasPodComponentDependencyRoot(IComponentRecorder recorder, (string Name, string Version) component, (string Name, string Version) root)
-    {
-        Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<PodComponent>(
+    private void AssertPodComponentHasPodComponentDependencyRoot(IComponentRecorder recorder, (string Name, string Version) component, (string Name, string Version) root) => Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<PodComponent>(
             new PodComponent(component.Name, component.Version).Id,
             x => x.Id == new PodComponent(root.Name, root.Version).Id));
-    }
 
-    private void AssertPodComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string Name, string Version) component, (string Commit, string Repo) root)
-    {
-        Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
+    private void AssertPodComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string Name, string Version) component, (string Commit, string Repo) root) => Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
             new PodComponent(component.Name, component.Version).Id,
             x => x.Id == new GitComponent(new Uri(root.Repo), root.Commit).Id));
-    }
 
-    private void AssertGitComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string Commit, string Repo) component, (string Commit, string Repo) root)
-    {
-        Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
+    private void AssertGitComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string Commit, string Repo) component, (string Commit, string Repo) root) => Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
             new GitComponent(new Uri(component.Repo), component.Commit).Id,
             x => x.Id == new GitComponent(new Uri(root.Repo), root.Commit).Id));
-    }
 }

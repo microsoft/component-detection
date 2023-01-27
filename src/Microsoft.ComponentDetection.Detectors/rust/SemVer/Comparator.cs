@@ -130,18 +130,15 @@ internal class Comparator : IEquatable<Comparator>
             : null;
     }
 
-    public bool IsSatisfied(SemVersion version)
+    public bool IsSatisfied(SemVersion version) => this.ComparatorType switch
     {
-        return this.ComparatorType switch
-        {
-            Operator.Equal => version == this.Version,
-            Operator.LessThan => version < this.Version,
-            Operator.LessThanOrEqual => version <= this.Version,
-            Operator.GreaterThan => version > this.Version,
-            Operator.GreaterThanOrEqual => version >= this.Version,
-            _ => throw new InvalidOperationException("Comparator type not recognised."),
-        };
-    }
+        Operator.Equal => version == this.Version,
+        Operator.LessThan => version < this.Version,
+        Operator.LessThanOrEqual => version <= this.Version,
+        Operator.GreaterThan => version > this.Version,
+        Operator.GreaterThanOrEqual => version >= this.Version,
+        _ => throw new InvalidOperationException("Comparator type not recognised."),
+    };
 
     public bool Intersects(Comparator other)
     {
@@ -202,26 +199,17 @@ internal class Comparator : IEquatable<Comparator>
         return this.ComparatorType == other.ComparatorType && this.Version == other.Version;
     }
 
-    public override bool Equals(object other)
-    {
-        return this.Equals(other as Comparator);
-    }
+    public override bool Equals(object other) => this.Equals(other as Comparator);
 
-    public override int GetHashCode()
-    {
-        return this.ToString().GetHashCode();
-    }
+    public override int GetHashCode() => this.ToString().GetHashCode();
 
-    private static Operator ParseComparatorType(string input)
+    private static Operator ParseComparatorType(string input) => input switch
     {
-        return input switch
-        {
-            "" or "=" => Operator.Equal,
-            "<" => Operator.LessThan,
-            "<=" => Operator.LessThanOrEqual,
-            ">" => Operator.GreaterThan,
-            ">=" => Operator.GreaterThanOrEqual,
-            _ => throw new ArgumentException(string.Format("Invalid comparator type: {0}", input)),
-        };
-    }
+        "" or "=" => Operator.Equal,
+        "<" => Operator.LessThan,
+        "<=" => Operator.LessThanOrEqual,
+        ">" => Operator.GreaterThan,
+        ">=" => Operator.GreaterThanOrEqual,
+        _ => throw new ArgumentException(string.Format("Invalid comparator type: {0}", input)),
+    };
 }

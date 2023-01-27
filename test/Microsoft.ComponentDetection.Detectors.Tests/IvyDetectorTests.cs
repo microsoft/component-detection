@@ -46,10 +46,7 @@ public class IvyDetectorTests
     }
 
     [TestCleanup]
-    public void TestCleanup()
-    {
-        this.scanRequest.SourceDirectory.Delete(recursive: true);
-    }
+    public void TestCleanup() => this.scanRequest.SourceDirectory.Delete(recursive: true);
 
     [TestMethod]
     public async Task IfAntIsNotAvailableThenExitDetectorGracefully()

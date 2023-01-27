@@ -50,25 +50,13 @@ public class Logger : ILogger
         this.AppendToFile(NewLine);
     }
 
-    public void LogWarning(string message)
-    {
-        this.LogInternal("WARN", message);
-    }
+    public void LogWarning(string message) => this.LogInternal("WARN", message);
 
-    public void LogInfo(string message)
-    {
-        this.LogInternal("INFO", message);
-    }
+    public void LogInfo(string message) => this.LogInternal("INFO", message);
 
-    public void LogVerbose(string message)
-    {
-        this.LogInternal("VERBOSE", message, VerbosityMode.Verbose);
-    }
+    public void LogVerbose(string message) => this.LogInternal("VERBOSE", message, VerbosityMode.Verbose);
 
-    public void LogError(string message)
-    {
-        this.LogInternal("ERROR", message, VerbosityMode.Quiet);
-    }
+    public void LogError(string message) => this.LogInternal("ERROR", message, VerbosityMode.Quiet);
 
     public void LogFailedReadingFile(string filePath, Exception e)
     {
@@ -113,20 +101,11 @@ public class Logger : ILogger
     }
 
     // TODO: All these vso specific logs should go away
-    public void LogBuildWarning(string message)
-    {
-        this.PrintToConsole($"##vso[task.LogIssue type=warning;]{message}{NewLine}", VerbosityMode.Quiet);
-    }
+    public void LogBuildWarning(string message) => this.PrintToConsole($"##vso[task.LogIssue type=warning;]{message}{NewLine}", VerbosityMode.Quiet);
 
-    public void LogBuildError(string message)
-    {
-        this.PrintToConsole($"##vso[task.LogIssue type=error;]{message}{NewLine}", VerbosityMode.Quiet);
-    }
+    public void LogBuildError(string message) => this.PrintToConsole($"##vso[task.LogIssue type=error;]{message}{NewLine}", VerbosityMode.Quiet);
 
-    private void LogFailedProcessingFile(string filePath)
-    {
-        this.LogVerbose($"Could not read component details from file {filePath} {NewLine}");
-    }
+    private void LogFailedProcessingFile(string filePath) => this.LogVerbose($"Could not read component details from file {filePath} {NewLine}");
 
     private void AppendToFile(string text)
     {

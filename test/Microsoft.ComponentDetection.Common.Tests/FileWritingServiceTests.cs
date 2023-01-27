@@ -29,10 +29,7 @@ public class FileWritingServiceTests
     }
 
     [TestCleanup]
-    public void TestCleanup()
-    {
-        Directory.Delete(this.tempFolder, true);
-    }
+    public void TestCleanup() => Directory.Delete(this.tempFolder, true);
 
     [TestMethod]
     public void AppendToFile_AppendsToFiles()

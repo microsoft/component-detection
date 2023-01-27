@@ -20,15 +20,9 @@ public class YarnLockParser : IYarnLockParser
     [Import]
     public ILogger Logger { get; set; }
 
-    public static string NormalizeVersion(string version)
-    {
-        return version.StartsWith("npm:") ? version : $"npm:{version}";
-    }
+    public static string NormalizeVersion(string version) => version.StartsWith("npm:") ? version : $"npm:{version}";
 
-    public bool CanParse(YarnLockVersion yarnLockVersion)
-    {
-        return SupportedVersions.Contains(yarnLockVersion);
-    }
+    public bool CanParse(YarnLockVersion yarnLockVersion) => SupportedVersions.Contains(yarnLockVersion);
 
     public YarnLockFile Parse(IYarnBlockFile blockFile, ILogger logger)
     {
@@ -108,13 +102,12 @@ public class YarnLockParser : IYarnLockParser
         return file;
     }
 
-    private Func<string, string> GenerateBlockTitleNormalizer(YarnBlock block)
-    {
+    private Func<string, string> GenerateBlockTitleNormalizer(YarnBlock block) =>
         // For cases where we have no version in the title, ex:
         //   nyc:
         //    version "10.0.0"
         //    resolved "https://registry.Yarnpkg.com/nyc/-/nyc-10.0.0.tgz#95bd4a2c3487f33e1e78f213c6d5a53d88074ce6"
-        return blockTitleMember =>
+        blockTitleMember =>
         {
             if (blockTitleMember.Contains('@'))
             {
@@ -130,7 +123,6 @@ public class YarnLockParser : IYarnLockParser
 
             return blockTitleMember + $"@{versionValue.Value}";
         };
-    }
 
     private bool TryReadNameAndSatisfiedVersion(string nameVersionPairing, out Tuple<string, string> output)
     {

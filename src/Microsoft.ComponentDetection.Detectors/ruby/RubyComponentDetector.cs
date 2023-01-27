@@ -245,10 +245,7 @@ public class RubyComponentDetector : FileComponentDetector
         }
     }
 
-    private bool IsVersionRelative(string version)
-    {
-        return version.StartsWith("~") || version.StartsWith("=");
-    }
+    private bool IsVersionRelative(string version) => version.StartsWith("~") || version.StartsWith("=");
 
     private class Dependency
     {

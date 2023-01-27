@@ -49,10 +49,7 @@ other=2.1";
     private Mock<ICommandLineInvocationService> commandLineInvokationService;
 
     [TestInitialize]
-    public void TestInitialize()
-    {
-        this.commandLineInvokationService = new Mock<ICommandLineInvocationService>();
-    }
+    public void TestInitialize() => this.commandLineInvokationService = new Mock<ICommandLineInvocationService>();
 
     [TestMethod]
     public async Task PythonCommandService_ReturnsTrueWhenPythonExists()
@@ -239,155 +236,128 @@ other=2.1";
     }
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentsSupported()
-    {
-        await this.SetupAndParseReqsTxt(this.requirementstxtBasicGitComponent, parseResult =>
-        {
-            parseResult.Count.Should().Be(1);
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentsSupported() => await this.SetupAndParseReqsTxt(this.requirementstxtBasicGitComponent, parseResult =>
+                                                                                          {
+                                                                                              parseResult.Count.Should().Be(1);
 
-            var (packageString, component) = parseResult.Single();
-            packageString.Should().BeNull();
-            component.Should().NotBeNull();
+                                                                                              var (packageString, component) = parseResult.Single();
+                                                                                              packageString.Should().BeNull();
+                                                                                              component.Should().NotBeNull();
 
-            var gitComponent = component;
-            gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
-            gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
-        });
-    }
+                                                                                              var gitComponent = component;
+                                                                                              gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
+                                                                                              gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
+                                                                                          });
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentAndEnvironmentMarker()
-    {
-        await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentAndEnvironmentMarker, parseResult =>
-        {
-            parseResult.Count.Should().Be(1);
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentAndEnvironmentMarker() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentAndEnvironmentMarker, parseResult =>
+                                                                                                    {
+                                                                                                        parseResult.Count.Should().Be(1);
 
-            var (packageString, component) = parseResult.Single();
-            packageString.Should().BeNull();
-            component.Should().NotBeNull();
+                                                                                                        var (packageString, component) = parseResult.Single();
+                                                                                                        packageString.Should().BeNull();
+                                                                                                        component.Should().NotBeNull();
 
-            var gitComponent = component;
-            gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
-            gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
-        });
-    }
+                                                                                                        var gitComponent = component;
+                                                                                                        gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
+                                                                                                        gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
+                                                                                                    });
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentAndComment()
-    {
-        await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentAndComment, parseResult =>
-        {
-            parseResult.Count.Should().Be(1);
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentAndComment() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentAndComment, parseResult =>
+                                                                                          {
+                                                                                              parseResult.Count.Should().Be(1);
 
-            var (packageString, component) = parseResult.Single();
-            packageString.Should().BeNull();
-            component.Should().NotBeNull();
+                                                                                              var (packageString, component) = parseResult.Single();
+                                                                                              packageString.Should().BeNull();
+                                                                                              component.Should().NotBeNull();
 
-            var gitComponent = component;
-            gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
-            gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
-        });
-    }
+                                                                                              var gitComponent = component;
+                                                                                              gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
+                                                                                              gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
+                                                                                          });
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentAndCommentAndEnvironmentMarker()
-    {
-        await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentAndCommentAndEnvironmentMarker, parseResult =>
-        {
-            parseResult.Count.Should().Be(1);
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentAndCommentAndEnvironmentMarker() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentAndCommentAndEnvironmentMarker, parseResult =>
+                                                                                                              {
+                                                                                                                  parseResult.Count.Should().Be(1);
 
-            var (packageString, component) = parseResult.Single();
-            packageString.Should().BeNull();
-            component.Should().NotBeNull();
+                                                                                                                  var (packageString, component) = parseResult.Single();
+                                                                                                                  packageString.Should().BeNull();
+                                                                                                                  component.Should().NotBeNull();
 
-            var gitComponent = component;
-            gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
-            gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
-        });
-    }
+                                                                                                                  var gitComponent = component;
+                                                                                                                  gitComponent.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
+                                                                                                                  gitComponent.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
+                                                                                                              });
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenBranch()
-    {
-        await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentBranchInsteadOfCommitId, parseResult =>
-        {
-            parseResult.Count.Should().Be(0);
-        });
-    }
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenBranch() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentBranchInsteadOfCommitId, parseResult =>
+                                                                                                         {
+                                                                                                             parseResult.Count.Should().Be(0);
+                                                                                                         });
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenRelease()
-    {
-        await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentReleaseInsteadOfCommitId, parseResult =>
-        {
-            parseResult.Count.Should().Be(0);
-        });
-    }
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenRelease() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentReleaseInsteadOfCommitId, parseResult =>
+                                                                                                          {
+                                                                                                              parseResult.Count.Should().Be(0);
+                                                                                                          });
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenMalformedCommitHash()
-    {
-        await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentCommitIdWrongLength, parseResult =>
-        {
-            parseResult.Count.Should().Be(0);
-        });
-    }
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentNotCreatedWhenGivenMalformedCommitHash() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentCommitIdWrongLength, parseResult =>
+                                                                                                                      {
+                                                                                                                          parseResult.Count.Should().Be(0);
+                                                                                                                      });
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentsMultiple()
-    {
-        await this.SetupAndParseReqsTxt(this.requirementstxtDoubleGitComponents, parseResult =>
-        {
-            parseResult.Count.Should().Be(2);
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentsMultiple() => await this.SetupAndParseReqsTxt(this.requirementstxtDoubleGitComponents, parseResult =>
+                                                                                         {
+                                                                                             parseResult.Count.Should().Be(2);
 
-            var (packageString, component) = parseResult.First();
-            packageString.Should().BeNull();
-            component.Should().NotBeNull();
+                                                                                             var (packageString, component) = parseResult.First();
+                                                                                             packageString.Should().BeNull();
+                                                                                             component.Should().NotBeNull();
 
-            var gitComponent1 = component;
-            gitComponent1.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
-            gitComponent1.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
+                                                                                             var gitComponent1 = component;
+                                                                                             gitComponent1.RepositoryUrl.Should().Be("https://github.com/vscode-python/jedi-language-server");
+                                                                                             gitComponent1.CommitHash.Should().Be("42823a2598d4b6369e9273c5ad237a48c5d67553");
 
-            var (packageString2, component2) = parseResult.Skip(1).First();
-            packageString2.Should().BeNull();
-            component2.Should().NotBeNull();
+                                                                                             var (packageString2, component2) = parseResult.Skip(1).First();
+                                                                                             packageString2.Should().BeNull();
+                                                                                             component2.Should().NotBeNull();
 
-            var gitComponent2 = component2;
-            gitComponent2.RepositoryUrl.Should().Be("https://github.com/path/to/package-two");
-            gitComponent2.CommitHash.Should().Be("41b95ec");
-        });
-    }
+                                                                                             var gitComponent2 = component2;
+                                                                                             gitComponent2.RepositoryUrl.Should().Be("https://github.com/path/to/package-two");
+                                                                                             gitComponent2.CommitHash.Should().Be("41b95ec");
+                                                                                         });
 
     [TestMethod]
-    public async Task ParseFile_RequirementTxtHasComment_GitComponentWrappedInRegularComponent()
-    {
-        await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentWrappedinRegularComponents, parseResult =>
-        {
-            parseResult.Count.Should().Be(3);
+    public async Task ParseFile_RequirementTxtHasComment_GitComponentWrappedInRegularComponent() => await this.SetupAndParseReqsTxt(this.requirementstxtGitComponentWrappedinRegularComponents, parseResult =>
+                                                                                                         {
+                                                                                                             parseResult.Count.Should().Be(3);
 
-            var (packageString, component) = parseResult.First();
-            packageString.Should().NotBeNull();
-            component.Should().BeNull();
+                                                                                                             var (packageString, component) = parseResult.First();
+                                                                                                             packageString.Should().NotBeNull();
+                                                                                                             component.Should().BeNull();
 
-            var regularComponent1 = packageString;
-            regularComponent1.Should().Be("something=1.3");
+                                                                                                             var regularComponent1 = packageString;
+                                                                                                             regularComponent1.Should().Be("something=1.3");
 
-            var (packageString2, component2) = parseResult.Skip(1).First();
-            packageString2.Should().BeNull();
-            component2.Should().NotBeNull();
+                                                                                                             var (packageString2, component2) = parseResult.Skip(1).First();
+                                                                                                             packageString2.Should().BeNull();
+                                                                                                             component2.Should().NotBeNull();
 
-            var gitComponent = component2;
-            gitComponent.RepositoryUrl.Should().Be("https://github.com/path/to/package-two");
-            gitComponent.CommitHash.Should().Be("41b95ec");
+                                                                                                             var gitComponent = component2;
+                                                                                                             gitComponent.RepositoryUrl.Should().Be("https://github.com/path/to/package-two");
+                                                                                                             gitComponent.CommitHash.Should().Be("41b95ec");
 
-            var (packageString3, component3) = parseResult.ToArray()[2];
-            packageString3.Should().NotBeNull();
-            component3.Should().BeNull();
+                                                                                                             var (packageString3, component3) = parseResult.ToArray()[2];
+                                                                                                             packageString3.Should().NotBeNull();
+                                                                                                             component3.Should().BeNull();
 
-            var regularComponent2 = packageString3;
-            regularComponent2.Should().Be("other=2.1");
-        });
-    }
+                                                                                                             var regularComponent2 = packageString3;
+                                                                                                             regularComponent2.Should().Be("other=2.1");
+                                                                                                         });
 
     private async Task<int> SetupAndParseReqsTxt(string fileToParse, Action<IList<(string PackageString, GitComponent Component)>> verificationFunction)
     {

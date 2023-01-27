@@ -61,10 +61,7 @@ public class DetectorListingCommandServiceTests
     }
 
     [TestCleanup]
-    public void CleanupTests()
-    {
-        this.detectorRegistryServiceMock.VerifyAll();
-    }
+    public void CleanupTests() => this.detectorRegistryServiceMock.VerifyAll();
 
     [TestMethod]
     public async Task DetectorListingCommandService_ListsDetectors()

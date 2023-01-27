@@ -15,28 +15,16 @@ public class CommandLineInvocationServiceTests
     private CommandLineInvocationService commandLineService;
 
     [TestInitialize]
-    public void TestInitialize()
-    {
-        this.commandLineService = new CommandLineInvocationService();
-    }
+    public void TestInitialize() => this.commandLineService = new CommandLineInvocationService();
 
     [SkipTestIfNotWindows]
-    public async Task ShowsCmdExeAsExecutable()
-    {
-        Assert.IsTrue(await this.commandLineService.CanCommandBeLocated("cmd.exe", default, "/C"));
-    }
+    public async Task ShowsCmdExeAsExecutable() => Assert.IsTrue(await this.commandLineService.CanCommandBeLocated("cmd.exe", default, "/C"));
 
     [SkipTestIfNotWindows]
-    public async Task FallbackWorksIfBadCommandsAreFirst()
-    {
-        Assert.IsTrue(await this.commandLineService.CanCommandBeLocated("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe", "cmd.exe" }, "/C"));
-    }
+    public async Task FallbackWorksIfBadCommandsAreFirst() => Assert.IsTrue(await this.commandLineService.CanCommandBeLocated("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe", "cmd.exe" }, "/C"));
 
     [SkipTestIfNotWindows]
-    public async Task ReturnsFalseIfNoValidCommandIsFound()
-    {
-        Assert.IsFalse(await this.commandLineService.CanCommandBeLocated("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe" }, "/C"));
-    }
+    public async Task ReturnsFalseIfNoValidCommandIsFound() => Assert.IsFalse(await this.commandLineService.CanCommandBeLocated("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe" }, "/C"));
 
     [SkipTestIfNotWindows]
     public async Task ReturnsStandardOutput()

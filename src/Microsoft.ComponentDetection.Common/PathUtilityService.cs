@@ -95,10 +95,7 @@ public class PathUtilityService : IPathUtilityService
         }
     }
 
-    public string GetParentDirectory(string path)
-    {
-        return Path.GetDirectoryName(path);
-    }
+    public string GetParentDirectory(string path) => Path.GetDirectoryName(path);
 
     public bool IsFileBelowAnother(string aboveFilePath, string belowFilePath)
     {

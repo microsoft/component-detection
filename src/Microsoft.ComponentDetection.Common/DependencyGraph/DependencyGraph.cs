@@ -58,15 +58,9 @@ internal class DependencyGraph : IDependencyGraph
         this.AddDependency(componentNode.Id, parentComponentId);
     }
 
-    public bool Contains(string componentId)
-    {
-        return this.componentNodes.ContainsKey(componentId);
-    }
+    public bool Contains(string componentId) => this.componentNodes.ContainsKey(componentId);
 
-    public ICollection<string> GetDependenciesForComponent(string componentId)
-    {
-        return this.componentNodes[componentId].DependencyIds;
-    }
+    public ICollection<string> GetDependenciesForComponent(string componentId) => this.componentNodes[componentId].DependencyIds;
 
     public ICollection<string> GetExplicitReferencedDependencyIds(string componentId)
     {
@@ -87,52 +81,25 @@ internal class DependencyGraph : IDependencyGraph
         return explicitReferencedDependencyIds;
     }
 
-    public void AddAdditionalRelatedFile(string additionalRelatedFile)
-    {
-        this.AdditionalRelatedFiles.AddOrUpdate(additionalRelatedFile, 0, (notUsed, notUsed2) => 0);
-    }
+    public void AddAdditionalRelatedFile(string additionalRelatedFile) => this.AdditionalRelatedFiles.AddOrUpdate(additionalRelatedFile, 0, (notUsed, notUsed2) => 0);
 
-    public HashSet<string> GetAdditionalRelatedFiles()
-    {
-        return this.AdditionalRelatedFiles.Keys.ToImmutableHashSet().ToHashSet();
-    }
+    public HashSet<string> GetAdditionalRelatedFiles() => this.AdditionalRelatedFiles.Keys.ToImmutableHashSet().ToHashSet();
 
-    public bool HasComponents()
-    {
-        return this.componentNodes.Count > 0;
-    }
+    public bool HasComponents() => this.componentNodes.Count > 0;
 
-    public bool? IsDevelopmentDependency(string componentId)
-    {
-        return this.componentNodes[componentId].IsDevelopmentDependency;
-    }
+    public bool? IsDevelopmentDependency(string componentId) => this.componentNodes[componentId].IsDevelopmentDependency;
 
-    public DependencyScope? GetDependencyScope(string componentId)
-    {
-        return this.componentNodes[componentId].DependencyScope;
-    }
+    public DependencyScope? GetDependencyScope(string componentId) => this.componentNodes[componentId].DependencyScope;
 
-    public IEnumerable<string> GetAllExplicitlyReferencedComponents()
-    {
-        return this.componentNodes.Values
+    public IEnumerable<string> GetAllExplicitlyReferencedComponents() => this.componentNodes.Values
             .Where(componentRefNode => this.IsExplicitReferencedDependency(componentRefNode))
             .Select(componentRefNode => componentRefNode.Id);
-    }
 
-    IEnumerable<string> IDependencyGraph.GetDependenciesForComponent(string componentId)
-    {
-        return this.GetDependenciesForComponent(componentId).ToImmutableList();
-    }
+    IEnumerable<string> IDependencyGraph.GetDependenciesForComponent(string componentId) => this.GetDependenciesForComponent(componentId).ToImmutableList();
 
-    IEnumerable<string> IDependencyGraph.GetComponents()
-    {
-        return this.componentNodes.Keys.ToImmutableList();
-    }
+    IEnumerable<string> IDependencyGraph.GetComponents() => this.componentNodes.Keys.ToImmutableList();
 
-    bool IDependencyGraph.IsComponentExplicitlyReferenced(string componentId)
-    {
-        return this.IsExplicitReferencedDependency(this.componentNodes[componentId]);
-    }
+    bool IDependencyGraph.IsComponentExplicitlyReferenced(string componentId) => this.IsExplicitReferencedDependency(this.componentNodes[componentId]);
 
     private void GetExplicitReferencedDependencies(ComponentRefNode component, IList<string> explicitReferencedDependencyIds, ISet<string> visited)
     {
@@ -152,11 +119,8 @@ internal class DependencyGraph : IDependencyGraph
         }
     }
 
-    private bool IsExplicitReferencedDependency(ComponentRefNode component)
-    {
-        return (this.enableManualTrackingOfExplicitReferences && component.IsExplicitReferencedDependency) ||
+    private bool IsExplicitReferencedDependency(ComponentRefNode component) => (this.enableManualTrackingOfExplicitReferences && component.IsExplicitReferencedDependency) ||
                (!this.enableManualTrackingOfExplicitReferences && !component.DependedOnByIds.Any());
-    }
 
     private void AddDependency(string componentId, string parentComponentId)
     {

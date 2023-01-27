@@ -54,10 +54,7 @@ public class MvnCliDetectorTests
     }
 
     [TestCleanup]
-    public void TestCleanup()
-    {
-        this.scanRequest.SourceDirectory.Delete();
-    }
+    public void TestCleanup() => this.scanRequest.SourceDirectory.Delete();
 
     [TestMethod]
     public async Task IfMavenIsNotAvailableThenExitDetectorGracefully()

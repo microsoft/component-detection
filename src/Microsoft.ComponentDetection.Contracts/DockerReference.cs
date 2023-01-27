@@ -71,10 +71,7 @@ public class DockerReference
         }
     }
 
-    public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
-    {
-        throw new System.NotImplementedException();
-    }
+    public virtual TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => throw new System.NotImplementedException();
 }
 
 public class Reference
@@ -95,18 +92,12 @@ public class DigestReference : DockerReference
 
     public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Digest;
 
-    public override string ToString()
-    {
-        return $"{this.Digest}";
-    }
+    public override string ToString() => $"{this.Digest}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
     {
-        return new TypedComponent.DockerReferenceComponent(this)
-        {
-            Digest = this.Digest,
-        };
-    }
+        Digest = this.Digest,
+    };
 }
 
 // docker.io/library/ubuntu@sha256:abc123...
@@ -120,20 +111,14 @@ public class CanonicalReference : DockerReference
 
     public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Canonical;
 
-    public override string ToString()
-    {
-        return $"{this.Domain}/{this.Repository}@${this.Digest}";
-    }
+    public override string ToString() => $"{this.Domain}/{this.Repository}@${this.Digest}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
     {
-        return new TypedComponent.DockerReferenceComponent(this)
-        {
-            Domain = this.Domain,
-            Digest = this.Digest,
-            Repository = this.Repository,
-        };
-    }
+        Domain = this.Domain,
+        Digest = this.Digest,
+        Repository = this.Repository,
+    };
 }
 
 // docker.io/library/ubuntu
@@ -145,19 +130,13 @@ public class RepositoryReference : DockerReference
 
     public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Repository;
 
-    public override string ToString()
-    {
-        return $"{this.Repository}";
-    }
+    public override string ToString() => $"{this.Repository}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
     {
-        return new TypedComponent.DockerReferenceComponent(this)
-        {
-            Domain = this.Domain,
-            Repository = this.Repository,
-        };
-    }
+        Domain = this.Domain,
+        Repository = this.Repository,
+    };
 }
 
 // docker.io/library/ubuntu:latest
@@ -171,20 +150,14 @@ public class TaggedReference : DockerReference
 
     public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Tagged;
 
-    public override string ToString()
-    {
-        return $"{this.Domain}/{this.Repository}:${this.Tag}";
-    }
+    public override string ToString() => $"{this.Domain}/{this.Repository}:${this.Tag}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
     {
-        return new TypedComponent.DockerReferenceComponent(this)
-        {
-            Domain = this.Domain,
-            Tag = this.Tag,
-            Repository = this.Repository,
-        };
-    }
+        Domain = this.Domain,
+        Tag = this.Tag,
+        Repository = this.Repository,
+    };
 }
 
 // docker.io/library/ubuntu:latest@sha256:abc123...
@@ -200,19 +173,13 @@ public class DualReference : DockerReference
 
     public override DockerReferenceKind Kind { get; } = DockerReferenceKind.Dual;
 
-    public override string ToString()
-    {
-        return $"{this.Domain}/{this.Repository}:${this.Tag}@${this.Digest}";
-    }
+    public override string ToString() => $"{this.Domain}/{this.Repository}:${this.Tag}@${this.Digest}";
 
-    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent()
+    public override TypedComponent.DockerReferenceComponent ToTypedDockerReferenceComponent() => new TypedComponent.DockerReferenceComponent(this)
     {
-        return new TypedComponent.DockerReferenceComponent(this)
-        {
-            Domain = this.Domain,
-            Digest = this.Digest,
-            Tag = this.Tag,
-            Repository = this.Repository,
-        };
-    }
+        Domain = this.Domain,
+        Digest = this.Digest,
+        Tag = this.Tag,
+        Repository = this.Repository,
+    };
 }

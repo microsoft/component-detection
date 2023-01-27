@@ -235,15 +235,12 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         return individualDetectorScanResult;
     }
 
-    private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult Result, ComponentRecorder Recorder, IComponentDetector Detector)> results, ProcessingResultCode exitCode)
+    private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult Result, ComponentRecorder Recorder, IComponentDetector Detector)> results, ProcessingResultCode exitCode) => new DetectorProcessingResult
     {
-        return new DetectorProcessingResult
-        {
-            ComponentRecorders = results.Select(tuple => (tuple.Detector, tuple.Recorder)),
-            ContainersDetailsMap = results.SelectMany(x => x.Result.ContainerDetails).ToDictionary(x => x.Id),
-            ResultCode = exitCode,
-        };
-    }
+        ComponentRecorders = results.Select(tuple => (tuple.Detector, tuple.Recorder)),
+        ContainersDetailsMap = results.SelectMany(x => x.Result.ContainerDetails).ToDictionary(x => x.Id),
+        ResultCode = exitCode,
+    };
 
     private async Task<IndividualDetectorScanResult> WithExperimentalScanGuards(Func<Task<IndividualDetectorScanResult>> detectionTaskGenerator, bool isExperimentalDetector, DetectorExecutionTelemetryRecord telemetryRecord)
     {
@@ -273,10 +270,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         }
     }
 
-    private bool IsOSLinuxOrMac()
-    {
-        return OSVersion.Platform == PlatformID.MacOSX || OSVersion.Platform == PlatformID.Unix;
-    }
+    private bool IsOSLinuxOrMac() => OSVersion.Platform == PlatformID.MacOSX || OSVersion.Platform == PlatformID.Unix;
 
     private void LogTabularOutput(ILogger logger, ConcurrentDictionary<string, DetectorRunResult> providerElapsedTime, double totalElapsedTime)
     {

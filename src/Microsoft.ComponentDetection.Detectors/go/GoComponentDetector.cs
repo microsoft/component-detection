@@ -265,10 +265,7 @@ public class GoComponentDetector : FileComponentDetector
         }
     }
 
-    private bool IsModuleInBuildList(ISingleFileComponentRecorder singleFileComponentRecorder, GoComponent component)
-    {
-        return singleFileComponentRecorder.GetComponent(component.Id) != null;
-    }
+    private bool IsModuleInBuildList(ISingleFileComponentRecorder singleFileComponentRecorder, GoComponent component) => singleFileComponentRecorder.GetComponent(component.Id) != null;
 
     private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
@@ -320,10 +317,7 @@ public class GoComponentDetector : FileComponentDetector
         return true;
     }
 
-    private bool IsGoCliManuallyDisabled()
-    {
-        return this.EnvVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
-    }
+    private bool IsGoCliManuallyDisabled() => this.EnvVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
 
     private class GoBuildModule
     {

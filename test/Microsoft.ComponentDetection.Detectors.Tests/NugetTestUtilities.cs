@@ -54,10 +54,7 @@ public static class NugetTestUtilities
         return template;
     }
 
-    public static string GetValidNuspec(string componentName, string version, string[] authors)
-    {
-        return GetTemplatedNuspec(componentName, version, authors);
-    }
+    public static string GetValidNuspec(string componentName, string version, string[] authors) => GetTemplatedNuspec(componentName, version, authors);
 
     public static async Task<Stream> ZipNupkgComponent(string filename, string content)
     {

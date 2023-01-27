@@ -12,10 +12,7 @@ public class DetectorListingCommandService : ServiceBase, IArgumentHandlingServi
     [Import]
     public IDetectorRegistryService DetectorRegistryService { get; set; }
 
-    public bool CanHandle(IScanArguments arguments)
-    {
-        return arguments is ListDetectionArgs;
-    }
+    public bool CanHandle(IScanArguments arguments) => arguments is ListDetectionArgs;
 
     public async Task<ScanResult> Handle(IScanArguments arguments)
     {

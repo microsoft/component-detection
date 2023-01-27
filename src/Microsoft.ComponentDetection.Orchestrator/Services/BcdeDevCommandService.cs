@@ -12,10 +12,7 @@ public class BcdeDevCommandService : ServiceBase, IArgumentHandlingService
     [Import]
     public IBcdeScanExecutionService BcdeScanExecutionService { get; set; }
 
-    public bool CanHandle(IScanArguments arguments)
-    {
-        return arguments is BcdeDevArguments;
-    }
+    public bool CanHandle(IScanArguments arguments) => arguments is BcdeDevArguments;
 
     public async Task<ScanResult> Handle(IScanArguments arguments)
     {

@@ -235,8 +235,5 @@ public class PipResolverTests
         return toReturn;
     }
 
-    private PythonProjectRelease CreatePythonProjectRelease()
-    {
-        return new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") };
-    }
+    private PythonProjectRelease CreatePythonProjectRelease() => new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") };
 }

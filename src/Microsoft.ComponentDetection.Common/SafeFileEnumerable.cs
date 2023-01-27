@@ -140,8 +140,5 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
         }
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return this.GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 }

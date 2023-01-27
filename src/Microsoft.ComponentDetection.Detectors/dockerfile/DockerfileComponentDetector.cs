@@ -179,8 +179,5 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         return DockerReferenceUtility.ParseFamiliarName(reference);
     }
 
-    private bool HasUnresolvedVariables(string reference)
-    {
-        return new Regex("[${}]").IsMatch(reference);
-    }
+    private bool HasUnresolvedVariables(string reference) => new Regex("[${}]").IsMatch(reference);
 }

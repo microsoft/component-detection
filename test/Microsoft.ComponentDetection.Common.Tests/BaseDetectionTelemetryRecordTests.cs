@@ -16,14 +16,12 @@ public class BaseDetectionTelemetryRecordTests
     private Type[] recordTypes;
 
     [TestInitialize]
-    public void Initialize()
-    {
+    public void Initialize() =>
         // this only discovers types in a single assembly, since that's the current situation!
         this.recordTypes = typeof(BaseDetectionTelemetryRecord).Assembly.GetTypes()
             .Where(type => typeof(BaseDetectionTelemetryRecord).IsAssignableFrom(type))
             .Where(type => !type.IsAbstract)
             .ToArray();
-    }
 
     [TestMethod]
     public void UniqueRecordNames()

@@ -10,10 +10,7 @@ using static Microsoft.ComponentDetection.Common.DependencyScopeComparer;
 public class DependencyScopeComparerTests
 {
     [TestMethod]
-    public void GetMergedDependencyScope_returnNull_IfBothNull()
-    {
-        GetMergedDependencyScope(null, null).Should().BeNull();
-    }
+    public void GetMergedDependencyScope_returnNull_IfBothNull() => GetMergedDependencyScope(null, null).Should().BeNull();
 
     [TestMethod]
     public void GetMergedDependencyScope_returnSecondIfFirstNulll()

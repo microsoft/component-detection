@@ -24,10 +24,7 @@ internal class CommandLineTelemetryService : ITelemetryService
     [Import]
     public IFileWritingService FileWritingService { get; set; }
 
-    public void Flush()
-    {
-        this.FileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(Records));
-    }
+    public void Flush() => this.FileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(Records));
 
     public void PostRecord(IDetectionTelemetryRecord record)
     {
@@ -46,8 +43,5 @@ internal class CommandLineTelemetryService : ITelemetryService
         }
     }
 
-    public void SetMode(TelemetryMode mode)
-    {
-        this.telemetryMode = mode;
-    }
+    public void SetMode(TelemetryMode mode) => this.telemetryMode = mode;
 }

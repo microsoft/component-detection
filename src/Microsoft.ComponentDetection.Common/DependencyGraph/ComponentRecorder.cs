@@ -26,10 +26,7 @@ public class ComponentRecorder : IComponentRecorder
         this.enableManualTrackingOfExplicitReferences = enableManualTrackingOfExplicitReferences;
     }
 
-    public TypedComponent GetComponent(string componentId)
-    {
-        return this.singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).FirstOrDefault(x => x != null);
-    }
+    public TypedComponent GetComponent(string componentId) => this.singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).FirstOrDefault(x => x != null);
 
     public IEnumerable<DetectedComponent> GetDetectedComponents()
     {
@@ -79,16 +76,10 @@ public class ComponentRecorder : IComponentRecorder
         return matching;
     }
 
-    public IReadOnlyDictionary<string, IDependencyGraph> GetDependencyGraphsByLocation()
-    {
-        return this.singleFileRecorders.Where(x => x.DependencyGraph.HasComponents())
+    public IReadOnlyDictionary<string, IDependencyGraph> GetDependencyGraphsByLocation() => this.singleFileRecorders.Where(x => x.DependencyGraph.HasComponents())
             .ToImmutableDictionary(x => x.ManifestFileLocation, x => x.DependencyGraph as IDependencyGraph);
-    }
 
-    internal DependencyGraph GetDependencyGraphForLocation(string location)
-    {
-        return this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
-    }
+    internal DependencyGraph GetDependencyGraphForLocation(string location) => this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
 
     public class SingleFileComponentRecorder : ISingleFileComponentRecorder
     {
@@ -124,11 +115,9 @@ public class ComponentRecorder : IComponentRecorder
             return null;
         }
 
-        public IReadOnlyDictionary<string, DetectedComponent> GetDetectedComponents()
-        {
+        public IReadOnlyDictionary<string, DetectedComponent> GetDetectedComponents() =>
             // Should this be immutable?
-            return this.detectedComponentsInternal;
-        }
+            this.detectedComponentsInternal;
 
         public void RegisterUsage(
             DetectedComponent detectedComponent,
@@ -173,20 +162,11 @@ public class ComponentRecorder : IComponentRecorder
             }
         }
 
-        public void AddAdditionalRelatedFile(string relatedFilePath)
-        {
-            this.DependencyGraph.AddAdditionalRelatedFile(relatedFilePath);
-        }
+        public void AddAdditionalRelatedFile(string relatedFilePath) => this.DependencyGraph.AddAdditionalRelatedFile(relatedFilePath);
 
-        public IList<string> GetAdditionalRelatedFiles()
-        {
-            return this.DependencyGraph.GetAdditionalRelatedFiles().ToImmutableList();
-        }
+        public IList<string> GetAdditionalRelatedFiles() => this.DependencyGraph.GetAdditionalRelatedFiles().ToImmutableList();
 
-        public IComponentRecorder GetParentComponentRecorder()
-        {
-            return this.recorder;
-        }
+        public IComponentRecorder GetParentComponentRecorder() => this.recorder;
 
         private void AddComponentToGraph(
             string location,

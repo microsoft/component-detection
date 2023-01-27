@@ -97,13 +97,7 @@ internal class PartialVersion
 
     public string PreRelease { get; set; }
 
-    public SemVersion ToZeroVersion()
-    {
-        return new SemVersion(this.Major ?? 0, this.Minor ?? 0, this.Patch ?? 0, this.PreRelease);
-    }
+    public SemVersion ToZeroVersion() => new SemVersion(this.Major ?? 0, this.Minor ?? 0, this.Patch ?? 0, this.PreRelease);
 
-    public bool IsFull()
-    {
-        return this.Major.HasValue && this.Minor.HasValue && this.Patch.HasValue;
-    }
+    public bool IsFull() => this.Major.HasValue && this.Minor.HasValue && this.Patch.HasValue;
 }

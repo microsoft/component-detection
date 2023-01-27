@@ -11,23 +11,11 @@ using Microsoft.ComponentDetection.Contracts;
 [Shared]
 public class FileUtilityService : IFileUtilityService
 {
-    public string ReadAllText(string filePath)
-    {
-        return File.ReadAllText(filePath);
-    }
+    public string ReadAllText(string filePath) => File.ReadAllText(filePath);
 
-    public string ReadAllText(FileInfo file)
-    {
-        return File.ReadAllText(file.FullName);
-    }
+    public string ReadAllText(FileInfo file) => File.ReadAllText(file.FullName);
 
-    public bool Exists(string fileName)
-    {
-        return File.Exists(fileName);
-    }
+    public bool Exists(string fileName) => File.Exists(fileName);
 
-    public Stream MakeFileStream(string fileName)
-    {
-        return new FileStream(fileName, FileMode.Open, FileAccess.Read);
-    }
+    public Stream MakeFileStream(string fileName) => new FileStream(fileName, FileMode.Open, FileAccess.Read);
 }

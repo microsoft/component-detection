@@ -287,8 +287,5 @@ public class YarnLockComponentDetector : FileComponentDetector
         }
     }
 
-    private string YarnEntryToComponentId(YarnEntry entry)
-    {
-        return new DetectedComponent(new NpmComponent(entry.Name, entry.Version)).Component.Id;
-    }
+    private string YarnEntryToComponentId(YarnEntry entry) => new DetectedComponent(new NpmComponent(entry.Name, entry.Version)).Component.Id;
 }

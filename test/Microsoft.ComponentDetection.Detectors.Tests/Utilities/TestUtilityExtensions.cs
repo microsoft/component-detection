@@ -4,17 +4,11 @@ using System.Security.Cryptography;
 
 internal static class TestUtilityExtensions
 {
-    public static string NewRandomVersion()
-    {
-        return new Version(
+    public static string NewRandomVersion() => new Version(
                 RandomNumberGenerator.GetInt32(0, 1000),
                 RandomNumberGenerator.GetInt32(0, 1000),
                 RandomNumberGenerator.GetInt32(0, 1000))
             .ToString();
-    }
 
-    public static string GetRandomString()
-    {
-        return Guid.NewGuid().ToString("N");
-    }
+    public static string GetRandomString() => Guid.NewGuid().ToString("N");
 }

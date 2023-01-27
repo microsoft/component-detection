@@ -83,10 +83,7 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <param name="sourceDirectory">The directory to search.</param>
     /// <param name="exclusionPredicate">The exclusion predicate function.</param>
     /// <returns>Awaitable task with enumerable streams <see cref="IEnumerable{IComponentStream}"/> for the declared detector. </returns>
-    protected Task<IEnumerable<IComponentStream>> GetFileStreamsAsync(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate exclusionPredicate)
-    {
-        return Task.FromResult(this.ComponentStreamEnumerableFactory.GetComponentStreams(sourceDirectory, this.SearchPatterns, exclusionPredicate));
-    }
+    protected Task<IEnumerable<IComponentStream>> GetFileStreamsAsync(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate exclusionPredicate) => Task.FromResult(this.ComponentStreamEnumerableFactory.GetComponentStreams(sourceDirectory, this.SearchPatterns, exclusionPredicate));
 
     private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
@@ -109,15 +106,9 @@ public abstract class FileComponentDetector : IComponentDetector
         };
     }
 
-    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
-    {
-        return Task.FromResult(processRequests);
-    }
+    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) => Task.FromResult(processRequests);
 
     protected abstract Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
 
-    protected virtual Task OnDetectionFinished()
-    {
-        return Task.CompletedTask;
-    }
+    protected virtual Task OnDetectionFinished() => Task.CompletedTask;
 }

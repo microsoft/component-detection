@@ -18,10 +18,7 @@ public class DockerServiceTests
     private DockerService dockerService;
 
     [TestInitialize]
-    public void TestInitialize()
-    {
-        this.dockerService = new DockerService();
-    }
+    public void TestInitialize() => this.dockerService = new DockerService();
 
     [TestMethod]
     public async Task DockerService_CanPingDocker()

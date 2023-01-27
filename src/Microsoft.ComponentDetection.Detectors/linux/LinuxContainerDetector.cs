@@ -95,22 +95,16 @@ public class LinuxContainerDetector : IComponentDetector
         return double.TryParse(timeout, out var parsedTimeout) ? TimeSpan.FromSeconds(parsedTimeout) : TimeSpan.FromMinutes(10);
     }
 
-    private static IndividualDetectorScanResult EmptySuccessfulScan()
+    private static IndividualDetectorScanResult EmptySuccessfulScan() => new IndividualDetectorScanResult
     {
-        return new IndividualDetectorScanResult
-        {
-            ResultCode = ProcessingResultCode.Success,
-        };
-    }
+        ResultCode = ProcessingResultCode.Success,
+    };
 
-    private static ImageScanningResult EmptyImageScanningResult()
+    private static ImageScanningResult EmptyImageScanningResult() => new ImageScanningResult
     {
-        return new ImageScanningResult
-        {
-            ContainerDetails = null,
-            Components = Enumerable.Empty<DetectedComponent>(),
-        };
-    }
+        ContainerDetails = null,
+        Components = Enumerable.Empty<DetectedComponent>(),
+    };
 
     private async Task<IEnumerable<ImageScanningResult>> ProcessImagesAsync(
         IEnumerable<string> imagesToProcess,

@@ -164,12 +164,10 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         }
     }
 
-    private async Task<bool> IsAntLocallyAvailableAsync()
-    {
+    private async Task<bool> IsAntLocallyAvailableAsync() =>
         // Note: calling CanCommandBeLocated populates a cache of valid commands.  If it is not called before ExecuteCommand,
         // ExecuteCommand calls CanCommandBeLocated with no arguments, which fails.
-        return await this.CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, AntVersionArgument);
-    }
+        await this.CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, AntVersionArgument);
 
     private async Task<bool> RunAntToDetectDependenciesAsync(string workingDirectory)
     {

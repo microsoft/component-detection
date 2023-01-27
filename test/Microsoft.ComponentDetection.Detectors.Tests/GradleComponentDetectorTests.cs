@@ -18,10 +18,7 @@ public class GradleComponentDetectorTests
     private DetectorTestUtility<GradleComponentDetector> detectorTestUtility;
 
     [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<GradleComponentDetector>();
-    }
+    public void TestInitialize() => this.detectorTestUtility = DetectorTestUtilityCreator.Create<GradleComponentDetector>();
 
     [TestMethod]
     public async Task TestGradleDetectorWithNoFiles_ReturnsSuccessfully()

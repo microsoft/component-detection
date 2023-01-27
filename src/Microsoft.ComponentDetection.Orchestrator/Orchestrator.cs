@@ -119,12 +119,9 @@ public class Orchestrator
         return returnResult;
     }
 
-    private static void AddAssembliesWithType<T>(Assembly assembly, ContainerConfiguration containerConfiguration)
-    {
-        assembly.GetTypes()
+    private static void AddAssembliesWithType<T>(Assembly assembly, ContainerConfiguration containerConfiguration) => assembly.GetTypes()
             .Where(x => typeof(T).IsAssignableFrom(x)).ToList()
             .ForEach(service => containerConfiguration = containerConfiguration.WithPart(service));
-    }
 
     public async Task<ScanResult> HandleCommandAsync(
         string[] args,

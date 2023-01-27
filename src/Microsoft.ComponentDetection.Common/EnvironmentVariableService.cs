@@ -7,10 +7,7 @@ using Microsoft.ComponentDetection.Contracts;
 [Export(typeof(IEnvironmentVariableService))]
 public class EnvironmentVariableService : IEnvironmentVariableService
 {
-    public bool DoesEnvironmentVariableExist(string name)
-    {
-        return this.GetEnvironmentVariable(name) != null;
-    }
+    public bool DoesEnvironmentVariableExist(string name) => this.GetEnvironmentVariable(name) != null;
 
     public string GetEnvironmentVariable(string name)
     {

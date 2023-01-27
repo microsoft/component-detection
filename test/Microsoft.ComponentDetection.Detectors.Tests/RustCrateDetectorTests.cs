@@ -232,10 +232,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     private DetectorTestUtility<RustCrateDetector> detectorTestUtility;
 
     [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<RustCrateDetector>();
-    }
+    public void TestInitialize() => this.detectorTestUtility = DetectorTestUtilityCreator.Create<RustCrateDetector>();
 
     [TestMethod]
     public async Task TestGraphIsCorrect()
@@ -618,16 +615,10 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustDetector_V1WorkspacesWithTopLevelDependencies()
-    {
-        await this.TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
-    }
+    public async Task TestRustDetector_V1WorkspacesWithTopLevelDependencies() => await this.TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
 
     [TestMethod]
-    public async Task TestRustDetector_V2WorkspacesWithTopLevelDependencies()
-    {
-        await this.TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
-    }
+    public async Task TestRustDetector_V2WorkspacesWithTopLevelDependencies() => await this.TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
 
     private async Task TestRustDetector_WorkspacesWithTopLevelDependencies(string lockFile)
     {
@@ -685,16 +676,10 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustDetector_V1WorkspacesNoTopLevelDependencies()
-    {
-        await this.TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
-    }
+    public async Task TestRustDetector_V1WorkspacesNoTopLevelDependencies() => await this.TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
 
     [TestMethod]
-    public async Task TestRustDetector_V2WorkspacesNoTopLevelDependencies()
-    {
-        await this.TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
-    }
+    public async Task TestRustDetector_V2WorkspacesNoTopLevelDependencies() => await this.TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
 
     private async Task TestRustDetector_WorkspacesNoTopLevelDependencies(string lockFile)
     {
@@ -707,16 +692,10 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustDetector_V1WorkspacesWithSubDirectories()
-    {
-        await this.TestRustDetector_WorkspacesWithSubDirectories(this.testWorkspaceLockV1NoBaseString);
-    }
+    public async Task TestRustDetector_V1WorkspacesWithSubDirectories() => await this.TestRustDetector_WorkspacesWithSubDirectories(this.testWorkspaceLockV1NoBaseString);
 
     [TestMethod]
-    public async Task TestRustDetector_V2WorkspacesWithSubDirectories()
-    {
-        await this.TestRustDetector_WorkspacesWithSubDirectories(this.testWorkspaceLockV2NoBaseString);
-    }
+    public async Task TestRustDetector_V2WorkspacesWithSubDirectories() => await this.TestRustDetector_WorkspacesWithSubDirectories(this.testWorkspaceLockV2NoBaseString);
 
     private async Task TestRustDetector_WorkspacesWithSubDirectories(string lockFile)
     {

@@ -14,8 +14,5 @@ public class SafeFileEnumerableFactory : ISafeFileEnumerableFactory
     [Import]
     public IPathUtilityService PathUtilityService { get; set; }
 
-    public IEnumerable<MatchedFile> CreateSafeFileEnumerable(DirectoryInfo directory, IEnumerable<string> searchPatterns, ExcludeDirectoryPredicate directoryExclusionPredicate)
-    {
-        return new SafeFileEnumerable(directory, searchPatterns, this.Logger, this.PathUtilityService, directoryExclusionPredicate);
-    }
+    public IEnumerable<MatchedFile> CreateSafeFileEnumerable(DirectoryInfo directory, IEnumerable<string> searchPatterns, ExcludeDirectoryPredicate directoryExclusionPredicate) => new SafeFileEnumerable(directory, searchPatterns, this.Logger, this.PathUtilityService, directoryExclusionPredicate);
 }

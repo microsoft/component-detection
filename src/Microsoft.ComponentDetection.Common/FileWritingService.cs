@@ -46,10 +46,7 @@ public class FileWritingService : IFileWritingService
         }
     }
 
-    public void WriteFile(FileInfo absolutePath, string text)
-    {
-        File.WriteAllText(absolutePath.FullName, text);
-    }
+    public void WriteFile(FileInfo absolutePath, string text) => File.WriteAllText(absolutePath.FullName, text);
 
     public string ResolveFilePath(string relativeFilePath)
     {

@@ -26,10 +26,7 @@ public class MavenCommandService : IMavenCommandService
 
     public string BcdeMvnDependencyFileName => "bcde.mvndeps";
 
-    public async Task<bool> MavenCLIExists()
-    {
-        return await this.CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
-    }
+    public async Task<bool> MavenCLIExists() => await this.CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
 
     public async Task GenerateDependenciesFile(ProcessRequest processRequest)
     {

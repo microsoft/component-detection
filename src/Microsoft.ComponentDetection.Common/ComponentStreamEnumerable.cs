@@ -38,10 +38,7 @@ public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
         }
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return this.GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
     private Stream SafeOpenFile(FileInfo file)
     {

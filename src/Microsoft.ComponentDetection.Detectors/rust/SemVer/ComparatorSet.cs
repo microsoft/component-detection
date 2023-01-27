@@ -170,20 +170,12 @@ internal class ComparatorSet : IEquatable<ComparatorSet>
         return thisSet.SetEquals(other.comparators);
     }
 
-    public override bool Equals(object other)
-    {
-        return this.Equals(other as ComparatorSet);
-    }
+    public override bool Equals(object other) => this.Equals(other as ComparatorSet);
 
-    public override string ToString()
-    {
-        return string.Join(" ", this.comparators.Select(c => c.ToString()).ToArray());
-    }
+    public override string ToString() => string.Join(" ", this.comparators.Select(c => c.ToString()).ToArray());
 
-    public override int GetHashCode()
-    {
+    public override int GetHashCode() =>
         // XOR is commutative, so this hash code is independent
         // of the order of comparators.
-        return this.comparators.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());
-    }
+        this.comparators.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());
 }

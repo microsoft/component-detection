@@ -72,10 +72,7 @@ public class DetectorTestUtility<T>
         return this;
     }
 
-    public DetectorTestUtility<T> WithFile(string fileName, string fileContents, IEnumerable<string> searchPatterns = null, string fileLocation = null)
-    {
-        return this.WithFile(fileName, fileContents.ToStream(), searchPatterns, fileLocation);
-    }
+    public DetectorTestUtility<T> WithFile(string fileName, string fileContents, IEnumerable<string> searchPatterns = null, string fileLocation = null) => this.WithFile(fileName, fileContents.ToStream(), searchPatterns, fileLocation);
 
     public DetectorTestUtility<T> WithFile(string fileName, Stream fileContents, IEnumerable<string> searchPatterns = null, string fileLocation = null)
     {
@@ -116,14 +113,11 @@ public class DetectorTestUtility<T>
         return getFileMock.Object;
     }
 
-    private ProcessRequest CreateProcessRequest(string pattern, string filePath, Stream content)
+    private ProcessRequest CreateProcessRequest(string pattern, string filePath, Stream content) => new ProcessRequest
     {
-        return new ProcessRequest
-        {
-            SingleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath),
-            ComponentStream = CreateComponentStreamForFile(pattern, filePath, content),
-        };
-    }
+        SingleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(filePath),
+        ComponentStream = CreateComponentStreamForFile(pattern, filePath, content),
+    };
 
     private void InitializeFileRelatedMocksUsingDefaultImplementationIfNecessary()
     {

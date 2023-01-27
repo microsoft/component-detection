@@ -25,10 +25,7 @@ public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
         }
     }
 
-    public void Dispose()
-    {
-        this.Dispose(true);
-    }
+    public void Dispose() => this.Dispose(true);
 
     protected virtual void Dispose(bool disposing)
     {

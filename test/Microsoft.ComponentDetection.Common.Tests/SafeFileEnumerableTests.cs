@@ -27,10 +27,7 @@ public class SafeFileEnumerableTests
     }
 
     [TestCleanup]
-    public void TestCleanup()
-    {
-        this.CleanupTemporaryDirectory(this.temporaryDirectory);
-    }
+    public void TestCleanup() => this.CleanupTemporaryDirectory(this.temporaryDirectory);
 
     [TestMethod]
     public void GetEnumerator_WorksOverExpectedFiles()

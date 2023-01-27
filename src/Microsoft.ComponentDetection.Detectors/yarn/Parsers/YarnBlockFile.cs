@@ -96,10 +96,7 @@ public class YarnBlockFile : IYarnBlockFile
         yield break;
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return this.GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
     private void ReadVersionHeader()
     {

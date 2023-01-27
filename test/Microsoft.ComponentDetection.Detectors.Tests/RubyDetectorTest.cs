@@ -412,23 +412,17 @@ PATH
         this.AssertRubyComponentNameAndVersion(detectedComponents, name: "test2", version: "1.0.0");
     }
 
-    private void AssertRubyComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
-    {
-        Assert.IsNotNull(
+    private void AssertRubyComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version) => Assert.IsNotNull(
             detectedComponents.SingleOrDefault(c =>
                 c.Component is RubyGemsComponent component &&
                 component.Name.Equals(name) &&
                 component.Version.Equals(version)),
             $"Component with name {name} and version {version} was not found");
-    }
 
-    private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
-    {
-        Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
-            c.Component is GitComponent component &&
-            component.CommitHash.Equals(commitHash) &&
-            component.RepositoryUrl.Equals(repositoryUrl)));
-    }
+    private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl) => Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
+                                                                                                                                                      c.Component is GitComponent component &&
+                                                                                                                                                      component.CommitHash.Equals(commitHash) &&
+                                                                                                                                                      component.RepositoryUrl.Equals(repositoryUrl)));
 
     private void AssertGitComponentAsRootAndGitComponentAsSubDependency(IComponentRecorder recorder, string rootHash, string subDependencyHash)
     {

@@ -122,10 +122,7 @@ public class Range : IEquatable<Range>
     /// </summary>
     /// <param name="version">The version to check.</param>
     /// <returns>true if the range is satisfied by the version.</returns>
-    public bool IsSatisfied(SemVersion version)
-    {
-        return this.comparatorSets.Any(s => s.IsSatisfied(version));
-    }
+    public bool IsSatisfied(SemVersion version) => this.comparatorSets.Any(s => s.IsSatisfied(version));
 
     /// <summary>
     /// Determine whether the given version satisfies this range.
@@ -152,10 +149,7 @@ public class Range : IEquatable<Range>
     /// </summary>
     /// <param name="versions">The versions to check.</param>
     /// <returns>An IEnumerable of satisfying versions.</returns>
-    public IEnumerable<SemVersion> Satisfying(IEnumerable<SemVersion> versions)
-    {
-        return versions.Where(this.IsSatisfied);
-    }
+    public IEnumerable<SemVersion> Satisfying(IEnumerable<SemVersion> versions) => versions.Where(this.IsSatisfied);
 
     /// <summary>
     /// Return the set of version strings that satisfy this range.
@@ -164,20 +158,14 @@ public class Range : IEquatable<Range>
     /// <param name="versions">The version strings to check.</param>
     /// <param name="loose">When true, be more forgiving of some invalid version specifications.</param>
     /// <returns>An IEnumerable of satisfying version strings.</returns>
-    public IEnumerable<string> Satisfying(IEnumerable<string> versions, bool loose = false)
-    {
-        return versions.Where(v => this.IsSatisfied(v, loose));
-    }
+    public IEnumerable<string> Satisfying(IEnumerable<string> versions, bool loose = false) => versions.Where(v => this.IsSatisfied(v, loose));
 
     /// <summary>
     /// Return the maximum version that satisfies this range.
     /// </summary>
     /// <param name="versions">The versions to select from.</param>
     /// <returns>The maximum satisfying version, or null if no versions satisfied this range.</returns>
-    public SemVersion MaxSatisfying(IEnumerable<SemVersion> versions)
-    {
-        return this.Satisfying(versions).Max();
-    }
+    public SemVersion MaxSatisfying(IEnumerable<SemVersion> versions) => this.Satisfying(versions).Max();
 
     /// <summary>
     /// Return the maximum version that satisfies this range.
@@ -215,10 +203,7 @@ public class Range : IEquatable<Range>
     /// Returns the range specification string used when constructing this range.
     /// </summary>
     /// <returns>The range string.</returns>
-    public override string ToString()
-    {
-        return this.rangeSpec;
-    }
+    public override string ToString() => this.rangeSpec;
 
     public bool Equals(Range other)
     {
@@ -231,15 +216,10 @@ public class Range : IEquatable<Range>
         return thisSet.SetEquals(other.comparatorSets);
     }
 
-    public override bool Equals(object other)
-    {
-        return this.Equals(other as Range);
-    }
+    public override bool Equals(object other) => this.Equals(other as Range);
 
-    public override int GetHashCode()
-    {
+    public override int GetHashCode() =>
         // XOR is commutative, so this hash code is independent
         // of the order of comparators.
-        return this.comparatorSets.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());
-    }
+        this.comparatorSets.Aggregate(0, (accum, next) => accum ^ next.GetHashCode());
 }

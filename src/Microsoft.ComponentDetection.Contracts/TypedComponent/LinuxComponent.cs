@@ -52,28 +52,13 @@ public class LinuxComponent : TypedComponent
         }
     }
 
-    private bool IsUbuntu()
-    {
-        return this.Distribution.ToUpperInvariant() == "UBUNTU";
-    }
+    private bool IsUbuntu() => this.Distribution.ToUpperInvariant() == "UBUNTU";
 
-    private bool IsDebian()
-    {
-        return this.Distribution.ToUpperInvariant() == "DEBIAN";
-    }
+    private bool IsDebian() => this.Distribution.ToUpperInvariant() == "DEBIAN";
 
-    private bool IsCentOS()
-    {
-        return this.Distribution.ToUpperInvariant() == "CENTOS";
-    }
+    private bool IsCentOS() => this.Distribution.ToUpperInvariant() == "CENTOS";
 
-    private bool IsFedora()
-    {
-        return this.Distribution.ToUpperInvariant() == "FEDORA";
-    }
+    private bool IsFedora() => this.Distribution.ToUpperInvariant() == "FEDORA";
 
-    private bool IsRHEL()
-    {
-        return this.Distribution.ToUpperInvariant() == "RED HAT ENTERPRISE LINUX";
-    }
+    private bool IsRHEL() => this.Distribution.ToUpperInvariant() == "RED HAT ENTERPRISE LINUX";
 }

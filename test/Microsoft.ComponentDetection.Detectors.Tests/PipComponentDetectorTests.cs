@@ -305,15 +305,9 @@ public class PipComponentDetectorTests
         }
     }
 
-    private void CheckChild(IComponentRecorder recorder, string childId, string[] parentIds)
-    {
-        recorder.AssertAllExplicitlyReferencedComponents<PipComponent>(
+    private void CheckChild(IComponentRecorder recorder, string childId, string[] parentIds) => recorder.AssertAllExplicitlyReferencedComponents<PipComponent>(
             childId,
             parentIds.Select(parentId => new Func<PipComponent, bool>(x => x.Id == parentId)).ToArray());
-    }
 
-    private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)
-    {
-        return components.Select<string, (string, GitComponent)>(dep => (dep, null)).ToList();
-    }
+    private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components) => components.Select<string, (string, GitComponent)>(dep => (dep, null)).ToList();
 }

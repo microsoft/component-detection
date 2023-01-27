@@ -13,10 +13,7 @@ public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDis
 
     public string Frameworks { get; set; }
 
-    public void Dispose()
-    {
-        this.Dispose(true);
-    }
+    public void Dispose() => this.Dispose(true);
 
     protected virtual void Dispose(bool disposing)
     {

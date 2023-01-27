@@ -53,16 +53,13 @@ public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
         return scanResult;
     }
 
-    private static Detector ConvertToContract(IComponentDetector detector)
+    private static Detector ConvertToContract(IComponentDetector detector) => new Detector
     {
-        return new Detector
-        {
-            DetectorId = detector.Id,
-            IsExperimental = detector is IExperimentalDetector,
-            Version = detector.Version,
-            SupportedComponentTypes = detector.SupportedComponentTypes,
-        };
-    }
+        DetectorId = detector.Id,
+        IsExperimental = detector is IExperimentalDetector,
+        Version = detector.Version,
+        SupportedComponentTypes = detector.SupportedComponentTypes,
+    };
 
     private DetectorRestrictions GetDetectorRestrictions(IDetectionArguments detectionArguments)
     {

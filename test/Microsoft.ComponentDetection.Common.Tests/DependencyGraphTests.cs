@@ -10,11 +10,9 @@ public class DependencyGraphTests
     private DependencyGraph.DependencyGraph dependencyGraph;
 
     [TestInitialize]
-    public void TestInitializer()
-    {
+    public void TestInitializer() =>
         // Default value of true -- some tests will create their own, though.
         this.dependencyGraph = new DependencyGraph.DependencyGraph(true);
-    }
 
     [TestMethod]
     public void AddComponent_ParentComponentIdIsPresent_DependencyRelationIsAdded()

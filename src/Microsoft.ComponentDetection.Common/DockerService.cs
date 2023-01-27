@@ -232,8 +232,5 @@ public class DockerService : IDockerService
         await Client.Containers.RemoveContainerAsync(containerId, parameters, cancellationToken);
     }
 
-    private static int GetContainerId()
-    {
-        return Interlocked.Increment(ref incrementingContainerId);
-    }
+    private static int GetContainerId() => Interlocked.Increment(ref incrementingContainerId);
 }

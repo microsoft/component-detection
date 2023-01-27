@@ -94,15 +94,10 @@ public class PnpmComponentDetector : FileComponentDetector
         }
     }
 
-    private bool IsLocalDependency(KeyValuePair<string, string> dependency)
-    {
+    private bool IsLocalDependency(KeyValuePair<string, string> dependency) =>
         // Local dependencies are dependencies that live in the file system
         // this requires an extra parsing that is not supported yet
-        return dependency.Key.StartsWith("file:") || dependency.Value.StartsWith("file:") || dependency.Value.StartsWith("link:");
-    }
+        dependency.Key.StartsWith("file:") || dependency.Value.StartsWith("file:") || dependency.Value.StartsWith("link:");
 
-    private string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion)
-    {
-        return dependencyVersion.Contains('/') ? dependencyVersion : $"/{dependencyName}/{dependencyVersion}";
-    }
+    private string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion) => dependencyVersion.Contains('/') ? dependencyVersion : $"/{dependencyName}/{dependencyVersion}";
 }

@@ -17,10 +17,7 @@ public class PoetryComponentDetectorTests
     private DetectorTestUtility<PoetryComponentDetector> detectorTestUtility;
 
     [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PoetryComponentDetector>();
-    }
+    public void TestInitialize() => this.detectorTestUtility = DetectorTestUtilityCreator.Create<PoetryComponentDetector>();
 
     [TestMethod]
     public async Task TestPoetryDetector_TestCustomSource()
@@ -128,21 +125,15 @@ resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
         this.AssertGitComponentHashAndUrl(detectedComponents, "232a5596424c98d11c3cf2e29b2f6a6c591c2ff3", "https://github.com/requests/requests.git");
     }
 
-    private void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
-    {
-        Assert.IsNotNull(
+    private void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version) => Assert.IsNotNull(
             detectedComponents.SingleOrDefault(c =>
                 c.Component is PipComponent component &&
                 component.Name.Equals(name) &&
                 component.Version.Equals(version)),
             $"Component with name {name} and version {version} was not found");
-    }
 
-    private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
-    {
-        Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
-            c.Component is GitComponent component &&
-            component.CommitHash.Equals(commitHash) &&
-            component.RepositoryUrl.Equals(repositoryUrl)));
-    }
+    private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl) => Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
+                                                                                                                                                      c.Component is GitComponent component &&
+                                                                                                                                                      component.CommitHash.Equals(commitHash) &&
+                                                                                                                                                      component.RepositoryUrl.Equals(repositoryUrl)));
 }

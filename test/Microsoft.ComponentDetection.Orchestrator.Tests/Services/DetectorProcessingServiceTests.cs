@@ -47,14 +47,11 @@ public class DetectorProcessingServiceTests
 
     private bool isWin;
 
-    private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId)
+    private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId) => new IndividualDetectorScanResult
     {
-        return new IndividualDetectorScanResult
-        {
-            AdditionalTelemetryDetails = new Dictionary<string, string> { { "detectorId", detectorId } },
-            ResultCode = ProcessingResultCode.Success,
-        };
-    }
+        AdditionalTelemetryDetails = new Dictionary<string, string> { { "detectorId", detectorId } },
+        ResultCode = ProcessingResultCode.Success,
+    };
 
     [TestInitialize]
     public void TestInit()
@@ -547,13 +544,10 @@ public class DetectorProcessingServiceTests
         return mockFileDetector;
     }
 
-    private IEnumerable<DetectedComponent> GetDiscoveredComponentsFromDetectorProcessingResult(DetectorProcessingResult detectorProcessingResult)
-    {
-        return detectorProcessingResult
+    private IEnumerable<DetectedComponent> GetDiscoveredComponentsFromDetectorProcessingResult(DetectorProcessingResult detectorProcessingResult) => detectorProcessingResult
             .ComponentRecorders
             .Select(componentRecorder => componentRecorder.Recorder.GetDetectedComponents())
             .SelectMany(x => x);
-    }
 
     private void FillComponentRecorder(IComponentRecorder componentRecorder, string id)
     {
