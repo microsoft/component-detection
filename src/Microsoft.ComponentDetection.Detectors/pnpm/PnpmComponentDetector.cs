@@ -26,7 +26,7 @@ public class PnpmComponentDetector : FileComponentDetector
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -40,7 +40,7 @@ public class PnpmComponentDetector : FileComponentDetector
 
         try
         {
-            var pnpmYaml = await PnpmParsingUtilities.DeserializePnpmYamlFile(file);
+            var pnpmYaml = await PnpmParsingUtilities.DeserializePnpmYamlFileAsync(file);
             this.RecordDependencyGraphFromFile(pnpmYaml, singleFileComponentRecorder);
         }
         catch (Exception e)

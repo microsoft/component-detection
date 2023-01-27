@@ -26,7 +26,7 @@ public class PodComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 2;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -35,7 +35,7 @@ public class PodComponentDetector : FileComponentDetector
 
         try
         {
-            var podfileLock = await ParsePodfileLock(file);
+            var podfileLock = await ParsePodfileLockAsync(file);
 
             this.ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
         }
@@ -45,7 +45,7 @@ public class PodComponentDetector : FileComponentDetector
         }
     }
 
-    private static async Task<PodfileLock> ParsePodfileLock(IComponentStream file)
+    private static async Task<PodfileLock> ParsePodfileLockAsync(IComponentStream file)
     {
         var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
         var input = new StringReader(fileContent);

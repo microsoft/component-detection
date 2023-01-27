@@ -14,7 +14,7 @@ public class BcdeDevCommandService : ServiceBase, IArgumentHandlingService
 
     public bool CanHandle(IScanArguments arguments) => arguments is BcdeDevArguments;
 
-    public async Task<ScanResult> Handle(IScanArguments arguments)
+    public async Task<ScanResult> HandleAsync(IScanArguments arguments)
     {
         // Run BCDE with the given arguments
         var detectionArguments = arguments as BcdeArguments;

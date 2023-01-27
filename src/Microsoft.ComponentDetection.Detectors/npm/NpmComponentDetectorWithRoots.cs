@@ -46,7 +46,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
 
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) => Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
+    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) => Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
             .Where(pr =>
             {
                 if (pr.ComponentStream.Pattern.Equals(LernaSearchPattern, StringComparison.Ordinal))
@@ -62,7 +62,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                 return true;
             }));
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         if (processRequest is null)
         {
@@ -96,7 +96,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             }
         }
 
-        await this.SafeProcessAllPackageJTokens(file, (token) =>
+        await this.SafeProcessAllPackageJTokensAsync(file, (token) =>
         {
             if (!foundUnderLerna && (token["name"] == null || token["version"] == null || string.IsNullOrWhiteSpace(token["name"].Value<string>()) || string.IsNullOrWhiteSpace(token["version"].Value<string>())))
             {
@@ -305,7 +305,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                 s.OnCompleted));
     }
 
-    private async Task SafeProcessAllPackageJTokens(IComponentStream componentStream, JTokenProcessor jtokenProcessor)
+    private async Task SafeProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessor jtokenProcessor)
     {
         try
         {

@@ -50,7 +50,7 @@ public class BcdeDevCommandServiceTests
     }
 
     [TestMethod]
-    public async Task RunComponentDetection()
+    public async Task RunComponentDetectionAsync()
     {
         var args = new BcdeArguments();
 
@@ -59,7 +59,7 @@ public class BcdeDevCommandServiceTests
             BcdeScanExecutionService = this.scanExecutionServiceMock.Object,
         };
 
-        var result = await this.serviceUnderTest.Handle(args);
+        var result = await this.serviceUnderTest.HandleAsync(args);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.SourceDirectory.Should().Be("D:\\test\\directory");
     }

@@ -38,7 +38,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV1WithZeroComponents_FindsNothing()
+    public async Task WellFormedYarnLockV1WithZeroComponents_FindsNothingAsync()
     {
         var yarnLock = YarnTestUtilities.GetWellFormedEmptyYarnV1LockFile();
         var packageJson = NpmTestUtilities.PackageJsonNoDependencies;
@@ -46,14 +46,14 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJson, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV2WithZeroComponents_FindsNothing()
+    public async Task WellFormedYarnLockV2WithZeroComponents_FindsNothingAsync()
     {
         var yarnLock = YarnTestUtilities.GetWellFormedEmptyYarnV2LockFile();
         var packageJson = NpmTestUtilities.PackageJsonNoDependencies;
@@ -61,14 +61,14 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJson, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task MalformedYarnLockV1WithOneComponent_FindsNoComponent()
+    public async Task MalformedYarnLockV1WithOneComponent_FindsNoComponentAsync()
     {
         var componentName0 = Guid.NewGuid().ToString("N");
         var version0 = NewRandomVersion();
@@ -90,14 +90,14 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task MalformedYarnLockV2WithOneComponent_FindsNoComponent()
+    public async Task MalformedYarnLockV2WithOneComponent_FindsNoComponentAsync()
     {
         var componentName0 = Guid.NewGuid().ToString("N");
         var version0 = NewRandomVersion();
@@ -117,14 +117,14 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV1WithOneComponent_FindsComponent()
+    public async Task WellFormedYarnLockV1WithOneComponent_FindsComponentAsync()
     {
         var version0 = NewRandomVersion();
         var componentA = new YarnTestComponentDefinition
@@ -141,7 +141,7 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -156,7 +156,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV2WithOneComponent_FindsComponent()
+    public async Task WellFormedYarnLockV2WithOneComponent_FindsComponentAsync()
     {
         var version0 = NewRandomVersion();
         var componentA = new YarnTestComponentDefinition
@@ -173,7 +173,7 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -188,7 +188,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV1WithWorkspace_FindsComponent()
+    public async Task WellFormedYarnLockV1WithWorkspace_FindsComponentAsync()
     {
         var directory = new DirectoryInfo(Path.GetTempPath());
 
@@ -236,7 +236,7 @@ public class YarnLockDetectorTests
         var (scanResult, _) = await this.detectorTestUtility
             .WithObservableDirectoryWalkerFactory(directoryWalkerMock)
             .WithComponentStreamEnumerableFactory(mock)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -251,7 +251,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV2WithWorkspace_FindsComponent()
+    public async Task WellFormedYarnLockV2WithWorkspace_FindsComponentAsync()
     {
         var directory = new DirectoryInfo(Path.GetTempPath());
 
@@ -299,7 +299,7 @@ public class YarnLockDetectorTests
         var (scanResult, _) = await this.detectorTestUtility
             .WithObservableDirectoryWalkerFactory(directoryWalkerMock)
             .WithComponentStreamEnumerableFactory(mock)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -314,7 +314,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV1WithWorkspaceAltForm_FindsComponent()
+    public async Task WellFormedYarnLockV1WithWorkspaceAltForm_FindsComponentAsync()
     {
         var directory = new DirectoryInfo(Path.GetTempPath());
 
@@ -374,7 +374,7 @@ public class YarnLockDetectorTests
         var (scanResult, _) = await this.detectorTestUtility
             .WithObservableDirectoryWalkerFactory(directoryWalkerMock)
             .WithComponentStreamEnumerableFactory(mock)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -389,7 +389,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV2WithWorkspaceAltForm_FindsComponent()
+    public async Task WellFormedYarnLockV2WithWorkspaceAltForm_FindsComponentAsync()
     {
         var directory = new DirectoryInfo(Path.GetTempPath());
 
@@ -449,7 +449,7 @@ public class YarnLockDetectorTests
         var (scanResult, _) = await this.detectorTestUtility
             .WithObservableDirectoryWalkerFactory(directoryWalkerMock)
             .WithComponentStreamEnumerableFactory(mock)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -464,7 +464,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV1WithMoreThanOneComponent_FindsComponents()
+    public async Task WellFormedYarnLockV1WithMoreThanOneComponent_FindsComponentsAsync()
     {
         var version0 = NewRandomVersion();
         var componentA = new YarnTestComponentDefinition
@@ -492,7 +492,7 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var component0 = detectedComponents.Select(x => x.Component).Cast<NpmComponent>().Single(x => x.Name == componentA.Name);
@@ -511,7 +511,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV2WithMoreThanOneComponent_FindsComponents()
+    public async Task WellFormedYarnLockV2WithMoreThanOneComponent_FindsComponentsAsync()
     {
         var version0 = NewRandomVersion();
         var componentA = new YarnTestComponentDefinition
@@ -539,7 +539,7 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var component0 = detectedComponents.Select(x => x.Component).Cast<NpmComponent>().Single(x => x.Name == componentA.Name);
@@ -558,7 +558,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV1WithMultiRootedComponent_FindsAllRoots()
+    public async Task WellFormedYarnLockV1WithMultiRootedComponent_FindsAllRootsAsync()
     {
         // This is a regression test for a bug where a dependency is both an explicitly referenced root and a transitive dependency.
         //
@@ -612,7 +612,7 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var detectedComponentes = componentRecorder.GetDetectedComponents();
         var componentA = detectedComponentes.Single(x => ((NpmComponent)x.Component).Name == componentNameA);
@@ -636,7 +636,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task WellFormedYarnLockV2WithMultiRootedComponent_FindsAllRoots()
+    public async Task WellFormedYarnLockV2WithMultiRootedComponent_FindsAllRootsAsync()
     {
         // This is a regression test for a bug where a dependency is both an explicitly referenced root and a transitive dependency.
         //
@@ -688,7 +688,7 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLock)
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var detectedComponentes = componentRecorder.GetDetectedComponents();
         var componentA = detectedComponentes.Single(x => ((NpmComponent)x.Component).Name == componentNameA);
@@ -712,7 +712,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task DependencyGraphV1IsGeneratedCorrectly()
+    public async Task DependencyGraphV1IsGeneratedCorrectlyAsync()
     {
         var componentA = new YarnTestComponentDefinition
         {
@@ -747,7 +747,7 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLockFileContent)
             .WithFile("package.json", packageJsonFileContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
@@ -768,7 +768,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task DependencyGraphV2IsGeneratedCorrectly()
+    public async Task DependencyGraphV2IsGeneratedCorrectlyAsync()
     {
         var componentA = new YarnTestComponentDefinition
         {
@@ -803,7 +803,7 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLockFileContent)
             .WithFile("package.json", packageJsonFileContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
@@ -824,7 +824,7 @@ public class YarnLockDetectorTests
     }
 
     [TestMethod]
-    public async Task MalformedYarnLockV1_Duplicate()
+    public async Task MalformedYarnLockV1_DuplicateAsync()
     {
         const string componentNameA = "lodash-shim";
         const string requestedVersionA = "file:lodash-shim";
@@ -845,7 +845,7 @@ public class YarnLockDetectorTests
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("yarn.lock", yarnLockFileContent)
             .WithFile("package.json", packageJsonFileContent, new List<string> { "package.json" })
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 

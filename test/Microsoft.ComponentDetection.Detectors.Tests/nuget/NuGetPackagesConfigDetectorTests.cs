@@ -21,7 +21,7 @@ public class NuGetPackagesConfigDetectorTests
     }
 
     [TestMethod]
-    public async Task Should_Work()
+    public async Task Should_WorkAsync()
     {
         var packagesConfig =
             @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -32,7 +32,7 @@ public class NuGetPackagesConfigDetectorTests
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("packages.config", packagesConfig)
-            .ExecuteDetector()
+            .ExecuteDetectorAsync()
             .ConfigureAwait(true);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();

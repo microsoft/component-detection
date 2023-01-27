@@ -26,13 +26,13 @@ public class MavenCommandService : IMavenCommandService
 
     public string BcdeMvnDependencyFileName => "bcde.mvndeps";
 
-    public async Task<bool> MavenCLIExists() => await this.CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
+    public async Task<bool> MavenCLIExistsAsync() => await this.CommandLineInvocationService.CanCommandBeLocatedAsync(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
 
-    public async Task GenerateDependenciesFile(ProcessRequest processRequest)
+    public async Task GenerateDependenciesFileAsync(ProcessRequest processRequest)
     {
         var pomFile = processRequest.ComponentStream;
         var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={this.BcdeMvnDependencyFileName}", "-DoutputType=text", $"-f{pomFile.Location}" };
-        var result = await this.CommandLineInvocationService.ExecuteCommand(PrimaryCommand, AdditionalValidCommands, cliParameters);
+        var result = await this.CommandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, AdditionalValidCommands, cliParameters);
         if (result.ExitCode != 0)
         {
             this.Logger.LogVerbose($"Mvn execution failed for pom file: {pomFile.Location}");

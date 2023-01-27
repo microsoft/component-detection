@@ -7,5 +7,5 @@ public interface IArgumentHandlingService
 {
     bool CanHandle(IScanArguments arguments);
 
-    Task<ScanResult> Handle(IScanArguments arguments);
+    Task<ScanResult> HandleAsync(IScanArguments arguments);
 }

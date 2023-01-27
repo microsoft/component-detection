@@ -21,7 +21,7 @@ public class DockerServiceTests
     public void TestInitialize() => this.dockerService = new DockerService();
 
     [TestMethod]
-    public async Task DockerService_CanPingDocker()
+    public async Task DockerService_CanPingDockerAsync()
     {
         var canPingDocker = await this.dockerService.CanPingDockerAsync();
         Assert.IsTrue(canPingDocker);
@@ -35,14 +35,14 @@ public class DockerServiceTests
     }
 
     [SkipTestOnWindows]
-    public async Task DockerService_CanPullImage()
+    public async Task DockerService_CanPullImageAsync()
     {
         Func<Task> action = async () => await this.dockerService.TryPullImageAsync(TestImage);
         await action.Should().NotThrowAsync();
     }
 
     [SkipTestOnWindows]
-    public async Task DockerService_CanInspectImage()
+    public async Task DockerService_CanInspectImageAsync()
     {
         await this.dockerService.TryPullImageAsync(TestImage);
         var details = await this.dockerService.InspectImageAsync(TestImage);
@@ -51,7 +51,7 @@ public class DockerServiceTests
     }
 
     [SkipTestOnWindows]
-    public async Task DockerService_PopulatesBaseImageAndLayerDetails()
+    public async Task DockerService_PopulatesBaseImageAndLayerDetailsAsync()
     {
         await this.dockerService.TryPullImageAsync(TestImageWithBaseDetails);
         var details = await this.dockerService.InspectImageAsync(TestImageWithBaseDetails);
@@ -71,7 +71,7 @@ public class DockerServiceTests
     }
 
     [SkipTestOnWindows]
-    public async Task DockerService_CanCreateAndRunImage()
+    public async Task DockerService_CanCreateAndRunImageAsync()
     {
         var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, new List<string>());
         stdout.Should().StartWith("\nHello from Docker!");

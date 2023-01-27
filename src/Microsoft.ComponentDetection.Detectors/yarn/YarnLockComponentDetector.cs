@@ -29,7 +29,7 @@ public class YarnLockComponentDetector : FileComponentDetector
     /// <remarks>"Package" is a more common substring, enclose it with \ to verify it is a folder.</remarks>
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store", "\\package\\" };
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;

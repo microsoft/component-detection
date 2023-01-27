@@ -235,11 +235,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     public void TestInitialize() => this.detectorTestUtility = DetectorTestUtilityCreator.Create<RustCrateDetector>();
 
     [TestMethod]
-    public async Task TestGraphIsCorrect()
+    public async Task TestGraphIsCorrectAsync()
     {
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockString)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
@@ -278,7 +278,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestSupportsCargoV1AndV2DefinitionPairs()
+    public async Task TestSupportsCargoV1AndV2DefinitionPairsAsync()
     {
         var componentRecorder = new ComponentRecorder();
         var request = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), null, null, new Dictionary<string, string>(), null, componentRecorder);
@@ -290,7 +290,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithFile("Cargo.lock", this.testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "v2", "Cargo.lock"))
             /* so we can reuse the component recorder */
             .WithScanRequest(request)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
 
@@ -300,12 +300,12 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestSupportsMultipleCargoV1DefinitionPairs()
+    public async Task TestSupportsMultipleCargoV1DefinitionPairsAsync()
     {
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockString)
             .WithFile("Cargo.lock", this.testCargoLockString, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
 
@@ -323,12 +323,12 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestSupportsMultipleCargoV2DefinitionPairs()
+    public async Task TestSupportsMultipleCargoV2DefinitionPairsAsync()
     {
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockV2String)
             .WithFile("Cargo.lock", this.testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
 
@@ -346,11 +346,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustDetector()
+    public async Task TestRustDetectorAsync()
     {
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockString)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
@@ -402,11 +402,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustV2Detector()
+    public async Task TestRustV2DetectorAsync()
     {
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", this.testCargoLockV2String)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
@@ -458,7 +458,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustV2Detector_DuplicatePackage()
+    public async Task TestRustV2Detector_DuplicatePackageAsync()
     {
         var testCargoLock = @"
 [[package]]
@@ -531,7 +531,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
 
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", testCargoLock)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
@@ -572,7 +572,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustDetector_SupportEmptySource()
+    public async Task TestRustDetector_SupportEmptySourceAsync()
     {
         var testLockString = @"
 [[package]]
@@ -597,7 +597,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", testLockString)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
@@ -612,16 +612,16 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustDetector_V1WorkspacesWithTopLevelDependencies() => await this.TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
+    public async Task TestRustDetector_V1WorkspacesWithTopLevelDependenciesAsync() => await this.TestRustDetector_WorkspacesWithTopLevelDependenciesAsync(this.testWorkspaceLockV1NoBaseString);
 
     [TestMethod]
-    public async Task TestRustDetector_V2WorkspacesWithTopLevelDependencies() => await this.TestRustDetector_WorkspacesWithTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
+    public async Task TestRustDetector_V2WorkspacesWithTopLevelDependenciesAsync() => await this.TestRustDetector_WorkspacesWithTopLevelDependenciesAsync(this.testWorkspaceLockV2NoBaseString);
 
-    private async Task TestRustDetector_WorkspacesWithTopLevelDependencies(string lockFile)
+    private async Task TestRustDetector_WorkspacesWithTopLevelDependenciesAsync(string lockFile)
     {
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", string.Concat(this.testWorkspaceLockBaseDependency, lockFile))
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
@@ -673,32 +673,32 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustDetector_V1WorkspacesNoTopLevelDependencies() => await this.TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV1NoBaseString);
+    public async Task TestRustDetector_V1WorkspacesNoTopLevelDependenciesAsync() => await this.TestRustDetector_WorkspacesNoTopLevelDependenciesAsync(this.testWorkspaceLockV1NoBaseString);
 
     [TestMethod]
-    public async Task TestRustDetector_V2WorkspacesNoTopLevelDependencies() => await this.TestRustDetector_WorkspacesNoTopLevelDependencies(this.testWorkspaceLockV2NoBaseString);
+    public async Task TestRustDetector_V2WorkspacesNoTopLevelDependenciesAsync() => await this.TestRustDetector_WorkspacesNoTopLevelDependenciesAsync(this.testWorkspaceLockV2NoBaseString);
 
-    private async Task TestRustDetector_WorkspacesNoTopLevelDependencies(string lockFile)
+    private async Task TestRustDetector_WorkspacesNoTopLevelDependenciesAsync(string lockFile)
     {
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", lockFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestRustDetector_V1WorkspacesWithSubDirectories() => await this.TestRustDetector_WorkspacesWithSubDirectories(this.testWorkspaceLockV1NoBaseString);
+    public async Task TestRustDetector_V1WorkspacesWithSubDirectoriesAsync() => await this.TestRustDetector_WorkspacesWithSubDirectoriesAsync(this.testWorkspaceLockV1NoBaseString);
 
     [TestMethod]
-    public async Task TestRustDetector_V2WorkspacesWithSubDirectories() => await this.TestRustDetector_WorkspacesWithSubDirectories(this.testWorkspaceLockV2NoBaseString);
+    public async Task TestRustDetector_V2WorkspacesWithSubDirectoriesAsync() => await this.TestRustDetector_WorkspacesWithSubDirectoriesAsync(this.testWorkspaceLockV2NoBaseString);
 
-    private async Task TestRustDetector_WorkspacesWithSubDirectories(string lockFile)
+    private async Task TestRustDetector_WorkspacesWithSubDirectoriesAsync(string lockFile)
     {
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", lockFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var componentGraphs = componentRecorder.GetDependencyGraphsByLocation();
 
@@ -712,7 +712,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
     }
 
     [TestMethod]
-    public async Task TestRustDetector_UnequalButSemverCompatibleRoot()
+    public async Task TestRustDetector_UnequalButSemverCompatibleRootAsync()
     {
         var testLockString = @"
 [[package]]
@@ -739,7 +739,7 @@ dependencies = [
 ";
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", testLockString)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
@@ -760,7 +760,7 @@ dependencies = [
     }
 
     [TestMethod]
-    public async Task TestRustDetector_GitDependency()
+    public async Task TestRustDetector_GitDependencyAsync()
     {
         var testLockString = @"
 [[package]]
@@ -777,7 +777,7 @@ source = ""git+https://github.com/microsoft/component-detection/?branch=main#abc
 ";
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", testLockString)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
@@ -790,7 +790,7 @@ source = ""git+https://github.com/microsoft/component-detection/?branch=main#abc
     }
 
     [TestMethod]
-    public async Task TestRustDetector_MultipleRegistries()
+    public async Task TestRustDetector_MultipleRegistriesAsync()
     {
         var testLockString = @"
 [[package]]
@@ -813,7 +813,7 @@ source = ""registry+sparse+https://other.registry/index/""
 ";
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", testLockString)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
 

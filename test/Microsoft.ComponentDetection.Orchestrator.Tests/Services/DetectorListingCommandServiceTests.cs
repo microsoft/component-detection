@@ -61,9 +61,9 @@ public class DetectorListingCommandServiceTests
     public void CleanupTests() => this.detectorRegistryServiceMock.VerifyAll();
 
     [TestMethod]
-    public async Task DetectorListingCommandService_ListsDetectors()
+    public async Task DetectorListingCommandService_ListsDetectorsAsync()
     {
-        var result = await this.serviceUnderTest.Handle(new ListDetectionArgs());
+        var result = await this.serviceUnderTest.HandleAsync(new ListDetectionArgs());
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         this.logOutput.Should().Contain("ComponentDetector2");

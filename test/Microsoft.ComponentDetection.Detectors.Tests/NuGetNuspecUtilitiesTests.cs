@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public class NuGetNuspecUtilitiesTests
 {
     [TestMethod]
-    public async Task GetNuspecBytes_FailsOnEmptyStream()
+    public async Task GetNuspecBytes_FailsOnEmptyStreamAsync()
     {
         using var stream = new MemoryStream();
 
@@ -25,7 +25,7 @@ public class NuGetNuspecUtilitiesTests
     }
 
     [TestMethod]
-    public async Task GetNuspecBytes_FailsOnTooSmallStream()
+    public async Task GetNuspecBytes_FailsOnTooSmallStreamAsync()
     {
         using var stream = new MemoryStream();
 
@@ -45,7 +45,7 @@ public class NuGetNuspecUtilitiesTests
     }
 
     [TestMethod]
-    public async Task GetNuspecBytes_FailsIfNuspecNotPresent()
+    public async Task GetNuspecBytes_FailsIfNuspecNotPresentAsync()
     {
         using var stream = new MemoryStream();
 
@@ -66,7 +66,7 @@ public class NuGetNuspecUtilitiesTests
     }
 
     [TestMethod]
-    public async Task GetNuspecBytes_ReadsNuspecBytes()
+    public async Task GetNuspecBytes_ReadsNuspecBytesAsync()
     {
         byte[] randomBytes = { 0xDE, 0xAD, 0xC0, 0xDE };
 

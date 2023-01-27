@@ -20,7 +20,7 @@ public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
 
     public bool CanHandle(IScanArguments arguments) => arguments is BcdeArguments;
 
-    public async Task<ScanResult> Handle(IScanArguments arguments)
+    public async Task<ScanResult> HandleAsync(IScanArguments arguments)
     {
         var bcdeArguments = (BcdeArguments)arguments;
         var result = await this.BcdeScanExecutionService.ExecuteScanAsync(bcdeArguments);

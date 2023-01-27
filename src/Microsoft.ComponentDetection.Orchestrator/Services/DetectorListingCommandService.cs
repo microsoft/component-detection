@@ -14,7 +14,7 @@ public class DetectorListingCommandService : ServiceBase, IArgumentHandlingServi
 
     public bool CanHandle(IScanArguments arguments) => arguments is ListDetectionArgs;
 
-    public async Task<ScanResult> Handle(IScanArguments arguments)
+    public async Task<ScanResult> HandleAsync(IScanArguments arguments)
     {
         await this.ListDetectorsAsync(arguments as IListDetectionArgs);
         return new ScanResult()

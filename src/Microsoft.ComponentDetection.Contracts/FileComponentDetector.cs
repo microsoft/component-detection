@@ -87,9 +87,9 @@ public abstract class FileComponentDetector : IComponentDetector
 
     private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
-        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFound(processRequest, detectorArgs));
+        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs));
 
-        var preprocessedObserbable = await this.OnPrepareDetection(processRequests, detectorArgs);
+        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
 
         await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
 
@@ -97,7 +97,7 @@ public abstract class FileComponentDetector : IComponentDetector
 
         await processor.Completion;
 
-        await this.OnDetectionFinished();
+        await this.OnDetectionFinishedAsync();
 
         return new IndividualDetectorScanResult
         {
@@ -106,9 +106,9 @@ public abstract class FileComponentDetector : IComponentDetector
         };
     }
 
-    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) => Task.FromResult(processRequests);
+    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) => Task.FromResult(processRequests);
 
-    protected abstract Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
+    protected abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
 
-    protected virtual Task OnDetectionFinished() => Task.CompletedTask;
+    protected virtual Task OnDetectionFinishedAsync() => Task.CompletedTask;
 }

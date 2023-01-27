@@ -38,33 +38,33 @@ public class MavenCommandServiceTests
     }
 
     [TestMethod]
-    public async Task MavenCLIExists_ExpectedArguments_ReturnTrue()
+    public async Task MavenCLIExists_ExpectedArguments_ReturnTrueAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(
             MavenCommandService.PrimaryCommand,
             MavenCommandService.AdditionalValidCommands,
             MavenCommandService.MvnVersionArgument)).ReturnsAsync(true);
 
-        var result = await this.mavenCommandService.MavenCLIExists();
+        var result = await this.mavenCommandService.MavenCLIExistsAsync();
 
         result.Should().BeTrue();
     }
 
     [TestMethod]
-    public async Task MavenCLIExists_ExpectedArguments_ReturnFalse()
+    public async Task MavenCLIExists_ExpectedArguments_ReturnFalseAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(
             MavenCommandService.PrimaryCommand,
             MavenCommandService.AdditionalValidCommands,
             MavenCommandService.MvnVersionArgument)).ReturnsAsync(false);
 
-        var result = await this.mavenCommandService.MavenCLIExists();
+        var result = await this.mavenCommandService.MavenCLIExistsAsync();
 
         result.Should().BeFalse();
     }
 
     [TestMethod]
-    public async Task GenerateDependenciesFile_Success()
+    public async Task GenerateDependenciesFile_SuccessAsync()
     {
         var pomLocation = "Test/location";
         var processRequest = new ProcessRequest
@@ -78,7 +78,7 @@ public class MavenCommandServiceTests
         var bcdeMvnFileName = "bcde.mvndeps";
         var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
 
-        this.commandLineMock.Setup(x => x.ExecuteCommand(
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
                 MavenCommandService.PrimaryCommand,
                 MavenCommandService.AdditionalValidCommands,
                 It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
@@ -88,7 +88,7 @@ public class MavenCommandServiceTests
             })
             .Verifiable();
 
-        await this.mavenCommandService.GenerateDependenciesFile(processRequest);
+        await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
 
         Mock.Verify(this.commandLineMock);
     }

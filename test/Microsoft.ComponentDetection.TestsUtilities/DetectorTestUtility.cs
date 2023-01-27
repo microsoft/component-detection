@@ -27,7 +27,7 @@ public class DetectorTestUtility<T>
 
     private T detector;
 
-    public async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetector()
+    public async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetectorAsync()
     {
         if (this.scanRequest == null)
         {

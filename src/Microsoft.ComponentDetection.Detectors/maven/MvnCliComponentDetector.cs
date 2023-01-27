@@ -29,15 +29,15 @@ public class MvnCliComponentDetector : FileComponentDetector
     [Import]
     public IMavenCommandService MavenCommandService { get; set; }
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
-        if (!await this.MavenCommandService.MavenCLIExists())
+        if (!await this.MavenCommandService.MavenCLIExistsAsync())
         {
             this.Logger.LogVerbose("Skipping maven detection as maven is not available in the local PATH.");
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
 
-        var processPomFile = new ActionBlock<ProcessRequest>(this.MavenCommandService.GenerateDependenciesFile);
+        var processPomFile = new ActionBlock<ProcessRequest>(this.MavenCommandService.GenerateDependenciesFileAsync);
 
         await this.RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest => processPomFile.Post(processRequest));
 
@@ -67,7 +67,7 @@ public class MvnCliComponentDetector : FileComponentDetector
             .ToObservable();
     }
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         this.MavenCommandService.ParseDependenciesFile(processRequest);
 

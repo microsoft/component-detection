@@ -151,7 +151,7 @@ public class Orchestrator
                 Logger.Init(argumentSet.Verbosity, writeLinePrefix: true);
                 Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
 
-                return await this.Dispatch(argumentSet, cancellationToken);
+                return await this.DispatchAsync(argumentSet, cancellationToken);
             });
         });
         parsedArguments.WithNotParsed(errors =>
@@ -219,7 +219,7 @@ public class Orchestrator
         return verbAttribute.Name;
     }
 
-    private async Task<ScanResult> Dispatch(IScanArguments arguments, CancellationToken cancellation)
+    private async Task<ScanResult> DispatchAsync(IScanArguments arguments, CancellationToken cancellation)
     {
         var scanResult = new ScanResult()
         {
@@ -239,7 +239,7 @@ public class Orchestrator
                 try
                 {
                     var timeout = arguments.Timeout == 0 ? TimeSpan.FromMilliseconds(-1) : TimeSpan.FromSeconds(arguments.Timeout);
-                    scanResult = await AsyncExecution.ExecuteWithTimeoutAsync(() => handler.Handle(arguments), timeout, cancellation);
+                    scanResult = await AsyncExecution.ExecuteWithTimeoutAsync(() => handler.HandleAsync(arguments), timeout, cancellation);
                 }
                 catch (TimeoutException timeoutException)
                 {

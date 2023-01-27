@@ -11,7 +11,7 @@ using YamlDotNet.Serialization;
 
 public static class PnpmParsingUtilities
 {
-    public static async Task<PnpmYaml> DeserializePnpmYamlFile(IComponentStream file)
+    public static async Task<PnpmYaml> DeserializePnpmYamlFileAsync(IComponentStream file)
     {
         if (file is null)
         {

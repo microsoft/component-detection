@@ -32,16 +32,16 @@ public class NuGetComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestNuGetDetectorWithNoFiles_ReturnsSuccessfully()
+    public async Task TestNuGetDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
-        var (scanResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestNugetDetector_ReturnsValidNuspecComponent()
+    public async Task TestNugetDetector_ReturnsValidNuspecComponentAsync()
     {
         var testComponentName = "TestComponentName";
         var testVersion = "1.2.3";
@@ -50,7 +50,7 @@ public class NuGetComponentDetectorTests
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("*.nuspec", nuspec)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
         Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
@@ -63,7 +63,7 @@ public class NuGetComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestNugetDetector_ReturnsValidNuspecComponent_SingleAuthor()
+    public async Task TestNugetDetector_ReturnsValidNuspecComponent_SingleAuthorAsync()
     {
         var testComponentName = "TestComponentName";
         var testVersion = "1.2.3";
@@ -72,7 +72,7 @@ public class NuGetComponentDetectorTests
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("*.nuspec", nuspec)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
         Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
@@ -85,35 +85,35 @@ public class NuGetComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestNugetDetector_ReturnsValidNupkgComponent()
+    public async Task TestNugetDetector_ReturnsValidNupkgComponentAsync()
     {
-        var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
+        var nupkg = await NugetTestUtilities.ZipNupkgComponentAsync("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("test.nupkg", nupkg)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestNugetDetector_ReturnsValidMixedComponent()
+    public async Task TestNugetDetector_ReturnsValidMixedComponentAsync()
     {
         var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
-        var nupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
+        var nupkg = await NugetTestUtilities.ZipNupkgComponentAsync("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("test.nuspec", nuspec)
             .WithFile("test.nupkg", nupkg)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestNugetDetector_ReturnsValidPaketComponent()
+    public async Task TestNugetDetector_ReturnsValidPaketComponentAsync()
     {
         var paketLock = @"
 NUGET
@@ -149,7 +149,7 @@ NUGET
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("paket.lock", paketLock)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -158,10 +158,10 @@ NUGET
     }
 
     [TestMethod]
-    public async Task TestNugetDetector_HandlesMalformedComponentsInComponentList()
+    public async Task TestNugetDetector_HandlesMalformedComponentsInComponentListAsync()
     {
-        var validNupkg = await NugetTestUtilities.ZipNupkgComponent("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
-        var malformedNupkg = await NugetTestUtilities.ZipNupkgComponent("malformed.nupkg", NugetTestUtilities.GetRandomMalformedNuPkgComponent());
+        var validNupkg = await NugetTestUtilities.ZipNupkgComponentAsync("test.nupkg", NugetTestUtilities.GetRandomValidNuspec());
+        var malformedNupkg = await NugetTestUtilities.ZipNupkgComponentAsync("malformed.nupkg", NugetTestUtilities.GetRandomMalformedNuPkgComponent());
         var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
@@ -169,7 +169,7 @@ NUGET
             .WithFile("test.nuspec", nuspec)
             .WithFile("test.nupkg", validNupkg)
             .WithFile("malformed.nupkg", malformedNupkg)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         this.loggerMock.Verify(x => x.LogFailedReadingFile(Path.Join(Path.GetTempPath(), "malformed.nupkg"), It.IsAny<Exception>()));
 
@@ -178,7 +178,7 @@ NUGET
     }
 
     [TestMethod]
-    public async Task TestNugetDetector_AdditionalDirectories()
+    public async Task TestNugetDetector_AdditionalDirectoriesAsync()
     {
         var component1 = NugetTestUtilities.GetRandomValidNuSpecComponentStream();
         var streamsDetectedInNormalPass = new List<IComponentStream> { component1 };
@@ -254,13 +254,13 @@ NUGET
     }
 
     [TestMethod]
-    public async Task TestNugetDetector_LowConfidencePackages()
+    public async Task TestNugetDetector_LowConfidencePackagesAsync()
     {
-        var nupkg = await NugetTestUtilities.ZipNupkgComponent("Newtonsoft.Json.nupkg", NugetTestUtilities.GetValidNuspec("Newtonsoft.Json", "9.0.1", new[] { "JamesNK" }));
+        var nupkg = await NugetTestUtilities.ZipNupkgComponentAsync("Newtonsoft.Json.nupkg", NugetTestUtilities.GetValidNuspec("Newtonsoft.Json", "9.0.1", new[] { "JamesNK" }));
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Newtonsoft.Json.nupkg", nupkg)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().BeEmpty()

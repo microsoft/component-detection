@@ -30,7 +30,7 @@ public class Spdx22ComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestSbomDetector_SimpleSbom()
+    public async Task TestSbomDetector_SimpleSbomAsync()
     {
         var spdxFile = /*lang=json,strict*/ @"{
     ""files"": [{
@@ -99,7 +99,7 @@ public class Spdx22ComponentDetectorTests
         var spdxFileName = "manifest.spdx.json";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(spdxFileName, spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -127,13 +127,13 @@ public class Spdx22ComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestSbomDetector_BlankJson()
+    public async Task TestSbomDetector_BlankJsonAsync()
     {
         var spdxFile = "{}";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("manifest.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -143,13 +143,13 @@ public class Spdx22ComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestSbomDetector_InvalidFile()
+    public async Task TestSbomDetector_InvalidFileAsync()
     {
         var spdxFile = "invalidspdxfile";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("manifest.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 

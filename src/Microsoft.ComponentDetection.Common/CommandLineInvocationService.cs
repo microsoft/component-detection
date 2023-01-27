@@ -16,7 +16,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 {
     private readonly IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
 
-    public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
+    public async Task<bool> CanCommandBeLocatedAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
     {
         additionalCandidateCommands ??= Enumerable.Empty<string>();
         parameters ??= Array.Empty<string>();
@@ -50,9 +50,9 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         return !string.IsNullOrWhiteSpace(validCommand);
     }
 
-    public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
+    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
     {
-        var isCommandLocatable = await this.CanCommandBeLocated(command, additionalCandidateCommands).ConfigureAwait(false);
+        var isCommandLocatable = await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands).ConfigureAwait(false);
         if (!isCommandLocatable)
         {
             throw new InvalidOperationException(
@@ -84,9 +84,9 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
     public bool IsCommandLineExecution() => true;
 
-    public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.CanCommandBeLocated(command, additionalCandidateCommands, workingDirectory: null, parameters).ConfigureAwait(false);
+    public async Task<bool> CanCommandBeLocatedAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands, workingDirectory: null, parameters).ConfigureAwait(false);
 
-    public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters).ConfigureAwait(false);
+    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, parameters).ConfigureAwait(false);
 
     private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
     {
