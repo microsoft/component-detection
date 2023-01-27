@@ -86,13 +86,13 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
     public async Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.CanCommandBeLocated(command, additionalCandidateCommands, workingDirectory: null, parameters).ConfigureAwait(false);
 
-    public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters).ConfigureAwait(false);
+    public async Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters) => await this.ExecuteCommand(command, additionalCandidateCommands, workingDirectory: null, parameters);
 
     private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
     {
         var tcs = new TaskCompletionSource<CommandLineExecutionResult>();
 
-        if (fileName.EndsWith(".cmd") || fileName.EndsWith(".bat"))
+        if (fileName.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
         {
             // If a script attempts to find its location using "%dp0", that can return the wrong path (current
             // working directory) unless the script is run via "cmd /C".  An example is "ant.bat".
