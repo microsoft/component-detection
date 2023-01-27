@@ -43,7 +43,7 @@ public static class PnpmParsingUtilities
             throw new ArgumentNullException(nameof(pnpmPackage));
         }
 
-        return string.Equals(bool.TrueString, pnpmPackage.dev, StringComparison.InvariantCultureIgnoreCase);
+        return string.Equals(bool.TrueString, pnpmPackage.dev, StringComparison.OrdinalIgnoreCase);
     }
 
     private static (string Name, string Version) ExtractNameAndVersionFromPnpmPackagePath(string pnpmPackagePath)
