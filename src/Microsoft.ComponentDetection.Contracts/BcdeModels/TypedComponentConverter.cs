@@ -29,10 +29,7 @@ public class TypedComponentConverter : JsonConverter
 
     public override bool CanWrite => false;
 
-    public override bool CanConvert(Type objectType)
-    {
-        return objectType == typeof(TypedComponent);
-    }
+    public override bool CanConvert(Type objectType) => objectType == typeof(TypedComponent);
 
     public override object ReadJson(
         JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
@@ -55,8 +52,5 @@ public class TypedComponentConverter : JsonConverter
     public override void WriteJson(
         JsonWriter writer,
         object value,
-        JsonSerializer serializer)
-    {
-        throw new NotImplementedException();
-    }
+        JsonSerializer serializer) => throw new NotImplementedException();
 }
