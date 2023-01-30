@@ -173,14 +173,14 @@ public class PathUtilityService : IPathUtilityService
             return path;
         }
 
-        var resultBuilder = new StringBuilder(InitalPathBufferSize);
-        var mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuilder, resultBuilder.Capacity, 0);
+        var resultBuf = new char[InitalPathBufferSize];
+        var mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuf, InitalPathBufferSize, 0);
 
         // If GetFinalPathNameByHandle needs a bigger buffer, it will tell us the size it needs (including the null terminator) in finalPathNameResultCode
         if (mResult > InitalPathBufferSize)
         {
-            resultBuilder = new StringBuilder(mResult);
-            mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuilder, resultBuilder.Capacity, 0);
+            resultBuf = new char[mResult];
+            mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuf, mResult, 0);
         }
 
         if (mResult < 0)
@@ -188,7 +188,7 @@ public class PathUtilityService : IPathUtilityService
             return path;
         }
 
-        var result = resultBuilder.ToString();
+        var result = resultBuf.ToString();
 
         result = result.StartsWith(LongPathPrefix) ? result[LongPathPrefix.Length..] : result;
 
@@ -246,7 +246,7 @@ public class PathUtilityService : IPathUtilityService
 
     [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
+    private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] char[] lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
 
     private bool CheckIfRunningOnWindowsContainer()
     {
