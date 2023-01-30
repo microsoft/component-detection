@@ -19,7 +19,7 @@ public class ConsoleWritingServiceTests
     {
         var service = new ConsoleWritingService();
         var guid = Guid.NewGuid().ToString();
-        var writer = new StringWriter();
+        using var writer = new StringWriter();
         Console.SetOut(writer);
         service.Write(guid);
         var obj = new object();

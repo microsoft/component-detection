@@ -88,7 +88,7 @@ public class PyPiClient : IPyPiClient
             return dependencies;
         }
 
-        var package = new ZipArchive(await response.Content.ReadAsStreamAsync());
+        using var package = new ZipArchive(await response.Content.ReadAsStreamAsync());
 
         var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
 

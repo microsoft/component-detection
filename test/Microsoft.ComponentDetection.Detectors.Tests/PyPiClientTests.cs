@@ -187,16 +187,17 @@ public class PyPiClientTests
     private static Mock<HttpMessageHandler> MockHttpMessageHandler(string content)
     {
         var handlerMock = new Mock<HttpMessageHandler>();
+        using var response = new HttpResponseMessage()
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent(content),
+        };
         handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage()
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(content),
-            });
+            .ReturnsAsync(response);
 
         return handlerMock;
     }

@@ -113,7 +113,8 @@ public class Spdx22ComponentDetectorTests
         }
 
 #pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
-        var checksum = BitConverter.ToString(SHA1.Create().ComputeHash(
+        using var sha1 = SHA1.Create();
+        var checksum = BitConverter.ToString(sha1.ComputeHash(
             Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350
 

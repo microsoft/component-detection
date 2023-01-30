@@ -109,7 +109,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
             fileName = "cmd.exe";
         }
 
-        var process = new Process
+        using var process = new Process
         {
             StartInfo =
             {

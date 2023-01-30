@@ -30,7 +30,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
         var poetryLockFile = processRequest.ComponentStream;
         this.Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
 
-        var reader = new StreamReader(poetryLockFile.Stream);
+        using var reader = new StreamReader(poetryLockFile.Stream);
         var options = new TomlModelOptions
         {
             IgnoreMissingProperties = true,
