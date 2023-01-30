@@ -112,6 +112,6 @@ public class CommandLineInvocationServiceTests
 
         await action.Should()
             .ThrowAsync<InvalidOperationException>()
-            .WithMessage("ExecuteCommand was called with a working directory that could not be located: *");
+            .WithMessage("ExecuteCommandAsync was called with a working directory that could not be located: *");
     }
 }
