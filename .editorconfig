@@ -551,6 +551,9 @@ dotnet_diagnostic.CA2251.severity = suggestion
 # CA1304: Specify CultureInfo
 dotnet_diagnostic.CA1304.severity = suggestion
 
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = suggestion
+
 # CA1307: Specify StringComparison for clarity
 dotnet_diagnostic.CA1307.severity = suggestion
 
