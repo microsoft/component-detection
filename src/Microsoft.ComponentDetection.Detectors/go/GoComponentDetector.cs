@@ -40,7 +40,7 @@ public class GoComponentDetector : FileComponentDetector
     private static void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         var goBuildModules = new List<GoBuildModule>();
-        using var reader = new JsonTextReader(new StringReader(goListOutput))
+        var reader = new JsonTextReader(new StringReader(goListOutput))
         {
             SupportMultipleContent = true,
         };

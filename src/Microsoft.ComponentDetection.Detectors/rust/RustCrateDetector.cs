@@ -61,7 +61,7 @@ public class RustCrateDetector : FileComponentDetector
 
         try
         {
-            using var reader = new StreamReader(cargoLockFile.Stream);
+            var reader = new StreamReader(cargoLockFile.Stream);
             var options = new TomlModelOptions
             {
                 IgnoreMissingProperties = true,

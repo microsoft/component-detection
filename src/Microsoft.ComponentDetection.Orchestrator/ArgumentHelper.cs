@@ -34,7 +34,7 @@ public class ArgumentHelper : IArgumentHelper
 
     public static ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
     {
-        using var p = new Parser(x =>
+        var p = new Parser(x =>
         {
             x.IgnoreUnknownArguments = ignoreInvalidArgs;
 

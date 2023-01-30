@@ -257,7 +257,7 @@ public class PathUtilityService : IPathUtilityService
 
         // This isn't the best way to do this in C#, but netstandard doesn't seem to support the service api calls
         // that we need to do this without shelling out
-        using var process = new Process()
+        var process = new Process()
         {
             StartInfo = new ProcessStartInfo
             {

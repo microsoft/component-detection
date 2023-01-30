@@ -13,11 +13,11 @@ public static class PnpmParsingUtilities
 {
     public static async Task<PnpmYaml> DeserializePnpmYamlFileAsync(IComponentStream file)
     {
-        using var reader = new StreamReader(file.Stream);
+        var text = await new StreamReader(file.Stream).ReadToEndAsync();
         var deserializer = new DeserializerBuilder()
             .IgnoreUnmatchedProperties()
             .Build();
-        return deserializer.Deserialize<PnpmYaml>(new StringReader(await reader.ReadToEndAsync()));
+        return deserializer.Deserialize<PnpmYaml>(new StringReader(text));
     }
 
     public static DetectedComponent CreateDetectedComponentFromPnpmPath(string pnpmPackagePath)

@@ -35,8 +35,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
     private static string GetSHA1HashFromStream(Stream stream)
     {
 #pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
-        using var sha1 = SHA1.Create();
-        return BitConverter.ToString(sha1.ComputeHash(stream)).Replace("-", string.Empty).ToLower();
+        return BitConverter.ToString(SHA1.Create().ComputeHash(stream)).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350
     }
 

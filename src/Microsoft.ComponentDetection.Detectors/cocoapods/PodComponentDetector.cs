@@ -47,8 +47,8 @@ public class PodComponentDetector : FileComponentDetector
 
     private static async Task<PodfileLock> ParsePodfileLockAsync(IComponentStream file)
     {
-        using var reader = new StreamReader(file.Stream);
-        var input = new StringReader(await reader.ReadToEndAsync());
+        var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
+        var input = new StringReader(fileContent);
         var deserializer = new DeserializerBuilder()
             .IgnoreUnmatchedProperties()
             .Build();

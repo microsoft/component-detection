@@ -51,7 +51,7 @@ public class LinuxContainerDetector : IComponentDetector
             return EmptySuccessfulScan();
         }
 
-        using var cancellationTokenSource = new CancellationTokenSource(GetTimeout(request.DetectorArgs));
+        var cancellationTokenSource = new CancellationTokenSource(GetTimeout(request.DetectorArgs));
 
         if (!await this.DockerService.CanRunLinuxContainersAsync(cancellationTokenSource.Token))
         {
