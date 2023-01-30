@@ -79,7 +79,7 @@ public class PyPiClient : IPyPiClient
     {
         var dependencies = new List<PipDependencySpecification>();
 
-        var uri = release.Url.ToString();
+        var uri = release.Url;
         var response = await this.GetAndCachePyPiResponseAsync(uri);
 
         if (!response.IsSuccessStatusCode)
@@ -127,7 +127,7 @@ public class PyPiClient : IPyPiClient
 
     public async Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec)
     {
-        var requestUri = $"https://pypi.org/pypi/{spec.Name}/json";
+        var requestUri = new Uri($"https://pypi.org/pypi/{spec.Name}/json");
 
         var request = await Policy
             .HandleResult<HttpResponseMessage>(message =>
@@ -213,7 +213,7 @@ public class PyPiClient : IPyPiClient
     /// </summary>
     /// <param name="uri">The REST Uri to call.</param>
     /// <returns>The cached response or a new result from PyPi.</returns>
-    private async Task<HttpResponseMessage> GetAndCachePyPiResponseAsync(string uri)
+    private async Task<HttpResponseMessage> GetAndCachePyPiResponseAsync(Uri uri)
     {
         if (!this.checkedMaxEntriesVariable)
         {
