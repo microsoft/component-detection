@@ -55,6 +55,8 @@ public class Orchestrator
             baseArguments = new BaseArguments();
         }
 
+        // This is required so TelemetryRelay can be accessed via it's static singleton
+        // It should be refactored out at a later date
         TelemetryRelay.Instance.Init(this.serviceProvider.GetRequiredService<IEnumerable<ITelemetryService>>());
         TelemetryRelay.Instance.SetTelemetryMode(baseArguments.DebugTelemetry ? TelemetryMode.Debug : TelemetryMode.Production);
 
