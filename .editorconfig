@@ -459,10 +459,6 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers
 ##########################################
 
-# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1200.md
-# Using directive should appear within a namespace declaration
-dotnet_diagnostic.SA1200.severity = suggestion
-
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented
 dotnet_diagnostic.SA1600.severity = suggestion
@@ -500,10 +496,6 @@ dotnet_diagnostic.VSTHRD101.severity = suggestion
 # Add .ConfigureAwait(bool) to your await expression
 dotnet_diagnostic.VSTHRD111.severity = suggestion
 
-# https://github.com/microsoft/vs-threading/blob/main/doc/analyzers/VSTHRD200.md
-# Use "Async" suffix in names of methods that return an awaitable type
-dotnet_diagnostic.VSTHRD200.severity = suggestion
-
 ##########################################
 # Provided by Roslyn
 # https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/
@@ -516,9 +508,6 @@ dotnet_diagnostic.CS0618.severity = suggestion
 # https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/cs1591
 # Missing XML comment for publicly visible type or member '...'
 dotnet_diagnostic.CS1591.severity = suggestion
-
-# IDE0003: Remove qualification
-dotnet_diagnostic.IDE0003.severity = suggestion
 
 # CA2007: Consider calling ConfigureAwait on the awaited task
 dotnet_diagnostic.CA2007.severity = suggestion
@@ -538,17 +527,8 @@ dotnet_diagnostic.CA1031.severity = suggestion
 # CA1711: Identifiers should not have incorrect suffix
 dotnet_diagnostic.CA1711.severity = suggestion
 
-# CA1018: Mark attributes with AttributeUsageAttribute
-dotnet_diagnostic.CA1018.severity = suggestion
-
-# CA1813: Avoid unsealed attributes
-dotnet_diagnostic.CA1813.severity = suggestion
-
 # CA2227: Collection properties should be read only
 dotnet_diagnostic.CA2227.severity = suggestion
-
-# CA1825: Avoid zero-length array allocations
-dotnet_diagnostic.CA1825.severity = suggestion
 
 # CA1310: Specify StringComparison for correctness
 dotnet_diagnostic.CA1310.severity = suggestion
@@ -556,26 +536,11 @@ dotnet_diagnostic.CA1310.severity = suggestion
 # CA1002: Do not expose generic lists
 dotnet_diagnostic.CA1002.severity = suggestion
 
-# IDE0008: Use explicit type
-dotnet_diagnostic.IDE0008.severity = suggestion
-
 # CA1305: Specify IFormatProvider
 dotnet_diagnostic.CA1305.severity = suggestion
 
-# CA1032: Implement standard exception constructors
-dotnet_diagnostic.CA1032.severity = suggestion
-
 # CA1051: Do not declare visible instance fields
 dotnet_diagnostic.CA1051.severity = suggestion
-
-# CA1401: P/Invokes should not be visible
-dotnet_diagnostic.CA1401.severity = suggestion
-
-# CA5392: Use DefaultDllImportSearchPaths attribute for P/Invokes
-dotnet_diagnostic.CA5392.severity = suggestion
-
-# CA2101: Specify marshaling for P/Invoke string arguments
-dotnet_diagnostic.CA2101.severity = suggestion
 
 # CA2211: Non-constant fields should not be visible
 dotnet_diagnostic.CA2211.severity = suggestion
@@ -586,20 +551,8 @@ dotnet_diagnostic.CA2251.severity = suggestion
 # CA1304: Specify CultureInfo
 dotnet_diagnostic.CA1304.severity = suggestion
 
-# CA1822: Mark members as static
-dotnet_diagnostic.CA1822.severity = suggestion
-
 # CA1307: Specify StringComparison for clarity
 dotnet_diagnostic.CA1307.severity = suggestion
-
-# CA1052: Static holder types should be Static or NotInheritable
-dotnet_diagnostic.CA1052.severity = suggestion
-
-# CA1725: Parameter names should match base declaration
-dotnet_diagnostic.CA1725.severity = suggestion
-
-# CA1805: Do not initialize unnecessarily
-dotnet_diagnostic.CA1805.severity = suggestion
 
 # CA1806: Do not ignore method results
 dotnet_diagnostic.CA1806.severity = suggestion
@@ -607,26 +560,11 @@ dotnet_diagnostic.CA1806.severity = suggestion
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = suggestion
 
-# CA1816: Dispose methods should call SuppressFinalize
-dotnet_diagnostic.CA1816.severity = suggestion
-
-# CA2249: Consider using 'string.Contains' instead of 'string.IndexOf'
-dotnet_diagnostic.CA2249.severity = suggestion
-
-# CA1836: Prefer IsEmpty over Count
-dotnet_diagnostic.CA1836.severity = suggestion
-
-# CA2208: Instantiate argument exceptions correctly
-dotnet_diagnostic.CA2208.severity = suggestion
-
 # CA1028: Enum Storage should be Int32
 dotnet_diagnostic.CA1028.severity = suggestion
 
 # CA1034: Nested types should not be visible
 dotnet_diagnostic.CA1034.severity = suggestion
-
-# CA1033: Interface methods should be callable by child types
-dotnet_diagnostic.CA1033.severity = suggestion
 
 # CA1054: URI-like parameters should not be strings
 dotnet_diagnostic.CA1054.severity = suggestion
@@ -637,14 +575,8 @@ dotnet_diagnostic.CA1027.severity = suggestion
 # CA1056: URI-like properties should not be strings
 dotnet_diagnostic.CA1056.severity = suggestion
 
-# CA1838: Avoid 'StringBuilder' parameters for P/Invokes
-dotnet_diagnostic.CA1838.severity = suggestion
-
 # CA2000: Dispose objects before losing scope
 dotnet_diagnostic.CA2000.severity = suggestion
-
-# CA2016: Forward the 'CancellationToken' parameter to methods
-dotnet_diagnostic.CA2016.severity = suggestion
 
 # CA1014: Mark assemblies with CLSCompliantAttribute
 dotnet_diagnostic.CA1014.severity = none
@@ -652,26 +584,8 @@ dotnet_diagnostic.CA1014.severity = none
 # CA1824: Mark assemblies with NeutralResourcesLanguageAttribute
 dotnet_diagnostic.CA1824.severity = none
 
-# CA1508: Avoid dead conditional code
-dotnet_diagnostic.CA1508.severity = suggestion
-
-# CA1823: Avoid unused private fields
-dotnet_diagnostic.CA1823.severity = suggestion
-
-# CA2234: Pass system uri objects instead of strings
-dotnet_diagnostic.CA2234.severity = suggestion
-
-# SA1101: Prefix local calls with this
-dotnet_diagnostic.SA1101.severity = suggestion
-
 # CA2219: Do not raise exceptions in finally clauses
 dotnet_diagnostic.CA2219.severity = suggestion
-
-# CA2201: Exception type System.Exception is not sufficiently specific
-dotnet_diagnostic.CA2201.severity = suggestion
-
-# CA1835: Prefer the 'Memory'-based overloads for 'ReadAsync' and 'WriteAsync'
-dotnet_diagnostic.CA1835.severity = suggestion
 
 # CA1036: Override methods on comparable types
 dotnet_diagnostic.CA1036.severity = suggestion
