@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Detectors.Pip;
+using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 /// <summary>
 /// Internal state used by PipDetector to hold intermediate structure info until the final

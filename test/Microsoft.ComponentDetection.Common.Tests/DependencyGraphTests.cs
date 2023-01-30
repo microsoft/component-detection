@@ -1,9 +1,8 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common.Tests;
+using System;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Common.Tests;
 
 [TestClass]
 public class DependencyGraphTests

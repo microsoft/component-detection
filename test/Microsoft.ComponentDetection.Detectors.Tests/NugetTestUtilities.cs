@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
@@ -6,8 +7,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Moq;
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 public static class NugetTestUtilities
 {

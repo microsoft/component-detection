@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 public interface IComponentRecorder
 {

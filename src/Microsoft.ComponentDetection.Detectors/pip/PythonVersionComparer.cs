@@ -1,6 +1,5 @@
-using System.Collections.Generic;
-
 namespace Microsoft.ComponentDetection.Detectors.Pip;
+using System.Collections.Generic;
 
 public class PythonVersionComparer : IComparer<string>
 {

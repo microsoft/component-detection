@@ -1,12 +1,11 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CommandLine;
 using Microsoft.ComponentDetection.Common;
 using Newtonsoft.Json;
-
-namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
 public class BaseArguments : IScanArguments
 {

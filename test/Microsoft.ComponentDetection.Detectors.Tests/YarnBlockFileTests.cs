@@ -1,12 +1,11 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]

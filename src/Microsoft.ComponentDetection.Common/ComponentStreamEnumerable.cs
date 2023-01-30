@@ -1,10 +1,9 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common;
 
 public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
 {

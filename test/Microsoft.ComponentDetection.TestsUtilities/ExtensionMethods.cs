@@ -1,7 +1,6 @@
-﻿using System.IO;
+﻿namespace Microsoft.ComponentDetection.TestsUtilities;
+using System.IO;
 using System.Text;
-
-namespace Microsoft.ComponentDetection.TestsUtilities;
 
 public static class ExtensionMethods
 {

@@ -1,10 +1,9 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.NuGet;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-
-namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 public static class NuGetNuspecUtilities
 {

@@ -1,9 +1,8 @@
+namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 
 public static class GraphTranslationUtility
 {

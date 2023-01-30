@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Linux;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -10,8 +11,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 using Newtonsoft.Json;
-
-namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 [Export(typeof(ILinuxScanner))]
 public class LinuxScanner : ILinuxScanner

@@ -1,6 +1,5 @@
-﻿using System;
-
-namespace Microsoft.ComponentDetection.Detectors.Linux.Exceptions;
+﻿namespace Microsoft.ComponentDetection.Detectors.Linux.Exceptions;
+using System;
 
 public class MissingContainerDetailException : Exception
 {

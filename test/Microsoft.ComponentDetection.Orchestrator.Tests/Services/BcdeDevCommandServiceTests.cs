@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -8,8 +9,6 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 [TestClass]
 [TestCategory("Governance/All")]

@@ -1,10 +1,9 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Microsoft.ComponentDetection.Detectors.Maven.MavenParsingUtilities;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]

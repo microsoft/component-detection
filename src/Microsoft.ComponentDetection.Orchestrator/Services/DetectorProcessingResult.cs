@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+using System.Collections.Generic;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 public class DetectorProcessingResult
 {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Spdx;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -10,8 +11,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Spdx;
 
 /// <summary>
 /// Spdx22ComponentDetector discover SPDX SBOM files in JSON format and create components with the information about

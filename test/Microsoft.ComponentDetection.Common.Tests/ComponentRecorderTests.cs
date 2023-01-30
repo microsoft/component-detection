@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common.Tests;
+using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
@@ -6,8 +7,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Common.Tests;
 
 [TestClass]
 public class ComponentRecorderTests

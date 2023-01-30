@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Composition;
@@ -16,8 +17,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Newtonsoft.Json;
 using static System.Environment;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 [Export(typeof(IDetectorProcessingService))]
 [Shared]

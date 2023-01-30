@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Composition;
@@ -12,8 +13,6 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
-
-namespace Microsoft.ComponentDetection.Common;
 
 [Export(typeof(IObservableDirectoryWalkerFactory))]
 [Export(typeof(FastDirectoryWalkerFactory))]

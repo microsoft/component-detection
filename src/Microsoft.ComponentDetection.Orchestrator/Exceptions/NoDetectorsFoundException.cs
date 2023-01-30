@@ -1,7 +1,6 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Exceptions;
+using System;
 using System.Runtime.Serialization;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Exceptions;
 
 [Serializable]
 internal class NoDetectorsFoundException : Exception

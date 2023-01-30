@@ -1,6 +1,5 @@
-using System;
-
 namespace Microsoft.ComponentDetection.Common.Exceptions;
+using System;
 
 public class InvalidUserInputException : Exception
 {

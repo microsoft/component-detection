@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Collections.Concurrent;
 using System.Composition;
 using System.Diagnostics;
@@ -8,8 +9,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Win32.SafeHandles;
-
-namespace Microsoft.ComponentDetection.Common;
 
 // We may want to consider breaking this class into Win/Mac/Linux variants if it gets bigger
 [Export(typeof(IPathUtilityService))]

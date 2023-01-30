@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -11,8 +12,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 
 [Export(typeof(IGraphTranslationService))]
 [ExportMetadata("Priority", 0)]

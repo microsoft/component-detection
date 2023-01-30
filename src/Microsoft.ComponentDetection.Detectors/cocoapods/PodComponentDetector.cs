@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.CocoaPods;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -11,8 +12,6 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
-
-namespace Microsoft.ComponentDetection.Detectors.CocoaPods;
 
 [Export(typeof(IComponentDetector))]
 public class PodComponentDetector : FileComponentDetector

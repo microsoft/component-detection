@@ -1,10 +1,9 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 
 public class YarnLockParser : IYarnLockParser
 {

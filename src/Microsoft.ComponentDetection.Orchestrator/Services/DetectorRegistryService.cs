@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+using System.Collections.Generic;
 using System.Composition;
 using System.Composition.Hosting;
 using System.IO;
@@ -9,8 +10,6 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Detectors;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 // Note : This class isn't unit testable in a meaningful way. Be careful when making changes that you're sure you can test them manually. This class should remain very simple to help prevent future bugs.
 [Export(typeof(IDetectorRegistryService))]

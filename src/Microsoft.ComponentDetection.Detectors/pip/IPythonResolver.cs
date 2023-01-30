@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Detectors.Pip;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-
-namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 public interface IPythonResolver
 {

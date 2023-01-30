@@ -1,7 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.Internal;
-
-namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 public interface IMavenCommandService
 {

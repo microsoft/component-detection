@@ -1,8 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator;
+using System;
 using System.Composition;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-
-namespace Microsoft.ComponentDetection.Orchestrator;
 
 [Export]
 public class CommandLineArgumentsExporter

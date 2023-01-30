@@ -1,7 +1,6 @@
-﻿using System.Composition;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using System.Composition;
 using CommandLine;
-
-namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
 [Verb("dev", HelpText = "Dev command", Hidden = true)]
 [Export(typeof(IScanArguments))]

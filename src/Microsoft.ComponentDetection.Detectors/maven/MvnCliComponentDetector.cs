@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Maven;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -11,8 +12,6 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 [Export(typeof(IComponentDetector))]
 public class MvnCliComponentDetector : FileComponentDetector

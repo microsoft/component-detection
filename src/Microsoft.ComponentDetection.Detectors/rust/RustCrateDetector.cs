@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Rust;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -11,8 +12,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 using Tomlyn;
-
-namespace Microsoft.ComponentDetection.Detectors.Rust;
 
 [Export(typeof(IComponentDetector))]
 public class RustCrateDetector : FileComponentDetector

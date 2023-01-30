@@ -1,10 +1,9 @@
+namespace Microsoft.ComponentDetection.Detectors.Pip;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
-
-namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 public class PythonVersion : IComparable<PythonVersion>
 {

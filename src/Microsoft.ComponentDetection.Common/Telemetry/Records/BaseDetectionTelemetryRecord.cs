@@ -1,8 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+using System;
 using System.Diagnostics;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
-
-namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
 {

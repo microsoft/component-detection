@@ -1,9 +1,8 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Common;
-
-namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
 public interface IScanArguments
 {
