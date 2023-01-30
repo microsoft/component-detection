@@ -6,6 +6,7 @@ using System;
 ///
 /// It is up to the implementing Telemetry Service to interpret this value.
 /// </summary>
-public class MetricAttribute : Attribute
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class MetricAttribute : Attribute
 {
 }
