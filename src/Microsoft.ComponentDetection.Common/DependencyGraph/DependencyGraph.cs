@@ -99,7 +99,7 @@ internal class DependencyGraph : IDependencyGraph
 
     public bool HasComponents()
     {
-        return this.componentNodes.Count > 0;
+        return !this.componentNodes.IsEmpty;
     }
 
     public bool? IsDevelopmentDependency(string componentId)
