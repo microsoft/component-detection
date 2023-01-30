@@ -37,9 +37,9 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
 
     public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
-    public override bool Equals(object other)
+    public override bool Equals(object obj)
     {
-        return other is GoComponent otherComponent && this.Equals(otherComponent);
+        return obj is GoComponent otherComponent && this.Equals(otherComponent);
     }
 
     public bool Equals(GoComponent other)
