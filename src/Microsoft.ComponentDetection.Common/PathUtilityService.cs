@@ -65,7 +65,9 @@ public class PathUtilityService : IPathUtilityService
     /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
     [DllImport("libc", EntryPoint = "realpath")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments. libc expects a null-terminated ANSI string.
     private static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
+#pragma warning restore CA2101 // Specify marshaling for P/Invoke string arguments
 
     /// <summary>
     /// Use this function to free memory and prevent memory leaks.
