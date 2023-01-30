@@ -56,13 +56,13 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         if (!isCommandLocatable)
         {
             throw new InvalidOperationException(
-                $"{nameof(this.ExecuteCommand)} was called with a command that could not be located: `{command}`!");
+                $"{nameof(this.ExecuteCommandAsync)} was called with a command that could not be located: `{command}`!");
         }
 
         if (workingDirectory != null && !Directory.Exists(workingDirectory.FullName))
         {
             throw new InvalidOperationException(
-                $"{nameof(this.ExecuteCommand)} was called with a working directory that could not be located: `{workingDirectory.FullName}`");
+                $"{nameof(this.ExecuteCommandAsync)} was called with a working directory that could not be located: `{workingDirectory.FullName}`");
         }
 
         using var record = new CommandLineInvocationTelemetryRecord();

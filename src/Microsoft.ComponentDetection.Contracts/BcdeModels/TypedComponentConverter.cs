@@ -34,7 +34,7 @@ public class TypedComponentConverter : JsonConverter
 
     public override bool CanConvert(Type objectType)
     {
-        return objectType == typeof(TypedComponent.TypedComponent);
+        return objectType == typeof(TypedComponent);
     }
 
     public override object ReadJson(

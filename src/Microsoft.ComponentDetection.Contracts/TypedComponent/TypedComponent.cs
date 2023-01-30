@@ -1,5 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -7,6 +6,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using PackageUrl;
+
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 [JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
 [JsonConverter(typeof(TypedComponentConverter))]
