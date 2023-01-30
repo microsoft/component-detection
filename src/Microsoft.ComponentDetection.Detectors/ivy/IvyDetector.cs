@@ -107,39 +107,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
             gav.Value<string>("v"));
     }
 
-    private async Task ProcessIvyAndIvySettingsFilesAsync(
-        ISingleFileComponentRecorder singleFileComponentRecorder,
-        string ivyXmlFile,
-        string ivySettingsXmlFile)
-    {
-        try
-        {
-            var workingDirectory = Path.Combine(Path.GetTempPath(), "ComponentDetection_Ivy");
-            this.Logger.LogVerbose($"Preparing temporary Ivy project in {workingDirectory}");
-            if (Directory.Exists(workingDirectory))
-            {
-                Directory.Delete(workingDirectory, recursive: true);
-            }
-
-            this.InitTemporaryAntProject(workingDirectory, ivyXmlFile, ivySettingsXmlFile);
-            if (await this.RunAntToDetectDependenciesAsync(workingDirectory))
-            {
-                var instructionsFile = Path.Combine(workingDirectory, "target", "RegisterUsage.json");
-                this.RegisterUsagesFromFile(singleFileComponentRecorder, instructionsFile);
-            }
-
-            Directory.Delete(workingDirectory, recursive: true);
-        }
-        catch (Exception e)
-        {
-            this.Logger.LogError("Exception occurred during Ivy file processing: " + e);
-
-            // If something went wrong, just ignore the file
-            this.Logger.LogFailedReadingFile(ivyXmlFile, e);
-        }
-    }
-
-    private void InitTemporaryAntProject(string workingDirectory, string ivyXmlFile, string ivySettingsXmlFile)
+    private static void InitTemporaryAntProject(string workingDirectory, string ivyXmlFile, string ivySettingsXmlFile)
     {
         Directory.CreateDirectory(workingDirectory);
         File.Copy(ivyXmlFile, Path.Combine(workingDirectory, "ivy.xml"));
@@ -161,6 +129,38 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         using (var fileOut = File.Create(Path.Combine(workingDirectory, "java-src", "IvyComponentDetectionAntTask.java")))
         {
             fileIn.CopyTo(fileOut);
+        }
+    }
+
+    private async Task ProcessIvyAndIvySettingsFilesAsync(
+        ISingleFileComponentRecorder singleFileComponentRecorder,
+        string ivyXmlFile,
+        string ivySettingsXmlFile)
+    {
+        try
+        {
+            var workingDirectory = Path.Combine(Path.GetTempPath(), "ComponentDetection_Ivy");
+            this.Logger.LogVerbose($"Preparing temporary Ivy project in {workingDirectory}");
+            if (Directory.Exists(workingDirectory))
+            {
+                Directory.Delete(workingDirectory, recursive: true);
+            }
+
+            InitTemporaryAntProject(workingDirectory, ivyXmlFile, ivySettingsXmlFile);
+            if (await this.RunAntToDetectDependenciesAsync(workingDirectory))
+            {
+                var instructionsFile = Path.Combine(workingDirectory, "target", "RegisterUsage.json");
+                this.RegisterUsagesFromFile(singleFileComponentRecorder, instructionsFile);
+            }
+
+            Directory.Delete(workingDirectory, recursive: true);
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogError("Exception occurred during Ivy file processing: " + e);
+
+            // If something went wrong, just ignore the file
+            this.Logger.LogFailedReadingFile(ivyXmlFile, e);
         }
     }
 

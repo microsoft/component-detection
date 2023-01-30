@@ -37,7 +37,7 @@ public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
             if (disposing)
             {
                 this.StopExecutionTimer();
-                TelemetryRelay.Instance.PostTelemetryRecord(this);
+                TelemetryRelay.PostTelemetryRecord(this);
             }
 
             this.disposedValue = true;

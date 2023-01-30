@@ -48,7 +48,7 @@ reference = ""custom""
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(1, detectedComponents.Count());
 
-        this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
+        AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
         var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
         Assert.IsFalse(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
     }
@@ -74,7 +74,7 @@ python-versions = ""*""
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(1, detectedComponents.Count());
 
-        this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
+        AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
 
         var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
         Assert.IsTrue(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
@@ -125,10 +125,10 @@ resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(2, detectedComponents.Count());
 
-        this.AssertGitComponentHashAndUrl(detectedComponents, "232a5596424c98d11c3cf2e29b2f6a6c591c2ff3", "https://github.com/requests/requests.git");
+        AssertGitComponentHashAndUrl(detectedComponents, "232a5596424c98d11c3cf2e29b2f6a6c591c2ff3", "https://github.com/requests/requests.git");
     }
 
-    private void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
+    private static void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
         Assert.IsNotNull(
             detectedComponents.SingleOrDefault(c =>
@@ -138,7 +138,7 @@ resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
             $"Component with name {name} and version {version} was not found");
     }
 
-    private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
+    private static void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
     {
         Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
             c.Component is GitComponent component &&

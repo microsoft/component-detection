@@ -32,12 +32,7 @@ public class ArgumentHelper : IArgumentHelper
         return detectorArgs;
     }
 
-    public ParserResult<object> ParseArguments(string[] args)
-    {
-        return Parser.Default.ParseArguments(args, this.ArgumentSets.Select(x => x.GetType()).ToArray());
-    }
-
-    public ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
+    public static ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)
     {
         var p = new Parser(x =>
         {
@@ -48,5 +43,10 @@ public class ArgumentHelper : IArgumentHelper
         });
 
         return p.ParseArguments<T>(args);
+    }
+
+    public ParserResult<object> ParseArguments(string[] args)
+    {
+        return Parser.Default.ParseArguments(args, this.ArgumentSets.Select(x => x.GetType()).ToArray());
     }
 }

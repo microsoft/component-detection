@@ -34,6 +34,53 @@ public class NuGetComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 2;
 
+    private static void ParsePaketLock(ProcessRequest processRequest)
+    {
+        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+        var stream = processRequest.ComponentStream;
+
+        using var reader = new StreamReader(stream.Stream);
+
+        string line;
+        while ((line = reader.ReadLine()) != null)
+        {
+            var matches = Regex.Matches(line, @"\s*([a-zA-Z0-9-.]*) \([<>=]*[ ]*([0-9a-zA-Z-.]*)\)", RegexOptions.Singleline);
+            foreach (var match in matches.Cast<Match>())
+            {
+                var name = match.Groups[1].Value;
+                var version = match.Groups[2].Value;
+                var component = new NuGetComponent(name, version);
+                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Checks to make sure a path is valid (does not have to exist).
+    /// </summary>
+    /// <param name="potentialPath"> The path to validate. </param>
+    /// <returns>True if path is valid, otherwise it retuns false. </returns>
+    private static bool IsValidPath(string potentialPath)
+    {
+        FileInfo fileInfo = null;
+
+        try
+        {
+            fileInfo = new FileInfo(potentialPath);
+        }
+        catch
+        {
+            return false;
+        }
+
+        if (fileInfo == null)
+        {
+            return false;
+        }
+
+        return fileInfo.Exists || fileInfo.Directory.Exists;
+    }
+
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var stream = processRequest.ComponentStream;
@@ -95,7 +142,7 @@ public class NuGetComponentDetector : FileComponentDetector
             }
             else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
-                this.ParsePaketLock(processRequest);
+                ParsePaketLock(processRequest);
             }
             else
             {
@@ -132,27 +179,6 @@ public class NuGetComponentDetector : FileComponentDetector
         {
             // If something went wrong, just ignore the component
             this.Logger.LogFailedReadingFile(stream.Location, e);
-        }
-    }
-
-    private void ParsePaketLock(ProcessRequest processRequest)
-    {
-        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-        var stream = processRequest.ComponentStream;
-
-        using var reader = new StreamReader(stream.Stream);
-
-        string line;
-        while ((line = reader.ReadLine()) != null)
-        {
-            var matches = Regex.Matches(line, @"\s*([a-zA-Z0-9-.]*) \([<>=]*[ ]*([0-9a-zA-Z-.]*)\)", RegexOptions.Singleline);
-            foreach (var match in matches.Cast<Match>())
-            {
-                var name = match.Groups[1].Value;
-                var version = match.Groups[2].Value;
-                var component = new NuGetComponent(name, version);
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
-            }
         }
     }
 
@@ -200,7 +226,7 @@ public class NuGetComponentDetector : FileComponentDetector
             {
                 path = new DirectoryInfo(Path.GetFullPath(potentialPath));
             }
-            else if (this.IsValidPath(componentStream.Location))
+            else if (IsValidPath(componentStream.Location))
             {
                 path = new DirectoryInfo(Path.GetFullPath(Path.Combine(Path.GetDirectoryName(componentStream.Location), potentialPath)));
             }
@@ -217,31 +243,5 @@ public class NuGetComponentDetector : FileComponentDetector
         }
 
         return paths;
-    }
-
-    /// <summary>
-    /// Checks to make sure a path is valid (does not have to exist).
-    /// </summary>
-    /// <param name="potentialPath"> The path to validate. </param>
-    /// <returns>True if path is valid, otherwise it retuns false. </returns>
-    private bool IsValidPath(string potentialPath)
-    {
-        FileInfo fileInfo = null;
-
-        try
-        {
-            fileInfo = new FileInfo(potentialPath);
-        }
-        catch
-        {
-            return false;
-        }
-
-        if (fileInfo == null)
-        {
-            return false;
-        }
-
-        return fileInfo.Exists || fileInfo.Directory.Exists;
     }
 }

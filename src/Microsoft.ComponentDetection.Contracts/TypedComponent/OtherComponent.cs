@@ -10,9 +10,9 @@ public class OtherComponent : TypedComponent
 
     public OtherComponent(string name, string version, Uri downloadUrl, string hash)
     {
-        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Other));
-        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Other));
-        this.DownloadUrl = this.ValidateRequiredInput(downloadUrl, nameof(this.DownloadUrl), nameof(ComponentType.Other));
+        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Other));
+        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Other));
+        this.DownloadUrl = ValidateRequiredInput(downloadUrl, nameof(this.DownloadUrl), nameof(ComponentType.Other));
         this.Hash = hash;
     }
 

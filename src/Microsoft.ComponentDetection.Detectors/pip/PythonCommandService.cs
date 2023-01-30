@@ -15,66 +15,7 @@ public class PythonCommandService : IPythonCommandService
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
-    public async Task<bool> PythonExistsAsync(string pythonPath = null)
-    {
-        return !string.IsNullOrEmpty(await this.ResolvePythonAsync(pythonPath));
-    }
-
-    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(string filePath, string pythonPath = null)
-    {
-        if (string.IsNullOrEmpty(filePath))
-        {
-            return new List<(string, GitComponent)>();
-        }
-
-        if (filePath.EndsWith(".py"))
-        {
-            return (await this.ParseSetupPyFileAsync(filePath, pythonPath))
-                .Select<string, (string, GitComponent)>(component => (component, null))
-                .ToList();
-        }
-        else if (filePath.EndsWith(".txt"))
-        {
-            return this.ParseRequirementsTextFile(filePath);
-        }
-        else
-        {
-            return new List<(string, GitComponent)>();
-        }
-    }
-
-    private async Task<IList<string>> ParseSetupPyFileAsync(string filePath, string pythonExePath = null)
-    {
-        var pythonExecutable = await this.ResolvePythonAsync(pythonExePath);
-
-        if (string.IsNullOrEmpty(pythonExecutable))
-        {
-            throw new PythonNotFoundException();
-        }
-
-        // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
-        // We need to have python interpret this file because install_requires can be composed at runtime
-        var command = await this.CommandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
-
-        if (command.ExitCode != 0)
-        {
-            return new List<string>();
-        }
-
-        var result = command.StdOut;
-
-        result = result.Trim('[', ']', '\r', '\n').Trim();
-
-        // For Python2 if there are no packages (Result: "None") skip any parsing
-        if (result.Equals("None", StringComparison.OrdinalIgnoreCase) && !command.StdOut.StartsWith('['))
-        {
-            return new List<string>();
-        }
-
-        return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
-    }
-
-    private IList<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
+    private static IList<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
     {
         var items = new List<(string, GitComponent)>();
         foreach (var line in File.ReadAllLines(path).Select(x => x.Trim().TrimEnd('\\')).Where(x => !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))
@@ -129,6 +70,65 @@ public class PythonCommandService : IPythonCommandService
         }
 
         return items;
+    }
+
+    public async Task<bool> PythonExistsAsync(string pythonPath = null)
+    {
+        return !string.IsNullOrEmpty(await this.ResolvePythonAsync(pythonPath));
+    }
+
+    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(string filePath, string pythonPath = null)
+    {
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return new List<(string, GitComponent)>();
+        }
+
+        if (filePath.EndsWith(".py"))
+        {
+            return (await this.ParseSetupPyFileAsync(filePath, pythonPath))
+                .Select<string, (string, GitComponent)>(component => (component, null))
+                .ToList();
+        }
+        else if (filePath.EndsWith(".txt"))
+        {
+            return ParseRequirementsTextFile(filePath);
+        }
+        else
+        {
+            return new List<(string, GitComponent)>();
+        }
+    }
+
+    private async Task<IList<string>> ParseSetupPyFileAsync(string filePath, string pythonExePath = null)
+    {
+        var pythonExecutable = await this.ResolvePythonAsync(pythonExePath);
+
+        if (string.IsNullOrEmpty(pythonExecutable))
+        {
+            throw new PythonNotFoundException();
+        }
+
+        // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
+        // We need to have python interpret this file because install_requires can be composed at runtime
+        var command = await this.CommandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
+
+        if (command.ExitCode != 0)
+        {
+            return new List<string>();
+        }
+
+        var result = command.StdOut;
+
+        result = result.Trim('[', ']', '\r', '\n').Trim();
+
+        // For Python2 if there are no packages (Result: "None") skip any parsing
+        if (result.Equals("None", StringComparison.OrdinalIgnoreCase) && !command.StdOut.StartsWith('['))
+        {
+            return new List<string>();
+        }
+
+        return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
     }
 
     private async Task<string> ResolvePythonAsync(string pythonPath = null)

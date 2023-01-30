@@ -10,6 +10,21 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestCategory("Governance/ComponentDetection")]
 public class RustDependencySpecifierTest
 {
+    public static void DoAllTheTests(IEnumerable<(bool ShouldMatch, string CaseName, string SpecifierName, string SpecifierRange)> testCases)
+    {
+        foreach (var (shouldMatch, caseName, specifierName, specifierRange) in testCases)
+        {
+            var di = new DependencySpecification();
+            if (specifierName != null)
+            {
+                di.Add(specifierName, specifierRange);
+            }
+
+            di.MatchesPackage(new CargoPackage { Name = "some-cargo-package", Version = "1.2.3" })
+                .Should().Be(shouldMatch, caseName);
+        }
+    }
+
     [TestMethod]
     public void DoesntMatch_WhenNoDependencyAdded()
     {
@@ -35,21 +50,6 @@ public class RustDependencySpecifierTest
             (true, "Matches_-", "some-cargo-package", "1.2.0 - 1.2.5"),
             (false, "DoesntMatch_-", "some-cargo-package", "1.1.0 - 1.1.5"),
         };
-        this.DoAllTheTests(testCases);
-    }
-
-    public void DoAllTheTests(IEnumerable<(bool ShouldMatch, string CaseName, string SpecifierName, string SpecifierRange)> testCases)
-    {
-        foreach (var (shouldMatch, caseName, specifierName, specifierRange) in testCases)
-        {
-            var di = new DependencySpecification();
-            if (specifierName != null)
-            {
-                di.Add(specifierName, specifierRange);
-            }
-
-            di.MatchesPackage(new CargoPackage { Name = "some-cargo-package", Version = "1.2.3" })
-                .Should().Be(shouldMatch, caseName);
-        }
+        DoAllTheTests(testCases);
     }
 }

@@ -84,15 +84,15 @@ public class YarnParserTests
 
         var blocks = new List<YarnBlock>
         {
-            this.CreateBlock("a@^1.0.0", "1.0.0", "https://a", new List<YarnBlock>
+            CreateBlock("a@^1.0.0", "1.0.0", "https://a", new List<YarnBlock>
             {
-                this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
+                CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
             }),
-            this.CreateBlock("b@2.4.6", "2.4.6", "https://b", new List<YarnBlock>
+            CreateBlock("b@2.4.6", "2.4.6", "https://b", new List<YarnBlock>
             {
-                this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
+                CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
             }),
-            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", Enumerable.Empty<YarnBlock>()),
+            CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", Enumerable.Empty<YarnBlock>()),
         };
 
         var blockFile = new Mock<IYarnBlockFile>();
@@ -108,7 +108,7 @@ public class YarnParserTests
         {
             var block = blocks.Single(x => x.Values["resolved"] == entry.Resolved);
 
-            this.AssertBlockMatchesEntry(block, entry);
+            AssertBlockMatchesEntry(block, entry);
         }
     }
 
@@ -121,13 +121,13 @@ public class YarnParserTests
 
         var blocks = new List<YarnBlock>
         {
-            this.CreateBlock("a", "1.0.0", "https://a", new List<YarnBlock>
+            CreateBlock("a", "1.0.0", "https://a", new List<YarnBlock>
             {
-                this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
+                CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
             }),
-            this.CreateBlock("b", "2.4.6", "https://b", new List<YarnBlock>
+            CreateBlock("b", "2.4.6", "https://b", new List<YarnBlock>
             {
-                this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
+                CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
             }),
         };
 
@@ -144,7 +144,7 @@ public class YarnParserTests
         Assert.IsNotNull(file.Entries.FirstOrDefault(x => x.LookupKey == "b@2.4.6"));
     }
 
-    private YarnBlock CreateDependencyBlock(IDictionary<string, string> dependencies)
+    private static YarnBlock CreateDependencyBlock(IDictionary<string, string> dependencies)
     {
         var block = new YarnBlock { Title = "dependencies" };
 
@@ -157,7 +157,7 @@ public class YarnParserTests
         return block;
     }
 
-    private YarnBlock CreateBlock(string title, string version, string resolved, IEnumerable<YarnBlock> dependencies)
+    private static YarnBlock CreateBlock(string title, string version, string resolved, IEnumerable<YarnBlock> dependencies)
     {
         var block = new YarnBlock
         {
@@ -177,7 +177,7 @@ public class YarnParserTests
         return block;
     }
 
-    private void AssertBlockMatchesEntry(YarnBlock block, YarnEntry entry)
+    private static void AssertBlockMatchesEntry(YarnBlock block, YarnEntry entry)
     {
         var componentName = block.Title.Split(',').Select(x => x.Trim()).First().Split('@')[0];
         var blockVersions = block.Title.Split(',').Select(x => x.Trim()).Select(x => x.Split('@')[1]);

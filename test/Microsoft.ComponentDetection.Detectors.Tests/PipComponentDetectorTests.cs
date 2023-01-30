@@ -70,8 +70,8 @@ public class PipComponentDetectorTests
     {
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
 
-        var baseSetupPyDependencies = this.ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1", "c!=1.1" });
-        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1" });
+        var baseSetupPyDependencies = ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1", "c!=1.1" });
+        var baseRequirementsTextDependencies = ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1" });
         baseRequirementsTextDependencies.Add((null, new GitComponent(new Uri("https://github.com/example/example"), "deadbee")));
 
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
@@ -129,8 +129,8 @@ public class PipComponentDetectorTests
     {
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
 
-        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "h==1.3" });
-        var baseRequirementsTextDependencies2 = this.ToGitTuple(new List<string> { "D~=1.0", "E<=2.0", "F===1.1", "g==2" });
+        var baseRequirementsTextDependencies = ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "h==1.3" });
+        var baseRequirementsTextDependencies2 = ToGitTuple(new List<string> { "D~=1.0", "E<=2.0", "F===1.1", "g==2" });
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies);
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "TEST", "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies2);
 
@@ -169,8 +169,8 @@ public class PipComponentDetectorTests
         const string file1 = "c:\\repo\\setup.py";
         const string file2 = "c:\\repo\\lib\\requirements.txt";
 
-        var baseReqs = this.ToGitTuple(new List<string> { "a~=1.0", "b<=2.0", });
-        var altReqs = this.ToGitTuple(new List<string> { "c~=1.0", "d<=2.0", "e===1.1" });
+        var baseReqs = ToGitTuple(new List<string> { "a~=1.0", "b<=2.0", });
+        var altReqs = ToGitTuple(new List<string> { "c~=1.0", "d<=2.0", "e===1.1" });
         this.pythonCommandService.Setup(x => x.ParseFileAsync(file1, null)).ReturnsAsync(baseReqs);
         this.pythonCommandService.Setup(x => x.ParseFileAsync(file2, null)).ReturnsAsync(altReqs);
 
@@ -231,12 +231,12 @@ public class PipComponentDetectorTests
                 x => x.Id == rootId);
         }
 
-        this.CheckChild(componentRecorder, "red 0.2 - pip", new[] { "a 1.0 - pip", "c 1.0 - pip", });
-        this.CheckChild(componentRecorder, "green 1.3 - pip", new[] { "b 2.1 - pip", });
-        this.CheckChild(componentRecorder, "blue 0.4 - pip", new[] { "c 1.0 - pip", });
-        this.CheckChild(componentRecorder, "cat 1.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
-        this.CheckChild(componentRecorder, "lion 3.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
-        this.CheckChild(componentRecorder, "dog 2.1 - pip", new[] { "c 1.0 - pip", });
+        CheckChild(componentRecorder, "red 0.2 - pip", new[] { "a 1.0 - pip", "c 1.0 - pip", });
+        CheckChild(componentRecorder, "green 1.3 - pip", new[] { "b 2.1 - pip", });
+        CheckChild(componentRecorder, "blue 0.4 - pip", new[] { "c 1.0 - pip", });
+        CheckChild(componentRecorder, "cat 1.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
+        CheckChild(componentRecorder, "lion 3.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
+        CheckChild(componentRecorder, "dog 2.1 - pip", new[] { "c 1.0 - pip", });
 
         var graphsByLocations = componentRecorder.GetDependencyGraphsByLocation();
         Assert.AreEqual(2, graphsByLocations.Count);
@@ -254,7 +254,7 @@ public class PipComponentDetectorTests
         var graph1 = graphsByLocations[file1];
         Assert.IsTrue(graph1ComponentsWithDeps.Keys.Take(2).All(graph1.IsComponentExplicitlyReferenced));
         Assert.IsTrue(graph1ComponentsWithDeps.Keys.Skip(2).All(a => !graph1.IsComponentExplicitlyReferenced(a)));
-        this.CheckGraphStructure(graph1, graph1ComponentsWithDeps);
+        CheckGraphStructure(graph1, graph1ComponentsWithDeps);
 
         var graph2ComponentsWithDeps = new Dictionary<string, string[]>
         {
@@ -271,10 +271,10 @@ public class PipComponentDetectorTests
         var graph2 = graphsByLocations[file2];
         Assert.IsTrue(graph2ComponentsWithDeps.Keys.Take(3).All(graph2.IsComponentExplicitlyReferenced));
         Assert.IsTrue(graph2ComponentsWithDeps.Keys.Skip(3).All(a => !graph2.IsComponentExplicitlyReferenced(a)));
-        this.CheckGraphStructure(graph2, graph2ComponentsWithDeps);
+        CheckGraphStructure(graph2, graph2ComponentsWithDeps);
     }
 
-    private void CheckGraphStructure(IDependencyGraph graph, Dictionary<string, string[]> graphComponentsWithDeps)
+    private static void CheckGraphStructure(IDependencyGraph graph, Dictionary<string, string[]> graphComponentsWithDeps)
     {
         var graphComponents = graph.GetComponents().ToArray();
         Assert.AreEqual(
@@ -305,14 +305,14 @@ public class PipComponentDetectorTests
         }
     }
 
-    private void CheckChild(IComponentRecorder recorder, string childId, string[] parentIds)
+    private static void CheckChild(IComponentRecorder recorder, string childId, string[] parentIds)
     {
         recorder.AssertAllExplicitlyReferencedComponents<PipComponent>(
             childId,
             parentIds.Select(parentId => new Func<PipComponent, bool>(x => x.Id == parentId)).ToArray());
     }
 
-    private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)
+    private static List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)
     {
         return components.Select<string, (string, GitComponent)>(dep => (dep, null)).ToList();
     }

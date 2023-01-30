@@ -11,8 +11,8 @@ public class PipComponent : TypedComponent
 
     public PipComponent(string name, string version)
     {
-        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Pip));
-        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Pip));
+        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Pip));
+        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Pip));
     }
 
     public string Name { get; set; }

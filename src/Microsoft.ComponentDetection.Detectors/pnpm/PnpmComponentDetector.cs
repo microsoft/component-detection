@@ -41,7 +41,7 @@ public class PnpmComponentDetector : FileComponentDetector
         try
         {
             var pnpmYaml = await PnpmParsingUtilities.DeserializePnpmYamlFileAsync(file);
-            this.RecordDependencyGraphFromFile(pnpmYaml, singleFileComponentRecorder);
+            RecordDependencyGraphFromFile(pnpmYaml, singleFileComponentRecorder);
         }
         catch (Exception e)
         {
@@ -49,7 +49,7 @@ public class PnpmComponentDetector : FileComponentDetector
         }
     }
 
-    private void RecordDependencyGraphFromFile(PnpmYaml yaml, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private static void RecordDependencyGraphFromFile(PnpmYaml yaml, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         foreach (var packageKeyValue in yaml.packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
         {
@@ -69,12 +69,12 @@ public class PnpmComponentDetector : FileComponentDetector
                 foreach (var dependency in packageKeyValue.Value.dependencies)
                 {
                     // Ignore local packages.
-                    if (this.IsLocalDependency(dependency))
+                    if (IsLocalDependency(dependency))
                     {
                         continue;
                     }
 
-                    var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: this.CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
+                    var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
 
                     // Older code used the root's dev dependency value. We're leaving this null until we do a second pass to look at each components' top level referrers.
                     singleFileComponentRecorder.RegisterUsage(childDetectedComponent, parentComponentId: parentDetectedComponent.Component.Id, isDevelopmentDependency: null);
@@ -94,14 +94,14 @@ public class PnpmComponentDetector : FileComponentDetector
         }
     }
 
-    private bool IsLocalDependency(KeyValuePair<string, string> dependency)
+    private static bool IsLocalDependency(KeyValuePair<string, string> dependency)
     {
         // Local dependencies are dependencies that live in the file system
         // this requires an extra parsing that is not supported yet
         return dependency.Key.StartsWith("file:") || dependency.Value.StartsWith("file:") || dependency.Value.StartsWith("link:");
     }
 
-    private string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion)
+    private static string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion)
     {
         return dependencyVersion.Contains('/') ? dependencyVersion : $"/{dependencyName}/{dependencyVersion}";
     }

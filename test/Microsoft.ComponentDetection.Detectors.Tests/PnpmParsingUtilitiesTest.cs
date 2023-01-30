@@ -37,7 +37,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-        var parsedYaml = await PnpmParsingUtilities.DeserializePnpmYamlFileAsync(this.CreateComponentStreamForShrinkwrap(yamlFile));
+        var parsedYaml = await PnpmParsingUtilities.DeserializePnpmYamlFileAsync(CreateComponentStreamForShrinkwrap(yamlFile));
 
         parsedYaml.packages.Should().HaveCount(2);
         parsedYaml.packages.Should().ContainKey("/query-string/4.3.4");
@@ -105,7 +105,7 @@ shrinkwrapVersion: 3";
         action.Should().Throw<ArgumentNullException>();
     }
 
-    private IComponentStream CreateComponentStreamForShrinkwrap(string content)
+    private static IComponentStream CreateComponentStreamForShrinkwrap(string content)
     {
         var packageLockMock = new Mock<IComponentStream>();
         packageLockMock.SetupGet(x => x.Stream).Returns(content.ToStream());

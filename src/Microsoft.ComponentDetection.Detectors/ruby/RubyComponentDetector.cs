@@ -62,6 +62,11 @@ public class RubyComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 3;
 
+    private static bool IsVersionRelative(string version)
+    {
+        return version.StartsWith("~") || version.StartsWith("=");
+    }
+
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -211,7 +216,7 @@ public class RubyComponentDetector : FileComponentDetector
                         var version = splits[1][1..^1];
                         TypedComponent newComponent;
 
-                        if (this.IsVersionRelative(version))
+                        if (IsVersionRelative(version))
                         {
                             this.Logger.LogWarning($"Found component with invalid version, name = {name} and version = {version}");
                             wasParentDependencyExcluded = true;
@@ -243,11 +248,6 @@ public class RubyComponentDetector : FileComponentDetector
                 }
             }
         }
-    }
-
-    private bool IsVersionRelative(string version)
-    {
-        return version.StartsWith("~") || version.StartsWith("=");
     }
 
     private class Dependency

@@ -49,7 +49,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     [TestMethod]
     public async Task ScanDirectoryAsync_Base_2_2_VerificationAsync()
     {
-        var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
+        var osAgnostic = Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
@@ -72,7 +72,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     [TestMethod]
     public async Task ScanDirectoryAsync_Base_2_2_additional_VerificationAsync()
     {
-        var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
+        var osAgnostic = Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
@@ -98,7 +98,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     [TestMethod]
     public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_2_2_VerificationAsync()
     {
-        var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
+        var osAgnostic = Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
@@ -113,7 +113,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     [TestMethod]
     public async Task ScanDirectoryAsync_DependencyGraph_2_2_additional_VerificationAsync()
     {
-        var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
+        var osAgnostic = Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
@@ -193,7 +193,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     [TestMethod]
     public async Task ScanDirectoryAsync_Base_3_1_VerificationAsync()
     {
-        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
+        var osAgnostic = Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
@@ -215,7 +215,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     [TestMethod]
     public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_3_1_VerificationAsync()
     {
-        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
+        var osAgnostic = Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
@@ -231,7 +231,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     [TestMethod]
     public async Task ScanDirectoryAsync_DependencyGraph_3_1_VerificationAsync()
     {
-        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
+        var osAgnostic = Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
@@ -296,7 +296,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
         dependencyGraphs.Count.Should().Be(0);
     }
 
-    private string Convert22SampleToOSAgnostic(string project_assets)
+    private static string Convert22SampleToOSAgnostic(string project_assets)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -312,7 +312,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
         return project_assets;
     }
 
-    private string Convert31SampleToOSAgnostic(string project_assets)
+    private static string Convert31SampleToOSAgnostic(string project_assets)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {

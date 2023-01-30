@@ -4,8 +4,8 @@ public class CondaComponent : TypedComponent
 {
     public CondaComponent(string name, string version, string build, string channel, string subdir, string @namespace, string url, string md5)
     {
-        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Conda));
-        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Conda));
+        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Conda));
+        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Conda));
         this.Build = build;
         this.Channel = channel;
         this.Subdir = subdir;

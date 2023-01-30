@@ -38,6 +38,7 @@ internal class InjectionParameters
         environmentVariableServiceStatic = detectorDependencies.EnvironmentVariableService;
     }
 
+#pragma warning disable CA1822
     [Export(typeof(ILogger))]
     public ILogger Logger => loggerStatic;
 
@@ -61,4 +62,5 @@ internal class InjectionParameters
 
     [Export(typeof(IEnvironmentVariableService))]
     public IEnvironmentVariableService EnvironmentVariableService => environmentVariableServiceStatic;
+#pragma warning restore CA1822
 }

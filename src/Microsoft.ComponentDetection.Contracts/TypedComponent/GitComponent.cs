@@ -5,8 +5,8 @@ public class GitComponent : TypedComponent
 {
     public GitComponent(Uri repositoryUrl, string commitHash)
     {
-        this.RepositoryUrl = this.ValidateRequiredInput(repositoryUrl, nameof(this.RepositoryUrl), nameof(ComponentType.Git));
-        this.CommitHash = this.ValidateRequiredInput(commitHash, nameof(this.CommitHash), nameof(ComponentType.Git));
+        this.RepositoryUrl = ValidateRequiredInput(repositoryUrl, nameof(this.RepositoryUrl), nameof(ComponentType.Git));
+        this.CommitHash = ValidateRequiredInput(commitHash, nameof(this.CommitHash), nameof(ComponentType.Git));
     }
 
     public GitComponent(Uri repositoryUrl, string commitHash, string tag)

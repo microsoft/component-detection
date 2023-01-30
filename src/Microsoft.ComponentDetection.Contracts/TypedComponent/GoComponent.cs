@@ -6,16 +6,16 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
 {
     public GoComponent(string name, string version)
     {
-        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Go));
-        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Go));
+        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Go));
+        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Go));
         this.Hash = string.Empty;
     }
 
     public GoComponent(string name, string version, string hash)
     {
-        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Go));
-        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Go));
-        this.Hash = this.ValidateRequiredInput(hash, nameof(this.Hash), nameof(ComponentType.Go));
+        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Go));
+        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Go));
+        this.Hash = ValidateRequiredInput(hash, nameof(this.Hash), nameof(ComponentType.Go));
     }
 
     private GoComponent()

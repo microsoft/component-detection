@@ -23,13 +23,13 @@ public class SafeFileEnumerableTests
     {
         this.loggerMock = new Mock<ILogger>();
         this.pathUtilityServiceMock = new Mock<IPathUtilityService>();
-        this.temporaryDirectory = this.GetTemporaryDirectory();
+        this.temporaryDirectory = GetTemporaryDirectory();
     }
 
     [TestCleanup]
     public void TestCleanup()
     {
-        this.CleanupTemporaryDirectory(this.temporaryDirectory);
+        CleanupTemporaryDirectory(this.temporaryDirectory);
     }
 
     [TestMethod]
@@ -138,14 +138,14 @@ public class SafeFileEnumerableTests
         this.pathUtilityServiceMock.Verify(x => x.ResolvePhysicalPath(this.temporaryDirectory), Times.AtLeastOnce);
     }
 
-    private string GetTemporaryDirectory()
+    private static string GetTemporaryDirectory()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
         return tempDirectory;
     }
 
-    private void CleanupTemporaryDirectory(string directory)
+    private static void CleanupTemporaryDirectory(string directory)
     {
         try
         {

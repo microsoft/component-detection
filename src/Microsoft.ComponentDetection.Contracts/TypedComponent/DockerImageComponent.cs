@@ -9,7 +9,7 @@ public class DockerImageComponent : TypedComponent
 
     public DockerImageComponent(string hash, string name = null, string tag = null)
     {
-        this.Digest = this.ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.DockerImage));
+        this.Digest = ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.DockerImage));
         this.Name = name;
         this.Tag = tag;
     }

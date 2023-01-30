@@ -20,6 +20,33 @@ public class YarnLockParser : IYarnLockParser
     [Import]
     public ILogger Logger { get; set; }
 
+    private static bool TryReadNameAndSatisfiedVersion(string nameVersionPairing, out Tuple<string, string> output)
+    {
+        output = null;
+        var workingString = nameVersionPairing;
+        workingString = workingString.TrimEnd(':');
+        workingString = workingString.Trim('\"');
+        var startsWithAtSign = false;
+        if (workingString.StartsWith('@'))
+        {
+            startsWithAtSign = true;
+            workingString = workingString.TrimStart('@');
+        }
+
+        var parts = workingString.Split('@');
+
+        if (parts.Length != 2)
+        {
+            return false;
+        }
+
+        var at = startsWithAtSign ? "@" : string.Empty;
+        var name = $"{at}{parts[0]}";
+
+        output = new Tuple<string, string>(name, parts[1]);
+        return true;
+    }
+
     public static string NormalizeVersion(string version)
     {
         return version.StartsWith("npm:") ? version : $"npm:{version}";
@@ -48,7 +75,7 @@ public class YarnLockParser : IYarnLockParser
 
             foreach (var package in satisfiedPackages)
             {
-                if (!this.TryReadNameAndSatisfiedVersion(package, out var parsed))
+                if (!TryReadNameAndSatisfiedVersion(package, out var parsed))
                 {
                     continue;
                 }
@@ -130,32 +157,5 @@ public class YarnLockParser : IYarnLockParser
 
             return blockTitleMember + $"@{versionValue.Value}";
         };
-    }
-
-    private bool TryReadNameAndSatisfiedVersion(string nameVersionPairing, out Tuple<string, string> output)
-    {
-        output = null;
-        var workingString = nameVersionPairing;
-        workingString = workingString.TrimEnd(':');
-        workingString = workingString.Trim('\"');
-        var startsWithAtSign = false;
-        if (workingString.StartsWith('@'))
-        {
-            startsWithAtSign = true;
-            workingString = workingString.TrimStart('@');
-        }
-
-        var parts = workingString.Split('@');
-
-        if (parts.Length != 2)
-        {
-            return false;
-        }
-
-        var at = startsWithAtSign ? "@" : string.Empty;
-        var name = $"{at}{parts[0]}";
-
-        output = new Tuple<string, string>(name, parts[1]);
-        return true;
     }
 }

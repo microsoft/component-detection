@@ -10,8 +10,8 @@ public class CargoComponent : TypedComponent
 
     public CargoComponent(string name, string version)
     {
-        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Cargo));
-        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Cargo));
+        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Cargo));
+        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Cargo));
     }
 
     public string Name { get; set; }

@@ -12,8 +12,8 @@ public class VcpkgComponent : TypedComponent
     {
         int.TryParse(portVersion, out var port);
 
-        this.SPDXID = this.ValidateRequiredInput(spdxid, nameof(this.SPDXID), nameof(ComponentType.Vcpkg));
-        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Vcpkg));
+        this.SPDXID = ValidateRequiredInput(spdxid, nameof(this.SPDXID), nameof(ComponentType.Vcpkg));
+        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Vcpkg));
         this.Version = version;
         this.PortVersion = port;
         this.Triplet = triplet;
