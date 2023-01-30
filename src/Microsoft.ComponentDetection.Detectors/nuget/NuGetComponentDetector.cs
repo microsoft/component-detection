@@ -73,11 +73,6 @@ public class NuGetComponentDetector : FileComponentDetector
             return false;
         }
 
-        if (fileInfo == null)
-        {
-            return false;
-        }
-
         return fileInfo.Exists || fileInfo.Directory.Exists;
     }
 
