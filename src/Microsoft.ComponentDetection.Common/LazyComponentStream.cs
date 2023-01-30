@@ -45,6 +45,6 @@ public class LazyComponentStream : IComponentStream
             this.logger?.LogException(e, isError: false);
         }
 
-        return new byte[0];
+        return Array.Empty<byte>();
     }
 }
