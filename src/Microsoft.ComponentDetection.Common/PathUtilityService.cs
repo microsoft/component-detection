@@ -64,7 +64,7 @@ public class PathUtilityService : IPathUtilityService
     /// <param name="output"> The pointer output. </param>
     /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
     [DllImport("libc", EntryPoint = "realpath")]
-    public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
+    private static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
 
     /// <summary>
     /// Use this function to free memory and prevent memory leaks.
@@ -73,7 +73,7 @@ public class PathUtilityService : IPathUtilityService
     /// </summary>
     /// <param name="toFree">Pointer to the memory space to free. </param>
     [DllImport("libc", EntryPoint = "free")]
-    public static extern void FreeMemoryLinux([In] IntPtr toFree);
+    private static extern void FreeMemoryLinux([In] IntPtr toFree);
 
     public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
     {
