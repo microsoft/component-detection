@@ -34,7 +34,7 @@ internal class DependencyGraph : IDependencyGraph
 
         if (string.IsNullOrWhiteSpace(componentNode.Id))
         {
-            throw new ArgumentNullException(nameof(componentNode.Id));
+            throw new ArgumentNullException(nameof(componentNode.Id), "Invalid component node id");
         }
 
         this.componentNodes.AddOrUpdate(componentNode.Id, componentNode, (key, currentNode) =>
