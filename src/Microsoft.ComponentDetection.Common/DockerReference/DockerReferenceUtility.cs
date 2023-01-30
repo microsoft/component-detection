@@ -111,7 +111,7 @@ public static class DockerReferenceUtility
             domain = DEFAULTDOMAIN;
         }
 
-        if (domain == DEFAULTDOMAIN && remainder.IndexOf('/') == -1)
+        if (domain == DEFAULTDOMAIN && indexOfSlash == -1)
         {
             remainder = $"{OFFICIALREPOSITORYNAME}/{remainder}";
         }

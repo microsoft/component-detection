@@ -26,7 +26,7 @@ public static class NuGetNuspecUtilities
             var nuspecEntry =
                 archive.Entries.FirstOrDefault(x =>
                     x.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase)
-                    && x.FullName.IndexOf('/') == -1);
+                    && !x.FullName.Contains('/'));
 
             if (nuspecEntry == null)
             {
