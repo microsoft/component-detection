@@ -67,7 +67,7 @@ public class FileWritingServiceTests
             .Should().NotBeEmpty();
         File.ReadAllText(files[0])
             .Should().Contain($"sampleTextsampleText2");
-        VerifyTimestamp(files[0], "somefile_", ".txt");
+        this.VerifyTimestamp(files[0], "somefile_", ".txt");
     }
 
     [TestMethod]
@@ -76,7 +76,7 @@ public class FileWritingServiceTests
         var relativeDir = "someOtherFile_{timestamp}.txt";
         this.serviceUnderTest.WriteFile(relativeDir, string.Empty);
         var fullPath = this.serviceUnderTest.ResolveFilePath(relativeDir);
-        VerifyTimestamp(fullPath, "someOtherFile_", ".txt");
+        this.VerifyTimestamp(fullPath, "someOtherFile_", ".txt");
     }
 
     [TestMethod]
@@ -89,7 +89,7 @@ public class FileWritingServiceTests
         action.Should().Throw<InvalidUserInputException>();
     }
 
-    private static void VerifyTimestamp(string fullPath, string prefix, string suffix)
+    private void VerifyTimestamp(string fullPath, string prefix, string suffix)
     {
         var fileName = Path.GetFileName(fullPath);
         fileName

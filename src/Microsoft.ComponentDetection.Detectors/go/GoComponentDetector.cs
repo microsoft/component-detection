@@ -37,91 +37,6 @@ public class GoComponentDetector : FileComponentDetector
 
     public override int Version => 6;
 
-    private static void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
-    {
-        var goBuildModules = new List<GoBuildModule>();
-        var reader = new JsonTextReader(new StringReader(goListOutput))
-        {
-            SupportMultipleContent = true,
-        };
-
-        while (reader.Read())
-        {
-            var serializer = new JsonSerializer();
-            var buildModule = serializer.Deserialize<GoBuildModule>(reader);
-
-            goBuildModules.Add(buildModule);
-        }
-
-        foreach (var dependency in goBuildModules)
-        {
-            if (dependency.Main)
-            {
-                // main is the entry point module (superfluous as we already have the file location)
-                continue;
-            }
-
-            var goComponent = new GoComponent(dependency.Path, dependency.Version);
-
-            if (dependency.Indirect)
-            {
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
-            }
-            else
-            {
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent), isExplicitReferencedDependency: true);
-            }
-        }
-    }
-
-    private static bool TryCreateGoComponentFromRelationshipPart(string relationship, out GoComponent goComponent)
-    {
-        var componentParts = relationship.Split('@');
-        if (componentParts.Length != 2)
-        {
-            goComponent = null;
-            return false;
-        }
-
-        goComponent = new GoComponent(componentParts[0], componentParts[1]);
-        return true;
-    }
-
-    private static bool TryToCreateGoComponentFromModLine(string line, out GoComponent goComponent)
-    {
-        var lineComponents = Regex.Split(line.Trim(), @"\s+");
-
-        if (lineComponents.Length < 2)
-        {
-            goComponent = null;
-            return false;
-        }
-
-        var name = lineComponents[0];
-        var version = lineComponents[1];
-        goComponent = new GoComponent(name, version);
-
-        return true;
-    }
-
-    private static bool TryToCreateGoComponentFromSumLine(string line, out GoComponent goComponent)
-    {
-        var m = GoSumRegex.Match(line);
-        if (m.Success)
-        {
-            goComponent = new GoComponent(m.Groups["name"].Value, m.Groups["version"].Value, m.Groups["hash"].Value);
-            return true;
-        }
-
-        goComponent = null;
-        return false;
-    }
-
-    private static bool IsModuleInBuildList(ISingleFileComponentRecorder singleFileComponentRecorder, GoComponent component)
-    {
-        return singleFileComponentRecorder.GetComponent(component.Id) != null;
-    }
-
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -213,7 +128,7 @@ public class GoComponentDetector : FileComponentDetector
             return false;
         }
 
-        RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
+        this.RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
 
         var generateGraphProcess = await this.CommandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, new List<string> { "mod", "graph" }.ToArray());
         if (generateGraphProcess.ExitCode == 0)
@@ -240,7 +155,7 @@ public class GoComponentDetector : FileComponentDetector
         // Stopping at the first ) restrict the detection to only the require section.
         while ((line = reader.ReadLine()) != null && !line.EndsWith(")"))
         {
-            if (TryToCreateGoComponentFromModLine(line, out var goComponent))
+            if (this.TryToCreateGoComponentFromModLine(line, out var goComponent))
             {
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
             }
@@ -249,6 +164,23 @@ public class GoComponentDetector : FileComponentDetector
                 this.Logger.LogWarning($"Line could not be parsed for component [{line.Trim()}]");
             }
         }
+    }
+
+    private bool TryToCreateGoComponentFromModLine(string line, out GoComponent goComponent)
+    {
+        var lineComponents = Regex.Split(line.Trim(), @"\s+");
+
+        if (lineComponents.Length < 2)
+        {
+            goComponent = null;
+            return false;
+        }
+
+        var name = lineComponents[0];
+        var version = lineComponents[1];
+        goComponent = new GoComponent(name, version);
+
+        return true;
     }
 
     // For more information about the format of the go.sum file
@@ -262,7 +194,7 @@ public class GoComponentDetector : FileComponentDetector
         string line;
         while ((line = reader.ReadLine()) != null)
         {
-            if (TryToCreateGoComponentFromSumLine(line, out var goComponent))
+            if (this.TryToCreateGoComponentFromSumLine(line, out var goComponent))
             {
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
             }
@@ -271,6 +203,19 @@ public class GoComponentDetector : FileComponentDetector
                 this.Logger.LogWarning($"Line could not be parsed for component [{line.Trim()}]");
             }
         }
+    }
+
+    private bool TryToCreateGoComponentFromSumLine(string line, out GoComponent goComponent)
+    {
+        var m = GoSumRegex.Match(line);
+        if (m.Success)
+        {
+            goComponent = new GoComponent(m.Groups["name"].Value, m.Groups["version"].Value, m.Groups["hash"].Value);
+            return true;
+        }
+
+        goComponent = null;
+        return false;
     }
 
     /// <summary>
@@ -297,8 +242,8 @@ public class GoComponentDetector : FileComponentDetector
                 continue;
             }
 
-            var isParentParsed = TryCreateGoComponentFromRelationshipPart(components[0], out var parentComponent);
-            var isChildParsed = TryCreateGoComponentFromRelationshipPart(components[1], out var childComponent);
+            var isParentParsed = this.TryCreateGoComponentFromRelationshipPart(components[0], out var parentComponent);
+            var isChildParsed = this.TryCreateGoComponentFromRelationshipPart(components[1], out var childComponent);
 
             if (!isParentParsed)
             {
@@ -308,7 +253,7 @@ public class GoComponentDetector : FileComponentDetector
 
             if (isChildParsed)
             {
-                if (IsModuleInBuildList(componentRecorder, parentComponent) && IsModuleInBuildList(componentRecorder, childComponent))
+                if (this.IsModuleInBuildList(componentRecorder, parentComponent) && this.IsModuleInBuildList(componentRecorder, childComponent))
                 {
                     componentRecorder.RegisterUsage(new DetectedComponent(childComponent), parentComponentId: parentComponent.Id);
                 }
@@ -318,6 +263,61 @@ public class GoComponentDetector : FileComponentDetector
                 this.Logger.LogWarning($"Failed to parse components from relationship string {relationship}");
             }
         }
+    }
+
+    private bool IsModuleInBuildList(ISingleFileComponentRecorder singleFileComponentRecorder, GoComponent component)
+    {
+        return singleFileComponentRecorder.GetComponent(component.Id) != null;
+    }
+
+    private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
+    {
+        var goBuildModules = new List<GoBuildModule>();
+        var reader = new JsonTextReader(new StringReader(goListOutput))
+        {
+            SupportMultipleContent = true,
+        };
+
+        while (reader.Read())
+        {
+            var serializer = new JsonSerializer();
+            var buildModule = serializer.Deserialize<GoBuildModule>(reader);
+
+            goBuildModules.Add(buildModule);
+        }
+
+        foreach (var dependency in goBuildModules)
+        {
+            if (dependency.Main)
+            {
+                // main is the entry point module (superfluous as we already have the file location)
+                continue;
+            }
+
+            var goComponent = new GoComponent(dependency.Path, dependency.Version);
+
+            if (dependency.Indirect)
+            {
+                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
+            }
+            else
+            {
+                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent), isExplicitReferencedDependency: true);
+            }
+        }
+    }
+
+    private bool TryCreateGoComponentFromRelationshipPart(string relationship, out GoComponent goComponent)
+    {
+        var componentParts = relationship.Split('@');
+        if (componentParts.Length != 2)
+        {
+            goComponent = null;
+            return false;
+        }
+
+        goComponent = new GoComponent(componentParts[0], componentParts[1]);
+        return true;
     }
 
     private bool IsGoCliManuallyDisabled()

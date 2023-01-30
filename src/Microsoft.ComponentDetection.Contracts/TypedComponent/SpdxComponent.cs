@@ -10,12 +10,12 @@ public class SpdxComponent : TypedComponent
 
     public SpdxComponent(string spdxVersion, Uri documentNamespace, string name, string checksum, string rootElementId, string path)
     {
-        this.SpdxVersion = ValidateRequiredInput(spdxVersion, nameof(this.SpdxVersion), nameof(ComponentType.Spdx));
-        this.DocumentNamespace = ValidateRequiredInput(documentNamespace, nameof(this.DocumentNamespace), nameof(ComponentType.Spdx));
-        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Spdx));
-        this.Checksum = ValidateRequiredInput(checksum, nameof(this.Checksum), nameof(ComponentType.Spdx));
-        this.RootElementId = ValidateRequiredInput(rootElementId, nameof(this.RootElementId), nameof(ComponentType.Spdx));
-        this.Path = ValidateRequiredInput(path, nameof(this.Path), nameof(ComponentType.Spdx));
+        this.SpdxVersion = this.ValidateRequiredInput(spdxVersion, nameof(this.SpdxVersion), nameof(ComponentType.Spdx));
+        this.DocumentNamespace = this.ValidateRequiredInput(documentNamespace, nameof(this.DocumentNamespace), nameof(ComponentType.Spdx));
+        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Spdx));
+        this.Checksum = this.ValidateRequiredInput(checksum, nameof(this.Checksum), nameof(ComponentType.Spdx));
+        this.RootElementId = this.ValidateRequiredInput(rootElementId, nameof(this.RootElementId), nameof(ComponentType.Spdx));
+        this.Path = this.ValidateRequiredInput(path, nameof(this.Path), nameof(ComponentType.Spdx));
     }
 
     public override ComponentType Type => ComponentType.Spdx;

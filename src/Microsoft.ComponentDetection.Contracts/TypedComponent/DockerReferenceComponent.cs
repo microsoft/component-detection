@@ -4,7 +4,7 @@ public class DockerReferenceComponent : TypedComponent
 {
     public DockerReferenceComponent(string hash, string repository = null, string tag = null)
     {
-        this.Digest = ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.DockerReference));
+        this.Digest = this.ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.DockerReference));
         this.Repository = repository;
         this.Tag = tag;
     }

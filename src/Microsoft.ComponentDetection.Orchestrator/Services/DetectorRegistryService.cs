@@ -21,35 +21,6 @@ public class DetectorRegistryService : ServiceBase, IDetectorRegistryService
 
     private IEnumerable<IComponentDetector> ComponentDetectors { get; set; }
 
-    // Plugin producers may include files we have already loaded
-    private static IList<Assembly> SafeLoadAssemblies(IEnumerable<string> files)
-    {
-        var assemblyList = new List<Assembly>();
-
-        foreach (var file in files)
-        {
-            try
-            {
-                var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(file);
-
-                assemblyList.Add(assembly);
-            }
-            catch (FileLoadException ex)
-            {
-                if (ex.Message == "Assembly with same name is already loaded")
-                {
-                    continue;
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-
-        return assemblyList;
-    }
-
     public IEnumerable<IComponentDetector> GetDetectors(IEnumerable<DirectoryInfo> additionalSearchDirectories, IEnumerable<string> extraDetectorAssemblies, bool skipPluginsDirectory = false)
     {
         var directoriesToSearch = new List<DirectoryInfo>();
@@ -121,7 +92,7 @@ public class DetectorRegistryService : ServiceBase, IDetectorRegistryService
 
             this.Logger.LogInfo($"Attempting to load component detectors from {searchPath}");
 
-            var assemblies = SafeLoadAssemblies(searchPath.GetFiles("*.dll", SearchOption.AllDirectories).Select(x => x.FullName));
+            var assemblies = this.SafeLoadAssemblies(searchPath.GetFiles("*.dll", SearchOption.AllDirectories).Select(x => x.FullName));
 
             var loadedDetectors = this.LoadComponentDetectorsFromAssemblies(assemblies, extraDetectorAssemblies);
 
@@ -158,5 +129,34 @@ public class DetectorRegistryService : ServiceBase, IDetectorRegistryService
         using var container = configuration.CreateContainer();
 
         return container.GetExports<IComponentDetector>().ToList();
+    }
+
+    // Plugin producers may include files we have already loaded
+    private IList<Assembly> SafeLoadAssemblies(IEnumerable<string> files)
+    {
+        var assemblyList = new List<Assembly>();
+
+        foreach (var file in files)
+        {
+            try
+            {
+                var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(file);
+
+                assemblyList.Add(assembly);
+            }
+            catch (FileLoadException ex)
+            {
+                if (ex.Message == "Assembly with same name is already loaded")
+                {
+                    continue;
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        return assemblyList;
     }
 }

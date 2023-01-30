@@ -16,22 +16,6 @@ public class PythonResolver : IPythonResolver
     [Import]
     public ILogger Logger { get; set; }
 
-    private static void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
-    {
-        if (state.NodeReferences.TryGetValue(name, out var value))
-        {
-            parent.Children.Add(value);
-            value.Parents.Add(parent);
-        }
-        else
-        {
-            var node = new PipGraphNode(new PipComponent(name, version));
-            state.NodeReferences[name] = node;
-            parent.Children.Add(node);
-            node.Parents.Add(parent);
-        }
-    }
-
     /// <summary>
     /// Resolves the root Python packages from the initial list of packages.
     /// </summary>
@@ -118,7 +102,7 @@ public class PythonResolver : IPythonResolver
                         var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
                             ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
 
-                        AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
+                        this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
 
                         state.ProcessingQueue.Enqueue((root, dependencyNode));
                     }
@@ -203,6 +187,22 @@ public class PythonResolver : IPythonResolver
         }
 
         return await this.PypiClient.FetchPackageDependenciesAsync(spec.Name, candidateVersion, packageToFetch);
+    }
+
+    private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
+    {
+        if (state.NodeReferences.TryGetValue(name, out var value))
+        {
+            parent.Children.Add(value);
+            value.Parents.Add(parent);
+        }
+        else
+        {
+            var node = new PipGraphNode(new PipComponent(name, version));
+            state.NodeReferences[name] = node;
+            parent.Children.Add(node);
+            node.Parents.Add(parent);
+        }
     }
 
     private class PythonResolverState

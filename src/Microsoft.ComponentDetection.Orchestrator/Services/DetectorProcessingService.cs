@@ -43,7 +43,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         var providerElapsedTime = new ConcurrentDictionary<string, DetectorRunResult>();
         var detectorArguments = GetDetectorArgs(detectionArguments.DetectorArgs);
 
-        var exclusionPredicate = IsOSLinuxOrMac()
+        var exclusionPredicate = this.IsOSLinuxOrMac()
             ? this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: false, ignoreCase: false)
             : this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
 
@@ -63,13 +63,13 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
                 IndividualDetectorScanResult result;
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
-                    result = await WithExperimentalScanGuardsAsync(
+                    result = await this.WithExperimentalScanGuardsAsync(
                         () => detector.ExecuteDetectorAsync(new ScanRequest(detectionArguments.SourceDirectory, exclusionPredicate, this.Logger, detectorArguments, detectionArguments.DockerImagesToScan, componentRecorder)),
                         isExperimentalDetector,
                         record);
 
                     // Make sure top level enumerables are at least empty and not null.
-                    result = CoalesceResult(result);
+                    result = this.CoalesceResult(result);
 
                     detectedComponents = componentRecorder.GetDetectedComponents();
                     resultCode = result.ResultCode;
@@ -116,7 +116,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
 
         var results = await Task.WhenAll(scanTasks);
 
-        var detectorProcessingResult = ConvertDetectorResultsIntoResult(results, exitCode);
+        var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
         var totalElapsedTime = stopwatch.Elapsed.TotalSeconds;
         this.LogTabularOutput(this.Logger, providerElapsedTime, totalElapsedTime);
@@ -225,7 +225,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         return detectorArgs;
     }
 
-    private static IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
+    private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
     {
         individualDetectorScanResult ??= new IndividualDetectorScanResult();
 
@@ -235,7 +235,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         return individualDetectorScanResult;
     }
 
-    private static DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult Result, ComponentRecorder Recorder, IComponentDetector Detector)> results, ProcessingResultCode exitCode)
+    private DetectorProcessingResult ConvertDetectorResultsIntoResult(IEnumerable<(IndividualDetectorScanResult Result, ComponentRecorder Recorder, IComponentDetector Detector)> results, ProcessingResultCode exitCode)
     {
         return new DetectorProcessingResult
         {
@@ -245,7 +245,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         };
     }
 
-    private static async Task<IndividualDetectorScanResult> WithExperimentalScanGuardsAsync(Func<Task<IndividualDetectorScanResult>> detectionTaskGenerator, bool isExperimentalDetector, DetectorExecutionTelemetryRecord telemetryRecord)
+    private async Task<IndividualDetectorScanResult> WithExperimentalScanGuardsAsync(Func<Task<IndividualDetectorScanResult>> detectionTaskGenerator, bool isExperimentalDetector, DetectorExecutionTelemetryRecord telemetryRecord)
     {
         if (!isExperimentalDetector)
         {
@@ -273,7 +273,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         }
     }
 
-    private static bool IsOSLinuxOrMac()
+    private bool IsOSLinuxOrMac()
     {
         return OSVersion.Platform == PlatformID.MacOSX || OSVersion.Platform == PlatformID.Unix;
     }

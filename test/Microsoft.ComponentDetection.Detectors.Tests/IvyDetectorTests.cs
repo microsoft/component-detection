@@ -149,7 +149,7 @@ public class IvyDetectorTests
         dependencyGraph.IsDevelopmentDependency(d3Id).Should().BeFalse();
     }
 
-    protected static bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
+    protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
     {
         result.Should<T>().BeEquivalentTo(expected);
         return true;

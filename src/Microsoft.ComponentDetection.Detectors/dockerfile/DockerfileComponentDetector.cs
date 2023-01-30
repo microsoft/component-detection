@@ -31,86 +31,6 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override int Version => 1;
 
-    private static DockerReference ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
-    {
-        var tokens = construct.Tokens.ToArray();
-        var resolvedFromStatement = construct.ResolveVariables(escapeChar).TrimEnd();
-        var fromInstruction = (FromInstruction)construct;
-        var reference = fromInstruction.ImageName;
-        if (string.IsNullOrWhiteSpace(resolvedFromStatement) || string.IsNullOrEmpty(reference))
-        {
-            return null;
-        }
-
-        var stageName = fromInstruction.StageName;
-        stageNameMap.TryGetValue(reference, out var stageNameReference);
-
-        if (!string.IsNullOrEmpty(stageName))
-        {
-            if (!string.IsNullOrEmpty(stageNameReference))
-            {
-                stageNameMap.Add(stageName, stageNameReference);
-            }
-            else
-            {
-                stageNameMap.Add(stageName, reference);
-            }
-        }
-
-        if (!string.IsNullOrEmpty(stageNameReference))
-        {
-            if (HasUnresolvedVariables(stageNameReference))
-            {
-                return null;
-            }
-
-            return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
-        }
-
-        if (HasUnresolvedVariables(reference))
-        {
-            return null;
-        }
-
-        return DockerReferenceUtility.ParseFamiliarName(reference);
-    }
-
-    private static DockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
-    {
-        var resolvedCopyStatement = construct.ResolveVariables(escapeChar).TrimEnd();
-        var copyInstruction = (CopyInstruction)construct;
-        var reference = copyInstruction.FromStageName;
-        if (string.IsNullOrWhiteSpace(resolvedCopyStatement) || string.IsNullOrWhiteSpace(reference))
-        {
-            return null;
-        }
-
-        stageNameMap.TryGetValue(reference, out var stageNameReference);
-        if (!string.IsNullOrEmpty(stageNameReference))
-        {
-            if (HasUnresolvedVariables(stageNameReference))
-            {
-                return null;
-            }
-            else
-            {
-                return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
-            }
-        }
-
-        if (HasUnresolvedVariables(reference))
-        {
-            return null;
-        }
-
-        return DockerReferenceUtility.ParseFamiliarName(reference);
-    }
-
-    private static bool HasUnresolvedVariables(string reference)
-    {
-        return new Regex("[${}]").IsMatch(reference);
-    }
-
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -164,10 +84,10 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
                 switch (constructType)
                 {
                     case "FromInstruction":
-                        baseImage = ParseFromInstruction(construct, escapeChar, stageNameMap);
+                        baseImage = this.ParseFromInstruction(construct, escapeChar, stageNameMap);
                         break;
                     case "CopyInstruction":
-                        baseImage = ParseCopyInstruction(construct, escapeChar, stageNameMap);
+                        baseImage = this.ParseCopyInstruction(construct, escapeChar, stageNameMap);
                         break;
                     default:
                         break;
@@ -182,5 +102,85 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             this.Logger.LogException(e, isError: true, printException: true);
             return null;
         }
+    }
+
+    private DockerReference ParseFromInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    {
+        var tokens = construct.Tokens.ToArray();
+        var resolvedFromStatement = construct.ResolveVariables(escapeChar).TrimEnd();
+        var fromInstruction = (FromInstruction)construct;
+        var reference = fromInstruction.ImageName;
+        if (string.IsNullOrWhiteSpace(resolvedFromStatement) || string.IsNullOrEmpty(reference))
+        {
+            return null;
+        }
+
+        var stageName = fromInstruction.StageName;
+        stageNameMap.TryGetValue(reference, out var stageNameReference);
+
+        if (!string.IsNullOrEmpty(stageName))
+        {
+            if (!string.IsNullOrEmpty(stageNameReference))
+            {
+                stageNameMap.Add(stageName, stageNameReference);
+            }
+            else
+            {
+                stageNameMap.Add(stageName, reference);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(stageNameReference))
+        {
+            if (this.HasUnresolvedVariables(stageNameReference))
+            {
+                return null;
+            }
+
+            return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
+        }
+
+        if (this.HasUnresolvedVariables(reference))
+        {
+            return null;
+        }
+
+        return DockerReferenceUtility.ParseFamiliarName(reference);
+    }
+
+    private DockerReference ParseCopyInstruction(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    {
+        var resolvedCopyStatement = construct.ResolveVariables(escapeChar).TrimEnd();
+        var copyInstruction = (CopyInstruction)construct;
+        var reference = copyInstruction.FromStageName;
+        if (string.IsNullOrWhiteSpace(resolvedCopyStatement) || string.IsNullOrWhiteSpace(reference))
+        {
+            return null;
+        }
+
+        stageNameMap.TryGetValue(reference, out var stageNameReference);
+        if (!string.IsNullOrEmpty(stageNameReference))
+        {
+            if (this.HasUnresolvedVariables(stageNameReference))
+            {
+                return null;
+            }
+            else
+            {
+                return DockerReferenceUtility.ParseFamiliarName(stageNameReference);
+            }
+        }
+
+        if (this.HasUnresolvedVariables(reference))
+        {
+            return null;
+        }
+
+        return DockerReferenceUtility.ParseFamiliarName(reference);
+    }
+
+    private bool HasUnresolvedVariables(string reference)
+    {
+        return new Regex("[${}]").IsMatch(reference);
     }
 }

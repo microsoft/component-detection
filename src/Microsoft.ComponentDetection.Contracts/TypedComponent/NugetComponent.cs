@@ -10,8 +10,8 @@ public class NuGetComponent : TypedComponent
 
     public NuGetComponent(string name, string version, string[] authors = null)
     {
-        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.NuGet));
-        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.NuGet));
+        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.NuGet));
+        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.NuGet));
         this.Authors = authors;
     }
 

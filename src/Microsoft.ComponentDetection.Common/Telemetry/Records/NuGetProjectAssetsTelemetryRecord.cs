@@ -25,7 +25,7 @@ public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDis
         {
             if (disposing)
             {
-                TelemetryRelay.PostTelemetryRecord(this);
+                TelemetryRelay.Instance.PostTelemetryRecord(this);
             }
 
             this.disposedValue = true;

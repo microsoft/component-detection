@@ -17,26 +17,6 @@ public class PipResolverTests
     private Mock<ILogger> loggerMock;
     private Mock<IPyPiClient> pyPiClient;
 
-    private static SortedDictionary<string, IList<PythonProjectRelease>> CreateReleasesDictionary(IList<string> versions)
-    {
-        var toReturn = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
-
-        foreach (var version in versions)
-        {
-            toReturn.Add(version, new List<PythonProjectRelease>
-            {
-                CreatePythonProjectRelease(),
-            });
-        }
-
-        return toReturn;
-    }
-
-    private static PythonProjectRelease CreatePythonProjectRelease()
-    {
-        return new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") };
-    }
-
     [TestInitialize]
     public void TestInitialize()
     {
@@ -53,9 +33,9 @@ public class PipResolverTests
 
         var versions = new List<string> { "1.0" };
 
-        var aReleases = CreateReleasesDictionary(versions);
-        var bReleases = CreateReleasesDictionary(versions);
-        var cReleases = CreateReleasesDictionary(versions);
+        var aReleases = this.CreateReleasesDictionary(versions);
+        var bReleases = this.CreateReleasesDictionary(versions);
+        var cReleases = this.CreateReleasesDictionary(versions);
 
         this.pyPiClient.Setup(x => x.GetReleasesAsync(a)).ReturnsAsync(aReleases);
         this.pyPiClient.Setup(x => x.GetReleasesAsync(b)).ReturnsAsync(bReleases);
@@ -95,14 +75,14 @@ public class PipResolverTests
 
         var versions = new List<string> { "1.0" };
 
-        var aReleases = CreateReleasesDictionary(versions);
-        var bReleases = CreateReleasesDictionary(versions);
-        var cReleases = CreateReleasesDictionary(versions);
+        var aReleases = this.CreateReleasesDictionary(versions);
+        var bReleases = this.CreateReleasesDictionary(versions);
+        var cReleases = this.CreateReleasesDictionary(versions);
 
         this.pyPiClient.Setup(x => x.GetReleasesAsync(a)).ReturnsAsync(aReleases);
         this.pyPiClient.Setup(x => x.GetReleasesAsync(b)).ReturnsAsync(bReleases);
         this.pyPiClient.Setup(x => x.GetReleasesAsync(c)).ReturnsAsync(cReleases);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(doesNotExist)).ReturnsAsync(CreateReleasesDictionary(new List<string>()));
+        this.pyPiClient.Setup(x => x.GetReleasesAsync(doesNotExist)).ReturnsAsync(this.CreateReleasesDictionary(new List<string>()));
 
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
@@ -137,13 +117,13 @@ public class PipResolverTests
 
         var versions = new List<string> { "1.0" };
 
-        var aReleases = CreateReleasesDictionary(versions);
-        var bReleases = CreateReleasesDictionary(versions);
-        var cReleases = CreateReleasesDictionary(versions);
+        var aReleases = this.CreateReleasesDictionary(versions);
+        var bReleases = this.CreateReleasesDictionary(versions);
+        var cReleases = this.CreateReleasesDictionary(versions);
 
         this.pyPiClient.Setup(x => x.GetReleasesAsync(a)).ReturnsAsync(aReleases);
         this.pyPiClient.Setup(x => x.GetReleasesAsync(b)).ReturnsAsync(bReleases);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(c)).ReturnsAsync(CreateReleasesDictionary(new List<string>()));
+        this.pyPiClient.Setup(x => x.GetReleasesAsync(c)).ReturnsAsync(this.CreateReleasesDictionary(new List<string>()));
 
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
@@ -178,9 +158,9 @@ public class PipResolverTests
 
         var otherVersions = new List<string> { "1.0", "1.1" };
 
-        var aReleases = CreateReleasesDictionary(versions);
-        var bReleases = CreateReleasesDictionary(versions);
-        var cReleases = CreateReleasesDictionary(otherVersions);
+        var aReleases = this.CreateReleasesDictionary(versions);
+        var bReleases = this.CreateReleasesDictionary(versions);
+        var cReleases = this.CreateReleasesDictionary(otherVersions);
 
         this.pyPiClient.Setup(x => x.GetReleasesAsync(a)).ReturnsAsync(aReleases);
         this.pyPiClient.Setup(x => x.GetReleasesAsync(b)).ReturnsAsync(bReleases);
@@ -238,5 +218,25 @@ public class PipResolverTests
         }
 
         return valid;
+    }
+
+    private SortedDictionary<string, IList<PythonProjectRelease>> CreateReleasesDictionary(IList<string> versions)
+    {
+        var toReturn = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
+
+        foreach (var version in versions)
+        {
+            toReturn.Add(version, new List<PythonProjectRelease>
+            {
+                this.CreatePythonProjectRelease(),
+            });
+        }
+
+        return toReturn;
+    }
+
+    private PythonProjectRelease CreatePythonProjectRelease()
+    {
+        return new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") };
     }
 }

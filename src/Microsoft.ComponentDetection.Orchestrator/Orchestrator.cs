@@ -42,7 +42,7 @@ public class Orchestrator
     {
         var argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
         BaseArguments baseArguments = null;
-        var parserResult = ComponentDetection.Orchestrator.ArgumentHelper.ParseArguments<BaseArguments>(args, true);
+        var parserResult = argumentHelper.ParseArguments<BaseArguments>(args, true);
         parserResult.WithParsed(x => baseArguments = x);
         if (parserResult.Tag == ParserResultType.NotParsed)
         {
@@ -71,7 +71,7 @@ public class Orchestrator
             container.SatisfyImports(TelemetryRelay.Instance);
         }
 
-        TelemetryRelay.SetTelemetryMode(baseArguments.DebugTelemetry ? TelemetryMode.Debug : TelemetryMode.Production);
+        TelemetryRelay.Instance.SetTelemetryMode(baseArguments.DebugTelemetry ? TelemetryMode.Debug : TelemetryMode.Production);
 
         var shouldFailureBeSuppressed = false;
 
@@ -79,7 +79,7 @@ public class Orchestrator
         var returnResult = await BcdeExecutionTelemetryRecord.TrackAsync(
             async (record, ct) =>
             {
-                var executionResult = await HandleCommandAsync(args, record, ct);
+                var executionResult = await this.HandleCommandAsync(args, record, ct);
                 if (executionResult.ResultCode == ProcessingResultCode.PartialSuccess)
                 {
                     shouldFailureBeSuppressed = true;
@@ -126,7 +126,7 @@ public class Orchestrator
             .ForEach(service => containerConfiguration = containerConfiguration.WithPart(service));
     }
 
-    public static async Task<ScanResult> HandleCommandAsync(
+    public async Task<ScanResult> HandleCommandAsync(
         string[] args,
         BcdeExecutionTelemetryRecord telemetryRecord,
         CancellationToken cancellationToken = default)
@@ -143,18 +143,18 @@ public class Orchestrator
 
             // Don't set production telemetry if we are running the build task in DevFabric. 0.36.0 is set in the task.json for the build task in development, but is calculated during deployment for production.
             TelemetryConstants.CorrelationId = argumentSet.CorrelationId;
-            telemetryRecord.Command = GetVerb(argumentSet);
+            telemetryRecord.Command = this.GetVerb(argumentSet);
 
-            scanResult = await SafelyExecuteAsync(telemetryRecord, async () =>
+            scanResult = await this.SafelyExecuteAsync(telemetryRecord, async () =>
             {
-                await GenerateEnvironmentSpecificTelemetryAsync(telemetryRecord);
+                await this.GenerateEnvironmentSpecificTelemetryAsync(telemetryRecord);
 
                 telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
                 FileWritingService.Init(argumentSet.Output);
                 Logger.Init(argumentSet.Verbosity, writeLinePrefix: true);
                 Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
 
-                return await DispatchAsync(argumentSet, cancellationToken);
+                return await this.DispatchAsync(argumentSet, cancellationToken);
             });
         });
         parsedArguments.WithNotParsed(errors =>
@@ -177,7 +177,7 @@ public class Orchestrator
         return scanResult;
     }
 
-    private static async Task GenerateEnvironmentSpecificTelemetryAsync(BcdeExecutionTelemetryRecord telemetryRecord)
+    private async Task GenerateEnvironmentSpecificTelemetryAsync(BcdeExecutionTelemetryRecord telemetryRecord)
     {
         telemetryRecord.AgentOSDescription = RuntimeInformation.OSDescription;
 
@@ -216,13 +216,13 @@ public class Orchestrator
         }
     }
 
-    private static string GetVerb(IScanArguments argumentSet)
+    private string GetVerb(IScanArguments argumentSet)
     {
         var verbAttribute = argumentSet.GetType().GetCustomAttribute<VerbAttribute>();
         return verbAttribute.Name;
     }
 
-    private static async Task<ScanResult> DispatchAsync(IScanArguments arguments, CancellationToken cancellation)
+    private async Task<ScanResult> DispatchAsync(IScanArguments arguments, CancellationToken cancellation)
     {
         var scanResult = new ScanResult()
         {
@@ -258,7 +258,7 @@ public class Orchestrator
         return scanResult;
     }
 
-    private static async Task<ScanResult> SafelyExecuteAsync(BcdeExecutionTelemetryRecord record, Func<Task<ScanResult>> wrappedInvocation)
+    private async Task<ScanResult> SafelyExecuteAsync(BcdeExecutionTelemetryRecord record, Func<Task<ScanResult>> wrappedInvocation)
     {
         try
         {

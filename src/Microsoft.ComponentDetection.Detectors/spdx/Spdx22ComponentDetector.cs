@@ -32,13 +32,6 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "*.spdx.json" };
 
-    private static string GetSHA1HashFromStream(Stream stream)
-    {
-#pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
-        return BitConverter.ToString(SHA1.Create().ComputeHash(stream)).Replace("-", string.Empty).ToLower();
-#pragma warning restore CA5350
-    }
-
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         this.Logger.LogVerbose($"Discovered SPDX2.2 manifest file at: {processRequest.ComponentStream.Location}");
@@ -46,7 +39,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
         try
         {
-            var hash = GetSHA1HashFromStream(file.Stream);
+            var hash = this.GetSHA1HashFromStream(file.Stream);
 
             // Reset buffer to starting position after hash generation.
             file.Stream.Seek(0, SeekOrigin.Begin);
@@ -112,5 +105,12 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
         var component = new SpdxComponent(spdxVersion, new Uri(sbomNamespace), name, fileHash, rootElementId, path);
 
         return component;
+    }
+
+    private string GetSHA1HashFromStream(Stream stream)
+    {
+#pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
+        return BitConverter.ToString(SHA1.Create().ComputeHash(stream)).Replace("-", string.Empty).ToLower();
+#pragma warning restore CA5350
     }
 }

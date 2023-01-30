@@ -10,8 +10,8 @@ public class RubyGemsComponent : TypedComponent
 
     public RubyGemsComponent(string name, string version, string source = "")
     {
-        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.RubyGems));
-        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.RubyGems));
+        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.RubyGems));
+        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.RubyGems));
         this.Source = source;
     }
 

@@ -34,7 +34,7 @@ public sealed class TelemetryRelay
     /// Post a given telemetry record to all telemetry services.
     /// </summary>
     /// <param name="record">Record to post. </param>
-    public static void PostTelemetryRecord(IDetectionTelemetryRecord record)
+    public void PostTelemetryRecord(IDetectionTelemetryRecord record)
     {
         foreach (var service in TelemetryServices)
         {
@@ -53,7 +53,7 @@ public sealed class TelemetryRelay
     /// Disables the sending of telemetry and flushes any messages out of the queue for each service.
     /// </summary>
     /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
-    public static async Task ShutdownAsync()
+    public async Task ShutdownAsync()
     {
         Active = false;
 
@@ -74,7 +74,7 @@ public sealed class TelemetryRelay
         }
     }
 
-    public static void SetTelemetryMode(TelemetryMode mode)
+    public void SetTelemetryMode(TelemetryMode mode)
     {
         foreach (var telemetryService in TelemetryServices ?? Enumerable.Empty<ITelemetryService>())
         {

@@ -183,13 +183,13 @@ NUGET
         var component1 = NugetTestUtilities.GetRandomValidNuSpecComponentStream();
         var streamsDetectedInNormalPass = new List<IComponentStream> { component1 };
 
-        var additionalDirectory = CreateTemporaryDirectory();
+        var additionalDirectory = this.CreateTemporaryDirectory();
         var nugetConfigComponent = NugetTestUtilities.GetValidNuGetConfig(additionalDirectory);
         var streamsDetectedInAdditionalDirectoryPass = new List<IComponentStream> { nugetConfigComponent };
 
         var componentRecorder = new ComponentRecorder();
         var detector = new NuGetComponentDetector();
-        var sourceDirectoryPath = CreateTemporaryDirectory();
+        var sourceDirectoryPath = this.CreateTemporaryDirectory();
 
         detector.Logger = this.loggerMock.Object;
 
@@ -267,7 +267,7 @@ NUGET
             .And.HaveCount(0);
     }
 
-    private static string CreateTemporaryDirectory()
+    private string CreateTemporaryDirectory()
     {
         string path;
         do

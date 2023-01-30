@@ -27,11 +27,11 @@ public class DetectorRestrictionServiceTests
     public void TestInitialize()
     {
         this.logger = new Mock<Logger>();
-        this.firstDetectorMock = GenerateDetector("FirstDetector");
-        this.secondDetectorMock = GenerateDetector("SecondDetector");
-        this.thirdDetectorMock = GenerateDetector("ThirdDetector");
-        this.retiredNpmDetector = GenerateDetector("MSLicenseDevNpm");
-        this.newNpmDetector = GenerateDetector("NpmWithRoots");
+        this.firstDetectorMock = this.GenerateDetector("FirstDetector");
+        this.secondDetectorMock = this.GenerateDetector("SecondDetector");
+        this.thirdDetectorMock = this.GenerateDetector("ThirdDetector");
+        this.retiredNpmDetector = this.GenerateDetector("MSLicenseDevNpm");
+        this.newNpmDetector = this.GenerateDetector("NpmWithRoots");
 
         this.detectors = new[]
         {
@@ -58,7 +58,7 @@ public class DetectorRestrictionServiceTests
     public void WithRestrictions_RemovesDefaultOff()
     {
         var r = new DetectorRestrictions();
-        var detectorMock = GenerateDetector("defaultOffDetector");
+        var detectorMock = this.GenerateDetector("defaultOffDetector");
         var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
         this.detectors = this.detectors.Union(new[] { defaultOffDetectorMock.Object as IComponentDetector }).ToArray();
         var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
@@ -70,7 +70,7 @@ public class DetectorRestrictionServiceTests
     public void WithRestrictions_AllowsDefaultOffWithDetectorRestriction()
     {
         var r = new DetectorRestrictions();
-        var detectorMock = GenerateDetector("defaultOffDetector");
+        var detectorMock = this.GenerateDetector("defaultOffDetector");
         var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
         this.detectors = this.detectors.Union(new[] { defaultOffDetectorMock.Object as IComponentDetector }).ToArray();
         r.ExplicitlyEnabledDetectorIds = new[] { "defaultOffDetector" };
@@ -147,9 +147,9 @@ public class DetectorRestrictionServiceTests
     {
         var detectors = new[]
         {
-            GenerateDetector("1", new[] { "Cat1" }).Object,
-            GenerateDetector("2", new[] { "Cat2" }).Object,
-            GenerateDetector("3", new[] { nameof(DetectorClass.All) }).Object,
+            this.GenerateDetector("1", new[] { "Cat1" }).Object,
+            this.GenerateDetector("2", new[] { "Cat2" }).Object,
+            this.GenerateDetector("3", new[] { nameof(DetectorClass.All) }).Object,
         };
 
         var r = new DetectorRestrictions
@@ -177,7 +177,7 @@ public class DetectorRestrictionServiceTests
             .And.Contain(detectors[2]);
     }
 
-    private static Mock<IComponentDetector> GenerateDetector(string detectorName, string[] categories = null)
+    private Mock<IComponentDetector> GenerateDetector(string detectorName, string[] categories = null)
     {
         var mockDetector = new Mock<IComponentDetector>();
         mockDetector.SetupGet(x => x.Id).Returns($"{detectorName}");

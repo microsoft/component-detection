@@ -5,9 +5,9 @@ public class MavenComponent : TypedComponent
 {
     public MavenComponent(string groupId, string artifactId, string version)
     {
-        this.GroupId = ValidateRequiredInput(groupId, nameof(this.GroupId), nameof(ComponentType.Maven));
-        this.ArtifactId = ValidateRequiredInput(artifactId, nameof(this.ArtifactId), nameof(ComponentType.Maven));
-        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Maven));
+        this.GroupId = this.ValidateRequiredInput(groupId, nameof(this.GroupId), nameof(ComponentType.Maven));
+        this.ArtifactId = this.ValidateRequiredInput(artifactId, nameof(this.ArtifactId), nameof(ComponentType.Maven));
+        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Maven));
     }
 
     private MavenComponent()

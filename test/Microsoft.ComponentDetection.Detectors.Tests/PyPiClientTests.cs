@@ -43,7 +43,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
@@ -63,7 +63,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
@@ -91,7 +91,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () =>
@@ -114,7 +114,7 @@ public class PyPiClientTests
     [TestMethod]
     public async Task FetchPackageDependencies_DuplicateEntries_CallsGetAsync_OnceAsync()
     {
-        var mockHandler = MockHttpMessageHandler("invalid ZIP");
+        var mockHandler = this.MockHttpMessageHandler("invalid ZIP");
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () => await this.pypiClient.FetchPackageDependenciesAsync("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://testurl") });
@@ -133,7 +133,7 @@ public class PyPiClientTests
     [TestMethod]
     public async Task FetchPackageDependencies_DifferentEntries_CallsGetAsync_OnceAsync()
     {
-        var mockHandler = MockHttpMessageHandler("invalid ZIP");
+        var mockHandler = this.MockHttpMessageHandler("invalid ZIP");
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () => await this.pypiClient.FetchPackageDependenciesAsync("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") });
@@ -161,7 +161,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         var mockLogger = new Mock<ILogger>();
@@ -184,7 +184,7 @@ public class PyPiClientTests
         mockLogger.Verify(x => x.LogInfo(It.Is<string>(s => s.Equals("Setting IPyPiClient max cache entries to 32"))), Times.Once());
     }
 
-    private static Mock<HttpMessageHandler> MockHttpMessageHandler(string content)
+    private Mock<HttpMessageHandler> MockHttpMessageHandler(string content)
     {
         var handlerMock = new Mock<HttpMessageHandler>();
         handlerMock.Protected()

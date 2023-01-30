@@ -10,10 +10,10 @@ public class LinuxComponent : TypedComponent
 
     public LinuxComponent(string distribution, string release, string name, string version)
     {
-        this.Distribution = ValidateRequiredInput(distribution, nameof(this.Distribution), nameof(ComponentType.Linux));
-        this.Release = ValidateRequiredInput(release, nameof(this.Release), nameof(ComponentType.Linux));
-        this.Name = ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Linux));
-        this.Version = ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Linux));
+        this.Distribution = this.ValidateRequiredInput(distribution, nameof(this.Distribution), nameof(ComponentType.Linux));
+        this.Release = this.ValidateRequiredInput(release, nameof(this.Release), nameof(ComponentType.Linux));
+        this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Linux));
+        this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Linux));
     }
 
     public string Distribution { get; set; }

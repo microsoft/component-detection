@@ -112,13 +112,6 @@ public class LinuxContainerDetector : IComponentDetector
         };
     }
 
-    // Validate that the image actually does start with the layers from the base image specified in the annotations
-    private static bool ValidateBaseImageLayers(ContainerDetails scannedImageDetails, ContainerDetails baseImageDetails)
-    {
-        var scannedImageLayers = scannedImageDetails.Layers.ToArray();
-        return !(baseImageDetails.Layers.Count() > scannedImageLayers.Length || baseImageDetails.Layers.Where((layer, index) => scannedImageLayers[index].DiffId != layer.DiffId).Any());
-    }
-
     private async Task<IEnumerable<ImageScanningResult>> ProcessImagesAsync(
         IEnumerable<string> imagesToProcess,
         IComponentRecorder componentRecorder,
@@ -246,7 +239,7 @@ public class LinuxContainerDetector : IComponentDetector
         }
 
         var baseImageDetails = await this.DockerService.InspectImageAsync(refWithDigest, cancellationToken);
-        if (!ValidateBaseImageLayers(scannedImageDetails, baseImageDetails))
+        if (!this.ValidateBaseImageLayers(scannedImageDetails, baseImageDetails))
         {
             record.BaseImageLayerMessage = $"Docker image {image} was set to have base image {refWithDigest} but is not built off of it. Results will not be mapped to base image layers";
             this.Logger.LogInfo(record.BaseImageLayerMessage);
@@ -255,5 +248,12 @@ public class LinuxContainerDetector : IComponentDetector
 
         record.BaseImageLayerCount = baseImageDetails.Layers.Count();
         return baseImageDetails.Layers.Count();
+    }
+
+    // Validate that the image actually does start with the layers from the base image specified in the annotations
+    private bool ValidateBaseImageLayers(ContainerDetails scannedImageDetails, ContainerDetails baseImageDetails)
+    {
+        var scannedImageLayers = scannedImageDetails.Layers.ToArray();
+        return !(baseImageDetails.Layers.Count() > scannedImageLayers.Length || baseImageDetails.Layers.Where((layer, index) => scannedImageLayers[index].DiffId != layer.DiffId).Any());
     }
 }

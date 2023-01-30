@@ -45,7 +45,7 @@ public class BcdeExecutionTelemetryRecord : BaseDetectionTelemetryRecord
             record.Dispose();
             if (terminalRecord && !(record.Command?.Equals("help", StringComparison.InvariantCultureIgnoreCase) ?? false))
             {
-                await TelemetryRelay.ShutdownAsync();
+                await TelemetryRelay.Instance.ShutdownAsync();
             }
         }
     }
