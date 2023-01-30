@@ -237,7 +237,7 @@ public class NuGetComponentDetector : FileComponentDetector
             return false;
         }
 
-        if (fileInfo == null)
+        if (potentialPath == null)
         {
             return false;
         }

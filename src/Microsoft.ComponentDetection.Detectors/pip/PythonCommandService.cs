@@ -35,7 +35,7 @@ public class PythonCommandService : IPythonCommandService
         }
         else if (path.EndsWith(".txt"))
         {
-            return this.ParseRequirementsTextFile(filePath);
+            return this.ParseRequirementsTextFile(path);
         }
         else
         {
