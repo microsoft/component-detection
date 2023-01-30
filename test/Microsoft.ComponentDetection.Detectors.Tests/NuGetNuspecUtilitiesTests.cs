@@ -78,7 +78,7 @@ public class NuGetNuspecUtilitiesTests
 
             using var entryStream = entry.Open();
 
-            await entryStream.WriteAsync(randomBytes, 0, randomBytes.Length);
+            await entryStream.WriteAsync(randomBytes);
         }
 
         stream.Seek(0, SeekOrigin.Begin);

@@ -54,7 +54,7 @@ public static class NuGetNuspecUtilities
         var bytesReadSoFar = 0;
         while (bytesReadSoFar < nuspecBytes.Length)
         {
-            bytesReadSoFar += await nuspecStream.ReadAsync(nuspecBytes, bytesReadSoFar, nuspecBytes.Length - bytesReadSoFar);
+            bytesReadSoFar += await nuspecStream.ReadAsync(nuspecBytes.AsMemory(bytesReadSoFar, nuspecBytes.Length - bytesReadSoFar));
         }
 
         return nuspecBytes;

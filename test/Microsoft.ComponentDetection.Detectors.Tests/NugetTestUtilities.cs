@@ -70,7 +70,7 @@ public static class NugetTestUtilities
             using var entryStream = entry.Open();
 
             var templateBytes = Encoding.UTF8.GetBytes(content);
-            await entryStream.WriteAsync(templateBytes, 0, templateBytes.Length);
+            await entryStream.WriteAsync(templateBytes);
         }
 
         stream.Seek(0, SeekOrigin.Begin);
