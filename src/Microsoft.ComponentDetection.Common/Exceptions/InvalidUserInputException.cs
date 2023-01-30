@@ -7,4 +7,13 @@ public class InvalidUserInputException : Exception
         : base(message, innerException)
     {
     }
+
+    public InvalidUserInputException()
+    {
+    }
+
+    public InvalidUserInputException(string message)
+        : base(message)
+    {
+    }
 }

@@ -8,6 +8,20 @@ public class DockerReferenceException : Exception
         : base($"Error while parsing docker reference {reference} : {exceptionErrorMessage}")
     {
     }
+
+    public DockerReferenceException()
+    {
+    }
+
+    public DockerReferenceException(string message)
+        : base(message)
+    {
+    }
+
+    public DockerReferenceException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
 
 // ReferenceInvalidFormat represents an error while trying to parse a string as a reference.
@@ -17,6 +31,15 @@ public class ReferenceInvalidFormatException : DockerReferenceException
 
     public ReferenceInvalidFormatException(string reference)
         : base(reference, ErrorMessage)
+    {
+    }
+
+    public ReferenceInvalidFormatException()
+    {
+    }
+
+    public ReferenceInvalidFormatException(string message, Exception innerException)
+        : base(message, innerException)
     {
     }
 }
@@ -30,6 +53,15 @@ public class ReferenceTagInvalidFormatException : DockerReferenceException
         : base(reference, ErrorMessage)
     {
     }
+
+    public ReferenceTagInvalidFormatException()
+    {
+    }
+
+    public ReferenceTagInvalidFormatException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
 
 // DigestInvalidFormat represents an error while trying to parse a string as a tag.
@@ -39,6 +71,15 @@ public class ReferenceDigestInvalidFormatException : DockerReferenceException
 
     public ReferenceDigestInvalidFormatException(string reference)
         : base(reference, ErrorMessage)
+    {
+    }
+
+    public ReferenceDigestInvalidFormatException()
+    {
+    }
+
+    public ReferenceDigestInvalidFormatException(string message, Exception innerException)
+        : base(message, innerException)
     {
     }
 }
@@ -52,6 +93,15 @@ public class ReferenceNameContainsUppercaseException : DockerReferenceException
         : base(reference, ErrorMessage)
     {
     }
+
+    public ReferenceNameContainsUppercaseException()
+    {
+    }
+
+    public ReferenceNameContainsUppercaseException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
 
 // NameEmpty is returned for empty, invalid repository names.
@@ -61,6 +111,15 @@ public class ReferenceNameEmptyException : DockerReferenceException
 
     public ReferenceNameEmptyException(string reference)
         : base(reference, ErrorMessage)
+    {
+    }
+
+    public ReferenceNameEmptyException()
+    {
+    }
+
+    public ReferenceNameEmptyException(string message, Exception innerException)
+        : base(message, innerException)
     {
     }
 }
@@ -74,6 +133,15 @@ public class ReferenceNameTooLongException : DockerReferenceException
         : base(reference, ErrorMessage)
     {
     }
+
+    public ReferenceNameTooLongException()
+    {
+    }
+
+    public ReferenceNameTooLongException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
 
 // ErrNameNotCanonical is returned when a name is not canonical.
@@ -83,6 +151,15 @@ public class ReferenceNameNotCanonicalException : DockerReferenceException
 
     public ReferenceNameNotCanonicalException(string reference)
         : base(reference, ErrorMessage)
+    {
+    }
+
+    public ReferenceNameNotCanonicalException()
+    {
+    }
+
+    public ReferenceNameNotCanonicalException(string message, Exception innerException)
+        : base(message, innerException)
     {
     }
 }
@@ -95,6 +172,15 @@ public class InvalidDigestFormatError : DockerReferenceException
         : base(reference, ErrorMessage)
     {
     }
+
+    public InvalidDigestFormatError()
+    {
+    }
+
+    public InvalidDigestFormatError(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
 
 public class UnsupportedAlgorithmError : DockerReferenceException
@@ -105,6 +191,15 @@ public class UnsupportedAlgorithmError : DockerReferenceException
         : base(reference, ErrorMessage)
     {
     }
+
+    public UnsupportedAlgorithmError()
+    {
+    }
+
+    public UnsupportedAlgorithmError(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
 
 public class InvalidDigestLengthError : DockerReferenceException
@@ -113,6 +208,15 @@ public class InvalidDigestLengthError : DockerReferenceException
 
     public InvalidDigestLengthError(string reference)
         : base(reference, ErrorMessage)
+    {
+    }
+
+    public InvalidDigestLengthError()
+    {
+    }
+
+    public InvalidDigestLengthError(string message, Exception innerException)
+        : base(message, innerException)
     {
     }
 }
