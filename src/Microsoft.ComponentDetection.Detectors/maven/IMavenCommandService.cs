@@ -6,9 +6,9 @@ public interface IMavenCommandService
 {
     string BcdeMvnDependencyFileName { get; }
 
-    Task<bool> MavenCLIExists();
+    Task<bool> MavenCLIExistsAsync();
 
-    Task GenerateDependenciesFile(ProcessRequest processRequest);
+    Task GenerateDependenciesFileAsync(ProcessRequest processRequest);
 
     void ParseDependenciesFile(ProcessRequest processRequest);
 }

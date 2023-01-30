@@ -29,7 +29,7 @@ public class NpmComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 2;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -42,7 +42,7 @@ public class NpmComponentDetector : FileComponentDetector
             contents = await reader.ReadToEndAsync();
         }
 
-        await this.SafeProcessAllPackageJTokens(filePath, contents, (token) =>
+        await this.SafeProcessAllPackageJTokensAsync(filePath, contents, (token) =>
         {
             if (token["name"] == null || token["version"] == null)
             {
@@ -80,7 +80,7 @@ public class NpmComponentDetector : FileComponentDetector
         return true;
     }
 
-    private async Task SafeProcessAllPackageJTokens(string sourceFilePath, string contents, JTokenProcessingDelegate jtokenProcessor)
+    private async Task SafeProcessAllPackageJTokensAsync(string sourceFilePath, string contents, JTokenProcessingDelegate jtokenProcessor)
     {
         try
         {

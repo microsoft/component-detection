@@ -28,7 +28,7 @@ public class PnpmDetectorTests
     }
 
     [TestMethod]
-    public async Task TestPnpmDetector_SingleFileLocatesExpectedInput()
+    public async Task TestPnpmDetector_SingleFileLocatesExpectedInputAsync()
     {
         var yamlFile = @"
 dependencies:
@@ -71,7 +71,7 @@ shrinkwrapVersion: 3";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -124,7 +124,7 @@ shrinkwrapVersion: 3";
     }
 
     [TestMethod]
-    public async Task TestPnpmDetector_SameComponentMergesRootsAndLocationsAcrossMultipleFiles()
+    public async Task TestPnpmDetector_SameComponentMergesRootsAndLocationsAcrossMultipleFilesAsync()
     {
         var yamlFile1 = @"
 dependencies:
@@ -173,7 +173,7 @@ shrinkwrapVersion: 3";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .WithFile("shrinkwrap2.yaml", yamlFile2)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -192,7 +192,7 @@ shrinkwrapVersion: 3";
     }
 
     [TestMethod]
-    public async Task TestPnpmDetector_SpecialDependencyVersionStringDoesntBlowUsUp()
+    public async Task TestPnpmDetector_SpecialDependencyVersionStringDoesntBlowUsUpAsync()
     {
         var yamlFile1 = @"
 dependencies:
@@ -218,7 +218,7 @@ shrinkwrapVersion: 3";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -233,7 +233,7 @@ shrinkwrapVersion: 3";
     }
 
     [TestMethod]
-    public async Task TestPnpmDetector_DetectorRecognizeDevDependenciesValues()
+    public async Task TestPnpmDetector_DetectorRecognizeDevDependenciesValuesAsync()
     {
         var yamlFile1 = @"
                 dependencies:
@@ -247,7 +247,7 @@ shrinkwrapVersion: 3";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var noDevDependencyComponent = detectedComponents.Select(x => new { Component = x.Component as NpmComponent, DetectedComponent = x }).FirstOrDefault(x => x.Component.Name.Contains("query-string"));
@@ -258,7 +258,7 @@ shrinkwrapVersion: 3";
     }
 
     [TestMethod]
-    public async Task TestPnpmDetector_DetectorRecognizeDevDependenciesValues_InWeirdCases()
+    public async Task TestPnpmDetector_DetectorRecognizeDevDependenciesValues_InWeirdCasesAsync()
     {
         var yamlFile1 = @"
                 dependencies:
@@ -278,7 +278,7 @@ shrinkwrapVersion: 3";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         componentRecorder.GetEffectiveDevDependencyValue("solo-non-dev-dep 0.1.2 - Npm").Value.Should().BeFalse();
         componentRecorder.GetEffectiveDevDependencyValue("solo-dev-dep 0.1.2 - Npm").Value.Should().BeTrue();
@@ -286,21 +286,21 @@ shrinkwrapVersion: 3";
     }
 
     [TestMethod]
-    public async Task TestPnpmDetector_HandlesMalformedYaml()
+    public async Task TestPnpmDetector_HandlesMalformedYamlAsync()
     {
         // This is a clearly malformed Yaml. We expect parsing it to "succeed" but find no components
         var yamlFile1 = @"dependencies";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile1)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestPnpmDetector_DependencyGraphIsCreated()
+    public async Task TestPnpmDetector_DependencyGraphIsCreatedAsync()
     {
         var yamlFile = @"
 dependencies:
@@ -323,7 +323,7 @@ packages:
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(4, componentRecorder.GetDetectedComponents().Count());
@@ -352,7 +352,7 @@ packages:
     }
 
     [TestMethod]
-    public async Task TestPnpmDetector_DependenciesRefeToLocalPaths_DependenciesAreIgnored()
+    public async Task TestPnpmDetector_DependenciesRefeToLocalPaths_DependenciesAreIgnoredAsync()
     {
         var yamlFile = @"
 dependencies:
@@ -371,7 +371,7 @@ packages:
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("shrinkwrap1.yaml", yamlFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().HaveCount(2, "Components that comes from a file (file:* or link:*) should be ignored.");

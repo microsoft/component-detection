@@ -199,7 +199,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
     [Import]
     public IFileUtilityService FileUtilityService { get; set; }
 
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         try
         {
@@ -239,7 +239,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         return Task.CompletedTask;
     }
 
-    protected override Task OnDetectionFinished()
+    protected override Task OnDetectionFinishedAsync()
     {
         this.Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonConvert.SerializeObject(this.frameworkComponentsThatWereOmmittedWithCount));
 

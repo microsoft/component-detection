@@ -25,7 +25,7 @@ public class PodDetectorTest
     }
 
     [TestMethod]
-    public async Task TestPodDetector_EmptyPodfileLock()
+    public async Task TestPodDetector_EmptyPodfileLockAsync()
     {
         var podfileLockContent = @"PODFILE CHECKSUM: b3f970aecf9d240064c3b1737d975c9cb179c851
 
@@ -33,14 +33,14 @@ COCOAPODS: 1.4.0.beta.1";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorRecognizePodComponents()
+    public async Task TestPodDetector_DetectorRecognizePodComponentsAsync()
     {
         var podfileLockContent = @"PODS:
   - AzureCore (0.5.0):
@@ -69,7 +69,7 @@ COCOAPODS: 0.39.0";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -85,7 +85,7 @@ COCOAPODS: 0.39.0";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorRecognizeSubspecsAsSinglePodComponent()
+    public async Task TestPodDetector_DetectorRecognizeSubspecsAsSinglePodComponentAsync()
     {
         var podfileLockContent = @"PODS:
   - MSAL/app-lib (1.0.7)
@@ -111,7 +111,7 @@ COCOAPODS: 1.8.4";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -123,7 +123,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorRecognizeGitComponents()
+    public async Task TestPodDetector_DetectorRecognizeGitComponentsAsync()
     {
         var podfileLockContent = @"PODS:
   - MSGraphClientSDK (1.0.0):
@@ -155,7 +155,7 @@ COCOAPODS: 1.8.4";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -166,7 +166,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorRecognizeGitComponentsWithTagsAsPodComponents()
+    public async Task TestPodDetector_DetectorRecognizeGitComponentsWithTagsAsPodComponentsAsync()
     {
         var podfileLockContent = @"PODS:
   - MSGraphClientSDK (1.0.0):
@@ -198,7 +198,7 @@ COCOAPODS: 1.8.4";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -209,7 +209,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorRecognizeGitComponentsWithTagsAsPodComponents_GitUri()
+    public async Task TestPodDetector_DetectorRecognizeGitComponentsWithTagsAsPodComponents_GitUriAsync()
     {
         var podfileLockContent = @"PODS:
   - MSGraphClientSDK (1.0.0):
@@ -241,7 +241,7 @@ COCOAPODS: 1.8.4";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -252,7 +252,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorRecognizePodComponentsFromExternalPodspecs()
+    public async Task TestPodDetector_DetectorRecognizePodComponentsFromExternalPodspecsAsync()
     {
         var podfileLockContent = @"PODS:
   - CocoaLumberjack (3.6.0):
@@ -278,7 +278,7 @@ COCOAPODS: 1.8.4";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -290,7 +290,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorRecognizePodComponentsFromLocalPath()
+    public async Task TestPodDetector_DetectorRecognizePodComponentsFromLocalPathAsync()
     {
         var podfileLockContent = @"PODS:
   - Keys (1.0.1)
@@ -311,7 +311,7 @@ COCOAPODS: 1.8.4";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -322,7 +322,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_MultiplePodfileLocks()
+    public async Task TestPodDetector_MultiplePodfileLocksAsync()
     {
         var podfileLockContent = @"PODS:
   - AzureCore (0.5.0):
@@ -377,7 +377,7 @@ COCOAPODS: 1.8.4";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -395,7 +395,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorSupportsDependencyRoots()
+    public async Task TestPodDetector_DetectorSupportsDependencyRootsAsync()
     {
         var podfileLockContent = @"PODS:
   - AzureCore (0.5.0):
@@ -461,7 +461,7 @@ COCOAPODS: 1.8.4";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -492,7 +492,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorSupportsDependencyRoots_GitUri()
+    public async Task TestPodDetector_DetectorSupportsDependencyRoots_GitUriAsync()
     {
         var podfileLockContent = @"PODS:
   - AzureCore (0.5.0):
@@ -558,7 +558,7 @@ COCOAPODS: 1.8.4";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -589,7 +589,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorHandlesMainSpecRepoDifferences()
+    public async Task TestPodDetector_DetectorHandlesMainSpecRepoDifferencesAsync()
     {
         var podfileLockContent = @"PODS:
   - AzureCore (0.5.0)
@@ -640,7 +640,7 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2)
             .WithFile("Podfile.lock", podfileLockContent3)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -651,7 +651,7 @@ COCOAPODS: 1.8.4";
     }
 
     [TestMethod]
-    public async Task TestPodDetector_DetectorRecognizeComponentsSpecRepo()
+    public async Task TestPodDetector_DetectorRecognizeComponentsSpecRepoAsync()
     {
         var podfileLockContent = @"PODS:
   - AzureCore (0.5.0)
@@ -686,7 +686,7 @@ COCOAPODS: 1.8.4";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2, fileLocation: Path.Join(Path.GetTempPath(), "sub-folder", "Podfile.lock"))
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 

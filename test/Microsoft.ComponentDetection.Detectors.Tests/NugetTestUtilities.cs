@@ -59,7 +59,7 @@ public static class NugetTestUtilities
         return GetTemplatedNuspec(componentName, version, authors);
     }
 
-    public static async Task<Stream> ZipNupkgComponent(string filename, string content)
+    public static async Task<Stream> ZipNupkgComponentAsync(string filename, string content)
     {
         var stream = new MemoryStream();
 

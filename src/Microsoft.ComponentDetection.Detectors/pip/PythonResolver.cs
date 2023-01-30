@@ -21,7 +21,7 @@ public class PythonResolver : IPythonResolver
     /// </summary>
     /// <param name="initialPackages">The initial list of packages.</param>
     /// <returns>The root packages, with dependencies associated as children.</returns>
-    public async Task<IList<PipGraphNode>> ResolveRoots(IList<PipDependencySpecification> initialPackages)
+    public async Task<IList<PipGraphNode>> ResolveRootsAsync(IList<PipDependencySpecification> initialPackages)
     {
         var state = new PythonResolverState();
 
@@ -31,7 +31,7 @@ public class PythonResolver : IPythonResolver
             // If we have it, we probably just want to skip at this phase as this indicates duplicates
             if (!state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
             {
-                var result = await this.PypiClient.GetReleases(rootPackage);
+                var result = await this.PypiClient.GetReleasesAsync(rootPackage);
 
                 if (result.Keys.Any())
                 {
@@ -57,17 +57,17 @@ public class PythonResolver : IPythonResolver
         }
 
         // Now queue packages for processing
-        return await this.ProcessQueue(state) ?? new List<PipGraphNode>();
+        return await this.ProcessQueueAsync(state) ?? new List<PipGraphNode>();
     }
 
-    private async Task<IList<PipGraphNode>> ProcessQueue(PythonResolverState state)
+    private async Task<IList<PipGraphNode>> ProcessQueueAsync(PythonResolverState state)
     {
         while (state.ProcessingQueue.Count > 0)
         {
             var (root, currentNode) = state.ProcessingQueue.Dequeue();
 
             // gather all dependencies for the current node
-            var dependencies = (await this.FetchPackageDependencies(state, currentNode)).Where(x => !x.PackageIsUnsafe());
+            var dependencies = (await this.FetchPackageDependenciesAsync(state, currentNode)).Where(x => !x.PackageIsUnsafe());
 
             foreach (var dependencyNode in dependencies)
             {
@@ -94,7 +94,7 @@ public class PythonResolver : IPythonResolver
                 else
                 {
                     // We haven't encountered this package before, so let's fetch it and find a candidate
-                    var result = await this.PypiClient.GetReleases(dependencyNode);
+                    var result = await this.PypiClient.GetReleasesAsync(dependencyNode);
 
                     if (result.Keys.Any())
                     {
@@ -145,7 +145,7 @@ public class PythonResolver : IPythonResolver
 
         node.Value = new PipComponent(pipComponent.Name, candidateVersion);
 
-        var dependencies = (await this.FetchPackageDependencies(state, newSpec)).ToDictionary(x => x.Name, x => x);
+        var dependencies = (await this.FetchPackageDependenciesAsync(state, newSpec)).ToDictionary(x => x.Name, x => x);
 
         var toRemove = new List<PipGraphNode>();
         foreach (var child in node.Children)
@@ -173,7 +173,7 @@ public class PythonResolver : IPythonResolver
         return true;
     }
 
-    private async Task<IList<PipDependencySpecification>> FetchPackageDependencies(
+    private async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(
         PythonResolverState state,
         PipDependencySpecification spec)
     {
@@ -186,7 +186,7 @@ public class PythonResolver : IPythonResolver
             return new List<PipDependencySpecification>();
         }
 
-        return await this.PypiClient.FetchPackageDependencies(spec.Name, candidateVersion, packageToFetch);
+        return await this.PypiClient.FetchPackageDependenciesAsync(spec.Name, candidateVersion, packageToFetch);
     }
 
     private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)

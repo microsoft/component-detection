@@ -26,7 +26,7 @@ public class VcpkgComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestNlohmann()
+    public async Task TestNlohmannAsync()
     {
         var spdxFile = @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
@@ -50,7 +50,7 @@ public class VcpkgComponentDetectorTests
 }";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -73,7 +73,7 @@ public class VcpkgComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestTinyxmlAndResource()
+    public async Task TestTinyxmlAndResourceAsync()
     {
         var spdxFile = @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
@@ -109,7 +109,7 @@ public class VcpkgComponentDetectorTests
 }";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -132,13 +132,13 @@ public class VcpkgComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestBlankJson()
+    public async Task TestBlankJsonAsync()
     {
         var spdxFile = "{}";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -148,13 +148,13 @@ public class VcpkgComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestInvalidFile()
+    public async Task TestInvalidFileAsync()
     {
         var spdxFile = "invalidspdxfile";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 

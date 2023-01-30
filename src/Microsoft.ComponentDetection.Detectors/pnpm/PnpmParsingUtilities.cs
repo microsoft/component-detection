@@ -10,7 +10,7 @@ using YamlDotNet.Serialization;
 
 public static class PnpmParsingUtilities
 {
-    public static async Task<PnpmYaml> DeserializePnpmYamlFile(IComponentStream file)
+    public static async Task<PnpmYaml> DeserializePnpmYamlFileAsync(IComponentStream file)
     {
         var text = await new StreamReader(file.Stream).ReadToEndAsync();
         var deserializer = new DeserializerBuilder()

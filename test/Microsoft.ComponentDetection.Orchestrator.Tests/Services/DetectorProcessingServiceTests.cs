@@ -85,7 +85,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_HappyPathReturnsDetectedComponents()
+    public async Task ProcessDetectorsAsync_HappyPathReturnsDetectedComponentsAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -107,7 +107,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_NullDetectedComponentsReturnIsCoalesced()
+    public async Task ProcessDetectorsAsync_NullDetectedComponentsReturnIsCoalescedAsync()
     {
         var mockComponentDetector = new Mock<IComponentDetector>();
         mockComponentDetector.Setup(d => d.Id).Returns("test");
@@ -130,7 +130,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_HappyPathReturns_DependencyGraph()
+    public async Task ProcessDetectorsAsync_HappyPathReturns_DependencyGraphAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -277,7 +277,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpected()
+    public async Task ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpectedAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -385,7 +385,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpectedForObsolete()
+    public async Task ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpectedForObsoleteAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -502,7 +502,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_HandlesDetectorArgs()
+    public async Task ProcessDetectorsAsync_HandlesDetectorArgsAsync()
     {
         ScanRequest capturedRequest = null;
         this.firstFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>()))

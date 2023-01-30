@@ -35,7 +35,7 @@ public static class NuGetNuspecUtilities
 
             using var nuspecStream = nuspecEntry.Open();
 
-            return await GetNuspecBytesFromNuspecStream(nuspecStream, nuspecEntry.Length);
+            return await GetNuspecBytesFromNuspecStreamAsync(nuspecStream, nuspecEntry.Length);
         }
         catch (InvalidDataException ex)
         {
@@ -48,7 +48,7 @@ public static class NuGetNuspecUtilities
         }
     }
 
-    public static async Task<byte[]> GetNuspecBytesFromNuspecStream(Stream nuspecStream, long nuspecLength)
+    public static async Task<byte[]> GetNuspecBytesFromNuspecStreamAsync(Stream nuspecStream, long nuspecLength)
     {
         var nuspecBytes = new byte[nuspecLength];
         var bytesReadSoFar = 0;

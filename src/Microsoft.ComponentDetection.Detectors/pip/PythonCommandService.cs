@@ -15,12 +15,12 @@ public class PythonCommandService : IPythonCommandService
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
-    public async Task<bool> PythonExists(string pythonPath = null)
+    public async Task<bool> PythonExistsAsync(string pythonPath = null)
     {
-        return !string.IsNullOrEmpty(await this.ResolvePython(pythonPath));
+        return !string.IsNullOrEmpty(await this.ResolvePythonAsync(pythonPath));
     }
 
-    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFile(string filePath, string pythonPath = null)
+    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(string filePath, string pythonPath = null)
     {
         if (string.IsNullOrEmpty(filePath))
         {
@@ -29,7 +29,7 @@ public class PythonCommandService : IPythonCommandService
 
         if (filePath.EndsWith(".py"))
         {
-            return (await this.ParseSetupPyFile(filePath, pythonPath))
+            return (await this.ParseSetupPyFileAsync(filePath, pythonPath))
                 .Select<string, (string, GitComponent)>(component => (component, null))
                 .ToList();
         }
@@ -43,9 +43,9 @@ public class PythonCommandService : IPythonCommandService
         }
     }
 
-    private async Task<IList<string>> ParseSetupPyFile(string filePath, string pythonExePath = null)
+    private async Task<IList<string>> ParseSetupPyFileAsync(string filePath, string pythonExePath = null)
     {
-        var pythonExecutable = await this.ResolvePython(pythonExePath);
+        var pythonExecutable = await this.ResolvePythonAsync(pythonExePath);
 
         if (string.IsNullOrEmpty(pythonExecutable))
         {
@@ -54,7 +54,7 @@ public class PythonCommandService : IPythonCommandService
 
         // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
         // We need to have python interpret this file because install_requires can be composed at runtime
-        var command = await this.CommandLineInvocationService.ExecuteCommand(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
+        var command = await this.CommandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
 
         if (command.ExitCode != 0)
         {
@@ -131,11 +131,11 @@ public class PythonCommandService : IPythonCommandService
         return items;
     }
 
-    private async Task<string> ResolvePython(string pythonPath = null)
+    private async Task<string> ResolvePythonAsync(string pythonPath = null)
     {
         var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : pythonPath;
 
-        if (await this.CanCommandBeLocated(pythonCommand))
+        if (await this.CanCommandBeLocatedAsync(pythonCommand))
         {
             return pythonCommand;
         }
@@ -143,8 +143,8 @@ public class PythonCommandService : IPythonCommandService
         return null;
     }
 
-    private async Task<bool> CanCommandBeLocated(string pythonPath)
+    private async Task<bool> CanCommandBeLocatedAsync(string pythonPath)
     {
-        return await this.CommandLineInvocationService.CanCommandBeLocated(pythonPath, new List<string> { "python3", "python2" }, "--version");
+        return await this.CommandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, new List<string> { "python3", "python2" }, "--version");
     }
 }

@@ -23,7 +23,7 @@ public class PoetryComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestPoetryDetector_TestCustomSource()
+    public async Task TestPoetryDetector_TestCustomSourceAsync()
     {
         var poetryLockContent = @"[[package]]
 name = ""certifi""
@@ -41,7 +41,7 @@ reference = ""custom""
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("poetry.lock", poetryLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -54,7 +54,7 @@ reference = ""custom""
     }
 
     [TestMethod]
-    public async Task TestPoetryDetector_TestDevDependency()
+    public async Task TestPoetryDetector_TestDevDependencyAsync()
     {
         var poetryLockContent = @"[[package]]
 name = ""certifi""
@@ -67,7 +67,7 @@ python-versions = ""*""
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("poetry.lock", poetryLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -81,7 +81,7 @@ python-versions = ""*""
     }
 
     [TestMethod]
-    public async Task TestPoetryDetector_TestGitDependency()
+    public async Task TestPoetryDetector_TestGitDependencyAsync()
     {
         var poetryLockContent = @"[[package]]
 name = ""certifi""
@@ -118,7 +118,7 @@ resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("poetry.lock", poetryLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 

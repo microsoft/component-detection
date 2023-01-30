@@ -32,7 +32,7 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
 
     public override int Version => 2;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -45,10 +45,10 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
             return;
         }
 
-        await this.ParseSpdxFile(singleFileComponentRecorder, file);
+        await this.ParseSpdxFileAsync(singleFileComponentRecorder, file);
     }
 
-    private async Task ParseSpdxFile(
+    private async Task ParseSpdxFileAsync(
         ISingleFileComponentRecorder singleFileComponentRecorder,
         IComponentStream file)
     {

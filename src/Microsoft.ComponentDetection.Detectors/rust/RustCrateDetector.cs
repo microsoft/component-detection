@@ -54,7 +54,7 @@ public class RustCrateDetector : FileComponentDetector
 
     private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var cargoLockFile = processRequest.ComponentStream;

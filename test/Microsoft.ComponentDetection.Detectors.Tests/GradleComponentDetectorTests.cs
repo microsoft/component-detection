@@ -24,17 +24,17 @@ public class GradleComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestGradleDetectorWithNoFiles_ReturnsSuccessfully()
+    public async Task TestGradleDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
         var (scanResult, componentRecorder) = await this.detectorTestUtility
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestGradleDetectorWithValidFile_DetectsComponentsSuccessfully()
+    public async Task TestGradleDetectorWithValidFile_DetectsComponentsSuccessfullyAsync()
     {
         var validFileOne =
             @"org.springframework:spring-beans:5.0.5.RELEASE
@@ -43,7 +43,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -65,7 +65,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
     }
 
     [TestMethod]
-    public async Task TestGradleDetectorWithValidSingleLockfilePerProject_DetectsComponentsSuccessfully()
+    public async Task TestGradleDetectorWithValidSingleLockfilePerProject_DetectsComponentsSuccessfullyAsync()
     {
         var validFileOne =
             @"org.springframework:spring-beans:5.0.5.RELEASE=lintClassPath
@@ -74,7 +74,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE=lintClassPath,debugCompile,releaseC
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -97,7 +97,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE=lintClassPath,debugCompile,releaseC
     }
 
     [TestMethod]
-    public async Task TestGradleDetectorWithValidFiles_ReturnsSuccessfully()
+    public async Task TestGradleDetectorWithValidFiles_ReturnsSuccessfullyAsync()
     {
         var validFileOne =
             @"org.springframework:spring-beans:5.0.5.RELEASE
@@ -114,7 +114,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
             .WithFile("gradle2.lockfile", validFileTwo)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
@@ -148,7 +148,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
     }
 
     [TestMethod]
-    public async Task TestGradleDetector_SameComponentDifferentLocations_DifferentLocationsAreSaved()
+    public async Task TestGradleDetector_SameComponentDifferentLocations_DifferentLocationsAreSavedAsync()
     {
         var validFileOne =
             @"org.springframework:spring-beans:5.0.5.RELEASE";
@@ -159,7 +159,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
             .WithFile("gradle2.lockfile", validFileTwo)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
@@ -179,7 +179,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
     }
 
     [TestMethod]
-    public async Task TestGradleDetectorWithInvalidAndValidFiles_ReturnsSuccessfully()
+    public async Task TestGradleDetectorWithInvalidAndValidFiles_ReturnsSuccessfullyAsync()
     {
         var validFileTwo =
             @"com.fasterxml.jackson.core:jackson-annotations:2.8.0
@@ -197,7 +197,7 @@ $#26^#25%4";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("gradle.lockfile", invalidFileOne)
             .WithFile("gradle2.lockfile", validFileTwo)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(5, componentRecorder.GetDetectedComponents().Count());

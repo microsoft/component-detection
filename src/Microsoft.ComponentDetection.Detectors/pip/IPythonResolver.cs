@@ -9,5 +9,5 @@ public interface IPythonResolver
     /// </summary>
     /// <param name="initialPackages">The initial list of packages.</param>
     /// <returns>The root packages, with dependencies associated as children.</returns>
-    Task<IList<PipGraphNode>> ResolveRoots(IList<PipDependencySpecification> initialPackages);
+    Task<IList<PipGraphNode>> ResolveRootsAsync(IList<PipDependencySpecification> initialPackages);
 }

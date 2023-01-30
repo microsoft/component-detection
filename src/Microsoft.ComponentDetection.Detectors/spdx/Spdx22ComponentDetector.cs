@@ -32,7 +32,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "*.spdx.json" };
 
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         this.Logger.LogVerbose($"Discovered SPDX2.2 manifest file at: {processRequest.ComponentStream.Location}");
         var file = processRequest.ComponentStream;

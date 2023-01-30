@@ -13,7 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public class YarnBlockFileTests
 {
     [TestMethod]
-    public async Task BlockFileParserWithNullStream_Fails()
+    public async Task BlockFileParserWithNullStream_FailsAsync()
     {
         static async Task Action() => await YarnBlockFile.CreateBlockFileAsync(null);
 
@@ -21,7 +21,7 @@ public class YarnBlockFileTests
     }
 
     [TestMethod]
-    public async Task BlockFileParserWithClosedStream_Fails()
+    public async Task BlockFileParserWithClosedStream_FailsAsync()
     {
         using var stream = new MemoryStream();
 
@@ -33,7 +33,7 @@ public class YarnBlockFileTests
     }
 
     [TestMethod]
-    public async Task BlockFileParserWithEmptyStream_ProducesEnumerableOfZero()
+    public async Task BlockFileParserWithEmptyStream_ProducesEnumerableOfZeroAsync()
     {
         YarnBlockFile file;
         using (var stream = new MemoryStream())
@@ -47,7 +47,7 @@ public class YarnBlockFileTests
     }
 
     [TestMethod]
-    public async Task BlockFileParserV1WithVersionString_ProducesEnumerableOfZero()
+    public async Task BlockFileParserV1WithVersionString_ProducesEnumerableOfZeroAsync()
     {
         var yarnLockFileVersionString = "#yarn lockfile v1";
 
@@ -67,7 +67,7 @@ public class YarnBlockFileTests
     }
 
     [TestMethod]
-    public async Task BlockFileParserV1WithSingleBlock_Parses()
+    public async Task BlockFileParserV1WithSingleBlock_ParsesAsync()
     {
         var yarnLockFileVersionString = "#yarn lockfile v1";
 
@@ -98,7 +98,7 @@ public class YarnBlockFileTests
     }
 
     [TestMethod]
-    public async Task BlockFileParserV1WithSeveralBlocks_Parses()
+    public async Task BlockFileParserV1WithSeveralBlocks_ParsesAsync()
     {
         var yarnLockFileVersionString = "#yarn lockfile v1";
 
@@ -142,7 +142,7 @@ public class YarnBlockFileTests
     }
 
     [TestMethod]
-    public async Task BlockFileParserV2WithMetadataBlock_Parses()
+    public async Task BlockFileParserV2WithMetadataBlock_ParsesAsync()
     {
         var yarnLockFileVersionString = "__metadata:";
 
@@ -169,7 +169,7 @@ public class YarnBlockFileTests
     }
 
     [TestMethod]
-    public async Task BlockFileParserV2WithSingleBlock_Parses()
+    public async Task BlockFileParserV2WithSingleBlock_ParsesAsync()
     {
         var yarnLockFileVersionString = "__metadata:";
 
@@ -207,7 +207,7 @@ public class YarnBlockFileTests
     }
 
     [TestMethod]
-    public async Task BlockFileParserV2WithSingleBlock_ParsesWithQuotes()
+    public async Task BlockFileParserV2WithSingleBlock_ParsesWithQuotesAsync()
     {
         var yarnLockFileVersionString = "__metadata:";
 
@@ -245,7 +245,7 @@ public class YarnBlockFileTests
     }
 
     [TestMethod]
-    public async Task BlockFileParserV2WithMultipleBlocks_Parses()
+    public async Task BlockFileParserV2WithMultipleBlocks_ParsesAsync()
     {
         var yarnLockFileVersionString = "__metadata:";
 

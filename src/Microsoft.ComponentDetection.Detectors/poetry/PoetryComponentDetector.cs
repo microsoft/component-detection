@@ -24,7 +24,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IEnumerable<string> Categories => new List<string> { "Python" };
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var poetryLockFile = processRequest.ComponentStream;

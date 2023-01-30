@@ -63,7 +63,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
                 IndividualDetectorScanResult result;
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
-                    result = await this.WithExperimentalScanGuards(
+                    result = await this.WithExperimentalScanGuardsAsync(
                         () => detector.ExecuteDetectorAsync(new ScanRequest(detectionArguments.SourceDirectory, exclusionPredicate, this.Logger, detectorArguments, detectionArguments.DockerImagesToScan, componentRecorder)),
                         isExperimentalDetector,
                         record);
@@ -245,7 +245,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         };
     }
 
-    private async Task<IndividualDetectorScanResult> WithExperimentalScanGuards(Func<Task<IndividualDetectorScanResult>> detectionTaskGenerator, bool isExperimentalDetector, DetectorExecutionTelemetryRecord telemetryRecord)
+    private async Task<IndividualDetectorScanResult> WithExperimentalScanGuardsAsync(Func<Task<IndividualDetectorScanResult>> detectionTaskGenerator, bool isExperimentalDetector, DetectorExecutionTelemetryRecord telemetryRecord)
     {
         if (!isExperimentalDetector)
         {

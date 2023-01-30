@@ -55,7 +55,7 @@ public class LinuxContainerDetectorTests
     }
 
     [TestMethod]
-    public async Task TestLinuxContainerDetector()
+    public async Task TestLinuxContainerDetectorAsync()
     {
         var componentRecorder = new ComponentRecorder();
 
@@ -82,7 +82,7 @@ public class LinuxContainerDetectorTests
     }
 
     [TestMethod]
-    public async Task TestLinuxContainerDetector_CantRunLinuxContainers()
+    public async Task TestLinuxContainerDetector_CantRunLinuxContainersAsync()
     {
         var componentRecorder = new ComponentRecorder();
 
@@ -109,7 +109,7 @@ public class LinuxContainerDetectorTests
     }
 
     [TestMethod]
-    public async Task TestLinuxContainerDetector_TestNull()
+    public async Task TestLinuxContainerDetector_TestNullAsync()
     {
         var componentRecorder = new ComponentRecorder();
 
@@ -133,7 +133,7 @@ public class LinuxContainerDetectorTests
     }
 
     [TestMethod]
-    public async Task TestLinuxContainerDetector_VerifyLowerCase()
+    public async Task TestLinuxContainerDetector_VerifyLowerCaseAsync()
     {
         var componentRecorder = new ComponentRecorder();
 
@@ -158,7 +158,7 @@ public class LinuxContainerDetectorTests
     }
 
     [TestMethod]
-    public async Task TestLinuxContainerDetector_SameImagePassedMultipleTimes()
+    public async Task TestLinuxContainerDetector_SameImagePassedMultipleTimesAsync()
     {
         var componentRecorder = new ComponentRecorder();
 
@@ -184,7 +184,7 @@ public class LinuxContainerDetectorTests
     }
 
     [TestMethod]
-    public async Task TestLinuxContainerDetector_TimeoutParameterSpecified()
+    public async Task TestLinuxContainerDetector_TimeoutParameterSpecifiedAsync()
     {
         var detectorArgs = new Dictionary<string, string> { { "Linux.ScanningTimeoutSec", "2" } };
         var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, detectorArgs, new List<string> { NodeLatestImage }, new ComponentRecorder());
@@ -201,7 +201,7 @@ public class LinuxContainerDetectorTests
     }
 
     [TestMethod]
-    public async Task TestLinuxContainerDetector_HandlesScratchBase()
+    public async Task TestLinuxContainerDetector_HandlesScratchBaseAsync()
     {
         // Setup docker service to throw an exception on scratch
         // then specify that the base image is scratch, to test this
@@ -212,6 +212,6 @@ public class LinuxContainerDetectorTests
 
             // Specify BaseImageRef = scratch to verify that cope
             .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = Enumerable.Empty<DockerLayer>(), BaseImageRef = "scratch" });
-        await this.TestLinuxContainerDetector();
+        await this.TestLinuxContainerDetectorAsync();
     }
 }
