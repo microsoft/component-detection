@@ -77,22 +77,22 @@ public class PythonCommandService : IPythonCommandService
         return !string.IsNullOrEmpty(await this.ResolvePythonAsync(pythonPath));
     }
 
-    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(string filePath, string pythonPath = null)
+    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(string path, string pythonPath = null)
     {
-        if (string.IsNullOrEmpty(filePath))
+        if (string.IsNullOrEmpty(path))
         {
             return new List<(string, GitComponent)>();
         }
 
-        if (filePath.EndsWith(".py"))
+        if (path.EndsWith(".py"))
         {
-            return (await this.ParseSetupPyFileAsync(filePath, pythonPath))
+            return (await this.ParseSetupPyFileAsync(path, pythonPath))
                 .Select<string, (string, GitComponent)>(component => (component, null))
                 .ToList();
         }
-        else if (filePath.EndsWith(".txt"))
+        else if (path.EndsWith(".txt"))
         {
-            return ParseRequirementsTextFile(filePath);
+            return ParseRequirementsTextFile(path);
         }
         else
         {

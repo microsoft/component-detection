@@ -231,9 +231,9 @@ public class Range : IEquatable<Range>
         return thisSet.SetEquals(other.comparatorSets);
     }
 
-    public override bool Equals(object other)
+    public override bool Equals(object obj)
     {
-        return this.Equals(other as Range);
+        return this.Equals(obj as Range);
     }
 
     public override int GetHashCode()
