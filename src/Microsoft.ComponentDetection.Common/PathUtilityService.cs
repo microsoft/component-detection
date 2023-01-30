@@ -64,6 +64,7 @@ public class PathUtilityService : IPathUtilityService
     /// <param name="output"> The pointer output. </param>
     /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
     [DllImport("libc", EntryPoint = "realpath")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
 
     /// <summary>
@@ -73,6 +74,7 @@ public class PathUtilityService : IPathUtilityService
     /// </summary>
     /// <param name="toFree">Pointer to the memory space to free. </param>
     [DllImport("libc", EntryPoint = "free")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern void FreeMemoryLinux([In] IntPtr toFree);
 
     public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
@@ -230,6 +232,7 @@ public class PathUtilityService : IPathUtilityService
     }
 
     [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern SafeFileHandle CreateFile(
         [In] string lpFileName,
         [In] uint dwDesiredAccess,
@@ -240,6 +243,7 @@ public class PathUtilityService : IPathUtilityService
         [In] IntPtr hTemplateFile);
 
     [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
 
     private bool CheckIfRunningOnWindowsContainer()
