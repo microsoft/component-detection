@@ -178,7 +178,7 @@ public class GoComponentDetector : FileComponentDetector
 
                     default:
                     {
-                        throw new Exception("Unexpected file type detected in go detector");
+                        throw new InvalidOperationException("Unexpected file type detected in go detector");
                     }
                 }
             }

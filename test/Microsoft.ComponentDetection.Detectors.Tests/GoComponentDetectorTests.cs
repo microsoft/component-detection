@@ -268,7 +268,7 @@ replace (
     public async Task TestGoDetector_GoCommandThrowsAsync()
     {
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
-            .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
+            .ReturnsAsync(() => throw new InvalidOperationException("Some horrible error occured"));
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
@@ -299,7 +299,7 @@ replace (
             .ReturnsAsync(true);
 
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go mod graph", null, It.IsAny<DirectoryInfo>(), It.IsAny<string>()))
-            .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
+            .ReturnsAsync(() => throw new InvalidOperationException("Some horrible error occured"));
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 

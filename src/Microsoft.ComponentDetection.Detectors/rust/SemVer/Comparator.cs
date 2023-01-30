@@ -103,7 +103,7 @@ internal class Comparator : IEquatable<Comparator>
     public Comparator(Operator comparatorType, SemVersion comparatorVersion)
     {
         this.ComparatorType = comparatorType;
-        this.Version = comparatorVersion ?? throw new NullReferenceException("Null comparator version");
+        this.Version = comparatorVersion ?? throw new ArgumentNullException(nameof(comparatorVersion), "Null comparator version");
     }
 
     public enum Operator
