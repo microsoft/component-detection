@@ -30,7 +30,7 @@ public static class AsyncExecution
             throw new ArgumentNullException(nameof(toExecute));
         }
 
-        var work = Task.Run(toExecute);
+        var work = Task.Run(toExecute, cancellationToken);
         var completedInTime = await Task.Run(() => work.Wait(timeout));
         if (!completedInTime)
         {
