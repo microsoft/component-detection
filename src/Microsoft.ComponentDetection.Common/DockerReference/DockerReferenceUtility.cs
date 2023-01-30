@@ -27,7 +27,7 @@
 namespace Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 
-public class DockerReferenceUtility
+public static class DockerReferenceUtility
 {
     // NameTotalLengthMax is the maximum total number of characters in a repository name.
     private const int NameTotalLengthMax = 255;
