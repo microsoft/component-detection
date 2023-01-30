@@ -3,7 +3,7 @@ using System;
 
 public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDisposable
 {
-    private bool disposedValue = false;
+    private bool disposedValue;
 
     public string RecordName => "NuGetProjectAssets";
 

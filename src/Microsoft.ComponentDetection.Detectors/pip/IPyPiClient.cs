@@ -44,10 +44,10 @@ public class PyPiClient : IPyPiClient
     // Keep telemetry on how the cache is being used for future refinements
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
 
-    private bool checkedMaxEntriesVariable = false;
+    private bool checkedMaxEntriesVariable;
 
     // retries used so far for calls to pypi.org
-    private long retries = 0;
+    private long retries;
 
     /// <summary>
     /// A thread safe cache implementation which contains a mapping of URI -> HttpResponseMessage

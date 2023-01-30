@@ -31,7 +31,7 @@ public class PathUtilityService : IPathUtilityService
     private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
 
     private readonly object isRunningOnWindowsContainerLock = new object();
-    private bool? isRunningOnWindowsContainer = null;
+    private bool? isRunningOnWindowsContainer;
 
     public bool IsRunningOnWindowsContainer
     {

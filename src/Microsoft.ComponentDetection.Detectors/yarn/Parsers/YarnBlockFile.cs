@@ -46,7 +46,7 @@ public class YarnBlockFile : IYarnBlockFile
 
     private readonly IList<string> fileLines = new List<string>();
 
-    private int fileLineIndex = 0;
+    private int fileLineIndex;
 
     private YarnBlockFile(IList<string> parsedFileLines)
     {

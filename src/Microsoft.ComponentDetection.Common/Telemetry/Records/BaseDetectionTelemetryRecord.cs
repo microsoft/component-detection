@@ -7,7 +7,7 @@ public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
 {
     private readonly Stopwatch stopwatch = new Stopwatch();
 
-    private bool disposedValue = false;
+    private bool disposedValue;
 
     protected BaseDetectionTelemetryRecord() => this.stopwatch.Start();
 
