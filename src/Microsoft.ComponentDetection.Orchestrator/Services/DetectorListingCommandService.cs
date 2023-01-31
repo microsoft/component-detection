@@ -1,11 +1,10 @@
-﻿using System.Composition;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 [Export(typeof(IArgumentHandlingService))]
 public class DetectorListingCommandService : ServiceBase, IArgumentHandlingService
@@ -18,7 +17,7 @@ public class DetectorListingCommandService : ServiceBase, IArgumentHandlingServi
         return arguments is ListDetectionArgs;
     }
 
-    public async Task<ScanResult> Handle(IScanArguments arguments)
+    public async Task<ScanResult> HandleAsync(IScanArguments arguments)
     {
         await this.ListDetectorsAsync(arguments as IListDetectionArgs);
         return new ScanResult()

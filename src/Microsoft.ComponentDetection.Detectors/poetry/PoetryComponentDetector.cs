@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Poetry;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -9,8 +10,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 using Tomlyn;
-
-namespace Microsoft.ComponentDetection.Detectors.Poetry;
 
 [Export(typeof(IComponentDetector))]
 public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
@@ -25,7 +24,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IEnumerable<string> Categories => new List<string> { "Python" };
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var poetryLockFile = processRequest.ComponentStream;

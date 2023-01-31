@@ -1,9 +1,8 @@
+namespace Microsoft.ComponentDetection.Common;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Microsoft.ComponentDetection.Common;
-
-public class DockerRegex
+public static class DockerRegex
 {
     public static readonly Regex AlphaNumericRegexp = new Regex("[a-z0-9]+");
     public static readonly Regex SeparatorRegexp = new Regex("(?:[._]|__|[-]*)");

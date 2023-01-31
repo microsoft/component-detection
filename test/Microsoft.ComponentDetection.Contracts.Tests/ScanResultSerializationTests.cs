@@ -1,12 +1,11 @@
-﻿using System.Linq;
+﻿namespace Microsoft.ComponentDetection.Contracts.Tests;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Contracts.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]

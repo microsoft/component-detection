@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -9,8 +10,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Newtonsoft.Json;
-
-namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
 
 [Export(typeof(IComponentDetector))]
 public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
@@ -33,7 +32,7 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
 
     public override int Version => 2;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -46,10 +45,10 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
             return;
         }
 
-        await this.ParseSpdxFile(singleFileComponentRecorder, file);
+        await this.ParseSpdxFileAsync(singleFileComponentRecorder, file);
     }
 
-    private async Task ParseSpdxFile(
+    private async Task ParseSpdxFileAsync(
         ISingleFileComponentRecorder singleFileComponentRecorder,
         IComponentStream file)
     {

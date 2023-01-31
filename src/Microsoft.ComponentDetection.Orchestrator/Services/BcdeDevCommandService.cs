@@ -1,11 +1,10 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+using System;
 using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 [Export(typeof(IArgumentHandlingService))]
 public class BcdeDevCommandService : ServiceBase, IArgumentHandlingService
@@ -18,7 +17,7 @@ public class BcdeDevCommandService : ServiceBase, IArgumentHandlingService
         return arguments is BcdeDevArguments;
     }
 
-    public async Task<ScanResult> Handle(IScanArguments arguments)
+    public async Task<ScanResult> HandleAsync(IScanArguments arguments)
     {
         // Run BCDE with the given arguments
         var detectionArguments = arguments as BcdeArguments;

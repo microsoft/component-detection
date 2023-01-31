@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,8 +16,6 @@ using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -94,7 +93,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task DetectComponents_HappyPath()
+    public async Task DetectComponents_HappyPathAsync()
     {
         var componentRecorder = new ComponentRecorder();
         var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/some/file/path"));
@@ -152,7 +151,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task DetectComponents_DetectOnlyWithIdAndCategoryRestrictions()
+    public async Task DetectComponents_DetectOnlyWithIdAndCategoryRestrictionsAsync()
     {
         var args = new BcdeArguments
         {
@@ -181,7 +180,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task DetectComponents_DetectOnlyWithNoUrl()
+    public async Task DetectComponents_DetectOnlyWithNoUrlAsync()
     {
         var args = new BcdeArguments
         {
@@ -206,7 +205,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task DetectComponents_ReturnsExperimentalDetectorInformation()
+    public async Task DetectComponents_ReturnsExperimentalDetectorInformationAsync()
     {
         this.componentDetector2Mock.As<IExperimentalDetector>();
         this.componentDetector3Mock.As<IExperimentalDetector>();
@@ -230,7 +229,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task DetectComponents_Graph_Happy_Path()
+    public async Task DetectComponents_Graph_Happy_PathAsync()
     {
         var mockGraphLocation = "/some/dependency/graph";
 
@@ -288,7 +287,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task DetectComponents_Graph_AccumulatesGraphsOnSameLocation()
+    public async Task DetectComponents_Graph_AccumulatesGraphsOnSameLocationAsync()
     {
         var mockGraphLocation = "/some/dependency/graph";
 
@@ -359,7 +358,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyTranslation_ComponentsAreReturnedWithDevDependencyInfo()
+    public async Task VerifyTranslation_ComponentsAreReturnedWithDevDependencyInfoAsync()
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new NpmComponentDetectorWithRoots();
@@ -393,7 +392,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyTranslation_RootsFromMultipleLocationsAreAgregated()
+    public async Task VerifyTranslation_RootsFromMultipleLocationsAreAgregatedAsync()
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new NpmComponentDetectorWithRoots();
@@ -429,7 +428,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyTranslation_ComponentsAreReturnedWithRoots()
+    public async Task VerifyTranslation_ComponentsAreReturnedWithRootsAsync()
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new NpmComponentDetectorWithRoots();
@@ -460,7 +459,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyTranslation_DevDependenciesAreMergedWhenSameComponentInDifferentFiles()
+    public async Task VerifyTranslation_DevDependenciesAreMergedWhenSameComponentInDifferentFilesAsync()
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new NpmComponentDetectorWithRoots();
@@ -512,7 +511,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyTranslation_LocationsAreMergedWhenSameComponentInDifferentFiles()
+    public async Task VerifyTranslation_LocationsAreMergedWhenSameComponentInDifferentFilesAsync()
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new NpmComponentDetectorWithRoots();
@@ -553,7 +552,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyTranslation_RootsAreMergedWhenSameComponentInDifferentFiles()
+    public async Task VerifyTranslation_RootsAreMergedWhenSameComponentInDifferentFilesAsync()
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new NpmComponentDetectorWithRoots();
@@ -591,7 +590,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
-    public async Task VerifyTranslation_DetectedComponentExist_UpdateFunctionIsApplied()
+    public async Task VerifyTranslation_DetectedComponentExist_UpdateFunctionIsAppliedAsync()
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new NpmComponentDetectorWithRoots();

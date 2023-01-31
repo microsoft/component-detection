@@ -1,9 +1,8 @@
+namespace Microsoft.ComponentDetection.Contracts;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 public interface IDockerService
 {

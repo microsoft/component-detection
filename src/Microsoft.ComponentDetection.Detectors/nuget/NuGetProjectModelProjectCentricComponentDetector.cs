@@ -1,3 +1,5 @@
+namespace Microsoft.ComponentDetection.Detectors.NuGet;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -5,15 +7,13 @@ using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using global::NuGet.Packaging.Core;
+using global::NuGet.ProjectModel;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
-using NuGet.Packaging.Core;
-using NuGet.ProjectModel;
-using NuGet.Versioning;
-
-namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 [Export(typeof(IComponentDetector))]
 public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDetector
@@ -200,7 +200,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
     [Import]
     public IFileUtilityService FileUtilityService { get; set; }
 
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         try
         {
@@ -240,7 +240,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         return Task.CompletedTask;
     }
 
-    protected override Task OnDetectionFinished()
+    protected override Task OnDetectionFinishedAsync()
     {
         this.Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonConvert.SerializeObject(this.frameworkComponentsThatWereOmmittedWithCount));
 

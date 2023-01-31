@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 
 // https://stackoverflow.com/questions/35128996/groupby-on-complex-object-e-g-listt
 public class EnumerableStringComparer : IEqualityComparer<IEnumerable<string>>

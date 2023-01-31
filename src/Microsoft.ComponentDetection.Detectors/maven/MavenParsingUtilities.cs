@@ -1,11 +1,10 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 public static class MavenParsingUtilities
 {

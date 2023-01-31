@@ -1,12 +1,11 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests;
 
 public static class TelemetryHelper
 {

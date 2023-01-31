@@ -1,8 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-
-namespace Microsoft.ComponentDetection.Common;
 
 public static class AsyncExecution
 {
@@ -31,7 +30,7 @@ public static class AsyncExecution
             throw new ArgumentNullException(nameof(toExecute));
         }
 
-        var work = Task.Run(toExecute);
+        var work = Task.Run(toExecute, cancellationToken);
         var completedInTime = await Task.Run(() => work.Wait(timeout));
         if (!completedInTime)
         {

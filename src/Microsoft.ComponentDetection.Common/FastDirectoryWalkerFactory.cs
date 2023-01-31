@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Composition;
@@ -12,8 +13,6 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
-
-namespace Microsoft.ComponentDetection.Common;
 
 [Export(typeof(IObservableDirectoryWalkerFactory))]
 [Export(typeof(FastDirectoryWalkerFactory))]
@@ -201,11 +200,11 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
     /// </summary>
     /// <param name="root">Root directory to scan.</param>
     /// <param name="directoryExclusionPredicate">predicate for excluding directories.</param>
-    /// <param name="minimumConnectionCount">Number of observers that need to subscribe before the observable connects and starts enumerating.</param>
+    /// <param name="count">Number of observers that need to subscribe before the observable connects and starts enumerating.</param>
     /// <param name="filePatterns">Pattern used to filter files.</param>
-    public void Initialize(DirectoryInfo root, ExcludeDirectoryPredicate directoryExclusionPredicate, int minimumConnectionCount, IEnumerable<string> filePatterns = null)
+    public void Initialize(DirectoryInfo root, ExcludeDirectoryPredicate directoryExclusionPredicate, int count, IEnumerable<string> filePatterns = null)
     {
-        this.pendingScans.GetOrAdd(root, new Lazy<IObservable<FileSystemInfo>>(() => this.CreateDirectoryWalker(root, directoryExclusionPredicate, minimumConnectionCount, filePatterns)));
+        this.pendingScans.GetOrAdd(root, new Lazy<IObservable<FileSystemInfo>>(() => this.CreateDirectoryWalker(root, directoryExclusionPredicate, count, filePatterns)));
     }
 
     public IObservable<FileSystemInfo> Subscribe(DirectoryInfo root, IEnumerable<string> patterns)

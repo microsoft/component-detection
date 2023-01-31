@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -7,8 +8,6 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>Specialized base class for file based component detection.</summary>
 public abstract class FileComponentDetector : IComponentDetector
@@ -91,9 +90,9 @@ public abstract class FileComponentDetector : IComponentDetector
 
     private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
-        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFound(processRequest, detectorArgs));
+        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs));
 
-        var preprocessedObserbable = await this.OnPrepareDetection(processRequests, detectorArgs);
+        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
 
         await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
 
@@ -101,7 +100,7 @@ public abstract class FileComponentDetector : IComponentDetector
 
         await processor.Completion;
 
-        await this.OnDetectionFinished();
+        await this.OnDetectionFinishedAsync();
 
         return new IndividualDetectorScanResult
         {
@@ -110,14 +109,14 @@ public abstract class FileComponentDetector : IComponentDetector
         };
     }
 
-    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         return Task.FromResult(processRequests);
     }
 
-    protected abstract Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
+    protected abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
 
-    protected virtual Task OnDetectionFinished()
+    protected virtual Task OnDetectionFinishedAsync()
     {
         return Task.CompletedTask;
     }

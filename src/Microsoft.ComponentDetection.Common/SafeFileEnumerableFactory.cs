@@ -1,9 +1,8 @@
+namespace Microsoft.ComponentDetection.Common;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common;
 
 [Export(typeof(ISafeFileEnumerableFactory))]
 [Shared]

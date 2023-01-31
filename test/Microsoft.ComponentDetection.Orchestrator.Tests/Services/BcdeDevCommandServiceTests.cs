@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -8,8 +9,6 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -51,7 +50,7 @@ public class BcdeDevCommandServiceTests
     }
 
     [TestMethod]
-    public async Task RunComponentDetection()
+    public async Task RunComponentDetectionAsync()
     {
         var args = new BcdeArguments();
 
@@ -60,7 +59,7 @@ public class BcdeDevCommandServiceTests
             BcdeScanExecutionService = this.scanExecutionServiceMock.Object,
         };
 
-        var result = await this.serviceUnderTest.Handle(args);
+        var result = await this.serviceUnderTest.HandleAsync(args);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.SourceDirectory.Should().Be("D:\\test\\directory");
     }

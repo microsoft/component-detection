@@ -1,11 +1,10 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+using System;
 using System.Composition;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
-
-namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 [Export(typeof(IMavenCommandService))]
 public class MavenCommandService : IMavenCommandService
@@ -27,16 +26,16 @@ public class MavenCommandService : IMavenCommandService
 
     public string BcdeMvnDependencyFileName => "bcde.mvndeps";
 
-    public async Task<bool> MavenCLIExists()
+    public async Task<bool> MavenCLIExistsAsync()
     {
-        return await this.CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
+        return await this.CommandLineInvocationService.CanCommandBeLocatedAsync(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
     }
 
-    public async Task GenerateDependenciesFile(ProcessRequest processRequest)
+    public async Task GenerateDependenciesFileAsync(ProcessRequest processRequest)
     {
         var pomFile = processRequest.ComponentStream;
         var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={this.BcdeMvnDependencyFileName}", "-DoutputType=text", $"-f{pomFile.Location}" };
-        var result = await this.CommandLineInvocationService.ExecuteCommand(PrimaryCommand, AdditionalValidCommands, cliParameters);
+        var result = await this.CommandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, AdditionalValidCommands, cliParameters);
         if (result.ExitCode != 0)
         {
             this.Logger.LogVerbose($"Mvn execution failed for pom file: {pomFile.Location}");

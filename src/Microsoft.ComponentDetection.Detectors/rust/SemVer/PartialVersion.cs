@@ -7,12 +7,11 @@
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
+namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Semver;
-
-namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer;
 
 // A version that might not have a minor or patch
 // number, for use in ranges like "^1.2" or "2.x"

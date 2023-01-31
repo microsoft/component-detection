@@ -1,10 +1,9 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-
-namespace Microsoft.ComponentDetection.Common;
 
 public static class PatternMatchingUtility
 {
@@ -13,10 +12,10 @@ public static class PatternMatchingUtility
     public static FilePatternMatcher GetFilePatternMatcher(IEnumerable<string> patterns)
     {
         var ordinalComparison = Expression.Constant(StringComparison.Ordinal, typeof(StringComparison));
-        var asSpan = typeof(MemoryExtensions).GetMethod("AsSpan", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(string) }, new ParameterModifier[0]);
-        var equals = typeof(MemoryExtensions).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison) }, new ParameterModifier[0]);
-        var startsWith = typeof(MemoryExtensions).GetMethod("StartsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison) }, new ParameterModifier[0]);
-        var endsWith = typeof(MemoryExtensions).GetMethod("EndsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison) }, new ParameterModifier[0]);
+        var asSpan = typeof(MemoryExtensions).GetMethod("AsSpan", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(string) }, Array.Empty<ParameterModifier>());
+        var equals = typeof(MemoryExtensions).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison) }, Array.Empty<ParameterModifier>());
+        var startsWith = typeof(MemoryExtensions).GetMethod("StartsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison) }, Array.Empty<ParameterModifier>());
+        var endsWith = typeof(MemoryExtensions).GetMethod("EndsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison) }, Array.Empty<ParameterModifier>());
 
         var predicates = new List<Expression>();
         var left = Expression.Parameter(typeof(ReadOnlySpan<char>), "fileName");

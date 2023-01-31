@@ -1,8 +1,7 @@
+namespace Microsoft.ComponentDetection.Contracts;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>Results object for a component scan.</summary>
 public class IndividualDetectorScanResult

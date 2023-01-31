@@ -1,9 +1,8 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Composition;
 using System.IO;
 using Microsoft.ComponentDetection.Common.Exceptions;
-
-namespace Microsoft.ComponentDetection.Common;
 
 [Export(typeof(IFileWritingService))]
 [Export(typeof(FileWritingService))]
@@ -47,9 +46,9 @@ public class FileWritingService : IFileWritingService
         }
     }
 
-    public void WriteFile(FileInfo absolutePath, string text)
+    public void WriteFile(FileInfo relativeFilePath, string text)
     {
-        File.WriteAllText(absolutePath.FullName, text);
+        File.WriteAllText(relativeFilePath.FullName, text);
     }
 
     public string ResolveFilePath(string relativeFilePath)

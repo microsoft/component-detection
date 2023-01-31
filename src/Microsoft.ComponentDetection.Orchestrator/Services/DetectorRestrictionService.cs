@@ -1,11 +1,10 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Exceptions;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 [Export(typeof(IDetectorRestrictionService))]
 public class DetectorRestrictionService : IDetectorRestrictionService
@@ -16,16 +15,16 @@ public class DetectorRestrictionService : IDetectorRestrictionService
     [Import]
     public ILogger Logger { get; set; }
 
-    public IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions argSpecifiedRestrictions, IEnumerable<IComponentDetector> detectors)
+    public IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions restrictions, IEnumerable<IComponentDetector> detectors)
     {
         // Get a list of our default off detectors beforehand so that they can always be considered
         var defaultOffDetectors = detectors.Where(x => x is IDefaultOffComponentDetector).ToList();
         detectors = detectors.Where(x => !(x is IDefaultOffComponentDetector)).ToList();
 
         // If someone specifies an "allow list", use it, otherwise assume everything is allowed
-        if (argSpecifiedRestrictions.AllowedDetectorIds != null && argSpecifiedRestrictions.AllowedDetectorIds.Any())
+        if (restrictions.AllowedDetectorIds != null && restrictions.AllowedDetectorIds.Any())
         {
-            var allowedIds = argSpecifiedRestrictions.AllowedDetectorIds;
+            var allowedIds = restrictions.AllowedDetectorIds;
 
             // If we have retired detectors in the arg specified list and don't have the new detector, add the new detector
             if (allowedIds.Any(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)) && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
@@ -55,7 +54,7 @@ public class DetectorRestrictionService : IDetectorRestrictionService
         }
 
         var allCategoryName = Enum.GetName(typeof(DetectorClass), DetectorClass.All);
-        var detectorCategories = argSpecifiedRestrictions.AllowedDetectorCategories;
+        var detectorCategories = restrictions.AllowedDetectorCategories;
 
         // If someone specifies an "allow list", use it, otherwise assume everything is allowed
         if (detectorCategories != null && detectorCategories.Any() && !detectorCategories.Contains(allCategoryName))
@@ -76,9 +75,9 @@ public class DetectorRestrictionService : IDetectorRestrictionService
             }
         }
 
-        if (argSpecifiedRestrictions.ExplicitlyEnabledDetectorIds != null && argSpecifiedRestrictions.ExplicitlyEnabledDetectorIds.Any())
+        if (restrictions.ExplicitlyEnabledDetectorIds != null && restrictions.ExplicitlyEnabledDetectorIds.Any())
         {
-            detectors = detectors.Union(defaultOffDetectors.Where(x => argSpecifiedRestrictions.ExplicitlyEnabledDetectorIds.Contains(x.Id))).ToList();
+            detectors = detectors.Union(defaultOffDetectors.Where(x => restrictions.ExplicitlyEnabledDetectorIds.Contains(x.Id))).ToList();
         }
 
         return detectors;

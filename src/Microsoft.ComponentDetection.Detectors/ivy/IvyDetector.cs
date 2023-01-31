@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Ivy;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -11,8 +12,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Ivy;
 
 /// <summary>
 /// Detector for Maven components declared in ivy.xml files for Java projects that are built using Apache Ant
@@ -58,7 +57,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
     [Import]
     public ICommandLineInvocationService CommandLineInvocationService { get; set; }
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         if (await this.IsAntLocallyAvailableAsync())
         {
@@ -69,7 +68,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         return Enumerable.Empty<ProcessRequest>().ToObservable();
     }
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var ivyXmlFile = processRequest.ComponentStream;
@@ -169,14 +168,14 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
     {
         // Note: calling CanCommandBeLocated populates a cache of valid commands.  If it is not called before ExecuteCommand,
         // ExecuteCommand calls CanCommandBeLocated with no arguments, which fails.
-        return await this.CommandLineInvocationService.CanCommandBeLocated(PrimaryCommand, AdditionalValidCommands, AntVersionArgument);
+        return await this.CommandLineInvocationService.CanCommandBeLocatedAsync(PrimaryCommand, AdditionalValidCommands, AntVersionArgument);
     }
 
     private async Task<bool> RunAntToDetectDependenciesAsync(string workingDirectory)
     {
         var ret = false;
         this.Logger.LogVerbose($"Executing command `ant resolve-dependencies` in directory {workingDirectory}");
-        var result = await this.CommandLineInvocationService.ExecuteCommand(PrimaryCommand, additionalCandidateCommands: AdditionalValidCommands, "-buildfile", workingDirectory, "resolve-dependencies");
+        var result = await this.CommandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, additionalCandidateCommands: AdditionalValidCommands, "-buildfile", workingDirectory, "resolve-dependencies");
         if (result.ExitCode == 0)
         {
             this.Logger.LogVerbose("Ant command succeeded");

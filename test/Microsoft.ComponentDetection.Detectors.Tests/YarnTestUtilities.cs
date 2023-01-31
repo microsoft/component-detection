@@ -1,10 +1,9 @@
-﻿using System.IO;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System.IO;
 using System.Text;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 public static class YarnTestUtilities
 {

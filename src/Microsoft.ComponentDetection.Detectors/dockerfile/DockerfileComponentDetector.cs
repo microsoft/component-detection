@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -10,8 +11,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Valleysoft.DockerfileModel;
-
-namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 
 [Export(typeof(IComponentDetector))]
 public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
@@ -32,7 +31,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override int Version => 1;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -48,7 +47,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             }
 
             var stageNameMap = new Dictionary<string, string>();
-            var dockerFileComponent = this.ParseDockerFile(contents, file.Location, singleFileComponentRecorder, stageNameMap);
+            var dockerFileComponent = this.ParseDockerFileAsync(contents, file.Location, singleFileComponentRecorder, stageNameMap);
         }
         catch (Exception e)
         {
@@ -57,7 +56,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         }
     }
 
-    private Task ParseDockerFile(string fileContents, string fileLocation, ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, string> stageNameMap)
+    private Task ParseDockerFileAsync(string fileContents, string fileLocation, ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, string> stageNameMap)
     {
         var dockerfileModel = Valleysoft.DockerfileModel.Dockerfile.Parse(fileContents);
         var instructions = dockerfileModel.Items;

@@ -1,6 +1,5 @@
-﻿using System.IO;
-
-namespace Microsoft.ComponentDetection.Contracts;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+using System.IO;
 
 /// <summary>
 /// Wraps some common file operations for easier testability. This interface is *only used by the command line driven app*.

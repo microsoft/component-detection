@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Composition;
@@ -16,8 +17,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Newtonsoft.Json;
 using static System.Environment;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 [Export(typeof(IDetectorProcessingService))]
 [Shared]
@@ -64,7 +63,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
                 IndividualDetectorScanResult result;
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
-                    result = await this.WithExperimentalScanGuards(
+                    result = await this.WithExperimentalScanGuardsAsync(
                         () => detector.ExecuteDetectorAsync(new ScanRequest(detectionArguments.SourceDirectory, exclusionPredicate, this.Logger, detectorArguments, detectionArguments.DockerImagesToScan, componentRecorder)),
                         isExperimentalDetector,
                         record);
@@ -246,7 +245,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         };
     }
 
-    private async Task<IndividualDetectorScanResult> WithExperimentalScanGuards(Func<Task<IndividualDetectorScanResult>> detectionTaskGenerator, bool isExperimentalDetector, DetectorExecutionTelemetryRecord telemetryRecord)
+    private async Task<IndividualDetectorScanResult> WithExperimentalScanGuardsAsync(Func<Task<IndividualDetectorScanResult>> detectionTaskGenerator, bool isExperimentalDetector, DetectorExecutionTelemetryRecord telemetryRecord)
     {
         if (!isExperimentalDetector)
         {

@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,8 +9,6 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -27,7 +26,7 @@ public class VcpkgComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestNlohmann()
+    public async Task TestNlohmannAsync()
     {
         var spdxFile = @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
@@ -51,7 +50,7 @@ public class VcpkgComponentDetectorTests
 }";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -74,7 +73,7 @@ public class VcpkgComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestTinyxmlAndResource()
+    public async Task TestTinyxmlAndResourceAsync()
     {
         var spdxFile = @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
@@ -110,7 +109,7 @@ public class VcpkgComponentDetectorTests
 }";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -133,13 +132,13 @@ public class VcpkgComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestBlankJson()
+    public async Task TestBlankJsonAsync()
     {
         var spdxFile = "{}";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -149,13 +148,13 @@ public class VcpkgComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestInvalidFile()
+    public async Task TestInvalidFileAsync()
     {
         var spdxFile = "invalidspdxfile";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 

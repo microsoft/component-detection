@@ -1,9 +1,8 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-
-namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 // Summary:
 //     Details for a docker container

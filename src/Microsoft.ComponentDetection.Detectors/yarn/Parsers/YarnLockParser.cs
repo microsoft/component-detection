@@ -1,10 +1,9 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 
 public class YarnLockParser : IYarnLockParser
 {
@@ -31,17 +30,17 @@ public class YarnLockParser : IYarnLockParser
         return SupportedVersions.Contains(yarnLockVersion);
     }
 
-    public YarnLockFile Parse(IYarnBlockFile blockFile, ILogger logger)
+    public YarnLockFile Parse(IYarnBlockFile fileLines, ILogger logger)
     {
-        if (blockFile == null)
+        if (fileLines == null)
         {
-            throw new ArgumentNullException(nameof(blockFile));
+            throw new ArgumentNullException(nameof(fileLines));
         }
 
-        var file = new YarnLockFile { LockVersion = blockFile.YarnLockVersion };
+        var file = new YarnLockFile { LockVersion = fileLines.YarnLockVersion };
         IList<YarnEntry> entries = new List<YarnEntry>();
 
-        foreach (var block in blockFile)
+        foreach (var block in fileLines)
         {
             var yarnEntry = new YarnEntry();
             var satisfiedPackages = block.Title.Split(',').Select(x => x.Trim())

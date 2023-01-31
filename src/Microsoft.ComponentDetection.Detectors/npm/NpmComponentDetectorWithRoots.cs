@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -11,8 +12,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 [Export(typeof(IComponentDetector))]
 public class NpmComponentDetectorWithRoots : FileComponentDetector
@@ -47,7 +46,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
 
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         return Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
             .Where(pr =>
@@ -66,7 +65,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             }));
     }
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         IEnumerable<string> packageJsonPattern = new List<string> { "package.json" };
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -95,7 +94,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             }
         }
 
-        await this.SafeProcessAllPackageJTokens(file, (token) =>
+        await this.SafeProcessAllPackageJTokensAsync(file, (token) =>
         {
             if (!foundUnderLerna && (token["name"] == null || token["version"] == null || string.IsNullOrWhiteSpace(token["name"].Value<string>()) || string.IsNullOrWhiteSpace(token["version"].Value<string>())))
             {
@@ -237,7 +236,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         });
     }
 
-    private async Task SafeProcessAllPackageJTokens(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
+    private async Task SafeProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
     {
         try
         {

@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Linux;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,8 +14,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 using Microsoft.ComponentDetection.Detectors.Linux.Exceptions;
-
-namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 [Export(typeof(IComponentDetector))]
 public class LinuxContainerDetector : IComponentDetector
@@ -165,7 +164,7 @@ public class LinuxContainerDetector : IComponentDetector
             {
                 var internalContainerDetails = kvp.Value;
                 var image = kvp.Key;
-                var baseImageLayerCount = await this.GetBaseImageLayerCount(internalContainerDetails, image, cancellationToken);
+                var baseImageLayerCount = await this.GetBaseImageLayerCountAsync(internalContainerDetails, image, cancellationToken);
 
                 // Update the layer information to specify if a layer was fond in the specified baseImage
                 internalContainerDetails.Layers = internalContainerDetails.Layers.Select(layer => new DockerLayer
@@ -205,7 +204,7 @@ public class LinuxContainerDetector : IComponentDetector
         return await Task.WhenAll(scanTasks);
     }
 
-    private async Task<int> GetBaseImageLayerCount(ContainerDetails scannedImageDetails, string image, CancellationToken cancellationToken = default)
+    private async Task<int> GetBaseImageLayerCountAsync(ContainerDetails scannedImageDetails, string image, CancellationToken cancellationToken = default)
     {
         using var record = new LinuxContainerDetectorLayerAwareness
         {

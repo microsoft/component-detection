@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common;
 
 [DebuggerDisplay("{Name}")]
 public class DirectoryItemFacade

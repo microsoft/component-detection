@@ -1,3 +1,5 @@
+namespace Microsoft.ComponentDetection.Detectors.NuGet;
+
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -8,12 +10,10 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using NuGet.Versioning;
-
-namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 [Export(typeof(IComponentDetector))]
 public class NuGetComponentDetector : FileComponentDetector
@@ -34,22 +34,22 @@ public class NuGetComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 2;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var stream = processRequest.ComponentStream;
         var ignoreNugetConfig = detectorArgs.TryGetValue("NuGet.IncludeRepositoryPaths", out var includeRepositoryPathsValue) && includeRepositoryPathsValue.Equals(bool.FalseString, StringComparison.OrdinalIgnoreCase);
 
         if (NugetConfigFileName.Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
         {
-            await this.ProcessAdditionalDirectory(processRequest, ignoreNugetConfig);
+            await this.ProcessAdditionalDirectoryAsync(processRequest, ignoreNugetConfig);
         }
         else
         {
-            await this.ProcessFile(processRequest);
+            await this.ProcessFileAsync(processRequest);
         }
     }
 
-    private async Task ProcessAdditionalDirectory(ProcessRequest processRequest, bool ignoreNugetConfig)
+    private async Task ProcessAdditionalDirectoryAsync(ProcessRequest processRequest, bool ignoreNugetConfig)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var stream = processRequest.ComponentStream;
@@ -70,13 +70,13 @@ public class NuGetComponentDetector : FileComponentDetector
                     this.Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
 
                     await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
-                        .ForEachAsync(async fi => await this.ProcessFile(fi));
+                        .ForEachAsync(async fi => await this.ProcessFileAsync(fi));
                 }
             }
         }
     }
 
-    private async Task ProcessFile(ProcessRequest processRequest)
+    private async Task ProcessFileAsync(ProcessRequest processRequest)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var stream = processRequest.ComponentStream;
@@ -91,7 +91,7 @@ public class NuGetComponentDetector : FileComponentDetector
             }
             else if ("*.nuspec".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
-                nuspecBytes = await NuGetNuspecUtilities.GetNuspecBytesFromNuspecStream(stream.Stream, stream.Stream.Length);
+                nuspecBytes = await NuGetNuspecUtilities.GetNuspecBytesFromNuspecStreamAsync(stream.Stream, stream.Stream.Length);
             }
             else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
@@ -237,7 +237,7 @@ public class NuGetComponentDetector : FileComponentDetector
             return false;
         }
 
-        if (fileInfo == null)
+        if (potentialPath == null)
         {
             return false;
         }

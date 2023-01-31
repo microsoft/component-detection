@@ -1,10 +1,9 @@
-﻿using System;
-
-namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+using System;
 
 public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDisposable
 {
-    private bool disposedValue = false;
+    private bool disposedValue;
 
     public string RecordName => "NuGetProjectAssets";
 
@@ -17,6 +16,7 @@ public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDis
     public void Dispose()
     {
         this.Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
     protected virtual void Dispose(bool disposing)

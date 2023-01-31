@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Spdx;
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.IO;
@@ -10,8 +11,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Spdx;
 
 /// <summary>
 /// Spdx22ComponentDetector discover SPDX SBOM files in JSON format and create components with the information about
@@ -33,7 +32,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "*.spdx.json" };
 
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         this.Logger.LogVerbose($"Discovered SPDX2.2 manifest file at: {processRequest.ComponentStream.Location}");
         var file = processRequest.ComponentStream;

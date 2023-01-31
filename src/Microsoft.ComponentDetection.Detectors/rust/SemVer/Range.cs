@@ -7,12 +7,11 @@
 // https://github.com/adamreeve/semver.net/issues/46
 // https://github.com/adamreeve/semver.net/issues/47
 
+namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Semver;
-
-namespace Microsoft.ComponentDetection.Detectors.Rust.SemVer;
 
 /// <summary>
 /// Specifies valid versions.
@@ -232,9 +231,9 @@ public class Range : IEquatable<Range>
         return thisSet.SetEquals(other.comparatorSets);
     }
 
-    public override bool Equals(object other)
+    public override bool Equals(object obj)
     {
-        return this.Equals(other as Range);
+        return this.Equals(obj as Range);
     }
 
     public override int GetHashCode()

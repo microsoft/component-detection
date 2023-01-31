@@ -1,14 +1,13 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+using System;
 using System.Diagnostics;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
-
-namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
 {
     private readonly Stopwatch stopwatch = new Stopwatch();
 
-    private bool disposedValue = false;
+    private bool disposedValue;
 
     protected BaseDetectionTelemetryRecord() => this.stopwatch.Start();
 
@@ -29,6 +28,7 @@ public abstract class BaseDetectionTelemetryRecord : IDetectionTelemetryRecord
     public void Dispose()
     {
         this.Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
     protected virtual void Dispose(bool disposing)

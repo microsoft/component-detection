@@ -1,7 +1,6 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+using System;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 public class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryRecord
 {

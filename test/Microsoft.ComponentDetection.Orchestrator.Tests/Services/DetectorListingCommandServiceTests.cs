@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -7,8 +8,6 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -68,9 +67,9 @@ public class DetectorListingCommandServiceTests
     }
 
     [TestMethod]
-    public async Task DetectorListingCommandService_ListsDetectors()
+    public async Task DetectorListingCommandService_ListsDetectorsAsync()
     {
-        var result = await this.serviceUnderTest.Handle(new ListDetectionArgs());
+        var result = await this.serviceUnderTest.HandleAsync(new ListDetectionArgs());
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         this.logOutput.Should().Contain("ComponentDetector2");

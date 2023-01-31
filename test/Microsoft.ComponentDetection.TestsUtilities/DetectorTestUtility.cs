@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.TestsUtilities;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,8 +9,6 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Moq;
-
-namespace Microsoft.ComponentDetection.TestsUtilities;
 
 public class DetectorTestUtility<T>
     where T : FileComponentDetector, new()
@@ -28,7 +27,7 @@ public class DetectorTestUtility<T>
 
     private T detector;
 
-    public async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetector()
+    public async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetectorAsync()
     {
         if (this.scanRequest == null)
         {

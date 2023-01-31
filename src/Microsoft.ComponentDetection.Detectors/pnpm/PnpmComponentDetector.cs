@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -6,8 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 [Export(typeof(IComponentDetector))]
 public class PnpmComponentDetector : FileComponentDetector
@@ -27,7 +26,7 @@ public class PnpmComponentDetector : FileComponentDetector
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -41,7 +40,7 @@ public class PnpmComponentDetector : FileComponentDetector
 
         try
         {
-            var pnpmYaml = await PnpmParsingUtilities.DeserializePnpmYamlFile(file);
+            var pnpmYaml = await PnpmParsingUtilities.DeserializePnpmYamlFileAsync(file);
             this.RecordDependencyGraphFromFile(pnpmYaml, singleFileComponentRecorder);
         }
         catch (Exception e)

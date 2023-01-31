@@ -90,7 +90,7 @@ public class ComponentRecorder : IComponentRecorder
         return this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
     }
 
-    public class SingleFileComponentRecorder : ISingleFileComponentRecorder
+    public sealed class SingleFileComponentRecorder : ISingleFileComponentRecorder
     {
         private readonly ILogger log;
 

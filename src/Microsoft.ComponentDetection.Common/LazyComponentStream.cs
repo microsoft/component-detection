@@ -1,8 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common;
 
 public class LazyComponentStream : IComponentStream
 {
@@ -46,6 +45,6 @@ public class LazyComponentStream : IComponentStream
             this.logger?.LogException(e, isError: false);
         }
 
-        return new byte[0];
+        return Array.Empty<byte>();
     }
 }

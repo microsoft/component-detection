@@ -25,6 +25,7 @@
 // Gemfile.lock comes with a section called "Dependencies", in the section are listed the dependencies that the user specified in the Gemfile,
 // is necessary to investigate if this section is a new adition or always has been there.
 
+namespace Microsoft.ComponentDetection.Detectors.Ruby;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -34,8 +35,6 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Detectors.Ruby;
 
 [Export(typeof(IComponentDetector))]
 public class RubyComponentDetector : FileComponentDetector
@@ -63,7 +62,7 @@ public class RubyComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 3;
 
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;

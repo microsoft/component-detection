@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
 /// Service for managing execution on a command line. Generally, methods on this service expect a command line environment to be
@@ -24,7 +23,7 @@ public interface ICommandLineInvocationService
     /// <param name="workingDirectory">The directory under which to execute the command.</param>
     /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
     /// <returns>Awaitable task with true if the command can be found in the local environment, false otherwise.</returns>
-    Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters);
+    Task<bool> CanCommandBeLocatedAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters);
 
     /// <summary>
     /// Checks to see if the given command can be located -- in cases of absolute paths, this is a simple File.Exists. For non-absolute paths, all PATH entries are checked.
@@ -33,7 +32,7 @@ public interface ICommandLineInvocationService
     /// <param name="additionalCandidateCommands">Other commands that could satisfy the need for the first command. Assumption is that they all share similar calling patterns.</param>
     /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
     /// <returns>Awaitable task with true if the command can be found in the local environment, false otherwise.</returns>
-    Task<bool> CanCommandBeLocated(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters);
+    Task<bool> CanCommandBeLocatedAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters);
 
     /// <summary>
     /// Executes a command line command. If the command has not been located yet, CanCommandBeLocated will be invoked without the submitted parameters.
@@ -43,7 +42,7 @@ public interface ICommandLineInvocationService
     /// <param name="workingDirectory">The directory under which to run the command.</param>
     /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
     /// <returns>Awaitable task with the result of executing the command, including exit code.</returns>
-    Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters);
+    Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters);
 
     /// <summary>
     /// Executes a command line command. If the command has not been located yet, CanCommandBeLocated will be invoked without the submitted parameters.
@@ -52,7 +51,7 @@ public interface ICommandLineInvocationService
     /// <param name="additionalCandidateCommands">Other commands that could satisfy the need for the first command. Assumption is that they all share similar calling patterns.</param>
     /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
     /// <returns>Awaitable task with the result of executing the command, including exit code.</returns>
-    Task<CommandLineExecutionResult> ExecuteCommand(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters);
+    Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters);
 }
 
 public class CommandLineExecutionResult

@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.IO;
 using System.Linq;
@@ -10,8 +11,6 @@ using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -51,12 +50,12 @@ public class GoComponentDetectorTests
             .WithScanRequest(this.scanRequest)
             .WithDetector(detector);
 
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(false);
     }
 
     [TestMethod]
-    public async Task TestGoModDetectorWithValidFile_ReturnsSuccessfully()
+    public async Task TestGoModDetectorWithValidFile_ReturnsSuccessfullyAsync()
     {
         var goMod =
             @"module github.com/Azure/azure-storage-blob-go
@@ -69,7 +68,7 @@ require (
 )";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -84,7 +83,7 @@ require (
     }
 
     [TestMethod]
-    public async Task TestGoSumDetectorWithValidFile_ReturnsSuccessfully()
+    public async Task TestGoSumDetectorWithValidFile_ReturnsSuccessfullyAsync()
     {
         var goSum =
             @"
@@ -100,7 +99,7 @@ github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.sum", goSum)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -122,7 +121,7 @@ github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
     }
 
     [TestMethod]
-    public async Task TestGoModDetector_MultipleSpaces_ReturnsSuccessfully()
+    public async Task TestGoModDetector_MultipleSpaces_ReturnsSuccessfullyAsync()
     {
         var goMod =
             @"module github.com/Azure/azure-storage-blob-go
@@ -136,7 +135,7 @@ require (
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -151,7 +150,7 @@ require (
     }
 
     [TestMethod]
-    public async Task TestGoModDetector_ComponentsWithMultipleLocations_ReturnsSuccessfully()
+    public async Task TestGoModDetector_ComponentsWithMultipleLocations_ReturnsSuccessfullyAsync()
     {
         var goMod1 =
             @"module github.com/Azure/azure-storage-blob-go
@@ -175,7 +174,7 @@ require (
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod1)
             .WithFile("go.mod", goMod2, fileLocation: Path.Join(Path.GetTempPath(), "another-location", "go.mod"))
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(4, componentRecorder.GetDetectedComponents().Count());
@@ -190,7 +189,7 @@ require (
     }
 
     [TestMethod]
-    public async Task TestGoModDetectorInvalidFiles_DoesNotFail()
+    public async Task TestGoModDetectorInvalidFiles_DoesNotFailAsync()
     {
         var invalidGoMod =
             @"     #/bin/sh
@@ -200,14 +199,14 @@ $#26^#25%4";
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", invalidGoMod)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestGoSumDetection_TwoEntriesForTheSameComponent_ReturnsSuccessfully()
+    public async Task TestGoSumDetection_TwoEntriesForTheSameComponent_ReturnsSuccessfullyAsync()
     {
         var goSum =
             @"
@@ -217,7 +216,7 @@ github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d/go.mod h1:ZZM
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.sum", goSum)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -226,7 +225,7 @@ github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d/go.mod h1:ZZM
     }
 
     [TestMethod]
-    public async Task TestGoModDetector_DetectorOnlyDetectInsideRequireSection()
+    public async Task TestGoModDetector_DetectorOnlyDetectInsideRequireSectionAsync()
     {
         var goMod =
             @"module github.com/Azure/azure-storage-blob-go
@@ -242,7 +241,7 @@ replace (
 ";
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -255,34 +254,34 @@ replace (
     }
 
     [TestMethod]
-    public async Task TestGoDetector_GoCommandNotFound()
+    public async Task TestGoDetector_GoCommandNotFoundAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(false);
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
-        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
+        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfullyAsync();
     }
 
     [TestMethod]
-    public async Task TestGoDetector_GoCommandThrows()
+    public async Task TestGoDetector_GoCommandThrowsAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
-            .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+            .ReturnsAsync(() => throw new InvalidOperationException("Some horrible error occured"));
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
-        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
+        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfullyAsync();
     }
 
     [TestMethod]
-    public async Task TestGoDetector_GoGraphCommandFails()
+    public async Task TestGoDetector_GoGraphCommandFailsAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommand("go mod graph", null, It.IsAny<DirectoryInfo>(), It.IsAny<string>()))
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go mod graph", null, It.IsAny<DirectoryInfo>(), It.IsAny<string>()))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 1,
@@ -290,25 +289,25 @@ replace (
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
-        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
+        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfullyAsync();
     }
 
     [TestMethod]
-    public async Task TestGoDetector_GoGraphCommandThrows()
+    public async Task TestGoDetector_GoGraphCommandThrowsAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommand("go mod graph", null, It.IsAny<DirectoryInfo>(), It.IsAny<string>()))
-            .ReturnsAsync(() => throw new Exception("Some horrible error occured"));
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go mod graph", null, It.IsAny<DirectoryInfo>(), It.IsAny<string>()))
+            .ReturnsAsync(() => throw new InvalidOperationException("Some horrible error occured"));
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
-        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
+        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfullyAsync();
     }
 
     [TestMethod]
-    public async Task TestGoDetector_GoGraphHappyPath()
+    public async Task TestGoDetector_GoGraphHappyPathAsync()
     {
         var buildDependencies = @"{
     ""Path"": ""some-package"",
@@ -341,17 +340,17 @@ replace (
 }";
         var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 a@v1.5.0";
 
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommand("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
                 StdOut = buildDependencies,
             });
 
-        this.commandLineMock.Setup(x => x.ExecuteCommand("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
@@ -362,7 +361,7 @@ replace (
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", string.Empty)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -376,7 +375,7 @@ replace (
     }
 
     [TestMethod]
-    public async Task TestGoDetector_GoGraphCyclicDependencies()
+    public async Task TestGoDetector_GoGraphCyclicDependenciesAsync()
     {
         var buildDependencies = @"{
     ""Path"": ""github.com/prometheus/common"",
@@ -403,17 +402,17 @@ replace (
         var goGraph = @"
 github.com/prometheus/common@v0.32.1 github.com/prometheus/client_golang@v1.11.0
 github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1";
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommand("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
                 StdOut = buildDependencies,
             });
 
-        this.commandLineMock.Setup(x => x.ExecuteCommand("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
@@ -424,7 +423,7 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
 
         var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", string.Empty)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -433,10 +432,10 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
     }
 
     [TestMethod]
-    public async Task TestGoDetector_GoCliRequiresEnvVarToRun()
+    public async Task TestGoDetector_GoCliRequiresEnvVarToRunAsync()
     {
-        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfully();
+        await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfullyAsync();
 
-        this.commandLineMock.Verify(x => x.CanCommandBeLocated("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()), Times.Never);
+        this.commandLineMock.Verify(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()), Times.Never);
     }
 }

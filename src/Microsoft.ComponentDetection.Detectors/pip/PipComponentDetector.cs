@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Pip;
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -7,8 +8,6 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 [Export(typeof(IComponentDetector))]
 public class PipComponentDetector : FileComponentDetector
@@ -29,10 +28,10 @@ public class PipComponentDetector : FileComponentDetector
     [Import]
     public IPythonResolver PythonResolver { get; set; }
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
-        if (!await this.PythonCommandService.PythonExists(pythonExePath))
+        if (!await this.PythonCommandService.PythonExistsAsync(pythonExePath))
         {
             this.Logger.LogInfo($"No python found on system. Python detection will not run.");
 
@@ -42,7 +41,7 @@ public class PipComponentDetector : FileComponentDetector
         return processRequests;
     }
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -50,7 +49,7 @@ public class PipComponentDetector : FileComponentDetector
 
         try
         {
-            var initialPackages = await this.PythonCommandService.ParseFile(file.Location, pythonExePath);
+            var initialPackages = await this.PythonCommandService.ParseFileAsync(file.Location, pythonExePath);
             var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
                 .Select(tuple => tuple.PackageString)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -58,7 +57,7 @@ public class PipComponentDetector : FileComponentDetector
                 .Where(x => !x.PackageIsUnsafe())
                 .ToList();
 
-            var roots = await this.PythonResolver.ResolveRoots(listedPackage);
+            var roots = await this.PythonResolver.ResolveRootsAsync(listedPackage);
 
             RecordComponents(
                 singleFileComponentRecorder,

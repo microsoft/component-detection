@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,8 +13,6 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 public class PipComponentDetectorTests
@@ -43,40 +42,40 @@ public class PipComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestPipDetector_PythonNotInstalled()
+    public async Task TestPipDetector_PythonNotInstalledAsync()
     {
-        this.pythonCommandService.Setup(x => x.PythonExists(It.IsAny<string>())).ReturnsAsync(false);
+        this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
 
         this.loggerMock.Setup(x => x.LogInfo(It.Is<string>(l => l.Contains("No python found"))));
 
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("setup.py", string.Empty)
             .WithLogger(this.loggerMock)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         this.loggerMock.VerifyAll();
     }
 
     [TestMethod]
-    public async Task TestPipDetector_PythonInstalledNoFiles()
+    public async Task TestPipDetector_PythonInstalledNoFilesAsync()
     {
-        var (result, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (result, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
     }
 
     [TestMethod]
-    public async Task TestPipDetector_SetupPyAndRequirementsTxt()
+    public async Task TestPipDetector_SetupPyAndRequirementsTxtAsync()
     {
-        this.pythonCommandService.Setup(x => x.PythonExists(It.IsAny<string>())).ReturnsAsync(true);
+        this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
 
         var baseSetupPyDependencies = this.ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1", "c!=1.1" });
         var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1" });
         baseRequirementsTextDependencies.Add((null, new GitComponent(new Uri("https://github.com/example/example"), "deadbee")));
 
-        this.pythonCommandService.Setup(x => x.ParseFile(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
-        this.pythonCommandService.Setup(x => x.ParseFile(Path.Join(Path.GetTempPath(), "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies);
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies);
 
         var setupPyRoots = new List<PipGraphNode>
         {
@@ -94,13 +93,13 @@ public class PipComponentDetectorTests
             new PipGraphNode(new PipComponent("f", "1.1")),
         };
 
-        this.pythonResolver.Setup(x => x.ResolveRoots(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "b")))).ReturnsAsync(setupPyRoots);
-        this.pythonResolver.Setup(x => x.ResolveRoots(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "d")))).ReturnsAsync(requirementsTxtRoots);
+        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "b")))).ReturnsAsync(setupPyRoots);
+        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "d")))).ReturnsAsync(requirementsTxtRoots);
 
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("setup.py", string.Empty)
             .WithFile("requirements.txt", string.Empty)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
 
@@ -126,14 +125,14 @@ public class PipComponentDetectorTests
     }
 
     [TestMethod]
-    public async Task TestPipDetector_ComponentsDedupedAcrossFiles()
+    public async Task TestPipDetector_ComponentsDedupedAcrossFilesAsync()
     {
-        this.pythonCommandService.Setup(x => x.PythonExists(It.IsAny<string>())).ReturnsAsync(true);
+        this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
 
         var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "h==1.3" });
         var baseRequirementsTextDependencies2 = this.ToGitTuple(new List<string> { "D~=1.0", "E<=2.0", "F===1.1", "g==2" });
-        this.pythonCommandService.Setup(x => x.ParseFile(Path.Join(Path.GetTempPath(), "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies);
-        this.pythonCommandService.Setup(x => x.ParseFile(Path.Join(Path.GetTempPath(), "TEST", "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies2);
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies);
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "TEST", "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies2);
 
         var requirementsTxtRoots = new List<PipGraphNode>
         {
@@ -150,30 +149,30 @@ public class PipComponentDetectorTests
             new PipGraphNode(new PipComponent("g", "1.2")),
         };
 
-        this.pythonResolver.Setup(x => x.ResolveRoots(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "h")))).ReturnsAsync(requirementsTxtRoots);
-        this.pythonResolver.Setup(x => x.ResolveRoots(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "g")))).ReturnsAsync(requirementsTxtRoots2);
+        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "h")))).ReturnsAsync(requirementsTxtRoots);
+        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "g")))).ReturnsAsync(requirementsTxtRoots2);
 
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("requirements.txt", string.Empty)
             .WithFile("requirements.txt", string.Empty, fileLocation: Path.Join(Path.GetTempPath(), "TEST", "requirements.txt"))
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
         Assert.AreEqual(5, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestPipDetector_ComponentRecorder()
+    public async Task TestPipDetector_ComponentRecorderAsync()
     {
-        this.pythonCommandService.Setup(x => x.PythonExists(It.IsAny<string>())).ReturnsAsync(true);
+        this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
 
         const string file1 = "c:\\repo\\setup.py";
         const string file2 = "c:\\repo\\lib\\requirements.txt";
 
         var baseReqs = this.ToGitTuple(new List<string> { "a~=1.0", "b<=2.0", });
         var altReqs = this.ToGitTuple(new List<string> { "c~=1.0", "d<=2.0", "e===1.1" });
-        this.pythonCommandService.Setup(x => x.ParseFile(file1, null)).ReturnsAsync(baseReqs);
-        this.pythonCommandService.Setup(x => x.ParseFile(file2, null)).ReturnsAsync(altReqs);
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(file1, null)).ReturnsAsync(baseReqs);
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(file2, null)).ReturnsAsync(altReqs);
 
         var rootA = new PipGraphNode(new PipComponent("a", "1.0"));
         var rootB = new PipGraphNode(new PipComponent("b", "2.1"));
@@ -199,17 +198,17 @@ public class PipComponentDetectorTests
         blue.Children.Add(dog);
 
         this.pythonResolver.Setup(x =>
-                x.ResolveRoots(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "a"))))
+                x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "a"))))
             .ReturnsAsync(new List<PipGraphNode> { rootA, rootB, });
 
         this.pythonResolver.Setup(x =>
-                x.ResolveRoots(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "c"))))
+                x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "c"))))
             .ReturnsAsync(new List<PipGraphNode> { rootC, rootD, rootE, });
 
         var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("setup.py", string.Empty, fileLocation: file1)
             .WithFile("setup.py", string.Empty, fileLocation: file2)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var discoveredComponents = componentRecorder.GetDetectedComponents();
 

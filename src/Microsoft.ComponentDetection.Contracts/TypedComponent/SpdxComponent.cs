@@ -1,6 +1,5 @@
-﻿using System;
-
-namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+using System;
 
 public class SpdxComponent : TypedComponent
 {

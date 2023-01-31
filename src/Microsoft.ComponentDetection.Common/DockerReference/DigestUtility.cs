@@ -1,8 +1,7 @@
+namespace Microsoft.ComponentDetection.Common;
 using System.Collections.Generic;
 
-namespace Microsoft.ComponentDetection.Common;
-
-public class DigestUtility
+public static class DigestUtility
 {
     private static readonly Dictionary<string, int> AlgorithmsSizes = new Dictionary<string, int>()
     {

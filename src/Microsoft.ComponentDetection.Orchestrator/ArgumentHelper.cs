@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Orchestrator;
+using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using CommandLine;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-
-namespace Microsoft.ComponentDetection.Orchestrator;
 
 [Export(typeof(IArgumentHelper))]
 public class ArgumentHelper : IArgumentHelper

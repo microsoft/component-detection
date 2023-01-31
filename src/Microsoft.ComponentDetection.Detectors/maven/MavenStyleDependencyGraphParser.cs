@@ -1,9 +1,8 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 public class MavenStyleDependencyGraphParser
 {
@@ -15,7 +14,7 @@ public class MavenStyleDependencyGraphParser
 
     private readonly Stack<(int ParseLevel, DetectedComponent Component)> tupleStack = new Stack<(int, DetectedComponent)>();
 
-    private DetectedComponent topLevelComponent = null;
+    private DetectedComponent topLevelComponent;
 
     public GraphNode<string> DependencyCategory { get; private set; }
 

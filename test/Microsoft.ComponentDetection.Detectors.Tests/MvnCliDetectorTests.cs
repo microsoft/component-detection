@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,8 +13,6 @@ using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -61,27 +60,27 @@ public class MvnCliDetectorTests
     }
 
     [TestMethod]
-    public async Task IfMavenIsNotAvailableThenExitDetectorGracefully()
+    public async Task IfMavenIsNotAvailableThenExitDetectorGracefullyAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(
             MavenCommandService.PrimaryCommand,
             MavenCommandService.AdditionalValidCommands,
             MavenCommandService.MvnVersionArgument)).ReturnsAsync(false);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 0);
         Assert.AreEqual(detectorResult.ResultCode, ProcessingResultCode.Success);
     }
 
     [TestMethod]
-    public async Task MavenAvailableHappyPath()
+    public async Task MavenAvailableHappyPathAsync()
     {
         const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
 
         this.MvnCliHappyPath(content: componentString);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(detectedComponents.Count(), 1);
@@ -96,20 +95,20 @@ public class MvnCliDetectorTests
     }
 
     [TestMethod]
-    public async Task MavenCli_FileObservableIsNotPresent_DetectionShouldNotFail()
+    public async Task MavenCli_FileObservableIsNotPresent_DetectionShouldNotFailAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(
             MavenCommandService.PrimaryCommand,
             MavenCommandService.AdditionalValidCommands,
             MavenCommandService.MvnVersionArgument)).ReturnsAsync(true);
 
-        Func<Task> action = async () => await this.detectorTestUtility.ExecuteDetector();
+        Func<Task> action = async () => await this.detectorTestUtility.ExecuteDetectorAsync();
 
         await action.Should().NotThrowAsync();
     }
 
     [TestMethod]
-    public async Task MavenRoots()
+    public async Task MavenRootsAsync()
     {
         const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
         const string childComponentString = "org.apache.maven:maven-compat-child:jar:3.6.1-SNAPSHOT";
@@ -119,7 +118,7 @@ public class MvnCliDetectorTests
         this.MvnCliHappyPath(content);
 
         var (detectorResult, componentRecorder) = await this.detectorTestUtility
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(detectedComponents.Count(), 3);
@@ -137,7 +136,7 @@ public class MvnCliDetectorTests
     }
 
     [TestMethod]
-    public async Task MavenDependencyGraph()
+    public async Task MavenDependencyGraphAsync()
     {
         const string explicitReferencedComponent = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
 
@@ -156,7 +155,7 @@ public class MvnCliDetectorTests
 
         this.MvnCliHappyPath(content);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         componentRecorder.GetDetectedComponents().Should().HaveCount(4);
         detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -184,7 +183,7 @@ public class MvnCliDetectorTests
 
     private void MvnCliHappyPath(string content)
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(MavenCommandService.PrimaryCommand, MavenCommandService.AdditionalValidCommands, MavenCommandService.MvnVersionArgument)).ReturnsAsync(true);
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(MavenCommandService.PrimaryCommand, MavenCommandService.AdditionalValidCommands, MavenCommandService.MvnVersionArgument)).ReturnsAsync(true);
 
         var expectedPomLocation = this.scanRequest.SourceDirectory.FullName;
 
@@ -194,7 +193,7 @@ public class MvnCliDetectorTests
 
         var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{expectedPomLocation}" };
 
-        this.commandLineMock.Setup(x => x.ExecuteCommand(
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
                 MavenCommandService.PrimaryCommand,
                 MavenCommandService.AdditionalValidCommands,
                 It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))

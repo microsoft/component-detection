@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
-
-namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 
 // Represents Poetry.Lock file structure.
 [DataContract]

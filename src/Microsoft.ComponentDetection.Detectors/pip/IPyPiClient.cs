@@ -20,9 +20,9 @@ namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 public interface IPyPiClient
 {
-    Task<IList<PipDependencySpecification>> FetchPackageDependencies(string name, string version, PythonProjectRelease release);
+    Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release);
 
-    Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleases(PipDependencySpecification spec);
+    Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec);
 }
 
 [Export(typeof(IPyPiClient))]
@@ -44,10 +44,10 @@ public class PyPiClient : IPyPiClient
     // Keep telemetry on how the cache is being used for future refinements
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
 
-    private bool checkedMaxEntriesVariable = false;
+    private bool checkedMaxEntriesVariable;
 
     // retries used so far for calls to pypi.org
-    private long retries = 0;
+    private long retries;
 
     /// <summary>
     /// A thread safe cache implementation which contains a mapping of URI -> HttpResponseMessage
@@ -75,12 +75,12 @@ public class PyPiClient : IPyPiClient
     [Import]
     public IEnvironmentVariableService EnvironmentVariableService { get; set; }
 
-    public async Task<IList<PipDependencySpecification>> FetchPackageDependencies(string name, string version, PythonProjectRelease release)
+    public async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release)
     {
         var dependencies = new List<PipDependencySpecification>();
 
-        var uri = release.Url.ToString();
-        var response = await this.GetAndCachePyPiResponse(uri);
+        var uri = release.Url;
+        var response = await this.GetAndCachePyPiResponseAsync(uri);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -125,9 +125,9 @@ public class PyPiClient : IPyPiClient
         return dependencies;
     }
 
-    public async Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleases(PipDependencySpecification spec)
+    public async Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec)
     {
-        var requestUri = $"https://pypi.org/pypi/{spec.Name}/json";
+        var requestUri = new Uri($"https://pypi.org/pypi/{spec.Name}/json");
 
         var request = await Policy
             .HandleResult<HttpResponseMessage>(message =>
@@ -159,7 +159,7 @@ public class PyPiClient : IPyPiClient
                     return Task.FromResult<HttpResponseMessage>(null);
                 }
 
-                return this.GetAndCachePyPiResponse(requestUri);
+                return this.GetAndCachePyPiResponseAsync(requestUri);
             });
 
         if (request == null)
@@ -213,7 +213,7 @@ public class PyPiClient : IPyPiClient
     /// </summary>
     /// <param name="uri">The REST Uri to call.</param>
     /// <returns>The cached response or a new result from PyPi.</returns>
-    private async Task<HttpResponseMessage> GetAndCachePyPiResponse(string uri)
+    private async Task<HttpResponseMessage> GetAndCachePyPiResponseAsync(Uri uri)
     {
         if (!this.checkedMaxEntriesVariable)
         {

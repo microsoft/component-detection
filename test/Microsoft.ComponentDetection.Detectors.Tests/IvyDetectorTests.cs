@@ -1,3 +1,4 @@
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,8 +12,6 @@ using Microsoft.ComponentDetection.Detectors.Ivy;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -53,19 +52,19 @@ public class IvyDetectorTests
     }
 
     [TestMethod]
-    public async Task IfAntIsNotAvailableThenExitDetectorGracefully()
+    public async Task IfAntIsNotAvailableThenExitDetectorGracefullyAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
             .ReturnsAsync(false);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 0);
         Assert.AreEqual(detectorResult.ResultCode, ProcessingResultCode.Success);
     }
 
     [TestMethod]
-    public async Task AntAvailableHappyPath()
+    public async Task AntAvailableHappyPathAsync()
     {
         // Fake output from the IvyComponentDetectionAntTask
         var registerUsageContent = "{\"RegisterUsage\": [" +
@@ -77,7 +76,7 @@ public class IvyDetectorTests
 
         this.IvyHappyPath(content: registerUsageContent);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents(); // IsDevelopmentDependency = true in componentRecorder but null in detectedComponents... why?
         Assert.AreEqual(3, detectedComponents.Count());
@@ -100,18 +99,18 @@ public class IvyDetectorTests
     }
 
     [TestMethod]
-    public async Task IvyDetector_FileObservableIsNotPresent_DetectionShouldNotFail()
+    public async Task IvyDetector_FileObservableIsNotPresent_DetectionShouldNotFailAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
             .ReturnsAsync(true);
 
-        Func<Task> action = async () => await this.detectorTestUtility.ExecuteDetector();
+        Func<Task> action = async () => await this.detectorTestUtility.ExecuteDetectorAsync();
 
         await action.Should().NotThrowAsync();
     }
 
     [TestMethod]
-    public async Task IvyDependencyGraph()
+    public async Task IvyDependencyGraphAsync()
     {
         // Fake output from the IvyComponentDetectionAntTask
         var registerUsageContent = "{\"RegisterUsage\": [" +
@@ -127,7 +126,7 @@ public class IvyDetectorTests
 
         this.IvyHappyPath(content: registerUsageContent);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents(); // IsDevelopmentDependency = true in componentRecorder but null in detectedComponents... why?
         Assert.AreEqual(3, detectedComponents.Count());
@@ -158,7 +157,7 @@ public class IvyDetectorTests
 
     private void IvyHappyPath(string content)
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
             .ReturnsAsync(true);
 
         var expectedIvyXmlLocation = this.scanRequest.SourceDirectory.FullName;
@@ -169,7 +168,7 @@ public class IvyDetectorTests
             .WithFile("ivy.xml", "(dummy content)", fileLocation: Path.Combine(expectedIvyXmlLocation, "ivy.xml"));
 
         this.commandLineMock.Setup(
-            x => x.ExecuteCommand(
+            x => x.ExecuteCommandAsync(
                 IvyDetector.PrimaryCommand,
                 IvyDetector.AdditionalValidCommands,
                 It.IsAny<string[]>())).Callback((string cmd, IEnumerable<string> cmd2, string[] parameters) =>

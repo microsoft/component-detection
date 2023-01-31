@@ -1,15 +1,15 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NuGet.Versioning;
-
-namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 public static class NpmComponentUtilities
 {

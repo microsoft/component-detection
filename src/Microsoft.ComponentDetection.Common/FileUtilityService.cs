@@ -1,8 +1,7 @@
-﻿using System.Composition;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System.Composition;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common;
 
 /// <summary>
 /// Wraps some common file operations for easier testability. This interface is *only used by the command line driven app*.
