@@ -145,7 +145,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_AdditionalTelemetryDetailsAreReturned()
+    public async Task ProcessDetectorsAsync_AdditionalTelemetryDetailsAreReturnedAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -165,7 +165,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_ExperimentalDetectorsDoNotReturnComponents()
+    public async Task ProcessDetectorsAsync_ExperimentalDetectorsDoNotReturnComponentsAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -202,7 +202,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_ExperimentalDetectorsDoNormalStuffIfExplicitlyEnabled()
+    public async Task ProcessDetectorsAsync_ExperimentalDetectorsDoNormalStuffIfExplicitlyEnabledAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -230,7 +230,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_ExperimentalDetectorsThrowingDoesntKillDetection()
+    public async Task ProcessDetectorsAsync_ExperimentalDetectorsThrowingDoesntKillDetectionAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -425,7 +425,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_CapturesTelemetry()
+    public async Task ProcessDetectorsAsync_CapturesTelemetryAsync()
     {
         var args = DefaultArgs;
 
@@ -454,7 +454,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_ExecutesMixedCommandAndFileDetectors()
+    public async Task ProcessDetectorsAsync_ExecutesMixedCommandAndFileDetectorsAsync()
     {
         this.detectorsToUse = new[]
         {

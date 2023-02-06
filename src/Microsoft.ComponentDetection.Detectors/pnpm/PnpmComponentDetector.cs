@@ -7,8 +7,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-namespace Microsoft.ComponentDetection.Detectors.Pnpm;
-
 public class PnpmComponentDetector : FileComponentDetector
 {
     public PnpmComponentDetector(

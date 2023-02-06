@@ -28,7 +28,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     [TestMethod]
     public async Task IfMavenIsNotAvailableThenExitDetectorGracefullyAsync()
     {
-        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExists())
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(false);
 
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
@@ -63,7 +63,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     [TestMethod]
     public async Task MavenCli_FileObservableIsNotPresent_DetectionShouldNotFailAsync()
     {
-        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExists())
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
         Func<Task> action = async () => await this.DetectorTestUtility.ExecuteDetectorAsync();
@@ -189,7 +189,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
 
         this.mavenCommandServiceMock.Setup(x => x.BcdeMvnDependencyFileName)
             .Returns(bcdeMvnFileName);
-        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExists())
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
         this.DetectorTestUtility.WithFile("pom.xml", content)
             .WithFile("pom.xml", content, searchPatterns: new[] { bcdeMvnFileName });
