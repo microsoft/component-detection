@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
         <PackageReference Include="DotNet.Glob" />
@@ -6,7 +6,7 @@
         <PackageReference Include="NuGet.ProjectModel" />
         <PackageReference Include="NuGet.Versioning" />
         <PackageReference Include="Polly" />
-        <PackageReference Include="Semver" />
+        <PackageReference Include="SemanticVersioning" />
         <PackageReference Include="yamldotnet" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
         <PackageReference Include="Newtonsoft.Json" />
@@ -17,7 +17,7 @@
         <PackageReference Include="System.Composition.TypedParts" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
-        <PackageReference Include="Tomlyn"/>
+        <PackageReference Include="Tomlyn" />
         <PackageReference Include="Valleysoft.DockerfileModel " />
     </ItemGroup>
 

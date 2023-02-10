@@ -1,13 +1,13 @@
 <Project>
 
-    <ItemDefinitionGroup>
-        <PackageReference>
-            <!-- Do not share compile-time dependencies transitively.  This requires that all projects reference all packages -->
-            <PrivateAssets>Compile</PrivateAssets>
-        </PackageReference>
-    </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <PackageReference>
+      <!-- Do not share compile-time dependencies transitively.  This requires that all projects reference all packages -->
+      <PrivateAssets>Compile</PrivateAssets>
+    </PackageReference>
+  </ItemDefinitionGroup>
 
-    <ItemGroup>
+  <ItemGroup>
         <PackageVersion Include="CommandLineParser" Version="2.9.1"/>
         <PackageVersion Include="coverlet.msbuild" Version="3.2.0"/>
         <PackageVersion Include="Docker.DotNet" Version="3.125.12"/>
@@ -30,7 +30,7 @@
         <PackageVersion Include="NuGet.Versioning" Version="6.4.0"/>
         <PackageVersion Include="packageurl-dotnet" Version="1.0.0"/>
         <PackageVersion Include="Polly" Version="7.2.3"/>
-        <PackageVersion Include="Semver" Version="2.2.0"/>
+        <PackageVersion Include="SemanticVersioning" Version="2.0.0" />
         <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.435"/>
         <PackageVersion Include="System.Composition.AttributedModel" Version="7.0.0"/>
         <PackageVersion Include="System.Composition.Convention" Version="7.0.0"/>
@@ -45,5 +45,5 @@
         <PackageVersion Include="yamldotnet" Version="12.3.1"/>
         <PackageVersion Include="Faker.net" Version="2.0.154"/>
         <PackageVersion Include="Valleysoft.DockerfileModel" Version="1.1.0"/>
-    </ItemGroup>
+  </ItemGroup>
 </Project>

@@ -1,10 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
         <PackageReference Include="Docker.DotNet" />
         <PackageReference Include="Microsoft.AspNet.WebApi.Client" />
         <PackageReference Include="Newtonsoft.Json" />
-        <PackageReference Include="Semver" />
         <PackageReference Include="System.Composition.AttributedModel" />
         <PackageReference Include="System.Composition.Convention" />
         <PackageReference Include="System.Composition.Hosting" />
