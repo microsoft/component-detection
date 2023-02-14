@@ -81,8 +81,8 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
             new PipGraphNode(new PipComponent("f", "1.1")),
         };
 
-        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "b")))).ReturnsAsync(setupPyRoots);
-        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "d")))).ReturnsAsync(requirementsTxtRoots);
+        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.IsAny<ISingleFileComponentRecorder>(), It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "b")))).ReturnsAsync(setupPyRoots);
+        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.IsAny<ISingleFileComponentRecorder>(), It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "d")))).ReturnsAsync(requirementsTxtRoots);
 
         var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty)
@@ -137,8 +137,8 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
             new PipGraphNode(new PipComponent("g", "1.2")),
         };
 
-        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "h")))).ReturnsAsync(requirementsTxtRoots);
-        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "g")))).ReturnsAsync(requirementsTxtRoots2);
+        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.IsAny<ISingleFileComponentRecorder>(), It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "h")))).ReturnsAsync(requirementsTxtRoots);
+        this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.IsAny<ISingleFileComponentRecorder>(), It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "g")))).ReturnsAsync(requirementsTxtRoots2);
 
         var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("requirements.txt", string.Empty)
@@ -186,11 +186,11 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         blue.Children.Add(dog);
 
         this.pythonResolver.Setup(x =>
-                x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "a"))))
+                x.ResolveRootsAsync(It.IsAny<ISingleFileComponentRecorder>(), It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "a"))))
             .ReturnsAsync(new List<PipGraphNode> { rootA, rootB, });
 
         this.pythonResolver.Setup(x =>
-                x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "c"))))
+                x.ResolveRootsAsync(It.IsAny<ISingleFileComponentRecorder>(), It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "c"))))
             .ReturnsAsync(new List<PipGraphNode> { rootC, rootD, rootE, });
 
         var (result, componentRecorder) = await this.DetectorTestUtility
