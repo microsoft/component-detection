@@ -9,58 +9,46 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
 
 [TestClass]
-public class PipComponentDetectorTests
+public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 {
-    private Mock<IPythonCommandService> pythonCommandService;
-    private Mock<IPythonResolver> pythonResolver;
-    private Mock<ILogger> loggerMock;
+    private readonly Mock<IPythonCommandService> pythonCommandService;
+    private readonly Mock<IPythonResolver> pythonResolver;
 
-    private DetectorTestUtility<PipComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
+    public PipComponentDetectorTests()
     {
         this.pythonCommandService = new Mock<IPythonCommandService>();
+        this.DetectorTestUtility.AddServiceMock(this.pythonCommandService);
+
         this.pythonResolver = new Mock<IPythonResolver>();
-        this.loggerMock = new Mock<ILogger>();
-
-        var detector = new PipComponentDetector
-        {
-            PythonCommandService = this.pythonCommandService.Object,
-            PythonResolver = this.pythonResolver.Object,
-            Logger = this.loggerMock.Object,
-        };
-
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PipComponentDetector>()
-            .WithDetector(detector);
+        this.DetectorTestUtility.AddServiceMock(this.pythonResolver);
     }
 
     [TestMethod]
     public async Task TestPipDetector_PythonNotInstalledAsync()
     {
+        var mockLogger = new Mock<ILogger>();
+        mockLogger.Setup(x => x.LogInfo(It.Is<string>(l => l.Contains("No python found"))));
+        this.DetectorTestUtility.AddServiceMock(mockLogger);
+
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
 
-        this.loggerMock.Setup(x => x.LogInfo(It.Is<string>(l => l.Contains("No python found"))));
-
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty)
-            .WithLogger(this.loggerMock)
             .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        this.loggerMock.VerifyAll();
+        mockLogger.VerifyAll();
     }
 
     [TestMethod]
     public async Task TestPipDetector_PythonInstalledNoFilesAsync()
     {
-        var (result, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
+        var (result, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
     }
@@ -96,7 +84,7 @@ public class PipComponentDetectorTests
         this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "b")))).ReturnsAsync(setupPyRoots);
         this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "d")))).ReturnsAsync(requirementsTxtRoots);
 
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty)
             .WithFile("requirements.txt", string.Empty)
             .ExecuteDetectorAsync();
@@ -152,7 +140,7 @@ public class PipComponentDetectorTests
         this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "h")))).ReturnsAsync(requirementsTxtRoots);
         this.pythonResolver.Setup(x => x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "g")))).ReturnsAsync(requirementsTxtRoots2);
 
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("requirements.txt", string.Empty)
             .WithFile("requirements.txt", string.Empty, fileLocation: Path.Join(Path.GetTempPath(), "TEST", "requirements.txt"))
             .ExecuteDetectorAsync();
@@ -205,7 +193,7 @@ public class PipComponentDetectorTests
                 x.ResolveRootsAsync(It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "c"))))
             .ReturnsAsync(new List<PipGraphNode> { rootC, rootD, rootE, });
 
-        var (result, componentRecorder) = await this.detectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty, fileLocation: file1)
             .WithFile("setup.py", string.Empty, fileLocation: file2)
             .ExecuteDetectorAsync();

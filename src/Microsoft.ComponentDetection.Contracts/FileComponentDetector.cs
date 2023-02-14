@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -13,14 +12,16 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 public abstract class FileComponentDetector : IComponentDetector
 {
     /// <summary>
-    /// Gets or sets the factory for handing back component streams to File detectors. Injected automatically by MEF composition.
+    /// Gets or sets the factory for handing back component streams to File detectors.
     /// </summary>
-    [Import]
-    public IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
+    protected IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
 
-    /// <summary>Gets or sets the logger for writing basic logging message to both console and file. Injected automatically by MEF composition.</summary>
-    [Import]
-    public ILogger Logger { get; set; }
+    protected IObservableDirectoryWalkerFactory Scanner { get; set; }
+
+    /// <summary>
+    /// Gets or sets the logger for writing basic logging message to both console and file.
+    /// </summary>
+    protected ILogger Logger { get; set; }
 
     public IComponentRecorder ComponentRecorder { get; private set; }
 
@@ -49,9 +50,6 @@ public abstract class FileComponentDetector : IComponentDetector
     ///  the overrider should ensure this property is populated.
     /// </summary>
     protected ScanRequest CurrentScanRequest { get; set; }
-
-    [Import]
-    public IObservableDirectoryWalkerFactory Scanner { get; set; }
 
     public bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
 

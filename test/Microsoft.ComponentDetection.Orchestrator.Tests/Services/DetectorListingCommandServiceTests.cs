@@ -1,6 +1,5 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -15,7 +14,7 @@ using Moq;
 public class DetectorListingCommandServiceTests
 {
     private Mock<ILogger> loggerMock;
-    private Mock<IDetectorRegistryService> detectorRegistryServiceMock;
+    private Mock<IEnumerable<IComponentDetector>> detectorsMock;
     private Mock<IComponentDetector> componentDetector2Mock;
     private Mock<IComponentDetector> componentDetector3Mock;
     private Mock<IComponentDetector> versionedComponentDetector1Mock;
@@ -28,16 +27,14 @@ public class DetectorListingCommandServiceTests
     public void InitializeTest()
     {
         this.loggerMock = new Mock<ILogger>();
-        this.detectorRegistryServiceMock = new Mock<IDetectorRegistryService>();
+        this.detectorsMock = new Mock<IEnumerable<IComponentDetector>>();
         this.componentDetector2Mock = new Mock<IComponentDetector>();
         this.componentDetector3Mock = new Mock<IComponentDetector>();
         this.versionedComponentDetector1Mock = new Mock<IComponentDetector>();
 
-        this.serviceUnderTest = new DetectorListingCommandService
-        {
-            DetectorRegistryService = this.detectorRegistryServiceMock.Object,
-            Logger = this.loggerMock.Object,
-        };
+        this.serviceUnderTest = new DetectorListingCommandService(
+            this.detectorsMock.Object,
+            this.loggerMock.Object);
 
         this.logOutput = new List<string>();
         this.loggerMock.Setup(x => x.LogInfo(It.IsAny<string>())).Callback<string>(loggedString =>
@@ -49,21 +46,21 @@ public class DetectorListingCommandServiceTests
         this.componentDetector3Mock.SetupGet(x => x.Id).Returns("ComponentDetector3");
         this.versionedComponentDetector1Mock.SetupGet(x => x.Id).Returns("VersionedComponentDetector");
 
-        var registeredDetectors = new[]
+        IEnumerable<IComponentDetector> registeredDetectors = new[]
         {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
 
             this.versionedComponentDetector1Mock.Object,
         };
 
-        this.detectorRegistryServiceMock.Setup(x => x.GetDetectors(It.IsAny<IEnumerable<DirectoryInfo>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<bool>()))
-            .Returns(registeredDetectors);
+        this.detectorsMock.Setup(x => x.GetEnumerator())
+            .Returns(registeredDetectors.GetEnumerator());
     }
 
     [TestCleanup]
     public void CleanupTests()
     {
-        this.detectorRegistryServiceMock.VerifyAll();
+        this.detectorsMock.VerifyAll();
     }
 
     [TestMethod]

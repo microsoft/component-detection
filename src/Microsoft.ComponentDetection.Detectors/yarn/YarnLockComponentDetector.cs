@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -12,9 +11,22 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
 
-[Export(typeof(IComponentDetector))]
 public class YarnLockComponentDetector : FileComponentDetector
 {
+    private readonly IYarnLockFileFactory yarnLockFileFactory;
+
+    public YarnLockComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IYarnLockFileFactory yarnLockFileFactory,
+        ILogger logger)
+    {
+        this.yarnLockFileFactory = yarnLockFileFactory;
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override string Id { get; } = "Yarn";
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "yarn.lock" };
@@ -45,7 +57,7 @@ public class YarnLockComponentDetector : FileComponentDetector
 
         try
         {
-            var parsed = await YarnLockFileFactory.ParseYarnLockFileAsync(singleFileComponentRecorder, file.Stream, this.Logger);
+            var parsed = await this.yarnLockFileFactory.ParseYarnLockFileAsync(singleFileComponentRecorder, file.Stream, this.Logger);
             this.DetectComponents(parsed, file.Location, singleFileComponentRecorder);
         }
         catch (Exception ex)

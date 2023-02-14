@@ -1,19 +1,18 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Exceptions;
 
-[Export(typeof(IDetectorRestrictionService))]
 public class DetectorRestrictionService : IDetectorRestrictionService
 {
     private readonly IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
     private readonly string newDetectorId = "NpmWithRoots";
 
-    [Import]
-    public ILogger Logger { get; set; }
+    private readonly ILogger logger;
+
+    public DetectorRestrictionService(ILogger logger) => this.logger = logger;
 
     public IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions restrictions, IEnumerable<IComponentDetector> detectors)
     {
@@ -47,7 +46,7 @@ public class DetectorRestrictionService : IDetectorRestrictionService
                     }
                     else
                     {
-                        this.Logger.LogWarning($"The detector '{id}' has been phased out, we will run the '{this.newDetectorId}' detector which replaced its functionality.");
+                        this.logger.LogWarning($"The detector '{id}' has been phased out, we will run the '{this.newDetectorId}' detector which replaced its functionality.");
                     }
                 }
             }

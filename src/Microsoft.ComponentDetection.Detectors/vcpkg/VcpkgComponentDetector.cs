@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,16 +10,26 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Newtonsoft.Json;
 
-[Export(typeof(IComponentDetector))]
 public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private readonly HashSet<string> projectRoots = new HashSet<string>();
 
-    [Import]
-    public ICommandLineInvocationService CommandLineInvocationService { get; set; }
+    private readonly ICommandLineInvocationService commandLineInvocationService;
+    private readonly IEnvironmentVariableService envVarService;
 
-    [Import]
-    public IEnvironmentVariableService EnvVarService { get; set; }
+    public VcpkgComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        IEnvironmentVariableService environmentVariableService,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.commandLineInvocationService = commandLineInvocationService;
+        this.envVarService = environmentVariableService;
+        this.Logger = logger;
+    }
 
     public override string Id { get; } = "Vcpkg";
 

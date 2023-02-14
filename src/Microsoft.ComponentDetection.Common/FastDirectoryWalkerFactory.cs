@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Enumeration;
@@ -14,18 +13,17 @@ using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 
-[Export(typeof(IObservableDirectoryWalkerFactory))]
-[Export(typeof(FastDirectoryWalkerFactory))]
-[Shared]
 public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 {
     private readonly ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>> pendingScans = new ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>>();
+    private readonly IPathUtilityService pathUtilityService;
+    private readonly ILogger logger;
 
-    [Import]
-    public ILogger Logger { get; set; }
-
-    [Import]
-    public IPathUtilityService PathUtilityService { get; set; }
+    public FastDirectoryWalkerFactory(IPathUtilityService pathUtilityService, ILogger logger)
+    {
+        this.pathUtilityService = pathUtilityService;
+        this.logger = logger;
+    }
 
     public IObservable<FileSystemInfo> GetDirectoryScanner(DirectoryInfo root, ConcurrentDictionary<string, bool> scannedDirectories, ExcludeDirectoryPredicate directoryExclusionPredicate, IEnumerable<string> filePatterns = null, bool recurse = true)
     {
@@ -33,7 +31,7 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
         {
             if (!root.Exists)
             {
-                this.Logger?.LogError($"Root directory doesn't exist: {root.FullName}");
+                this.logger?.LogError($"Root directory doesn't exist: {root.FullName}");
                 s.OnCompleted();
                 return Task.CompletedTask;
             }
@@ -51,7 +49,7 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 
             var sw = Stopwatch.StartNew();
 
-            this.Logger?.LogInfo($"Starting enumeration of {root.FullName}");
+            this.logger?.LogInfo($"Starting enumeration of {root.FullName}");
 
             var fileCount = 0;
             var directoryCount = 0;
@@ -72,7 +70,7 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 
                 if (di.Attributes.HasFlag(FileAttributes.ReparsePoint))
                 {
-                    var realPath = this.PathUtilityService.ResolvePhysicalPath(di.FullName);
+                    var realPath = this.pathUtilityService.ResolvePhysicalPath(di.FullName);
 
                     realDirectory = new DirectoryInfo(realPath);
                 }
@@ -189,7 +187,7 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
                 () =>
                 {
                     sw.Stop();
-                    this.Logger?.LogInfo($"Enumerated {fileCount} files and {directoryCount} directories in {sw.Elapsed}");
+                    this.logger?.LogInfo($"Enumerated {fileCount} files and {directoryCount} directories in {sw.Elapsed}");
                     s.OnCompleted();
                 });
         });
@@ -213,7 +211,7 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 
         if (this.pendingScans.TryGetValue(root, out var scannerObservable))
         {
-            this.Logger.LogVerbose(string.Join(":", patterns));
+            this.logger.LogVerbose(string.Join(":", patterns));
 
             var inner = scannerObservable.Value.Where(fsi =>
             {
@@ -244,11 +242,11 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
                 var searchPattern = x.SearchPattern;
                 var fileName = x.File.Name;
 
-                return this.PathUtilityService.MatchesPattern(searchPattern, fileName);
+                return this.pathUtilityService.MatchesPattern(searchPattern, fileName);
             }).Where(x => x.File.Exists)
             .Select(x =>
             {
-                var lazyComponentStream = new LazyComponentStream(x.File, x.SearchPattern, this.Logger);
+                var lazyComponentStream = new LazyComponentStream(x.File, x.SearchPattern, this.logger);
                 return new ProcessRequest
                 {
                     ComponentStream = lazyComponentStream,
@@ -287,6 +285,6 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 
     private bool MatchesAnyPattern(FileInfo fi, params string[] searchPatterns)
     {
-        return searchPatterns != null && searchPatterns.Any(sp => this.PathUtilityService.MatchesPattern(sp, fi.Name));
+        return searchPatterns != null && searchPatterns.Any(sp => this.pathUtilityService.MatchesPattern(sp, fi.Name));
     }
 }

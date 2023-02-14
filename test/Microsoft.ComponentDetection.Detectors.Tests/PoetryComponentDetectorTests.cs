@@ -6,22 +6,13 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class PoetryComponentDetectorTests
+public class PoetryComponentDetectorTests : BaseDetectorTest<PoetryComponentDetector>
 {
-    private DetectorTestUtility<PoetryComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PoetryComponentDetector>();
-    }
-
     [TestMethod]
     public async Task TestPoetryDetector_TestCustomSourceAsync()
     {
@@ -39,7 +30,7 @@ url = ""https://pypi.custom.com//simple""
 reference = ""custom""
 ";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("poetry.lock", poetryLockContent)
             .ExecuteDetectorAsync();
 
@@ -65,7 +56,7 @@ optional = false
 python-versions = ""*""
 ";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("poetry.lock", poetryLockContent)
             .ExecuteDetectorAsync();
 
@@ -116,7 +107,7 @@ url = ""https://github.com/requests/requests.git""
 reference = ""master""
 resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("poetry.lock", poetryLockContent)
             .ExecuteDetectorAsync();
 

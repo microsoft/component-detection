@@ -10,7 +10,6 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Tests.Mocks;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
@@ -18,39 +17,24 @@ using Newtonsoft.Json;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class NuGetProjectModelProjectCentricComponentDetectorTests
+public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetectorTest<NuGetProjectModelProjectCentricComponentDetector>
 {
     private readonly string projectAssetsJsonFileName = "project.assets.json";
-    private DetectorTestUtility<NuGetProjectModelProjectCentricComponentDetector> detectorTestUtility;
+    private readonly Mock<IFileUtilityService> fileUtilityServiceMock;
 
-    [TestInitialize]
-    public void TestInitialize()
+    public NuGetProjectModelProjectCentricComponentDetectorTests()
     {
-        var detector = new NuGetProjectModelProjectCentricComponentDetector();
-
-        var loggerMock = new Mock<ILogger>();
-        loggerMock.Setup(x => x.LogWarning(It.IsAny<string>())).Callback<string>(message => Console.WriteLine(message));
-        loggerMock.Setup(x => x.LogFailedReadingFile(It.IsAny<string>(), It.IsAny<Exception>())).Callback<string, Exception>((message, exception) =>
-        {
-            Console.WriteLine(message);
-            Console.WriteLine(exception.ToString());
-        });
-        detector.Logger = loggerMock.Object;
-
-        var fileUtilityServiceMock = new Mock<IFileUtilityService>();
-        fileUtilityServiceMock.Setup(x => x.Exists(It.IsAny<string>()))
+        this.fileUtilityServiceMock = new Mock<IFileUtilityService>();
+        this.fileUtilityServiceMock.Setup(x => x.Exists(It.IsAny<string>()))
             .Returns(true);
-        detector.FileUtilityService = fileUtilityServiceMock.Object;
-
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<NuGetProjectModelProjectCentricComponentDetector>()
-            .WithDetector(detector);
+        this.DetectorTestUtility.AddServiceMock(this.fileUtilityServiceMock);
     }
 
     [TestMethod]
     public async Task ScanDirectoryAsync_Base_2_2_VerificationAsync()
     {
         var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
@@ -73,7 +57,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     public async Task ScanDirectoryAsync_Base_2_2_additional_VerificationAsync()
     {
         var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
@@ -99,7 +83,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_2_2_VerificationAsync()
     {
         var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2);
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
@@ -114,7 +98,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     public async Task ScanDirectoryAsync_DependencyGraph_2_2_additional_VerificationAsync()
     {
         var osAgnostic = this.Convert22SampleToOSAgnostic(TestResources.project_assets_2_2_additional);
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
         var graphsByLocation = componentRecorder.GetDependencyGraphsByLocation();
@@ -194,7 +178,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     public async Task ScanDirectoryAsync_Base_3_1_VerificationAsync()
     {
         var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
@@ -216,7 +200,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_3_1_VerificationAsync()
     {
         var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
@@ -232,7 +216,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
     public async Task ScanDirectoryAsync_DependencyGraph_3_1_VerificationAsync()
     {
         var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_3_1);
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
@@ -285,7 +269,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests
   },
  ""packageFolders"": {}
 }";
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 

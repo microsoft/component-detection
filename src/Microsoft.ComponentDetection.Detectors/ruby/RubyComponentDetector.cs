@@ -28,7 +28,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Ruby;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -36,14 +35,22 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-[Export(typeof(IComponentDetector))]
 public class RubyComponentDetector : FileComponentDetector
 {
     private static readonly Regex HeadingRegex = new Regex("^[A-Z ]+$", RegexOptions.Compiled);
     private static readonly Regex DependencyDefinitionRegex = new Regex("^ {4}[A-Za-z-]+", RegexOptions.Compiled);
     private static readonly Regex SubDependencyRegex = new Regex("^ {6}[A-Za-z-]+", RegexOptions.Compiled);
 
-    public RubyComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
+    public RubyComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.NeedsAutomaticRootDependencyCalculation = true;
+        this.Logger = logger;
+    }
 
     private enum SectionType
     {

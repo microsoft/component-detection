@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 using System;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -8,11 +9,10 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class LoggerTests
 {
-    private Mock<IFileWritingService> fileWritingServiceMock;
-    private Mock<IConsoleWritingService> consoleWritingServiceMock;
+    private readonly Mock<IFileWritingService> fileWritingServiceMock;
+    private readonly Mock<IConsoleWritingService> consoleWritingServiceMock;
 
-    [TestInitialize]
-    public void TestInitialize()
+    public LoggerTests()
     {
         this.consoleWritingServiceMock = new Mock<IConsoleWritingService>();
         this.fileWritingServiceMock = new Mock<IFileWritingService>();
@@ -28,11 +28,7 @@ public class LoggerTests
     [TestMethod]
     public void LogCreateLoggingGroup_HandlesFailedInit()
     {
-        var logger = new Logger
-        {
-            ConsoleWriter = this.consoleWritingServiceMock.Object,
-            FileWritingService = null,
-        };
+        var logger = new Logger(this.consoleWritingServiceMock.Object, null);
 
         // This should throw an exception while setting up the file writing service, but handle it
         logger.Init(VerbosityMode.Normal);
@@ -264,11 +260,7 @@ public class LoggerTests
 
     private Logger CreateLogger(VerbosityMode verbosityMode)
     {
-        var serviceUnderTest = new Logger
-        {
-            ConsoleWriter = this.consoleWritingServiceMock.Object,
-            FileWritingService = this.fileWritingServiceMock.Object,
-        };
+        var serviceUnderTest = new Logger(this.consoleWritingServiceMock.Object, this.fileWritingServiceMock.Object);
 
         serviceUnderTest.Init(verbosityMode);
 

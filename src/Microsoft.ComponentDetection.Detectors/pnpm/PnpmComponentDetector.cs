@@ -1,17 +1,24 @@
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-[Export(typeof(IComponentDetector))]
 public class PnpmComponentDetector : FileComponentDetector
 {
-    public PnpmComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
+    public PnpmComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.NeedsAutomaticRootDependencyCalculation = true;
+        this.Logger = logger;
+    }
 
     public override string Id { get; } = "Pnpm";
 

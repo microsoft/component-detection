@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -9,11 +8,16 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-[Export(typeof(IPythonCommandService))]
 public class PythonCommandService : IPythonCommandService
 {
-    [Import]
-    public ICommandLineInvocationService CommandLineInvocationService { get; set; }
+    private readonly ICommandLineInvocationService commandLineInvocationService;
+
+    public PythonCommandService()
+    {
+    }
+
+    public PythonCommandService(ICommandLineInvocationService commandLineInvocationService) =>
+        this.commandLineInvocationService = commandLineInvocationService;
 
     public async Task<bool> PythonExistsAsync(string pythonPath = null)
     {
@@ -54,7 +58,7 @@ public class PythonCommandService : IPythonCommandService
 
         // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
         // We need to have python interpret this file because install_requires can be composed at runtime
-        var command = await this.CommandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
+        var command = await this.commandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
 
         if (command.ExitCode != 0)
         {
@@ -145,6 +149,6 @@ public class PythonCommandService : IPythonCommandService
 
     private async Task<bool> CanCommandBeLocatedAsync(string pythonPath)
     {
-        return await this.CommandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, new List<string> { "python3", "python2" }, "--version");
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, new List<string> { "python3", "python2" }, "--version");
     }
 }

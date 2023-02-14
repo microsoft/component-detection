@@ -5,21 +5,11 @@ using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
-public class NuGetPackagesConfigDetectorTests
+public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesConfigDetector>
 {
-    private DetectorTestUtility<NuGetPackagesConfigDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        var detector = new NuGetPackagesConfigDetector();
-        this.detectorTestUtility = new DetectorTestUtility<NuGetPackagesConfigDetector>().WithDetector(detector);
-    }
-
     [TestMethod]
     public async Task Should_WorkAsync()
     {
@@ -30,10 +20,9 @@ public class NuGetPackagesConfigDetectorTests
                     <package id=""NLog"" version=""4.3.10"" targetFramework=""net46"" />
                 </packages>";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("packages.config", packagesConfig)
-            .ExecuteDetectorAsync()
-            .ConfigureAwait(true);
+            .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().NotBeEmpty()

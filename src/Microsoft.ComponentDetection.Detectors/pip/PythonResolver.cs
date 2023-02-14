@@ -1,20 +1,21 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Pip;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-[Export(typeof(IPythonResolver))]
 public class PythonResolver : IPythonResolver
 {
-    [Import]
-    public IPyPiClient PypiClient { get; set; }
+    private readonly IPyPiClient pypiClient;
+    private readonly ILogger logger;
 
-    [Import]
-    public ILogger Logger { get; set; }
+    public PythonResolver(IPyPiClient pypiClient, ILogger logger)
+    {
+        this.pypiClient = pypiClient;
+        this.logger = logger;
+    }
 
     /// <summary>
     /// Resolves the root Python packages from the initial list of packages.
@@ -32,7 +33,7 @@ public class PythonResolver : IPythonResolver
             // If we have it, we probably just want to skip at this phase as this indicates duplicates
             if (!state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
             {
-                var result = await this.PypiClient.GetReleasesAsync(rootPackage);
+                var result = await this.pypiClient.GetReleasesAsync(rootPackage);
 
                 if (result.Keys.Any())
                 {
@@ -52,7 +53,7 @@ public class PythonResolver : IPythonResolver
                 }
                 else
                 {
-                    this.Logger.LogWarning($"Root dependency {rootPackage.Name} not found on pypi. Skipping package.");
+                    this.logger.LogWarning($"Root dependency {rootPackage.Name} not found on pypi. Skipping package.");
                     singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
                 }
             }
@@ -82,13 +83,13 @@ public class PythonResolver : IPythonResolver
                 }
                 else if (node != null)
                 {
-                    this.Logger.LogWarning($"Candidate version ({node.Value.Id}) for {dependencyNode.Name} already exists in map and the version is NOT valid.");
-                    this.Logger.LogWarning($"Specifiers: {string.Join(',', dependencyNode.DependencySpecifiers)} for package {currentNode.Name} caused this.");
+                    this.logger.LogWarning($"Candidate version ({node.Value.Id}) for {dependencyNode.Name} already exists in map and the version is NOT valid.");
+                    this.logger.LogWarning($"Specifiers: {string.Join(',', dependencyNode.DependencySpecifiers)} for package {currentNode.Name} caused this.");
 
                     // The currently selected version is invalid, try to see if there is another valid version available
                     if (!await this.InvalidateAndReprocessAsync(state, node, dependencyNode))
                     {
-                        this.Logger.LogWarning($"Version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
+                        this.logger.LogWarning($"Version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
 
                         // there is no valid version available for the node, dependencies are incompatible,
                     }
@@ -96,7 +97,7 @@ public class PythonResolver : IPythonResolver
                 else
                 {
                     // We haven't encountered this package before, so let's fetch it and find a candidate
-                    var result = await this.PypiClient.GetReleasesAsync(dependencyNode);
+                    var result = await this.pypiClient.GetReleasesAsync(dependencyNode);
 
                     if (result.Keys.Any())
                     {
@@ -110,7 +111,6 @@ public class PythonResolver : IPythonResolver
                     }
                     else
                     {
-                        this.Logger.LogWarning($"Dependency Package {dependencyNode.Name} not found in Pypi. Skipping package");
                         singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                     }
                 }
@@ -189,7 +189,7 @@ public class PythonResolver : IPythonResolver
             return new List<PipDependencySpecification>();
         }
 
-        return await this.PypiClient.FetchPackageDependenciesAsync(spec.Name, candidateVersion, packageToFetch);
+        return await this.pypiClient.FetchPackageDependenciesAsync(spec.Name, candidateVersion, packageToFetch);
     }
 
     private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)

@@ -1,22 +1,29 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
-using System.Composition;
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Newtonsoft.Json;
 
-[Export(typeof(IArgumentHandlingService))]
 public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
 {
     public const string ManifestRelativePath = "ScanManifest_{timestamp}.json";
 
-    [Import]
-    public IFileWritingService FileWritingService { get; set; }
+    private readonly IFileWritingService fileWritingService;
+    private readonly IBcdeScanExecutionService bcdeScanExecutionService;
 
-    [Import]
-    public IBcdeScanExecutionService BcdeScanExecutionService { get; set; }
+    public BcdeScanCommandService(
+        IFileWritingService fileWritingService,
+        IBcdeScanExecutionService bcdeScanExecutionService,
+        ILogger logger)
+    {
+        this.fileWritingService = fileWritingService;
+        this.bcdeScanExecutionService = bcdeScanExecutionService;
+        this.Logger = logger;
+    }
 
     public bool CanHandle(IScanArguments arguments)
     {
@@ -26,7 +33,7 @@ public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
     public async Task<ScanResult> HandleAsync(IScanArguments arguments)
     {
         var bcdeArguments = (BcdeArguments)arguments;
-        var result = await this.BcdeScanExecutionService.ExecuteScanAsync(bcdeArguments);
+        var result = await this.bcdeScanExecutionService.ExecuteScanAsync(bcdeArguments);
         this.WriteComponentManifest(bcdeArguments, result);
         return result;
     }
@@ -42,16 +49,16 @@ public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
         }
         else
         {
-            this.Logger.LogInfo($"Scan Manifest file: {this.FileWritingService.ResolveFilePath(ManifestRelativePath)}");
+            this.Logger.LogInfo($"Scan Manifest file: {this.fileWritingService.ResolveFilePath(ManifestRelativePath)}");
         }
 
         if (userRequestedManifestPath == null)
         {
-            this.FileWritingService.AppendToFile(ManifestRelativePath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
+            this.fileWritingService.AppendToFile(ManifestRelativePath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
         }
         else
         {
-            this.FileWritingService.WriteFile(userRequestedManifestPath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
+            this.fileWritingService.WriteFile(userRequestedManifestPath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
         }
     }
 }

@@ -1,9 +1,7 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
-using System.Composition;
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Contracts;
 
 public abstract class ServiceBase
 {
-    [Import]
-    public ILogger Logger { get; set; }
+    protected ILogger Logger { get; set; }
 }
