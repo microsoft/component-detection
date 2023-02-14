@@ -62,6 +62,24 @@ public class ComponentRecorder : IComponentRecorder
         return detectedComponents;
     }
 
+    public IEnumerable<string> GetSkippedComponents()
+    {
+        IEnumerable<string> skippedComponents;
+        if (this.singleFileRecorders == null)
+        {
+            return Enumerable.Empty<string>();
+        }
+
+        skippedComponents = this.singleFileRecorders
+            .Select(singleFileRecorder => singleFileRecorder.GetSkippedComponents().Keys)
+            .SelectMany(x => x)
+            .GroupBy(x => x)
+            .Select(grouping => grouping.First())
+            .ToImmutableList();
+
+        return skippedComponents;
+    }
+
     public ISingleFileComponentRecorder CreateSingleFileComponentRecorder(string location)
     {
         if (string.IsNullOrWhiteSpace(location))
@@ -90,15 +108,22 @@ public class ComponentRecorder : IComponentRecorder
         return this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
     }
 
-    public sealed class SingleFileComponentRecorder : ISingleFileComponentRecorder
+    public class SingleFileComponentRecorder : ISingleFileComponentRecorder
     {
         private readonly ILogger log;
 
         private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new ConcurrentDictionary<string, DetectedComponent>();
 
+        /// <summary>
+        /// Dictionary of components which had an error during parsing and a dummy data value that only allocates 1 byte.
+        /// </summary>
+        private readonly ConcurrentDictionary<string, byte> skippedComponentsInternal = new ConcurrentDictionary<string, byte>();
+
         private readonly ComponentRecorder recorder;
 
         private readonly object registerUsageLock = new object();
+
+        private readonly object registerSkippedLock = new object();
 
         public SingleFileComponentRecorder(string location, ComponentRecorder recorder, bool enableManualTrackingOfExplicitReferences, ILogger log)
         {
@@ -128,6 +153,12 @@ public class ComponentRecorder : IComponentRecorder
         {
             // Should this be immutable?
             return this.detectedComponentsInternal;
+        }
+
+        public IReadOnlyDictionary<string, byte> GetSkippedComponents()
+        {
+            // Should this be immutable?
+            return this.skippedComponentsInternal;
         }
 
         public void RegisterUsage(
@@ -170,6 +201,19 @@ public class ComponentRecorder : IComponentRecorder
             {
                 storedComponent = this.detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
                 this.AddComponentToGraph(this.ManifestFileLocation, detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, dependencyScope);
+            }
+        }
+
+        public void RegisterPackageParseFailure(string skippedComponent)
+        {
+            if (skippedComponent == null)
+            {
+                throw new ArgumentNullException(paramName: nameof(skippedComponent));
+            }
+
+            lock (this.registerSkippedLock)
+            {
+                _ = this.skippedComponentsInternal[skippedComponent] = default;
             }
         }
 

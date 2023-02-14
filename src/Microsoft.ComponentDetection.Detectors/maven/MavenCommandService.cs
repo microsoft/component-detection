@@ -40,6 +40,7 @@ public class MavenCommandService : IMavenCommandService
         {
             this.Logger.LogVerbose($"Mvn execution failed for pom file: {pomFile.Location}");
             this.Logger.LogError(string.IsNullOrEmpty(result.StdErr) ? result.StdOut : result.StdErr);
+            processRequest.SingleFileComponentRecorder.RegisterPackageParseFailure(pomFile.Location);
         }
     }
 

@@ -11,7 +11,7 @@ public static class YarnLockFileFactory
 
     public static IList<IYarnLockParser> Parsers { get; }
 
-    public static async Task<YarnLockFile> ParseYarnLockFileAsync(Stream file, ILogger logger)
+    public static async Task<YarnLockFile> ParseYarnLockFileAsync(ISingleFileComponentRecorder singleFileComponentRecorder, Stream file, ILogger logger)
     {
         var blockFile = await YarnBlockFile.CreateBlockFileAsync(file);
 
@@ -19,7 +19,7 @@ public static class YarnLockFileFactory
         {
             if (parser.CanParse(blockFile.YarnLockVersion))
             {
-                return parser.Parse(blockFile, logger);
+                return parser.Parse(singleFileComponentRecorder, blockFile, logger);
             }
         }
 

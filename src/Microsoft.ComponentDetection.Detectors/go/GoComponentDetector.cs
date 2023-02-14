@@ -161,7 +161,9 @@ public class GoComponentDetector : FileComponentDetector
             }
             else
             {
-                this.Logger.LogWarning($"Line could not be parsed for component [{line.Trim()}]");
+                var lineTrim = line.Trim();
+                this.Logger.LogWarning($"Line could not be parsed for component [{lineTrim}]");
+                singleFileComponentRecorder.RegisterPackageParseFailure(lineTrim);
             }
         }
     }
@@ -200,7 +202,9 @@ public class GoComponentDetector : FileComponentDetector
             }
             else
             {
-                this.Logger.LogWarning($"Line could not be parsed for component [{line.Trim()}]");
+                var lineTrim = line.Trim();
+                this.Logger.LogWarning($"Line could not be parsed for component [{lineTrim}]");
+                singleFileComponentRecorder.RegisterPackageParseFailure(lineTrim);
             }
         }
     }
@@ -261,6 +265,7 @@ public class GoComponentDetector : FileComponentDetector
             else
             {
                 this.Logger.LogWarning($"Failed to parse components from relationship string {relationship}");
+                componentRecorder.RegisterPackageParseFailure(relationship);
             }
         }
     }

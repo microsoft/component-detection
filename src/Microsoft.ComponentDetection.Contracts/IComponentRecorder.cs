@@ -8,6 +8,8 @@ public interface IComponentRecorder
 
     IEnumerable<DetectedComponent> GetDetectedComponents();
 
+    IEnumerable<string> GetSkippedComponents();
+
     ISingleFileComponentRecorder CreateSingleFileComponentRecorder(string location);
 
     IReadOnlyDictionary<string, IDependencyGraph> GetDependencyGraphsByLocation();
@@ -34,6 +36,12 @@ public interface ISingleFileComponentRecorder
         string parentComponentId = null,
         bool? isDevelopmentDependency = null,
         DependencyScope? dependencyScope = null);
+
+    /// <summary>
+    /// Register that a package was unable to be processed.
+    /// </summary>
+    /// <param name="skippedComponent">Component version identifier.</param>
+    void RegisterPackageParseFailure(string skippedComponent);
 
     DetectedComponent GetComponent(string componentId);
 

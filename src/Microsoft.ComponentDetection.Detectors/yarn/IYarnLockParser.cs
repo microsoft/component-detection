@@ -6,5 +6,5 @@ public interface IYarnLockParser
 {
     bool CanParse(YarnLockVersion yarnLockVersion);
 
-    YarnLockFile Parse(IYarnBlockFile fileLines, ILogger logger);
+    YarnLockFile Parse(ISingleFileComponentRecorder singleFileComponentRecorder, IYarnBlockFile fileLines, ILogger logger);
 }
