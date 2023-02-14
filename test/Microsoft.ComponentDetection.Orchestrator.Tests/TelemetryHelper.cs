@@ -3,13 +3,14 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Moq;
 
 public static class TelemetryHelper
 {
-    public static IEnumerable<T> ExecuteWhileCapturingTelemetry<T>(Action codeToExecute)
+    public static async Task<IEnumerable<T>> ExecuteWhileCapturingTelemetryAsync<T>(Func<Task> codeToExecute)
         where T : class, IDetectionTelemetryRecord
     {
         var telemetryServiceMock = new Mock<ITelemetryService>();
@@ -22,15 +23,15 @@ public static class TelemetryHelper
                     records.Add(asT);
                 }
             });
-        var oldServices = TelemetryRelay.TelemetryServices;
-        TelemetryRelay.TelemetryServices = new[] { telemetryServiceMock.Object };
+        TelemetryRelay.Instance.Init(new[] { telemetryServiceMock.Object });
+
         try
         {
-            codeToExecute();
+            await codeToExecute();
         }
-        finally
+        catch
         {
-            TelemetryRelay.TelemetryServices = oldServices;
+            // ignored
         }
 
         return records.ToList();

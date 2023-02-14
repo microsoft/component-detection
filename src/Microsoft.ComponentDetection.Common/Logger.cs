@@ -1,24 +1,23 @@
-﻿namespace Microsoft.ComponentDetection.Common;
+namespace Microsoft.ComponentDetection.Common;
 using System;
-using System.Composition;
 using System.Runtime.CompilerServices;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 
 using static System.Environment;
 
-[Export(typeof(ILogger))]
-[Export(typeof(Logger))]
-[Shared]
 public class Logger : ILogger
 {
     public const string LogRelativePath = "GovCompDisc_Log_{timestamp}.log";
 
-    [Import]
-    public IFileWritingService FileWritingService { get; set; }
+    private readonly IConsoleWritingService consoleWriter;
+    private readonly IFileWritingService fileWritingService;
 
-    [Import]
-    public IConsoleWritingService ConsoleWriter { get; set; }
+    public Logger(IConsoleWritingService consoleWriter, IFileWritingService fileWritingService)
+    {
+        this.consoleWriter = consoleWriter;
+        this.fileWritingService = fileWritingService;
+    }
 
     private VerbosityMode Verbosity { get; set; }
 
@@ -33,8 +32,8 @@ public class Logger : ILogger
         this.WriteLinePrefix = writeLinePrefix;
         try
         {
-            this.FileWritingService.WriteFile(LogRelativePath, string.Empty);
-            this.LogInfo($"Log file: {this.FileWritingService.ResolveFilePath(LogRelativePath)}");
+            this.fileWritingService.WriteFile(LogRelativePath, string.Empty);
+            this.LogInfo($"Log file: {this.fileWritingService.ResolveFilePath(LogRelativePath)}");
         }
         catch (Exception)
         {
@@ -132,7 +131,7 @@ public class Logger : ILogger
     {
         if (this.WriteToFile)
         {
-            this.FileWritingService.AppendToFile(LogRelativePath, text);
+            this.fileWritingService.AppendToFile(LogRelativePath, text);
         }
     }
 
@@ -140,7 +139,7 @@ public class Logger : ILogger
     {
         if (this.Verbosity >= minVerbosity)
         {
-            this.ConsoleWriter.Write(text);
+            this.consoleWriter.Write(text);
         }
     }
 

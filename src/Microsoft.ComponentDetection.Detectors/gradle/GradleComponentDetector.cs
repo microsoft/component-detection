@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Gradle;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -9,10 +8,19 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-[Export(typeof(IComponentDetector))]
 public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 {
     private static readonly Regex StartsWithLetterRegex = new Regex("^[A-Za-z]", RegexOptions.Compiled);
+
+    public GradleComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
 
     public override string Id { get; } = "Gradle";
 

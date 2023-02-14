@@ -5,9 +5,13 @@
     </PropertyGroup>
 
     <ItemGroup Label="Project References">
-        <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Detectors\Microsoft.ComponentDetection.Detectors.csproj"/>
-        <PackageReference Include="System.Reactive"/>
-        <PackageReference Include="System.Threading.Tasks.Dataflow" />
+      <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Detectors\Microsoft.ComponentDetection.Detectors.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Package References">
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+      <PackageReference Include="System.Reactive" />
+      <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
 
 </Project>

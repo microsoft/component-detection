@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Spdx;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -16,10 +15,19 @@ using Newtonsoft.Json.Linq;
 /// Spdx22ComponentDetector discover SPDX SBOM files in JSON format and create components with the information about
 /// what SPDX document describes.
 /// </summary>
-[Export(typeof(IComponentDetector))]
 public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     private readonly IEnumerable<string> supportedSPDXVersions = new List<string> { "SPDX-2.2" };
+
+    public Spdx22ComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
 
     public override IEnumerable<string> Categories =>
         new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Spdx) };
@@ -30,7 +38,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
     public override int Version => 1;
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "*.spdx.json" };
+    public override IList<string> SearchPatterns => new List<string> { "*.spdx.json" };
 
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {

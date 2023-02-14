@@ -47,7 +47,7 @@ public class PipResolverTests
 
         var dependencies = new List<PipDependencySpecification> { a };
 
-        var resolver = new PythonResolver() { PypiClient = this.pyPiClient.Object, Logger = this.loggerMock.Object, };
+        var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
 
         var resolveResult = await resolver.ResolveRootsAsync(dependencies);
 
@@ -90,7 +90,7 @@ public class PipResolverTests
 
         var dependencies = new List<PipDependencySpecification> { a, doesNotExist };
 
-        var resolver = new PythonResolver() { PypiClient = this.pyPiClient.Object, Logger = this.loggerMock.Object, };
+        var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
 
         var resolveResult = await resolver.ResolveRootsAsync(dependencies);
 
@@ -130,7 +130,7 @@ public class PipResolverTests
 
         var dependencies = new List<PipDependencySpecification> { a };
 
-        var resolver = new PythonResolver() { PypiClient = this.pyPiClient.Object, Logger = this.loggerMock.Object, };
+        var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
 
         var resolveResult = await resolver.ResolveRootsAsync(dependencies);
 
@@ -173,7 +173,7 @@ public class PipResolverTests
 
         var dependencies = new List<PipDependencySpecification> { a };
 
-        var resolver = new PythonResolver() { PypiClient = this.pyPiClient.Object, Logger = this.loggerMock.Object, };
+        var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
 
         var resolveResult = await resolver.ResolveRootsAsync(dependencies);
 

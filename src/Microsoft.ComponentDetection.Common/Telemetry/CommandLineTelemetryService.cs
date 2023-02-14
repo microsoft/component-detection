@@ -1,32 +1,31 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Telemetry;
 using System;
 using System.Collections.Concurrent;
-using System.Composition;
-using Microsoft.ComponentDetection.Common.Telemetry.Attributes;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-[Export(typeof(ITelemetryService))]
-[TelemetryService(nameof(CommandLineTelemetryService))]
 internal class CommandLineTelemetryService : ITelemetryService
 {
     private static readonly ConcurrentQueue<JObject> Records = new ConcurrentQueue<JObject>();
 
     public const string TelemetryRelativePath = "ScanTelemetry_{timestamp}.json";
 
+    private readonly IFileWritingService fileWritingService;
+    private readonly ILogger logger;
+
     private TelemetryMode telemetryMode = TelemetryMode.Production;
 
-    [Import]
-    public ILogger Logger { get; set; }
-
-    [Import]
-    public IFileWritingService FileWritingService { get; set; }
+    public CommandLineTelemetryService(ILogger logger, IFileWritingService fileWritingService)
+    {
+        this.logger = logger;
+        this.fileWritingService = fileWritingService;
+    }
 
     public void Flush()
     {
-        this.FileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(Records));
+        this.fileWritingService.WriteFile(TelemetryRelativePath, JsonConvert.SerializeObject(Records));
     }
 
     public void PostRecord(IDetectionTelemetryRecord record)
@@ -41,7 +40,7 @@ internal class CommandLineTelemetryService : ITelemetryService
 
             if (this.telemetryMode == TelemetryMode.Debug)
             {
-                this.Logger.LogInfo(jsonRecord.ToString());
+                this.logger.LogInfo(jsonRecord.ToString());
             }
         }
     }

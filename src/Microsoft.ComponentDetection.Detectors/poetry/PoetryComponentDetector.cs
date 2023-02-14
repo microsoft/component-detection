@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Poetry;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,9 +10,18 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 using Tomlyn;
 
-[Export(typeof(IComponentDetector))]
 public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
 {
+    public PoetryComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override string Id => "Poetry";
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "poetry.lock" };

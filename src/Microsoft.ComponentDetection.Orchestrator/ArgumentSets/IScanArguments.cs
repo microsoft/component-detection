@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts;
 
 public interface IScanArguments
 {

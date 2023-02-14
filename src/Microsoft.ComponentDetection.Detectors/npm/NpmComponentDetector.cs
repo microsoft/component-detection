@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,9 +11,18 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json.Linq;
 
-[Export(typeof(IComponentDetector))]
 public class NpmComponentDetector : FileComponentDetector
 {
+    public NpmComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     /// <summary>Common delegate for Package.json JToken processing.</summary>
     /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>

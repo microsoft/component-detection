@@ -1,13 +1,11 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -34,44 +32,26 @@ public class DetectorProcessingServiceTests
         { "experimentalFileDetectorId", new DetectedComponent(new NuGetComponent("experimentalDetectorName", "experimentalDetectorVersion")) },
     };
 
+    private readonly Mock<ILogger> loggerMock;
+    private readonly DetectorProcessingService serviceUnderTest;
+    private readonly Mock<IObservableDirectoryWalkerFactory> directoryWalkerFactory;
+
+    private readonly Mock<FileComponentDetector> firstFileComponentDetectorMock;
+    private readonly Mock<FileComponentDetector> secondFileComponentDetectorMock;
+    private readonly Mock<IComponentDetector> firstCommandComponentDetectorMock;
+    private readonly Mock<IComponentDetector> secondCommandComponentDetectorMock;
+    private readonly Mock<FileComponentDetector> experimentalFileComponentDetectorMock;
+
+    private readonly bool isWin;
+
     private IEnumerable<IComponentDetector> detectorsToUse;
-    private Mock<ILogger> loggerMock;
-    private DetectorProcessingService serviceUnderTest;
-    private FastDirectoryWalkerFactory directoryWalkerFactory;
 
-    private Mock<FileComponentDetector> firstFileComponentDetectorMock;
-    private Mock<FileComponentDetector> secondFileComponentDetectorMock;
-    private Mock<IComponentDetector> firstCommandComponentDetectorMock;
-    private Mock<IComponentDetector> secondCommandComponentDetectorMock;
-    private Mock<FileComponentDetector> experimentalFileComponentDetectorMock;
-
-    private bool isWin;
-
-    private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId)
-    {
-        return new IndividualDetectorScanResult
-        {
-            AdditionalTelemetryDetails = new Dictionary<string, string> { { "detectorId", detectorId } },
-            ResultCode = ProcessingResultCode.Success,
-        };
-    }
-
-    [TestInitialize]
-    public void TestInit()
+    public DetectorProcessingServiceTests()
     {
         this.loggerMock = new Mock<ILogger>();
-        this.serviceUnderTest = new DetectorProcessingService
-        {
-            Logger = this.loggerMock.Object,
-        };
-
-        this.directoryWalkerFactory = new FastDirectoryWalkerFactory()
-        {
-            Logger = this.loggerMock.Object,
-            PathUtilityService = new PathUtilityService(),
-        };
-
-        this.serviceUnderTest.Scanner = this.directoryWalkerFactory;
+        this.directoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
+        this.serviceUnderTest =
+            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.loggerMock.Object);
 
         this.firstFileComponentDetectorMock = this.SetupFileDetectorMock("firstFileDetectorId");
         this.secondFileComponentDetectorMock = this.SetupFileDetectorMock("secondFileDetectorId");
@@ -82,6 +62,15 @@ public class DetectorProcessingServiceTests
         this.secondCommandComponentDetectorMock = this.SetupCommandDetectorMock("secondCommandDetectorId");
 
         this.isWin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    }
+
+    private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId)
+    {
+        return new IndividualDetectorScanResult
+        {
+            AdditionalTelemetryDetails = new Dictionary<string, string> { { "detectorId", detectorId } },
+            ResultCode = ProcessingResultCode.Success,
+        };
     }
 
     [TestMethod]
@@ -156,14 +145,14 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public void ProcessDetectorsAsync_AdditionalTelemetryDetailsAreReturned()
+    public async Task ProcessDetectorsAsync_AdditionalTelemetryDetailsAreReturnedAsync()
     {
         this.detectorsToUse = new[]
         {
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
         };
 
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(async () =>
+        var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
         {
             await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
         });
@@ -176,8 +165,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
-    public void ProcessDetectorsAsync_ExperimentalDetectorsDoNotReturnComponents()
+    public async Task ProcessDetectorsAsync_ExperimentalDetectorsDoNotReturnComponentsAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -187,9 +175,9 @@ public class DetectorProcessingServiceTests
         };
 
         DetectorProcessingResult results = null;
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
+        var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
         {
-            results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
+            results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
         });
 
         var experimentalDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.experimentalFileComponentDetectorMock.Object.Id);
@@ -214,8 +202,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
-    public void ProcessDetectorsAsync_ExperimentalDetectorsDoNormalStuffIfExplicitlyEnabled()
+    public async Task ProcessDetectorsAsync_ExperimentalDetectorsDoNormalStuffIfExplicitlyEnabledAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -226,9 +213,9 @@ public class DetectorProcessingServiceTests
         var experimentalDetectorId = this.experimentalFileComponentDetectorMock.Object.Id;
 
         DetectorProcessingResult results = null;
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
+        var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
         {
-            results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions { ExplicitlyEnabledDetectorIds = new[] { experimentalDetectorId } }).Result;
+            results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions { ExplicitlyEnabledDetectorIds = new[] { experimentalDetectorId } });
         });
 
         // We should have all components except the ones that came from our experimental detector
@@ -243,8 +230,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
-    public void ProcessDetectorsAsync_ExperimentalDetectorsThrowingDoesntKillDetection()
+    public async Task ProcessDetectorsAsync_ExperimentalDetectorsThrowingDoesntKillDetectionAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -256,9 +242,9 @@ public class DetectorProcessingServiceTests
             .Throws(new InvalidOperationException("Simulated experimental failure"));
 
         DetectorProcessingResult results = null;
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
+        var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
         {
-            results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
+            results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
         });
 
         var experimentalDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.experimentalFileComponentDetectorMock.Object.Id);
@@ -438,9 +424,8 @@ public class DetectorProcessingServiceTests
         capturedRequest.DirectoryExclusionPredicate(d3.Name.AsSpan(), d3.Parent.FullName.AsSpan()).Should().BeFalse();
     }
 
-    [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
     [TestMethod]
-    public void ProcessDetectorsAsync_CapturesTelemetry()
+    public async Task ProcessDetectorsAsync_CapturesTelemetryAsync()
     {
         var args = DefaultArgs;
 
@@ -449,9 +434,9 @@ public class DetectorProcessingServiceTests
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
         };
 
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
+        var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
         {
-            this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions()).Wait();
+            await this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions());
         });
 
         records.Should().Contain(x => x is DetectorExecutionTelemetryRecord);
@@ -469,8 +454,7 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "Need to Wait for Async lambda to execute.")]
-    public void ProcessDetectorsAsync_ExecutesMixedCommandAndFileDetectors()
+    public async Task ProcessDetectorsAsync_ExecutesMixedCommandAndFileDetectorsAsync()
     {
         this.detectorsToUse = new[]
         {
@@ -481,9 +465,9 @@ public class DetectorProcessingServiceTests
         };
 
         DetectorProcessingResult results = null;
-        var records = TelemetryHelper.ExecuteWhileCapturingTelemetry<DetectorExecutionTelemetryRecord>(() =>
+        var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
         {
-            results = this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions()).Result;
+            results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
         });
 
         results.Should().NotBeNull("Detector processing failed");
@@ -539,7 +523,6 @@ public class DetectorProcessingServiceTests
         mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
             (ScanRequest request) =>
             {
-                this.serviceUnderTest.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
                 this.FillComponentRecorder(request.ComponentRecorder, id);
                 return expectedResult;
             }).Verifiable();

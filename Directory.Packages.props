@@ -32,11 +32,6 @@
         <PackageVersion Include="Polly" Version="7.2.3"/>
         <PackageVersion Include="Semver" Version="2.2.0"/>
         <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.435"/>
-        <PackageVersion Include="System.Composition.AttributedModel" Version="7.0.0"/>
-        <PackageVersion Include="System.Composition.Convention" Version="7.0.0"/>
-        <PackageVersion Include="System.Composition.Hosting" Version="7.0.0"/>
-        <PackageVersion Include="System.Composition.Runtime" Version="7.0.0"/>
-        <PackageVersion Include="System.Composition.TypedParts" Version="7.0.0"/>
         <PackageVersion Include="System.Memory" Version="4.5.5"/>
         <PackageVersion Include="System.Reactive" Version="5.0.0"/>
         <PackageVersion Include="System.Runtime.Loader" Version="4.3.0"/>

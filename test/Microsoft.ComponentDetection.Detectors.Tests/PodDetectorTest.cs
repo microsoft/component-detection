@@ -8,22 +8,13 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class PodDetectorTest
+public class PodDetectorTest : BaseDetectorTest<PodComponentDetector>
 {
-    private DetectorTestUtility<PodComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PodComponentDetector>();
-    }
-
     [TestMethod]
     public async Task TestPodDetector_EmptyPodfileLockAsync()
     {
@@ -31,7 +22,7 @@ public class PodDetectorTest
 
 COCOAPODS: 1.4.0.beta.1";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
@@ -67,7 +58,7 @@ SPEC CHECKSUMS:
 
 COCOAPODS: 0.39.0";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
@@ -109,7 +100,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
@@ -153,7 +144,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
@@ -196,7 +187,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
@@ -239,7 +230,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
@@ -276,7 +267,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
@@ -309,7 +300,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
@@ -374,7 +365,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2)
             .ExecuteDetectorAsync();
@@ -458,7 +449,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2)
             .ExecuteDetectorAsync();
@@ -555,7 +546,7 @@ PODFILE CHECKSUM: accace11c2720ac62a63c1b7629cc202a7e108b8
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2)
             .ExecuteDetectorAsync();
@@ -636,7 +627,7 @@ SPEC CHECKSUMS:
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2)
             .WithFile("Podfile.lock", podfileLockContent3)
@@ -683,7 +674,7 @@ SPEC CHECKSUMS:
 
 COCOAPODS: 1.8.4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Podfile.lock", podfileLockContent)
             .WithFile("Podfile.lock", podfileLockContent2, fileLocation: Path.Join(Path.GetTempPath(), "sub-folder", "Podfile.lock"))
             .ExecuteDetectorAsync();

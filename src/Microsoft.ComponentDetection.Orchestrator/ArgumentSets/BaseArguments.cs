@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CommandLine;
-using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts;
 using Newtonsoft.Json;
 
 public class BaseArguments : IScanArguments

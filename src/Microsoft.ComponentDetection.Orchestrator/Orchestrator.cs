@@ -1,8 +1,6 @@
 namespace Microsoft.ComponentDetection.Orchestrator;
 using System;
 using System.Collections.Generic;
-using System.Composition;
-using System.Composition.Hosting;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -19,30 +17,37 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
-using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 
 public class Orchestrator
 {
     private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
-    [ImportMany]
-    private static IEnumerable<IArgumentHandlingService> ArgumentHandlers { get; set; }
+    private readonly IServiceProvider serviceProvider;
+    private readonly IEnumerable<IArgumentHandlingService> argumentHandlers;
+    private readonly IFileWritingService fileWritingService;
+    private readonly IArgumentHelper argumentHelper;
+    private readonly ILogger logger;
 
-    [Import]
-    private static Logger Logger { get; set; }
-
-    [Import]
-    private static FileWritingService FileWritingService { get; set; }
-
-    [Import]
-    private static IArgumentHelper ArgumentHelper { get; set; }
+    public Orchestrator(
+        IServiceProvider serviceProvider,
+        IEnumerable<IArgumentHandlingService> argumentHandlers,
+        IFileWritingService fileWritingService,
+        IArgumentHelper argumentHelper,
+        ILogger logger)
+    {
+        this.serviceProvider = serviceProvider;
+        this.argumentHandlers = argumentHandlers;
+        this.fileWritingService = fileWritingService;
+        this.argumentHelper = argumentHelper;
+        this.logger = logger;
+    }
 
     public async Task<ScanResult> LoadAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        var argumentHelper = new ArgumentHelper { ArgumentSets = new[] { new BaseArguments() } };
         BaseArguments baseArguments = null;
-        var parserResult = argumentHelper.ParseArguments<BaseArguments>(args, true);
+        var parserResult = this.argumentHelper.ParseArguments<BaseArguments>(args, true);
         parserResult.WithParsed(x => baseArguments = x);
         if (parserResult.Tag == ParserResultType.NotParsed)
         {
@@ -50,27 +55,9 @@ public class Orchestrator
             baseArguments = new BaseArguments();
         }
 
-        var additionalDITargets = baseArguments.AdditionalDITargets ?? Enumerable.Empty<string>();
-
-        // Load all types from Common (where Logger lives) and our executing assembly.
-        var configuration = new ContainerConfiguration()
-            .WithAssembly(typeof(Logger).Assembly)
-            .WithAssembly(Assembly.GetExecutingAssembly());
-
-        foreach (var assemblyPath in additionalDITargets)
-        {
-            var assemblies = Assembly.LoadFrom(assemblyPath);
-
-            AddAssembliesWithType<ITelemetryService>(assemblies, configuration);
-            AddAssembliesWithType<IGraphTranslationService>(assemblies, configuration);
-        }
-
-        using (var container = configuration.CreateContainer())
-        {
-            container.SatisfyImports(this);
-            container.SatisfyImports(TelemetryRelay.Instance);
-        }
-
+        // This is required so TelemetryRelay can be accessed via it's static singleton
+        // It should be refactored out at a later date
+        TelemetryRelay.Instance.Init(this.serviceProvider.GetRequiredService<IEnumerable<ITelemetryService>>());
         TelemetryRelay.Instance.SetTelemetryMode(baseArguments.DebugTelemetry ? TelemetryMode.Debug : TelemetryMode.Production);
 
         var shouldFailureBeSuppressed = false;
@@ -94,7 +81,7 @@ public class Orchestrator
         // The order of these things is a little weird, but done this way mostly to prevent any of the logic inside if blocks from being duplicated
         if (shouldFailureBeSuppressed)
         {
-            Logger.LogInfo("The scan had some detections complete while others encountered errors. The log file should indicate any issues that happened during the scan.");
+            this.logger.LogInfo("The scan had some detections complete while others encountered errors. The log file should indicate any issues that happened during the scan.");
         }
 
         if (returnResult.ResultCode == ProcessingResultCode.TimeoutError)
@@ -119,13 +106,6 @@ public class Orchestrator
         return returnResult;
     }
 
-    private static void AddAssembliesWithType<T>(Assembly assembly, ContainerConfiguration containerConfiguration)
-    {
-        assembly.GetTypes()
-            .Where(x => typeof(T).IsAssignableFrom(x)).ToList()
-            .ForEach(service => containerConfiguration = containerConfiguration.WithPart(service));
-    }
-
     public async Task<ScanResult> HandleCommandAsync(
         string[] args,
         BcdeExecutionTelemetryRecord telemetryRecord,
@@ -136,7 +116,7 @@ public class Orchestrator
             ResultCode = ProcessingResultCode.Error,
         };
 
-        var parsedArguments = ArgumentHelper.ParseArguments(args);
+        var parsedArguments = this.argumentHelper.ParseArguments(args);
         await parsedArguments.WithParsedAsync<IScanArguments>(async argumentSet =>
         {
             CommandLineArgumentsExporter.ArgumentsForDelayedInjection = argumentSet;
@@ -150,9 +130,9 @@ public class Orchestrator
                 await this.GenerateEnvironmentSpecificTelemetryAsync(telemetryRecord);
 
                 telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
-                FileWritingService.Init(argumentSet.Output);
-                Logger.Init(argumentSet.Verbosity, writeLinePrefix: true);
-                Logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
+                this.fileWritingService.Init(argumentSet.Output);
+                this.logger.Init(argumentSet.Verbosity, writeLinePrefix: true);
+                this.logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
 
                 return await this.DispatchAsync(argumentSet, cancellationToken);
             });
@@ -229,13 +209,13 @@ public class Orchestrator
             ResultCode = ProcessingResultCode.Error,
         };
 
-        if (ArgumentHandlers == null)
+        if (this.argumentHandlers == null)
         {
-            Logger.LogError("No argument handling services were registered.");
+            this.logger.LogError("No argument handling services were registered.");
             return scanResult;
         }
 
-        foreach (var handler in ArgumentHandlers)
+        foreach (var handler in this.argumentHandlers)
         {
             if (handler.CanHandle(arguments))
             {
@@ -246,7 +226,7 @@ public class Orchestrator
                 }
                 catch (TimeoutException timeoutException)
                 {
-                    Logger.LogError(timeoutException.Message);
+                    this.logger.LogError(timeoutException.Message);
                     scanResult.ResultCode = ProcessingResultCode.TimeoutError;
                 }
 
@@ -254,7 +234,7 @@ public class Orchestrator
             }
         }
 
-        Logger.LogError("No handlers for the provided Argument Set were found.");
+        this.logger.LogError("No handlers for the provided Argument Set were found.");
         return scanResult;
     }
 
@@ -274,8 +254,8 @@ public class Orchestrator
             var e = ae.GetBaseException();
             if (e is InvalidUserInputException)
             {
-                Logger.LogError($"Something bad happened, is everything configured correctly?");
-                Logger.LogException(e, isError: true, printException: true);
+                this.logger.LogError($"Something bad happened, is everything configured correctly?");
+                this.logger.LogException(e, isError: true, printException: true);
 
                 record.ErrorMessage = e.ToString();
                 result.ResultCode = ProcessingResultCode.InputError;
@@ -285,8 +265,8 @@ public class Orchestrator
             else
             {
                 // On an exception, return error to dotnet core
-                Logger.LogError($"There was an unexpected error: ");
-                Logger.LogException(e, isError: true);
+                this.logger.LogError($"There was an unexpected error: ");
+                this.logger.LogException(e, isError: true);
 
                 var errorMessage = new StringBuilder();
                 errorMessage.AppendLine(e.ToString());
@@ -295,7 +275,7 @@ public class Orchestrator
                     foreach (var loaderException in refEx.LoaderExceptions)
                     {
                         var loaderExceptionString = loaderException.ToString();
-                        Logger.LogError(loaderExceptionString);
+                        this.logger.LogError(loaderExceptionString);
                         errorMessage.AppendLine(loaderExceptionString);
                     }
                 }

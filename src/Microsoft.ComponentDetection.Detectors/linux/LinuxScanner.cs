@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Linux;
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +11,6 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 using Newtonsoft.Json;
 
-[Export(typeof(ILinuxScanner))]
 public class LinuxScanner : ILinuxScanner
 {
     private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v0.53.4@sha256:04ed9c717a814fdccf52758b67333632a0ff16840fc393f5fba5864285eaebbe";
@@ -28,11 +26,14 @@ public class LinuxScanner : ILinuxScanner
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(TimeSpan.FromHours(1).TotalMilliseconds);
 
-    [Import]
-    public ILogger Logger { get; set; }
+    private readonly IDockerService dockerService;
+    private readonly ILogger logger;
 
-    [Import]
-    public IDockerService DockerService { get; set; }
+    public LinuxScanner(IDockerService dockerService, ILogger logger)
+    {
+        this.dockerService = dockerService;
+        this.logger = logger;
+    }
 
     public async Task<IEnumerable<LayerMappedLinuxComponents>> ScanLinuxAsync(string imageHash, IEnumerable<DockerLayer> dockerLayers, int baseImageLayerCount, CancellationToken cancellationToken = default)
     {
@@ -56,19 +57,19 @@ public class LinuxScanner : ILinuxScanner
                 try
                 {
                     var command = new List<string> { imageHash }.Concat(CmdParameters).ToList();
-                    (stdout, stderr) = await this.DockerService.CreateAndRunContainerAsync(ScannerImage, command, cancellationToken);
+                    (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(ScannerImage, command, cancellationToken);
                 }
                 catch (Exception e)
                 {
                     syftTelemetryRecord.Exception = JsonConvert.SerializeObject(e);
-                    this.Logger.LogException(e, false);
+                    this.logger.LogException(e, false);
                     throw;
                 }
             }
             else
             {
                 record.SemaphoreFailure = true;
-                this.Logger.LogWarning($"Failed to enter the docker semaphore for image {imageHash}");
+                this.logger.LogWarning($"Failed to enter the docker semaphore for image {imageHash}");
             }
         }
         finally

@@ -18,17 +18,11 @@ using Newtonsoft.Json;
 [TestClass]
 public class PyPiClientTests
 {
-    private PyPiClient pypiClient;
+    private readonly PyPiClient pypiClient;
 
-    [TestInitialize]
-    public void Initialize()
-    {
-        this.pypiClient = new PyPiClient()
-        {
-            EnvironmentVariableService = new EnvironmentVariableService(),
-            Logger = new Mock<ILogger>().Object,
-        };
-    }
+    public PyPiClientTests() => this.pypiClient = new PyPiClient(
+            new EnvironmentVariableService(),
+            new Mock<ILogger>().Object);
 
     [TestMethod]
     public async Task GetReleases_InvalidSpecVersion_NotThrowAsync()
@@ -168,11 +162,9 @@ public class PyPiClientTests
         var mockEvs = new Mock<IEnvironmentVariableService>();
         mockEvs.Setup(x => x.GetEnvironmentVariable(It.Is<string>(s => s.Equals("PyPiMaxCacheEntries")))).Returns("32");
 
-        var mockedPyPi = new PyPiClient()
-        {
-            EnvironmentVariableService = mockEvs.Object,
-            Logger = mockLogger.Object,
-        };
+        var mockedPyPi = new PyPiClient(
+            mockEvs.Object,
+            mockLogger.Object);
 
         Func<Task> action = async () => await mockedPyPi.GetReleasesAsync(pythonSpecs);
 
