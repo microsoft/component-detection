@@ -133,6 +133,7 @@ public class NuGetComponentDetector : FileComponentDetector
         {
             // If something went wrong, just ignore the component
             this.Logger.LogFailedReadingFile(stream.Location, e);
+            singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
         }
     }
 

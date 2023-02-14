@@ -72,7 +72,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         return Task.CompletedTask;
     }
 
-    private DockerReference ProcessDockerfileConstruct(ISingleFileComponentRecorder singleFileComponentRecorder, DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
+    private DockerReference ProcessDockerfileConstruct(DockerfileConstruct construct, char escapeChar, Dictionary<string, string> stageNameMap)
     {
         try
         {
@@ -100,7 +100,6 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         {
             this.Logger.LogError($"Failed to detect a DockerReference component, the component will not be registered. \n Error Message: <{e.Message}>");
             this.Logger.LogException(e, isError: true, printException: true);
-            singleFileComponentRecorder.RegisterPackageParseFailure();
             return null;
         }
     }

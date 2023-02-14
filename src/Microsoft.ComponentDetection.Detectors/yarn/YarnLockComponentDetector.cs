@@ -77,7 +77,7 @@ public class YarnLockComponentDetector : FileComponentDetector
             }
         }
 
-        if (yarnPackages.Count == 0 || !this.TryReadPeerPackageJsonRequestsAsYarnEntries(location, yarnPackages, out var yarnRoots))
+        if (yarnPackages.Count == 0 || !this.TryReadPeerPackageJsonRequestsAsYarnEntries(singleFileComponentRecorder, location, yarnPackages, out var yarnRoots))
         {
             return;
         }
@@ -166,11 +166,12 @@ public class YarnLockComponentDetector : FileComponentDetector
     /// This function reads those from the package.json so that they can later be used as the starting points
     /// in traversing the dependency graph.
     /// </summary>
+    /// <param name="singleFileComponentRecorder">The component recorder for file that is been processed.</param>
     /// <param name="location">The file location of the yarn.lock file.</param>
     /// <param name="yarnEntries">All the yarn entries that we know about.</param>
     /// <param name="yarnRoots">The output yarnRoots that we care about using as starting points.</param>
     /// <returns>False if no package.json file was found at location, otherwise it returns true. </returns>
-    private bool TryReadPeerPackageJsonRequestsAsYarnEntries(string location, Dictionary<string, YarnEntry> yarnEntries, out List<YarnEntry> yarnRoots)
+    private bool TryReadPeerPackageJsonRequestsAsYarnEntries(ISingleFileComponentRecorder singleFileComponentRecorder, string location, Dictionary<string, YarnEntry> yarnEntries, out List<YarnEntry> yarnRoots)
     {
         yarnRoots = new List<YarnEntry>();
 
@@ -209,6 +210,7 @@ public class YarnLockComponentDetector : FileComponentDetector
                 if (!yarnEntries.ContainsKey(entryKey))
                 {
                     this.Logger.LogWarning($"A package was requested in the package.json file that was a peer of {location} but was not contained in the lockfile. {name} - {version.Key}");
+                    singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version.Key}");
                     continue;
                 }
 
