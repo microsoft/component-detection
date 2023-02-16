@@ -35,7 +35,4 @@ public class BaseArguments : IScanArguments
 
     [Option("Output", Required = false, HelpText = "Output path for log files. Defaults to %TMP%")]
     public string Output { get; set; }
-
-    [Option("AdditionalDITargets", Required = false, Separator = ',', HelpText = "Comma separated list of paths to additional dependency injection targets.")]
-    public IEnumerable<string> AdditionalDITargets { get; set; }
 }

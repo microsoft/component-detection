@@ -8,8 +8,6 @@ public interface IScanArguments
 {
     IEnumerable<DirectoryInfo> AdditionalPluginDirectories { get; set; }
 
-    IEnumerable<string> AdditionalDITargets { get; set; }
-
     bool SkipPluginsDirectory { get; set; }
 
     Guid CorrelationId { get; set; }
