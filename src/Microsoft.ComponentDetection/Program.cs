@@ -32,6 +32,9 @@ try
 
     Console.WriteLine($"Execution finished, status: {exitCode}.");
 
+    // Manually dispose to flush logs as we force exit
+    await serviceProvider.DisposeAsync();
+
     // force an exit, not letting any lingering threads not responding.
     Environment.Exit(exitCode);
 }
