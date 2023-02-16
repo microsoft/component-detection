@@ -110,7 +110,6 @@ public class BcdeScanExecutionServiceTests
 
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
         var result = await this.DetectComponentsHappyPathAsync(
@@ -149,7 +148,6 @@ public class BcdeScanExecutionServiceTests
         {
             DetectorCategories = new[] { "Category1", "Category2" },
             DetectorsFilter = new[] { "Detector1", "Detector2" },
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -176,7 +174,6 @@ public class BcdeScanExecutionServiceTests
     {
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -204,7 +201,6 @@ public class BcdeScanExecutionServiceTests
 
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -227,7 +223,6 @@ public class BcdeScanExecutionServiceTests
 
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -285,7 +280,6 @@ public class BcdeScanExecutionServiceTests
 
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -356,7 +350,6 @@ public class BcdeScanExecutionServiceTests
         var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -390,7 +383,6 @@ public class BcdeScanExecutionServiceTests
         var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -426,7 +418,6 @@ public class BcdeScanExecutionServiceTests
         var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -457,7 +448,6 @@ public class BcdeScanExecutionServiceTests
         var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -509,7 +499,6 @@ public class BcdeScanExecutionServiceTests
         var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -550,7 +539,6 @@ public class BcdeScanExecutionServiceTests
         var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -588,7 +576,6 @@ public class BcdeScanExecutionServiceTests
         var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
-            AdditionalPluginDirectories = Enumerable.Empty<DirectoryInfo>(),
             SourceDirectory = this.sourceDirectory,
         };
 
