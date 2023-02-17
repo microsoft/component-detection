@@ -64,20 +64,16 @@ public class ComponentRecorder : IComponentRecorder
 
     public IEnumerable<string> GetSkippedComponents()
     {
-        IEnumerable<string> skippedComponents;
         if (this.singleFileRecorders == null)
         {
             return Enumerable.Empty<string>();
         }
 
-        skippedComponents = this.singleFileRecorders
-            .Select(singleFileRecorder => singleFileRecorder.GetSkippedComponents().Keys)
+        return this.singleFileRecorders
+            .Select(x => x.GetSkippedComponents().Keys)
             .SelectMany(x => x)
-            .GroupBy(x => x)
-            .Select(grouping => grouping.First())
+            .Distinct()
             .ToImmutableList();
-
-        return skippedComponents;
     }
 
     public ISingleFileComponentRecorder CreateSingleFileComponentRecorder(string location)
@@ -123,8 +119,6 @@ public class ComponentRecorder : IComponentRecorder
 
         private readonly object registerUsageLock = new object();
 
-        private readonly object registerSkippedLock = new object();
-
         public SingleFileComponentRecorder(string location, ComponentRecorder recorder, bool enableManualTrackingOfExplicitReferences, ILogger log)
         {
             this.ManifestFileLocation = location;
@@ -157,7 +151,6 @@ public class ComponentRecorder : IComponentRecorder
 
         public IReadOnlyDictionary<string, byte> GetSkippedComponents()
         {
-            // Should this be immutable?
             return this.skippedComponentsInternal;
         }
 
@@ -211,10 +204,7 @@ public class ComponentRecorder : IComponentRecorder
                 throw new ArgumentNullException(paramName: nameof(skippedComponent));
             }
 
-            lock (this.registerSkippedLock)
-            {
-                _ = this.skippedComponentsInternal[skippedComponent] = default;
-            }
+            _ = this.skippedComponentsInternal[skippedComponent] = default;
         }
 
         public void AddAdditionalRelatedFile(string relatedFilePath)
