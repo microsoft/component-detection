@@ -241,6 +241,7 @@ public class RustCrateDetector : FileComponentDetector
             record.Dependencies = dependency;
 
             this.Logger.LogFailedReadingFile(cargoLockFile.Location, e);
+            singleFileComponentRecorder.RegisterPackageParseFailure(record.PackageInfo);
         }
     }
 }

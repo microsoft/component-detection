@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -62,6 +62,20 @@ public class ComponentRecorder : IComponentRecorder
         return detectedComponents;
     }
 
+    public IEnumerable<string> GetSkippedComponents()
+    {
+        if (this.singleFileRecorders == null)
+        {
+            return Enumerable.Empty<string>();
+        }
+
+        return this.singleFileRecorders
+            .Select(x => x.GetSkippedComponents().Keys)
+            .SelectMany(x => x)
+            .Distinct()
+            .ToImmutableList();
+    }
+
     public ISingleFileComponentRecorder CreateSingleFileComponentRecorder(string location)
     {
         if (string.IsNullOrWhiteSpace(location))
@@ -96,6 +110,11 @@ public class ComponentRecorder : IComponentRecorder
 
         private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new ConcurrentDictionary<string, DetectedComponent>();
 
+        /// <summary>
+        /// Dictionary of components which had an error during parsing and a dummy data value that only allocates 1 byte.
+        /// </summary>
+        private readonly ConcurrentDictionary<string, byte> skippedComponentsInternal = new ConcurrentDictionary<string, byte>();
+
         private readonly ComponentRecorder recorder;
 
         private readonly object registerUsageLock = new object();
@@ -128,6 +147,11 @@ public class ComponentRecorder : IComponentRecorder
         {
             // Should this be immutable?
             return this.detectedComponentsInternal;
+        }
+
+        public IReadOnlyDictionary<string, byte> GetSkippedComponents()
+        {
+            return this.skippedComponentsInternal;
         }
 
         public void RegisterUsage(
@@ -171,6 +195,16 @@ public class ComponentRecorder : IComponentRecorder
                 storedComponent = this.detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
                 this.AddComponentToGraph(this.ManifestFileLocation, detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, dependencyScope);
             }
+        }
+
+        public void RegisterPackageParseFailure(string skippedComponent)
+        {
+            if (skippedComponent == null)
+            {
+                throw new ArgumentNullException(paramName: nameof(skippedComponent));
+            }
+
+            _ = this.skippedComponentsInternal[skippedComponent] = default;
         }
 
         public void AddAdditionalRelatedFile(string relatedFilePath)

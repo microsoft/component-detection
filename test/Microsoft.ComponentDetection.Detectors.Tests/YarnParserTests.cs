@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,15 +14,20 @@ using Moq;
 public class YarnParserTests
 {
     private readonly Mock<ILogger> loggerMock;
+    private readonly Mock<ISingleFileComponentRecorder> recorderMock;
 
-    public YarnParserTests() => this.loggerMock = new Mock<ILogger>();
+    public YarnParserTests()
+    {
+        this.loggerMock = new Mock<ILogger>();
+        this.recorderMock = new Mock<ISingleFileComponentRecorder>();
+    }
 
     [TestMethod]
     public void YarnLockParserWithNullBlockFile_Fails()
     {
         var parser = new YarnLockParser(this.loggerMock.Object);
 
-        void Action() => parser.Parse(null, this.loggerMock.Object);
+        void Action() => parser.Parse(this.recorderMock.Object, null, this.loggerMock.Object);
 
         Assert.ThrowsException<ArgumentNullException>(Action);
     }
@@ -65,7 +70,7 @@ public class YarnParserTests
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
         blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
 
-        var file = parser.Parse(blockFile.Object, this.loggerMock.Object);
+        var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
         Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
         Assert.AreEqual(0, file.Entries.Count());
@@ -95,7 +100,7 @@ public class YarnParserTests
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
         blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
 
-        var file = parser.Parse(blockFile.Object, this.loggerMock.Object);
+        var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
         Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
         Assert.AreEqual(3, file.Entries.Count());
@@ -131,7 +136,7 @@ public class YarnParserTests
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
         blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
 
-        var file = parser.Parse(blockFile.Object, this.loggerMock.Object);
+        var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
         Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
         Assert.AreEqual(2, file.Entries.Count());

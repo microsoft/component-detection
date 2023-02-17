@@ -66,7 +66,7 @@ public class PipComponentDetector : FileComponentDetector
                 .Where(x => !x.PackageIsUnsafe())
                 .ToList();
 
-            var roots = await this.pythonResolver.ResolveRootsAsync(listedPackage);
+            var roots = await this.pythonResolver.ResolveRootsAsync(singleFileComponentRecorder, listedPackage);
 
             RecordComponents(
                 singleFileComponentRecorder,

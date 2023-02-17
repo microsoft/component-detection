@@ -20,9 +20,10 @@ public class PythonResolver : IPythonResolver
     /// <summary>
     /// Resolves the root Python packages from the initial list of packages.
     /// </summary>
+    /// <param name="singleFileComponentRecorder">The component recorder for file that is been processed.</param>
     /// <param name="initialPackages">The initial list of packages.</param>
     /// <returns>The root packages, with dependencies associated as children.</returns>
-    public async Task<IList<PipGraphNode>> ResolveRootsAsync(IList<PipDependencySpecification> initialPackages)
+    public async Task<IList<PipGraphNode>> ResolveRootsAsync(ISingleFileComponentRecorder singleFileComponentRecorder, IList<PipDependencySpecification> initialPackages)
     {
         var state = new PythonResolverState();
 
@@ -53,15 +54,16 @@ public class PythonResolver : IPythonResolver
                 else
                 {
                     this.logger.LogWarning($"Root dependency {rootPackage.Name} not found on pypi. Skipping package.");
+                    singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
                 }
             }
         }
 
         // Now queue packages for processing
-        return await this.ProcessQueueAsync(state) ?? new List<PipGraphNode>();
+        return await this.ProcessQueueAsync(singleFileComponentRecorder, state) ?? new List<PipGraphNode>();
     }
 
-    private async Task<IList<PipGraphNode>> ProcessQueueAsync(PythonResolverState state)
+    private async Task<IList<PipGraphNode>> ProcessQueueAsync(ISingleFileComponentRecorder singleFileComponentRecorder, PythonResolverState state)
     {
         while (state.ProcessingQueue.Count > 0)
         {
@@ -109,7 +111,7 @@ public class PythonResolver : IPythonResolver
                     }
                     else
                     {
-                        this.logger.LogWarning($"Dependency Package {dependencyNode.Name} not found in Pypi. Skipping package");
+                        singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                     }
                 }
             }

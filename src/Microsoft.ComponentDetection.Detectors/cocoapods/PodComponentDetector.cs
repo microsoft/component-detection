@@ -237,6 +237,7 @@ public class PodComponentDetector : FileComponentDetector
                 else
                 {
                     this.Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
+                    singleFileComponentRecorder.RegisterPackageParseFailure($"{dependency.Podspec} - {dependency.PodVersion}");
                 }
             }
         }
