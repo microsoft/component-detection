@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Common;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Exceptions;
 
 public sealed class FileWritingService : IFileWritingService
@@ -90,5 +91,14 @@ public sealed class FileWritingService : IFileWritingService
     {
         this.Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var (filename, streamWriter) in this.bufferedStreams)
+        {
+            await streamWriter.DisposeAsync();
+            this.bufferedStreams.TryRemove(filename, out _);
+        }
     }
 }
