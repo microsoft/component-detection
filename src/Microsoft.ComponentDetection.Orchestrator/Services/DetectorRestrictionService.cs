@@ -4,15 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Exceptions;
+using Microsoft.Extensions.Logging;
 
 public class DetectorRestrictionService : IDetectorRestrictionService
 {
     private readonly IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
     private readonly string newDetectorId = "NpmWithRoots";
 
-    private readonly ILogger logger;
+    private readonly ILogger<DetectorRestrictionService> logger;
 
-    public DetectorRestrictionService(ILogger logger) => this.logger = logger;
+    public DetectorRestrictionService(ILogger<DetectorRestrictionService> logger) => this.logger = logger;
 
     public IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions restrictions, IEnumerable<IComponentDetector> detectors)
     {
@@ -46,7 +47,7 @@ public class DetectorRestrictionService : IDetectorRestrictionService
                     }
                     else
                     {
-                        this.logger.LogWarning($"The detector '{id}' has been phased out, we will run the '{this.newDetectorId}' detector which replaced its functionality.");
+                        this.logger.LogWarning("The detector '{OldId}' has been phased out, we will run the '{NewId}' detector which replaced its functionality.", id, this.newDetectorId);
                     }
                 }
             }

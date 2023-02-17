@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,11 +12,13 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
 
 [TestClass]
+[SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Test class")]
 public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 {
     private readonly Mock<IPythonCommandService> pythonCommandService;
@@ -34,7 +37,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
     public async Task TestPipDetector_PythonNotInstalledAsync()
     {
         var mockLogger = new Mock<ILogger>();
-        mockLogger.Setup(x => x.LogInfo(It.Is<string>(l => l.Contains("No python found"))));
+        mockLogger.Setup(x => x.LogInformation(It.Is<string>(l => l.Contains("No python found"))));
         this.DetectorTestUtility.AddServiceMock(mockLogger);
 
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(false);

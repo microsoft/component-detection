@@ -48,7 +48,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileUtilityService, FileUtilityService>();
         services.AddSingleton<IFileWritingService, FileWritingService>();
         services.AddSingleton<IGraphTranslationService, DefaultGraphTranslationService>();
-        services.AddSingleton<ILogger, Logger>();
         services.AddSingleton<IPathUtilityService, PathUtilityService>();
         services.AddSingleton<ISafeFileEnumerableFactory, SafeFileEnumerableFactory>();
 

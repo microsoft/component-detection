@@ -5,11 +5,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json"/>
-        <PackageReference Include="packageurl-dotnet"/>
-        <PackageReference Include="System.Memory"/>
-        <PackageReference Include="System.Reactive"/>
-        <PackageReference Include="System.Threading.Tasks.Dataflow"/>
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="packageurl-dotnet" />
+        <PackageReference Include="Serilog" />
+        <PackageReference Include="Serilog.Extensions.Hosting" />
+        <PackageReference Include="Serilog.Sinks.Console" />
+        <PackageReference Include="Serilog.Sinks.File" />
+        <PackageReference Include="System.Memory" />
+        <PackageReference Include="System.Reactive" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
 
 </Project>

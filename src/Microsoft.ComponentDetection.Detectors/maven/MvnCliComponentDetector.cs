@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Maven;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +12,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 public class MvnCliComponentDetector : FileComponentDetector
 {
@@ -20,7 +22,7 @@ public class MvnCliComponentDetector : FileComponentDetector
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         IMavenCommandService mavenCommandService,
-        ILogger logger)
+        ILogger<MvnCliComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -42,7 +44,7 @@ public class MvnCliComponentDetector : FileComponentDetector
     {
         if (!await this.mavenCommandService.MavenCLIExistsAsync())
         {
-            this.Logger.LogVerbose("Skipping maven detection as maven is not available in the local PATH.");
+            this.Logger.LogDebug("Skipping maven detection as maven is not available in the local PATH.");
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
 
@@ -143,7 +145,7 @@ public class MvnCliComponentDetector : FileComponentDetector
 
                         if (last != null && current.Files.FirstOrDefault(x => string.Equals(Path.GetFileName(x.Location), "pom.xml", StringComparison.OrdinalIgnoreCase)) != null)
                         {
-                            this.Logger.LogVerbose($"Ignoring pom.xml at {item.Location}, as it has a parent pom.xml that will be processed at {current.Name}\\pom.xml .");
+                            this.Logger.LogDebug("Ignoring pom.xml at {ChildPomXmlLocation}, as it has a parent pom.xml that will be processed at {ParentDirName}\\pom.xml .", item.Location, current.Name);
                             break;
                         }
 

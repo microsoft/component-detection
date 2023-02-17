@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +14,7 @@ using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
@@ -29,11 +31,11 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
     public YarnLockDetectorTests()
     {
         // TODO: Mock all of this correctly
-        var loggerMock = new Mock<ILogger>();
+        var loggerMock = new Mock<ILogger<YarnLockParser>>();
         this.yarnLockParser = new YarnLockParser(loggerMock.Object);
         this.yarnLockFileFactory = new YarnLockFileFactory(new[] { this.yarnLockParser });
         var yarnLockFileFactoryMock = new Mock<IYarnLockFileFactory>();
-        yarnLockFileFactoryMock.Setup(x => x.ParseYarnLockFileAsync(It.IsAny<Stream>(), It.IsAny<ILogger>()))
+        yarnLockFileFactoryMock.Setup(x => x.ParseYarnLockFileAsync(It.IsAny<Stream>(), It.IsAny<ILogger<YarnLockParser>>()))
             .Returns((Stream stream, ILogger logger) => this.yarnLockFileFactory.ParseYarnLockFileAsync(stream, logger));
         this.DetectorTestUtility.AddServiceMock(yarnLockFileFactoryMock);
     }

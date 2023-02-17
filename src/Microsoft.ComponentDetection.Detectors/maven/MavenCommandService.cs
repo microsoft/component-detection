@@ -1,9 +1,11 @@
-namespace Microsoft.ComponentDetection.Detectors.Maven;
+﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
+using Microsoft.Extensions.Logging;
 
 public class MavenCommandService : IMavenCommandService
 {
@@ -15,12 +17,12 @@ public class MavenCommandService : IMavenCommandService
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IMavenStyleDependencyGraphParserService parserService;
-    private readonly ILogger logger;
+    private readonly ILogger<MavenCommandService> logger;
 
     public MavenCommandService(
         ICommandLineInvocationService commandLineInvocationService,
         IMavenStyleDependencyGraphParserService parserService,
-        ILogger logger)
+        ILogger<MavenCommandService> logger)
     {
         this.commandLineInvocationService = commandLineInvocationService;
         this.parserService = parserService;
@@ -41,8 +43,8 @@ public class MavenCommandService : IMavenCommandService
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, AdditionalValidCommands, cliParameters);
         if (result.ExitCode != 0)
         {
-            this.logger.LogVerbose($"Mvn execution failed for pom file: {pomFile.Location}");
-            this.logger.LogError(string.IsNullOrEmpty(result.StdErr) ? result.StdOut : result.StdErr);
+            this.logger.LogDebug("Mvn execution failed for pom file: {PomFileLocation}", pomFile.Location);
+            this.logger.LogError("Mvn output: {MvnStdErr}", string.IsNullOrEmpty(result.StdErr) ? result.StdOut : result.StdErr);
         }
     }
 

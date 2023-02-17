@@ -12,6 +12,7 @@ using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDetector
@@ -23,8 +24,6 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
     private readonly ConcurrentDictionary<string, int> frameworkComponentsThatWereOmmittedWithCount = new ConcurrentDictionary<string, int>();
 
     private readonly List<string> netCoreFrameworkNames = new List<string> { "Microsoft.AspNetCore.App", "Microsoft.AspNetCore.Razor.Design", "Microsoft.NETCore.App" };
-
-    private readonly HashSet<string> alreadyLoggedWarnings = new HashSet<string>();
 
     // This list is meant to encompass all net standard dependencies, but likely contains some net core app 1.x ones, too.
     // The specific guidance we got around populating this list is to do so based on creating a dotnet core 1.x app to make sure we had the complete
@@ -191,7 +190,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         IFileUtilityService fileUtilityService,
-        ILogger logger)
+        ILogger<NuGetProjectModelProjectCentricComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -243,7 +242,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         catch (Exception e)
         {
             // If something went wrong, just ignore the package
-            this.Logger.LogFailedReadingFile(processRequest.ComponentStream.Location, e);
+            this.Logger.LogError(e, "Failed to process NuGet lockfile {NuGetLockFile}", processRequest.ComponentStream.Location);
         }
 
         return Task.CompletedTask;
@@ -382,12 +381,11 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         if (matchingLibrary == null)
         {
             matchingLibrary = matchingLibraryNames.First();
-            var logMessage = $"Couldn't satisfy lookup for {(versionRange != null ? versionRange.ToNormalizedString() : version.ToString())}. Falling back to first found component for {matchingLibrary.Name}, resolving to version {matchingLibrary.Version}.";
-            if (!this.alreadyLoggedWarnings.Contains(logMessage))
-            {
-                this.Logger.LogWarning(logMessage);
-                this.alreadyLoggedWarnings.Add(logMessage);
-            }
+            this.Logger.LogWarning(
+                "Couldn't satisfy lookup for {Version}. Falling back to first found component for {MatchingLibraryName}, resolving to version {MatchingLibraryVersion}.",
+                versionRange != null ? versionRange.ToNormalizedString() : version.ToString(),
+                matchingLibrary.Name,
+                matchingLibrary.Version);
         }
 
         return matchingLibrary;

@@ -8,6 +8,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
+using Microsoft.Extensions.Logging;
 
 public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
 {
@@ -21,7 +22,7 @@ public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
         IDetectorProcessingService detectorProcessingService,
         IDetectorRestrictionService detectorRestrictionService,
         IGraphTranslationService graphTranslationService,
-        ILogger logger)
+        ILogger<BcdeScanExecutionService> logger)
     {
         this.detectors = detectors;
         this.detectorProcessingService = detectorProcessingService;
@@ -32,12 +33,12 @@ public class BcdeScanExecutionService : ServiceBase, IBcdeScanExecutionService
 
     public async Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments)
     {
-        this.Logger.LogCreateLoggingGroup();
+        using var scope = this.Logger.BeginScope("Executing BCDE scan");
 
         var detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
         var detectors = this.detectorRestrictionService.ApplyRestrictions(detectorRestrictions, this.detectors).ToImmutableList();
 
-        this.Logger.LogVerbose($"Finished applying restrictions to detectors.");
+        this.Logger.LogDebug("Finished applying restrictions to detectors.");
 
         var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
         var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, detectionArguments);

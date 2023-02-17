@@ -14,6 +14,7 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using static System.Environment;
 
@@ -23,7 +24,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
 
     public DetectorProcessingService(
         IObservableDirectoryWalkerFactory scanner,
-        ILogger logger)
+        ILogger<DetectorProcessingService> logger)
     {
         this.scanner = scanner;
         this.Logger = logger;
@@ -31,8 +32,8 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
 
     public async Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions)
     {
-        this.Logger.LogCreateLoggingGroup();
-        this.Logger.LogInfo($"Finding components...");
+        using var scope = this.Logger.BeginScope("Processing detectors");
+        this.Logger.LogInformation($"Finding components...");
 
         var stopwatch = Stopwatch.StartNew();
         var exitCode = ProcessingResultCode.Success;
@@ -119,8 +120,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         var totalElapsedTime = stopwatch.Elapsed.TotalSeconds;
         this.LogTabularOutput(this.Logger, providerElapsedTime, totalElapsedTime);
 
-        this.Logger.LogCreateLoggingGroup();
-        this.Logger.LogInfo($"Detection time: {totalElapsedTime} seconds.");
+        this.Logger.LogInformation("Detection time: {ElapsedTime} seconds.", totalElapsedTime);
 
         return detectorProcessingResult;
     }
@@ -163,7 +163,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
                         && (pathOfParentOfDirectoryToConsider.Equals(pathOfParentOfDirectoryToExclude, StringComparison.Ordinal)
                             || pathOfParentOfDirectoryToConsider.ToString().Equals(valueTuple.rootedLinuxSymlinkCompatibleRelativePathToExclude, StringComparison.Ordinal)))
                     {
-                        this.Logger.LogVerbose($"Excluding folder {Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString())}.");
+                        this.Logger.LogDebug("Excluding folder {Folder}.", Path.Combine(pathOfParentOfDirectoryToConsider, nameOfDirectoryToConsider));
                         return true;
                     }
                 }
@@ -195,7 +195,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
             {
                 if (minimatcherKeyValue.Value.IsMatch(path))
                 {
-                    this.Logger.LogVerbose($"Excluding folder {path} because it matched glob {minimatcherKeyValue.Key}.");
+                    this.Logger.LogDebug("Excluding folder {Path} because it matched glob {Glob}.", path, minimatcherKeyValue.Key);
                     return true;
                 }
 
@@ -309,7 +309,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         foreach (var line in tsf.GenerateString(rows)
                      .Split(new string[] { NewLine }, StringSplitOptions.None))
         {
-            this.Logger.LogInfo(line);
+            this.Logger.LogInformation("{Line}", line);
         }
     }
 }

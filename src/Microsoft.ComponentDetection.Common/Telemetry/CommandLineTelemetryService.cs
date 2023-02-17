@@ -1,8 +1,9 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Telemetry;
+
 using System;
 using System.Collections.Concurrent;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
-using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -12,12 +13,12 @@ internal class CommandLineTelemetryService : ITelemetryService
 
     public const string TelemetryRelativePath = "ScanTelemetry_{timestamp}.json";
 
-    private readonly IFileWritingService fileWritingService;
     private readonly ILogger logger;
+    private readonly IFileWritingService fileWritingService;
 
     private TelemetryMode telemetryMode = TelemetryMode.Production;
 
-    public CommandLineTelemetryService(ILogger logger, IFileWritingService fileWritingService)
+    public CommandLineTelemetryService(ILogger<CommandLineTelemetryService> logger, IFileWritingService fileWritingService)
     {
         this.logger = logger;
         this.fileWritingService = fileWritingService;
@@ -40,7 +41,7 @@ internal class CommandLineTelemetryService : ITelemetryService
 
             if (this.telemetryMode == TelemetryMode.Debug)
             {
-                this.logger.LogInfo(jsonRecord.ToString());
+                this.logger.LogInformation("Telemetry record: {Record}", jsonRecord.ToString());
             }
         }
     }

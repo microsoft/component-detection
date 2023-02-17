@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.CocoaPods;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +9,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
@@ -17,7 +19,7 @@ public class PodComponentDetector : FileComponentDetector
     public PodComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger logger)
+        ILogger<PodComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -39,7 +41,7 @@ public class PodComponentDetector : FileComponentDetector
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        this.Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
+        this.Logger.LogDebug("Found {Pattern}: {Location}", file.Pattern, file.Location);
 
         try
         {
@@ -49,7 +51,7 @@ public class PodComponentDetector : FileComponentDetector
         }
         catch (Exception e)
         {
-            this.Logger.LogFailedReadingFile(file.Location, e);
+            this.Logger.LogError(e, "Error parsing Podfile.lock");
         }
     }
 
@@ -236,7 +238,7 @@ public class PodComponentDetector : FileComponentDetector
                 }
                 else
                 {
-                    this.Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
+                    this.Logger.LogWarning("Missing podspec declaration. podspec={Podspec}, version={PodVersion}", dependency.Podspec, dependency.PodVersion);
                 }
             }
         }

@@ -2,17 +2,22 @@
 
     <ItemGroup>
         <PackageReference Include="DotNet.Glob" />
+        <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="morelinq" />
         <PackageReference Include="NuGet.ProjectModel" />
         <PackageReference Include="NuGet.Versioning" />
         <PackageReference Include="Polly" />
         <PackageReference Include="Semver" />
+        <PackageReference Include="Serilog" />
+        <PackageReference Include="Serilog.Extensions.Hosting" />
+        <PackageReference Include="Serilog.Sinks.Console" />
+        <PackageReference Include="Serilog.Sinks.File" />
         <PackageReference Include="yamldotnet" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
-        <PackageReference Include="Tomlyn"/>
+        <PackageReference Include="Tomlyn" />
         <PackageReference Include="Valleysoft.DockerfileModel " />
     </ItemGroup>
 

@@ -1,11 +1,11 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
@@ -18,7 +18,7 @@ public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
     public BcdeScanCommandService(
         IFileWritingService fileWritingService,
         IBcdeScanExecutionService bcdeScanExecutionService,
-        ILogger logger)
+        ILogger<BcdeScanCommandService> logger)
     {
         this.fileWritingService = fileWritingService;
         this.bcdeScanExecutionService = bcdeScanExecutionService;
@@ -44,12 +44,12 @@ public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
 
         if (detectionArguments.ManifestFile != null)
         {
-            this.Logger.LogInfo($"Scan Manifest file: {detectionArguments.ManifestFile.FullName}");
+            this.Logger.LogInformation("Scan Manifest file: {ManifestFile}", detectionArguments.ManifestFile.FullName);
             userRequestedManifestPath = detectionArguments.ManifestFile;
         }
         else
         {
-            this.Logger.LogInfo($"Scan Manifest file: {this.fileWritingService.ResolveFilePath(ManifestRelativePath)}");
+            this.Logger.LogInformation("Scan Manifest file: {ManifestFile}", this.fileWritingService.ResolveFilePath(ManifestRelativePath));
         }
 
         if (userRequestedManifestPath == null)

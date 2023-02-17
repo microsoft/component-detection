@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 public class PipComponentDetector : FileComponentDetector
 {
@@ -18,7 +20,7 @@ public class PipComponentDetector : FileComponentDetector
         IObservableDirectoryWalkerFactory walkerFactory,
         IPythonCommandService pythonCommandService,
         IPythonResolver pythonResolver,
-        ILogger logger)
+        ILogger<PipComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -42,7 +44,7 @@ public class PipComponentDetector : FileComponentDetector
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         if (!await this.pythonCommandService.PythonExistsAsync(pythonExePath))
         {
-            this.Logger.LogInfo($"No python found on system. Python detection will not run.");
+            this.Logger.LogInformation($"No python found on system. Python detection will not run.");
 
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
@@ -79,7 +81,7 @@ public class PipComponentDetector : FileComponentDetector
         }
         catch (Exception e)
         {
-            this.Logger.LogFailedReadingFile(file.Location, e);
+            this.Logger.LogError(e, "Error while parsing pip components");
         }
     }
 

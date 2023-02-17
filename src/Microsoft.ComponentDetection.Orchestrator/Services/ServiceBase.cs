@@ -1,5 +1,6 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
-using Microsoft.ComponentDetection.Contracts;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
+using Microsoft.Extensions.Logging;
 
 public abstract class ServiceBase
 {

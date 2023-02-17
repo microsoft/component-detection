@@ -1,11 +1,12 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -14,13 +15,13 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class PipResolverTests
 {
-    private Mock<ILogger> loggerMock;
+    private Mock<ILogger<PythonResolver>> loggerMock;
     private Mock<IPyPiClient> pyPiClient;
 
     [TestInitialize]
     public void TestInitialize()
     {
-        this.loggerMock = new Mock<ILogger>();
+        this.loggerMock = new Mock<ILogger<PythonResolver>>();
         this.pyPiClient = new Mock<IPyPiClient>();
     }
 

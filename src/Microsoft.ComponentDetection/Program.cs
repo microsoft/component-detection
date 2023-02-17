@@ -6,6 +6,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 try
 {
@@ -20,6 +21,7 @@ try
 
     var serviceProvider = new ServiceCollection()
         .AddComponentDetection()
+        .AddLogging(builder => builder.AddSerilog())
         .BuildServiceProvider();
     var orchestrator = serviceProvider.GetRequiredService<Orchestrator>();
     var result = await orchestrator.LoadAsync(args);
@@ -31,6 +33,8 @@ try
     }
 
     Console.WriteLine($"Execution finished, status: {exitCode}.");
+
+    await Log.CloseAndFlushAsync();
 
     // force an exit, not letting any lingering threads not responding.
     Environment.Exit(exitCode);

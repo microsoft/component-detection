@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 /// <summary>Specialized base class for file based component detection.</summary>
 public abstract class FileComponentDetector : IComponentDetector
@@ -71,7 +73,7 @@ public abstract class FileComponentDetector : IComponentDetector
 
         var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
-        this.Logger?.LogVerbose($"Registered {this.GetType().FullName}");
+        this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
         return this.ProcessAsync(filteredObservable, request.DetectorArgs);
     }
 

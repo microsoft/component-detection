@@ -7,6 +7,7 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -16,7 +17,7 @@ using Moq;
 public class BcdeDevCommandServiceTests
 {
     private readonly Mock<IBcdeScanExecutionService> scanExecutionServiceMock;
-    private readonly Mock<ILogger> loggerMock;
+    private readonly Mock<ILogger<BcdeDevCommandService>> loggerMock;
 
     private readonly ScannedComponent[] scannedComponents;
 
@@ -25,7 +26,7 @@ public class BcdeDevCommandServiceTests
     public BcdeDevCommandServiceTests()
     {
         this.scanExecutionServiceMock = new Mock<IBcdeScanExecutionService>();
-        this.loggerMock = new Mock<ILogger>();
+        this.loggerMock = new Mock<ILogger<BcdeDevCommandService>>();
         this.serviceUnderTest = new BcdeDevCommandService(this.scanExecutionServiceMock.Object, this.loggerMock.Object);
 
         this.scannedComponents = new ScannedComponent[]

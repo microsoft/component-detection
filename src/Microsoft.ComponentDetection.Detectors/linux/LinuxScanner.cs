@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Linux;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 public class LinuxScanner : ILinuxScanner
@@ -27,9 +29,9 @@ public class LinuxScanner : ILinuxScanner
     private static readonly int SemaphoreTimeout = Convert.ToInt32(TimeSpan.FromHours(1).TotalMilliseconds);
 
     private readonly IDockerService dockerService;
-    private readonly ILogger logger;
+    private readonly ILogger<LinuxScanner> logger;
 
-    public LinuxScanner(IDockerService dockerService, ILogger logger)
+    public LinuxScanner(IDockerService dockerService, ILogger<LinuxScanner> logger)
     {
         this.dockerService = dockerService;
         this.logger = logger;
@@ -62,14 +64,14 @@ public class LinuxScanner : ILinuxScanner
                 catch (Exception e)
                 {
                     syftTelemetryRecord.Exception = JsonConvert.SerializeObject(e);
-                    this.logger.LogException(e, false);
+                    this.logger.LogError(e, "Failed to run syft");
                     throw;
                 }
             }
             else
             {
                 record.SemaphoreFailure = true;
-                this.logger.LogWarning($"Failed to enter the docker semaphore for image {imageHash}");
+                this.logger.LogWarning("Failed to enter the docker semaphore for image {ImageHash}", imageHash);
             }
         }
         finally

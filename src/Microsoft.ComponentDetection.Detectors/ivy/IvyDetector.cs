@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Ivy;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +11,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 /// <summary>
@@ -48,7 +50,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
-        ILogger logger)
+        ILogger<IvyDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -73,7 +75,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
             return processRequests;
         }
 
-        this.Logger.LogVerbose("Skipping Ivy detection as ant is not available in the local PATH.");
+        this.Logger.LogDebug("Skipping Ivy detection as ant is not available in the local PATH.");
         return Enumerable.Empty<ProcessRequest>().ToObservable();
     }
 
@@ -88,18 +90,18 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         {
             if (File.Exists(ivySettingsFilePath))
             {
-                this.Logger.LogInfo($"Processing {ivyXmlFile.Location} and ivysettings.xml.");
+                this.Logger.LogInformation("Processing {IvyXmlFileLocation} and ivysettings.xml.", ivyXmlFile.Location);
                 await this.ProcessIvyAndIvySettingsFilesAsync(singleFileComponentRecorder, ivyXmlFile.Location, ivySettingsFilePath);
             }
             else
             {
-                this.Logger.LogInfo($"Processing {ivyXmlFile.Location}.");
+                this.Logger.LogInformation("Processing {IvyXmlFile}.", ivyXmlFile.Location);
                 await this.ProcessIvyAndIvySettingsFilesAsync(singleFileComponentRecorder, ivyXmlFile.Location, null);
             }
         }
         else
         {
-            this.Logger.LogError($"File {ivyXmlFile.Location} passed to OnFileFound, but does not exist!");
+            this.Logger.LogError("File {IvyXmlFileLocation} passed to OnFileFound, but does not exist!", ivyXmlFile.Location);
         }
     }
 
@@ -124,7 +126,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         try
         {
             var workingDirectory = Path.Combine(Path.GetTempPath(), "ComponentDetection_Ivy");
-            this.Logger.LogVerbose($"Preparing temporary Ivy project in {workingDirectory}");
+            this.Logger.LogDebug("Preparing temporary Ivy project in {WorkingDirectory}", workingDirectory);
             if (Directory.Exists(workingDirectory))
             {
                 Directory.Delete(workingDirectory, recursive: true);
@@ -141,10 +143,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         }
         catch (Exception e)
         {
-            this.Logger.LogError("Exception occurred during Ivy file processing: " + e);
-
-            // If something went wrong, just ignore the file
-            this.Logger.LogFailedReadingFile(ivyXmlFile, e);
+            this.Logger.LogError(e, "Exception occurred during Ivy file processing: ");
         }
     }
 
@@ -183,34 +182,34 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
     private async Task<bool> RunAntToDetectDependenciesAsync(string workingDirectory)
     {
         var ret = false;
-        this.Logger.LogVerbose($"Executing command `ant resolve-dependencies` in directory {workingDirectory}");
+        this.Logger.LogDebug("Executing command `ant resolve-dependencies` in directory {WorkingDirectory}", workingDirectory);
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, additionalCandidateCommands: AdditionalValidCommands, "-buildfile", workingDirectory, "resolve-dependencies");
         if (result.ExitCode == 0)
         {
-            this.Logger.LogVerbose("Ant command succeeded");
+            this.Logger.LogDebug("Ant command succeeded");
             ret = true;
         }
         else
         {
-            this.Logger.LogError($"Ant command failed with return code {result.ExitCode}");
+            this.Logger.LogError("Ant command failed with return code {ExitCode}", result.ExitCode);
         }
 
         if (string.IsNullOrWhiteSpace(result.StdOut))
         {
-            this.Logger.LogVerbose("Ant command wrote nothing to stdout.");
+            this.Logger.LogDebug("Ant command wrote nothing to stdout.");
         }
         else
         {
-            this.Logger.LogVerbose("Ant command stdout:\n" + result.StdOut);
+            this.Logger.LogDebug("Ant command stdout: {AntCmdStdOut}", result.StdOut);
         }
 
         if (string.IsNullOrWhiteSpace(result.StdErr))
         {
-            this.Logger.LogVerbose("Ant command wrote nothing to stderr.");
+            this.Logger.LogDebug("Ant command wrote nothing to stderr.");
         }
         else
         {
-            this.Logger.LogWarning("Ant command stderr:\n" + result.StdErr);
+            this.Logger.LogWarning("Ant command stderr: {AntCmdStdErr}", result.StdErr);
         }
 
         return ret;
@@ -236,7 +235,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
             }
             else
             {
-                this.Logger.LogWarning($"Dependency \"{component.Id}\" could not be resolved by Ivy, and so has not been recorded by Component Detection.");
+                this.Logger.LogWarning("Dependency \"{MavenComponentId}\" could not be resolved by Ivy, and so has not been recorded by Component Detection.", component.Id);
             }
         }
     }

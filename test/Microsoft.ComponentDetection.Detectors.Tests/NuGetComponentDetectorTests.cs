@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -13,12 +14,14 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
+[SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Test class")]
 public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetector>
 {
     private static readonly IEnumerable<string> DetectorSearchPattern =
@@ -166,7 +169,7 @@ NUGET
             .AddServiceMock(mockLogger)
             .ExecuteDetectorAsync();
 
-        mockLogger.Verify(x => x.LogFailedReadingFile(Path.Join(Path.GetTempPath(), "malformed.nupkg"), It.IsAny<Exception>()));
+        mockLogger.Verify(x => x.LogError(It.IsAny<Exception>(), Path.Join(Path.GetTempPath(), "malformed.nupkg")));
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
@@ -239,7 +242,7 @@ NUGET
         var detector = new NuGetComponentDetector(
             componentStreamEnumerableFactoryMock.Object,
             directoryWalkerMock.Object,
-            mockLogger.Object);
+            new Mock<ILogger<NuGetComponentDetector>>().Object);
 
         var scanResult = await detector.ExecuteDetectorAsync(new ScanRequest(new DirectoryInfo(sourceDirectoryPath), (name, directoryName) => false, null, new Dictionary<string, string>(), null, componentRecorder));
 

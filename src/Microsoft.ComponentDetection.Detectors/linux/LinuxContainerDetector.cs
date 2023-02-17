@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Linux;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,14 +14,15 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 using Microsoft.ComponentDetection.Detectors.Linux.Exceptions;
+using Microsoft.Extensions.Logging;
 
 public class LinuxContainerDetector : IComponentDetector
 {
     private readonly ILinuxScanner linuxScanner;
     private readonly IDockerService dockerService;
-    private readonly ILogger logger;
+    private readonly ILogger<LinuxContainerDetector> logger;
 
-    public LinuxContainerDetector(ILinuxScanner linuxScanner, IDockerService dockerService, ILogger logger)
+    public LinuxContainerDetector(ILinuxScanner linuxScanner, IDockerService dockerService, ILogger<LinuxContainerDetector> logger)
     {
         this.linuxScanner = linuxScanner;
         this.dockerService = dockerService;
@@ -47,7 +49,7 @@ public class LinuxContainerDetector : IComponentDetector
 
         if (imagesToProcess == null || !imagesToProcess.Any())
         {
-            this.logger.LogInfo("No instructions received to scan docker images.");
+            this.logger.LogInformation("No instructions received to scan docker images.");
             return EmptySuccessfulScan();
         }
 
@@ -59,7 +61,7 @@ public class LinuxContainerDetector : IComponentDetector
             {
                 Os = RuntimeInformation.OSDescription,
             };
-            this.logger.LogInfo("Linux containers are not available on this host.");
+            this.logger.LogInformation("Linux containers are not available on this host.");
             return EmptySuccessfulScan();
         }
 
@@ -145,7 +147,7 @@ public class LinuxContainerDetector : IComponentDetector
                 }
                 catch (Exception e)
                 {
-                    this.logger.LogWarning($"Processing of image {image} failed with exception: {e.Message}");
+                    this.logger.LogWarning(e, "Processing of image {DockerImage} failed", image);
                     using var record = new LinuxContainerDetectorImageDetectionFailed
                     {
                         ExceptionType = e.GetType().ToString(),
@@ -188,7 +190,7 @@ public class LinuxContainerDetector : IComponentDetector
             }
             catch (Exception e)
             {
-                this.logger.LogWarning($"Scanning of image {kvp.Key} failed with exception: {e.Message}");
+                this.logger.LogWarning(e, "Scanning of image {KvpKey} failed", kvp.Key);
                 using var record = new LinuxContainerDetectorImageDetectionFailed
                 {
                     ExceptionType = e.GetType().ToString(),
@@ -214,14 +216,14 @@ public class LinuxContainerDetector : IComponentDetector
         if (string.IsNullOrEmpty(scannedImageDetails.BaseImageRef))
         {
             record.BaseImageLayerMessage = $"Base image annotations not found on image {image}, Results will not be mapped to base image layers";
-            this.logger.LogInfo(record.BaseImageLayerMessage);
+            this.logger.LogInformation("Base image annotations not found on image {DockerImage}, Results will not be mapped to base image layers", image);
             return 0;
         }
 
         if (scannedImageDetails.BaseImageRef == "scratch")
         {
             record.BaseImageLayerMessage = $"{image} has no base image";
-            this.logger.LogInfo(record.BaseImageLayerMessage);
+            this.logger.LogInformation("{DockerImage} has no base image", image);
             return 0;
         }
 
@@ -234,7 +236,7 @@ public class LinuxContainerDetector : IComponentDetector
               await this.dockerService.TryPullImageAsync(refWithDigest, cancellationToken)))
         {
             record.BaseImageLayerMessage = $"Base image {refWithDigest} could not be found locally and could not be pulled. Results will not be mapped to base image layers";
-            this.logger.LogInfo(record.BaseImageLayerMessage);
+            this.logger.LogInformation("Base image {BaseImage} could not be found locally and could not be pulled. Results will not be mapped to base image layers", refWithDigest);
             return 0;
         }
 
@@ -242,7 +244,7 @@ public class LinuxContainerDetector : IComponentDetector
         if (!this.ValidateBaseImageLayers(scannedImageDetails, baseImageDetails))
         {
             record.BaseImageLayerMessage = $"Docker image {image} was set to have base image {refWithDigest} but is not built off of it. Results will not be mapped to base image layers";
-            this.logger.LogInfo(record.BaseImageLayerMessage);
+            this.logger.LogInformation("Docker image {DockerImage} was set to have base image {BaseImage} but is not built off of it. Results will not be mapped to base image layers", image, refWithDigest);
             return 0;
         }
 

@@ -1,9 +1,11 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.Extensions.Logging;
 
 public class DetectorListingCommandService : ServiceBase, IArgumentHandlingService
 {
@@ -11,7 +13,7 @@ public class DetectorListingCommandService : ServiceBase, IArgumentHandlingServi
 
     public DetectorListingCommandService(
         IEnumerable<IComponentDetector> detectors,
-        ILogger logger)
+        ILogger<DetectorListingCommandService> logger)
     {
         this.detectors = detectors;
         this.Logger = logger;
@@ -33,10 +35,7 @@ public class DetectorListingCommandService : ServiceBase, IArgumentHandlingServi
 
     private async Task<ProcessingResultCode> ListDetectorsAsync(IScanArguments listArguments)
     {
-        foreach (var detector in this.detectors)
-        {
-            this.Logger.LogInfo($"{detector.Id}");
-        }
+        this.Logger.LogInformation("Detectors: {DetectorList}", string.Join(',', this.detectors.Select(x => x.Id)));
 
         return await Task.FromResult(ProcessingResultCode.Success);
     }

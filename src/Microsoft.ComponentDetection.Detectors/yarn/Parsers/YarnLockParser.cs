@@ -1,8 +1,9 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 
 public class YarnLockParser : IYarnLockParser
 {
@@ -16,9 +17,9 @@ public class YarnLockParser : IYarnLockParser
 
     private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
 
-    private readonly ILogger logger;
+    private readonly ILogger<YarnLockParser> logger;
 
-    public YarnLockParser(ILogger logger) => this.logger = logger;
+    public YarnLockParser(ILogger<YarnLockParser> logger) => this.logger = logger;
 
     public static string NormalizeVersion(string version)
     {
@@ -63,13 +64,13 @@ public class YarnLockParser : IYarnLockParser
 
             if (string.IsNullOrWhiteSpace(yarnEntry.Name))
             {
-                logger.LogWarning($"Failed to read a name for block {block.Title}. The entry will be skipped.");
+                logger.LogWarning("Failed to read a name for block {BlockTitle}. The entry will be skipped.", block.Title);
                 continue;
             }
 
             if (!block.Values.TryGetValue(VersionString, out var version))
             {
-                logger.LogWarning($"Failed to read a version for {yarnEntry.Name}. The entry will be skipped.");
+                logger.LogWarning("Failed to read a version for {YarnEntryName}. The entry will be skipped.", yarnEntry.Name);
                 continue;
             }
 

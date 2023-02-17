@@ -11,10 +11,11 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.Extensions.Logging;
 
 public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationService
 {
-    public DefaultGraphTranslationService(ILogger logger) => this.Logger = logger;
+    public DefaultGraphTranslationService(ILogger<DefaultGraphTranslationService> logger) => this.Logger = logger;
 
     public ScanResult GenerateScanResultFromProcessingResult(DetectorProcessingResult detectorProcessingResult, IDetectionArguments detectionArguments)
     {
@@ -207,9 +208,9 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
 
                 relativePathSet.Add(relativePath);
             }
-            catch (UriFormatException)
+            catch (UriFormatException e)
             {
-                logger.LogVerbose($"The path: {path} could not be resolved relative to the root {rootUri}");
+                logger.LogDebug(e, "The path: {Path} could not be resolved relative to the root {RootUri}", path, rootUri);
             }
         }
 
