@@ -31,7 +31,7 @@ public class YarnLockParser : IYarnLockParser
         return SupportedVersions.Contains(yarnLockVersion);
     }
 
-    public YarnLockFile Parse(IYarnBlockFile fileLines, ILogger logger)
+    public YarnLockFile Parse(ISingleFileComponentRecorder singleFileComponentRecorder, IYarnBlockFile fileLines, ILogger logger)
     {
         if (fileLines == null)
         {
@@ -71,6 +71,7 @@ public class YarnLockParser : IYarnLockParser
             if (!block.Values.TryGetValue(VersionString, out var version))
             {
                 logger.LogWarning("Failed to read a version for {YarnEntryName}. The entry will be skipped.", yarnEntry.Name);
+                singleFileComponentRecorder.RegisterPackageParseFailure(yarnEntry.Name);
                 continue;
             }
 

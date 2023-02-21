@@ -6,5 +6,5 @@ using Microsoft.Extensions.Logging;
 
 public interface IYarnLockFileFactory
 {
-    Task<YarnLockFile> ParseYarnLockFileAsync(Stream file, ILogger logger);
+    Task<YarnLockFile> ParseYarnLockFileAsync(ISingleFileComponentRecorder singleFileComponentRecorder, Stream file, ILogger logger);
 }

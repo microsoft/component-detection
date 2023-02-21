@@ -17,12 +17,14 @@ public class PipResolverTests
 {
     private Mock<ILogger<PythonResolver>> loggerMock;
     private Mock<IPyPiClient> pyPiClient;
+    private Mock<ISingleFileComponentRecorder> recorderMock;
 
     [TestInitialize]
     public void TestInitialize()
     {
         this.loggerMock = new Mock<ILogger<PythonResolver>>();
         this.pyPiClient = new Mock<IPyPiClient>();
+        this.recorderMock = new Mock<ISingleFileComponentRecorder>();
     }
 
     [TestMethod]
@@ -50,7 +52,7 @@ public class PipResolverTests
 
         var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
 
-        var resolveResult = await resolver.ResolveRootsAsync(dependencies);
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
         Assert.IsNotNull(resolveResult);
 
@@ -93,7 +95,7 @@ public class PipResolverTests
 
         var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
 
-        var resolveResult = await resolver.ResolveRootsAsync(dependencies);
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
         Assert.IsNotNull(resolveResult);
 
@@ -133,7 +135,7 @@ public class PipResolverTests
 
         var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
 
-        var resolveResult = await resolver.ResolveRootsAsync(dependencies);
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
         Assert.IsNotNull(resolveResult);
 
@@ -176,7 +178,7 @@ public class PipResolverTests
 
         var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
 
-        var resolveResult = await resolver.ResolveRootsAsync(dependencies);
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
         Assert.IsNotNull(resolveResult);
 

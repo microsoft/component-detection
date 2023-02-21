@@ -10,9 +10,9 @@ using Microsoft.Extensions.Logging;
 public class PythonResolver : IPythonResolver
 {
     private readonly IPyPiClient pypiClient;
-    private readonly ILogger<PythonResolver> logger;
+    private readonly ILogger logger;
 
-    public PythonResolver(IPyPiClient pypiClient, ILogger<PythonResolver> logger)
+    public PythonResolver(IPyPiClient pypiClient, ILogger logger)
     {
         this.pypiClient = pypiClient;
         this.logger = logger;
@@ -21,9 +21,10 @@ public class PythonResolver : IPythonResolver
     /// <summary>
     /// Resolves the root Python packages from the initial list of packages.
     /// </summary>
+    /// <param name="singleFileComponentRecorder">The component recorder for file that is been processed.</param>
     /// <param name="initialPackages">The initial list of packages.</param>
     /// <returns>The root packages, with dependencies associated as children.</returns>
-    public async Task<IList<PipGraphNode>> ResolveRootsAsync(IList<PipDependencySpecification> initialPackages)
+    public async Task<IList<PipGraphNode>> ResolveRootsAsync(ISingleFileComponentRecorder singleFileComponentRecorder, IList<PipDependencySpecification> initialPackages)
     {
         var state = new PythonResolverState();
 
@@ -56,15 +57,16 @@ public class PythonResolver : IPythonResolver
                     this.logger.LogWarning(
                         "Root dependency {RootPackageName} not found on pypi. Skipping package.",
                         rootPackage.Name);
+                    singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
                 }
             }
         }
 
         // Now queue packages for processing
-        return await this.ProcessQueueAsync(state) ?? new List<PipGraphNode>();
+        return await this.ProcessQueueAsync(singleFileComponentRecorder, state) ?? new List<PipGraphNode>();
     }
 
-    private async Task<IList<PipGraphNode>> ProcessQueueAsync(PythonResolverState state)
+    private async Task<IList<PipGraphNode>> ProcessQueueAsync(ISingleFileComponentRecorder singleFileComponentRecorder, PythonResolverState state)
     {
         while (state.ProcessingQueue.Count > 0)
         {
@@ -117,6 +119,7 @@ public class PythonResolver : IPythonResolver
                         this.logger.LogWarning(
                             "Dependency Package {DependencyName} not found in Pypi. Skipping package",
                             dependencyNode.Name);
+                        singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                     }
                 }
             }

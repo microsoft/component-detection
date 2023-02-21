@@ -118,6 +118,7 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
             catch (Exception e)
             {
                 this.Logger.LogWarning(e, "failed while handling {ItemName}", item.Name);
+                singleFileComponentRecorder.RegisterPackageParseFailure(item.Name);
             }
         }
     }

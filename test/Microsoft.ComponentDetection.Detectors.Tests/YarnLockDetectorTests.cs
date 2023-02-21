@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -37,6 +37,12 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var yarnLockFileFactoryMock = new Mock<IYarnLockFileFactory>();
         yarnLockFileFactoryMock.Setup(x => x.ParseYarnLockFileAsync(It.IsAny<Stream>(), It.IsAny<ILogger<YarnLockParser>>()))
             .Returns((Stream stream, ILogger logger) => this.yarnLockFileFactory.ParseYarnLockFileAsync(stream, logger));
+
+        var recorderMock = new Mock<ISingleFileComponentRecorder>();
+
+        yarnLockFileFactoryMock.Setup(x => x.ParseYarnLockFileAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<Stream>(), It.IsAny<ILogger>()))
+            .Returns((ISingleFileComponentRecorder recorder, Stream stream, ILogger logger) => this.yarnLockFileFactory.ParseYarnLockFileAsync(recorder, stream, logger));
+
         this.DetectorTestUtility.AddServiceMock(yarnLockFileFactoryMock);
     }
 

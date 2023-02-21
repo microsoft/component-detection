@@ -120,7 +120,35 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         var totalElapsedTime = stopwatch.Elapsed.TotalSeconds;
         this.LogTabularOutput(this.Logger, providerElapsedTime, totalElapsedTime);
 
-        this.Logger.LogInformation("Detection time: {ElapsedTime} seconds.", totalElapsedTime);
+        // If there are components which are skipped due to connection or parsing
+        // errors, log them by detector.
+        var parseWarningShown = false;
+        foreach (var (_, recorder, detector) in results)
+        {
+            var skippedComponents = recorder.GetSkippedComponents();
+            if (!skippedComponents.Any())
+            {
+                continue;
+            }
+
+            if (!parseWarningShown)
+            {
+                using var parseWarningScope = this.Logger.BeginScope("Parse warnings");
+                this.Logger.LogWarning("Some components or files were not detected due to parsing failures or connectivity issues.");
+                this.Logger.LogWarning("Please review the logs above for more detailed information.");
+                parseWarningShown = true;
+            }
+
+            using var scGroup = this.Logger.BeginScope("Skipped Components");
+            this.Logger.LogWarning("Components skipped for {DetectorId} detector:", detector.Id);
+            foreach (var component in skippedComponents)
+            {
+                this.Logger.LogWarning("- {Component}", component);
+            }
+        }
+
+        using var dtScope = this.Logger.BeginScope("Detection Time");
+        this.Logger.LogInformation("Detection time: {DetectionTime} seconds.", totalElapsedTime);
 
         return detectorProcessingResult;
     }

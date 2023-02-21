@@ -80,6 +80,7 @@ public class NpmComponentDetector : FileComponentDetector
         if (!SemanticVersion.TryParse(version, out _))
         {
             this.Logger.LogWarning("Unable to parse version {NpmPackageVersion} for package {NpmPackageName} found at path {NpmPackageLocation}. This may indicate an invalid npm package component and it will not be registered.", version, name, filePath);
+            singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version}");
             return false;
         }
 

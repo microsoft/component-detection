@@ -127,6 +127,7 @@ public class NuGetComponentDetector : FileComponentDetector
             if (!NuGetVersion.TryParse(version, out var parsedVer))
             {
                 this.Logger.LogInformation("Version '{NuspecVersion}' from {NuspecLocation} could not be parsed as a NuGet version", version, stream.Location);
+                singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
 
                 return;
             }
@@ -141,6 +142,7 @@ public class NuGetComponentDetector : FileComponentDetector
         {
             // If something went wrong, just ignore the component
             this.Logger.LogError(e, "Error parsing NuGet component from {NuspecLocation}", stream.Location);
+            singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
         }
     }
 

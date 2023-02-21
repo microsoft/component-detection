@@ -243,6 +243,7 @@ public class RustCrateDetector : FileComponentDetector
             record.Dependencies = dependency;
 
             this.Logger.LogError(e, "Failed to process Cargo.lock file '{CargoLockLocation}'", cargoLockFile.Location);
+            singleFileComponentRecorder.RegisterPackageParseFailure(record.PackageInfo);
         }
     }
 }

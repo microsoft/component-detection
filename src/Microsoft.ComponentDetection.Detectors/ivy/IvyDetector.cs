@@ -236,6 +236,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
             else
             {
                 this.Logger.LogWarning("Dependency \"{MavenComponentId}\" could not be resolved by Ivy, and so has not been recorded by Component Detection.", component.Id);
+                singleFileComponentRecorder.RegisterPackageParseFailure(component.Id);
             }
         }
     }

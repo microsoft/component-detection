@@ -141,9 +141,7 @@ public class GoComponentDetector : FileComponentDetector
         this.RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
 
         var generateGraphProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, new List<string> { "mod", "graph" }.ToArray());
-#pragma warning disable CA1508
         if (generateGraphProcess.ExitCode == 0)
-#pragma warning restore CA1508
         {
             this.PopulateDependencyGraph(generateGraphProcess.StdOut, singleFileComponentRecorder);
             record.WasGraphSuccessful = true;
@@ -173,7 +171,9 @@ public class GoComponentDetector : FileComponentDetector
             }
             else
             {
-                this.Logger.LogWarning("Line could not be parsed for component detection: {Line}", line.Trim());
+                var lineTrim = line.Trim();
+                this.Logger.LogWarning("Line could not be parsed for component [{LineTrim}]", lineTrim);
+                singleFileComponentRecorder.RegisterPackageParseFailure(lineTrim);
             }
         }
     }
@@ -212,7 +212,9 @@ public class GoComponentDetector : FileComponentDetector
             }
             else
             {
-                this.Logger.LogWarning("Line could not be parsed for component {Line}", line.Trim());
+                var lineTrim = line.Trim();
+                this.Logger.LogWarning("Line could not be parsed for component [{LineTrim}]", lineTrim);
+                singleFileComponentRecorder.RegisterPackageParseFailure(lineTrim);
             }
         }
     }
@@ -272,6 +274,7 @@ public class GoComponentDetector : FileComponentDetector
             else
             {
                 this.Logger.LogWarning("Failed to parse components from relationship string {Relationship}", relationship);
+                componentRecorder.RegisterPackageParseFailure(relationship);
             }
         }
     }

@@ -119,13 +119,13 @@ public class RubyComponentDetector : FileComponentDetector
                 switch (heading)
                 {
                     case "GIT":
-                        this.ParseSection(SectionType.GIT, sublines, components, dependencies, file);
+                        this.ParseSection(singleFileComponentRecorder, SectionType.GIT, sublines, components, dependencies, file);
                         break;
                     case "GEM":
-                        this.ParseSection(SectionType.GEM, sublines, components, dependencies, file);
+                        this.ParseSection(singleFileComponentRecorder, SectionType.GEM, sublines, components, dependencies, file);
                         break;
                     case "PATH":
-                        this.ParseSection(SectionType.PATH, sublines, components, dependencies, file);
+                        this.ParseSection(singleFileComponentRecorder, SectionType.PATH, sublines, components, dependencies, file);
                         break;
                     case "BUNDLED WITH":
                         var line = sublines[0].Trim();
@@ -144,6 +144,7 @@ public class RubyComponentDetector : FileComponentDetector
             else
             {
                 // Throw this line away. Is this malformed? We were expecting a header
+                this.Logger.LogDebug("{MalformedLine}", lines[0]);
                 this.Logger.LogDebug("Appears to be malformed/is not expected here.  Expected heading. {Line}", lines[0]);
                 lines.RemoveAt(0);
             }
@@ -172,7 +173,7 @@ public class RubyComponentDetector : FileComponentDetector
         }
     }
 
-    private void ParseSection(SectionType sectionType, List<string> lines, Dictionary<string, DetectedComponent> components, Dictionary<string, List<Dependency>> dependencies, IComponentStream file)
+    private void ParseSection(ISingleFileComponentRecorder singleFileComponentRecorder, SectionType sectionType, List<string> lines, Dictionary<string, DetectedComponent> components, Dictionary<string, List<Dependency>> dependencies, IComponentStream file)
     {
         string name, remote, revision;
         name = remote = revision = string.Empty;
@@ -222,6 +223,7 @@ public class RubyComponentDetector : FileComponentDetector
                         if (this.IsVersionRelative(version))
                         {
                             this.Logger.LogWarning("Found component with invalid version, name = {RubyComponentName} and version = {RubyComponentVersion}", name, version);
+                            singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version}");
                             wasParentDependencyExcluded = true;
                             continue;
                         }

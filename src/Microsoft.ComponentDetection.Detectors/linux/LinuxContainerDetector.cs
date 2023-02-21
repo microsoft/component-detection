@@ -155,6 +155,9 @@ public class LinuxContainerDetector : IComponentDetector
                         StackTrace = e.StackTrace,
                         ImageId = image,
                     };
+
+                    var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(image);
+                    singleFileComponentRecorder.RegisterPackageParseFailure(image);
                 }
             });
 
@@ -198,6 +201,9 @@ public class LinuxContainerDetector : IComponentDetector
                     StackTrace = e.StackTrace,
                     ImageId = kvp.Value.ImageId,
                 };
+
+                var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(kvp.Value.ImageId);
+                singleFileComponentRecorder.RegisterPackageParseFailure(kvp.Key);
             }
 
             return EmptyImageScanningResult();
