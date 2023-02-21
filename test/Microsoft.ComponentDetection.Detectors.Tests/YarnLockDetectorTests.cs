@@ -34,10 +34,8 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var loggerMock = new Mock<ILogger<YarnLockParser>>();
         this.yarnLockParser = new YarnLockParser(loggerMock.Object);
         this.yarnLockFileFactory = new YarnLockFileFactory(new[] { this.yarnLockParser });
-        var yarnLockFileFactoryMock = new Mock<IYarnLockFileFactory>();
-        yarnLockFileFactoryMock.Setup(x => x.ParseYarnLockFileAsync(It.IsAny<Stream>(), It.IsAny<ILogger<YarnLockParser>>()))
-            .Returns((Stream stream, ILogger logger) => this.yarnLockFileFactory.ParseYarnLockFileAsync(stream, logger));
 
+        var yarnLockFileFactoryMock = new Mock<IYarnLockFileFactory>();
         var recorderMock = new Mock<ISingleFileComponentRecorder>();
 
         yarnLockFileFactoryMock.Setup(x => x.ParseYarnLockFileAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<Stream>(), It.IsAny<ILogger>()))

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 

@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
 
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.Extensions.Logging;
 

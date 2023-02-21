@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 
 public class YarnLockParser : IYarnLockParser
