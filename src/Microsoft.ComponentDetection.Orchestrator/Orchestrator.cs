@@ -2,7 +2,6 @@ namespace Microsoft.ComponentDetection.Orchestrator;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -21,11 +20,12 @@ using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 
 public class Orchestrator
 {
+    public static readonly LoggingLevelSwitch MinimumLogLevelSwitch = new(LogEventLevel.Information);
     private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
     private readonly IServiceProvider serviceProvider;
@@ -58,6 +58,15 @@ public class Orchestrator
             // Blank args for this part of the loader, all things are optional and default to false / empty / null
             baseArguments = new BaseArguments();
         }
+
+        // Set the minimum logging level
+        MinimumLogLevelSwitch.MinimumLevel = baseArguments.Verbosity switch
+        {
+            VerbosityMode.Quiet => LogEventLevel.Error,
+            VerbosityMode.Normal => LogEventLevel.Information,
+            VerbosityMode.Verbose => LogEventLevel.Debug,
+            _ => throw new ArgumentOutOfRangeException(nameof(baseArguments.Verbosity), "Invalid verbosity level"),
+        };
 
         // This is required so TelemetryRelay can be accessed via it's static singleton
         // It should be refactored out at a later date
@@ -135,22 +144,6 @@ public class Orchestrator
 
                 telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
                 this.fileWritingService.Init(argumentSet.Output);
-
-                var minLevel = argumentSet.Verbosity switch
-                {
-                    VerbosityMode.Quiet => LogEventLevel.Warning,
-                    VerbosityMode.Normal => LogEventLevel.Information,
-                    VerbosityMode.Verbose => LogEventLevel.Debug,
-                    _ => LogEventLevel.Information,
-                };
-
-                Log.Logger = new LoggerConfiguration()
-                    .WriteTo.Console()
-                    .WriteTo.File(Path.Combine(Path.GetTempPath(), $"GovCompDiscLog_{DateTime.Now:yyyyMMddHHmmssfff}.txt"), buffered: true)
-                    .Enrich.FromLogContext()
-                    .MinimumLevel.Is(minLevel)
-                    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                    .CreateLogger();
 
                 this.logger.LogInformation("Run correlation id: {CorrelationId}", TelemetryConstants.CorrelationId);
 
