@@ -21,6 +21,8 @@ public class Logger : ILogger
 
     private VerbosityMode Verbosity { get; set; }
 
+    private bool Initialized { get; set; }
+
     private bool WriteToFile { get; set; }
 
     private bool WriteLinePrefix { get; set; }
@@ -30,10 +32,19 @@ public class Logger : ILogger
         this.WriteToFile = true;
         this.Verbosity = verbosity;
         this.WriteLinePrefix = writeLinePrefix;
+
+        // If initialization has already completed, don't attempt to create
+        // the log file again as this throws an exception
+        if (this.Initialized)
+        {
+            return;
+        }
+
         try
         {
             this.fileWritingService.WriteFile(LogRelativePath, string.Empty);
             this.LogInfo($"Log file: {this.fileWritingService.ResolveFilePath(LogRelativePath)}");
+            this.Initialized = true;
         }
         catch (Exception)
         {
