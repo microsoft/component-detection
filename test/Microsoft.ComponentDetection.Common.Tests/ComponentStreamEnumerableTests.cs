@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Tests;
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -63,7 +64,12 @@ public class ComponentStreamEnumerableTests
         var tempFileTwo = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var tempFileThree = Path.GetTempFileName();
         File.Delete(tempFileTwo);
-        this.loggerMock.Setup(x => x.LogWarning(Match.Create<string>(message => message.Contains("not exist"))));
+        this.loggerMock.Setup(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(tempFileTwo)),
+            It.IsAny<IOException>(),
+            It.IsAny<Func<It.IsAnyType, Exception, string>>()));
         var enumerable = new ComponentStreamEnumerable(
             new[]
             {

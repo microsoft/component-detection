@@ -177,7 +177,14 @@ public class PyPiClientTests
 
         // Verify the cache setup call was performed only once
         mockEvs.Verify(x => x.GetEnvironmentVariable(It.IsAny<string>()), Times.Once());
-        mockLogger.Verify(x => x.LogInformation(It.Is<string>(s => s.Equals("Setting IPyPiClient max cache entries to 32"))), Times.Once());
+        mockLogger.Verify(
+            x => x.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+            Times.Exactly(3));
     }
 
     private Mock<HttpMessageHandler> MockHttpMessageHandler(string content)

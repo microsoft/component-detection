@@ -6,11 +6,15 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesConfigDetector>
 {
+    public NuGetPackagesConfigDetectorTests() => this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<NuGetPackagesConfigDetector>>());
+
     [TestMethod]
     public async Task Should_WorkAsync()
     {

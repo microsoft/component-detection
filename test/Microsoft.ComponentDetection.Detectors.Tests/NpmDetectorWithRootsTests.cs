@@ -11,6 +11,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
@@ -30,6 +31,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     {
         this.mockPathUtilityService = new Mock<IPathUtilityService>();
         this.DetectorTestUtility.AddServiceMock(this.mockPathUtilityService);
+        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<NpmComponentDetectorWithRoots>>());
     }
 
     [TestMethod]

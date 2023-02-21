@@ -10,6 +10,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Ivy;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -24,6 +25,7 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
     {
         this.commandLineMock = new Mock<ICommandLineInvocationService>();
         this.DetectorTestUtility.AddServiceMock(this.commandLineMock);
+        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<IvyDetector>>());
     }
 
     [TestMethod]

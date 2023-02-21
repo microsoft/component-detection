@@ -253,7 +253,7 @@ public class NpmUtilitiesTests
             DevelopmentDependency = true,
         };
 
-        var componentRecorder = new ComponentRecorder();
+        var componentRecorder = new ComponentRecorder(new Mock<ILogger>().Object);
         var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("path");
         singleFileComponentRecorder.RegisterUsage(detectedComponent);
 

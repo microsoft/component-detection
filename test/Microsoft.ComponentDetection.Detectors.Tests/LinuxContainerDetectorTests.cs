@@ -106,7 +106,12 @@ public class LinuxContainerDetectorTests
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         detectedComponents.Should().HaveCount(0);
         scanResult.ContainerDetails.Should().HaveCount(0);
-        this.mockLogger.Verify(logger => logger.LogInformation(It.IsAny<string>()));
+        this.mockLinuxContainerDetectorLogger.Verify(logger => logger.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
     }
 
     [TestMethod]
@@ -128,7 +133,12 @@ public class LinuxContainerDetectorTests
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         detectedComponents.Should().HaveCount(0);
         scanResult.ContainerDetails.Should().HaveCount(0);
-        this.mockLogger.Verify(logger => logger.LogInformation(It.IsAny<string>()));
+        this.mockLinuxContainerDetectorLogger.Verify(logger => logger.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
     }
 
     [TestMethod]

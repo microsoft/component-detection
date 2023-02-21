@@ -11,6 +11,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Maven;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -25,6 +26,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
     {
         this.mavenCommandServiceMock = new Mock<IMavenCommandService>();
         this.DetectorTestUtility.AddServiceMock(this.mavenCommandServiceMock);
+        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<MvnCliComponentDetector>>());
     }
 
     [TestMethod]

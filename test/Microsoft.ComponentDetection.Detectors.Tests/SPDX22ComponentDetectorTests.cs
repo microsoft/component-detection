@@ -12,7 +12,9 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Spdx;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -30,6 +32,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
                 new Dictionary<string, string>(),
                 null,
                 componentRecorder));
+        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<Spdx22ComponentDetector>>());
     }
 
     [TestMethod]

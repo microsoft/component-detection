@@ -1,6 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -35,7 +34,12 @@ public class DetectorListingCommandService : ServiceBase, IArgumentHandlingServi
 
     private async Task<ProcessingResultCode> ListDetectorsAsync(IScanArguments listArguments)
     {
-        this.Logger.LogInformation("Detectors: {DetectorList}", string.Join(',', this.detectors.Select(x => x.Id)));
+        this.Logger.LogInformation("Detectors:");
+
+        foreach (var detector in this.detectors)
+        {
+            this.Logger.LogInformation("{DetectorId}", detector.Id);
+        }
 
         return await Task.FromResult(ProcessingResultCode.Success);
     }

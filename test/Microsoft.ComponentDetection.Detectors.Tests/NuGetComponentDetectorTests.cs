@@ -27,6 +27,14 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
     private static readonly IEnumerable<string> DetectorSearchPattern =
         new List<string> { "*.nupkg", "*.nuspec", "nuget.config", "paket.lock" };
 
+    private readonly Mock<ILogger<NuGetComponentDetector>> mockLogger;
+
+    public NuGetComponentDetectorTests()
+    {
+        this.mockLogger = new Mock<ILogger<NuGetComponentDetector>>();
+        this.DetectorTestUtility.AddServiceMock(this.mockLogger);
+    }
+
     [TestMethod]
     public async Task TestNuGetDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
@@ -160,16 +168,19 @@ NUGET
         var malformedNupkg = await NugetTestUtilities.ZipNupkgComponentAsync("malformed.nupkg", NugetTestUtilities.GetRandomMalformedNuPkgComponent());
         var nuspec = NugetTestUtilities.GetRandomValidNuSpecComponent();
 
-        var mockLogger = new Mock<ILogger>();
-
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("test.nuspec", nuspec)
             .WithFile("test.nupkg", validNupkg)
             .WithFile("malformed.nupkg", malformedNupkg)
-            .AddServiceMock(mockLogger)
+            .AddServiceMock(this.mockLogger)
             .ExecuteDetectorAsync();
 
-        mockLogger.Verify(x => x.LogError(It.IsAny<Exception>(), Path.Join(Path.GetTempPath(), "malformed.nupkg")));
+        this.mockLogger.Verify(x => x.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());

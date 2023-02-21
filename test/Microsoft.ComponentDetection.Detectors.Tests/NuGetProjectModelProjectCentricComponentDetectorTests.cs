@@ -12,6 +12,7 @@ using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Tests.Mocks;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
@@ -30,6 +31,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         this.fileUtilityServiceMock.Setup(x => x.Exists(It.IsAny<string>()))
             .Returns(true);
         this.DetectorTestUtility.AddServiceMock(this.fileUtilityServiceMock);
+        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<NuGetProjectModelProjectCentricComponentDetector>>());
     }
 
     [TestMethod]

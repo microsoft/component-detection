@@ -1,4 +1,6 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
@@ -40,10 +42,23 @@ public class DetectorListingCommandServiceTests
             this.loggerMock.Object);
 
         this.logOutput = new List<string>();
-        this.loggerMock.Setup(x => x.LogInformation(It.IsAny<string>())).Callback<string>(loggedString =>
-        {
-            this.logOutput.Add(loggedString);
-        });
+        this.loggerMock.Setup(x => x.Log(
+                It.IsAny<LogLevel>(),
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
+            .Callback(new InvocationAction(invocation =>
+            {
+                var state = invocation.Arguments[2];
+                var exception = (Exception)invocation.Arguments[3];
+                var formatter = invocation.Arguments[4];
+
+                var invokeMethod = formatter.GetType().GetMethod("Invoke");
+                var logMessage = (string)invokeMethod?.Invoke(formatter, new[] { state, exception });
+
+                this.logOutput.Add(logMessage);
+            }));
 
         this.componentDetector2Mock.SetupGet(x => x.Id).Returns("ComponentDetector2");
         this.componentDetector3Mock.SetupGet(x => x.Id).Returns("ComponentDetector3");
@@ -72,6 +87,7 @@ public class DetectorListingCommandServiceTests
         var result = await this.serviceUnderTest.HandleAsync(new ListDetectionArgs());
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
+        Console.WriteLine(string.Join('\n', this.logOutput));
         this.logOutput.Should().Contain("ComponentDetector2");
         this.logOutput.Should().Contain("ComponentDetector3");
         this.logOutput.Should().Contain("VersionedComponentDetector");

@@ -9,13 +9,17 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Gradle;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
 public class GradleComponentDetectorTests : BaseDetectorTest<GradleComponentDetector>
 {
+    public GradleComponentDetectorTests() => this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<GradleComponentDetector>>());
+
     [TestMethod]
     public async Task TestGradleDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {

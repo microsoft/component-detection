@@ -86,7 +86,7 @@ public class BcdeScanExecutionServiceTests
     [TestMethod]
     public async Task DetectComponents_HappyPathAsync()
     {
-        var componentRecorder = new ComponentRecorder();
+        var componentRecorder = new ComponentRecorder(new Mock<ILogger>().Object);
         var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/some/file/path"));
 
         this.componentDetector2Mock.SetupGet(x => x.Id).Returns("Detector2");
@@ -571,7 +571,7 @@ public class BcdeScanExecutionServiceTests
     [TestMethod]
     public async Task VerifyTranslation_DetectedComponentExist_UpdateFunctionIsAppliedAsync()
     {
-        var componentRecorder = new ComponentRecorder();
+        var componentRecorder = new ComponentRecorder(new Mock<ILogger>().Object);
         var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {
