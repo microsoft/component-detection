@@ -11,9 +11,9 @@ using Microsoft.Extensions.Logging;
 public class PythonResolver : IPythonResolver
 {
     private readonly IPyPiClient pypiClient;
-    private readonly ILogger logger;
+    private readonly ILogger<PythonResolver> logger;
 
-    public PythonResolver(IPyPiClient pypiClient, ILogger logger)
+    public PythonResolver(IPyPiClient pypiClient, ILogger<PythonResolver> logger)
     {
         this.pypiClient = pypiClient;
         this.logger = logger;
