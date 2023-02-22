@@ -8,10 +8,6 @@
         <PackageReference Include="NuGet.Versioning" />
         <PackageReference Include="Polly" />
         <PackageReference Include="Semver" />
-        <PackageReference Include="Serilog" />
-        <PackageReference Include="Serilog.Extensions.Hosting" />
-        <PackageReference Include="Serilog.Sinks.Console" />
-        <PackageReference Include="Serilog.Sinks.File" />
         <PackageReference Include="yamldotnet" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
         <PackageReference Include="Newtonsoft.Json" />

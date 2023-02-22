@@ -7,10 +7,6 @@
     <ItemGroup Label="Package References">
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="Serilog" />
-        <PackageReference Include="Serilog.Extensions.Hosting" />
-        <PackageReference Include="Serilog.Sinks.Console" />
-        <PackageReference Include="Serilog.Sinks.File" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="packageurl-dotnet" />
