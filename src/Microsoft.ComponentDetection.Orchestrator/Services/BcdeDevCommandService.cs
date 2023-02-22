@@ -7,14 +7,15 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.Extensions.Logging;
 
-public class BcdeDevCommandService : ServiceBase, IArgumentHandlingService
+public class BcdeDevCommandService : IArgumentHandlingService
 {
     private readonly IBcdeScanExecutionService bcdeScanExecutionService;
+    private readonly ILogger<BcdeDevCommandService> logger;
 
     public BcdeDevCommandService(IBcdeScanExecutionService bcdeScanExecutionService, ILogger<BcdeDevCommandService> logger)
     {
         this.bcdeScanExecutionService = bcdeScanExecutionService;
-        this.Logger = logger;
+        this.logger = logger;
     }
 
     public bool CanHandle(IScanArguments arguments)

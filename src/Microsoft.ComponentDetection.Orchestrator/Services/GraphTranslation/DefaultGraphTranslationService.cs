@@ -13,9 +13,11 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.Extensions.Logging;
 
-public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationService
+public class DefaultGraphTranslationService : IGraphTranslationService
 {
-    public DefaultGraphTranslationService(ILogger<DefaultGraphTranslationService> logger) => this.Logger = logger;
+    private readonly ILogger<DefaultGraphTranslationService> logger;
+
+    public DefaultGraphTranslationService(ILogger<DefaultGraphTranslationService> logger) => this.logger = logger;
 
     public ScanResult GenerateScanResultFromProcessingResult(DetectorProcessingResult detectorProcessingResult, IDetectionArguments detectionArguments)
     {
@@ -87,7 +89,7 @@ public class DefaultGraphTranslationService : ServiceBase, IGraphTranslationServ
                         var locations = dependencyGraph.GetAdditionalRelatedFiles();
                         locations.Add(location);
 
-                        var relativePaths = this.MakeFilePathsRelative(this.Logger, rootDirectory, locations);
+                        var relativePaths = this.MakeFilePathsRelative(this.logger, rootDirectory, locations);
 
                         foreach (var additionalRelatedFile in relativePaths ?? Enumerable.Empty<string>())
                         {

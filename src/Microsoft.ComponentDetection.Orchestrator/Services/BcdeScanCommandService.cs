@@ -8,12 +8,13 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
+public class BcdeScanCommandService : IArgumentHandlingService
 {
     public const string ManifestRelativePath = "ScanManifest_{timestamp}.json";
 
     private readonly IFileWritingService fileWritingService;
     private readonly IBcdeScanExecutionService bcdeScanExecutionService;
+    private readonly ILogger<BcdeScanCommandService> logger;
 
     public BcdeScanCommandService(
         IFileWritingService fileWritingService,
@@ -22,7 +23,7 @@ public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
     {
         this.fileWritingService = fileWritingService;
         this.bcdeScanExecutionService = bcdeScanExecutionService;
-        this.Logger = logger;
+        this.logger = logger;
     }
 
     public bool CanHandle(IScanArguments arguments)
@@ -44,12 +45,12 @@ public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
 
         if (detectionArguments.ManifestFile != null)
         {
-            this.Logger.LogInformation("Scan Manifest file: {ManifestFile}", detectionArguments.ManifestFile.FullName);
+            this.logger.LogInformation("Scan Manifest file: {ManifestFile}", detectionArguments.ManifestFile.FullName);
             userRequestedManifestPath = detectionArguments.ManifestFile;
         }
         else
         {
-            this.Logger.LogInformation("Scan Manifest file: {ManifestFile}", this.fileWritingService.ResolveFilePath(ManifestRelativePath));
+            this.logger.LogInformation("Scan Manifest file: {ManifestFile}", this.fileWritingService.ResolveFilePath(ManifestRelativePath));
         }
 
         if (userRequestedManifestPath == null)

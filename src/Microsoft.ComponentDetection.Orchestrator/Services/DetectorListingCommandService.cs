@@ -6,16 +6,17 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.Extensions.Logging;
 
-public class DetectorListingCommandService : ServiceBase, IArgumentHandlingService
+public class DetectorListingCommandService : IArgumentHandlingService
 {
     private readonly IEnumerable<IComponentDetector> detectors;
+    private readonly ILogger<DetectorListingCommandService> logger;
 
     public DetectorListingCommandService(
         IEnumerable<IComponentDetector> detectors,
         ILogger<DetectorListingCommandService> logger)
     {
         this.detectors = detectors;
-        this.Logger = logger;
+        this.logger = logger;
     }
 
     public bool CanHandle(IScanArguments arguments)
@@ -34,11 +35,11 @@ public class DetectorListingCommandService : ServiceBase, IArgumentHandlingServi
 
     private async Task<ProcessingResultCode> ListDetectorsAsync(IScanArguments listArguments)
     {
-        this.Logger.LogInformation("Detectors:");
+        this.logger.LogInformation("Detectors:");
 
         foreach (var detector in this.detectors)
         {
-            this.Logger.LogInformation("{DetectorId}", detector.Id);
+            this.logger.LogInformation("{DetectorId}", detector.Id);
         }
 
         return await Task.FromResult(ProcessingResultCode.Success);
