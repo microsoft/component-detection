@@ -2,7 +2,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -20,7 +19,6 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-[SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Test method")]
 public class LinuxContainerDetectorTests
 {
     private const string NodeLatestImage = "node:latest";

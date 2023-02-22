@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -19,7 +18,6 @@ using Moq.Protected;
 using Newtonsoft.Json;
 
 [TestClass]
-[SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Test class")]
 public class PyPiClientTests
 {
     private readonly PyPiClient pypiClient;

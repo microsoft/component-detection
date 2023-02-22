@@ -48,7 +48,7 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        this.Logger.LogInformation("vcpkg detector found {File}", file);
+        this.Logger.LogDebug("vcpkg detector found {File}", file);
 
         var projectRootDirectory = Directory.GetParent(file.Location);
         if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))

@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
@@ -12,7 +11,6 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-[SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Test method")]
 public class ComponentStreamEnumerableTests
 {
     private Mock<ILogger> loggerMock;

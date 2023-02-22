@@ -8,17 +8,13 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
 public class PoetryComponentDetectorTests : BaseDetectorTest<PoetryComponentDetector>
 {
-    public PoetryComponentDetectorTests() => this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<PoetryComponentDetector>>());
-
     [TestMethod]
     public async Task TestPoetryDetector_TestCustomSourceAsync()
     {

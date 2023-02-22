@@ -143,7 +143,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         }
         catch (Exception e)
         {
-            this.Logger.LogError(e, "Exception occurred during Ivy file processing: ");
+            this.Logger.LogError(e, "Exception occurred processing {FileName} ", ivyXmlFile);
         }
     }
 

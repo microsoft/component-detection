@@ -381,9 +381,10 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         if (matchingLibrary == null)
         {
             matchingLibrary = matchingLibraryNames.First();
+            var versionString = versionRange != null ? versionRange.ToNormalizedString() : version.ToString();
             this.Logger.LogWarning(
                 "Couldn't satisfy lookup for {Version}. Falling back to first found component for {MatchingLibraryName}, resolving to version {MatchingLibraryVersion}.",
-                versionRange != null ? versionRange.ToNormalizedString() : version.ToString(),
+                versionString,
                 matchingLibrary.Name,
                 matchingLibrary.Version);
         }

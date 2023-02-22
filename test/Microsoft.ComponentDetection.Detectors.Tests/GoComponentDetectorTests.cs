@@ -9,7 +9,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -31,8 +30,6 @@ public class GoComponentDetectorTests : BaseDetectorTest<GoComponentDetector>
         this.envVarService = new Mock<IEnvironmentVariableService>();
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
         this.DetectorTestUtility.AddServiceMock(this.envVarService);
-
-        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<GoComponentDetector>>());
     }
 
     [TestMethod]

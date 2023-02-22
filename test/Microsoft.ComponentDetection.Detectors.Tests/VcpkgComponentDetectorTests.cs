@@ -9,7 +9,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -28,8 +27,6 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
 
         this.mockEnvironmentVariableService = new Mock<IEnvironmentVariableService>();
         this.DetectorTestUtility.AddServiceMock(this.mockEnvironmentVariableService);
-
-        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<VcpkgComponentDetector>>());
 
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
         this.DetectorTestUtility.WithScanRequest(

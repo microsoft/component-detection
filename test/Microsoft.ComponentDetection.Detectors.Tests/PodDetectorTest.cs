@@ -10,17 +10,13 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
 public class PodDetectorTest : BaseDetectorTest<PodComponentDetector>
 {
-    public PodDetectorTest() => this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<PodComponentDetector>>());
-
     [TestMethod]
     public async Task TestPodDetector_EmptyPodfileLockAsync()
     {

@@ -42,8 +42,6 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .Returns((ISingleFileComponentRecorder recorder, Stream stream, ILogger logger) => this.yarnLockFileFactory.ParseYarnLockFileAsync(recorder, stream, logger));
 
         this.DetectorTestUtility.AddServiceMock(yarnLockFileFactoryMock);
-
-        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<YarnLockComponentDetector>>());
     }
 
     [TestMethod]

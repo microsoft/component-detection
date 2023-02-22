@@ -51,7 +51,7 @@ public class PodComponentDetector : FileComponentDetector
         }
         catch (Exception e)
         {
-            this.Logger.LogError(e, "Error parsing Podfile.lock");
+            this.Logger.LogError(e, "Error parsing Podfile.lock at {Location}", file.Location);
         }
     }
 

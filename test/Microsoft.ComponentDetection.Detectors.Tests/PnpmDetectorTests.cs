@@ -31,7 +31,6 @@ public class PnpmDetectorTests : BaseDetectorTest<PnpmComponentDetector>
                 new Dictionary<string, string>(),
                 null,
                 componentRecorder));
-        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<PnpmComponentDetector>>());
         this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<FileComponentDetector>>());
     }
 

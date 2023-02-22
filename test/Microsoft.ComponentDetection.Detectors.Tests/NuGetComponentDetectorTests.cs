@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -21,7 +20,6 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-[SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Test class")]
 public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetector>
 {
     private static readonly IEnumerable<string> DetectorSearchPattern =

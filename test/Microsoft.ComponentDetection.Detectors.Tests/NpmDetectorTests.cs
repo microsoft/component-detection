@@ -7,9 +7,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
 
 [TestClass]
@@ -18,8 +16,6 @@ using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityE
 public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
 {
     private readonly List<string> packageJsonSearchPattern = new List<string> { "package.json" };
-
-    public NpmDetectorTests() => this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<NpmComponentDetector>>());
 
     [TestMethod]
     public async Task TestNpmDetector_NameAndVersionDetectedAsync()

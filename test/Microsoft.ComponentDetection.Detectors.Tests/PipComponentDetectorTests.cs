@@ -2,7 +2,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,7 +17,6 @@ using Moq;
 using Newtonsoft.Json;
 
 [TestClass]
-[SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Test class")]
 public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 {
     private readonly Mock<IPythonCommandService> pythonCommandService;

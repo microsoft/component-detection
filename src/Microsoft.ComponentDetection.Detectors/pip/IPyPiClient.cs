@@ -157,7 +157,7 @@ public class PyPiClient : IPyPiClient
 
                 this.logger.LogWarning(
                     "Received {StatusCode} {ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
-                    (int)result.Result.StatusCode,
+                    result.Result.StatusCode,
                     result.Result.ReasonPhrase,
                     requestUri,
                     timeSpan,

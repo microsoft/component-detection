@@ -11,8 +11,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32.SafeHandles;
 
-using ILogger = Microsoft.Extensions.Logging.ILogger;
-
 // We may want to consider breaking this class into Win/Mac/Linux variants if it gets bigger
 public class PathUtilityService : IPathUtilityService
 {

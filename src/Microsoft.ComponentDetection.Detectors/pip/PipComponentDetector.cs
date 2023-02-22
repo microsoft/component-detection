@@ -81,7 +81,7 @@ public class PipComponentDetector : FileComponentDetector
         }
         catch (Exception e)
         {
-            this.Logger.LogError(e, "Error while parsing pip components");
+            this.Logger.LogError(e, "Error while parsing pip components in {File}", file.Location);
         }
     }
 

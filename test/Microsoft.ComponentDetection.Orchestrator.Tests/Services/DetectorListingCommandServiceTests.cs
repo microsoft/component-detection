@@ -2,7 +2,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -15,7 +14,6 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-[SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Test class")]
 public class DetectorListingCommandServiceTests
 {
     private Mock<ILogger<DetectorListingCommandService>> loggerMock;

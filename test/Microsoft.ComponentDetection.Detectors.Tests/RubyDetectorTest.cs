@@ -11,9 +11,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -31,7 +29,6 @@ public class RubyDetectorTest : BaseDetectorTest<RubyComponentDetector>
                 new Dictionary<string, string>(),
                 null,
                 componentRecorder));
-        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<RubyComponentDetector>>());
     }
 
     [TestMethod]
