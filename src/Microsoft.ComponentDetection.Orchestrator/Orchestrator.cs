@@ -25,7 +25,7 @@ using Serilog.Events;
 
 public class Orchestrator
 {
-    public static readonly LoggingLevelSwitch MinimumLogLevelSwitch = new(LogEventLevel.Information);
+    public static readonly LoggingLevelSwitch MinimumLogLevelSwitch = new();
     private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
     private readonly IServiceProvider serviceProvider;
