@@ -25,6 +25,7 @@ try
 
     var serviceProvider = new ServiceCollection()
         .AddComponentDetection()
+        .ConfigureLoggingProviders()
         .BuildServiceProvider();
     var orchestrator = serviceProvider.GetRequiredService<Orchestrator>();
     var result = await orchestrator.LoadAsync(args);

@@ -39,8 +39,6 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<Orchestrator>();
 
-        ConfigureLoggingProviders(services);
-
         // Shared services
         services.AddSingleton<ITelemetryService, CommandLineTelemetryService>();
         services.AddSingleton<ICommandLineInvocationService, CommandLineInvocationService>();
@@ -133,7 +131,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    private static void ConfigureLoggingProviders(IServiceCollection services)
+    public static IServiceCollection ConfigureLoggingProviders(this IServiceCollection services)
     {
         var providers = new LoggerProviderCollection();
         services.AddSingleton(providers);
@@ -150,5 +148,7 @@ public static class ServiceCollectionExtensions
             return factory;
         });
         services.AddLogging(l => l.AddFilter<SerilogLoggerProvider>(null, LogLevel.Trace));
+
+        return services;
     }
 }
