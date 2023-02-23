@@ -1,6 +1,7 @@
+namespace Microsoft.ComponentDetection.Common;
+
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -10,11 +11,9 @@ using Docker.DotNet.Models;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.Common;
-
-[Export(typeof(IDockerService))]
 public class DockerService : IDockerService
 {
     // Base image annotations from ADO dockerTask
@@ -24,8 +23,9 @@ public class DockerService : IDockerService
     private static readonly DockerClient Client = new DockerClientConfiguration().CreateClient();
     private static int incrementingContainerId;
 
-    [Import]
-    public ILogger Logger { get; set; }
+    private readonly ILogger logger;
+
+    public DockerService(ILogger<DockerService> logger) => this.logger = logger;
 
     public async Task<bool> CanPingDockerAsync(CancellationToken cancellationToken = default)
     {
@@ -36,7 +36,7 @@ public class DockerService : IDockerService
         }
         catch (Exception e)
         {
-            this.Logger.LogException(e, false);
+            this.logger.LogError(e, "Failed to ping docker");
             return false;
         }
     }

@@ -1,10 +1,10 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+
+using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+using Microsoft.Extensions.Logging;
 
 public class YarnLockParser : IYarnLockParser
 {
@@ -18,8 +18,9 @@ public class YarnLockParser : IYarnLockParser
 
     private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
 
-    [Import]
-    public ILogger Logger { get; set; }
+    private readonly ILogger<YarnLockParser> logger;
+
+    public YarnLockParser(ILogger<YarnLockParser> logger) => this.logger = logger;
 
     public static string NormalizeVersion(string version)
     {
@@ -31,17 +32,17 @@ public class YarnLockParser : IYarnLockParser
         return SupportedVersions.Contains(yarnLockVersion);
     }
 
-    public YarnLockFile Parse(IYarnBlockFile blockFile, ILogger logger)
+    public YarnLockFile Parse(ISingleFileComponentRecorder singleFileComponentRecorder, IYarnBlockFile fileLines, ILogger logger)
     {
-        if (blockFile == null)
+        if (fileLines == null)
         {
-            throw new ArgumentNullException(nameof(blockFile));
+            throw new ArgumentNullException(nameof(fileLines));
         }
 
-        var file = new YarnLockFile { LockVersion = blockFile.YarnLockVersion };
+        var file = new YarnLockFile { LockVersion = fileLines.YarnLockVersion };
         IList<YarnEntry> entries = new List<YarnEntry>();
 
-        foreach (var block in blockFile)
+        foreach (var block in fileLines)
         {
             var yarnEntry = new YarnEntry();
             var satisfiedPackages = block.Title.Split(',').Select(x => x.Trim())
@@ -64,13 +65,14 @@ public class YarnLockParser : IYarnLockParser
 
             if (string.IsNullOrWhiteSpace(yarnEntry.Name))
             {
-                logger.LogWarning($"Failed to read a name for block {block.Title}. The entry will be skipped.");
+                logger.LogWarning("Failed to read a name for block {BlockTitle}. The entry will be skipped.", block.Title);
                 continue;
             }
 
             if (!block.Values.TryGetValue(VersionString, out var version))
             {
-                logger.LogWarning($"Failed to read a version for {yarnEntry.Name}. The entry will be skipped.");
+                logger.LogWarning("Failed to read a version for {YarnEntryName}. The entry will be skipped.", yarnEntry.Name);
+                singleFileComponentRecorder.RegisterPackageParseFailure(yarnEntry.Name);
                 continue;
             }
 
@@ -125,7 +127,7 @@ public class YarnLockParser : IYarnLockParser
             var versionValue = block.Values.FirstOrDefault(x => string.Equals(x.Key, VersionString, StringComparison.OrdinalIgnoreCase));
             if (default(KeyValuePair<string, string>).Equals(versionValue))
             {
-                this.Logger.LogWarning("Block without version detected");
+                this.logger.LogWarning("Block without version detected");
                 return blockTitleMember;
             }
 

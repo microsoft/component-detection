@@ -1,11 +1,10 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common.Tests;
+using System;
 using System.Globalization;
 using System.IO;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.Exceptions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Common.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -42,6 +41,7 @@ public class FileWritingServiceTests
         var fileLocation = Path.Combine(this.tempFolder, relativeDir);
         File.Create(fileLocation).Dispose();
         this.serviceUnderTest.AppendToFile(relativeDir, "someSampleText");
+        this.serviceUnderTest.Dispose();
         var text = File.ReadAllText(Path.Combine(this.tempFolder, relativeDir));
         text
             .Should().Be("someSampleText");
@@ -63,6 +63,7 @@ public class FileWritingServiceTests
         var relativeDir = "somefile_{timestamp}.txt";
         this.serviceUnderTest.WriteFile(relativeDir, "sampleText");
         this.serviceUnderTest.AppendToFile(relativeDir, "sampleText2");
+        this.serviceUnderTest.Dispose();
         var files = Directory.GetFiles(this.tempFolder);
         files
             .Should().NotBeEmpty();

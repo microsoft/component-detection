@@ -1,11 +1,10 @@
+namespace Microsoft.ComponentDetection.Detectors.Rust;
 using System;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 
 using Range = SemanticVersioning.Range;
 using Version = SemanticVersioning.Version;
-
-namespace Microsoft.ComponentDetection.Detectors.Rust;
 
 public class DependencySpecification
 {

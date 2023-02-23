@@ -1,6 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
+
+using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -10,12 +11,24 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
+using Microsoft.Extensions.Logging;
 
-namespace Microsoft.ComponentDetection.Detectors.Yarn;
-
-[Export(typeof(IComponentDetector))]
 public class YarnLockComponentDetector : FileComponentDetector
 {
+    private readonly IYarnLockFileFactory yarnLockFileFactory;
+
+    public YarnLockComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IYarnLockFileFactory yarnLockFileFactory,
+        ILogger<YarnLockComponentDetector> logger)
+    {
+        this.yarnLockFileFactory = yarnLockFileFactory;
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override string Id { get; } = "Yarn";
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "yarn.lock" };
@@ -30,7 +43,7 @@ public class YarnLockComponentDetector : FileComponentDetector
     /// <remarks>"Package" is a more common substring, enclose it with \ to verify it is a folder.</remarks>
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store", "\\package\\" };
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -38,21 +51,20 @@ public class YarnLockComponentDetector : FileComponentDetector
         var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
         if (!string.IsNullOrEmpty(skippedFolder))
         {
-            this.Logger.LogInfo($"Yarn.Lock file {file.Location} was found in a {skippedFolder} folder and will be skipped.");
+            this.Logger.LogInformation("Yarn.Lock file {YarnLockLocation} was found in a {SkippedFolder} folder and will be skipped.", file.Location, skippedFolder);
             return;
         }
 
-        this.Logger.LogInfo($"Processing file {file.Location}");
+        this.Logger.LogInformation("Processing file {YarnLockLocation}", file.Location);
 
         try
         {
-            var parsed = await YarnLockFileFactory.ParseYarnLockFileAsync(file.Stream, this.Logger);
+            var parsed = await this.yarnLockFileFactory.ParseYarnLockFileAsync(singleFileComponentRecorder, file.Stream, this.Logger);
             this.DetectComponents(parsed, file.Location, singleFileComponentRecorder);
         }
         catch (Exception ex)
         {
-            this.Logger.LogBuildWarning($"Could not read components from file {file.Location}.");
-            this.Logger.LogFailedReadingFile(file.Location, ex);
+            this.Logger.LogError(ex, "Could not read components from file {YarnLockLocation}.", file.Location);
         }
     }
 
@@ -73,12 +85,12 @@ public class YarnLockComponentDetector : FileComponentDetector
                 var addSuccessful = yarnPackages.TryAdd(key, entry);
                 if (!addSuccessful)
                 {
-                    this.Logger.LogWarning($"Found duplicate entry {key} in {location}");
+                    this.Logger.LogWarning("Found duplicate entry {Key} in {Location}", key, location);
                 }
             }
         }
 
-        if (yarnPackages.Count == 0 || !this.TryReadPeerPackageJsonRequestsAsYarnEntries(location, yarnPackages, out var yarnRoots))
+        if (yarnPackages.Count == 0 || !this.TryReadPeerPackageJsonRequestsAsYarnEntries(singleFileComponentRecorder, location, yarnPackages, out var yarnRoots))
         {
             return;
         }
@@ -156,7 +168,7 @@ public class YarnLockComponentDetector : FileComponentDetector
                 }
                 else
                 {
-                    this.Logger.LogInfo($"Failed to find resolved dependency for {newDependency.LookupKey}");
+                    this.Logger.LogInformation("Failed to find resolved dependency for {YarnDependency}", newDependency.LookupKey);
                 }
             }
         }
@@ -167,11 +179,12 @@ public class YarnLockComponentDetector : FileComponentDetector
     /// This function reads those from the package.json so that they can later be used as the starting points
     /// in traversing the dependency graph.
     /// </summary>
+    /// <param name="singleFileComponentRecorder">The component recorder for file that is been processed.</param>
     /// <param name="location">The file location of the yarn.lock file.</param>
     /// <param name="yarnEntries">All the yarn entries that we know about.</param>
     /// <param name="yarnRoots">The output yarnRoots that we care about using as starting points.</param>
     /// <returns>False if no package.json file was found at location, otherwise it returns true. </returns>
-    private bool TryReadPeerPackageJsonRequestsAsYarnEntries(string location, Dictionary<string, YarnEntry> yarnEntries, out List<YarnEntry> yarnRoots)
+    private bool TryReadPeerPackageJsonRequestsAsYarnEntries(ISingleFileComponentRecorder singleFileComponentRecorder, string location, Dictionary<string, YarnEntry> yarnEntries, out List<YarnEntry> yarnRoots)
     {
         yarnRoots = new List<YarnEntry>();
 
@@ -190,7 +203,7 @@ public class YarnLockComponentDetector : FileComponentDetector
 
         if (pkgJsonCount != 1)
         {
-            this.Logger.LogWarning($"No package.json was found for file at {location}. It will not be registered.");
+            this.Logger.LogWarning("No package.json was found for file at {Location}. It will not be registered.", location);
             return false;
         }
 
@@ -209,7 +222,8 @@ public class YarnLockComponentDetector : FileComponentDetector
                 var entryKey = $"{name}@npm:{version.Key}";
                 if (!yarnEntries.ContainsKey(entryKey))
                 {
-                    this.Logger.LogWarning($"A package was requested in the package.json file that was a peer of {location} but was not contained in the lockfile. {name} - {version.Key}");
+                    this.Logger.LogWarning("A package was requested in the package.json file that was a peer of {Location} but was not contained in the lockfile. {Name} - {VersionKey}", location, name, version.Key);
+                    singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version.Key}");
                     continue;
                 }
 
@@ -244,7 +258,7 @@ public class YarnLockComponentDetector : FileComponentDetector
 
             foreach (var stream in componentStreams)
             {
-                this.Logger.LogInfo($"{stream.Location} found for workspace {workspacePattern}");
+                this.Logger.LogInformation("{ComponentLocation} found for workspace {WorkspacePattern}", stream.Location, workspacePattern);
                 var combinedDependencies = NpmComponentUtilities.TryGetAllPackageJsonDependencies(stream.Stream, out _);
 
                 foreach (var dependency in combinedDependencies)

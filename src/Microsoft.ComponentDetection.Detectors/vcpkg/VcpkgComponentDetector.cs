@@ -1,6 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
+
+using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,20 +9,29 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
-
-[Export(typeof(IComponentDetector))]
 public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private readonly HashSet<string> projectRoots = new HashSet<string>();
 
-    [Import]
-    public ICommandLineInvocationService CommandLineInvocationService { get; set; }
+    private readonly ICommandLineInvocationService commandLineInvocationService;
+    private readonly IEnvironmentVariableService envVarService;
 
-    [Import]
-    public IEnvironmentVariableService EnvVarService { get; set; }
+    public VcpkgComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        IEnvironmentVariableService environmentVariableService,
+        ILogger<VcpkgComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.commandLineInvocationService = commandLineInvocationService;
+        this.envVarService = environmentVariableService;
+        this.Logger = logger;
+    }
 
     public override string Id { get; } = "Vcpkg";
 
@@ -33,12 +43,12 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
 
     public override int Version => 2;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        this.Logger.LogInfo($"vcpkg detector found {file}");
+        this.Logger.LogDebug("vcpkg detector found {File}", file);
 
         var projectRootDirectory = Directory.GetParent(file.Location);
         if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
@@ -46,10 +56,10 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
             return;
         }
 
-        await this.ParseSpdxFile(singleFileComponentRecorder, file);
+        await this.ParseSpdxFileAsync(singleFileComponentRecorder, file);
     }
 
-    private async Task ParseSpdxFile(
+    private async Task ParseSpdxFileAsync(
         ISingleFileComponentRecorder singleFileComponentRecorder,
         IComponentStream file)
     {
@@ -78,7 +88,7 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
                     continue;
                 }
 
-                this.Logger.LogVerbose($"vcpkg parsed package {item.Name}");
+                this.Logger.LogDebug("vcpkg parsed package {PackageName}", item.Name);
                 if (item.SPDXID == "SPDXRef-port")
                 {
                     var split = item.VersionInfo.Split('#');
@@ -105,9 +115,10 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                this.Logger.LogWarning($"failed while handling {item.Name}");
+                this.Logger.LogWarning(e, "failed while handling {ItemName}", item.Name);
+                singleFileComponentRecorder.RegisterPackageParseFailure(item.Name);
             }
         }
     }

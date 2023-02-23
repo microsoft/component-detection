@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-
-namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+using System.Collections.Generic;
 
 public class DependencyGraph : Dictionary<string, HashSet<string>>
 {

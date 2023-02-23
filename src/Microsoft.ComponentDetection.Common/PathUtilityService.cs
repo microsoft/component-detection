@@ -1,20 +1,17 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+
+using System;
 using System.Collections.Concurrent;
-using System.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Enumeration;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32.SafeHandles;
 
-namespace Microsoft.ComponentDetection.Common;
-
 // We may want to consider breaking this class into Win/Mac/Linux variants if it gets bigger
-[Export(typeof(IPathUtilityService))]
-[Export(typeof(PathUtilityService))]
-[Shared]
 public class PathUtilityService : IPathUtilityService
 {
     public const uint CreationDispositionRead = 0x3;
@@ -32,7 +29,10 @@ public class PathUtilityService : IPathUtilityService
     private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
 
     private readonly object isRunningOnWindowsContainerLock = new object();
-    private bool? isRunningOnWindowsContainer = null;
+    private readonly ILogger logger;
+    private bool? isRunningOnWindowsContainer;
+
+    public PathUtilityService(ILogger<PathUtilityService> logger) => this.logger = logger;
 
     public bool IsRunningOnWindowsContainer
     {
@@ -53,9 +53,6 @@ public class PathUtilityService : IPathUtilityService
         }
     }
 
-    [Import]
-    public ILogger Logger { get; set; }
-
     /// <summary>
     /// This call can be made on a linux system to get the absolute path of a file. It will resolve nested layers.
     /// Note: You may pass IntPtr.Zero to the output parameter. You MUST then free the IntPtr that RealPathLinux returns
@@ -65,7 +62,10 @@ public class PathUtilityService : IPathUtilityService
     /// <param name="output"> The pointer output. </param>
     /// <returns> A pointer <see cref= "IntPtr"/> to the absolute path of a file. </returns>
     [DllImport("libc", EntryPoint = "realpath")]
-    public static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments. libc expects a null-terminated ANSI string.
+    private static extern IntPtr RealPathLinux([MarshalAs(UnmanagedType.LPStr)] string path, IntPtr output);
+#pragma warning restore CA2101 // Specify marshaling for P/Invoke string arguments
 
     /// <summary>
     /// Use this function to free memory and prevent memory leaks.
@@ -74,7 +74,8 @@ public class PathUtilityService : IPathUtilityService
     /// </summary>
     /// <param name="toFree">Pointer to the memory space to free. </param>
     [DllImport("libc", EntryPoint = "free")]
-    public static extern void FreeMemoryLinux([In] IntPtr toFree);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    private static extern void FreeMemoryLinux([In] IntPtr toFree);
 
     public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
     {
@@ -170,14 +171,14 @@ public class PathUtilityService : IPathUtilityService
             return path;
         }
 
-        var resultBuilder = new StringBuilder(InitalPathBufferSize);
-        var mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuilder, resultBuilder.Capacity, 0);
+        var resultBuf = new char[InitalPathBufferSize];
+        var mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuf, InitalPathBufferSize, 0);
 
         // If GetFinalPathNameByHandle needs a bigger buffer, it will tell us the size it needs (including the null terminator) in finalPathNameResultCode
         if (mResult > InitalPathBufferSize)
         {
-            resultBuilder = new StringBuilder(mResult);
-            mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuilder, resultBuilder.Capacity, 0);
+            resultBuf = new char[mResult];
+            mResult = GetFinalPathNameByHandle(directoryHandle.DangerousGetHandle(), resultBuf, mResult, 0);
         }
 
         if (mResult < 0)
@@ -185,7 +186,7 @@ public class PathUtilityService : IPathUtilityService
             return path;
         }
 
-        var result = resultBuilder.ToString();
+        var result = resultBuf.ToString();
 
         result = result.StartsWith(LongPathPrefix) ? result[LongPathPrefix.Length..] : result;
 
@@ -218,7 +219,7 @@ public class PathUtilityService : IPathUtilityService
         }
         catch (Exception ex)
         {
-            this.Logger.LogException(ex, isError: false, printException: true);
+            this.logger.LogError(ex, "Failed to resolve path {Path}", path);
             return path;
         }
         finally
@@ -231,6 +232,7 @@ public class PathUtilityService : IPathUtilityService
     }
 
     [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern SafeFileHandle CreateFile(
         [In] string lpFileName,
         [In] uint dwDesiredAccess,
@@ -241,7 +243,8 @@ public class PathUtilityService : IPathUtilityService
         [In] IntPtr hTemplateFile);
 
     [DllImport("kernel32.dll", EntryPoint = "GetFinalPathNameByHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] StringBuilder lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static extern int GetFinalPathNameByHandle([In] IntPtr hFile, [Out] char[] lpszFilePath, [In] int cchFilePath, [In] int dwFlags);
 
     private bool CheckIfRunningOnWindowsContainer()
     {
@@ -278,7 +281,7 @@ public class PathUtilityService : IPathUtilityService
 
         if (sb.ToString().Contains("Container Execution Agent"))
         {
-            this.Logger.LogWarning("Detected execution in a Windows container. Currently windows containers < 1809 do not support symlinks well, so disabling symlink resolution/dedupe behavior");
+            this.logger.LogWarning("Detected execution in a Windows container. Currently windows containers < 1809 do not support symlinks well, so disabling symlink resolution/dedupe behavior");
             return true;
         }
         else

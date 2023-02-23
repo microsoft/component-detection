@@ -1,7 +1,6 @@
-﻿using Microsoft.ComponentDetection.Contracts.TypedComponent;
+﻿namespace Microsoft.ComponentDetection.Contracts.Tests;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Contracts.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]

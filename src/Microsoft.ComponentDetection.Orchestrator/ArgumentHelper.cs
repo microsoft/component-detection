@@ -1,18 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Composition;
+namespace Microsoft.ComponentDetection.Orchestrator;
+using System.Collections.Generic;
 using System.Linq;
 using CommandLine;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
-namespace Microsoft.ComponentDetection.Orchestrator;
-
-[Export(typeof(IArgumentHelper))]
 public class ArgumentHelper : IArgumentHelper
 {
-    public ArgumentHelper() => this.ArgumentSets = Enumerable.Empty<IScanArguments>();
+    private readonly IEnumerable<IScanArguments> argumentSets;
 
-    [ImportMany]
-    public IEnumerable<IScanArguments> ArgumentSets { get; set; }
+    public ArgumentHelper(IEnumerable<IScanArguments> argumentSets) => this.argumentSets = argumentSets;
 
     public static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
     {
@@ -35,7 +31,7 @@ public class ArgumentHelper : IArgumentHelper
 
     public ParserResult<object> ParseArguments(string[] args)
     {
-        return Parser.Default.ParseArguments(args, this.ArgumentSets.Select(x => x.GetType()).ToArray());
+        return Parser.Default.ParseArguments(args, this.argumentSets.Select(x => x.GetType()).ToArray());
     }
 
     public ParserResult<T> ParseArguments<T>(string[] args, bool ignoreInvalidArgs = false)

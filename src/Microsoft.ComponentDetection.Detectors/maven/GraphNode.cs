@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-
-namespace Microsoft.ComponentDetection.Detectors.Maven;
+﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+using System.Collections.Generic;
 
 /// <summary>
 /// Internal state holder used by Maven detector.

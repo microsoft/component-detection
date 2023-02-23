@@ -1,14 +1,15 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+
+using System;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common;
+using Microsoft.Extensions.Logging;
 
 public class LazyComponentStream : IComponentStream
 {
     private readonly FileInfo fileInfo;
-    private readonly Lazy<byte[]> fileBuffer;
     private readonly ILogger logger;
+    private readonly Lazy<byte[]> fileBuffer;
 
     public LazyComponentStream(FileInfo fileInfo, string pattern, ILogger logger)
     {
@@ -36,16 +37,15 @@ public class LazyComponentStream : IComponentStream
 
             return buffer;
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException e)
         {
-            this.logger?.LogWarning($"Unauthorized access exception caught when trying to open {this.fileInfo.FullName}");
+            this.logger.LogWarning(e, "Unauthorized access exception caught when trying to open {FileName}", this.fileInfo.FullName);
         }
         catch (Exception e)
         {
-            this.logger?.LogWarning($"Unhandled exception caught when trying to open {this.fileInfo.FullName}");
-            this.logger?.LogException(e, isError: false);
+            this.logger.LogWarning(e, "Unhandled exception caught when trying to open {FileName}", this.fileInfo.FullName);
         }
 
-        return new byte[0];
+        return Array.Empty<byte>();
     }
 }

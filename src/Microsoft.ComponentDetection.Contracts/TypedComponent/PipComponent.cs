@@ -1,7 +1,6 @@
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 using System.Diagnostics.CodeAnalysis;
 using PackageUrl;
-
-namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 public class PipComponent : TypedComponent
 {

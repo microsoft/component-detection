@@ -1,15 +1,16 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NuGet.Versioning;
-
-namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 public static class NpmComponentUtilities
 {
@@ -43,13 +44,13 @@ public static class NpmComponentUtilities
 
         if (!IsPackageNameValid(name))
         {
-            logger.LogInfo($"The package name {name} is invalid or unsupported and a component will not be recorded.");
+            logger.LogInformation("The package name {PackageName} is invalid or unsupported and a component will not be recorded.", name);
             return null;
         }
 
         if (!SemanticVersion.TryParse(version, out var result) && !TryParseNpmVersion(npmRegistryHost, name, version, out result))
         {
-            logger.LogInfo($"Version string {version} for component {name} is invalid or unsupported and a component will not be recorded.");
+            logger.LogInformation("Version string {ComponentVersion} for component {ComponentName} is invalid or unsupported and a component will not be recorded.", version, name);
             return null;
         }
 

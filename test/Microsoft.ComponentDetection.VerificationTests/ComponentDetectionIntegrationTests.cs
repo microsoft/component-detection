@@ -1,4 +1,6 @@
-﻿using System;
+namespace Microsoft.ComponentDetection.VerificationTests;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,265 +11,262 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.VerificationTests
+[TestClass]
+public class ComponentDetectionIntegrationTests
 {
-    [TestClass]
-    public class ComponentDetectionIntegrationTests
+    private string oldLogFileContents;
+    private string newLogFileContents;
+    private DefaultGraphScanResult oldScanResult;
+    private DefaultGraphScanResult newScanResult;
+    private List<string> bumpedDetectorVersions;
+    private double allowedTimeDriftRatio;
+
+    [TestInitialize]
+    public void GatherResources()
     {
-        private string oldLogFileContents;
-        private string newLogFileContents;
-        private DefaultGraphScanResult oldScanResult;
-        private DefaultGraphScanResult newScanResult;
-        private List<string> bumpedDetectorVersions;
-        private double allowedTimeDriftRatio;
+        var oldGithubArtifactsDir = Environment.GetEnvironmentVariable("GITHUB_OLD_ARTIFACTS_DIR");
+        var newGithubArtifactsDir = Environment.GetEnvironmentVariable("GITHUB_NEW_ARTIFACTS_DIR");
+        var allowedTimeDriftRatioString = Environment.GetEnvironmentVariable("ALLOWED_TIME_DRIFT_RATIO");
+        this.allowedTimeDriftRatio = string.IsNullOrEmpty(allowedTimeDriftRatioString) ? .1 : double.Parse(allowedTimeDriftRatioString);
 
-        [TestInitialize]
-        public void GatherResources()
+        this.SetupGithub(oldGithubArtifactsDir, newGithubArtifactsDir);
+    }
+
+    [TestMethod]
+    public void LogFileHasNoErrors()
+    {
+        // make sure the new log does not contain any error messages.
+        var errorIndex = this.newLogFileContents.IndexOf("[ERROR]");
+        if (errorIndex >= 0)
         {
-            var oldGithubArtifactsDir = Environment.GetEnvironmentVariable("GITHUB_OLD_ARTIFACTS_DIR");
-            var newGithubArtifactsDir = Environment.GetEnvironmentVariable("GITHUB_NEW_ARTIFACTS_DIR");
-            var allowedTimeDriftRatioString = Environment.GetEnvironmentVariable("ALLOWED_TIME_DRIFT_RATIO");
-            this.allowedTimeDriftRatio = string.IsNullOrEmpty(allowedTimeDriftRatioString) ? .1 : double.Parse(allowedTimeDriftRatioString);
-
-            this.SetupGithub(oldGithubArtifactsDir, newGithubArtifactsDir);
+            // prints out the line that the error occured.
+            var errorMessage = $"An Error was found: {this.newLogFileContents.Substring(errorIndex, 200)}";
+            throw new InvalidOperationException(errorMessage);
         }
+    }
 
-        [TestMethod]
-        public void LogFileHasNoErrors()
+    [TestMethod]
+    public void CheckManifestFiles_ExcludingExperimentalDetectors()
+    {
+        // can't just compare contents since the order of detectors is non deterministic.
+        // Parse out array of components
+        // make sure each component id has identical fields.
+        // if any are lost, error, new ones should come with a bumped detector version, which is checked during the detectors counts test.
+        var experimentalDetectorsId = this.GetExperimentalDetectorsId(this.newScanResult.DetectorsInScan, this.oldScanResult.DetectorsInScan);
+
+        var newComponents = this.newScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
+        var oldComponents = this.oldScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
+
+        var newComponentDictionary = this.GetComponentDictionary(newComponents);
+        var oldComponentDictionary = this.GetComponentDictionary(oldComponents);
+        using (new AssertionScope())
         {
-            // make sure the new log does not contain any error messages.
-            var errorIndex = this.newLogFileContents.IndexOf("[ERROR]");
-            if (errorIndex >= 0)
+            this.CompareDetectedComponents(oldComponents, newComponentDictionary, "new");
+            this.CompareDetectedComponents(newComponents, oldComponentDictionary, "old");
+            var oldGraphs = this.oldScanResult.DependencyGraphs;
+            var newGraphs = this.newScanResult.DependencyGraphs;
+            this.CompareGraphs(oldGraphs, newGraphs, "old", "new");
+            this.CompareGraphs(newGraphs, oldGraphs, "new", "old");
+        }
+    }
+
+    private ISet<string> GetExperimentalDetectorsId(IEnumerable<Detector> newScanDetectors, IEnumerable<Detector> oldScanDetectors)
+    {
+        var experimentalDetectorsId = new HashSet<string>();
+
+        foreach (var detector in newScanDetectors)
+        {
+            if (detector.IsExperimental)
             {
-                // prints out the line that the error occured.
-                var errorMessage = $"An Error was found: {this.newLogFileContents.Substring(errorIndex, 200)}";
-                throw new Exception(errorMessage);
+                experimentalDetectorsId.Add(detector.DetectorId);
             }
         }
 
-        [TestMethod]
-        public void CheckManifestFiles_ExcludingExperimentalDetectors()
+        foreach (var detector in oldScanDetectors)
         {
-            // can't just compare contents since the order of detectors is non deterministic.
-            // Parse out array of components
-            // make sure each component id has identical fields.
-            // if any are lost, error, new ones should come with a bumped detector version, which is checked during the detectors counts test.
-            var experimentalDetectorsId = this.GetExperimentalDetectorsId(this.newScanResult.DetectorsInScan, this.oldScanResult.DetectorsInScan);
-
-            var newComponents = this.newScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
-            var oldComponents = this.oldScanResult.ComponentsFound.Where(c => !experimentalDetectorsId.Contains(c.DetectorId));
-
-            var newComponentDictionary = this.GetComponentDictionary(newComponents);
-            var oldComponentDictionary = this.GetComponentDictionary(oldComponents);
-            using (new AssertionScope())
+            if (detector.IsExperimental)
             {
-                this.CompareDetectedComponents(oldComponents, newComponentDictionary, "new");
-                this.CompareDetectedComponents(newComponents, oldComponentDictionary, "old");
-                var oldGraphs = this.oldScanResult.DependencyGraphs;
-                var newGraphs = this.newScanResult.DependencyGraphs;
-                this.CompareGraphs(oldGraphs, newGraphs, "old", "new");
-                this.CompareGraphs(newGraphs, oldGraphs, "new", "old");
+                experimentalDetectorsId.Add(detector.DetectorId);
             }
         }
 
-        private ISet<string> GetExperimentalDetectorsId(IEnumerable<Detector> newScanDetectors, IEnumerable<Detector> oldScanDetectors)
-        {
-            var experimentalDetectorsId = new HashSet<string>();
+        return experimentalDetectorsId;
+    }
 
-            foreach (var detector in newScanDetectors)
+    private void CompareDetectedComponents(IEnumerable<ScannedComponent> leftComponents, Dictionary<string, ScannedComponent> rightComponentDictionary, string rightFileName)
+    {
+        foreach (var leftComponent in leftComponents)
+        {
+            var foundComponent = rightComponentDictionary.TryGetValue(this.GetKey(leftComponent), out var rightComponent);
+            if (!foundComponent)
             {
-                if (detector.IsExperimental)
-                {
-                    experimentalDetectorsId.Add(detector.DetectorId);
-                }
+                foundComponent.Should().BeTrue($"The component for {this.GetKey(leftComponent)} was not present in the {rightFileName} manifest file. Verify this is expected behavior before proceeding");
             }
 
-            foreach (var detector in oldScanDetectors)
+            if (leftComponent.IsDevelopmentDependency != null)
             {
-                if (detector.IsExperimental)
-                {
-                    experimentalDetectorsId.Add(detector.DetectorId);
-                }
-            }
-
-            return experimentalDetectorsId;
-        }
-
-        private void CompareDetectedComponents(IEnumerable<ScannedComponent> leftComponents, Dictionary<string, ScannedComponent> rightComponentDictionary, string rightFileName)
-        {
-            foreach (var leftComponent in leftComponents)
-            {
-                var foundComponent = rightComponentDictionary.TryGetValue(this.GetKey(leftComponent), out var rightComponent);
-                if (!foundComponent)
-                {
-                    foundComponent.Should().BeTrue($"The component for {this.GetKey(leftComponent)} was not present in the {rightFileName} manifest file. Verify this is expected behavior before proceeding");
-                }
-
-                if (leftComponent.IsDevelopmentDependency != null)
-                {
-                    leftComponent.IsDevelopmentDependency.Should().Be(rightComponent.IsDevelopmentDependency, $"Component: {this.GetKey(rightComponent)} has a different \"DevelopmentDependency\".");
-                }
+                leftComponent.IsDevelopmentDependency.Should().Be(rightComponent.IsDevelopmentDependency, $"Component: {this.GetKey(rightComponent)} has a different \"DevelopmentDependency\".");
             }
         }
+    }
 
-        private void CompareGraphs(DependencyGraphCollection leftGraphs, DependencyGraphCollection newGraphs, string leftGraphName, string rightGraphName)
+    private void CompareGraphs(DependencyGraphCollection leftGraphs, DependencyGraphCollection newGraphs, string leftGraphName, string rightGraphName)
+    {
+        foreach (var leftGraph in leftGraphs)
         {
-            foreach (var leftGraph in leftGraphs)
-            {
-                newGraphs.TryGetValue(leftGraph.Key, out var rightGraph).Should().BeTrue($"File {leftGraph.Key} is in the {leftGraphName} dependency graph, but not in the {rightGraphName} one.");
+            newGraphs.TryGetValue(leftGraph.Key, out var rightGraph).Should().BeTrue($"File {leftGraph.Key} is in the {leftGraphName} dependency graph, but not in the {rightGraphName} one.");
 
-                if (rightGraph == null)
+            if (rightGraph == null)
+            {
+                // the rest of test depends on rightDependencies, if it is null a
+                // NullReferenceException is going to be thrown stopping the verification process
+                // the previous test that validate its existance is going to include a meaningfull message
+                // in the test summary
+                continue;
+            }
+
+            foreach (var leftComponent in leftGraph.Value.ExplicitlyReferencedComponentIds)
+            {
+                rightGraph.ExplicitlyReferencedComponentIds.Should().Contain(leftComponent, $"Component {leftComponent} was explicitly referenced in the {leftGraphName} dependency graph, but is not in the {rightGraphName} one.");
+            }
+
+            foreach (var leftComponent in leftGraph.Value.Graph)
+            {
+                rightGraph.Graph.TryGetValue(leftComponent.Key, out var rightDependencies).Should().BeTrue($"Component {leftComponent} was in the {leftGraphName} dependency graph, but is not in the {rightGraphName} one.");
+
+                if (rightDependencies == null)
                 {
                     // the rest of test depends on rightDependencies, if it is null a
                     // NullReferenceException is going to be thrown stopping the verification process
-                    // the previous test that validate its existance is going to include a meaningfull message
-                    // in the test summary
                     continue;
                 }
 
-                foreach (var leftComponent in leftGraph.Value.ExplicitlyReferencedComponentIds)
+                var leftDependenciesGraph = leftGraph.Value.Graph[leftComponent.Key];
+                if (leftDependenciesGraph != null)
                 {
-                    rightGraph.ExplicitlyReferencedComponentIds.Should().Contain(leftComponent, $"Component {leftComponent} was explicitly referenced in the {leftGraphName} dependency graph, but is not in the {rightGraphName} one.");
-                }
-
-                foreach (var leftComponent in leftGraph.Value.Graph)
-                {
-                    rightGraph.Graph.TryGetValue(leftComponent.Key, out var rightDependencies).Should().BeTrue($"Component {leftComponent} was in the {leftGraphName} dependency graph, but is not in the {rightGraphName} one.");
-
-                    if (rightDependencies == null)
+                    var leftDependencies = leftGraph.Value.Graph[leftComponent.Key];
+                    foreach (var leftDependency in leftDependencies)
                     {
-                        // the rest of test depends on rightDependencies, if it is null a
-                        // NullReferenceException is going to be thrown stopping the verification process
-                        continue;
+                        rightDependencies.Should().Contain(leftDependency, $"Component dependency {leftDependency} for component {leftComponent} was not in the {rightGraphName} dependency graph.");
                     }
 
-                    var leftDependenciesGraph = leftGraph.Value.Graph[leftComponent.Key];
-                    if (leftDependenciesGraph != null)
-                    {
-                        var leftDependencies = leftGraph.Value.Graph[leftComponent.Key];
-                        foreach (var leftDependency in leftDependencies)
-                        {
-                            rightDependencies.Should().Contain(leftDependency, $"Component dependency {leftDependency} for component {leftComponent} was not in the {rightGraphName} dependency graph.");
-                        }
-
-                        leftDependencies.Should().BeEquivalentTo(rightDependencies, $"{rightGraphName} has the following components that were not found in {leftGraphName}, please verify this is expected behavior. {JsonConvert.SerializeObject(rightDependencies.Except(leftDependencies))}");
-                    }
+                    leftDependencies.Should().BeEquivalentTo(rightDependencies, $"{rightGraphName} has the following components that were not found in {leftGraphName}, please verify this is expected behavior. {JsonConvert.SerializeObject(rightDependencies.Except(leftDependencies))}");
                 }
             }
         }
+    }
 
-        private Dictionary<string, ScannedComponent> GetComponentDictionary(IEnumerable<ScannedComponent> scannedComponents)
-        {
-            // The Maven detector currently returns duplicate components in some cases, so we do this to insulate.
-            var grouping = scannedComponents.GroupBy(x => this.GetKey(x));
-            return grouping.ToDictionary(x => x.Key, x => x.First());
-        }
+    private Dictionary<string, ScannedComponent> GetComponentDictionary(IEnumerable<ScannedComponent> scannedComponents)
+    {
+        // The Maven detector currently returns duplicate components in some cases, so we do this to insulate.
+        var grouping = scannedComponents.GroupBy(x => this.GetKey(x));
+        return grouping.ToDictionary(x => x.Key, x => x.First());
+    }
 
-        private string GetKey(ScannedComponent component)
-        {
-            return $"{component.DetectorId}-{component.Component.Id}";
-        }
+    private string GetKey(ScannedComponent component)
+    {
+        return $"{component.DetectorId}-{component.Component.Id}";
+    }
 
-        [TestMethod]
-        public void CheckDetectorsRunTimesAndCounts()
+    [TestMethod]
+    public void CheckDetectorsRunTimesAndCounts()
+    {
+        // makes sure that all detectors have the same number of components found.
+        // if some are lost, error.
+        // if some are new, check if version of detector is updated. if it isn't error
+        // Run times should be fairly close to identical. errors if there is an increase of more than 5%
+        using (new AssertionScope())
         {
-            // makes sure that all detectors have the same number of components found.
-            // if some are lost, error.
-            // if some are new, check if version of detector is updated. if it isn't error
-            // Run times should be fairly close to identical. errors if there is an increase of more than 5%
-            using (new AssertionScope())
+            this.ProcessDetectorVersions();
+            var regexPattern = @"Detection time: (\w+\.\w+) seconds.\w?|(\w+ *[\w()]+) *\|(\w+\.*\w*) seconds *\|(\d+)";
+            var oldMatches = Regex.Matches(this.oldLogFileContents, regexPattern);
+            var newMatches = Regex.Matches(this.newLogFileContents, regexPattern);
+
+            newMatches.Should().HaveCountGreaterOrEqualTo(oldMatches.Count, "A detector was lost, make sure this was intentional.");
+
+            var detectorTimes = new Dictionary<string, float>();
+            var detectorCounts = new Dictionary<string, int>();
+            foreach (var match in oldMatches.Cast<Match>())
             {
-                this.ProcessDetectorVersions();
-                var regexPattern = @"Detection time: (\w+\.\w+) seconds. |(\w+ *[\w()]+) *\|(\w+\.*\w*) seconds *\|(\d+)";
-                var oldMatches = Regex.Matches(this.oldLogFileContents, regexPattern);
-                var newMatches = Regex.Matches(this.newLogFileContents, regexPattern);
-
-                newMatches.Should().HaveCountGreaterOrEqualTo(oldMatches.Count, "A detector was lost, make sure this was intentional.");
-
-                var detectorTimes = new Dictionary<string, float>();
-                var detectorCounts = new Dictionary<string, int>();
-                foreach (var match in oldMatches.Cast<Match>())
+                if (!match.Groups[2].Success)
                 {
-                    if (!match.Groups[2].Success)
-                    {
-                        detectorTimes.Add("TotalTime", float.Parse(match.Groups[1].Value));
-                    }
-                    else
-                    {
-                        var detectorId = match.Groups[2].Value;
-                        detectorTimes.Add(detectorId, float.Parse(match.Groups[3].Value));
-                        detectorCounts.Add(detectorId, int.Parse(match.Groups[4].Value));
-                    }
+                    detectorTimes.Add("TotalTime", float.Parse(match.Groups[1].Value));
                 }
-
-                // fail at the end to gather all failures instead of just the first.
-                foreach (var match in newMatches.Cast<Match>())
+                else
                 {
-                    // for each detector and overall, make sure the time doesn't increase by more than 10%
-                    // for each detector make sure component counts do not change. if they increase, make sure the version of the detector was bumped.
-                    if (!match.Groups[2].Success)
-                    {
-                        detectorTimes.TryGetValue("TotalTime", out var oldTime);
-                        var newTime = float.Parse(match.Groups[1].Value);
-
-                        var maxTimeThreshold = (float)(oldTime + Math.Max(5, oldTime * this.allowedTimeDriftRatio));
-                        newTime.Should().BeLessOrEqualTo(maxTimeThreshold, $"Total Time take increased by a large amount. Please verify before continuing. old time: {oldTime}, new time: {newTime}");
-                    }
-                    else
-                    {
-                        var detectorId = match.Groups[2].Value;
-                        var newCount = int.Parse(match.Groups[4].Value);
-                        if (detectorCounts.TryGetValue(detectorId, out var oldCount))
-                        {
-                            newCount.Should().BeGreaterOrEqualTo(oldCount, $"{oldCount - newCount} Components were lost for detector {detectorId}. Verify this is expected behavior. \n Old Count: {oldCount}, PPE Count: {newCount}");
-
-                            (newCount > oldCount && !this.bumpedDetectorVersions.Contains(detectorId)).Should().BeFalse($"{newCount - oldCount} New Components were found for detector {detectorId}, but the detector version was not updated.");
-                        }
-                    }
+                    var detectorId = match.Groups[2].Value;
+                    detectorTimes.Add(detectorId, float.Parse(match.Groups[3].Value));
+                    detectorCounts.Add(detectorId, int.Parse(match.Groups[4].Value));
                 }
             }
-        }
 
-        private void ProcessDetectorVersions()
-        {
-            var oldDetectors = this.oldScanResult.DetectorsInScan;
-            var newDetectors = this.newScanResult.DetectorsInScan;
-            this.bumpedDetectorVersions = new List<string>();
-            foreach (var cd in oldDetectors)
+            // fail at the end to gather all failures instead of just the first.
+            foreach (var match in newMatches.Cast<Match>())
             {
-                var newDetector = newDetectors.FirstOrDefault(det => det.DetectorId == cd.DetectorId);
-
-                if (newDetector == null)
+                // for each detector and overall, make sure the time doesn't increase by more than 10%
+                // for each detector make sure component counts do not change. if they increase, make sure the version of the detector was bumped.
+                if (!match.Groups[2].Success)
                 {
-                    newDetector.Should().NotBeNull($"the detector {cd.DetectorId} was lost, verify this is expected behavior");
-                    continue;
+                    detectorTimes.TryGetValue("TotalTime", out var oldTime);
+                    var newTime = float.Parse(match.Groups[1].Value);
+
+                    var maxTimeThreshold = (float)(oldTime + Math.Max(5, oldTime * this.allowedTimeDriftRatio));
+                    newTime.Should().BeLessOrEqualTo(maxTimeThreshold, $"Total Time take increased by a large amount. Please verify before continuing. old time: {oldTime}, new time: {newTime}");
                 }
-
-                newDetector.Version.Should().BeGreaterOrEqualTo(cd.Version, $"the version for detector {cd.DetectorId} was unexpectedly reduced. please check all detector versions and verify this behavior.");
-
-                if (newDetector.Version > cd.Version)
+                else
                 {
-                    this.bumpedDetectorVersions.Add(cd.DetectorId);
-                }
+                    var detectorId = match.Groups[2].Value;
+                    var newCount = int.Parse(match.Groups[4].Value);
+                    if (detectorCounts.TryGetValue(detectorId, out var oldCount))
+                    {
+                        newCount.Should().BeGreaterOrEqualTo(oldCount, $"{oldCount - newCount} Components were lost for detector {detectorId}. Verify this is expected behavior. \n Old Count: {oldCount}, PPE Count: {newCount}");
 
-                cd.SupportedComponentTypes.Should().OnlyContain(type => newDetector.SupportedComponentTypes.Contains(type), "the detector {cd.DetectorId} has lost suppported component types. Verify this is expected behavior.");
+                        (newCount > oldCount && !this.bumpedDetectorVersions.Contains(detectorId)).Should().BeFalse($"{newCount - oldCount} New Components were found for detector {detectorId}, but the detector version was not updated.");
+                    }
+                }
             }
         }
+    }
 
-        private void SetupGithub(string oldGithubArtifactsDir, string newGithubArtifactsDir)
+    private void ProcessDetectorVersions()
+    {
+        var oldDetectors = this.oldScanResult.DetectorsInScan;
+        var newDetectors = this.newScanResult.DetectorsInScan;
+        this.bumpedDetectorVersions = new List<string>();
+        foreach (var cd in oldDetectors)
         {
-            var oldGithubDirectory = new DirectoryInfo(oldGithubArtifactsDir);
-            this.oldLogFileContents = this.GetFileTextWithPattern("GovCompDisc_Log*.log", oldGithubDirectory);
-            this.oldScanResult = JsonConvert.DeserializeObject<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", oldGithubDirectory));
+            var newDetector = newDetectors.FirstOrDefault(det => det.DetectorId == cd.DetectorId);
 
-            var newGithubDirectory = new DirectoryInfo(newGithubArtifactsDir);
-            this.newLogFileContents = this.GetFileTextWithPattern("GovCompDisc_Log*.log", newGithubDirectory);
-            this.newScanResult = JsonConvert.DeserializeObject<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", newGithubDirectory));
-        }
+            if (newDetector == null)
+            {
+                newDetector.Should().NotBeNull($"the detector {cd.DetectorId} was lost, verify this is expected behavior");
+                continue;
+            }
 
-        private string GetFileTextWithPattern(string pattern, DirectoryInfo directory)
-        {
-            return directory.GetFiles(pattern).Single().OpenText().ReadToEnd();
+            newDetector.Version.Should().BeGreaterOrEqualTo(cd.Version, $"the version for detector {cd.DetectorId} was unexpectedly reduced. please check all detector versions and verify this behavior.");
+
+            if (newDetector.Version > cd.Version)
+            {
+                this.bumpedDetectorVersions.Add(cd.DetectorId);
+            }
+
+            cd.SupportedComponentTypes.Should().OnlyContain(type => newDetector.SupportedComponentTypes.Contains(type), "the detector {cd.DetectorId} has lost suppported component types. Verify this is expected behavior.");
         }
+    }
+
+    private void SetupGithub(string oldGithubArtifactsDir, string newGithubArtifactsDir)
+    {
+        var oldGithubDirectory = new DirectoryInfo(oldGithubArtifactsDir);
+        this.oldLogFileContents = this.GetFileTextWithPattern("GovCompDisc_Log*.log", oldGithubDirectory);
+        this.oldScanResult = JsonConvert.DeserializeObject<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", oldGithubDirectory));
+
+        var newGithubDirectory = new DirectoryInfo(newGithubArtifactsDir);
+        this.newLogFileContents = this.GetFileTextWithPattern("GovCompDisc_Log*.log", newGithubDirectory);
+        this.newScanResult = JsonConvert.DeserializeObject<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", newGithubDirectory));
+    }
+
+    private string GetFileTextWithPattern(string pattern, DirectoryInfo directory)
+    {
+        return directory.GetFiles(pattern).Single().OpenText().ReadToEnd();
     }
 }

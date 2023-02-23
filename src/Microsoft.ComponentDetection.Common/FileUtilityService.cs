@@ -1,15 +1,10 @@
-﻿using System.Composition;
+namespace Microsoft.ComponentDetection.Common;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common;
 
 /// <summary>
 /// Wraps some common file operations for easier testability. This interface is *only used by the command line driven app*.
 /// </summary>
-[Export(typeof(IFileUtilityService))]
-[Export(typeof(FileUtilityService))]
-[Shared]
 public class FileUtilityService : IFileUtilityService
 {
     public string ReadAllText(string filePath)

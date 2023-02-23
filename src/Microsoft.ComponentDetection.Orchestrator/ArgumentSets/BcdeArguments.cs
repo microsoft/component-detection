@@ -1,13 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Composition;
+namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using System.Collections.Generic;
 using System.IO;
 using CommandLine;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
-
 [Verb("scan", HelpText = "Scans components")]
-[Export(typeof(IScanArguments))]
 public class BcdeArguments : BaseArguments, IDetectionArguments
 {
     [Option("DirectoryExclusionList", Required = false, Separator = ';', HelpText = "Filters out specific directories following a minimatch pattern.")]

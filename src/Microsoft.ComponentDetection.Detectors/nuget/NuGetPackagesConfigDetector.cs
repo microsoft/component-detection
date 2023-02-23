@@ -2,17 +2,26 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.Threading.Tasks;
 using System.Xml;
 using global::NuGet.Packaging;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
-[Export(typeof(IComponentDetector))]
 public class NuGetPackagesConfigDetector : FileComponentDetector
 {
+    public NuGetPackagesConfigDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<NuGetPackagesConfigDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override IList<string> SearchPatterns => new[] { "packages.config" };
 
     public override string Id => "NuGetPackagesConfig";
@@ -24,7 +33,7 @@ public class NuGetPackagesConfigDetector : FileComponentDetector
 
     public override int Version => 1;
 
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         try
         {
@@ -43,7 +52,7 @@ public class NuGetPackagesConfigDetector : FileComponentDetector
         }
         catch (Exception e) when (e is PackagesConfigReaderException or XmlException)
         {
-            this.Logger.LogFailedReadingFile(processRequest.ComponentStream.Location, e);
+            this.Logger.LogError(e, "Failed to read packages.config file {File}", processRequest.ComponentStream.Location);
         }
 
         return Task.CompletedTask;

@@ -1,24 +1,30 @@
-﻿using System.Composition;
-using System.Linq;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.Extensions.Logging;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
-
-[Export(typeof(IArgumentHandlingService))]
-public class DetectorListingCommandService : ServiceBase, IArgumentHandlingService
+public class DetectorListingCommandService : IArgumentHandlingService
 {
-    [Import]
-    public IDetectorRegistryService DetectorRegistryService { get; set; }
+    private readonly IEnumerable<IComponentDetector> detectors;
+    private readonly ILogger<DetectorListingCommandService> logger;
+
+    public DetectorListingCommandService(
+        IEnumerable<IComponentDetector> detectors,
+        ILogger<DetectorListingCommandService> logger)
+    {
+        this.detectors = detectors;
+        this.logger = logger;
+    }
 
     public bool CanHandle(IScanArguments arguments)
     {
         return arguments is ListDetectionArgs;
     }
 
-    public async Task<ScanResult> Handle(IScanArguments arguments)
+    public async Task<ScanResult> HandleAsync(IScanArguments arguments)
     {
         await this.ListDetectorsAsync(arguments as IListDetectionArgs);
         return new ScanResult()
@@ -29,13 +35,11 @@ public class DetectorListingCommandService : ServiceBase, IArgumentHandlingServi
 
     private async Task<ProcessingResultCode> ListDetectorsAsync(IScanArguments listArguments)
     {
-        var detectors = this.DetectorRegistryService.GetDetectors(listArguments.AdditionalPluginDirectories, listArguments.AdditionalDITargets, listArguments.SkipPluginsDirectory);
-        if (detectors.Any())
+        this.logger.LogInformation("Detectors:");
+
+        foreach (var detector in this.detectors)
         {
-            foreach (var detector in detectors)
-            {
-                this.Logger.LogInfo($"{detector.Id}");
-            }
+            this.logger.LogInformation("{DetectorId}", detector.Id);
         }
 
         return await Task.FromResult(ProcessingResultCode.Success);

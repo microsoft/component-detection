@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -6,27 +7,27 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
 public class BcdeDevCommandServiceTests
 {
-    private Mock<IBcdeScanExecutionService> scanExecutionServiceMock;
+    private readonly Mock<IBcdeScanExecutionService> scanExecutionServiceMock;
+    private readonly Mock<ILogger<BcdeDevCommandService>> loggerMock;
+
+    private readonly ScannedComponent[] scannedComponents;
 
     private BcdeDevCommandService serviceUnderTest;
 
-    private ScannedComponent[] scannedComponents;
-
-    [TestInitialize]
-    public void InitializeTest()
+    public BcdeDevCommandServiceTests()
     {
         this.scanExecutionServiceMock = new Mock<IBcdeScanExecutionService>();
-        this.serviceUnderTest = new BcdeDevCommandService();
+        this.loggerMock = new Mock<ILogger<BcdeDevCommandService>>();
+        this.serviceUnderTest = new BcdeDevCommandService(this.scanExecutionServiceMock.Object, this.loggerMock.Object);
 
         this.scannedComponents = new ScannedComponent[]
         {
@@ -51,16 +52,15 @@ public class BcdeDevCommandServiceTests
     }
 
     [TestMethod]
-    public async Task RunComponentDetection()
+    public async Task RunComponentDetectionAsync()
     {
         var args = new BcdeArguments();
 
-        this.serviceUnderTest = new BcdeDevCommandService
-        {
-            BcdeScanExecutionService = this.scanExecutionServiceMock.Object,
-        };
+        this.serviceUnderTest = new BcdeDevCommandService(
+                this.scanExecutionServiceMock.Object,
+                this.loggerMock.Object);
 
-        var result = await this.serviceUnderTest.Handle(args);
+        var result = await this.serviceUnderTest.HandleAsync(args);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.SourceDirectory.Should().Be("D:\\test\\directory");
     }

@@ -1,11 +1,10 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -13,7 +12,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 public class NuGetNuspecUtilitiesTests
 {
     [TestMethod]
-    public async Task GetNuspecBytes_FailsOnEmptyStream()
+    public async Task GetNuspecBytes_FailsOnEmptyStreamAsync()
     {
         using var stream = new MemoryStream();
 
@@ -26,7 +25,7 @@ public class NuGetNuspecUtilitiesTests
     }
 
     [TestMethod]
-    public async Task GetNuspecBytes_FailsOnTooSmallStream()
+    public async Task GetNuspecBytes_FailsOnTooSmallStreamAsync()
     {
         using var stream = new MemoryStream();
 
@@ -46,7 +45,7 @@ public class NuGetNuspecUtilitiesTests
     }
 
     [TestMethod]
-    public async Task GetNuspecBytes_FailsIfNuspecNotPresent()
+    public async Task GetNuspecBytes_FailsIfNuspecNotPresentAsync()
     {
         using var stream = new MemoryStream();
 
@@ -67,7 +66,7 @@ public class NuGetNuspecUtilitiesTests
     }
 
     [TestMethod]
-    public async Task GetNuspecBytes_ReadsNuspecBytes()
+    public async Task GetNuspecBytes_ReadsNuspecBytesAsync()
     {
         byte[] randomBytes = { 0xDE, 0xAD, 0xC0, 0xDE };
 
@@ -79,7 +78,7 @@ public class NuGetNuspecUtilitiesTests
 
             using var entryStream = entry.Open();
 
-            await entryStream.WriteAsync(randomBytes, 0, randomBytes.Length);
+            await entryStream.WriteAsync(randomBytes);
         }
 
         stream.Seek(0, SeekOrigin.Begin);

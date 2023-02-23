@@ -1,4 +1,5 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -8,13 +9,11 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests;
-
 [TestClass]
 public class PnpmParsingUtilitiesTest
 {
     [TestMethod]
-    public async Task DeserializePnpmYamlFile()
+    public async Task DeserializePnpmYamlFileAsync()
     {
         var yamlFile = @"
 dependencies:
@@ -38,7 +37,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
-        var parsedYaml = await PnpmParsingUtilities.DeserializePnpmYamlFile(this.CreateComponentStreamForShrinkwrap(yamlFile));
+        var parsedYaml = await PnpmParsingUtilities.DeserializePnpmYamlFileAsync(this.CreateComponentStreamForShrinkwrap(yamlFile));
 
         parsedYaml.packages.Should().HaveCount(2);
         parsedYaml.packages.Should().ContainKey("/query-string/4.3.4");

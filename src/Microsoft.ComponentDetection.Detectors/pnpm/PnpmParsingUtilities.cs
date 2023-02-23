@@ -1,17 +1,17 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Pnpm;
+
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using NuGet.Versioning;
 using YamlDotNet.Serialization;
-
-namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 public static class PnpmParsingUtilities
 {
-    public static async Task<PnpmYaml> DeserializePnpmYamlFile(IComponentStream file)
+    public static async Task<PnpmYaml> DeserializePnpmYamlFileAsync(IComponentStream file)
     {
         var text = await new StreamReader(file.Stream).ReadToEndAsync();
         var deserializer = new DeserializerBuilder()

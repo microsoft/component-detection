@@ -25,26 +25,34 @@
 // Gemfile.lock comes with a section called "Dependencies", in the section are listed the dependencies that the user specified in the Gemfile,
 // is necessary to investigate if this section is a new adition or always has been there.
 
+namespace Microsoft.ComponentDetection.Detectors.Ruby;
+
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
-namespace Microsoft.ComponentDetection.Detectors.Ruby;
-
-[Export(typeof(IComponentDetector))]
 public class RubyComponentDetector : FileComponentDetector
 {
     private static readonly Regex HeadingRegex = new Regex("^[A-Z ]+$", RegexOptions.Compiled);
     private static readonly Regex DependencyDefinitionRegex = new Regex("^ {4}[A-Za-z-]+", RegexOptions.Compiled);
     private static readonly Regex SubDependencyRegex = new Regex("^ {6}[A-Za-z-]+", RegexOptions.Compiled);
 
-    public RubyComponentDetector() => this.NeedsAutomaticRootDependencyCalculation = true;
+    public RubyComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<RubyComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.NeedsAutomaticRootDependencyCalculation = true;
+        this.Logger = logger;
+    }
 
     private enum SectionType
     {
@@ -63,12 +71,12 @@ public class RubyComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 3;
 
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        this.Logger.LogVerbose("Found Gemfile.lock: " + file.Location);
+        this.Logger.LogDebug("Found Gemfile.lock {FileLocation}", file.Location);
         this.ParseGemLockFile(singleFileComponentRecorder, file);
 
         return Task.CompletedTask;
@@ -111,13 +119,13 @@ public class RubyComponentDetector : FileComponentDetector
                 switch (heading)
                 {
                     case "GIT":
-                        this.ParseSection(SectionType.GIT, sublines, components, dependencies, file);
+                        this.ParseSection(singleFileComponentRecorder, SectionType.GIT, sublines, components, dependencies, file);
                         break;
                     case "GEM":
-                        this.ParseSection(SectionType.GEM, sublines, components, dependencies, file);
+                        this.ParseSection(singleFileComponentRecorder, SectionType.GEM, sublines, components, dependencies, file);
                         break;
                     case "PATH":
-                        this.ParseSection(SectionType.PATH, sublines, components, dependencies, file);
+                        this.ParseSection(singleFileComponentRecorder, SectionType.PATH, sublines, components, dependencies, file);
                         break;
                     case "BUNDLED WITH":
                         var line = sublines[0].Trim();
@@ -136,8 +144,8 @@ public class RubyComponentDetector : FileComponentDetector
             else
             {
                 // Throw this line away. Is this malformed? We were expecting a header
-                this.Logger.LogVerbose(lines[0]);
-                this.Logger.LogVerbose("Appears to be malformed/is not expected here.  Expected heading.");
+                this.Logger.LogDebug("{MalformedLine}", lines[0]);
+                this.Logger.LogDebug("Appears to be malformed/is not expected here. Expected heading. {Line}", lines[0]);
                 lines.RemoveAt(0);
             }
         }
@@ -165,7 +173,7 @@ public class RubyComponentDetector : FileComponentDetector
         }
     }
 
-    private void ParseSection(SectionType sectionType, List<string> lines, Dictionary<string, DetectedComponent> components, Dictionary<string, List<Dependency>> dependencies, IComponentStream file)
+    private void ParseSection(ISingleFileComponentRecorder singleFileComponentRecorder, SectionType sectionType, List<string> lines, Dictionary<string, DetectedComponent> components, Dictionary<string, List<Dependency>> dependencies, IComponentStream file)
     {
         string name, remote, revision;
         name = remote = revision = string.Empty;
@@ -214,7 +222,8 @@ public class RubyComponentDetector : FileComponentDetector
 
                         if (this.IsVersionRelative(version))
                         {
-                            this.Logger.LogWarning($"Found component with invalid version, name = {name} and version = {version}");
+                            this.Logger.LogWarning("Found component with invalid version, name = {RubyComponentName} and version = {RubyComponentVersion}", name, version);
+                            singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version}");
                             wasParentDependencyExcluded = true;
                             continue;
                         }

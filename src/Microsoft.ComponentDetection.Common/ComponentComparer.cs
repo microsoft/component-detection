@@ -1,17 +1,16 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Common;
 
 public class ComponentComparer : EqualityComparer<TypedComponent>
 {
-    public override bool Equals(TypedComponent t0, TypedComponent t1)
+    public override bool Equals(TypedComponent x, TypedComponent y)
     {
-        return t0.Id.Equals(t1.Id);
+        return x.Id.Equals(y.Id);
     }
 
-    public override int GetHashCode(TypedComponent typedComponent)
+    public override int GetHashCode(TypedComponent obj)
     {
-        return typedComponent.Id.GetHashCode();
+        return obj.Id.GetHashCode();
     }
 }

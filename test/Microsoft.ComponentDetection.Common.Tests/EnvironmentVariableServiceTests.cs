@@ -1,7 +1,6 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common.Tests;
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Common.Tests;
 
 [TestClass]
 public class EnvironmentVariableServiceTests

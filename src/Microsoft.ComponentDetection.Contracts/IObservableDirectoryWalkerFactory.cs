@@ -1,9 +1,8 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts.Internal;
-
-namespace Microsoft.ComponentDetection.Contracts;
 
 public delegate bool ExcludeDirectoryPredicate(ReadOnlySpan<char> nameOfDirectoryToConsider, ReadOnlySpan<char> pathOfParentOfDirectoryToConsider);
 

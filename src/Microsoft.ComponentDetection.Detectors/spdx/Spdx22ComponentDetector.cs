@@ -1,6 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Spdx;
+
+using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -8,19 +9,27 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Spdx;
 
 /// <summary>
 /// Spdx22ComponentDetector discover SPDX SBOM files in JSON format and create components with the information about
 /// what SPDX document describes.
 /// </summary>
-[Export(typeof(IComponentDetector))]
 public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     private readonly IEnumerable<string> supportedSPDXVersions = new List<string> { "SPDX-2.2" };
+
+    public Spdx22ComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<Spdx22ComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
 
     public override IEnumerable<string> Categories =>
         new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Spdx) };
@@ -31,11 +40,11 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
     public override int Version => 1;
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "*.spdx.json" };
+    public override IList<string> SearchPatterns => new List<string> { "*.spdx.json" };
 
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
-        this.Logger.LogVerbose($"Discovered SPDX2.2 manifest file at: {processRequest.ComponentStream.Location}");
+        this.Logger.LogDebug("Discovered SPDX2.2 manifest file at: {ManifestLocation}", processRequest.ComponentStream.Location);
         var file = processRequest.ComponentStream;
 
         try
@@ -61,22 +70,22 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
                     }
                     else
                     {
-                        this.Logger.LogWarning($"Discovered SPDX at {processRequest.ComponentStream.Location} is not SPDX-2.2 document, skipping");
+                        this.Logger.LogWarning("Discovered SPDX at {ManifestLocation} is not SPDX-2.2 document, skipping", processRequest.ComponentStream.Location);
                     }
                 }
                 else
                 {
-                    this.Logger.LogWarning($"Discovered SPDX file at {processRequest.ComponentStream.Location} is not a valid document, skipping");
+                    this.Logger.LogWarning("Discovered SPDX file at {ManifestLocation} is not a valid document, skipping", processRequest.ComponentStream.Location);
                 }
             }
             catch (JsonReaderException)
             {
-                this.Logger.LogWarning($"Unable to parse file at {processRequest.ComponentStream.Location}, skipping");
+                this.Logger.LogWarning("Unable to parse file at {ManifestLocation}, skipping", processRequest.ComponentStream.Location);
             }
         }
         catch (Exception e)
         {
-            this.Logger.LogFailedReadingFile(file.Location, e);
+            this.Logger.LogError(e, "Error while processing SPDX file at {ManifestLocation}", processRequest.ComponentStream.Location);
         }
 
         return Task.CompletedTask;
@@ -93,12 +102,12 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
         if (rootElements?.Length > 1)
         {
-            this.Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} has more than one element in documentDescribes, first will be selected as root element.");
+            this.Logger.LogWarning("SPDX file at {ManifestLocation} has more than one element in documentDescribes, first will be selected as root element.", processRequest.ComponentStream.Location);
         }
 
         if (rootElements != null && !rootElements.Any())
         {
-            this.Logger.LogWarning($"SPDX file at {processRequest.ComponentStream.Location} does not have root elements in documentDescribes section, considering SPDXRef-Document as a root element.");
+            this.Logger.LogWarning("SPDX file at {ManifestLocation} does not have root elements in documentDescribes section, considering SPDXRef-Document as a root element.", processRequest.ComponentStream.Location);
         }
 
         var rootElementId = rootElements?.FirstOrDefault() ?? "SPDXRef-Document";

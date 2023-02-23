@@ -1,3 +1,5 @@
+namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,23 +10,13 @@ using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests;
-
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class PoetryComponentDetectorTests
+public class PoetryComponentDetectorTests : BaseDetectorTest<PoetryComponentDetector>
 {
-    private DetectorTestUtility<PoetryComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<PoetryComponentDetector>();
-    }
-
     [TestMethod]
-    public async Task TestPoetryDetector_TestCustomSource()
+    public async Task TestPoetryDetector_TestCustomSourceAsync()
     {
         var poetryLockContent = @"[[package]]
 name = ""certifi""
@@ -40,9 +32,9 @@ url = ""https://pypi.custom.com//simple""
 reference = ""custom""
 ";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("poetry.lock", poetryLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -55,7 +47,7 @@ reference = ""custom""
     }
 
     [TestMethod]
-    public async Task TestPoetryDetector_TestDevDependency()
+    public async Task TestPoetryDetector_TestDevDependencyAsync()
     {
         var poetryLockContent = @"[[package]]
 name = ""certifi""
@@ -66,9 +58,9 @@ optional = false
 python-versions = ""*""
 ";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("poetry.lock", poetryLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -82,7 +74,7 @@ python-versions = ""*""
     }
 
     [TestMethod]
-    public async Task TestPoetryDetector_TestGitDependency()
+    public async Task TestPoetryDetector_TestGitDependencyAsync()
     {
         var poetryLockContent = @"[[package]]
 name = ""certifi""
@@ -117,9 +109,9 @@ url = ""https://github.com/requests/requests.git""
 reference = ""master""
 resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("poetry.lock", poetryLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 

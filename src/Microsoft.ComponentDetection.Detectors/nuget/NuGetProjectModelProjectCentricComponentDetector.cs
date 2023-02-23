@@ -1,21 +1,20 @@
+namespace Microsoft.ComponentDetection.Detectors.NuGet;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using global::NuGet.Packaging.Core;
+using global::NuGet.ProjectModel;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using NuGet.Packaging.Core;
-using NuGet.ProjectModel;
-using NuGet.Versioning;
 
-namespace Microsoft.ComponentDetection.Detectors.NuGet;
-
-[Export(typeof(IComponentDetector))]
 public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDetector
 {
     public const string OmittedFrameworkComponentsTelemetryKey = "OmittedFrameworkComponents";
@@ -25,8 +24,6 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
     private readonly ConcurrentDictionary<string, int> frameworkComponentsThatWereOmmittedWithCount = new ConcurrentDictionary<string, int>();
 
     private readonly List<string> netCoreFrameworkNames = new List<string> { "Microsoft.AspNetCore.App", "Microsoft.AspNetCore.Razor.Design", "Microsoft.NETCore.App" };
-
-    private readonly HashSet<string> alreadyLoggedWarnings = new HashSet<string>();
 
     // This list is meant to encompass all net standard dependencies, but likely contains some net core app 1.x ones, too.
     // The specific guidance we got around populating this list is to do so based on creating a dotnet core 1.x app to make sure we had the complete
@@ -187,6 +184,20 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         "System.Xml.XPath.XDocument",
     };
 
+    private readonly IFileUtilityService fileUtilityService;
+
+    public NuGetProjectModelProjectCentricComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IFileUtilityService fileUtilityService,
+        ILogger<NuGetProjectModelProjectCentricComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.fileUtilityService = fileUtilityService;
+        this.Logger = logger;
+    }
+
     public override string Id { get; } = "NuGetProjectCentric";
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
@@ -197,10 +208,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     public override int Version { get; } = 1;
 
-    [Import]
-    public IFileUtilityService FileUtilityService { get; set; }
-
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         try
         {
@@ -234,13 +242,13 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         catch (Exception e)
         {
             // If something went wrong, just ignore the package
-            this.Logger.LogFailedReadingFile(processRequest.ComponentStream.Location, e);
+            this.Logger.LogError(e, "Failed to process NuGet lockfile {NuGetLockFile}", processRequest.ComponentStream.Location);
         }
 
         return Task.CompletedTask;
     }
 
-    protected override Task OnDetectionFinished()
+    protected override Task OnDetectionFinishedAsync()
     {
         this.Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonConvert.SerializeObject(this.frameworkComponentsThatWereOmmittedWithCount));
 
@@ -373,12 +381,12 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         if (matchingLibrary == null)
         {
             matchingLibrary = matchingLibraryNames.First();
-            var logMessage = $"Couldn't satisfy lookup for {(versionRange != null ? versionRange.ToNormalizedString() : version.ToString())}. Falling back to first found component for {matchingLibrary.Name}, resolving to version {matchingLibrary.Version}.";
-            if (!this.alreadyLoggedWarnings.Contains(logMessage))
-            {
-                this.Logger.LogWarning(logMessage);
-                this.alreadyLoggedWarnings.Add(logMessage);
-            }
+            var versionString = versionRange != null ? versionRange.ToNormalizedString() : version.ToString();
+            this.Logger.LogWarning(
+                "Couldn't satisfy lookup for {Version}. Falling back to first found component for {MatchingLibraryName}, resolving to version {MatchingLibraryVersion}.",
+                versionString,
+                matchingLibrary.Name,
+                matchingLibrary.Version);
         }
 
         return matchingLibrary;

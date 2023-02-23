@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-
-namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+using System.Collections.Generic;
 
 public class YarnBlock
 {

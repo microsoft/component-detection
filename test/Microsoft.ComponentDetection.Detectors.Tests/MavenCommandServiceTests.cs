@@ -1,4 +1,6 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -8,64 +10,60 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Detectors.Maven;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
 public class MavenCommandServiceTests
 {
-    private Mock<ICommandLineInvocationService> commandLineMock;
-    private Mock<IMavenStyleDependencyGraphParserService> parserServiceMock;
-    private MavenCommandService mavenCommandService;
+    private readonly Mock<ICommandLineInvocationService> commandLineMock;
+    private readonly Mock<IMavenStyleDependencyGraphParserService> parserServiceMock;
+    private readonly MavenCommandService mavenCommandService;
 
-    [TestInitialize]
-    public void InitializeTests()
+    public MavenCommandServiceTests()
     {
         this.commandLineMock = new Mock<ICommandLineInvocationService>();
-        var loggerMock = new Mock<ILogger>();
+        var loggerMock = new Mock<ILogger<MavenCommandService>>();
 
         this.parserServiceMock = new Mock<IMavenStyleDependencyGraphParserService>();
 
-        this.mavenCommandService = new MavenCommandService
-        {
-            CommandLineInvocationService = this.commandLineMock.Object,
-            ParserService = this.parserServiceMock.Object,
-            Logger = loggerMock.Object,
-        };
+        this.mavenCommandService = new MavenCommandService(
+            this.commandLineMock.Object,
+            this.parserServiceMock.Object,
+            loggerMock.Object);
     }
 
     [TestMethod]
-    public async Task MavenCLIExists_ExpectedArguments_ReturnTrue()
+    public async Task MavenCLIExists_ExpectedArguments_ReturnTrueAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(
             MavenCommandService.PrimaryCommand,
             MavenCommandService.AdditionalValidCommands,
             MavenCommandService.MvnVersionArgument)).ReturnsAsync(true);
 
-        var result = await this.mavenCommandService.MavenCLIExists();
+        var result = await this.mavenCommandService.MavenCLIExistsAsync();
 
         result.Should().BeTrue();
     }
 
     [TestMethod]
-    public async Task MavenCLIExists_ExpectedArguments_ReturnFalse()
+    public async Task MavenCLIExists_ExpectedArguments_ReturnFalseAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(
             MavenCommandService.PrimaryCommand,
             MavenCommandService.AdditionalValidCommands,
             MavenCommandService.MvnVersionArgument)).ReturnsAsync(false);
 
-        var result = await this.mavenCommandService.MavenCLIExists();
+        var result = await this.mavenCommandService.MavenCLIExistsAsync();
 
         result.Should().BeFalse();
     }
 
     [TestMethod]
-    public async Task GenerateDependenciesFile_Success()
+    public async Task GenerateDependenciesFile_SuccessAsync()
     {
         var pomLocation = "Test/location";
         var processRequest = new ProcessRequest
@@ -79,7 +77,7 @@ public class MavenCommandServiceTests
         var bcdeMvnFileName = "bcde.mvndeps";
         var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
 
-        this.commandLineMock.Setup(x => x.ExecuteCommand(
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
                 MavenCommandService.PrimaryCommand,
                 MavenCommandService.AdditionalValidCommands,
                 It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
@@ -89,7 +87,7 @@ public class MavenCommandServiceTests
             })
             .Verifiable();
 
-        await this.mavenCommandService.GenerateDependenciesFile(processRequest);
+        await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
 
         Mock.Verify(this.commandLineMock);
     }

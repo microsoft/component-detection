@@ -1,11 +1,13 @@
+namespace Microsoft.ComponentDetection.Common.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace Microsoft.ComponentDetection.Common.Tests;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -16,16 +18,13 @@ public class DockerServiceTests
 
     private const string TestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
 
-    private DockerService dockerService;
+    private readonly Mock<ILogger<DockerService>> loggerMock = new();
+    private readonly DockerService dockerService;
 
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.dockerService = new DockerService();
-    }
+    public DockerServiceTests() => this.dockerService = new DockerService(this.loggerMock.Object);
 
     [TestMethod]
-    public async Task DockerService_CanPingDocker()
+    public async Task DockerService_CanPingDockerAsync()
     {
         var canPingDocker = await this.dockerService.CanPingDockerAsync();
         Assert.IsTrue(canPingDocker);
@@ -39,14 +38,14 @@ public class DockerServiceTests
     }
 
     [SkipTestOnWindows]
-    public async Task DockerService_CanPullImage()
+    public async Task DockerService_CanPullImageAsync()
     {
         Func<Task> action = async () => await this.dockerService.TryPullImageAsync(TestImage);
         await action.Should().NotThrowAsync();
     }
 
     [SkipTestOnWindows]
-    public async Task DockerService_CanInspectImage()
+    public async Task DockerService_CanInspectImageAsync()
     {
         await this.dockerService.TryPullImageAsync(TestImage);
         var details = await this.dockerService.InspectImageAsync(TestImage);
@@ -55,7 +54,7 @@ public class DockerServiceTests
     }
 
     [SkipTestOnWindows]
-    public async Task DockerService_PopulatesBaseImageAndLayerDetails()
+    public async Task DockerService_PopulatesBaseImageAndLayerDetailsAsync()
     {
         await this.dockerService.TryPullImageAsync(TestImageWithBaseDetails);
         var details = await this.dockerService.InspectImageAsync(TestImageWithBaseDetails);
@@ -63,7 +62,7 @@ public class DockerServiceTests
         details.Should().NotBeNull();
         details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag");
         var expectedImageId = "sha256:5edc12e9a797b59b9209354ff99d8550e7a1f90ca924c103fa3358e1a9ce15fe";
-        var expectedCreatedAt = DateTime.Parse("2021-09-23T23:47:57.442225064Z");
+        var expectedCreatedAt = DateTime.Parse("2021-09-23T23:47:57.442225064Z").ToUniversalTime();
 
         details.Should().NotBeNull();
         details.Id.Should().BeGreaterThan(0);
@@ -75,7 +74,7 @@ public class DockerServiceTests
     }
 
     [SkipTestOnWindows]
-    public async Task DockerService_CanCreateAndRunImage()
+    public async Task DockerService_CanCreateAndRunImageAsync()
     {
         var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, new List<string>());
         stdout.Should().StartWith("\nHello from Docker!");

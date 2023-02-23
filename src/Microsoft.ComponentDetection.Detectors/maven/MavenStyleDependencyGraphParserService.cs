@@ -1,9 +1,6 @@
-﻿using System.Composition;
+namespace Microsoft.ComponentDetection.Detectors.Maven;
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Detectors.Maven;
-
-[Export(typeof(IMavenStyleDependencyGraphParserService))]
 public class MavenStyleDependencyGraphParserService : IMavenStyleDependencyGraphParserService
 {
     public void Parse(string[] lines, ISingleFileComponentRecorder singleFileComponentRecorder)

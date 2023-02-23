@@ -1,20 +1,29 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+
+using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using NuGet.Versioning;
 
-namespace Microsoft.ComponentDetection.Detectors.Npm;
-
-[Export(typeof(IComponentDetector))]
 public class NpmComponentDetector : FileComponentDetector
 {
+    public NpmComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<NpmComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     /// <summary>Common delegate for Package.json JToken processing.</summary>
     /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
@@ -30,7 +39,7 @@ public class NpmComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 2;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -43,12 +52,11 @@ public class NpmComponentDetector : FileComponentDetector
             contents = await reader.ReadToEndAsync();
         }
 
-        await this.SafeProcessAllPackageJTokens(filePath, contents, (token) =>
+        await this.SafeProcessAllPackageJTokensAsync(filePath, contents, (token) =>
         {
             if (token["name"] == null || token["version"] == null)
             {
-                this.Logger.LogInfo($"{filePath} does not contain a name and/or version. These are required fields for a valid package.json file." +
-                                    $"It and its dependencies will not be registered.");
+                this.Logger.LogInformation("{BadPackageJson} does not contain a name and/or version. These are required fields for a valid package.json file. It and its dependencies will not be registered.", filePath);
                 return false;
             }
 
@@ -71,7 +79,8 @@ public class NpmComponentDetector : FileComponentDetector
 
         if (!SemanticVersion.TryParse(version, out _))
         {
-            this.Logger.LogWarning($"Unable to parse version \"{version}\" for package \"{name}\" found at path \"{filePath}\". This may indicate an invalid npm package component and it will not be registered.");
+            this.Logger.LogWarning("Unable to parse version {NpmPackageVersion} for package {NpmPackageName} found at path {NpmPackageLocation}. This may indicate an invalid npm package component and it will not be registered.", version, name, filePath);
+            singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version}");
             return false;
         }
 
@@ -81,7 +90,7 @@ public class NpmComponentDetector : FileComponentDetector
         return true;
     }
 
-    private async Task SafeProcessAllPackageJTokens(string sourceFilePath, string contents, JTokenProcessingDelegate jtokenProcessor)
+    private async Task SafeProcessAllPackageJTokensAsync(string sourceFilePath, string contents, JTokenProcessingDelegate jtokenProcessor)
     {
         try
         {
@@ -90,9 +99,7 @@ public class NpmComponentDetector : FileComponentDetector
         catch (Exception e)
         {
             // If something went wrong, just ignore the component
-            this.Logger.LogInfo($"Could not parse Jtokens from file {sourceFilePath}.");
-            this.Logger.LogFailedReadingFile(sourceFilePath, e);
-            return;
+            this.Logger.LogInformation(e, "Could not parse Jtokens from file {PackageJsonFilePaths}.", sourceFilePath);
         }
     }
 
@@ -135,13 +142,13 @@ public class NpmComponentDetector : FileComponentDetector
         }
         else
         {
-            this.Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
+            this.Logger.LogWarning("Unable to parse author:[{NpmAuthorString}] for package:[{NpmPackageName}] found at path:[{NpmPackageLocation}]. This may indicate an invalid npm package author, and author will not be registered.", authorString, packageName, filePath);
             return null;
         }
 
         if (string.IsNullOrEmpty(authorName))
         {
-            this.Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
+            this.Logger.LogWarning("Unable to parse author:[{NpmAuthorString}] for package:[{NpmPackageName}] found at path:[{NpmPackageLocation}]. This may indicate an invalid npm package author, and author will not be registered.", authorString, packageName, filePath);
             return null;
         }
 

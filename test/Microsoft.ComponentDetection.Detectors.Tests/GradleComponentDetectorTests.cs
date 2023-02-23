@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -9,42 +11,32 @@ using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests;
-
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class GradleComponentDetectorTests
+public class GradleComponentDetectorTests : BaseDetectorTest<GradleComponentDetector>
 {
-    private DetectorTestUtility<GradleComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
-    {
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<GradleComponentDetector>();
-    }
-
     [TestMethod]
-    public async Task TestGradleDetectorWithNoFiles_ReturnsSuccessfully()
+    public async Task TestGradleDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
-            .ExecuteDetector();
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 
     [TestMethod]
-    public async Task TestGradleDetectorWithValidFile_DetectsComponentsSuccessfully()
+    public async Task TestGradleDetectorWithValidFile_DetectsComponentsSuccessfullyAsync()
     {
         var validFileOne =
             @"org.springframework:spring-beans:5.0.5.RELEASE
 org.springframework:spring-core:5.0.5.RELEASE
 org.springframework:spring-jcl:5.0.5.RELEASE";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -66,16 +58,16 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
     }
 
     [TestMethod]
-    public async Task TestGradleDetectorWithValidSingleLockfilePerProject_DetectsComponentsSuccessfully()
+    public async Task TestGradleDetectorWithValidSingleLockfilePerProject_DetectsComponentsSuccessfullyAsync()
     {
         var validFileOne =
             @"org.springframework:spring-beans:5.0.5.RELEASE=lintClassPath
 org.springframework:spring-core:5.0.5.RELEASE=debugCompile,releaseCompile
 org.springframework:spring-jcl:5.0.5.RELEASE=lintClassPath,debugCompile,releaseCompile";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -98,7 +90,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE=lintClassPath,debugCompile,releaseC
     }
 
     [TestMethod]
-    public async Task TestGradleDetectorWithValidFiles_ReturnsSuccessfully()
+    public async Task TestGradleDetectorWithValidFiles_ReturnsSuccessfullyAsync()
     {
         var validFileOne =
             @"org.springframework:spring-beans:5.0.5.RELEASE
@@ -112,10 +104,10 @@ com.fasterxml.jackson.core:jackson-databind:2.8.11.3
 org.msgpack:msgpack-core:0.8.16
 org.springframework:spring-jcl:5.0.5.RELEASE";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
             .WithFile("gradle2.lockfile", validFileTwo)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
@@ -149,7 +141,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
     }
 
     [TestMethod]
-    public async Task TestGradleDetector_SameComponentDifferentLocations_DifferentLocationsAreSaved()
+    public async Task TestGradleDetector_SameComponentDifferentLocations_DifferentLocationsAreSavedAsync()
     {
         var validFileOne =
             @"org.springframework:spring-beans:5.0.5.RELEASE";
@@ -157,10 +149,10 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
         var validFileTwo =
             "org.springframework:spring-beans:5.0.5.RELEASE";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("gradle.lockfile", validFileOne)
             .WithFile("gradle2.lockfile", validFileTwo)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
@@ -180,7 +172,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
     }
 
     [TestMethod]
-    public async Task TestGradleDetectorWithInvalidAndValidFiles_ReturnsSuccessfully()
+    public async Task TestGradleDetectorWithInvalidAndValidFiles_ReturnsSuccessfullyAsync()
     {
         var validFileTwo =
             @"com.fasterxml.jackson.core:jackson-annotations:2.8.0
@@ -195,10 +187,10 @@ lorem ipsum
 four score and seven bugs ago
 $#26^#25%4";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("gradle.lockfile", invalidFileOne)
             .WithFile("gradle2.lockfile", validFileTwo)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(5, componentRecorder.GetDetectedComponents().Count());

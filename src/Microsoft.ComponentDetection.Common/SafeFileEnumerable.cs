@@ -1,18 +1,18 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Enumeration;
 using Microsoft.ComponentDetection.Contracts;
-
-namespace Microsoft.ComponentDetection.Common;
+using Microsoft.Extensions.Logging;
 
 public class SafeFileEnumerable : IEnumerable<MatchedFile>
 {
     private readonly IEnumerable<string> searchPatterns;
     private readonly ExcludeDirectoryPredicate directoryExclusionPredicate;
     private readonly DirectoryInfo directory;
-    private readonly ILogger logger;
     private readonly IPathUtilityService pathUtilityService;
     private readonly bool recursivelyScanDirectories;
     private readonly Func<FileInfo, bool> fileMatchingPredicate;
@@ -20,6 +20,7 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
     private readonly EnumerationOptions enumerationOptions;
 
     private readonly HashSet<string> enumeratedDirectories;
+    private readonly ILogger logger;
 
     public SafeFileEnumerable(DirectoryInfo directory, IEnumerable<string> searchPatterns, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
     {
@@ -118,7 +119,7 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
 
                 if (seenPreviously)
                 {
-                    this.logger.LogVerbose($"Encountered real path {targetPath} before. Short-Circuiting directory traversal");
+                    this.logger.LogDebug("Encountered real path {TargetPath} before. Short-Circuiting directory traversal", targetPath);
                     return false;
                 }
 

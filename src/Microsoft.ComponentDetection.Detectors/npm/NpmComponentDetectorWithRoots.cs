@@ -1,6 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+
+using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -9,12 +10,10 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Microsoft.ComponentDetection.Detectors.Npm;
-
-[Export(typeof(IComponentDetector))]
 public class NpmComponentDetectorWithRoots : FileComponentDetector
 {
     private const string NpmRegistryHost = "registry.npmjs.org";
@@ -23,14 +22,29 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     public const string LernaSearchPattern = "lerna.json";
 
+    /// <summary>
+    /// Gets or sets the logger for writing basic logging message to both console and file.
+    /// </summary>
+    private readonly IPathUtilityService pathUtilityService;
+
+    public NpmComponentDetectorWithRoots(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IPathUtilityService pathUtilityService,
+        ILogger<NpmComponentDetectorWithRoots> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.pathUtilityService = pathUtilityService;
+        this.Logger = logger;
+    }
+
+    public NpmComponentDetectorWithRoots(IPathUtilityService pathUtilityService) => this.pathUtilityService = pathUtilityService;
+
     /// <summary>Common delegate for Package.json JToken processing.</summary>
     /// <param name="token">A JToken, usually corresponding to a package.json file.</param>
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
     protected delegate bool JTokenProcessingDelegate(JToken token);
-
-    /// <summary>Gets or sets the logger for writing basic logging message to both console and file. Injected automatically by MEF composition.</summary>
-    [Import]
-    public IPathUtilityService PathUtilityService { get; set; }
 
     public override string Id { get; } = "NpmWithRoots";
 
@@ -47,7 +61,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
 
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         return Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
             .Where(pr =>
@@ -66,7 +80,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             }));
     }
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         IEnumerable<string> packageJsonPattern = new List<string> { "package.json" };
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -88,19 +102,18 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             var lernaFile = lernaProcessRequest.ComponentStream;
 
             // We have extra validation on lock files not found below a lerna.json
-            if (this.PathUtilityService.IsFileBelowAnother(lernaFile.Location, file.Location))
+            if (this.pathUtilityService.IsFileBelowAnother(lernaFile.Location, file.Location))
             {
                 foundUnderLerna = true;
                 break;
             }
         }
 
-        await this.SafeProcessAllPackageJTokens(file, (token) =>
+        await this.SafeProcessAllPackageJTokensAsync(file, (token) =>
         {
             if (!foundUnderLerna && (token["name"] == null || token["version"] == null || string.IsNullOrWhiteSpace(token["name"].Value<string>()) || string.IsNullOrWhiteSpace(token["version"].Value<string>())))
             {
-                this.Logger.LogInfo($"{file.Location} does not contain a valid name and/or version. These are required fields for a valid package-lock.json file." +
-                                    $"It and its dependencies will not be registered.");
+                this.Logger.LogInformation("{PackageLogJsonFile} does not contain a valid name and/or version. These are required fields for a valid package-lock.json file. It and its dependencies will not be registered.", file.Location);
                 return false;
             }
 
@@ -120,8 +133,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         }
         catch (Exception ex)
         {
-            this.Logger.LogInfo($"Could not read {componentStream.Location} file.");
-            this.Logger.LogFailedReadingFile(componentStream.Location, ex);
+            this.Logger.LogInformation(ex, "Could not read {ComponentStreamFile} file.", componentStream.Location);
             return Task.CompletedTask;
         }
 
@@ -178,7 +190,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                     DirectoryItemFacade last = null;
                     do
                     {
-                        currentDir = this.PathUtilityService.GetParentDirectory(currentDir);
+                        currentDir = this.pathUtilityService.GetParentDirectory(currentDir);
 
                         // We've reached the top / root
                         if (currentDir == null)
@@ -198,7 +210,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                             }
                             else
                             {
-                                this.Logger.LogVerbose($"Ignoring package-lock.json at {item.Location}, as it is inside a {skippedFolder} folder.");
+                                this.Logger.LogDebug("Ignoring package-lock.json at {PackageLockJsonLocation}, as it is inside a {SkippedFolder} folder.", item.Location, skippedFolder);
                             }
 
                             break;
@@ -237,7 +249,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         });
     }
 
-    private async Task SafeProcessAllPackageJTokens(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
+    private async Task SafeProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
     {
         try
         {
@@ -246,9 +258,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         catch (Exception e)
         {
             // If something went wrong, just ignore the component
-            this.Logger.LogInfo($"Could not parse Jtokens from {componentStream.Location} file.");
-            this.Logger.LogFailedReadingFile(componentStream.Location, e);
-            return;
+            this.Logger.LogInformation(e, "Could not parse Jtokens from {ComponentLocation} file.", componentStream.Location);
         }
     }
 

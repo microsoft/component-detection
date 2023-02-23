@@ -1,19 +1,28 @@
+namespace Microsoft.ComponentDetection.Detectors.Gradle;
+
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
-namespace Microsoft.ComponentDetection.Detectors.Gradle;
-
-[Export(typeof(IComponentDetector))]
 public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 {
     private static readonly Regex StartsWithLetterRegex = new Regex("^[A-Za-z]", RegexOptions.Compiled);
+
+    public GradleComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<GradleComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
 
     public override string Id { get; } = "Gradle";
 
@@ -25,12 +34,12 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 
     public override int Version { get; } = 2;
 
-    protected override Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        this.Logger.LogVerbose("Found Gradle lockfile: " + file.Location);
+        this.Logger.LogDebug("Found Gradle lockfile: {Location}", file.Location);
         this.ParseLockfile(singleFileComponentRecorder, file);
 
         return Task.CompletedTask;

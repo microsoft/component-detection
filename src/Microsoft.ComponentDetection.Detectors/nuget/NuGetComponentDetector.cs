@@ -1,6 +1,7 @@
+namespace Microsoft.ComponentDetection.Detectors.NuGet;
+
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -8,14 +9,12 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using NuGet.Versioning;
+using Microsoft.Extensions.Logging;
 
-namespace Microsoft.ComponentDetection.Detectors.NuGet;
-
-[Export(typeof(IComponentDetector))]
 public class NuGetComponentDetector : FileComponentDetector
 {
     private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
@@ -23,6 +22,16 @@ public class NuGetComponentDetector : FileComponentDetector
     public const string NugetConfigFileName = "nuget.config";
 
     private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
+
+    public NuGetComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<NuGetComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
 
     public override string Id { get; } = "NuGet";
 
@@ -34,22 +43,22 @@ public class NuGetComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 2;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var stream = processRequest.ComponentStream;
         var ignoreNugetConfig = detectorArgs.TryGetValue("NuGet.IncludeRepositoryPaths", out var includeRepositoryPathsValue) && includeRepositoryPathsValue.Equals(bool.FalseString, StringComparison.OrdinalIgnoreCase);
 
         if (NugetConfigFileName.Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
         {
-            await this.ProcessAdditionalDirectory(processRequest, ignoreNugetConfig);
+            await this.ProcessAdditionalDirectoryAsync(processRequest, ignoreNugetConfig);
         }
         else
         {
-            await this.ProcessFile(processRequest);
+            await this.ProcessFileAsync(processRequest);
         }
     }
 
-    private async Task ProcessAdditionalDirectory(ProcessRequest processRequest, bool ignoreNugetConfig)
+    private async Task ProcessAdditionalDirectoryAsync(ProcessRequest processRequest, bool ignoreNugetConfig)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var stream = processRequest.ComponentStream;
@@ -64,19 +73,19 @@ public class NuGetComponentDetector : FileComponentDetector
                 // Only paths outside of our sourceDirectory need to be added
                 if (!rootPath.IsBaseOf(new Uri(additionalPath.FullName + Path.DirectorySeparatorChar)))
                 {
-                    this.Logger.LogInfo($"Found path override in nuget configuration file. Adding {additionalPath} to the package search path.");
-                    this.Logger.LogWarning($"Path {additionalPath} is not rooted in the source tree. More components may be detected than expected if this path is shared across code projects.");
+                    this.Logger.LogInformation("Found path override in nuget configuration file. Adding {NuGetAdditionalPath} to the package search path.", additionalPath);
+                    this.Logger.LogWarning("Path {NuGetAdditionalPath} is not rooted in the source tree. More components may be detected than expected if this path is shared across code projects.", additionalPath);
 
                     this.Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
 
                     await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
-                        .ForEachAsync(async fi => await this.ProcessFile(fi));
+                        .ForEachAsync(async fi => await this.ProcessFileAsync(fi));
                 }
             }
         }
     }
 
-    private async Task ProcessFile(ProcessRequest processRequest)
+    private async Task ProcessFileAsync(ProcessRequest processRequest)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var stream = processRequest.ComponentStream;
@@ -91,7 +100,7 @@ public class NuGetComponentDetector : FileComponentDetector
             }
             else if ("*.nuspec".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
-                nuspecBytes = await NuGetNuspecUtilities.GetNuspecBytesFromNuspecStream(stream.Stream, stream.Stream.Length);
+                nuspecBytes = await NuGetNuspecUtilities.GetNuspecBytesFromNuspecStreamAsync(stream.Stream, stream.Stream.Length);
             }
             else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
@@ -117,7 +126,8 @@ public class NuGetComponentDetector : FileComponentDetector
 
             if (!NuGetVersion.TryParse(version, out var parsedVer))
             {
-                this.Logger.LogInfo($"Version '{version}' from {stream.Location} could not be parsed as a NuGet version");
+                this.Logger.LogInformation("Version '{NuspecVersion}' from {NuspecLocation} could not be parsed as a NuGet version", version, stream.Location);
+                singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
 
                 return;
             }
@@ -131,7 +141,8 @@ public class NuGetComponentDetector : FileComponentDetector
         catch (Exception e)
         {
             // If something went wrong, just ignore the component
-            this.Logger.LogFailedReadingFile(stream.Location, e);
+            this.Logger.LogError(e, "Error parsing NuGet component from {NuspecLocation}", stream.Location);
+            singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
         }
     }
 
@@ -206,7 +217,7 @@ public class NuGetComponentDetector : FileComponentDetector
             }
             else
             {
-                this.Logger.LogWarning($"Excluding discovered path {potentialPath} from location {componentStream.Location} as it could not be determined to be valid.");
+                this.Logger.LogWarning("Excluding discovered path {PotentialPath} from location {ComponentStreamLocation} as it could not be determined to be valid.", potentialPath, componentStream.Location);
                 continue;
             }
 
@@ -237,7 +248,7 @@ public class NuGetComponentDetector : FileComponentDetector
             return false;
         }
 
-        if (fileInfo == null)
+        if (potentialPath == null)
         {
             return false;
         }

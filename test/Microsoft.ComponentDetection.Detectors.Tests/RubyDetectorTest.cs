@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,40 +12,27 @@ using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class RubyDetectorTest
+public class RubyDetectorTest : BaseDetectorTest<RubyComponentDetector>
 {
-    private Mock<ILogger> loggerMock;
-    private RubyComponentDetector rubyDetector;
-    private DetectorTestUtility<RubyComponentDetector> detectorTestUtility;
-
-    [TestInitialize]
-    public void TestInitialize()
+    public RubyDetectorTest()
     {
-        this.loggerMock = new Mock<ILogger>();
-        this.rubyDetector = new RubyComponentDetector
-        {
-            Logger = this.loggerMock.Object,
-        };
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<RubyComponentDetector>()
-            .WithScanRequest(new ScanRequest(
+        var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
+        this.DetectorTestUtility.WithScanRequest(
+            new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
                 null,
-                new Dictionary<string,
-                    string>(),
+                new Dictionary<string, string>(),
                 null,
-                new ComponentRecorder(enableManualTrackingOfExplicitReferences: !this.rubyDetector.NeedsAutomaticRootDependencyCalculation)));
+                componentRecorder));
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_TestMultipleLockfiles()
+    public async Task TestRubyDetector_TestMultipleLockfilesAsync()
     {
         var gemFileLockContent = @"GEM
   remote: https://rubygems.org/
@@ -76,10 +65,10 @@ BUNDLED WITH
 
 BUNDLED WITH
     1.17.3";
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .WithFile("2Gemfile.lock", gemFileLockContent2)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -96,7 +85,7 @@ BUNDLED WITH
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_TestGemsWithUppercase_LockFile()
+    public async Task TestRubyDetector_TestGemsWithUppercase_LockFileAsync()
     {
         var gemFileLockContent = @"GEM
   remote: https://rubygems.org/
@@ -106,9 +95,9 @@ BUNDLED WITH
 
 BUNDLED WITH
     2.2.28";
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -121,7 +110,7 @@ BUNDLED WITH
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_DetectorParseWithBundlerVersion()
+    public async Task TestRubyDetector_DetectorParseWithBundlerVersionAsync()
     {
         var gemFileLockContent = @"GEM
   remote: https://rubygems.org/
@@ -139,9 +128,9 @@ BUNDLED WITH
 BUNDLED WITH
     1.17.3";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -157,7 +146,7 @@ BUNDLED WITH
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_DetectorRecognizeGemComponents()
+    public async Task TestRubyDetector_DetectorRecognizeGemComponentsAsync()
     {
         var gemFileLockContent = @"GEM
   remote: https://rubygems.org/
@@ -173,9 +162,9 @@ BUNDLED WITH
     nokogiri (~> 1.8.2)
     websocket-driver (0.6.1)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -190,7 +179,7 @@ BUNDLED WITH
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_ParentWithTildeInVersion_IsExcluded()
+    public async Task TestRubyDetector_ParentWithTildeInVersion_IsExcludedAsync()
     {
         var gemFileLockContent = @"GEM
   remote: https://rubygems.org/
@@ -203,9 +192,9 @@ BUNDLED WITH
       mini_portile2 (~> 2.3.0)
     mini_portile2 (2.3.0)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
@@ -218,7 +207,7 @@ BUNDLED WITH
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_DetectorCreatesADependencyGraph()
+    public async Task TestRubyDetector_DetectorCreatesADependencyGraphAsync()
     {
         var gemFileLockContent = @"GIT
   remote: https://github.com/mikel/mail.git
@@ -240,9 +229,9 @@ GEM
     nio4r (5.2.1)
     websocket-driver (0.6.1)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.Single();
 
@@ -278,7 +267,7 @@ GEM
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_ComponentsRootsAreFilledCorrectly()
+    public async Task TestRubyDetector_ComponentsRootsAreFilledCorrectlyAsync()
     {
         var gemFileLockContent = @"GEM
   remote: https://rubygems.org/
@@ -292,9 +281,9 @@ GEM
     nio4r (5.2.1)
     websocket-driver (0.6.1)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var acmeClientComponent = detectedComponents.Single(c => c.Component is RubyGemsComponent component && component.Name.Equals("acme-client"));
@@ -325,7 +314,7 @@ GEM
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_DetectorRecognizeGitComponents()
+    public async Task TestRubyDetector_DetectorRecognizeGitComponentsAsync()
     {
         var gemFileLockContent = @"GIT
   remote: https://github.com/test/abc.git
@@ -347,9 +336,9 @@ GEM
   specs:
     mini_mime (2.0.0)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(3, detectedComponents.Count());
@@ -359,7 +348,7 @@ GEM
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_DetectorRecognizeParentChildRelationshipInGitComponents()
+    public async Task TestRubyDetector_DetectorRecognizeParentChildRelationshipInGitComponentsAsync()
     {
         var gemFileLockContent = @"GIT
   remote: https://github.com/test/abc.git
@@ -376,15 +365,15 @@ GIT
   specs:
     mail (2.7.2.edge)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         this.AssertGitComponentAsRootAndGitComponentAsSubDependency(componentRecorder, rootHash: "commit-hash-1", subDependencyHash: "commit-hash-2");
     }
 
     [TestMethod]
-    public async Task TestRubyDetector_DetectorRecognizeLocalDependencies()
+    public async Task TestRubyDetector_DetectorRecognizeLocalDependenciesAsync()
     {
         var gemFileLockContent = @"GEM
   remote: https://rubygems.org/
@@ -401,9 +390,9 @@ PATH
   specs:
     test2 (1.0.0)";
 
-        var (scanResult, componentRecorder) = await this.detectorTestUtility
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("1Gemfile.lock", gemFileLockContent)
-            .ExecuteDetector();
+            .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         Assert.AreEqual(3, detectedComponents.Count());

@@ -1,4 +1,6 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -9,30 +11,23 @@ using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Pip;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
 using Newtonsoft.Json;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests;
-
 [TestClass]
 public class PyPiClientTests
 {
-    private PyPiClient pypiClient;
+    private readonly PyPiClient pypiClient;
 
-    [TestInitialize]
-    public void Initialize()
-    {
-        this.pypiClient = new PyPiClient()
-        {
-            EnvironmentVariableService = new EnvironmentVariableService(),
-            Logger = new Mock<ILogger>().Object,
-        };
-    }
+    public PyPiClientTests() => this.pypiClient = new PyPiClient(
+            new EnvironmentVariableService(),
+            new Mock<ILogger<PyPiClient>>().Object);
 
     [TestMethod]
-    public async Task GetReleases_InvalidSpecVersion_NotThrow()
+    public async Task GetReleases_InvalidSpecVersion_NotThrowAsync()
     {
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0", "==1.0.0notvalid" } };
 
@@ -47,13 +42,13 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        Func<Task> action = async () => await this.pypiClient.GetReleases(pythonSpecs);
+        Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
     }
 
     [TestMethod]
-    public async Task GetReleases_DuplicateEntries_CallsGetAsync_Once()
+    public async Task GetReleases_DuplicateEntries_CallsGetAsync_OnceAsync()
     {
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
@@ -67,7 +62,7 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        Func<Task> action = async () => await this.pypiClient.GetReleases(pythonSpecs);
+        Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
@@ -81,7 +76,7 @@ public class PyPiClientTests
     }
 
     [TestMethod]
-    public async Task GetReleases_DifferentEntries_CallsGetAsync_Once()
+    public async Task GetReleases_DifferentEntries_CallsGetAsync_OnceAsync()
     {
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
@@ -98,7 +93,7 @@ public class PyPiClientTests
         Func<Task> action = async () =>
         {
             pythonSpecs.Name = Guid.NewGuid().ToString();
-            await this.pypiClient.GetReleases(pythonSpecs);
+            await this.pypiClient.GetReleasesAsync(pythonSpecs);
         };
 
         await action.Should().NotThrowAsync();
@@ -113,12 +108,12 @@ public class PyPiClientTests
     }
 
     [TestMethod]
-    public async Task FetchPackageDependencies_DuplicateEntries_CallsGetAsync_Once()
+    public async Task FetchPackageDependencies_DuplicateEntries_CallsGetAsync_OnceAsync()
     {
         var mockHandler = this.MockHttpMessageHandler("invalid ZIP");
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        Func<Task> action = async () => await this.pypiClient.FetchPackageDependencies("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://testurl") });
+        Func<Task> action = async () => await this.pypiClient.FetchPackageDependenciesAsync("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://testurl") });
 
         await action.Should().ThrowAsync<InvalidDataException>();
         await action.Should().ThrowAsync<InvalidDataException>();
@@ -132,12 +127,12 @@ public class PyPiClientTests
     }
 
     [TestMethod]
-    public async Task FetchPackageDependencies_DifferentEntries_CallsGetAsync_Once()
+    public async Task FetchPackageDependencies_DifferentEntries_CallsGetAsync_OnceAsync()
     {
         var mockHandler = this.MockHttpMessageHandler("invalid ZIP");
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        Func<Task> action = async () => await this.pypiClient.FetchPackageDependencies("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") });
+        Func<Task> action = async () => await this.pypiClient.FetchPackageDependenciesAsync("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") });
 
         await action.Should().ThrowAsync<InvalidDataException>();
         await action.Should().ThrowAsync<InvalidDataException>();
@@ -151,7 +146,7 @@ public class PyPiClientTests
     }
 
     [TestMethod]
-    public async Task GetReleases_MaxEntriesVariable_CreatesNewCache()
+    public async Task GetReleases_MaxEntriesVariable_CreatesNewCacheAsync()
     {
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
@@ -165,24 +160,29 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        var mockLogger = new Mock<ILogger>();
+        var mockLogger = new Mock<ILogger<PyPiClient>>();
         var mockEvs = new Mock<IEnvironmentVariableService>();
         mockEvs.Setup(x => x.GetEnvironmentVariable(It.Is<string>(s => s.Equals("PyPiMaxCacheEntries")))).Returns("32");
 
-        var mockedPyPi = new PyPiClient()
-        {
-            EnvironmentVariableService = mockEvs.Object,
-            Logger = mockLogger.Object,
-        };
+        var mockedPyPi = new PyPiClient(
+            mockEvs.Object,
+            mockLogger.Object);
 
-        Func<Task> action = async () => await mockedPyPi.GetReleases(pythonSpecs);
+        Func<Task> action = async () => await mockedPyPi.GetReleasesAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
 
         // Verify the cache setup call was performed only once
         mockEvs.Verify(x => x.GetEnvironmentVariable(It.IsAny<string>()), Times.Once());
-        mockLogger.Verify(x => x.LogInfo(It.Is<string>(s => s.Equals("Setting IPyPiClient max cache entries to 32"))), Times.Once());
+        mockLogger.Verify(
+            x => x.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+            Times.Exactly(3));
     }
 
     private Mock<HttpMessageHandler> MockHttpMessageHandler(string content)

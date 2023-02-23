@@ -1,6 +1,7 @@
+namespace Microsoft.ComponentDetection.Detectors.CocoaPods;
+
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,15 +9,23 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-namespace Microsoft.ComponentDetection.Detectors.CocoaPods;
-
-[Export(typeof(IComponentDetector))]
 public class PodComponentDetector : FileComponentDetector
 {
+    public PodComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<PodComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override string Id { get; } = "CocoaPods";
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods) };
@@ -27,26 +36,26 @@ public class PodComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 2;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        this.Logger.LogVerbose($"Found {file.Pattern}: {file.Location}");
+        this.Logger.LogDebug("Found {Pattern}: {Location}", file.Pattern, file.Location);
 
         try
         {
-            var podfileLock = await ParsePodfileLock(file);
+            var podfileLock = await ParsePodfileLockAsync(file);
 
             this.ProcessPodfileLock(singleFileComponentRecorder, podfileLock);
         }
         catch (Exception e)
         {
-            this.Logger.LogFailedReadingFile(file.Location, e);
+            this.Logger.LogError(e, "Error parsing Podfile.lock at {Location}", file.Location);
         }
     }
 
-    private static async Task<PodfileLock> ParsePodfileLock(IComponentStream file)
+    private static async Task<PodfileLock> ParsePodfileLockAsync(IComponentStream file)
     {
         var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
         var input = new StringReader(fileContent);
@@ -229,7 +238,8 @@ public class PodComponentDetector : FileComponentDetector
                 }
                 else
                 {
-                    this.Logger.LogWarning($"Missing podspec declaration. podspec={dependency.Podspec}, version={dependency.PodVersion}");
+                    this.Logger.LogWarning("Missing podspec declaration. podspec={Podspec}, version={PodVersion}", dependency.Podspec, dependency.PodVersion);
+                    singleFileComponentRecorder.RegisterPackageParseFailure($"{dependency.Podspec} - {dependency.PodVersion}");
                 }
             }
         }

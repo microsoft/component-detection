@@ -1,5 +1,3 @@
-using Microsoft.ComponentDetection.Contracts;
-
 // transcribed from https://github.com/containers/image/blob/c1a5f92d0ebbf9e0bf187b3353dd400472b388eb/docker/reference/reference.go
 
 // Package reference provides a general type to represent any way of referencing images within the registry.
@@ -27,8 +25,9 @@ using Microsoft.ComponentDetection.Contracts;
 // identifier                      := /[a-f0-9]{64}/
 // short-identifier                := /[a-f0-9]{6,64}/
 namespace Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts;
 
-public class DockerReferenceUtility
+public static class DockerReferenceUtility
 {
     // NameTotalLengthMax is the maximum total number of characters in a repository name.
     private const int NameTotalLengthMax = 255;
@@ -112,7 +111,7 @@ public class DockerReferenceUtility
             domain = DEFAULTDOMAIN;
         }
 
-        if (domain == DEFAULTDOMAIN && remainder.IndexOf('/') == -1)
+        if (domain == DEFAULTDOMAIN && indexOfSlash == -1)
         {
             remainder = $"{OFFICIALREPOSITORYNAME}/{remainder}";
         }

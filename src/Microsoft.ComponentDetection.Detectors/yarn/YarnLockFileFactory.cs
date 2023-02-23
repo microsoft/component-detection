@@ -1,26 +1,27 @@
-﻿using System.Collections.Generic;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
+
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+using Microsoft.Extensions.Logging;
 
-namespace Microsoft.ComponentDetection.Detectors.Yarn;
-
-public static class YarnLockFileFactory
+public class YarnLockFileFactory : IYarnLockFileFactory
 {
-    static YarnLockFileFactory() => Parsers = new List<IYarnLockParser> { new YarnLockParser() };
+    private readonly IEnumerable<IYarnLockParser> parsers;
 
-    public static IList<IYarnLockParser> Parsers { get; }
+    public YarnLockFileFactory(IEnumerable<IYarnLockParser> parsers) => this.parsers = parsers;
 
-    public static async Task<YarnLockFile> ParseYarnLockFileAsync(Stream file, ILogger logger)
+    public async Task<YarnLockFile> ParseYarnLockFileAsync(ISingleFileComponentRecorder singleFileComponentRecorder, Stream file, ILogger logger)
     {
         var blockFile = await YarnBlockFile.CreateBlockFileAsync(file);
 
-        foreach (var parser in Parsers)
+        foreach (var parser in this.parsers)
         {
             if (parser.CanParse(blockFile.YarnLockVersion))
             {
-                return parser.Parse(blockFile, logger);
+                return parser.Parse(singleFileComponentRecorder, blockFile, logger);
             }
         }
 

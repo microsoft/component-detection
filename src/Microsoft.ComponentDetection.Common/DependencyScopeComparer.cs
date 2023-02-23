@@ -1,12 +1,11 @@
-﻿using Microsoft.ComponentDetection.Contracts.BcdeModels;
-
-namespace Microsoft.ComponentDetection.Common;
+﻿namespace Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 /// <summary>
 /// Merges dependnecy Scope in their order of Priority.
 /// Higher priority scope, as indicated by its lower enum value is given precendence.
 /// </summary>
-public class DependencyScopeComparer
+public static class DependencyScopeComparer
 {
     public static DependencyScope? GetMergedDependencyScope(DependencyScope? scope1, DependencyScope? scope2)
     {

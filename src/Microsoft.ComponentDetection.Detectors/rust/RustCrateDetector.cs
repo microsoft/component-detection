@@ -1,6 +1,7 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.Rust;
+
+using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -10,11 +11,9 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
+using Microsoft.Extensions.Logging;
 using Tomlyn;
 
-namespace Microsoft.ComponentDetection.Detectors.Rust;
-
-[Export(typeof(IComponentDetector))]
 public class RustCrateDetector : FileComponentDetector
 {
     private const string CargoLockSearchPattern = "Cargo.lock";
@@ -23,6 +22,16 @@ public class RustCrateDetector : FileComponentDetector
     private static readonly Regex DependencyFormatRegex = new Regex(
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
+
+    public RustCrateDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<RustCrateDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
 
     public override string Id => "RustCrateDetector";
 
@@ -55,7 +64,7 @@ public class RustCrateDetector : FileComponentDetector
 
     private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var cargoLockFile = processRequest.ComponentStream;
@@ -140,7 +149,7 @@ public class RustCrateDetector : FileComponentDetector
         catch (Exception e)
         {
             // If something went wrong, just ignore the file
-            this.Logger.LogFailedReadingFile(cargoLockFile.Location, e);
+            this.Logger.LogError(e, "Failed to process Cargo.lock file '{CargoLockLocation}'", cargoLockFile.Location);
         }
 
         await Task.CompletedTask;
@@ -233,7 +242,8 @@ public class RustCrateDetector : FileComponentDetector
             record.PackageInfo = $"{parentPackage.Name}, {parentPackage.Version}, {parentPackage.Source}";
             record.Dependencies = dependency;
 
-            this.Logger.LogFailedReadingFile(cargoLockFile.Location, e);
+            this.Logger.LogError(e, "Failed to process Cargo.lock file '{CargoLockLocation}'", cargoLockFile.Location);
+            singleFileComponentRecorder.RegisterPackageParseFailure(record.PackageInfo);
         }
     }
 }

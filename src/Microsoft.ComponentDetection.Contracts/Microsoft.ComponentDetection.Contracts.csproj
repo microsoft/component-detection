@@ -5,12 +5,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json"/>
-        <PackageReference Include="packageurl-dotnet"/>
-        <PackageReference Include="System.Composition.AttributedModel"/>
-        <PackageReference Include="System.Memory"/>
-        <PackageReference Include="System.Reactive"/>
-        <PackageReference Include="System.Threading.Tasks.Dataflow"/>
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="packageurl-dotnet" />
+        <PackageReference Include="System.Memory" />
+        <PackageReference Include="System.Reactive" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
 
 </Project>

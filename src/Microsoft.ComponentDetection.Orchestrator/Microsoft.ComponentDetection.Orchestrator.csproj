@@ -4,15 +4,16 @@
         <PackageReference Include="CommandLineParser" />
         <PackageReference Include="DotNet.Glob" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="Polly" />
+        <PackageReference Include="Serilog" />
+        <PackageReference Include="Serilog.Extensions.Hosting" />
+        <PackageReference Include="Serilog.Extensions.Logging" />
+        <PackageReference Include="Serilog.Sinks.Console" />
+        <PackageReference Include="Serilog.Sinks.File" />
         <PackageReference Include="System.Runtime.Loader" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
-        <PackageReference Include="System.Composition.AttributedModel" />
-        <PackageReference Include="System.Composition.Convention" />
-        <PackageReference Include="System.Composition.Hosting" />
-        <PackageReference Include="System.Composition.Runtime" />
-        <PackageReference Include="System.Composition.TypedParts" />
         <PackageReference Include="System.Reactive" />
     </ItemGroup>
 

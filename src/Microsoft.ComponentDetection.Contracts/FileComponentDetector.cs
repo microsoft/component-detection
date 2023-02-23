@@ -1,27 +1,29 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Contracts;
+
+using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-namespace Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 
 /// <summary>Specialized base class for file based component detection.</summary>
 public abstract class FileComponentDetector : IComponentDetector
 {
     /// <summary>
-    /// Gets or sets the factory for handing back component streams to File detectors. Injected automatically by MEF composition.
+    /// Gets or sets the factory for handing back component streams to File detectors.
     /// </summary>
-    [Import]
-    public IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
+    protected IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
 
-    /// <summary>Gets or sets the logger for writing basic logging message to both console and file. Injected automatically by MEF composition.</summary>
-    [Import]
-    public ILogger Logger { get; set; }
+    protected IObservableDirectoryWalkerFactory Scanner { get; set; }
+
+    /// <summary>
+    /// Gets or sets the logger for writing basic logging message to both console and file.
+    /// </summary>
+    protected ILogger Logger { get; set; }
 
     public IComponentRecorder ComponentRecorder { get; private set; }
 
@@ -51,9 +53,6 @@ public abstract class FileComponentDetector : IComponentDetector
     /// </summary>
     protected ScanRequest CurrentScanRequest { get; set; }
 
-    [Import]
-    public IObservableDirectoryWalkerFactory Scanner { get; set; }
-
     public bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
 
     protected Dictionary<string, string> Telemetry { get; set; } = new Dictionary<string, string>();
@@ -74,7 +73,7 @@ public abstract class FileComponentDetector : IComponentDetector
 
         var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
-        this.Logger?.LogVerbose($"Registered {this.GetType().FullName}");
+        this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
         return this.ProcessAsync(filteredObservable, request.DetectorArgs);
     }
 
@@ -91,9 +90,9 @@ public abstract class FileComponentDetector : IComponentDetector
 
     private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
-        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFound(processRequest, detectorArgs));
+        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs));
 
-        var preprocessedObserbable = await this.OnPrepareDetection(processRequests, detectorArgs);
+        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
 
         await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
 
@@ -101,7 +100,7 @@ public abstract class FileComponentDetector : IComponentDetector
 
         await processor.Completion;
 
-        await this.OnDetectionFinished();
+        await this.OnDetectionFinishedAsync();
 
         return new IndividualDetectorScanResult
         {
@@ -110,14 +109,14 @@ public abstract class FileComponentDetector : IComponentDetector
         };
     }
 
-    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetection(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         return Task.FromResult(processRequests);
     }
 
-    protected abstract Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
+    protected abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
 
-    protected virtual Task OnDetectionFinished()
+    protected virtual Task OnDetectionFinishedAsync()
     {
         return Task.CompletedTask;
     }

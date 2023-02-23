@@ -1,6 +1,7 @@
+namespace Microsoft.ComponentDetection.Detectors.Poetry;
+
 using System;
 using System.Collections.Generic;
-using System.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,13 +9,21 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
+using Microsoft.Extensions.Logging;
 using Tomlyn;
 
-namespace Microsoft.ComponentDetection.Detectors.Poetry;
-
-[Export(typeof(IComponentDetector))]
 public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
 {
+    public PoetryComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ILogger<PoetryComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.Logger = logger;
+    }
+
     public override string Id => "Poetry";
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "poetry.lock" };
@@ -25,11 +34,11 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IEnumerable<string> Categories => new List<string> { "Python" };
 
-    protected override async Task OnFileFound(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var poetryLockFile = processRequest.ComponentStream;
-        this.Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
+        this.Logger.LogDebug("Found Poetry lockfile {PoetryLockFile}", poetryLockFile);
 
         var reader = new StreamReader(poetryLockFile.Stream);
         var options = new TomlModelOptions

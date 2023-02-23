@@ -1,11 +1,8 @@
+namespace Microsoft.ComponentDetection.Common;
 using System;
-using System.Composition;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Common;
-
-[Export(typeof(IEnvironmentVariableService))]
 public class EnvironmentVariableService : IEnvironmentVariableService
 {
     public bool DoesEnvironmentVariableExist(string name)

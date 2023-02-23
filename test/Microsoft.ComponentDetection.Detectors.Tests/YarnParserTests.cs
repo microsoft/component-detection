@@ -1,33 +1,35 @@
-﻿using System;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
 public class YarnParserTests
 {
-    private Mock<ILogger> loggerMock;
+    private readonly Mock<ILogger<YarnLockParser>> loggerMock;
+    private readonly Mock<ISingleFileComponentRecorder> recorderMock;
 
-    [TestInitialize]
-    public void TestInitialize()
+    public YarnParserTests()
     {
-        this.loggerMock = new Mock<ILogger>();
+        this.loggerMock = new Mock<ILogger<YarnLockParser>>();
+        this.recorderMock = new Mock<ISingleFileComponentRecorder>();
     }
 
     [TestMethod]
     public void YarnLockParserWithNullBlockFile_Fails()
     {
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
-        void Action() => parser.Parse(null, this.loggerMock.Object);
+        void Action() => parser.Parse(this.recorderMock.Object, null, this.loggerMock.Object);
 
         Assert.ThrowsException<ArgumentNullException>(Action);
     }
@@ -37,7 +39,7 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V1;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blockFile = new Mock<IYarnBlockFile>();
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
@@ -50,7 +52,7 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V2;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blockFile = new Mock<IYarnBlockFile>();
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
@@ -63,14 +65,14 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V1;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blocks = Enumerable.Empty<YarnBlock>();
         var blockFile = new Mock<IYarnBlockFile>();
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
         blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
 
-        var file = parser.Parse(blockFile.Object, this.loggerMock.Object);
+        var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
         Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
         Assert.AreEqual(0, file.Entries.Count());
@@ -81,7 +83,7 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V1;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blocks = new List<YarnBlock>
         {
@@ -100,7 +102,7 @@ public class YarnParserTests
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
         blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
 
-        var file = parser.Parse(blockFile.Object, this.loggerMock.Object);
+        var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
         Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
         Assert.AreEqual(3, file.Entries.Count());
@@ -118,7 +120,7 @@ public class YarnParserTests
     {
         var yarnLockFileVersion = YarnLockVersion.V1;
 
-        var parser = new YarnLockParser();
+        var parser = new YarnLockParser(this.loggerMock.Object);
 
         var blocks = new List<YarnBlock>
         {
@@ -136,7 +138,7 @@ public class YarnParserTests
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
         blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
 
-        var file = parser.Parse(blockFile.Object, this.loggerMock.Object);
+        var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
         Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
         Assert.AreEqual(2, file.Entries.Count());

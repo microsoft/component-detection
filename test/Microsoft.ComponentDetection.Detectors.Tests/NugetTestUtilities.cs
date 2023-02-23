@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
@@ -6,8 +7,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Moq;
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 public static class NugetTestUtilities
 {
@@ -60,7 +59,7 @@ public static class NugetTestUtilities
         return GetTemplatedNuspec(componentName, version, authors);
     }
 
-    public static async Task<Stream> ZipNupkgComponent(string filename, string content)
+    public static async Task<Stream> ZipNupkgComponentAsync(string filename, string content)
     {
         var stream = new MemoryStream();
 
@@ -71,7 +70,7 @@ public static class NugetTestUtilities
             using var entryStream = entry.Open();
 
             var templateBytes = Encoding.UTF8.GetBytes(content);
-            await entryStream.WriteAsync(templateBytes, 0, templateBytes.Length);
+            await entryStream.WriteAsync(templateBytes);
         }
 
         stream.Seek(0, SeekOrigin.Begin);

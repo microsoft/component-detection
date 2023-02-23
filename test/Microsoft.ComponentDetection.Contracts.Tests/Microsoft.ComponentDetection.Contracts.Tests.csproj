@@ -1,14 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup Label="Project References">
-        <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Contracts\Microsoft.ComponentDetection.Contracts.csproj"/>
+        <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Contracts\Microsoft.ComponentDetection.Contracts.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Package References">
-        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
-        <PackageReference Include="System.Reactive"/>
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
-        <PackageReference Include="packageurl-dotnet"/>
+        <PackageReference Include="packageurl-dotnet" />
     </ItemGroup>
 
 </Project>

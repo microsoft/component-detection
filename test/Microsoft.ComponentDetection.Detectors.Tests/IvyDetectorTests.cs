@@ -1,10 +1,11 @@
+namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Ivy;
@@ -12,60 +13,33 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace Microsoft.ComponentDetection.Detectors.Tests;
-
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class IvyDetectorTests
+public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
 {
-    private Mock<ICommandLineInvocationService> commandLineMock;
-    private DetectorTestUtility<IvyDetector> detectorTestUtility;
-    private ScanRequest scanRequest;
+    private readonly Mock<ICommandLineInvocationService> commandLineMock;
 
-    [TestInitialize]
-    public void InitializeTests()
+    public IvyDetectorTests()
     {
         this.commandLineMock = new Mock<ICommandLineInvocationService>();
-        var loggerMock = new Mock<ILogger>();
-
-        var detector = new IvyDetector
-        {
-            CommandLineInvocationService = this.commandLineMock.Object,
-            Logger = loggerMock.Object,
-        };
-
-        var tempPath = Path.GetTempPath();
-        var detectionPath = Path.Combine(tempPath, Guid.NewGuid().ToString());
-        Directory.CreateDirectory(detectionPath);
-
-        this.scanRequest = new ScanRequest(new DirectoryInfo(detectionPath), (name, directoryName) => false, loggerMock.Object, null, null, new ComponentRecorder());
-
-        this.detectorTestUtility = DetectorTestUtilityCreator.Create<IvyDetector>()
-            .WithScanRequest(this.scanRequest)
-            .WithDetector(detector);
-    }
-
-    [TestCleanup]
-    public void TestCleanup()
-    {
-        this.scanRequest.SourceDirectory.Delete(recursive: true);
+        this.DetectorTestUtility.AddServiceMock(this.commandLineMock);
     }
 
     [TestMethod]
-    public async Task IfAntIsNotAvailableThenExitDetectorGracefully()
+    public async Task IfAntIsNotAvailableThenExitDetectorGracefullyAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
             .ReturnsAsync(false);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 0);
         Assert.AreEqual(detectorResult.ResultCode, ProcessingResultCode.Success);
     }
 
     [TestMethod]
-    public async Task AntAvailableHappyPath()
+    public async Task AntAvailableHappyPathAsync()
     {
         // Fake output from the IvyComponentDetectionAntTask
         var registerUsageContent = "{\"RegisterUsage\": [" +
@@ -77,7 +51,7 @@ public class IvyDetectorTests
 
         this.IvyHappyPath(content: registerUsageContent);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents(); // IsDevelopmentDependency = true in componentRecorder but null in detectedComponents... why?
         Assert.AreEqual(3, detectedComponents.Count());
@@ -100,18 +74,18 @@ public class IvyDetectorTests
     }
 
     [TestMethod]
-    public async Task IvyDetector_FileObservableIsNotPresent_DetectionShouldNotFail()
+    public async Task IvyDetector_FileObservableIsNotPresent_DetectionShouldNotFailAsync()
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
             .ReturnsAsync(true);
 
-        Func<Task> action = async () => await this.detectorTestUtility.ExecuteDetector();
+        Func<Task> action = async () => await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         await action.Should().NotThrowAsync();
     }
 
     [TestMethod]
-    public async Task IvyDependencyGraph()
+    public async Task IvyDependencyGraphAsync()
     {
         // Fake output from the IvyComponentDetectionAntTask
         var registerUsageContent = "{\"RegisterUsage\": [" +
@@ -127,7 +101,7 @@ public class IvyDetectorTests
 
         this.IvyHappyPath(content: registerUsageContent);
 
-        var (detectorResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetector();
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents(); // IsDevelopmentDependency = true in componentRecorder but null in detectedComponents... why?
         Assert.AreEqual(3, detectedComponents.Count());
@@ -150,26 +124,18 @@ public class IvyDetectorTests
         dependencyGraph.IsDevelopmentDependency(d3Id).Should().BeFalse();
     }
 
-    protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
-    {
-        result.Should<T>().BeEquivalentTo(expected);
-        return true;
-    }
-
     private void IvyHappyPath(string content)
     {
-        this.commandLineMock.Setup(x => x.CanCommandBeLocated(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync(IvyDetector.PrimaryCommand, IvyDetector.AdditionalValidCommands, IvyDetector.AntVersionArgument))
             .ReturnsAsync(true);
 
-        var expectedIvyXmlLocation = this.scanRequest.SourceDirectory.FullName;
-
-        File.WriteAllText(Path.Combine(expectedIvyXmlLocation, "ivy.xml"), "(dummy content)");
-        File.WriteAllText(Path.Combine(expectedIvyXmlLocation, "ivysettings.xml"), "(dummy content)");
-        this.detectorTestUtility
-            .WithFile("ivy.xml", "(dummy content)", fileLocation: Path.Combine(expectedIvyXmlLocation, "ivy.xml"));
+        File.WriteAllText(Path.Combine(Path.GetTempPath(), "ivy.xml"), "(dummy content)");
+        File.WriteAllText(Path.Combine(Path.GetTempPath(), "ivysettings.xml"), "(dummy content)");
+        this.DetectorTestUtility
+            .WithFile("ivy.xml", "(dummy content)", fileLocation: Path.Combine(Path.GetTempPath(), "ivy.xml"));
 
         this.commandLineMock.Setup(
-            x => x.ExecuteCommand(
+            x => x.ExecuteCommandAsync(
                 IvyDetector.PrimaryCommand,
                 IvyDetector.AdditionalValidCommands,
                 It.IsAny<string[]>())).Callback((string cmd, IEnumerable<string> cmd2, string[] parameters) =>

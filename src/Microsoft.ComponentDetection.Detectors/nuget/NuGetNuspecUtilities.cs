@@ -1,10 +1,9 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Detectors.NuGet;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-
-namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 public static class NuGetNuspecUtilities
 {
@@ -27,7 +26,7 @@ public static class NuGetNuspecUtilities
             var nuspecEntry =
                 archive.Entries.FirstOrDefault(x =>
                     x.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase)
-                    && x.FullName.IndexOf('/') == -1);
+                    && !x.FullName.Contains('/'));
 
             if (nuspecEntry == null)
             {
@@ -36,7 +35,7 @@ public static class NuGetNuspecUtilities
 
             using var nuspecStream = nuspecEntry.Open();
 
-            return await GetNuspecBytesFromNuspecStream(nuspecStream, nuspecEntry.Length);
+            return await GetNuspecBytesFromNuspecStreamAsync(nuspecStream, nuspecEntry.Length);
         }
         catch (InvalidDataException ex)
         {
@@ -49,13 +48,13 @@ public static class NuGetNuspecUtilities
         }
     }
 
-    public static async Task<byte[]> GetNuspecBytesFromNuspecStream(Stream nuspecStream, long nuspecLength)
+    public static async Task<byte[]> GetNuspecBytesFromNuspecStreamAsync(Stream nuspecStream, long nuspecLength)
     {
         var nuspecBytes = new byte[nuspecLength];
         var bytesReadSoFar = 0;
         while (bytesReadSoFar < nuspecBytes.Length)
         {
-            bytesReadSoFar += await nuspecStream.ReadAsync(nuspecBytes, bytesReadSoFar, nuspecBytes.Length - bytesReadSoFar);
+            bytesReadSoFar += await nuspecStream.ReadAsync(nuspecBytes.AsMemory(bytesReadSoFar, nuspecBytes.Length - bytesReadSoFar));
         }
 
         return nuspecBytes;

@@ -1,15 +1,16 @@
-﻿using System.Linq;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
+using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json.Linq;
-
-namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -252,7 +253,7 @@ public class NpmUtilitiesTests
             DevelopmentDependency = true,
         };
 
-        var componentRecorder = new ComponentRecorder();
+        var componentRecorder = new ComponentRecorder(new Mock<ILogger>().Object);
         var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("path");
         singleFileComponentRecorder.RegisterUsage(detectedComponent);
 

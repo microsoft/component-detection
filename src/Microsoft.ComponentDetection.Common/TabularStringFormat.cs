@@ -1,9 +1,8 @@
-﻿using System;
+﻿namespace Microsoft.ComponentDetection.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
-namespace Microsoft.ComponentDetection.Common;
 
 public class TabularStringFormat
 {

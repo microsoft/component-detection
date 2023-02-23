@@ -1,15 +1,14 @@
-﻿using System.Threading.Tasks;
+﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.Internal;
-
-namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 public interface IMavenCommandService
 {
     string BcdeMvnDependencyFileName { get; }
 
-    Task<bool> MavenCLIExists();
+    Task<bool> MavenCLIExistsAsync();
 
-    Task GenerateDependenciesFile(ProcessRequest processRequest);
+    Task GenerateDependenciesFileAsync(ProcessRequest processRequest);
 
     void ParseDependenciesFile(ProcessRequest processRequest);
 }

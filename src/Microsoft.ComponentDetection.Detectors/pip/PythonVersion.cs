@@ -1,10 +1,9 @@
+namespace Microsoft.ComponentDetection.Detectors.Pip;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
-
-namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 public class PythonVersion : IComparable<PythonVersion>
 {
@@ -96,7 +95,7 @@ public class PythonVersion : IComparable<PythonVersion>
 
     public int? DevNumber { get; set; }
 
-    public bool Floating { get; set; } = false;
+    public bool Floating { get; set; }
 
     public static bool operator >(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) == 1;
 

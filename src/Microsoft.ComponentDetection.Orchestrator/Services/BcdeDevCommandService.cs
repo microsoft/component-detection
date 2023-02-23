@@ -1,29 +1,34 @@
-﻿using System;
-using System.Composition;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.Extensions.Logging;
 
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
-
-[Export(typeof(IArgumentHandlingService))]
-public class BcdeDevCommandService : ServiceBase, IArgumentHandlingService
+public class BcdeDevCommandService : IArgumentHandlingService
 {
-    [Import]
-    public IBcdeScanExecutionService BcdeScanExecutionService { get; set; }
+    private readonly IBcdeScanExecutionService bcdeScanExecutionService;
+    private readonly ILogger<BcdeDevCommandService> logger;
+
+    public BcdeDevCommandService(IBcdeScanExecutionService bcdeScanExecutionService, ILogger<BcdeDevCommandService> logger)
+    {
+        this.bcdeScanExecutionService = bcdeScanExecutionService;
+        this.logger = logger;
+    }
 
     public bool CanHandle(IScanArguments arguments)
     {
         return arguments is BcdeDevArguments;
     }
 
-    public async Task<ScanResult> Handle(IScanArguments arguments)
+    public async Task<ScanResult> HandleAsync(IScanArguments arguments)
     {
         // Run BCDE with the given arguments
         var detectionArguments = arguments as BcdeArguments;
 
-        var result = await this.BcdeScanExecutionService.ExecuteScanAsync(detectionArguments);
+        var result = await this.bcdeScanExecutionService.ExecuteScanAsync(detectionArguments);
         var detectedComponents = result.ComponentsFound.ToList();
         foreach (var detectedComponent in detectedComponents)
         {
