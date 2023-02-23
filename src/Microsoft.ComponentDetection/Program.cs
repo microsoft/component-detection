@@ -20,7 +20,7 @@ try
     }
 
     Log.Logger = new LoggerConfiguration()
-        .WriteTo.Console()
+        .WriteTo.Console(outputTemplate: "[BOOTSTRAP] [{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
         .CreateBootstrapLogger();
 
     var serviceProvider = new ServiceCollection()
@@ -40,6 +40,8 @@ try
 
     // Manually dispose to flush logs as we force exit
     await serviceProvider.DisposeAsync();
+
+    await Log.CloseAndFlushAsync();
 
     // force an exit, not letting any lingering threads not responding.
     Environment.Exit(exitCode);

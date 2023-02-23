@@ -23,6 +23,8 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Serilog;
 using Serilog.Events;
+using Serilog.Extensions.Hosting;
+using Serilog.Extensions.Logging;
 
 public class Orchestrator
 {
@@ -59,18 +61,26 @@ public class Orchestrator
             baseArguments = new BaseArguments();
         }
 
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
-            .WriteTo.File(Path.Combine(baseArguments.Output ?? Path.GetTempPath(), $"GovCompDiscLog_{DateTime.Now:yyyyMMddHHmmssfff}.txt"), buffered: true)
-            .MinimumLevel.Is(baseArguments.Verbosity switch
-            {
-                VerbosityMode.Quiet => LogEventLevel.Error,
-                VerbosityMode.Normal => LogEventLevel.Information,
-                VerbosityMode.Verbose => LogEventLevel.Debug,
-                _ => throw new ArgumentOutOfRangeException(nameof(baseArguments.Verbosity), "Invalid verbosity level"),
-            })
-            .Enrich.FromLogContext()
-            .CreateLogger();
+        var logFile = Path.Combine(
+            baseArguments.Output ?? Path.GetTempPath(),
+            $"GovCompDiscLog_{DateTime.Now:yyyyMMddHHmmssfff}.txt");
+
+        var reloadableLogger = (ReloadableLogger)Log.Logger;
+        reloadableLogger.Reload(configuration =>
+            configuration
+                .WriteTo.Console()
+                .WriteTo.File(logFile, buffered: true)
+                .WriteTo.Providers(this.serviceProvider.GetRequiredService<LoggerProviderCollection>())
+                .MinimumLevel.Is(baseArguments.Verbosity switch
+                {
+                    VerbosityMode.Quiet => LogEventLevel.Error,
+                    VerbosityMode.Normal => LogEventLevel.Information,
+                    VerbosityMode.Verbose => LogEventLevel.Debug,
+                    _ => throw new ArgumentOutOfRangeException(nameof(baseArguments.Verbosity), "Invalid verbosity level"),
+                })
+                .Enrich.FromLogContext());
+
+        this.logger.LogInformation("Log file: {LogFile}", logFile);
 
         // This is required so TelemetryRelay can be accessed via it's static singleton
         // It should be refactored out at a later date
