@@ -188,7 +188,7 @@ public class PyPiClient : IPyPiClient
         {
             using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
 
-            this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", (int)request.StatusCode, request.ReasonPhrase, requestUri);
+            this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
 
             return new SortedDictionary<string, IList<PythonProjectRelease>>();
         }

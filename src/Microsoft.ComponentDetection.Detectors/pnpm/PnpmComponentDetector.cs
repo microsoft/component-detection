@@ -14,7 +14,7 @@ public class PnpmComponentDetector : FileComponentDetector
     public PnpmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger<FileComponentDetector> logger)
+        ILogger<PnpmComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;

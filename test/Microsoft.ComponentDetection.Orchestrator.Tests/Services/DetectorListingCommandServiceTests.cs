@@ -85,7 +85,6 @@ public class DetectorListingCommandServiceTests
         var result = await this.serviceUnderTest.HandleAsync(new ListDetectionArgs());
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        Console.WriteLine(string.Join('\n', this.logOutput));
         this.logOutput.Should().Contain("ComponentDetector2");
         this.logOutput.Should().Contain("ComponentDetector3");
         this.logOutput.Should().Contain("VersionedComponentDetector");

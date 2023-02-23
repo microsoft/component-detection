@@ -145,7 +145,7 @@ public class RubyComponentDetector : FileComponentDetector
             {
                 // Throw this line away. Is this malformed? We were expecting a header
                 this.Logger.LogDebug("{MalformedLine}", lines[0]);
-                this.Logger.LogDebug("Appears to be malformed/is not expected here.  Expected heading. {Line}", lines[0]);
+                this.Logger.LogDebug("Appears to be malformed/is not expected here. Expected heading. {Line}", lines[0]);
                 lines.RemoveAt(0);
             }
         }

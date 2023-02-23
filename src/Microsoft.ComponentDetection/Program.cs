@@ -7,9 +7,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Extensions.Logging;
 
 try
 {
@@ -22,32 +20,16 @@ try
         }
     }
 
-    var providers = new LoggerProviderCollection();
-
     Log.Logger = new LoggerConfiguration()
         .WriteTo.Console()
         .WriteTo.File(Path.Combine(Path.GetTempPath(), $"GovCompDiscLog_{DateTime.Now:yyyyMMddHHmmssfff}.txt"), buffered: true)
-        .WriteTo.Providers(providers)
         .MinimumLevel.ControlledBy(Orchestrator.MinimumLogLevelSwitch)
         .Enrich.FromLogContext()
         .CreateLogger();
 
     var serviceProvider = new ServiceCollection()
         .AddComponentDetection()
-        .AddSingleton(providers)
-        .AddSingleton<ILoggerFactory>(sc =>
-        {
-            var providerCollection = sc.GetService<LoggerProviderCollection>();
-            var factory = new SerilogLoggerFactory(null, true, providerCollection);
-
-            foreach (var provider in sc.GetServices<ILoggerProvider>())
-            {
-                factory.AddProvider(provider);
-            }
-
-            return factory;
-        })
-        .AddLogging(l => l.AddFilter<SerilogLoggerProvider>(null, LogLevel.Trace))
+        .AddLogging(l => l.AddSerilog(dispose: true))
         .BuildServiceProvider();
     var orchestrator = serviceProvider.GetRequiredService<Orchestrator>();
     var result = await orchestrator.LoadAsync(args);
@@ -59,8 +41,6 @@ try
     }
 
     Console.WriteLine($"Execution finished, status: {exitCode}.");
-
-    await Log.CloseAndFlushAsync();
 
     // Manually dispose to flush logs as we force exit
     await serviceProvider.DisposeAsync();
