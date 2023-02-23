@@ -12,17 +12,19 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 namespace Microsoft.ComponentDetection.Common.DependencyGraph;
 
+using Microsoft.Extensions.Logging;
+
 public class ComponentRecorder : IComponentRecorder
 {
-    private readonly ILogger log;
-
     private readonly ConcurrentBag<SingleFileComponentRecorder> singleFileRecorders = new ConcurrentBag<SingleFileComponentRecorder>();
 
     private readonly bool enableManualTrackingOfExplicitReferences;
 
-    public ComponentRecorder(ILogger log = null, bool enableManualTrackingOfExplicitReferences = true)
+    private readonly ILogger logger;
+
+    public ComponentRecorder(ILogger logger = null, bool enableManualTrackingOfExplicitReferences = true)
     {
-        this.log = log;
+        this.logger = logger;
         this.enableManualTrackingOfExplicitReferences = enableManualTrackingOfExplicitReferences;
     }
 
@@ -86,7 +88,7 @@ public class ComponentRecorder : IComponentRecorder
         var matching = this.singleFileRecorders.FirstOrDefault(x => x.ManifestFileLocation == location);
         if (matching == null)
         {
-            matching = new SingleFileComponentRecorder(location, this, this.enableManualTrackingOfExplicitReferences, this.log);
+            matching = new SingleFileComponentRecorder(location, this, this.enableManualTrackingOfExplicitReferences, this.logger);
             this.singleFileRecorders.Add(matching);
         }
 
@@ -106,8 +108,6 @@ public class ComponentRecorder : IComponentRecorder
 
     public sealed class SingleFileComponentRecorder : ISingleFileComponentRecorder
     {
-        private readonly ILogger log;
-
         private readonly ConcurrentDictionary<string, DetectedComponent> detectedComponentsInternal = new ConcurrentDictionary<string, DetectedComponent>();
 
         /// <summary>
@@ -116,14 +116,15 @@ public class ComponentRecorder : IComponentRecorder
         private readonly ConcurrentDictionary<string, byte> skippedComponentsInternal = new ConcurrentDictionary<string, byte>();
 
         private readonly ComponentRecorder recorder;
+        private readonly ILogger logger;
 
         private readonly object registerUsageLock = new object();
 
-        public SingleFileComponentRecorder(string location, ComponentRecorder recorder, bool enableManualTrackingOfExplicitReferences, ILogger log)
+        public SingleFileComponentRecorder(string location, ComponentRecorder recorder, bool enableManualTrackingOfExplicitReferences, ILogger logger)
         {
             this.ManifestFileLocation = location;
             this.recorder = recorder;
-            this.log = log;
+            this.logger = logger;
             this.DependencyGraph = new DependencyGraph(enableManualTrackingOfExplicitReferences);
         }
 
@@ -174,17 +175,17 @@ public class ComponentRecorder : IComponentRecorder
 #if DEBUG
             if (detectedComponent.FilePaths?.Any() ?? false)
             {
-                this.log?.LogWarning("Detector should not populate DetectedComponent.FilePaths!");
+                this.logger.LogWarning("Detector should not populate DetectedComponent.FilePaths!");
             }
 
             if (detectedComponent.DependencyRoots?.Any() ?? false)
             {
-                this.log?.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");
+                this.logger.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");
             }
 
             if (detectedComponent.DevelopmentDependency.HasValue)
             {
-                this.log?.LogWarning("Detector should not populate DetectedComponent.DevelopmentDependency!");
+                this.logger.LogWarning("Detector should not populate DetectedComponent.DevelopmentDependency!");
             }
 #endif
 

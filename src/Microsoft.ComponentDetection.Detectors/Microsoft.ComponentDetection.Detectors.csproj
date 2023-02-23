@@ -2,6 +2,7 @@
 
     <ItemGroup>
         <PackageReference Include="DotNet.Glob" />
+        <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="morelinq" />
         <PackageReference Include="NuGet.ProjectModel" />
         <PackageReference Include="NuGet.Versioning" />
@@ -12,7 +13,7 @@
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
-        <PackageReference Include="Tomlyn"/>
+        <PackageReference Include="Tomlyn" />
         <PackageReference Include="Valleysoft.DockerfileModel " />
     </ItemGroup>
 

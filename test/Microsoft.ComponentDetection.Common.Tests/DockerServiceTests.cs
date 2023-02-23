@@ -1,10 +1,11 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -17,7 +18,7 @@ public class DockerServiceTests
 
     private const string TestImageWithBaseDetails = "governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag";
 
-    private readonly Mock<ILogger> loggerMock = new();
+    private readonly Mock<ILogger<DockerService>> loggerMock = new();
     private readonly DockerService dockerService;
 
     public DockerServiceTests() => this.dockerService = new DockerService(this.loggerMock.Object);

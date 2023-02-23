@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Poetry;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +9,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
+using Microsoft.Extensions.Logging;
 using Tomlyn;
 
 public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
@@ -15,7 +17,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
     public PoetryComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger logger)
+        ILogger<PoetryComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -36,7 +38,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var poetryLockFile = processRequest.ComponentStream;
-        this.Logger.LogVerbose("Found Poetry lockfile: " + poetryLockFile);
+        this.Logger.LogDebug("Found Poetry lockfile {PoetryLockFile}", poetryLockFile);
 
         var reader = new StreamReader(poetryLockFile.Stream);
         var options = new TomlModelOptions

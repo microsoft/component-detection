@@ -1,21 +1,23 @@
 ﻿namespace Microsoft.ComponentDetection.Common;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 
 public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
 {
+    private readonly ILogger logger;
+
     public ComponentStreamEnumerable(IEnumerable<MatchedFile> fileEnumerable, ILogger logger)
     {
+        this.logger = logger;
         this.ToEnumerate = fileEnumerable;
-        this.Logger = logger;
     }
 
     private IEnumerable<MatchedFile> ToEnumerate { get; }
-
-    private ILogger Logger { get; }
 
     public IEnumerator<IComponentStream> GetEnumerator()
     {
@@ -23,7 +25,7 @@ public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
         {
             if (!filePairing.File.Exists)
             {
-                this.Logger.LogWarning($"File {filePairing.File.FullName} does not exist on disk.");
+                this.logger.LogWarning("File {FilePairingName} does not exist on disk.", filePairing.File.FullName);
                 yield break;
             }
 
@@ -51,13 +53,12 @@ public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
         }
         catch (UnauthorizedAccessException)
         {
-            this.Logger.LogWarning($"Unauthorized access exception caught when trying to open {file.FullName}");
+            this.logger.LogWarning("Unauthorized access exception caught when trying to open {FileName}", file.FullName);
             return null;
         }
         catch (Exception e)
         {
-            this.Logger.LogWarning($"Unhandled exception caught when trying to open {file.FullName}");
-            this.Logger.LogException(e, isError: false);
+            this.logger.LogWarning(e, "Unhandled exception caught when trying to open {FileName}", file.FullName);
             return null;
         }
     }

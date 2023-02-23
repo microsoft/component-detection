@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Common;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,14 +13,15 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
+using Microsoft.Extensions.Logging;
 
 public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 {
     private readonly ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>> pendingScans = new ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>>();
     private readonly IPathUtilityService pathUtilityService;
-    private readonly ILogger logger;
+    private readonly ILogger<FastDirectoryWalkerFactory> logger;
 
-    public FastDirectoryWalkerFactory(IPathUtilityService pathUtilityService, ILogger logger)
+    public FastDirectoryWalkerFactory(IPathUtilityService pathUtilityService, ILogger<FastDirectoryWalkerFactory> logger)
     {
         this.pathUtilityService = pathUtilityService;
         this.logger = logger;
@@ -31,7 +33,7 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
         {
             if (!root.Exists)
             {
-                this.logger?.LogError($"Root directory doesn't exist: {root.FullName}");
+                this.logger.LogError("Root directory doesn't exist: {RootFullName}", root.FullName);
                 s.OnCompleted();
                 return Task.CompletedTask;
             }
@@ -49,7 +51,7 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 
             var sw = Stopwatch.StartNew();
 
-            this.logger?.LogInfo($"Starting enumeration of {root.FullName}");
+            this.logger.LogInformation("Starting enumeration of {RootFullName}", root.FullName);
 
             var fileCount = 0;
             var directoryCount = 0;
@@ -187,7 +189,7 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
                 () =>
                 {
                     sw.Stop();
-                    this.logger?.LogInfo($"Enumerated {fileCount} files and {directoryCount} directories in {sw.Elapsed}");
+                    this.logger.LogInformation("Enumerated {FileCount} files and {DirectoryCount} directories in {Elapsed}", fileCount, directoryCount, sw.Elapsed);
                     s.OnCompleted();
                 });
         });
@@ -211,7 +213,7 @@ public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 
         if (this.pendingScans.TryGetValue(root, out var scannerObservable))
         {
-            this.logger.LogVerbose(string.Join(":", patterns));
+            this.logger.LogDebug("Logging patterns {Patterns} for {Root}", string.Join(":", patterns), root.FullName);
 
             var inner = scannerObservable.Value.Where(fsi =>
             {

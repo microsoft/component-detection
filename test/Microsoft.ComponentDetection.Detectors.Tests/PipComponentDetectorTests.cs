@@ -11,6 +11,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
@@ -20,6 +21,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 {
     private readonly Mock<IPythonCommandService> pythonCommandService;
     private readonly Mock<IPythonResolver> pythonResolver;
+    private readonly Mock<ILogger<PipComponentDetector>> mockLogger;
 
     public PipComponentDetectorTests()
     {
@@ -28,14 +30,22 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 
         this.pythonResolver = new Mock<IPythonResolver>();
         this.DetectorTestUtility.AddServiceMock(this.pythonResolver);
+
+        this.mockLogger = new Mock<ILogger<PipComponentDetector>>();
+        this.DetectorTestUtility.AddServiceMock(this.mockLogger);
     }
 
     [TestMethod]
     public async Task TestPipDetector_PythonNotInstalledAsync()
     {
-        var mockLogger = new Mock<ILogger>();
-        mockLogger.Setup(x => x.LogInfo(It.Is<string>(l => l.Contains("No python found"))));
-        this.DetectorTestUtility.AddServiceMock(mockLogger);
+        this.mockLogger.Setup(x => x.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        this.DetectorTestUtility.AddServiceMock(this.mockLogger);
 
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(false);
 
@@ -44,7 +54,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
             .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        mockLogger.VerifyAll();
+        this.mockLogger.VerifyAll();
     }
 
     [TestMethod]

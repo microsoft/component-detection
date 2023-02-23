@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +9,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
@@ -22,7 +24,7 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         IEnvironmentVariableService environmentVariableService,
-        ILogger logger)
+        ILogger<VcpkgComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -46,7 +48,7 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        this.Logger.LogVerbose($"vcpkg detector found {file}");
+        this.Logger.LogDebug("vcpkg detector found {File}", file);
 
         var projectRootDirectory = Directory.GetParent(file.Location);
         if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
@@ -86,7 +88,7 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
                     continue;
                 }
 
-                this.Logger.LogVerbose($"vcpkg parsed package {item.Name}");
+                this.Logger.LogDebug("vcpkg parsed package {PackageName}", item.Name);
                 if (item.SPDXID == "SPDXRef-port")
                 {
                     var split = item.VersionInfo.Split('#');
@@ -113,9 +115,9 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                this.Logger.LogWarning($"failed while handling {item.Name}");
+                this.Logger.LogWarning(e, "failed while handling {ItemName}", item.Name);
                 singleFileComponentRecorder.RegisterPackageParseFailure(item.Name);
             }
         }

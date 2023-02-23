@@ -11,7 +11,9 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pnpm;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -29,6 +31,7 @@ public class PnpmDetectorTests : BaseDetectorTest<PnpmComponentDetector>
                 new Dictionary<string, string>(),
                 null,
                 componentRecorder));
+        this.DetectorTestUtility.AddServiceMock(new Mock<ILogger<FileComponentDetector>>());
     }
 
     [TestMethod]

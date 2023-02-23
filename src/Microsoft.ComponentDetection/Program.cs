@@ -6,6 +6,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 try
 {
@@ -18,8 +19,13 @@ try
         }
     }
 
+    Log.Logger = new LoggerConfiguration()
+        .WriteTo.Console(outputTemplate: "[BOOTSTRAP] [{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+        .CreateBootstrapLogger();
+
     var serviceProvider = new ServiceCollection()
         .AddComponentDetection()
+        .ConfigureLoggingProviders()
         .BuildServiceProvider();
     var orchestrator = serviceProvider.GetRequiredService<Orchestrator>();
     var result = await orchestrator.LoadAsync(args);
@@ -34,6 +40,8 @@ try
 
     // Manually dispose to flush logs as we force exit
     await serviceProvider.DisposeAsync();
+
+    await Log.CloseAndFlushAsync();
 
     // force an exit, not letting any lingering threads not responding.
     Environment.Exit(exitCode);

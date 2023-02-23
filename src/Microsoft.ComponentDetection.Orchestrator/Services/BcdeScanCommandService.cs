@@ -1,28 +1,29 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
-using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
+public class BcdeScanCommandService : IArgumentHandlingService
 {
     public const string ManifestRelativePath = "ScanManifest_{timestamp}.json";
 
     private readonly IFileWritingService fileWritingService;
     private readonly IBcdeScanExecutionService bcdeScanExecutionService;
+    private readonly ILogger<BcdeScanCommandService> logger;
 
     public BcdeScanCommandService(
         IFileWritingService fileWritingService,
         IBcdeScanExecutionService bcdeScanExecutionService,
-        ILogger logger)
+        ILogger<BcdeScanCommandService> logger)
     {
         this.fileWritingService = fileWritingService;
         this.bcdeScanExecutionService = bcdeScanExecutionService;
-        this.Logger = logger;
+        this.logger = logger;
     }
 
     public bool CanHandle(IScanArguments arguments)
@@ -44,12 +45,12 @@ public class BcdeScanCommandService : ServiceBase, IArgumentHandlingService
 
         if (detectionArguments.ManifestFile != null)
         {
-            this.Logger.LogInfo($"Scan Manifest file: {detectionArguments.ManifestFile.FullName}");
+            this.logger.LogInformation("Scan Manifest file: {ManifestFile}", detectionArguments.ManifestFile.FullName);
             userRequestedManifestPath = detectionArguments.ManifestFile;
         }
         else
         {
-            this.Logger.LogInfo($"Scan Manifest file: {this.fileWritingService.ResolveFilePath(ManifestRelativePath)}");
+            this.logger.LogInformation("Scan Manifest file: {ManifestFile}", this.fileWritingService.ResolveFilePath(ManifestRelativePath));
         }
 
         if (userRequestedManifestPath == null)

@@ -1,20 +1,21 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.Extensions.Logging;
 
-public class BcdeDevCommandService : ServiceBase, IArgumentHandlingService
+public class BcdeDevCommandService : IArgumentHandlingService
 {
     private readonly IBcdeScanExecutionService bcdeScanExecutionService;
+    private readonly ILogger<BcdeDevCommandService> logger;
 
-    public BcdeDevCommandService(IBcdeScanExecutionService bcdeScanExecutionService, ILogger logger)
+    public BcdeDevCommandService(IBcdeScanExecutionService bcdeScanExecutionService, ILogger<BcdeDevCommandService> logger)
     {
         this.bcdeScanExecutionService = bcdeScanExecutionService;
-        this.Logger = logger;
+        this.logger = logger;
     }
 
     public bool CanHandle(IScanArguments arguments)

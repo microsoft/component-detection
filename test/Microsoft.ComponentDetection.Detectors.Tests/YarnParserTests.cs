@@ -1,10 +1,12 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -13,12 +15,12 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class YarnParserTests
 {
-    private readonly Mock<ILogger> loggerMock;
+    private readonly Mock<ILogger<YarnLockParser>> loggerMock;
     private readonly Mock<ISingleFileComponentRecorder> recorderMock;
 
     public YarnParserTests()
     {
-        this.loggerMock = new Mock<ILogger>();
+        this.loggerMock = new Mock<ILogger<YarnLockParser>>();
         this.recorderMock = new Mock<ISingleFileComponentRecorder>();
     }
 

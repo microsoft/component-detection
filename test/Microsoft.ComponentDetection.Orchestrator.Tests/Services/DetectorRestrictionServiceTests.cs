@@ -2,10 +2,10 @@
 using System;
 using System.Linq;
 using FluentAssertions;
-using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Exceptions;
 using Microsoft.ComponentDetection.Orchestrator.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -14,7 +14,7 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class DetectorRestrictionServiceTests
 {
-    private Mock<ILogger> logger;
+    private Mock<ILogger<DetectorRestrictionService>> logger;
     private Mock<IComponentDetector> firstDetectorMock;
     private Mock<IComponentDetector> secondDetectorMock;
     private Mock<IComponentDetector> thirdDetectorMock;
@@ -26,7 +26,7 @@ public class DetectorRestrictionServiceTests
     [TestInitialize]
     public void TestInitialize()
     {
-        this.logger = new Mock<ILogger>();
+        this.logger = new Mock<ILogger<DetectorRestrictionService>>();
         this.firstDetectorMock = this.GenerateDetector("FirstDetector");
         this.secondDetectorMock = this.GenerateDetector("SecondDetector");
         this.thirdDetectorMock = this.GenerateDetector("ThirdDetector");

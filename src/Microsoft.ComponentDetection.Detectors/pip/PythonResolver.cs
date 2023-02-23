@@ -1,17 +1,19 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Pip;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 public class PythonResolver : IPythonResolver
 {
     private readonly IPyPiClient pypiClient;
-    private readonly ILogger logger;
+    private readonly ILogger<PythonResolver> logger;
 
-    public PythonResolver(IPyPiClient pypiClient, ILogger logger)
+    public PythonResolver(IPyPiClient pypiClient, ILogger<PythonResolver> logger)
     {
         this.pypiClient = pypiClient;
         this.logger = logger;
@@ -53,7 +55,9 @@ public class PythonResolver : IPythonResolver
                 }
                 else
                 {
-                    this.logger.LogWarning($"Root dependency {rootPackage.Name} not found on pypi. Skipping package.");
+                    this.logger.LogWarning(
+                        "Root dependency {RootPackageName} not found on pypi. Skipping package.",
+                        rootPackage.Name);
                     singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
                 }
             }
@@ -83,13 +87,15 @@ public class PythonResolver : IPythonResolver
                 }
                 else if (node != null)
                 {
-                    this.logger.LogWarning($"Candidate version ({node.Value.Id}) for {dependencyNode.Name} already exists in map and the version is NOT valid.");
-                    this.logger.LogWarning($"Specifiers: {string.Join(',', dependencyNode.DependencySpecifiers)} for package {currentNode.Name} caused this.");
+                    this.logger.LogWarning("Candidate version ({NodeValueId}) for {DependencyName} already exists in map and the version is NOT valid.", node.Value.Id, dependencyNode.Name);
+                    this.logger.LogWarning("Specifiers: {DependencySpecifiers} for package {CurrentNodeName} caused this.", string.Join(',', dependencyNode.DependencySpecifiers), currentNode.Name);
 
                     // The currently selected version is invalid, try to see if there is another valid version available
                     if (!await this.InvalidateAndReprocessAsync(state, node, dependencyNode))
                     {
-                        this.logger.LogWarning($"Version Resolution for {dependencyNode.Name} failed, assuming last valid version is used.");
+                        this.logger.LogWarning(
+                            "Version Resolution for {DependencyName} failed, assuming last valid version is used.",
+                            dependencyNode.Name);
 
                         // there is no valid version available for the node, dependencies are incompatible,
                     }
@@ -111,6 +117,9 @@ public class PythonResolver : IPythonResolver
                     }
                     else
                     {
+                        this.logger.LogWarning(
+                            "Dependency Package {DependencyName} not found in Pypi. Skipping package",
+                            dependencyNode.Name);
                         singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                     }
                 }

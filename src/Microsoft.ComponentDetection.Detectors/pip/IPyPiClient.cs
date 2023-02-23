@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
 
@@ -43,7 +44,7 @@ public class PyPiClient : IPyPiClient
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
 
     private readonly IEnvironmentVariableService environmentVariableService;
-    private readonly ILogger logger;
+    private readonly ILogger<PyPiClient> logger;
 
     private bool checkedMaxEntriesVariable;
 
@@ -62,7 +63,7 @@ public class PyPiClient : IPyPiClient
         FinalCacheSize = 0,
     };
 
-    public PyPiClient(IEnvironmentVariableService environmentVariableService, ILogger logger)
+    public PyPiClient(IEnvironmentVariableService environmentVariableService, ILogger<PyPiClient> logger)
     {
         this.environmentVariableService = environmentVariableService;
         this.cacheTelemetry = new PypiCacheTelemetryRecord
@@ -90,7 +91,7 @@ public class PyPiClient : IPyPiClient
 
         if (!response.IsSuccessStatusCode)
         {
-            this.logger.LogWarning($"Http GET at {release.Url} failed with status code {response.StatusCode}");
+            this.logger.LogWarning("Http GET at {ReleaseUrl} failed with status code {ResponseStatusCode}", release.Url, response.StatusCode);
             return dependencies;
         }
 
@@ -154,7 +155,13 @@ public class PyPiClient : IPyPiClient
             {
                 using var r = new PypiRetryTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = result.Result.StatusCode };
 
-                this.logger.LogWarning($"Received {(int)result.Result.StatusCode} {result.Result.ReasonPhrase} from {requestUri}. Waiting {timeSpan} before retry attempt {retryCount}");
+                this.logger.LogWarning(
+                    "Received {StatusCode} {ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
+                    result.Result.StatusCode,
+                    result.Result.ReasonPhrase,
+                    requestUri,
+                    timeSpan,
+                    retryCount);
 
                 Interlocked.Increment(ref this.retries);
             })
@@ -181,7 +188,7 @@ public class PyPiClient : IPyPiClient
         {
             using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
 
-            this.logger.LogWarning($"Received {(int)request.StatusCode} {request.ReasonPhrase} from {requestUri}");
+            this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
 
             return new SortedDictionary<string, IList<PythonProjectRelease>>();
         }
@@ -204,8 +211,12 @@ public class PyPiClient : IPyPiClient
             }
             catch (ArgumentException ae)
             {
-                this.logger.LogError($"Component {release.Key} : {JsonConvert.SerializeObject(release.Value)} could not be added to the sorted list of pip components for spec={spec.Name}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions). Error details follow:");
-                this.logger.LogException(ae, true);
+                this.logger.LogError(
+                    ae,
+                    "Component {ReleaseKey} : {ReleaseValue)} could not be added to the sorted list of pip components for spec={SpecName}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions).",
+                    release.Key,
+                    JsonConvert.SerializeObject(release.Value),
+                    spec.Name);
                 continue;
             }
         }
@@ -229,11 +240,11 @@ public class PyPiClient : IPyPiClient
         if (this.cachedResponses.TryGetValue(uri, out HttpResponseMessage result))
         {
             this.cacheTelemetry.NumCacheHits++;
-            this.logger.LogVerbose("Retrieved cached Python data from " + uri);
+            this.logger.LogDebug("Retrieved cached Python data from {Uri}", uri);
             return result;
         }
 
-        this.logger.LogInfo("Getting Python data from " + uri);
+        this.logger.LogInformation("Getting Python data from {Uri}", uri);
         var response = await HttpClient.GetAsync(uri);
 
         // The `first - wins` response accepted into the cache. This might be different from the input if another caller wins the race.
@@ -254,7 +265,7 @@ public class PyPiClient : IPyPiClient
         var maxEntriesVariable = this.environmentVariableService.GetEnvironmentVariable("PyPiMaxCacheEntries");
         if (!string.IsNullOrEmpty(maxEntriesVariable) && long.TryParse(maxEntriesVariable, out var maxEntries))
         {
-            this.logger.LogInfo($"Setting IPyPiClient max cache entries to {maxEntries}");
+            this.logger.LogInformation("Setting IPyPiClient max cache entries to {MaxEntries}", maxEntries);
             this.cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = maxEntries });
         }
 

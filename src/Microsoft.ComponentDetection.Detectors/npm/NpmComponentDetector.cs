@@ -9,6 +9,7 @@ using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 public class NpmComponentDetector : FileComponentDetector
@@ -16,7 +17,7 @@ public class NpmComponentDetector : FileComponentDetector
     public NpmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger logger)
+        ILogger<NpmComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -55,8 +56,7 @@ public class NpmComponentDetector : FileComponentDetector
         {
             if (token["name"] == null || token["version"] == null)
             {
-                this.Logger.LogInfo($"{filePath} does not contain a name and/or version. These are required fields for a valid package.json file." +
-                                    $"It and its dependencies will not be registered.");
+                this.Logger.LogInformation("{BadPackageJson} does not contain a name and/or version. These are required fields for a valid package.json file. It and its dependencies will not be registered.", filePath);
                 return false;
             }
 
@@ -79,7 +79,7 @@ public class NpmComponentDetector : FileComponentDetector
 
         if (!SemanticVersion.TryParse(version, out _))
         {
-            this.Logger.LogWarning($"Unable to parse version \"{version}\" for package \"{name}\" found at path \"{filePath}\". This may indicate an invalid npm package component and it will not be registered.");
+            this.Logger.LogWarning("Unable to parse version {NpmPackageVersion} for package {NpmPackageName} found at path {NpmPackageLocation}. This may indicate an invalid npm package component and it will not be registered.", version, name, filePath);
             singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version}");
             return false;
         }
@@ -99,9 +99,7 @@ public class NpmComponentDetector : FileComponentDetector
         catch (Exception e)
         {
             // If something went wrong, just ignore the component
-            this.Logger.LogInfo($"Could not parse Jtokens from file {sourceFilePath}.");
-            this.Logger.LogFailedReadingFile(sourceFilePath, e);
-            return;
+            this.Logger.LogInformation(e, "Could not parse Jtokens from file {PackageJsonFilePaths}.", sourceFilePath);
         }
     }
 
@@ -144,13 +142,13 @@ public class NpmComponentDetector : FileComponentDetector
         }
         else
         {
-            this.Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
+            this.Logger.LogWarning("Unable to parse author:[{NpmAuthorString}] for package:[{NpmPackageName}] found at path:[{NpmPackageLocation}]. This may indicate an invalid npm package author, and author will not be registered.", authorString, packageName, filePath);
             return null;
         }
 
         if (string.IsNullOrEmpty(authorName))
         {
-            this.Logger.LogWarning($"Unable to parse author:[{authorString}] for package:[{packageName}] found at path:[{filePath}]. This may indicate an invalid npm package author, and author will not be registered.");
+            this.Logger.LogWarning("Unable to parse author:[{NpmAuthorString}] for package:[{NpmPackageName}] found at path:[{NpmPackageLocation}]. This may indicate an invalid npm package author, and author will not be registered.", authorString, packageName, filePath);
             return null;
         }
 

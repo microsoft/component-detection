@@ -11,6 +11,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
@@ -32,7 +33,7 @@ public class DetectorProcessingServiceTests
         { "experimentalFileDetectorId", new DetectedComponent(new NuGetComponent("experimentalDetectorName", "experimentalDetectorVersion")) },
     };
 
-    private readonly Mock<ILogger> loggerMock;
+    private readonly Mock<ILogger<DetectorProcessingService>> loggerMock;
     private readonly DetectorProcessingService serviceUnderTest;
     private readonly Mock<IObservableDirectoryWalkerFactory> directoryWalkerFactory;
 
@@ -48,7 +49,7 @@ public class DetectorProcessingServiceTests
 
     public DetectorProcessingServiceTests()
     {
-        this.loggerMock = new Mock<ILogger>();
+        this.loggerMock = new Mock<ILogger<DetectorProcessingService>>();
         this.directoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
         this.serviceUnderTest =
             new DetectorProcessingService(this.directoryWalkerFactory.Object, this.loggerMock.Object);

@@ -8,13 +8,14 @@ using global::NuGet.Packaging;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 public class NuGetPackagesConfigDetector : FileComponentDetector
 {
     public NuGetPackagesConfigDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger logger)
+        ILogger<NuGetPackagesConfigDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -51,7 +52,7 @@ public class NuGetPackagesConfigDetector : FileComponentDetector
         }
         catch (Exception e) when (e is PackagesConfigReaderException or XmlException)
         {
-            this.Logger.LogFailedReadingFile(processRequest.ComponentStream.Location, e);
+            this.Logger.LogError(e, "Failed to read packages.config file {File}", processRequest.ComponentStream.Location);
         }
 
         return Task.CompletedTask;

@@ -1,9 +1,10 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -21,7 +22,7 @@ public class FileEnumerationTests
             Assert.Inconclusive("Test directory environment variable isn't set. Not testing");
         }
 
-        var loggerMock = new Mock<ILogger>();
+        var loggerMock = new Mock<ILogger<PathUtilityService>>();
 
         var pathUtility = new PathUtilityService(loggerMock.Object);
         var sfe = new SafeFileEnumerable(new DirectoryInfo(Path.Combine(testDirectory, "root")), new[] { "*" }, loggerMock.Object, pathUtility, (name, directoryName) => false, true);

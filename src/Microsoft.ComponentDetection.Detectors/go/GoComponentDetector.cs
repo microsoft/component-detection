@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Go;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,7 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 public class GoComponentDetector : FileComponentDetector
@@ -27,7 +29,7 @@ public class GoComponentDetector : FileComponentDetector
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         IEnvironmentVariableService envVarService,
-        ILogger logger)
+        ILogger<GoComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -66,14 +68,13 @@ public class GoComponentDetector : FileComponentDetector
             }
             else
             {
-                this.Logger.LogInfo("Go cli scan was manually disabled, fallback strategy performed." +
+                this.Logger.LogInformation("Go cli scan was manually disabled, fallback strategy performed." +
                                     " More info: https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy");
             }
         }
         catch (Exception ex)
         {
-            this.Logger.LogError($"Failed to detect components using go cli. Location: {file.Location}");
-            this.Logger.LogException(ex, isError: true, printException: true);
+            this.Logger.LogError(ex, "Failed to detect components using go cli. Location: {Location}", file.Location);
         }
         finally
         {
@@ -88,14 +89,14 @@ public class GoComponentDetector : FileComponentDetector
                 {
                     case ".MOD":
                     {
-                        this.Logger.LogVerbose("Found Go.mod: " + file.Location);
+                        this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
                         this.ParseGoModFile(singleFileComponentRecorder, file);
                         break;
                     }
 
                     case ".SUM":
                     {
-                        this.Logger.LogVerbose("Found Go.sum: " + file.Location);
+                        this.Logger.LogDebug("Found Go.sum: {Location}", file.Location);
                         this.ParseGoSumFile(singleFileComponentRecorder, file);
                         break;
                     }
@@ -122,18 +123,18 @@ public class GoComponentDetector : FileComponentDetector
 
         if (!isGoAvailable)
         {
-            this.Logger.LogInfo("Go CLI was not found in the system");
+            this.Logger.LogInformation("Go CLI was not found in the system");
             return false;
         }
 
-        this.Logger.LogInfo("Go CLI was found in system and will be used to generate dependency graph. " +
+        this.Logger.LogInformation("Go CLI was found in system and will be used to generate dependency graph. " +
                             "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
                             "But, it will introduce noise into the detected components.");
         var goDependenciesProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-mod=readonly", "-m", "-json", "all" });
         if (goDependenciesProcess.ExitCode != 0)
         {
-            this.Logger.LogError($"Go CLI command \"go list -m -json all\" failed with error:\n {goDependenciesProcess.StdErr}");
-            this.Logger.LogError($"Go CLI could not get dependency build list at location: {location}. Fallback go.sum/go.mod parsing will be used.");
+            this.Logger.LogError("Go CLI command \"go list -m -json all\" failed with error: {GoDependenciesProcessStdErr}", goDependenciesProcess.StdErr);
+            this.Logger.LogError("Go CLI could not get dependency build list at location: {Location}. Fallback go.sum/go.mod parsing will be used.", location);
             return false;
         }
 
@@ -171,7 +172,7 @@ public class GoComponentDetector : FileComponentDetector
             else
             {
                 var lineTrim = line.Trim();
-                this.Logger.LogWarning($"Line could not be parsed for component [{lineTrim}]");
+                this.Logger.LogWarning("Line could not be parsed for component [{LineTrim}]", lineTrim);
                 singleFileComponentRecorder.RegisterPackageParseFailure(lineTrim);
             }
         }
@@ -212,7 +213,7 @@ public class GoComponentDetector : FileComponentDetector
             else
             {
                 var lineTrim = line.Trim();
-                this.Logger.LogWarning($"Line could not be parsed for component [{lineTrim}]");
+                this.Logger.LogWarning("Line could not be parsed for component [{LineTrim}]", lineTrim);
                 singleFileComponentRecorder.RegisterPackageParseFailure(lineTrim);
             }
         }
@@ -250,8 +251,7 @@ public class GoComponentDetector : FileComponentDetector
                     continue;
                 }
 
-                this.Logger.LogWarning("Unexpected relationship output from go mod graph:");
-                this.Logger.LogWarning(relationship);
+                this.Logger.LogWarning("Unexpected relationship output from go mod graph: {Relationship}", relationship);
                 continue;
             }
 
@@ -273,7 +273,7 @@ public class GoComponentDetector : FileComponentDetector
             }
             else
             {
-                this.Logger.LogWarning($"Failed to parse components from relationship string {relationship}");
+                this.Logger.LogWarning("Failed to parse components from relationship string {Relationship}", relationship);
                 componentRecorder.RegisterPackageParseFailure(relationship);
             }
         }

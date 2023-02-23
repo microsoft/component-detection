@@ -9,11 +9,10 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Npm;
-using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -22,7 +21,7 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class BcdeScanExecutionServiceTests
 {
-    private readonly Mock<ILogger> loggerMock;
+    private readonly Mock<ILogger<BcdeScanExecutionService>> loggerMock;
     private readonly Mock<IDetectorProcessingService> detectorProcessingServiceMock;
     private readonly Mock<IEnumerable<IComponentDetector>> detectorsMock;
     private readonly Mock<IDetectorRestrictionService> detectorRestrictionServiceMock;
@@ -40,7 +39,7 @@ public class BcdeScanExecutionServiceTests
 
     public BcdeScanExecutionServiceTests()
     {
-        this.loggerMock = new Mock<ILogger>();
+        this.loggerMock = new Mock<ILogger<BcdeScanExecutionService>>();
         this.detectorProcessingServiceMock = new Mock<IDetectorProcessingService>();
         this.detectorsMock = new Mock<IEnumerable<IComponentDetector>>();
         this.detectorRestrictionServiceMock = new Mock<IDetectorRestrictionService>();
@@ -48,7 +47,7 @@ public class BcdeScanExecutionServiceTests
         this.componentDetector3Mock = new Mock<IComponentDetector>();
         this.versionedComponentDetector1Mock = new Mock<IComponentDetector>();
         this.sampleContainerDetails = new ContainerDetails { Id = 1 };
-        this.graphTranslationService = new DefaultGraphTranslationService(this.loggerMock.Object);
+        this.graphTranslationService = new DefaultGraphTranslationService(new Mock<ILogger<DefaultGraphTranslationService>>().Object);
 
         this.detectedComponents = new[]
         {
@@ -87,7 +86,7 @@ public class BcdeScanExecutionServiceTests
     [TestMethod]
     public async Task DetectComponents_HappyPathAsync()
     {
-        var componentRecorder = new ComponentRecorder();
+        var componentRecorder = new ComponentRecorder(new Mock<ILogger>().Object);
         var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/some/file/path"));
 
         this.componentDetector2Mock.SetupGet(x => x.Id).Returns("Detector2");
@@ -572,7 +571,7 @@ public class BcdeScanExecutionServiceTests
     [TestMethod]
     public async Task VerifyTranslation_DetectedComponentExist_UpdateFunctionIsAppliedAsync()
     {
-        var componentRecorder = new ComponentRecorder();
+        var componentRecorder = new ComponentRecorder(new Mock<ILogger>().Object);
         var npmDetector = new Mock<IComponentDetector>();
         var args = new BcdeArguments
         {

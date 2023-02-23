@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -29,7 +31,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         IPathUtilityService pathUtilityService,
-        ILogger logger)
+        ILogger<NpmComponentDetectorWithRoots> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -111,8 +113,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         {
             if (!foundUnderLerna && (token["name"] == null || token["version"] == null || string.IsNullOrWhiteSpace(token["name"].Value<string>()) || string.IsNullOrWhiteSpace(token["version"].Value<string>())))
             {
-                this.Logger.LogInfo($"{file.Location} does not contain a valid name and/or version. These are required fields for a valid package-lock.json file." +
-                                    $"It and its dependencies will not be registered.");
+                this.Logger.LogInformation("{PackageLogJsonFile} does not contain a valid name and/or version. These are required fields for a valid package-lock.json file. It and its dependencies will not be registered.", file.Location);
                 return false;
             }
 
@@ -132,8 +133,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         }
         catch (Exception ex)
         {
-            this.Logger.LogInfo($"Could not read {componentStream.Location} file.");
-            this.Logger.LogFailedReadingFile(componentStream.Location, ex);
+            this.Logger.LogInformation(ex, "Could not read {ComponentStreamFile} file.", componentStream.Location);
             return Task.CompletedTask;
         }
 
@@ -210,7 +210,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                             }
                             else
                             {
-                                this.Logger.LogVerbose($"Ignoring package-lock.json at {item.Location}, as it is inside a {skippedFolder} folder.");
+                                this.Logger.LogDebug("Ignoring package-lock.json at {PackageLockJsonLocation}, as it is inside a {SkippedFolder} folder.", item.Location, skippedFolder);
                             }
 
                             break;
@@ -258,9 +258,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         catch (Exception e)
         {
             // If something went wrong, just ignore the component
-            this.Logger.LogInfo($"Could not parse Jtokens from {componentStream.Location} file.");
-            this.Logger.LogFailedReadingFile(componentStream.Location, e);
-            return;
+            this.Logger.LogInformation(e, "Could not parse Jtokens from {ComponentLocation} file.", componentStream.Location);
         }
     }
 

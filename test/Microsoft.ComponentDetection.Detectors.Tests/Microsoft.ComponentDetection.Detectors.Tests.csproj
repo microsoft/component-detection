@@ -5,6 +5,7 @@
     </ItemGroup>
 
     <ItemGroup Label="Package References">
+        <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="NuGet.Versioning" />
         <PackageReference Include="System.Reactive" />

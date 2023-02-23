@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +12,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -34,6 +36,7 @@ public class LinuxContainerDetectorTests
 
     private readonly Mock<IDockerService> mockDockerService;
     private readonly Mock<ILogger> mockLogger;
+    private readonly Mock<ILogger<LinuxContainerDetector>> mockLinuxContainerDetectorLogger;
     private readonly Mock<ILinuxScanner> mockSyftLinuxScanner;
 
     public LinuxContainerDetectorTests()
@@ -47,6 +50,7 @@ public class LinuxContainerDetectorTests
             .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = Enumerable.Empty<DockerLayer>() });
 
         this.mockLogger = new Mock<ILogger>();
+        this.mockLinuxContainerDetectorLogger = new Mock<ILogger<LinuxContainerDetector>>();
 
         this.mockSyftLinuxScanner = new Mock<ILinuxScanner>();
         this.mockSyftLinuxScanner.Setup(scanner => scanner.ScanLinuxAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DockerLayer>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -63,7 +67,7 @@ public class LinuxContainerDetectorTests
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
             this.mockDockerService.Object,
-            this.mockLogger.Object);
+            this.mockLinuxContainerDetectorLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -91,7 +95,7 @@ public class LinuxContainerDetectorTests
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
             this.mockDockerService.Object,
-            this.mockLogger.Object);
+            this.mockLinuxContainerDetectorLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -100,7 +104,12 @@ public class LinuxContainerDetectorTests
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         detectedComponents.Should().HaveCount(0);
         scanResult.ContainerDetails.Should().HaveCount(0);
-        this.mockLogger.Verify(logger => logger.LogInfo(It.IsAny<string>()));
+        this.mockLinuxContainerDetectorLogger.Verify(logger => logger.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
     }
 
     [TestMethod]
@@ -113,7 +122,7 @@ public class LinuxContainerDetectorTests
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
             this.mockDockerService.Object,
-            this.mockLogger.Object);
+            this.mockLinuxContainerDetectorLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -122,7 +131,12 @@ public class LinuxContainerDetectorTests
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         detectedComponents.Should().HaveCount(0);
         scanResult.ContainerDetails.Should().HaveCount(0);
-        this.mockLogger.Verify(logger => logger.LogInfo(It.IsAny<string>()));
+        this.mockLinuxContainerDetectorLogger.Verify(logger => logger.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
     }
 
     [TestMethod]
@@ -135,7 +149,7 @@ public class LinuxContainerDetectorTests
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
             this.mockDockerService.Object,
-            this.mockLogger.Object);
+            this.mockLinuxContainerDetectorLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -158,7 +172,7 @@ public class LinuxContainerDetectorTests
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
             this.mockDockerService.Object,
-            this.mockLogger.Object);
+            this.mockLinuxContainerDetectorLogger.Object);
 
         var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
@@ -181,7 +195,7 @@ public class LinuxContainerDetectorTests
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
             this.mockDockerService.Object,
-            this.mockLogger.Object);
+            this.mockLinuxContainerDetectorLogger.Object);
 
         Func<Task> action = async () => await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
         await action.Should().NotThrowAsync<OperationCanceledException>();

@@ -1,9 +1,11 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 

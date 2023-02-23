@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Orchestrator;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -18,7 +19,12 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Hosting;
+using Serilog.Extensions.Logging;
 
 public class Orchestrator
 {
@@ -28,14 +34,14 @@ public class Orchestrator
     private readonly IEnumerable<IArgumentHandlingService> argumentHandlers;
     private readonly IFileWritingService fileWritingService;
     private readonly IArgumentHelper argumentHelper;
-    private readonly ILogger logger;
+    private readonly ILogger<Orchestrator> logger;
 
     public Orchestrator(
         IServiceProvider serviceProvider,
         IEnumerable<IArgumentHandlingService> argumentHandlers,
         IFileWritingService fileWritingService,
         IArgumentHelper argumentHelper,
-        ILogger logger)
+        ILogger<Orchestrator> logger)
     {
         this.serviceProvider = serviceProvider;
         this.argumentHandlers = argumentHandlers;
@@ -54,6 +60,27 @@ public class Orchestrator
             // Blank args for this part of the loader, all things are optional and default to false / empty / null
             baseArguments = new BaseArguments();
         }
+
+        var logFile = Path.Combine(
+            baseArguments.Output ?? Path.GetTempPath(),
+            $"GovCompDisc_Log{DateTime.Now:yyyyMMddHHmmssfff}.log");
+
+        var reloadableLogger = (ReloadableLogger)Log.Logger;
+        reloadableLogger.Reload(configuration =>
+            configuration
+                .WriteTo.Console()
+                .WriteTo.File(logFile, buffered: true)
+                .WriteTo.Providers(this.serviceProvider.GetRequiredService<LoggerProviderCollection>())
+                .MinimumLevel.Is(baseArguments.Verbosity switch
+                {
+                    VerbosityMode.Quiet => LogEventLevel.Error,
+                    VerbosityMode.Normal => LogEventLevel.Information,
+                    VerbosityMode.Verbose => LogEventLevel.Debug,
+                    _ => throw new ArgumentOutOfRangeException(nameof(baseArguments.Verbosity), "Invalid verbosity level"),
+                })
+                .Enrich.FromLogContext());
+
+        this.logger.LogInformation("Log file: {LogFile}", logFile);
 
         // This is required so TelemetryRelay can be accessed via it's static singleton
         // It should be refactored out at a later date
@@ -81,7 +108,7 @@ public class Orchestrator
         // The order of these things is a little weird, but done this way mostly to prevent any of the logic inside if blocks from being duplicated
         if (shouldFailureBeSuppressed)
         {
-            this.logger.LogInfo("The scan had some detections complete while others encountered errors. The log file should indicate any issues that happened during the scan.");
+            this.logger.LogInformation("The scan had some detections complete while others encountered errors. The log file should indicate any issues that happened during the scan.");
         }
 
         if (returnResult.ResultCode == ProcessingResultCode.TimeoutError)
@@ -131,8 +158,8 @@ public class Orchestrator
 
                 telemetryRecord.Arguments = JsonConvert.SerializeObject(argumentSet);
                 this.fileWritingService.Init(argumentSet.Output);
-                this.logger.Init(argumentSet.Verbosity, writeLinePrefix: true);
-                this.logger.LogInfo($"Run correlation id: {TelemetryConstants.CorrelationId}");
+
+                this.logger.LogInformation("Run correlation id: {CorrelationId}", TelemetryConstants.CorrelationId);
 
                 return await this.DispatchAsync(argumentSet, cancellationToken);
             });
@@ -226,7 +253,7 @@ public class Orchestrator
                 }
                 catch (TimeoutException timeoutException)
                 {
-                    this.logger.LogError(timeoutException.Message);
+                    this.logger.LogError(timeoutException, "The scan timed out.");
                     scanResult.ResultCode = ProcessingResultCode.TimeoutError;
                 }
 
@@ -254,8 +281,7 @@ public class Orchestrator
             var e = ae.GetBaseException();
             if (e is InvalidUserInputException)
             {
-                this.logger.LogError($"Something bad happened, is everything configured correctly?");
-                this.logger.LogException(e, isError: true, printException: true);
+                this.logger.LogError(e, "Something bad happened, is everything configured correctly?");
 
                 record.ErrorMessage = e.ToString();
                 result.ResultCode = ProcessingResultCode.InputError;
@@ -265,8 +291,7 @@ public class Orchestrator
             else
             {
                 // On an exception, return error to dotnet core
-                this.logger.LogError($"There was an unexpected error: ");
-                this.logger.LogException(e, isError: true);
+                this.logger.LogError(e, "There was an unexpected error");
 
                 var errorMessage = new StringBuilder();
                 errorMessage.AppendLine(e.ToString());
@@ -274,9 +299,8 @@ public class Orchestrator
                 {
                     foreach (var loaderException in refEx.LoaderExceptions)
                     {
-                        var loaderExceptionString = loaderException.ToString();
-                        this.logger.LogError(loaderExceptionString);
-                        errorMessage.AppendLine(loaderExceptionString);
+                        this.logger.LogError(loaderException, "Got exception");
+                        errorMessage.AppendLine(loaderException.ToString());
                     }
                 }
 

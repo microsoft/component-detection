@@ -14,25 +14,27 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using static System.Environment;
 
-public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
+public class DetectorProcessingService : IDetectorProcessingService
 {
     private readonly IObservableDirectoryWalkerFactory scanner;
+    private readonly ILogger<DetectorProcessingService> logger;
 
     public DetectorProcessingService(
         IObservableDirectoryWalkerFactory scanner,
-        ILogger logger)
+        ILogger<DetectorProcessingService> logger)
     {
         this.scanner = scanner;
-        this.Logger = logger;
+        this.logger = logger;
     }
 
     public async Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions)
     {
-        this.Logger.LogCreateLoggingGroup();
-        this.Logger.LogInfo($"Finding components...");
+        using var scope = this.logger.BeginScope("Processing detectors");
+        this.logger.LogInformation($"Finding components...");
 
         var stopwatch = Stopwatch.StartNew();
         var exitCode = ProcessingResultCode.Success;
@@ -51,7 +53,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
                 var providerStopwatch = new Stopwatch();
                 providerStopwatch.Start();
 
-                var componentRecorder = new ComponentRecorder(this.Logger, !detector.NeedsAutomaticRootDependencyCalculation);
+                var componentRecorder = new ComponentRecorder(this.logger, !detector.NeedsAutomaticRootDependencyCalculation);
 
                 var isExperimentalDetector = detector is IExperimentalDetector && !(detectorRestrictions.ExplicitlyEnabledDetectorIds?.Contains(detector.Id)).GetValueOrDefault();
 
@@ -62,7 +64,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
-                        () => detector.ExecuteDetectorAsync(new ScanRequest(detectionArguments.SourceDirectory, exclusionPredicate, this.Logger, detectorArguments, detectionArguments.DockerImagesToScan, componentRecorder)),
+                        () => detector.ExecuteDetectorAsync(new ScanRequest(detectionArguments.SourceDirectory, exclusionPredicate, this.logger, detectorArguments, detectionArguments.DockerImagesToScan, componentRecorder)),
                         isExperimentalDetector,
                         record);
 
@@ -117,7 +119,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
         var totalElapsedTime = stopwatch.Elapsed.TotalSeconds;
-        this.LogTabularOutput(this.Logger, providerElapsedTime, totalElapsedTime);
+        this.LogTabularOutput(this.logger, providerElapsedTime, totalElapsedTime);
 
         // If there are components which are skipped due to connection or parsing
         // errors, log them by detector.
@@ -132,22 +134,22 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
 
             if (!parseWarningShown)
             {
-                this.Logger.LogCreateLoggingGroup();
-                this.Logger.LogWarning($"Some components or files were not detected due to parsing failures or connectivity issues.");
-                this.Logger.LogWarning($"Please review the logs above for more detailed information.");
+                using var parseWarningScope = this.logger.BeginScope("Parse warnings");
+                this.logger.LogWarning("Some components or files were not detected due to parsing failures or connectivity issues.");
+                this.logger.LogWarning("Please review the logs above for more detailed information.");
                 parseWarningShown = true;
             }
 
-            this.Logger.LogCreateLoggingGroup();
-            this.Logger.LogWarning($"Components skipped for {detector.Id} detector:");
+            using var scGroup = this.logger.BeginScope("Skipped Components");
+            this.logger.LogWarning("Components skipped for {DetectorId} detector:", detector.Id);
             foreach (var component in skippedComponents)
             {
-                this.Logger.LogWarning($"- {component}");
+                this.logger.LogWarning("- {Component}", component);
             }
         }
 
-        this.Logger.LogCreateLoggingGroup();
-        this.Logger.LogInfo($"Detection time: {totalElapsedTime} seconds.");
+        using var dtScope = this.logger.BeginScope("Detection Time");
+        this.logger.LogInformation("Detection time: {DetectionTime} seconds.", totalElapsedTime);
 
         return detectorProcessingResult;
     }
@@ -190,7 +192,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
                         && (pathOfParentOfDirectoryToConsider.Equals(pathOfParentOfDirectoryToExclude, StringComparison.Ordinal)
                             || pathOfParentOfDirectoryToConsider.ToString().Equals(valueTuple.rootedLinuxSymlinkCompatibleRelativePathToExclude, StringComparison.Ordinal)))
                     {
-                        this.Logger.LogVerbose($"Excluding folder {Path.Combine(pathOfParentOfDirectoryToConsider.ToString(), nameOfDirectoryToConsider.ToString())}.");
+                        this.logger.LogDebug("Excluding folder {Folder}.", Path.Combine(pathOfParentOfDirectoryToConsider, nameOfDirectoryToConsider));
                         return true;
                     }
                 }
@@ -222,7 +224,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
             {
                 if (minimatcherKeyValue.Value.IsMatch(path))
                 {
-                    this.Logger.LogVerbose($"Excluding folder {path} because it matched glob {minimatcherKeyValue.Key}.");
+                    this.logger.LogDebug("Excluding folder {Path} because it matched glob {Glob}.", path, minimatcherKeyValue.Key);
                     return true;
                 }
 
@@ -336,7 +338,7 @@ public class DetectorProcessingService : ServiceBase, IDetectorProcessingService
         foreach (var line in tsf.GenerateString(rows)
                      .Split(new string[] { NewLine }, StringSplitOptions.None))
         {
-            this.Logger.LogInfo(line);
+            this.logger.LogInformation("{Line}", line);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Detectors.Maven;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -24,7 +26,7 @@ public class MavenCommandServiceTests
     public MavenCommandServiceTests()
     {
         this.commandLineMock = new Mock<ICommandLineInvocationService>();
-        var loggerMock = new Mock<ILogger>();
+        var loggerMock = new Mock<ILogger<MavenCommandService>>();
 
         this.parserServiceMock = new Mock<IMavenStyleDependencyGraphParserService>();
 

@@ -25,6 +25,8 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog.Extensions.Logging;
 
 public static class ServiceCollectionExtensions
 {
@@ -48,7 +50,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileUtilityService, FileUtilityService>();
         services.AddSingleton<IFileWritingService, FileWritingService>();
         services.AddSingleton<IGraphTranslationService, DefaultGraphTranslationService>();
-        services.AddSingleton<ILogger, Logger>();
         services.AddSingleton<IPathUtilityService, PathUtilityService>();
         services.AddSingleton<ISafeFileEnumerableFactory, SafeFileEnumerableFactory>();
 
@@ -126,6 +127,27 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IYarnLockParser, YarnLockParser>();
         services.AddSingleton<IYarnLockFileFactory, YarnLockFileFactory>();
         services.AddSingleton<IComponentDetector, YarnLockComponentDetector>();
+
+        return services;
+    }
+
+    public static IServiceCollection ConfigureLoggingProviders(this IServiceCollection services)
+    {
+        var providers = new LoggerProviderCollection();
+        services.AddSingleton(providers);
+        services.AddSingleton<ILoggerFactory>(sc =>
+        {
+            var providerCollection = sc.GetService<LoggerProviderCollection>();
+            var factory = new SerilogLoggerFactory(null, true, providerCollection);
+
+            foreach (var provider in sc.GetServices<ILoggerProvider>())
+            {
+                factory.AddProvider(provider);
+            }
+
+            return factory;
+        });
+        services.AddLogging(l => l.AddFilter<SerilogLoggerProvider>(null, LogLevel.Trace));
 
         return services;
     }

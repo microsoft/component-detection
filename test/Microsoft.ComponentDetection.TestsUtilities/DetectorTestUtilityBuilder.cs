@@ -10,6 +10,7 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 public class DetectorTestUtilityBuilder<T>
@@ -20,7 +21,7 @@ public class DetectorTestUtilityBuilder<T>
 
     private readonly Mock<IComponentStreamEnumerableFactory> mockComponentStreamEnumerableFactory;
     private readonly Mock<IObservableDirectoryWalkerFactory> mockObservableDirectoryWalkerFactory;
-    private readonly Mock<ILogger> mockLogger;
+    private readonly Mock<ILogger<T>> mockLogger;
 
     private readonly IServiceCollection serviceCollection;
     private T detector;
@@ -40,7 +41,7 @@ public class DetectorTestUtilityBuilder<T>
         this.serviceCollection.AddSingleton(_ =>
             this.mockObservableDirectoryWalkerFactory?.Object);
 
-        this.mockLogger = new Mock<ILogger>();
+        this.mockLogger = new Mock<ILogger<T>>();
         this.serviceCollection.AddSingleton(_ =>
             this.mockLogger?.Object);
     }

@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Gradle;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 {
@@ -15,7 +17,7 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
     public GradleComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger logger)
+        ILogger<GradleComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -37,7 +39,7 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        this.Logger.LogVerbose("Found Gradle lockfile: " + file.Location);
+        this.Logger.LogDebug("Found Gradle lockfile: {Location}", file.Location);
         this.ParseLockfile(singleFileComponentRecorder, file);
 
         return Task.CompletedTask;

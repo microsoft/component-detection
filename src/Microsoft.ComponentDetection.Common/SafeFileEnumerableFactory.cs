@@ -1,18 +1,20 @@
 namespace Microsoft.ComponentDetection.Common;
+
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 
 public class SafeFileEnumerableFactory : ISafeFileEnumerableFactory
 {
     private readonly IPathUtilityService pathUtilityService;
-    private readonly ILogger logger;
+    private readonly ILogger<SafeFileEnumerableFactory> logger;
 
     public SafeFileEnumerableFactory()
     {
     }
 
-    public SafeFileEnumerableFactory(IPathUtilityService pathUtilityService, ILogger logger)
+    public SafeFileEnumerableFactory(IPathUtilityService pathUtilityService, ILogger<SafeFileEnumerableFactory> logger)
     {
         this.pathUtilityService = pathUtilityService;
         this.logger = logger;

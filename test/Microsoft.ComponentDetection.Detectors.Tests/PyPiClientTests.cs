@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +11,7 @@ using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Pip;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
@@ -22,7 +24,7 @@ public class PyPiClientTests
 
     public PyPiClientTests() => this.pypiClient = new PyPiClient(
             new EnvironmentVariableService(),
-            new Mock<ILogger>().Object);
+            new Mock<ILogger<PyPiClient>>().Object);
 
     [TestMethod]
     public async Task GetReleases_InvalidSpecVersion_NotThrowAsync()
@@ -158,7 +160,7 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        var mockLogger = new Mock<ILogger>();
+        var mockLogger = new Mock<ILogger<PyPiClient>>();
         var mockEvs = new Mock<IEnvironmentVariableService>();
         mockEvs.Setup(x => x.GetEnvironmentVariable(It.Is<string>(s => s.Equals("PyPiMaxCacheEntries")))).Returns("32");
 
@@ -173,7 +175,14 @@ public class PyPiClientTests
 
         // Verify the cache setup call was performed only once
         mockEvs.Verify(x => x.GetEnvironmentVariable(It.IsAny<string>()), Times.Once());
-        mockLogger.Verify(x => x.LogInfo(It.Is<string>(s => s.Equals("Setting IPyPiClient max cache entries to 32"))), Times.Once());
+        mockLogger.Verify(
+            x => x.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+            Times.Exactly(3));
     }
 
     private Mock<HttpMessageHandler> MockHttpMessageHandler(string content)

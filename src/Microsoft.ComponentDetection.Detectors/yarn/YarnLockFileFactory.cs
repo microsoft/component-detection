@@ -1,9 +1,11 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
+
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+using Microsoft.Extensions.Logging;
 
 public class YarnLockFileFactory : IYarnLockFileFactory
 {

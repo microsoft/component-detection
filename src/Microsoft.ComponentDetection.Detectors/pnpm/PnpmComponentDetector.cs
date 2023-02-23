@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,13 +7,14 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 public class PnpmComponentDetector : FileComponentDetector
 {
     public PnpmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger logger)
+        ILogger<PnpmComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -38,11 +40,11 @@ public class PnpmComponentDetector : FileComponentDetector
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        this.Logger.LogVerbose("Found yaml file: " + file.Location);
+        this.Logger.LogDebug("Found yaml file: {YamlFile}", file.Location);
         var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
         if (!string.IsNullOrEmpty(skippedFolder))
         {
-            this.Logger.LogVerbose($"Skipping found file, it was detected as being within a {skippedFolder} folder.");
+            this.Logger.LogDebug("Skipping found file, it was detected as being within a {SkippedFolder} folder.", skippedFolder);
         }
 
         try
@@ -52,7 +54,7 @@ public class PnpmComponentDetector : FileComponentDetector
         }
         catch (Exception e)
         {
-            this.Logger.LogFailedReadingFile(file.Location, e);
+            this.Logger.LogError(e, "Failed to read pnpm yaml file {File}", file.Location);
         }
     }
 

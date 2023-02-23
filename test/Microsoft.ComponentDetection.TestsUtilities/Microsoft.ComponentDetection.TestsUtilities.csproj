@@ -10,6 +10,7 @@
 
     <ItemGroup Label="Package References">
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+      <PackageReference Include="Microsoft.Extensions.Logging" />
       <PackageReference Include="System.Reactive" />
       <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>

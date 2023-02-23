@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +10,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 using Valleysoft.DockerfileModel;
 
 public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
@@ -21,7 +23,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         IEnvironmentVariableService envVarService,
-        ILogger logger)
+        ILogger<DockerfileComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -47,7 +49,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         var filePath = file.Location;
         try
         {
-            this.Logger.LogInfo($"Discovered dockerfile: {file.Location}");
+            this.Logger.LogInformation("Discovered dockerfile: {Location}", file.Location);
 
             string contents;
             using (var reader = new StreamReader(file.Stream))
@@ -60,8 +62,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         }
         catch (Exception e)
         {
-            this.Logger.LogError($"The file doesn't appear to be a Dockerfile: '{file.Location}'");
-            this.Logger.LogException(e, false);
+            this.Logger.LogError(e, "The file doesn't appear to be a Dockerfile: {Location}", filePath);
         }
     }
 
@@ -107,8 +108,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
         }
         catch (Exception e)
         {
-            this.Logger.LogError($"Failed to detect a DockerReference component, the component will not be registered. \n Error Message: <{e.Message}>");
-            this.Logger.LogException(e, isError: true, printException: true);
+            this.Logger.LogError(e, "Failed to detect a DockerReference component, the component will not be registered.");
             return null;
         }
     }

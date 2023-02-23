@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Common;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +11,7 @@ using Docker.DotNet.Models;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 public class DockerService : IDockerService
@@ -23,7 +25,7 @@ public class DockerService : IDockerService
 
     private readonly ILogger logger;
 
-    public DockerService(ILogger logger) => this.logger = logger;
+    public DockerService(ILogger<DockerService> logger) => this.logger = logger;
 
     public async Task<bool> CanPingDockerAsync(CancellationToken cancellationToken = default)
     {
@@ -34,7 +36,7 @@ public class DockerService : IDockerService
         }
         catch (Exception e)
         {
-            this.logger.LogException(e, false);
+            this.logger.LogError(e, "Failed to ping docker");
             return false;
         }
     }

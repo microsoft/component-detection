@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Common;
+
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -7,6 +8,7 @@ using System.IO.Enumeration;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32.SafeHandles;
 
 // We may want to consider breaking this class into Win/Mac/Linux variants if it gets bigger
@@ -26,16 +28,11 @@ public class PathUtilityService : IPathUtilityService
 
     private readonly ConcurrentDictionary<string, string> resolvedPaths = new ConcurrentDictionary<string, string>();
 
-    private readonly ILogger logger;
-
     private readonly object isRunningOnWindowsContainerLock = new object();
+    private readonly ILogger logger;
     private bool? isRunningOnWindowsContainer;
 
-    public PathUtilityService()
-    {
-    }
-
-    public PathUtilityService(ILogger logger) => this.logger = logger;
+    public PathUtilityService(ILogger<PathUtilityService> logger) => this.logger = logger;
 
     public bool IsRunningOnWindowsContainer
     {
@@ -222,7 +219,7 @@ public class PathUtilityService : IPathUtilityService
         }
         catch (Exception ex)
         {
-            this.logger.LogException(ex, isError: false, printException: true);
+            this.logger.LogError(ex, "Failed to resolve path {Path}", path);
             return path;
         }
         finally

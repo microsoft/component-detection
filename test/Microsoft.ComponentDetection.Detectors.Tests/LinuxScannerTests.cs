@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,6 +8,7 @@ using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Detectors.Linux;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -37,7 +39,7 @@ public class LinuxScannerTests
 
     private readonly LinuxScanner linuxScanner;
     private readonly Mock<IDockerService> mockDockerService;
-    private readonly Mock<ILogger> mockLogger;
+    private readonly Mock<ILogger<LinuxScanner>> mockLogger;
 
     public LinuxScannerTests()
     {
@@ -48,7 +50,7 @@ public class LinuxScannerTests
         this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((SyftOutput, string.Empty));
 
-        this.mockLogger = new Mock<ILogger>();
+        this.mockLogger = new Mock<ILogger<LinuxScanner>>();
 
         this.linuxScanner = new LinuxScanner(this.mockDockerService.Object, this.mockLogger.Object);
     }
