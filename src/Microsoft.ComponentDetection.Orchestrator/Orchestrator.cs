@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Orchestrator;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -20,12 +21,11 @@ using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Serilog.Core;
+using Serilog;
 using Serilog.Events;
 
 public class Orchestrator
 {
-    public static readonly LoggingLevelSwitch MinimumLogLevelSwitch = new();
     private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
     private readonly IServiceProvider serviceProvider;
@@ -59,14 +59,18 @@ public class Orchestrator
             baseArguments = new BaseArguments();
         }
 
-        // Set the minimum logging level
-        MinimumLogLevelSwitch.MinimumLevel = baseArguments.Verbosity switch
-        {
-            VerbosityMode.Quiet => LogEventLevel.Error,
-            VerbosityMode.Normal => LogEventLevel.Information,
-            VerbosityMode.Verbose => LogEventLevel.Debug,
-            _ => throw new ArgumentOutOfRangeException(nameof(baseArguments.Verbosity), "Invalid verbosity level"),
-        };
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console()
+            .WriteTo.File(Path.Combine(baseArguments.Output ?? Path.GetTempPath(), $"GovCompDiscLog_{DateTime.Now:yyyyMMddHHmmssfff}.txt"), buffered: true)
+            .MinimumLevel.Is(baseArguments.Verbosity switch
+            {
+                VerbosityMode.Quiet => LogEventLevel.Error,
+                VerbosityMode.Normal => LogEventLevel.Information,
+                VerbosityMode.Verbose => LogEventLevel.Debug,
+                _ => throw new ArgumentOutOfRangeException(nameof(baseArguments.Verbosity), "Invalid verbosity level"),
+            })
+            .Enrich.FromLogContext()
+            .CreateLogger();
 
         // This is required so TelemetryRelay can be accessed via it's static singleton
         // It should be refactored out at a later date

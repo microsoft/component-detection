@@ -25,6 +25,8 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog.Extensions.Logging;
 
 public static class ServiceCollectionExtensions
 {
@@ -36,6 +38,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddComponentDetection(this IServiceCollection services)
     {
         services.AddSingleton<Orchestrator>();
+
+        ConfigureLoggingProviders(services);
 
         // Shared services
         services.AddSingleton<ITelemetryService, CommandLineTelemetryService>();
@@ -127,5 +131,24 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, YarnLockComponentDetector>();
 
         return services;
+    }
+
+    private static void ConfigureLoggingProviders(IServiceCollection services)
+    {
+        var providers = new LoggerProviderCollection();
+        services.AddSingleton(providers);
+        services.AddSingleton<ILoggerFactory>(sc =>
+        {
+            var providerCollection = sc.GetService<LoggerProviderCollection>();
+            var factory = new SerilogLoggerFactory(null, true, providerCollection);
+
+            foreach (var provider in sc.GetServices<ILoggerProvider>())
+            {
+                factory.AddProvider(provider);
+            }
+
+            return factory;
+        });
+        services.AddLogging(l => l.AddFilter<SerilogLoggerProvider>(null, LogLevel.Trace));
     }
 }

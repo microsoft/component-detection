@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -22,14 +21,10 @@ try
 
     Log.Logger = new LoggerConfiguration()
         .WriteTo.Console()
-        .WriteTo.File(Path.Combine(Path.GetTempPath(), $"GovCompDiscLog_{DateTime.Now:yyyyMMddHHmmssfff}.txt"), buffered: true)
-        .MinimumLevel.ControlledBy(Orchestrator.MinimumLogLevelSwitch)
-        .Enrich.FromLogContext()
-        .CreateLogger();
+        .CreateBootstrapLogger();
 
     var serviceProvider = new ServiceCollection()
         .AddComponentDetection()
-        .AddLogging(l => l.AddSerilog(dispose: true))
         .BuildServiceProvider();
     var orchestrator = serviceProvider.GetRequiredService<Orchestrator>();
     var result = await orchestrator.LoadAsync(args);

@@ -8,6 +8,9 @@
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="Polly" />
         <PackageReference Include="Serilog" />
+        <PackageReference Include="Serilog.Extensions.Logging" />
+        <PackageReference Include="Serilog.Sinks.Console" />
+        <PackageReference Include="Serilog.Sinks.File" />
         <PackageReference Include="System.Runtime.Loader" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="System.Reactive" />
