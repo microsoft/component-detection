@@ -63,7 +63,7 @@ public class Orchestrator
 
         var logFile = Path.Combine(
             baseArguments.Output ?? Path.GetTempPath(),
-            $"GovCompDiscLog_{DateTime.Now:yyyyMMddHHmmssfff}.txt");
+            $"GovCompDisc_Log{DateTime.Now:yyyyMMddHHmmssfff}.txt");
 
         var reloadableLogger = (ReloadableLogger)Log.Logger;
         reloadableLogger.Reload(configuration =>
