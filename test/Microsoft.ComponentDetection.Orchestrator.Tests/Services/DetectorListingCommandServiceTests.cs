@@ -1,12 +1,12 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Services;
+using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -40,23 +40,7 @@ public class DetectorListingCommandServiceTests
             this.loggerMock.Object);
 
         this.logOutput = new List<string>();
-        this.loggerMock.Setup(x => x.Log(
-                It.IsAny<LogLevel>(),
-                It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()))
-            .Callback(new InvocationAction(invocation =>
-            {
-                var state = invocation.Arguments[2];
-                var exception = (Exception)invocation.Arguments[3];
-                var formatter = invocation.Arguments[4];
-
-                var invokeMethod = formatter.GetType().GetMethod("Invoke");
-                var logMessage = (string)invokeMethod?.Invoke(formatter, new[] { state, exception });
-
-                this.logOutput.Add(logMessage);
-            }));
+        this.loggerMock.CaptureLogOutput(this.logOutput);
 
         this.componentDetector2Mock.SetupGet(x => x.Id).Returns("ComponentDetector2");
         this.componentDetector3Mock.SetupGet(x => x.Id).Returns("ComponentDetector3");
