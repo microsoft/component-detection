@@ -39,7 +39,7 @@ public static class ExtensionMethods
 
                 var invokeMethod = formatter.GetType().GetMethod("Invoke");
                 var logMessage = (string)invokeMethod?.Invoke(formatter, new[] { state, exception });
-                Console.WriteLine("Got log: {0}", logMessage);
+
                 logOutput.Add(logMessage);
             }));
 }
