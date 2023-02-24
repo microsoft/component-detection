@@ -69,7 +69,7 @@ public class Orchestrator
         reloadableLogger.Reload(configuration =>
             configuration
                 .WriteTo.Console()
-                .WriteTo.File(logFile, buffered: true)
+                .WriteTo.Async(x => x.File(logFile))
                 .WriteTo.Providers(this.serviceProvider.GetRequiredService<LoggerProviderCollection>())
                 .MinimumLevel.Is(baseArguments.Verbosity switch
                 {
