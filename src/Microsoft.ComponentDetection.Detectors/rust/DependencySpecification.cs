@@ -1,10 +1,10 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Rust;
+namespace Microsoft.ComponentDetection.Detectors.Rust;
 using System;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
-using Semver;
 
-using Range = Microsoft.ComponentDetection.Detectors.Rust.SemVer.Range;
+using Range = SemanticVersioning.Range;
+using Version = SemanticVersioning.Version;
 
 public class DependencySpecification
 {
@@ -41,7 +41,7 @@ public class DependencySpecification
             var allSatisfied = true;
             foreach (var range in ranges)
             {
-                if (SemVersion.TryParse(package.Version, out var sv))
+                if (Version.TryParse(package.Version, out var sv))
                 {
                     if (!range.IsSatisfied(sv))
                     {
