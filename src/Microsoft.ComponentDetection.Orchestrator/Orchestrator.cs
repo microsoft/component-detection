@@ -22,7 +22,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Serilog;
-using Serilog.Events;
 using Serilog.Extensions.Hosting;
 using Serilog.Extensions.Logging;
 
@@ -71,13 +70,7 @@ public class Orchestrator
                 .WriteTo.Console()
                 .WriteTo.Async(x => x.File(logFile))
                 .WriteTo.Providers(this.serviceProvider.GetRequiredService<LoggerProviderCollection>())
-                .MinimumLevel.Is(baseArguments.Verbosity switch
-                {
-                    VerbosityMode.Quiet => LogEventLevel.Error,
-                    VerbosityMode.Normal => LogEventLevel.Information,
-                    VerbosityMode.Verbose => LogEventLevel.Debug,
-                    _ => throw new ArgumentOutOfRangeException(nameof(baseArguments.Verbosity), "Invalid verbosity level"),
-                })
+                .MinimumLevel.Is(baseArguments.LogLevel)
                 .Enrich.FromLogContext());
 
         this.logger.LogInformation("Log file: {LogFile}", logFile);

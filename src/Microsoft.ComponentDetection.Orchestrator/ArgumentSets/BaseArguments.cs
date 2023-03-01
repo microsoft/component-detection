@@ -1,7 +1,7 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using System;
 using CommandLine;
-using Microsoft.ComponentDetection.Contracts;
+using Serilog.Events;
 
 public class BaseArguments : IScanArguments
 {
@@ -14,8 +14,8 @@ public class BaseArguments : IScanArguments
     [Option("CorrelationId", Required = false, HelpText = "Identifier used to correlate all telemetry for a given execution. If not provided, a new GUID will be generated.")]
     public Guid CorrelationId { get; set; }
 
-    [Option("Verbosity", HelpText = "Flag indicating what level of logging to output to console during execution. Options are: Verbose, Normal, or Quiet.", Default = VerbosityMode.Normal)]
-    public VerbosityMode Verbosity { get; set; }
+    [Option("LogLevel", HelpText = "Flag indicating what level of logging to output to console during execution. Options are: Verbose, Debug, Information, Warning, Error, or Fatal.", Default = LogEventLevel.Information)]
+    public LogEventLevel LogLevel { get; set; }
 
     [Option("Timeout", Required = false, HelpText = "An integer representing the time limit (in seconds) before detection is cancelled")]
     public int Timeout { get; set; }
