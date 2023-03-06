@@ -62,5 +62,17 @@ public class PathUtilityService : IPathUtilityService
         return searchPattern.Equals(fileName, StringComparison.OrdinalIgnoreCase);
     }
 
-    public string ResolvePhysicalPath(string path) => Path.GetFullPath(path);
+    public string ResolvePhysicalPath(string path)
+    {
+        var directoryInfo = new DirectoryInfo(path);
+        if (directoryInfo.Exists)
+        {
+            return this.ResolvePathFromInfo(directoryInfo);
+        }
+
+        var fileInfo = new FileInfo(path);
+        return fileInfo.Exists ? this.ResolvePathFromInfo(fileInfo) : null;
+    }
+
+    private string ResolvePathFromInfo(FileSystemInfo info) => info.LinkTarget ?? info.FullName;
 }
