@@ -38,6 +38,9 @@ public class BcdeArguments : BaseArguments, IDetectionArguments
     [Option("ManifestFile", Required = false, HelpText = "The file to write scan results to.")]
     public FileInfo ManifestFile { get; set; }
 
+    [Option("PrintManifest", Required = false, HelpText = "Prints the manifest to standard output.")]
+    public bool PrintManifest { get; set; }
+
     public string ManifestFileSerialized => this.ManifestFile?.ToString();
 
     [Option("DockerImagesToScan", Required = false, Separator = ',', HelpText = "Comma separated list of docker image names or hashes to execute container scanning on, ex: ubuntu:16.04, 56bab49eef2ef07505f6a1b0d5bd3a601dfc3c76ad4460f24c91d6fa298369ab")]

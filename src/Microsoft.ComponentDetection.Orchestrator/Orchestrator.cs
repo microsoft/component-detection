@@ -68,7 +68,7 @@ public class Orchestrator
         var reloadableLogger = (ReloadableLogger)Log.Logger;
         reloadableLogger.Reload(configuration =>
             configuration
-                .WriteTo.Console()
+                .WriteTo.Console(standardErrorFromLevel: LogEventLevel.Debug)
                 .WriteTo.Async(x => x.File(logFile))
                 .WriteTo.Providers(this.serviceProvider.GetRequiredService<LoggerProviderCollection>())
                 .MinimumLevel.Is(baseArguments.Verbosity switch

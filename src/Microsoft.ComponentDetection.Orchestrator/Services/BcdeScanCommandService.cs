@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -53,13 +54,20 @@ public class BcdeScanCommandService : IArgumentHandlingService
             this.logger.LogInformation("Scan Manifest file: {ManifestFile}", this.fileWritingService.ResolveFilePath(ManifestRelativePath));
         }
 
+        var manifestJson = JsonConvert.SerializeObject(scanResult, Formatting.Indented);
+
         if (userRequestedManifestPath == null)
         {
-            this.fileWritingService.AppendToFile(ManifestRelativePath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
+            this.fileWritingService.AppendToFile(ManifestRelativePath, manifestJson);
         }
         else
         {
-            this.fileWritingService.WriteFile(userRequestedManifestPath, JsonConvert.SerializeObject(scanResult, Formatting.Indented));
+            this.fileWritingService.WriteFile(userRequestedManifestPath, manifestJson);
+        }
+
+        if (detectionArguments.PrintManifest)
+        {
+            Console.WriteLine(manifestJson);
         }
     }
 }
