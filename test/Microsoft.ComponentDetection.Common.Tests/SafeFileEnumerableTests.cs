@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -91,15 +92,18 @@ public class SafeFileEnumerableTests
     }
 
     [TestMethod]
+    [SkipTestOnWindows]
     public void GetEnumerator_CallsSymlinkCode()
     {
-        Assert.Inconclusive("Need actual symlinks to accurately test this");
         var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));
-        var name = string.Format("{0}.txt", Guid.NewGuid());
-        File.Create(Path.Combine(this.temporaryDirectory, name)).Close();
-        File.Create(Path.Combine(this.temporaryDirectory, "SubDir", name)).Close();
+        var tempFile = Path.Combine(this.temporaryDirectory, $"{Guid.NewGuid()}.txt");
 
-        IEnumerable<string> searchPatterns = new List<string> { name };
+        File.Create(tempFile).Close();
+
+        // create symlink in subdir to the file above
+        File.CreateSymbolicLink(Path.Combine(subDir.FullName, "test_symlink"), tempFile);
+
+        IEnumerable<string> searchPatterns = new List<string> { tempFile };
 
         var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, true);
 
@@ -111,15 +115,15 @@ public class SafeFileEnumerableTests
     }
 
     [TestMethod]
+    [SkipTestOnWindows]
     public void GetEnumerator_DuplicatePathIgnored()
     {
-        Assert.Inconclusive("Need actual symlinks to accurately test this");
-        Environment.SetEnvironmentVariable("GovernanceSymlinkAwareMode", bool.TrueString, EnvironmentVariableTarget.Process);
-
         var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));
-        var fakeSymlink = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "FakeSymlink"));
+        var fakeSymlink = Directory.CreateSymbolicLink(Path.Combine(this.temporaryDirectory, "FakeSymlink"), subDir.FullName);
+
         var name = string.Format("{0}.txt", Guid.NewGuid());
         var canary = string.Format("{0}.txt", Guid.NewGuid());
+
         File.Create(Path.Combine(this.temporaryDirectory, name)).Close();
         File.Create(Path.Combine(this.temporaryDirectory, "SubDir", name)).Close();
         File.Create(Path.Combine(this.temporaryDirectory, "FakeSymlink", canary)).Close();
