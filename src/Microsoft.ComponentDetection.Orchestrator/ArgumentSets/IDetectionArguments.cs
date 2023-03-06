@@ -20,5 +20,7 @@ public interface IDetectionArguments : IScanArguments
 
     FileInfo ManifestFile { get; set; }
 
+    public bool PrintManifest { get; set; }
+
     IEnumerable<string> DockerImagesToScan { get; set; }
 }
