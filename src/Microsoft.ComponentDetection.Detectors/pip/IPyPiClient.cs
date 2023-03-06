@@ -18,6 +18,8 @@ using Polly;
 
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
+using System.Text.Json;
+
 public interface IPyPiClient
 {
     Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release);
@@ -134,68 +136,13 @@ public class PyPiClient : IPyPiClient
 
     public async Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec)
     {
-        var requestUri = new Uri($"https://pypi.org/pypi/{spec.Name}/json");
-
-        var request = await Policy
-            .HandleResult<HttpResponseMessage>(message =>
-            {
-                // stop retrying if MAXRETRIES was hit!
-                if (message == null)
-                {
-                    return false;
-                }
-
-                var statusCode = (int)message.StatusCode;
-
-                // only retry if server doesn't classify the call as a client error!
-                var isRetryable = statusCode < 400 || statusCode > 499;
-                return !message.IsSuccessStatusCode && isRetryable;
-            })
-            .WaitAndRetryAsync(1, i => RETRYDELAY, (result, timeSpan, retryCount, context) =>
-            {
-                using var r = new PypiRetryTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = result.Result.StatusCode };
-
-                this.logger.LogWarning(
-                    "Received {StatusCode} {ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
-                    result.Result.StatusCode,
-                    result.Result.ReasonPhrase,
-                    requestUri,
-                    timeSpan,
-                    retryCount);
-
-                Interlocked.Increment(ref this.retries);
-            })
-            .ExecuteAsync(() =>
-            {
-                if (Interlocked.Read(ref this.retries) >= MAXRETRIES)
-                {
-                    return Task.FromResult<HttpResponseMessage>(null);
-                }
-
-                return this.GetAndCachePyPiResponseAsync(requestUri);
-            });
-
-        if (request == null)
-        {
-            using var r = new PypiMaxRetriesReachedTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray() };
-
-            this.logger.LogWarning($"Call to pypi.org failed, but no more retries allowed!");
-
-            return new SortedDictionary<string, IList<PythonProjectRelease>>();
-        }
-
-        if (!request.IsSuccessStatusCode)
-        {
-            using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
-
-            this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
-
-            return new SortedDictionary<string, IList<PythonProjectRelease>>();
-        }
-
-        var response = await request.Content.ReadAsStringAsync();
-        var project = JsonConvert.DeserializeObject<PythonProject>(response);
+        var project = await this.GetAndCachePyPiProjectResponseAsync(spec);
         var versions = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
+
+        if (project == null)
+        {
+            return versions;
+        }
 
         foreach (var release in project.Releases)
         {
@@ -222,6 +169,96 @@ public class PyPiClient : IPyPiClient
         }
 
         return versions;
+    }
+
+    /// <summary>
+    /// Returns a cached python project response if it exists, otherwise returns the response from PyPi REST call.
+    /// The response from PyPi is automatically added to the cache.
+    /// </summary>
+    /// <param name="spec">The pip dependency specification.</param>
+    /// <returns>The cached project or a new project from PyPi.</returns>
+    private async Task<PythonProject> GetAndCachePyPiProjectResponseAsync(PipDependencySpecification spec)
+    {
+        var uri = new Uri($"https://pypi.org/pypi/{spec.Name}/json");
+
+        if (!this.checkedMaxEntriesVariable)
+        {
+            this.InitializeNonDefaultMemoryCache();
+        }
+
+        if (this.cachedResponses.TryGetValue(uri, out PythonProject result))
+        {
+            this.cacheTelemetry.NumCacheHits++;
+            this.logger.LogDebug("Retrieved cached Python project from {Uri}", uri);
+            return result;
+        }
+
+        var request = await Policy
+            .HandleResult<HttpResponseMessage>(message =>
+            {
+                // stop retrying if MAXRETRIES was hit!
+                if (message == null)
+                {
+                    return false;
+                }
+
+                var statusCode = (int)message.StatusCode;
+
+                // only retry if server doesn't classify the call as a client error!
+                var isRetryable = statusCode < 400 || statusCode > 499;
+                return !message.IsSuccessStatusCode && isRetryable;
+            })
+            .WaitAndRetryAsync(1, i => RETRYDELAY, (result, timeSpan, retryCount, context) =>
+            {
+                using var r = new PypiRetryTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = result.Result.StatusCode };
+
+                this.logger.LogWarning(
+                    "Received {StatusCode} {ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
+                    result.Result.StatusCode,
+                    result.Result.ReasonPhrase,
+                    uri,
+                    timeSpan,
+                    retryCount);
+
+                Interlocked.Increment(ref this.retries);
+            })
+            .ExecuteAsync(async () =>
+            {
+                if (Interlocked.Read(ref this.retries) >= MAXRETRIES)
+                {
+                    return null;
+                }
+
+                this.logger.LogInformation("Getting Python data from {Uri}", uri);
+                return await HttpClient.GetAsync(uri);
+            });
+
+        if (request == null)
+        {
+            using var r = new PypiMaxRetriesReachedTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray() };
+
+            this.logger.LogWarning($"Call to pypi.org failed, but no more retries allowed!");
+
+            return null;
+        }
+
+        if (!request.IsSuccessStatusCode)
+        {
+            using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
+
+            this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, uri);
+
+            return null;
+        }
+
+        // The `first - wins` response accepted into the cache. This might be different from the input if another caller wins the race.
+        return await this.cachedResponses.GetOrCreateAsync(uri, async cacheEntry =>
+        {
+            cacheEntry.SlidingExpiration = TimeSpan.FromSeconds(CACHEINTERVALSECONDS); // This entry will expire after CACHEINTERVALSECONDS seconds from last use
+            cacheEntry.Size = 1; // Specify a size of 1 so a set number of entries can always be in the cache
+
+            return await JsonSerializer.DeserializeAsync<PythonProject>(await request.Content.ReadAsStreamAsync());
+        });
     }
 
     /// <summary>

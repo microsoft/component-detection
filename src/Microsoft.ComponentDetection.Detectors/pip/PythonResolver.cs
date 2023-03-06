@@ -1,6 +1,7 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ public class PythonResolver : IPythonResolver
         var state = new PythonResolverState();
 
         // Fill the dictionary with valid packages for the roots
-        foreach (var rootPackage in initialPackages)
+        await Parallel.ForEachAsync(initialPackages, async (rootPackage, cancellationToken) =>
         {
             // If we have it, we probably just want to skip at this phase as this indicates duplicates
             if (!state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
@@ -43,7 +44,8 @@ public class PythonResolver : IPythonResolver
 
                     // Grab the latest version as our candidate version
                     var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
-                        ? state.ValidVersionMap[rootPackage.Name].Keys.Last() : null;
+                        ? state.ValidVersionMap[rootPackage.Name].Keys.Last()
+                        : null;
 
                     var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion));
 
@@ -61,7 +63,7 @@ public class PythonResolver : IPythonResolver
                     singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
                 }
             }
-        }
+        });
 
         // Now queue packages for processing
         return await this.ProcessQueueAsync(singleFileComponentRecorder, state) ?? new List<PipGraphNode>();
@@ -69,9 +71,10 @@ public class PythonResolver : IPythonResolver
 
     private async Task<IList<PipGraphNode>> ProcessQueueAsync(ISingleFileComponentRecorder singleFileComponentRecorder, PythonResolverState state)
     {
-        while (state.ProcessingQueue.Count > 0)
+        while (!state.ProcessingQueue.IsEmpty)
         {
-            var (root, currentNode) = state.ProcessingQueue.Dequeue();
+            state.ProcessingQueue.TryDequeue(out var item);
+            var (root, currentNode) = item;
 
             // gather all dependencies for the current node
             var dependencies = (await this.FetchPackageDependenciesAsync(state, currentNode)).Where(x => !x.PackageIsUnsafe());
@@ -126,7 +129,7 @@ public class PythonResolver : IPythonResolver
             }
         }
 
-        return state.Roots;
+        return state.Roots.ToList();
     }
 
     private async Task<bool> InvalidateAndReprocessAsync(
@@ -191,8 +194,10 @@ public class PythonResolver : IPythonResolver
     {
         var candidateVersion = state.NodeReferences[spec.Name].Value.Version;
 
-        var packageToFetch = state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_wheel", x.PackageType, StringComparison.OrdinalIgnoreCase)) ??
-                             state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
+        var packageToFetch =
+            state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_wheel", x.PackageType, StringComparison.OrdinalIgnoreCase)) ??
+            state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
+
         if (packageToFetch == null)
         {
             return new List<PipDependencySpecification>();
@@ -220,12 +225,12 @@ public class PythonResolver : IPythonResolver
     private class PythonResolverState
     {
         public IDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>> ValidVersionMap { get; }
-            = new Dictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>>(StringComparer.OrdinalIgnoreCase);
+            = new ConcurrentDictionary<string, SortedDictionary<string, IList<PythonProjectRelease>>>(StringComparer.OrdinalIgnoreCase);
 
-        public Queue<(string PackageName, PipDependencySpecification Package)> ProcessingQueue { get; } = new Queue<(string, PipDependencySpecification)>();
+        public ConcurrentQueue<(string PackageName, PipDependencySpecification Package)> ProcessingQueue { get; } = new ConcurrentQueue<(string, PipDependencySpecification)>();
 
-        public IDictionary<string, PipGraphNode> NodeReferences { get; } = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
+        public IDictionary<string, PipGraphNode> NodeReferences { get; } = new ConcurrentDictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
 
-        public IList<PipGraphNode> Roots { get; } = new List<PipGraphNode>();
+        public ConcurrentBag<PipGraphNode> Roots { get; } = new ConcurrentBag<PipGraphNode>();
     }
 }
