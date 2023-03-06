@@ -95,23 +95,22 @@ public class SafeFileEnumerableTests
     [SkipTestOnWindows]
     public void GetEnumerator_CallsSymlinkCode()
     {
-        var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));
-        var tempFile = Path.Combine(this.temporaryDirectory, $"{Guid.NewGuid()}.txt");
+        var subDir = Directory.CreateSymbolicLink(Path.Combine(this.temporaryDirectory, "SubDir"), this.temporaryDirectory);
 
-        File.Create(tempFile).Close();
+        var name = string.Format("{0}.txt", Guid.NewGuid());
+        File.Create(Path.Combine(this.temporaryDirectory, name)).Close();
+        File.Create(Path.Combine(this.temporaryDirectory, "SubDir", name)).Close();
 
-        // create symlink in subdir to the file above
-        File.CreateSymbolicLink(Path.Combine(subDir.FullName, "test_symlink"), tempFile);
+        IEnumerable<string> searchPatterns = new List<string> { name };
 
-        IEnumerable<string> searchPatterns = new List<string> { tempFile };
-
+        this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(subDir.FullName)).Returns(subDir.FullName);
         var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, true);
 
         foreach (var file in enumerable)
         {
         }
 
-        this.pathUtilityServiceMock.Verify(x => x.ResolvePhysicalPath(this.temporaryDirectory), Times.AtLeastOnce);
+        this.pathUtilityServiceMock.Verify(x => x.ResolvePhysicalPath(subDir.FullName), Times.AtLeastOnce);
     }
 
     [TestMethod]
@@ -119,18 +118,19 @@ public class SafeFileEnumerableTests
     public void GetEnumerator_DuplicatePathIgnored()
     {
         var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));
-        var fakeSymlink = Directory.CreateSymbolicLink(Path.Combine(this.temporaryDirectory, "FakeSymlink"), subDir.FullName);
+        var symlink = Path.Combine(this.temporaryDirectory, "FakeSymlink");
 
-        var name = string.Format("{0}.txt", Guid.NewGuid());
-        var canary = string.Format("{0}.txt", Guid.NewGuid());
+        Directory.CreateSymbolicLink(symlink, subDir.FullName);
 
+        var name = $"{Guid.NewGuid()}.txt";
+        var canary = $"{Guid.NewGuid()}.txt";
         File.Create(Path.Combine(this.temporaryDirectory, name)).Close();
         File.Create(Path.Combine(this.temporaryDirectory, "SubDir", name)).Close();
         File.Create(Path.Combine(this.temporaryDirectory, "FakeSymlink", canary)).Close();
 
         this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(this.temporaryDirectory)).Returns(this.temporaryDirectory);
         this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(subDir.FullName)).Returns(subDir.FullName);
-        this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(fakeSymlink.FullName)).Returns(subDir.FullName);
+        this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(symlink)).Returns(subDir.FullName);
 
         IEnumerable<string> searchPatterns = new List<string> { name };
 
@@ -141,7 +141,7 @@ public class SafeFileEnumerableTests
             file.File.FullName.Should().NotBe(Path.Combine(this.temporaryDirectory, "FakeSymlink", canary));
         }
 
-        this.pathUtilityServiceMock.Verify(x => x.ResolvePhysicalPath(this.temporaryDirectory), Times.AtLeastOnce);
+        this.pathUtilityServiceMock.Verify(x => x.ResolvePhysicalPath(symlink), Times.AtLeastOnce);
     }
 
     private string GetTemporaryDirectory()
