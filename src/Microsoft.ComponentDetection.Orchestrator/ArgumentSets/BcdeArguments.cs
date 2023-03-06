@@ -38,7 +38,7 @@ public class BcdeArguments : BaseArguments, IDetectionArguments
     [Option("ManifestFile", Required = false, HelpText = "The file to write scan results to.")]
     public FileInfo ManifestFile { get; set; }
 
-    [Option("PrintManifest", Required = false, HelpText = "Prints the manifest to standard output.")]
+    [Option("PrintManifest", Required = false, HelpText = "Prints the manifest to standard output. Logging will be redirected to standard error.")]
     public bool PrintManifest { get; set; }
 
     public string ManifestFileSerialized => this.ManifestFile?.ToString();
