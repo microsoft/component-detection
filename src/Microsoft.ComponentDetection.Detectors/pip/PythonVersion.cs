@@ -14,9 +14,11 @@ public class PythonVersion : IComparable<PythonVersion>
 
     private static readonly Dictionary<string, int> PreReleaseMapping = new Dictionary<string, int> { { "a", 0 }, { "alpha", 0 }, { "b", 1 }, { "beta", 1 }, { "c", 2 }, { "rc", 2 }, { "pre", 2 }, { "preview", 2 } };
 
+    private static readonly Dictionary<string, PythonVersion> Cache = new();
+
     private readonly Match match;
 
-    public PythonVersion(string version)
+    private PythonVersion(string version)
     {
         var toOperate = version;
         if (version.EndsWith(".*"))
@@ -104,6 +106,23 @@ public class PythonVersion : IComparable<PythonVersion>
     public static bool operator >=(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) >= 0;
 
     public static bool operator <=(PythonVersion operand1, PythonVersion operand2) => operand1.CompareTo(operand2) <= 0;
+
+    public static PythonVersion Create(string version)
+    {
+        if (version == null)
+        {
+            throw new ArgumentNullException(nameof(version));
+        }
+
+        if (Cache.TryGetValue(version, out var cachedVersion))
+        {
+            return cachedVersion;
+        }
+
+        var pythonVersion = new PythonVersion(version);
+        Cache.Add(version, pythonVersion);
+        return pythonVersion;
+    }
 
     public int CompareTo(PythonVersion other)
     {
