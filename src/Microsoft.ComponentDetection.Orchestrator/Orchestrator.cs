@@ -202,7 +202,7 @@ public class Orchestrator
             {
                 var getLibSslPackages = Task.Run(() =>
                 {
-                    var startInfo = new ProcessStartInfo("apt", "list --installed") { RedirectStandardOutput = true };
+                    var startInfo = new ProcessStartInfo("dpkg", "-l") { RedirectStandardOutput = true };
                     var process = new Process { StartInfo = startInfo };
                     process.Start();
                     string aptListResult = null;
