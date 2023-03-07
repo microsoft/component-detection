@@ -14,7 +14,7 @@ public class PythonVersionTests
     [TestMethod]
     public void TestBasicVersionConstruction()
     {
-        var pythonVersion = new PythonVersion("4!3.2.1.1rc2.post99.dev2");
+        var pythonVersion = PythonVersion.Create("4!3.2.1.1rc2.post99.dev2");
 
         Assert.AreEqual(4, pythonVersion.Epoch);
         Assert.AreEqual("3.2.1.1", pythonVersion.Release);
@@ -27,7 +27,7 @@ public class PythonVersionTests
     [TestMethod]
     public void TestDefaultDevVersionConstruction()
     {
-        var pythonVersion = new PythonVersion("4!3.2.1.1rc2.post90.dev");
+        var pythonVersion = PythonVersion.Create("4!3.2.1.1rc2.post90.dev");
 
         Assert.AreEqual(4, pythonVersion.Epoch);
         Assert.AreEqual("3.2.1.1", pythonVersion.Release);
@@ -69,7 +69,7 @@ public class PythonVersionTests
             "2.10.0.dev1",
             "v2.10.0.dev2",
             "v2.10.0",
-        }.Select(x => new { Raw = x, Version = new PythonVersion(x) }).ToList();
+        }.Select(x => new { Raw = x, Version = PythonVersion.Create(x) }).ToList();
 
         for (var i = 1; i < versionItems.Count; i++)
         {
