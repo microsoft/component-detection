@@ -11,33 +11,33 @@ using System.Collections.Generic;
 
 public partial class SyftOutput
 {
-    public Relationship[] ArtifactRelationships { get; set; }
-    public Package[] Artifacts { get; set; }
+    public ArtifactRelationshipElement[] ArtifactRelationships { get; set; }
+    public ArtifactElement[] Artifacts { get; set; }
     public Descriptor Descriptor { get; set; }
-    public LinuxRelease Distro { get; set; }
-    public File[] Files { get; set; }
+    public Distro Distro { get; set; }
+    public FileElement[] Files { get; set; }
     public Schema Schema { get; set; }
-    public Secrets[] Secrets { get; set; }
-    public Source Source { get; set; }
+    public SyftOutputSecret[] Secrets { get; set; }
+    public SourceClass Source { get; set; }
 }
 
-public partial class Relationship
+public partial class ArtifactRelationshipElement
 {
     public string Child { get; set; }
-    public ConfigurationUnion? Metadata { get; set; }
+    public object Metadata { get; set; }
     public string Parent { get; set; }
     public string Type { get; set; }
 }
 
-public partial class Package
+public partial class ArtifactElement
 {
     public string[] Cpes { get; set; }
     public string FoundBy { get; set; }
     public string Id { get; set; }
     public string Language { get; set; }
     public string[] Licenses { get; set; }
-    public Coordinates[] Locations { get; set; }
-    public Metadata Metadata { get; set; }
+    public LocationElement[] Locations { get; set; }
+    public MetadataClass Metadata { get; set; }
     public string MetadataType { get; set; }
     public string Name { get; set; }
     public string Purl { get; set; }
@@ -45,19 +45,19 @@ public partial class Package
     public string Version { get; set; }
 }
 
-public partial class Coordinates
+public partial class LocationElement
 {
     public string LayerId { get; set; }
     public string Path { get; set; }
 }
 
-public partial class Metadata
+public partial class MetadataClass
 {
     public string Architecture { get; set; }
-    public AlpmFileRecord[] Backup { get; set; }
+    public BackupElement[] Backup { get; set; }
     public string Basepackage { get; set; }
     public string Description { get; set; }
-    public FileUnion[] Files { get; set; }
+    public File[] Files { get; set; }
     public License? License { get; set; }
     public string Package { get; set; }
     public string Packager { get; set; }
@@ -70,16 +70,26 @@ public partial class Metadata
     public long? InstalledSize { get; set; }
     public string Maintainer { get; set; }
     public string OriginPackage { get; set; }
+    public string[] Provides { get; set; }
     public string PullChecksum { get; set; }
-    public string PullDependencies { get; set; }
+    public string[] PullDependencies { get; set; }
+    public MatchElement[] Matches { get; set; }
     public string Checksum { get; set; }
     public string[] Dependencies { get; set; }
     public string Name { get; set; }
     public SourceUnion? Source { get; set; }
+    public string BuildRequires { get; set; }
+    public string Context { get; set; }
+    public Dictionary<string, string> Options { get; set; }
+    public string PackageId { get; set; }
+    public string Path { get; set; }
+    public string Prev { get; set; }
+    public string PyRequires { get; set; }
+    public string Ref { get; set; }
+    public string Requires { get; set; }
     public string HostedUrl { get; set; }
     public string VcsUrl { get; set; }
     public string HashPath { get; set; }
-    public string Path { get; set; }
     public string Sha512 { get; set; }
     public string SourceVersion { get; set; }
     public Author[] Authors { get; set; }
@@ -89,14 +99,22 @@ public partial class Metadata
     public string GoCompiledVersion { get; set; }
     public string H1Digest { get; set; }
     public string MainModule { get; set; }
-    public Digest[] Digest { get; set; }
-    public JavaManifest Manifest { get; set; }
+    public string PkgHash { get; set; }
+    public string SnapshotUrl { get; set; }
+    public DigestElement[] Digest { get; set; }
+    public Manifest Manifest { get; set; }
     public PomProject PomProject { get; set; }
     public PomProperties PomProperties { get; set; }
     public string VirtualPath { get; set; }
+    public string Kb { get; set; }
+    public string ProductId { get; set; }
+    public string PkgHashExt { get; set; }
     public string Author { get; set; }
+    public bool? Private { get; set; }
+    public string Integrity { get; set; }
+    public string Resolved { get; set; }
     public string[] Bin { get; set; }
-    public PhpComposerExternalReference Dist { get; set; }
+    public Dist Dist { get; set; }
     public string[] Keywords { get; set; }
     public string NotificationUrl { get; set; }
     public Dictionary<string, string> Provide { get; set; }
@@ -106,26 +124,29 @@ public partial class Metadata
     public string Time { get; set; }
     public string Type { get; set; }
     public string AuthorEmail { get; set; }
-    public PythonDirectUrlOriginInfo DirectUrlOrigin { get; set; }
+    public DirectUrlOrigin DirectUrlOrigin { get; set; }
     public string Platform { get; set; }
     public string SitePackagesRootPath { get; set; }
     public string[] TopLevelPackages { get; set; }
+    public string[] Hashes { get; set; }
+    public string Index { get; set; }
     public long? Epoch { get; set; }
+    public string ModularityLabel { get; set; }
     public string Release { get; set; }
     public string SourceRpm { get; set; }
     public string Vendor { get; set; }
 }
 
-public partial class PhpComposerAuthors
+public partial class AuthorClass
 {
     public string Email { get; set; }
     public string Homepage { get; set; }
     public string Name { get; set; }
 }
 
-public partial class AlpmFileRecord
+public partial class BackupElement
 {
-    public Digest[] Digest { get; set; }
+    public DigestElement[] Digest { get; set; }
     public string Gid { get; set; }
     public string Link { get; set; }
     public string Path { get; set; }
@@ -135,20 +156,20 @@ public partial class AlpmFileRecord
     public string Uid { get; set; }
 }
 
-public partial class Digest
+public partial class DigestElement
 {
     public string Algorithm { get; set; }
     public string Value { get; set; }
 }
 
-public partial class PythonDirectUrlOriginInfo
+public partial class DirectUrlOrigin
 {
     public string CommitId { get; set; }
     public string Url { get; set; }
     public string Vcs { get; set; }
 }
 
-public partial class PhpComposerExternalReference
+public partial class Dist
 {
     public string Reference { get; set; }
     public string Shasum { get; set; }
@@ -156,9 +177,9 @@ public partial class PhpComposerExternalReference
     public string Url { get; set; }
 }
 
-public partial class FileRecord
+public partial class FileFile
 {
-    public DigestUnion? Digest { get; set; }
+    public Digest? Digest { get; set; }
     public string Gid { get; set; }
     public string Link { get; set; }
     public string Path { get; set; }
@@ -176,16 +197,29 @@ public partial class FileRecord
     public string UserName { get; set; }
 }
 
-public partial class PurpleDigest
+public partial class PurpleSyftOutpu
 {
     public string Algorithm { get; set; }
     public string Value { get; set; }
 }
 
-public partial class JavaManifest
+public partial class Manifest
 {
     public Dictionary<string, string> Main { get; set; }
     public Dictionary<string, Dictionary<string, string>> NamedSections { get; set; }
+}
+
+public partial class MatchElement
+{
+    public string Classifier { get; set; }
+    public Location Location { get; set; }
+}
+
+public partial class Location
+{
+    public string LayerId { get; set; }
+    public string Path { get; set; }
+    public string VirtualPath { get; set; }
 }
 
 public partial class PomProject
@@ -194,13 +228,13 @@ public partial class PomProject
     public string Description { get; set; }
     public string GroupId { get; set; }
     public string Name { get; set; }
-    public PomParent Parent { get; set; }
+    public Parent Parent { get; set; }
     public string Path { get; set; }
     public string Url { get; set; }
     public string Version { get; set; }
 }
 
-public partial class PomParent
+public partial class Parent
 {
     public string ArtifactId { get; set; }
     public string GroupId { get; set; }
@@ -219,12 +253,12 @@ public partial class PomProperties
 
 public partial class Descriptor
 {
-    public ConfigurationUnion? Configuration { get; set; }
+    public object Configuration { get; set; }
     public string Name { get; set; }
     public string Version { get; set; }
 }
 
-public partial class LinuxRelease
+public partial class Distro
 {
     public string BugReportUrl { get; set; }
     public string BuildId { get; set; }
@@ -237,6 +271,7 @@ public partial class LinuxRelease
     public string Name { get; set; }
     public string PrettyName { get; set; }
     public string PrivacyPolicyUrl { get; set; }
+    public string SupportEnd { get; set; }
     public string SupportUrl { get; set; }
     public string Variant { get; set; }
     public string VariantId { get; set; }
@@ -245,23 +280,16 @@ public partial class LinuxRelease
     public string VersionId { get; set; }
 }
 
-public partial class File
+public partial class FileElement
 {
-    public Classification[] Classifications { get; set; }
     public string Contents { get; set; }
-    public Digest[] Digests { get; set; }
+    public DigestElement[] Digests { get; set; }
     public string Id { get; set; }
-    public Coordinates Location { get; set; }
-    public FileMetadataEntry Metadata { get; set; }
+    public LocationElement Location { get; set; }
+    public Metadata Metadata { get; set; }
 }
 
-public partial class Classification
-{
-    public string Class { get; set; }
-    public Dictionary<string, string> Metadata { get; set; }
-}
-
-public partial class FileMetadataEntry
+public partial class Metadata
 {
     public long GroupId { get; set; }
     public string LinkDestination { get; set; }
@@ -277,13 +305,13 @@ public partial class Schema
     public string Version { get; set; }
 }
 
-public partial class Secrets
+public partial class SyftOutputSecret
 {
-    public Coordinates Location { get; set; }
-    public SearchResult[] SecretsSecrets { get; set; }
+    public LocationElement Location { get; set; }
+    public SecretSecret[] Secrets { get; set; }
 }
 
-public partial class SearchResult
+public partial class SecretSecret
 {
     public string Classification { get; set; }
     public long Length { get; set; }
@@ -293,46 +321,29 @@ public partial class SearchResult
     public string Value { get; set; }
 }
 
-public partial class Source
+public partial class SourceClass
 {
-    public ConfigurationUnion Target { get; set; }
+    public string Id { get; set; }
+    public object Target { get; set; }
     public string Type { get; set; }
-}
-
-public partial struct ConfigurationUnion
-{
-    public object[] AnythingArray;
-    public Dictionary<string, object> AnythingMap;
-    public bool? Bool;
-    public double? Double;
-    public long? Integer;
-    public string String;
-
-    public static implicit operator ConfigurationUnion(object[] AnythingArray) => new ConfigurationUnion { AnythingArray = AnythingArray };
-    public static implicit operator ConfigurationUnion(Dictionary<string, object> AnythingMap) => new ConfigurationUnion { AnythingMap = AnythingMap };
-    public static implicit operator ConfigurationUnion(bool Bool) => new ConfigurationUnion { Bool = Bool };
-    public static implicit operator ConfigurationUnion(double Double) => new ConfigurationUnion { Double = Double };
-    public static implicit operator ConfigurationUnion(long Integer) => new ConfigurationUnion { Integer = Integer };
-    public static implicit operator ConfigurationUnion(string String) => new ConfigurationUnion { String = String };
-    public bool IsNull => this.AnythingArray == null && this.Bool == null && this.Double == null && this.Integer == null && this.AnythingMap == null && this.String == null;
 }
 
 public partial struct Author
 {
-    public PhpComposerAuthors PhpComposerAuthors;
+    public AuthorClass AuthorClass;
     public string String;
 
-    public static implicit operator Author(PhpComposerAuthors PhpComposerAuthors) => new Author { PhpComposerAuthors = PhpComposerAuthors };
+    public static implicit operator Author(AuthorClass AuthorClass) => new Author { AuthorClass = AuthorClass };
     public static implicit operator Author(string String) => new Author { String = String };
 }
 
-public partial struct DigestUnion
+public partial struct Digest
 {
-    public Digest[] DigestArray;
-    public PurpleDigest PurpleDigest;
+    public DigestElement[] DigestElementArray;
+    public PurpleSyftOutpu PurpleSyftOutpu;
 
-    public static implicit operator DigestUnion(Digest[] DigestArray) => new DigestUnion { DigestArray = DigestArray };
-    public static implicit operator DigestUnion(PurpleDigest PurpleDigest) => new DigestUnion { PurpleDigest = PurpleDigest };
+    public static implicit operator Digest(DigestElement[] DigestElementArray) => new Digest { DigestElementArray = DigestElementArray };
+    public static implicit operator Digest(PurpleSyftOutpu PurpleSyftOutpu) => new Digest { PurpleSyftOutpu = PurpleSyftOutpu };
 }
 
 public partial struct Size
@@ -344,13 +355,13 @@ public partial struct Size
     public static implicit operator Size(string String) => new Size { String = String };
 }
 
-public partial struct FileUnion
+public partial struct File
 {
-    public FileRecord FileRecord;
+    public FileFile FileFile;
     public string String;
 
-    public static implicit operator FileUnion(FileRecord FileRecord) => new FileUnion { FileRecord = FileRecord };
-    public static implicit operator FileUnion(string String) => new FileUnion { String = String };
+    public static implicit operator File(FileFile FileFile) => new File { FileFile = FileFile };
+    public static implicit operator File(string String) => new File { String = String };
 }
 
 public partial struct License
@@ -364,9 +375,9 @@ public partial struct License
 
 public partial struct SourceUnion
 {
-    public PhpComposerExternalReference PhpComposerExternalReference;
+    public Dist Dist;
     public string String;
 
-    public static implicit operator SourceUnion(PhpComposerExternalReference PhpComposerExternalReference) => new SourceUnion { PhpComposerExternalReference = PhpComposerExternalReference };
+    public static implicit operator SourceUnion(Dist Dist) => new SourceUnion { Dist = Dist };
     public static implicit operator SourceUnion(string String) => new SourceUnion { String = String };
 }
