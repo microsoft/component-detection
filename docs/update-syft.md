@@ -16,7 +16,7 @@ To do this:
 4. Use [`skopeo`][4] to copy the manifest and images to our Azure Container Registry:
 
     ```
-    skopeo copy --all docker://docker.io/anchore/syft:v0.74.0 docker://governancecontainerregistry.azurecr.io/syft:v0.74.0
+    skopeo copy --all docker://docker.io/anchore/syft:{LATEST} docker://governancecontainerregistry.azurecr.io/syft:{LATEST}
     ```
 
 5. Update the container reference in [`LinuxScanner`][5]
