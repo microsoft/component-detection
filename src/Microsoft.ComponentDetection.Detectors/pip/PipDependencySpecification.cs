@@ -12,7 +12,7 @@ public class PipDependencySpecification
 {
     // Extracts name and version from a Requires-Dist string that is found in a metadata file
     public static readonly Regex RequiresDistRegex = new Regex(
-        @"Requires-Dist:\s*(?:(.*?)\s*\((.*?)\)|([^\s;]*))",
+        @"Requires-Dist:\s*([^\s;\[<>=!~]+)(?:\[[^\]]+\])?(?:\s*\(([^)]+)\))?([^;]*)",
         RegexOptions.Compiled);
 
     /// <summary>
@@ -31,7 +31,7 @@ public class PipDependencySpecification
 
     // Extracts abcd from a string like abcd==1.*,!=1.3
     private static readonly Regex PipNameExtractionRegex = new Regex(
-        @"^.+?((?=<)|(?=>)|(?=>=)|(?=<=)|(?===)|(?=!=)|(?=~=)|(?====))",
+        @"^.+?((?=<)|(?=>)|(?=>=)|(?=<=)|(?===)|(?=!=)|(?=~=)|(?====)|(?=\[))",
         RegexOptions.Compiled);
 
     // Extracts ==1.*,!=1.3 from a string like abcd==1.*,!=1.3
