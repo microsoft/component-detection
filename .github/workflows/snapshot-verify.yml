@@ -91,6 +91,7 @@ jobs:
           
       - name: Upload logs
         uses: actions/upload-artifact@v3.1.2
+        if: !cancelled()
         with:
           name: verify-snapshot-output-${{ matrix.os }}
           path: ${{ github.workspace }}/output
