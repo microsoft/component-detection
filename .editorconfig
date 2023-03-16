@@ -453,6 +453,10 @@ dotnet_naming_rule.parameters_rule.severity             = warning
 # Custom rules
 ##########################################
 [*.cs]
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1623.md
+# Justification: It's noise to start a summary with "Gets" or "Sets"
+dotnet_diagnostic.SA1623.severity = none
+
 # See https://github.com/microsoft/component-detection/issues/202
 ##########################################
 # Provided by StyleCop.Analyzers
