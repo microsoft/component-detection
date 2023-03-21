@@ -66,7 +66,7 @@ public class PipDependencySpecification
 
                 if (string.IsNullOrWhiteSpace(this.Name))
                 {
-                    this.Name = distMatch.Groups[i].Value;
+                    this.Name = distMatch.Groups[i].Value.Trim();
                 }
                 else
                 {
@@ -94,7 +94,9 @@ public class PipDependencySpecification
             }
         }
 
-        this.DependencySpecifiers = this.DependencySpecifiers.Where(x => !x.Contains("python_version")).ToList();
+        this.DependencySpecifiers = this.DependencySpecifiers.Where(x => !x.Contains("python_version"))
+            .Select(x => x.Trim())
+            .ToList();
     }
 
     /// <summary>
