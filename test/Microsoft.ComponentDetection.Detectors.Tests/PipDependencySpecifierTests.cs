@@ -50,6 +50,7 @@ public class PipDependencySpecifierTests
             ("Requires-Dist: OtherPackage[Optional] (<3,>=1.0.0)", new PipDependencySpecification { Name = "OtherPackage", DependencySpecifiers = new List<string> { "<3", ">=1.0.0" } }),
             ("Requires-Dist: TestPackage (>=3.7.4.3) ; python_version < \"3.8\"", new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=3.7.4.3" } }),
             ("Requires-Dist: TestPackage ; python_version < \"3.8\"", new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string>() }),
+            ("Requires-Dist: SpacePackage >=1.16.0", new PipDependencySpecification() { Name = "SpacePackage", DependencySpecifiers = new List<string>() { ">=1.16.0" } }),
         };
 
         VerifyPipDependencyParsing(specs, true);
