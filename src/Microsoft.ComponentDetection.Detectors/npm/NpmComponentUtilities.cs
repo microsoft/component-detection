@@ -39,6 +39,13 @@ public static class NpmComponentUtilities
     public static TypedComponent GetTypedComponent(JProperty currentDependency, string npmRegistryHost, ILogger logger)
     {
         var name = currentDependency.Name;
+
+        // remove "node_modules/" prefix
+        if (name.StartsWith("node_modules/", StringComparison.OrdinalIgnoreCase))
+        {
+            name = name["node_modules/".Length..];
+        }
+
         var version = currentDependency.Value["version"].ToString();
         var hash = currentDependency.Value["integrity"]?.ToString(); // https://docs.npmjs.com/configuring-npm/package-lock-json.html#integrity
 

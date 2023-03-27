@@ -147,7 +147,10 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
     {
-        var dependencies = packageLockJToken["dependencies"];
+        var lockFileVersion = packageLockJToken.Value<int>("lockfileVersion");
+
+        var dependencies = lockFileVersion == 3 ? packageLockJToken["packages"] : packageLockJToken["dependencies"];
+
         var topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
 
         var dependencyLookup = dependencies.Children<JProperty>().ToDictionary(dependency => dependency.Name);
@@ -158,8 +161,8 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             using var reader = new JsonTextReader(file);
 
             var packageJsonToken = JToken.ReadFrom(reader);
-            var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
-            enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, skipValidation: skipValidation);
+            var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, lockFileVersion, skipValidation: skipValidation);
+            enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, lockFileVersion, skipValidation: skipValidation);
             if (!enqueued)
             {
                 // This represents a mismatch between lock file and package.json, break out and do not register anything for these files
@@ -172,7 +175,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             throw new InvalidOperationException(string.Format("InvalidPackageJson -- There must be a package.json file at '{0}' for components to be registered", singleFileComponentRecorder.ManifestFileLocation));
         }
 
-        this.TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, singleFileComponentRecorder);
+        this.TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, lockFileVersion, singleFileComponentRecorder);
     }
 
     private IObservable<ProcessRequest> RemoveNodeModuleNestedFiles(IObservable<ProcessRequest> componentStreams)
@@ -262,7 +265,11 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         }
     }
 
-    private void TraverseRequirementAndDependencyTree(IEnumerable<(JProperty Dependency, TypedComponent ParentComponent)> topLevelDependencies, IDictionary<string, JProperty> dependencyLookup, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private void TraverseRequirementAndDependencyTree(
+        IEnumerable<(JProperty Dependency, TypedComponent ParentComponent)> topLevelDependencies,
+        IDictionary<string, JProperty> dependencyLookup,
+        int lockFileVersion,
+        ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         // iterate through everything for a top level dependency with a single explicitReferencedDependency value
         foreach (var (currentDependency, _) in topLevelDependencies)
@@ -277,8 +284,16 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             var subQueue = new Queue<(JProperty, TypedComponent)>();
 
             NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder, typedComponent, explicitReferencedDependency: typedComponent);
-            this.EnqueueDependencies(subQueue, currentDependency.Value["dependencies"], parentComponent: typedComponent);
-            this.TryEnqueueFirstLevelDependencies(subQueue, currentDependency.Value["requires"], dependencyLookup, parentComponent: typedComponent);
+
+            if (lockFileVersion == 3)
+            {
+                this.TryEnqueueFirstLevelDependencies(subQueue, currentDependency.Value["dependencies"], dependencyLookup, lockFileVersion, parentComponent: typedComponent);
+            }
+            else
+            {
+                this.EnqueueDependencies(subQueue, currentDependency.Value["dependencies"], parentComponent: typedComponent);
+                this.TryEnqueueFirstLevelDependencies(subQueue, currentDependency.Value["requires"], dependencyLookup, lockFileVersion, parentComponent: typedComponent);
+            }
 
             while (subQueue.Count != 0)
             {
@@ -296,8 +311,15 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
                 NpmComponentUtilities.TraverseAndRecordComponents(currentSubDependency, singleFileComponentRecorder, typedSubComponent, explicitReferencedDependency: typedComponent, parentComponent.Id);
 
-                this.EnqueueDependencies(subQueue, currentSubDependency.Value["dependencies"], parentComponent: typedSubComponent);
-                this.TryEnqueueFirstLevelDependencies(subQueue, currentSubDependency.Value["requires"], dependencyLookup, parentComponent: typedSubComponent);
+                if (lockFileVersion == 3)
+                {
+                    this.TryEnqueueFirstLevelDependencies(subQueue, currentSubDependency.Value["dependencies"], dependencyLookup, lockFileVersion, parentComponent: typedSubComponent);
+                }
+                else
+                {
+                    this.EnqueueDependencies(subQueue, currentSubDependency.Value["dependencies"], parentComponent: typedSubComponent);
+                    this.TryEnqueueFirstLevelDependencies(subQueue, currentSubDependency.Value["requires"], dependencyLookup, lockFileVersion, parentComponent: typedSubComponent);
+                }
             }
         }
     }
@@ -316,31 +338,47 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         }
     }
 
-    private bool TryEnqueueFirstLevelDependencies(Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue, JToken dependencies, IDictionary<string, JProperty> dependencyLookup, Queue<TypedComponent> parentComponentQueue = null, TypedComponent parentComponent = null, bool skipValidation = false)
+    private bool TryEnqueueFirstLevelDependencies(
+        Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue,
+        JToken dependencies,
+        IDictionary<string, JProperty> dependencyLookup,
+        int lockFileVersion,
+        Queue<TypedComponent> parentComponentQueue = null,
+        TypedComponent parentComponent = null,
+        bool skipValidation = false)
     {
-        var isValid = true;
-        if (dependencies != null)
+        if (dependencies == null)
         {
-            foreach (var dependency in dependencies.Cast<JProperty>())
+            return true;
+        }
+
+        var isValid = true;
+
+        foreach (var dependency in dependencies.Cast<JProperty>())
+        {
+            if (dependency?.Name == null)
             {
-                if (dependency == null || dependency.Name == null)
+                continue;
+            }
+
+            var dependencyName = lockFileVersion == 2 ? dependency.Name : $"node_modules/{dependency.Name}";
+            var inLock = dependencyLookup.TryGetValue(dependencyName, out var dependencyProperty);
+            if (inLock)
+            {
+                queue.Enqueue((dependencyProperty, parentComponent));
+            }
+            else if (skipValidation)
+            {
+            }
+            else
+            {
+                if (lockFileVersion == 3)
                 {
-                    continue;
+                    // This should never happen, as we should always find the dependency in the lock file.
+                    this.Logger.LogWarning("Could not find dependency {DependencyName} in package-lock.json file.", dependencyName);
                 }
 
-                var inLock = dependencyLookup.TryGetValue(dependency.Name, out var dependencyProperty);
-                if (inLock)
-                {
-                    queue.Enqueue((dependencyProperty, parentComponent));
-                }
-                else if (skipValidation)
-                {
-                    continue;
-                }
-                else
-                {
-                    isValid = false;
-                }
+                isValid = false;
             }
         }
 
