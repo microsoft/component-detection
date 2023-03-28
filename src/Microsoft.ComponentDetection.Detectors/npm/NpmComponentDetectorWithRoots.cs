@@ -385,9 +385,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
         JToken dependencies,
         IDictionary<string, JProperty> dependencyLookup,
         ISingleFileComponentRecorder componentRecorder,
-        TypedComponent parentComponent,
-        Queue<TypedComponent> parentComponentQueue = null,
-        bool skipValidation = false)
+        TypedComponent parentComponent)
     {
         if (dependencies == null)
         {
@@ -408,37 +406,35 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
             var inLock = false;
             JProperty dependencyProperty;
-            if (ancestors.Count > 0)
+            ancestors.Add(parentComponent.Id);
+
+            // Remove version information (eg "package 1.0.0 - npm" -> package)
+            ancestors = ancestors.Select(x => x.Split(' ')[0]).ToList();
+
+            // Search for the dependency in a depth-first manner nested in the ancestors
+            var possibleDepPaths = ancestors.Select((t, i) => ancestors.TakeLast(ancestors.Count - i));
+
+            foreach (var possibleDepPath in possibleDepPaths)
             {
-                ancestors.Add(parentComponent.Id);
+                var ancestorNodeModulesPath =
+                    $"{NodeModules}/{string.Join($"/{NodeModules}/", possibleDepPath)}/{NodeModules}/{dependency.Name}";
 
-                // Remove version information (eg "package 1.0.0 - npm" -> package)
-                ancestors = ancestors.Select(x => x.Split(' ')[0]).ToList();
+                // Does this exist?
+                inLock = dependencyLookup.TryGetValue(ancestorNodeModulesPath, out dependencyProperty);
 
-                // Search for the dependency in a depth-first manner nested in the ancestors
-                var possibleDepPaths = ancestors.Select((t, i) => ancestors.TakeLast(ancestors.Count - i));
-
-                foreach (var possibleDepPath in possibleDepPaths)
-                {
-                    var ancestorNodeModulesPath = $"{NodeModules}/{string.Join($"/{NodeModules}/", possibleDepPath)}/{NodeModules}/{dependency.Name}";
-
-                    // Does this exist?
-                    inLock = dependencyLookup.TryGetValue(ancestorNodeModulesPath, out dependencyProperty);
-
-                    if (!inLock)
-                    {
-                        continue;
-                    }
-
-                    this.Logger.LogDebug("Found nested dependency {Dependency} in {AncestorNodeModulesPath}", dependency.Name, ancestorNodeModulesPath);
-                    queue.Enqueue((dependencyProperty, parentComponent));
-                    break;
-                }
-
-                if (inLock)
+                if (!inLock)
                 {
                     continue;
                 }
+
+                this.Logger.LogDebug("Found nested dependency {Dependency} in {AncestorNodeModulesPath}", dependency.Name, ancestorNodeModulesPath);
+                queue.Enqueue((dependencyProperty, parentComponent));
+                break;
+            }
+
+            if (inLock)
+            {
+                continue;
             }
 
             // If not, check if there is an entry in the lockfile for this dependency at the top level
@@ -446,9 +442,6 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             if (inLock)
             {
                 queue.Enqueue((dependencyProperty, parentComponent));
-            }
-            else if (skipValidation)
-            {
             }
             else
             {
