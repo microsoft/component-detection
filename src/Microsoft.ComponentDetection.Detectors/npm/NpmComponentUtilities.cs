@@ -18,6 +18,8 @@ public static class NpmComponentUtilities
         @"[?<>#%{}|`'^\\~\[\]""\s\x7f]|[\x00-\x1f]|[\x80-\xff]",
         RegexOptions.Compiled);
 
+    public static readonly string NodeModules = "node_modules";
+
     public static void TraverseAndRecordComponents(JProperty currentDependency, ISingleFileComponentRecorder singleFileComponentRecorder, TypedComponent component, TypedComponent explicitReferencedDependency, string parentComponentId = null)
     {
         var isDevDependency = currentDependency.Value["dev"] is JValue devJValue && (bool)devJValue;
@@ -38,13 +40,7 @@ public static class NpmComponentUtilities
 
     public static TypedComponent GetTypedComponent(JProperty currentDependency, string npmRegistryHost, ILogger logger)
     {
-        var name = currentDependency.Name;
-
-        // remove "node_modules/" prefix
-        if (name.StartsWith("node_modules/", StringComparison.OrdinalIgnoreCase))
-        {
-            name = name["node_modules/".Length..];
-        }
+        var name = GetModuleName(currentDependency.Name);
 
         var version = currentDependency.Value["version"].ToString();
         var hash = currentDependency.Value["integrity"]?.ToString(); // https://docs.npmjs.com/configuring-npm/package-lock-json.html#integrity
@@ -126,6 +122,27 @@ public static class NpmComponentUtilities
 
         var returnedDependencies = AttachDevInformationToDependencies(dependencies, false);
         return returnedDependencies.Concat(AttachDevInformationToDependencies(devDependencies, true)).GroupBy(x => x.Key).ToDictionary(x => x.Key, x => x.First().Value);
+    }
+
+    /// <summary>
+    /// Gets the module name, stripping off the "node_modules/" prefix if it exists.
+    /// </summary>
+    /// <param name="name">The name of the module.</param>
+    /// <returns>The module name, stripped of the "node_modules/" prefix if it exists.</returns>
+    public static string GetModuleName(string name)
+    {
+        if (name == null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        var index = name.LastIndexOf("node_modules/", StringComparison.OrdinalIgnoreCase);
+        if (index >= 0)
+        {
+            name = name[(index + "node_modules/".Length)..];
+        }
+
+        return name;
     }
 
     private static IDictionary<string, IDictionary<string, bool>> AttachDevInformationToDependencies(IDictionary<string, string> dependencies, bool isDev)
