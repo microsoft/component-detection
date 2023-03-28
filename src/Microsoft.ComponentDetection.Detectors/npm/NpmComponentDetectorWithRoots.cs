@@ -403,17 +403,14 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
             // First, check if there is an entry in the lockfile for this dependency nested in its ancestors
             var ancestors = componentRecorder.DependencyGraph.GetAncestors(parentComponent.Id);
+            ancestors.Add(parentComponent.Id);
+
+            var possibleDepPaths = ancestors
+                .Select(x => x.Split(' ')[0]) // remove version information
+                .Select((t, i) => ancestors.TakeLast(ancestors.Count - i)); // depth-first search
 
             var inLock = false;
             JProperty dependencyProperty;
-            ancestors.Add(parentComponent.Id);
-
-            // Remove version information (eg "package 1.0.0 - npm" -> package)
-            ancestors = ancestors.Select(x => x.Split(' ')[0]).ToList();
-
-            // Search for the dependency in a depth-first manner nested in the ancestors
-            var possibleDepPaths = ancestors.Select((t, i) => ancestors.TakeLast(ancestors.Count - i));
-
             foreach (var possibleDepPath in possibleDepPaths)
             {
                 var ancestorNodeModulesPath =
