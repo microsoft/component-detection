@@ -363,7 +363,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
                 continue;
             }
 
-            var inLock = dependencyLookup.TryGetValue(lockFileVersion == 2 ? dependency.Name : $"{NodeModules}/{dependency.Name}", out var dependencyProperty);
+            var inLock = dependencyLookup.TryGetValue(lockFileVersion == 3 ? $"{NodeModules}/{dependency.Name}" : dependency.Name, out var dependencyProperty);
             if (inLock)
             {
                 queue.Enqueue((dependencyProperty, parentComponent));
