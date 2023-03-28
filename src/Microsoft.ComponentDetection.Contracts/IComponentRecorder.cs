@@ -116,7 +116,6 @@ public interface IDependencyGraph
     /// Gets the componentIds that are ancestors for a given componentId.
     /// </summary>
     /// <param name="componentId">The component id to look up ancestors for.</param>
-    /// <param name="parentComponentId">Match ancestors that have this parent component id.</param>
     /// <returns>The componentIds that are ancestors for a given componentId.</returns>
-    ICollection<string> GetAncestors(string componentId, string parentComponentId = null);
+    ICollection<string> GetAncestors(string componentId);
 }

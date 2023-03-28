@@ -119,7 +119,7 @@ internal class DependencyGraph : IDependencyGraph
             .Select(componentRefNode => componentRefNode.Id);
     }
 
-    public ICollection<string> GetAncestors(string componentId, string parentComponentId = null)
+    public ICollection<string> GetAncestors(string componentId)
     {
         if (componentId == null)
         {
@@ -134,7 +134,7 @@ internal class DependencyGraph : IDependencyGraph
 
         // store the component id and the depth we found it at
         var ancestors = new Dictionary<string, int>();
-        this.GetAncestorsRecursive(componentRef, ancestors, 1, parentComponentId);
+        this.GetAncestorsRecursive(componentRef, ancestors, 1);
         return ancestors.OrderBy(x => x.Value).Select(x => x.Key).ToList();
     }
 
@@ -193,22 +193,17 @@ internal class DependencyGraph : IDependencyGraph
         this.componentNodes[componentId].DependedOnByIds.Add(parentComponentId);
     }
 
-    private void GetAncestorsRecursive(ComponentRefNode componentRef, IDictionary<string, int> ancestors, int depth, string parentComponentId)
+    private void GetAncestorsRecursive(ComponentRefNode componentRef, IDictionary<string, int> ancestors, int depth)
     {
         foreach (var parentId in componentRef.DependedOnByIds)
         {
-            if (depth == 1 && parentComponentId != null && parentId != parentComponentId)
-            {
-                continue;
-            }
-
             if (ancestors.ContainsKey(parentId))
             {
                 continue;
             }
 
             ancestors.Add(parentId, depth);
-            this.GetAncestorsRecursive(this.componentNodes[parentId], ancestors, depth + 1, parentComponentId);
+            this.GetAncestorsRecursive(this.componentNodes[parentId], ancestors, depth + 1);
         }
     }
 
