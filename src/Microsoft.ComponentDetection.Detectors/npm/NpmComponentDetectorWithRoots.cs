@@ -405,8 +405,10 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             var ancestors = componentRecorder.DependencyGraph.GetAncestors(parentComponent.Id);
             ancestors.Add(parentComponent.Id);
 
+            // remove version information
+            ancestors = ancestors.Select(x => x.Split(' ')[0]).ToList();
+
             var possibleDepPaths = ancestors
-                .Select(x => x.Split(' ')[0]) // remove version information
                 .Select((t, i) => ancestors.TakeLast(ancestors.Count - i)); // depth-first search
 
             var inLock = false;
