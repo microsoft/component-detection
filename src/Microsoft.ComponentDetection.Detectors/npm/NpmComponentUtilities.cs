@@ -136,10 +136,10 @@ public static class NpmComponentUtilities
             throw new ArgumentNullException(nameof(name));
         }
 
-        var index = name.LastIndexOf("node_modules/", StringComparison.OrdinalIgnoreCase);
+        var index = name.LastIndexOf($"{NodeModules}/", StringComparison.OrdinalIgnoreCase);
         if (index >= 0)
         {
-            name = name[(index + "node_modules/".Length)..];
+            name = name[(index + $"{NodeModules}/".Length)..];
         }
 
         return name;
