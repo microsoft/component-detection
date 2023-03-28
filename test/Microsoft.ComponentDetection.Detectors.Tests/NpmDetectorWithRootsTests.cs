@@ -59,6 +59,32 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     }
 
     [TestMethod]
+    public async Task TestNpmDetector_PackageLockVersion3ReturnsValidAsync()
+    {
+        var componentName0 = Guid.NewGuid().ToString("N");
+        var version0 = NewRandomVersion();
+
+        var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock3(this.packageLockJsonFileName, componentName0, version0);
+        var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
+            .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
+            .ExecuteDetectorAsync();
+
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        Assert.AreEqual(4, detectedComponents.Count());
+        foreach (var component in detectedComponents)
+        {
+            componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+                component.Component.Id,
+                parentComponent0 => parentComponent0.Name == componentName0 && parentComponent0.Version == version0);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(((NpmComponent)component.Component).Hash));
+        }
+    }
+
+    [TestMethod]
     public async Task TestNpmDetector_MismatchedFilesReturnsEmptyAsync()
     {
         var componentName0 = Guid.NewGuid().ToString("N");

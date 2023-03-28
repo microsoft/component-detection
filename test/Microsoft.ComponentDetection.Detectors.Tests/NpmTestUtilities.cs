@@ -236,4 +236,65 @@ public static class NpmTestUtilities
 
         return (lockFileName, packageLockTemplate, Path.Combine(Path.GetTempPath(), lockFileName));
     }
+
+    public static (string PackageJsonName, string PackageJsonContents, string PackageJsonPath) GetWellFormedPackageLock3(string lockFileName, string rootName0 = null, string rootVersion0 = null, string rootName2 = null, string rootVersion2 = null, string packageName0 = "test", string packageName1 = null, string packageName3 = null)
+    {
+        var packageLockJson = @"{{
+                ""name"": ""{10}"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 3,
+                ""packages"": {{
+                    """": {{
+                        ""dependencies"": {{
+                            ""{0}"": ""{1}"",
+                            ""{6}"": ""{7}""
+                        }}
+                    }},
+                    ""node_modules/{0}"": {{
+                        ""version"": ""{1}"",
+                        ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/"",
+                        ""integrity"": ""sha1-EBPRBRBH3TIP4k5JTVxm7K9hR9k="",
+                        ""dependencies"": {{
+                            ""{2}"": ""{3}""
+                        }}
+                    }},
+                    ""node_modules/{2}"": {{
+                        ""version"": ""{3}"",
+                        ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/"",
+                        ""integrity"": ""sha1-PRT306DRK/NZUaVL07iuqH7nWPg="",
+                        ""dependencies"": {{
+                            ""{4}"": ""{5}""
+                        }}
+                    }},
+                    ""node_modules/{6}"": {{
+                        ""version"": ""{7}"",
+                        ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/"",
+                        ""integrity"": ""sha1-PRT306DRK/NZUaVL07iuqH7nWPg="",
+                        ""dependencies"": {{
+                            ""{8}"": ""{9}""
+                        }}
+                    }},
+                    ""node_modules/{8}"": {{
+                        ""version"": ""{9}"",
+                        ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry/"",
+                        ""integrity"": ""sha1-PRT306DRK/NZUaVL07iuqH7nWPg="",
+                        ""dependencies"": {{
+                            ""{4}"": ""{5}""
+                        }}
+                    }}
+                }}
+            }}";
+
+        var componentName0 = rootName0 ?? Guid.NewGuid().ToString("N");
+        var version0 = rootVersion0 ?? NewRandomVersion();
+        var componentName1 = packageName1 ?? Guid.NewGuid().ToString("N");
+        var version1 = NewRandomVersion();
+        var componentName2 = rootName2 ?? Guid.NewGuid().ToString("N");
+        var version2 = rootVersion2 ?? NewRandomVersion();
+        var componentName3 = packageName3 ?? Guid.NewGuid().ToString("N");
+        var version3 = NewRandomVersion();
+        var packageLockTemplate = string.Format(packageLockJson, componentName0, version0, componentName1, version1, componentName2, version2, componentName2, version2, componentName3, version3, packageName0);
+
+        return (lockFileName, packageLockTemplate, Path.Combine(Path.GetTempPath(), lockFileName));
+    }
 }
