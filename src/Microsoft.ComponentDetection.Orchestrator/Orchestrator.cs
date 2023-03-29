@@ -63,12 +63,16 @@ public class Orchestrator
 
         var logFile = Path.Combine(
             baseArguments.Output ?? Path.GetTempPath(),
-            $"GovCompDisc_Log{DateTime.Now:yyyyMMddHHmmssfff}.log");
+            $"GovCompDisc_Log_{DateTime.Now:yyyyMMddHHmmssfff}_{Environment.ProcessId}.log");
 
         var reloadableLogger = (ReloadableLogger)Log.Logger;
         reloadableLogger.Reload(configuration =>
             configuration
-                .WriteTo.Console()
+                .WriteTo.Console(standardErrorFromLevel: args.Contains(
+                    $"--{nameof(IDetectionArguments.PrintManifest)}",
+                    StringComparer.InvariantCultureIgnoreCase)
+                    ? LogEventLevel.Debug
+                    : null)
                 .WriteTo.Async(x => x.File(logFile))
                 .WriteTo.Providers(this.serviceProvider.GetRequiredService<LoggerProviderCollection>())
                 .MinimumLevel.Is(baseArguments.Verbosity switch
@@ -198,7 +202,7 @@ public class Orchestrator
             {
                 var getLibSslPackages = Task.Run(() =>
                 {
-                    var startInfo = new ProcessStartInfo("apt", "list --installed") { RedirectStandardOutput = true };
+                    var startInfo = new ProcessStartInfo("dpkg", "-l") { RedirectStandardOutput = true };
                     var process = new Process { StartInfo = startInfo };
                     process.Start();
                     string aptListResult = null;

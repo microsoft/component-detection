@@ -95,8 +95,8 @@ public static class PythonVersionUtilities
 
         var op = spec[..i];
 
-        var targetVer = new PythonVersion(version);
-        var specVer = new PythonVersion(spec[i..]);
+        var targetVer = PythonVersion.Create(version);
+        var specVer = PythonVersion.Create(spec[i..]);
 
         if (!targetVer.Valid)
         {

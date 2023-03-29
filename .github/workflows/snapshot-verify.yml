@@ -88,3 +88,10 @@ jobs:
           GITHUB_OLD_ARTIFACTS_DIR: ${{ github.workspace }}/release-output
           GITHUB_NEW_ARTIFACTS_DIR: ${{ github.workspace }}/output
           ALLOWED_TIME_DRIFT_RATIO: '.75'
+          
+      - name: Upload logs
+        uses: actions/upload-artifact@v3.1.2
+        if: ${{ !cancelled() }}
+        with:
+          name: verify-snapshot-output-${{ matrix.os }}
+          path: ${{ github.workspace }}/output

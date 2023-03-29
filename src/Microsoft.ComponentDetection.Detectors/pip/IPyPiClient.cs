@@ -201,7 +201,7 @@ public class PyPiClient : IPyPiClient
         {
             try
             {
-                var parsedVersion = new PythonVersion(release.Key);
+                var parsedVersion = PythonVersion.Create(release.Key);
                 if (release.Value != null && release.Value.Count > 0 &&
                     parsedVersion.Valid && parsedVersion.IsReleasedPackage &&
                     PythonVersionUtilities.VersionValidForSpec(release.Key, spec.DependencySpecifiers))
