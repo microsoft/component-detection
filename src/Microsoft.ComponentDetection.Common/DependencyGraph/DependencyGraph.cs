@@ -121,21 +121,21 @@ internal class DependencyGraph : IDependencyGraph
 
     public ICollection<string> GetAncestors(string componentId)
     {
-        if (componentId == null)
-        {
-            throw new ArgumentNullException(nameof(componentId));
-        }
+        ArgumentNullException.ThrowIfNull(componentId);
 
         if (!this.componentNodes.TryGetValue(componentId, out var componentRef))
         {
-            // this component isnt in the graph, so it has no ancestors
+            // this component isn't in the graph, so it has no ancestors
             return new List<string>();
         }
 
         // store the component id and the depth we found it at
         var ancestors = new Dictionary<string, int>();
         this.GetAncestorsRecursive(componentRef, ancestors, 1);
-        return ancestors.OrderBy(x => x.Value).Select(x => x.Key).ToList();
+        return ancestors.OrderBy(x => x.Value)
+            .Select(x => x.Key)
+            .Where(x => !x.Equals(componentId))
+            .ToList();
     }
 
     IEnumerable<string> IDependencyGraph.GetDependenciesForComponent(string componentId)

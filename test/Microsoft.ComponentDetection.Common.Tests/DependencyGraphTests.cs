@@ -349,4 +349,74 @@ public class DependencyGraphTests
         this.dependencyGraph.IsDevelopmentDependency(componentB.Id).Should().Be(false);
         this.dependencyGraph.IsDevelopmentDependency(componentC.Id).Should().Be(true);
     }
+
+    [TestMethod]
+    public void GetAncestors_ReturnsAsExpected()
+    {
+        var componentA = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA" };
+        var componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB" };
+        var componentC = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC" };
+
+        this.dependencyGraph.AddComponent(componentA);
+        this.dependencyGraph.AddComponent(componentB, componentA.Id);
+        this.dependencyGraph.AddComponent(componentC, componentB.Id);
+
+        var ancestors = this.dependencyGraph.GetAncestors(componentC.Id);
+        ancestors.Should().HaveCount(2);
+        ancestors.Should().Contain(componentA.Id);
+        ancestors.Should().Contain(componentB.Id);
+
+        ancestors = this.dependencyGraph.GetAncestors(componentB.Id);
+        ancestors.Should().HaveCount(1);
+        ancestors.Should().Contain(componentA.Id);
+
+        ancestors = this.dependencyGraph.GetAncestors(componentA.Id);
+        ancestors.Should().BeEmpty();
+
+        ancestors = this.dependencyGraph.GetAncestors("test");
+        ancestors.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void GetAncestors_Null_ThrowsException()
+    {
+        this.dependencyGraph.Invoking(d => d.GetAncestors(null)).Should().Throw<ArgumentNullException>();
+    }
+
+    [TestMethod]
+    public void GetAncestors_Cyclic_ReturnsAsExpected()
+    {
+        var root = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "root" };
+        var componentA = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentA" };
+        var componentB = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentB" };
+        var componentC = new DependencyGraph.DependencyGraph.ComponentRefNode { Id = "componentC" };
+
+        // root -> componentA -> componentB -> componentC --> loops to componentA
+        this.dependencyGraph.AddComponent(root);
+        this.dependencyGraph.AddComponent(componentA, root.Id);
+        this.dependencyGraph.AddComponent(componentB, componentA.Id);
+        this.dependencyGraph.AddComponent(componentC, componentB.Id);
+        this.dependencyGraph.AddComponent(componentA, componentC.Id);
+
+        var ancestors = this.dependencyGraph.GetAncestors(componentC.Id);
+        ancestors.Should().HaveCount(3);
+        ancestors.Should().Contain(root.Id);
+        ancestors.Should().Contain(componentA.Id);
+        ancestors.Should().Contain(componentB.Id);
+
+        ancestors = this.dependencyGraph.GetAncestors(componentA.Id);
+        ancestors.Should().HaveCount(3);
+        ancestors.Should().Contain(root.Id);
+        ancestors.Should().Contain(componentB.Id);
+        ancestors.Should().Contain(componentC.Id);
+
+        ancestors = this.dependencyGraph.GetAncestors(componentB.Id);
+        ancestors.Should().HaveCount(3);
+        ancestors.Should().Contain(root.Id);
+        ancestors.Should().Contain(componentC.Id);
+        ancestors.Should().Contain(componentA.Id);
+
+        ancestors = this.dependencyGraph.GetAncestors(root.Id);
+        ancestors.Should().BeEmpty();
+    }
 }
