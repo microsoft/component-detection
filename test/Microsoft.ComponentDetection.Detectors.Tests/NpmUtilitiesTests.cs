@@ -263,4 +263,25 @@ public class NpmUtilitiesTests
         componentRecorder.GetEffectiveDevDependencyValue(detectedComponent.Component.Id).Should().BeFalse();
         componentRecorder.GetEffectiveDevDependencyValue(updatedDetectedComponent.Component.Id).Should().BeFalse();
     }
+
+    [TestMethod]
+    public void GetModuleName_ReturnsAsExpected()
+    {
+        var testCases = new[]
+        {
+            ("test", "test"),
+            ("@types/test", "@types/test"),
+            ("node_modules/test", "test"),
+            ("node_modules/@types/test", "@types/test"),
+            ("node_modules/root/node_modules/test", "test"),
+            ("node_modules/root/node_modules/@types/test", "@types/test"),
+            ("node_modules/rootA/node_modules/rootB/node_modules/test", "test"),
+            ("node_modules/rootA/node_modules/rootB/node_modules/@types/test", "@types/test"),
+        };
+
+        foreach (var (path, expectedModuleName) in testCases)
+        {
+            NpmComponentUtilities.GetModuleName(path).Should().Be(expectedModuleName);
+        }
+    }
 }

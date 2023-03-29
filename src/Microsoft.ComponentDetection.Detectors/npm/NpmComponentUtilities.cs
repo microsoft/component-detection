@@ -131,10 +131,7 @@ public static class NpmComponentUtilities
     /// <returns>The module name, stripped of the "node_modules/" prefix if it exists.</returns>
     public static string GetModuleName(string name)
     {
-        if (name == null)
-        {
-            throw new ArgumentNullException(nameof(name));
-        }
+        ArgumentNullException.ThrowIfNull(name);
 
         var index = name.LastIndexOf($"{NodeModules}/", StringComparison.OrdinalIgnoreCase);
         if (index >= 0)
