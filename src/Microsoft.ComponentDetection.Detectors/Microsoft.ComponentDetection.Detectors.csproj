@@ -13,7 +13,7 @@
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
-        <PackageReference Include="Tomlyn" />
+        <PackageReference Include="Tomlyn.Signed" />
         <PackageReference Include="Valleysoft.DockerfileModel " />
     </ItemGroup>
 
