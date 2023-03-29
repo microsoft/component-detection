@@ -415,8 +415,11 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             JProperty dependencyProperty;
             foreach (var possibleDepPath in possibleDepPaths)
             {
-                var ancestorNodeModulesPath =
-                    $"{NodeModules}/{string.Join($"/{NodeModules}/", possibleDepPath)}/{NodeModules}/{dependency.Name}";
+                var ancestorNodeModulesPath = string.Format(
+                    "{0}/{1}/{0}/{2}",
+                    NodeModules,
+                    string.Join($"/{NodeModules}/", possibleDepPath),
+                    dependency.Name);
 
                 // Does this exist?
                 inLock = dependencyLookup.TryGetValue(ancestorNodeModulesPath, out dependencyProperty);
