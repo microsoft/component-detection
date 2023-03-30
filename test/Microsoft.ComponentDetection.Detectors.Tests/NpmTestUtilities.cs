@@ -297,4 +297,60 @@ public static class NpmTestUtilities
 
         return (lockFileName, packageLockTemplate, Path.Combine(Path.GetTempPath(), lockFileName));
     }
+
+    public static (string PackageJsonName, string PackageJsonContents, string PackageJsonPath) GetWellFormedNestedPackageLock3(string lockFileName, string rootName0 = null, string rootVersion0 = null, string rootName1 = null, string rootVersion1 = null, string sharedName0 = null)
+    {
+        var packageLockJson = @"{{
+              ""name"": ""test"",
+              ""version"": ""0.0.0"",
+              ""lockfileVersion"": 3,
+              ""requires"": true,
+              ""packages"": {{
+                """": {{
+                  ""name"": ""test"",
+                  ""version"": ""0.0.0"",
+                  ""dependencies"": {{
+                    ""{0}"": ""^{3}"",
+                    ""{1}"": ""^{4}""
+                  }}
+                }},
+                ""node_modules/{0}"": {{
+                  ""version"": ""{3}"",
+                  ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry"",
+                  ""integrity"": ""sha512-nAEMjKcB1LDrMyYnjNsDkxoewI2aexrwlT3UJeL+nlbd64FEQNmKgPGAYIieaLVgtpRiHE9OL6/rmHLlstQwnQ=="",
+                  ""dependencies"": {{
+                    ""{2}"": ""2.1.2""
+                  }}
+                }},
+                ""node_modules/{0}/node_modules/{2}"": {{
+                  ""version"": ""2.1.2"",
+                  ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry"",
+                  ""integrity"": ""sha512-W86pkk7P9PAfARThHaD4fIjJ8QJUGMB2OhlCFsrueciPqlYZvDg/w62BmRm7PghVQcxGLbYoPN4+iykzP+0jRQ==""
+                }},
+                ""node_modules/{1}"": {{
+                  ""version"": ""{4}"",
+                  ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry"",
+                  ""integrity"": ""sha512-VPGZmLZpgqYaa5P4UCrpxC2V9YuneXmNwxVKXCw10iG/UdQSTqyeyNRtwLaCVXPX+wzqzzUa+TujhG787m4Ung=="",
+                  ""dependencies"": {{
+                    ""{2}"": ""^2.1.1""
+                  }}
+                }},
+                ""node_modules/{2}"": {{
+                  ""version"": ""2.1.3"",
+                  ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry"",
+                  ""integrity"": ""sha512-pitlDcWjRkRQHkOYvmyzK73zfAF2Qq8115BXvVw6KarvBXGSaCbNnQTK7YDORdol3+efRoMzuqXz+UDGcQbhDg==""
+                }}
+              }}
+            }}";
+
+        var componentName0 = rootName0 ?? Guid.NewGuid().ToString("N");
+        var version0 = rootVersion0 ?? NewRandomVersion();
+        var componentName1 = rootName1 ?? Guid.NewGuid().ToString("N");
+        var version1 = rootVersion1 ?? NewRandomVersion();
+        var componentName2 = sharedName0 ?? Guid.NewGuid().ToString("N");
+
+        var packageLockTemplate = string.Format(packageLockJson, componentName0, componentName1, componentName2, version0, version1);
+
+        return (lockFileName, packageLockTemplate, Path.Combine(Path.GetTempPath(), lockFileName));
+    }
 }

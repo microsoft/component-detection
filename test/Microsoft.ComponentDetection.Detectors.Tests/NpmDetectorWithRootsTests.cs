@@ -93,6 +93,66 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     }
 
     [TestMethod]
+    public async Task TestNpmDetector_PackageLockVersion3NestedReturnsValidAsync()
+    {
+        this.mockEnvService
+            .Setup(x =>
+                x.GetEnvironmentVariable(NpmComponentUtilities.LockFile3EnvFlag))
+            .Returns("true");
+
+        var componentName0 = Guid.NewGuid().ToString("N");
+        var version0 = NewRandomVersion();
+        var componentName1 = Guid.NewGuid().ToString("N");
+        var version1 = NewRandomVersion();
+        var componentName2 = Guid.NewGuid().ToString("N");
+
+        var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedNestedPackageLock3(this.packageLockJsonFileName, componentName0, version0, componentName1, version1, componentName2);
+
+        var packagejson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {{
+                    ""{0}"": ""{1}"",
+                    ""{2}"": ""{3}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        Assert.AreEqual(4, detectedComponents.Count);
+
+        var component0 = detectedComponents.First(x => x.Component.Id.Contains(componentName0));
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            component0.Component.Id,
+            parentComponent0 => parentComponent0.Name == componentName0);
+
+        var component1 = detectedComponents.First(x => x.Component.Id.Contains(componentName1));
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            component1.Component.Id,
+            parentComponent0 => parentComponent0.Name == componentName1);
+
+        var duplicate = detectedComponents.Where(x => x.Component.Id.Contains(componentName2)).ToList();
+        duplicate.Should().HaveCount(2);
+
+        foreach (var component in detectedComponents)
+        {
+            // check that either component0 or component1 is our parent
+            componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
+                component.Component.Id,
+                parentComponent0 => parentComponent0.Name == componentName0 || parentComponent0.Name == componentName1);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(((NpmComponent)component.Component).Hash));
+        }
+    }
+
+    [TestMethod]
     public async Task TestNpmDetector_MismatchedFilesReturnsEmptyAsync()
     {
         var componentName0 = Guid.NewGuid().ToString("N");
