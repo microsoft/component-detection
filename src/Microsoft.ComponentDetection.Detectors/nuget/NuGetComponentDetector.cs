@@ -119,8 +119,8 @@ public class NuGetComponentDetector : FileComponentDetector
             XmlNode packageNode = doc["package"];
             XmlNode metadataNode = packageNode["metadata"];
 
-            var name = metadataNode["id"].InnerText;
-            var version = metadataNode["version"].InnerText;
+            var name = metadataNode["id"]?.InnerText;
+            var version = metadataNode["version"]?.InnerText;
 
             var authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();
 
