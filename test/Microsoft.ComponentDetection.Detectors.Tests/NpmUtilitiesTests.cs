@@ -284,4 +284,30 @@ public class NpmUtilitiesTests
             NpmComponentUtilities.GetModuleName(path).Should().Be(expectedModuleName);
         }
     }
+
+    [TestMethod]
+    public void TestNpmDetector_UpdateLockFileVersion()
+    {
+        var envMock = new Mock<IEnvironmentVariableService>();
+        var loggerMock = new Mock<ILogger>();
+
+        var testCases = new[]
+        {
+            new { version = 0, env = string.Empty, result = 0 }, new { version = 0, env = "true", result = 0 },
+            new { version = 1, env = string.Empty, result = 1 }, new { version = 1, env = "true", result = 1 },
+            new { version = 2, env = string.Empty, result = 2 }, new { version = 2, env = "true", result = 2 },
+
+            // 3 should be set as 2 if the env var is not set
+            new { version = 3, env = string.Empty, result = 2 }, new { version = 3, env = "true", result = 3 },
+        };
+
+        foreach (var testCase in testCases)
+        {
+            envMock
+                .Setup(x => x.GetEnvironmentVariable(NpmComponentUtilities.LockFile3EnvFlag))
+                .Returns(testCase.env);
+
+            NpmComponentUtilities.UpdateLockFileVersion(testCase.version, envMock.Object, loggerMock.Object).Should().Be(testCase.result);
+        }
+    }
 }

@@ -27,15 +27,19 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
     /// </summary>
     private readonly IPathUtilityService pathUtilityService;
 
+    private readonly IEnvironmentVariableService environmentVariableService;
+
     public NpmComponentDetectorWithRoots(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         IPathUtilityService pathUtilityService,
+        IEnvironmentVariableService environmentVariableService,
         ILogger<NpmComponentDetectorWithRoots> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.pathUtilityService = pathUtilityService;
+        this.environmentVariableService = environmentVariableService;
         this.Logger = logger;
     }
 
@@ -149,7 +153,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
     {
-        var lockFileVersion = packageLockJToken.Value<int>("lockfileVersion");
+        var lockFileVersion = NpmComponentUtilities.UpdateLockFileVersion(packageLockJToken.Value<int>("lockfileVersion"), this.environmentVariableService, this.Logger);
 
         var dependencies = lockFileVersion == 3 ? packageLockJToken["packages"] : packageLockJToken["dependencies"];
 

@@ -25,11 +25,14 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     private readonly List<string> packageJsonSearchPattern = new() { "package.json" };
     private readonly List<string> packageLockJsonSearchPatterns = new() { "package-lock.json", "npm-shrinkwrap.json", "lerna.json" };
     private readonly Mock<IPathUtilityService> mockPathUtilityService;
+    private readonly Mock<IEnvironmentVariableService> mockEnvService;
 
     public NpmDetectorWithRootsTests()
     {
         this.mockPathUtilityService = new Mock<IPathUtilityService>();
+        this.mockEnvService = new Mock<IEnvironmentVariableService>();
         this.DetectorTestUtility.AddServiceMock(this.mockPathUtilityService);
+        this.DetectorTestUtility.AddServiceMock(this.mockEnvService);
     }
 
     [TestMethod]
@@ -61,6 +64,11 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     [TestMethod]
     public async Task TestNpmDetector_PackageLockVersion3ReturnsValidAsync()
     {
+        this.mockEnvService
+            .Setup(x =>
+                x.GetEnvironmentVariable(NpmComponentUtilities.LockFile3EnvFlag))
+            .Returns("true");
+
         var componentName0 = Guid.NewGuid().ToString("N");
         var version0 = NewRandomVersion();
 
@@ -610,6 +618,11 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     [TestMethod]
     public async Task TestNpmDetector_NestedNodeModulesV3Async()
     {
+        this.mockEnvService
+            .Setup(x =>
+                x.GetEnvironmentVariable(NpmComponentUtilities.LockFile3EnvFlag))
+            .Returns("true");
+
         var componentA = (Name: "componentA", Version: "1.0.0");
         var componentB = (Name: "componentB", Version: "1.0.0");
 
