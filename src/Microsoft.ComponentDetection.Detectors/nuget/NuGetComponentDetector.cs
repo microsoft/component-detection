@@ -125,7 +125,7 @@ public class NuGetComponentDetector : FileComponentDetector
 
             if (name == null)
             {
-                this.Logger.LogInformation("Error Parsing 'Name' of NuGet Component", stream.Location);
+                this.Logger.LogInformation("Could not parse name from Nuspec {NuspecLocation}", stream.Location);
                 singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
 
                 return;
