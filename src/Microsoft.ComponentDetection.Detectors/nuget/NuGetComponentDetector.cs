@@ -121,8 +121,15 @@ public class NuGetComponentDetector : FileComponentDetector
 
             var name = metadataNode["id"]?.InnerText;
             var version = metadataNode["version"]?.InnerText;
-
             var authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();
+
+            if (name == null)
+            {
+                this.Logger.LogInformation("Error Parsing 'Name' of NuGet Component", stream.Location);
+                singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
+
+                return;
+            }
 
             if (!NuGetVersion.TryParse(version, out var parsedVer))
             {
