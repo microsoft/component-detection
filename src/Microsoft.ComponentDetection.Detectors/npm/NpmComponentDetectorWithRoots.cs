@@ -451,6 +451,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             }
             else
             {
+                this.Logger.LogWarning("Could not find dependency {Dependency} in lockfile", dependency.Name);
                 isValid = false;
             }
         }
