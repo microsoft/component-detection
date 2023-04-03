@@ -21,7 +21,7 @@
     <PackageVersion Include="DotNet.Glob" Version="2.1.1" />
     <PackageVersion Include="MinVer" Version="4.3.0" />
     <PackageVersion Include="Moq" Version="4.18.4" />
-    <PackageVersion Include="morelinq" Version="3.4.1" />
+    <PackageVersion Include="morelinq" Version="3.4.2" />
     <PackageVersion Include="MSTest.TestAdapter" Version="3.0.2" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.0.2" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
