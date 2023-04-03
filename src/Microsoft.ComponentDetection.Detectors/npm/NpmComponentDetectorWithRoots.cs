@@ -149,8 +149,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
     protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
     {
         var lockfileVersion = packageLockJToken.Value<int>("lockfileVersion");
-        using var lockfileVersionTelemetry =
-            new NpmLockfileVersionTelemetryRecord() { LockfileVersion = lockfileVersion };
+        using var lockfileVersionTelemetry = new NpmLockfileVersionTelemetryRecord { LockfileVersion = lockfileVersion };
 
         var dependencies = packageLockJToken["dependencies"];
         var topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
