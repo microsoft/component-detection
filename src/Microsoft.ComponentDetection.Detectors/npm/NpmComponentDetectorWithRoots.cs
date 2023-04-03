@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -147,6 +148,10 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
     {
+        var lockfileVersion = packageLockJToken.Value<int>("lockfileVersion");
+        using var lockfileVersionTelemetry =
+            new NpmLockfileVersionTelemetryRecord() { LockfileVersion = lockfileVersion };
+
         var dependencies = packageLockJToken["dependencies"];
         var topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
 
