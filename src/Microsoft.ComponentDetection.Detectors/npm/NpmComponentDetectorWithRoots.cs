@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -153,10 +154,12 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
 
     protected void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
     {
-        var lockFileVersion = NpmComponentUtilities.UpdateLockFileVersion(packageLockJToken.Value<int>("lockfileVersion"), this.environmentVariableService, this.Logger);
+        var lockfileVersion = packageLockJToken.Value<int>("lockfileVersion");
+        using var lockfileVersionTelemetry = new NpmLockfileVersionTelemetryRecord { LockfileVersion = lockfileVersion };
 
-        var dependencies = lockFileVersion == 3 ? packageLockJToken["packages"] : packageLockJToken["dependencies"];
+        lockfileVersion = NpmComponentUtilities.UpdateLockFileVersion(lockfileVersion, this.environmentVariableService, this.Logger);
 
+        var dependencies = lockfileVersion == 3 ? packageLockJToken["packages"] : packageLockJToken["dependencies"];
         var topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
 
         var dependencyLookup = dependencies.Children<JProperty>().ToDictionary(dependency => dependency.Name);
@@ -167,8 +170,8 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             using var reader = new JsonTextReader(file);
 
             var packageJsonToken = JToken.ReadFrom(reader);
-            var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, lockFileVersion: lockFileVersion, skipValidation: skipValidation);
-            enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, lockFileVersion: lockFileVersion, skipValidation: skipValidation);
+            var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, lockFileVersion: lockfileVersion, skipValidation: skipValidation);
+            enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, lockFileVersion: lockfileVersion, skipValidation: skipValidation);
             if (!enqueued)
             {
                 // This represents a mismatch between lock file and package.json, break out and do not register anything for these files
@@ -181,7 +184,7 @@ public class NpmComponentDetectorWithRoots : FileComponentDetector
             throw new InvalidOperationException(string.Format("InvalidPackageJson -- There must be a package.json file at '{0}' for components to be registered", singleFileComponentRecorder.ManifestFileLocation));
         }
 
-        this.TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, lockFileVersion, singleFileComponentRecorder);
+        this.TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, lockfileVersion, singleFileComponentRecorder);
     }
 
     private IObservable<ProcessRequest> RemoveNodeModuleNestedFiles(IObservable<ProcessRequest> componentStreams)

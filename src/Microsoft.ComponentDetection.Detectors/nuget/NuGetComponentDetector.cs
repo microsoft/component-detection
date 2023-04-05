@@ -119,10 +119,17 @@ public class NuGetComponentDetector : FileComponentDetector
             XmlNode packageNode = doc["package"];
             XmlNode metadataNode = packageNode["metadata"];
 
-            var name = metadataNode["id"].InnerText;
-            var version = metadataNode["version"].InnerText;
-
+            var name = metadataNode["id"]?.InnerText;
+            var version = metadataNode["version"]?.InnerText;
             var authors = metadataNode["authors"]?.InnerText.Split(",").Select(author => author.Trim()).ToArray();
+
+            if (name == null)
+            {
+                this.Logger.LogInformation("Could not parse name from Nuspec {NuspecLocation}", stream.Location);
+                singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
+
+                return;
+            }
 
             if (!NuGetVersion.TryParse(version, out var parsedVer))
             {
