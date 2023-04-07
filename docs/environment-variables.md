@@ -13,3 +13,7 @@ The environment variable `PyPiMaxCacheEntries` is used to control the size of th
 The default value is 128.
 
 [1]: https://go.dev/ref/mod#go-mod-graph
+
+## `CD_LOCKFILE_V3_ENABLED`
+
+If the environment variable `CD_LOCKFILE_V3_ENABLED` is set to "true", this will enable the `NpmDetectorWithRoots` to use the experiementental `package-lock.json` `lockfileVersion` 3 logic. Otherwise, the `package-lock.json` file will be parsed with the existing logic, which is broken on `lockfileVersion` 3.

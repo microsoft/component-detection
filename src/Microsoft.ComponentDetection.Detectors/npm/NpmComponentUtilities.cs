@@ -18,6 +18,9 @@ public static class NpmComponentUtilities
         @"[?<>#%{}|`'^\\~\[\]""\s\x7f]|[\x00-\x1f]|[\x80-\xff]",
         RegexOptions.Compiled);
 
+    public static readonly string NodeModules = "node_modules";
+    public static readonly string LockFile3EnvFlag = "CD_LOCKFILE_V3_ENABLED";
+
     public static void TraverseAndRecordComponents(JProperty currentDependency, ISingleFileComponentRecorder singleFileComponentRecorder, TypedComponent component, TypedComponent explicitReferencedDependency, string parentComponentId = null)
     {
         var isDevDependency = currentDependency.Value["dev"] is JValue devJValue && (bool)devJValue;
@@ -38,7 +41,8 @@ public static class NpmComponentUtilities
 
     public static TypedComponent GetTypedComponent(JProperty currentDependency, string npmRegistryHost, ILogger logger)
     {
-        var name = currentDependency.Name;
+        var name = GetModuleName(currentDependency.Name);
+
         var version = currentDependency.Value["version"].ToString();
         var hash = currentDependency.Value["integrity"]?.ToString(); // https://docs.npmjs.com/configuring-npm/package-lock-json.html#integrity
 
@@ -121,6 +125,24 @@ public static class NpmComponentUtilities
         return returnedDependencies.Concat(AttachDevInformationToDependencies(devDependencies, true)).GroupBy(x => x.Key).ToDictionary(x => x.Key, x => x.First().Value);
     }
 
+    /// <summary>
+    /// Gets the module name, stripping off the "node_modules/" prefix if it exists.
+    /// </summary>
+    /// <param name="name">The name of the module.</param>
+    /// <returns>The module name, stripped of the "node_modules/" prefix if it exists.</returns>
+    public static string GetModuleName(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+
+        var index = name.LastIndexOf($"{NodeModules}/", StringComparison.OrdinalIgnoreCase);
+        if (index >= 0)
+        {
+            name = name[(index + $"{NodeModules}/".Length)..];
+        }
+
+        return name;
+    }
+
     private static IDictionary<string, IDictionary<string, bool>> AttachDevInformationToDependencies(IDictionary<string, string> dependencies, bool isDev)
     {
         IDictionary<string, IDictionary<string, bool>> returnedDependencies = new Dictionary<string, IDictionary<string, bool>>();
@@ -167,5 +189,32 @@ public static class NpmComponentUtilities
                  || name.StartsWith('.')
                  || name.StartsWith('_')
                  || UnsafeCharactersRegex.IsMatch(name));
+    }
+
+    /// <summary>
+    /// Updates the lockfile version based on the a feature gate environment variable. If the lock file version is 3,
+    /// and the environment variable <see cref="LockFile3EnvFlag"/> is not set, the lock file version is downgraded to 2.
+    /// </summary>
+    /// <param name="lockfileVersion">The lockfileVersion read from the package-lock.json.</param>
+    /// <param name="envService">The environment variable service.</param>
+    /// <param name="logger">The logger.</param>
+    /// <returns>The lockfileVersion to treat the package lock as.</returns>
+    public static int UpdateLockFileVersion(int lockfileVersion, IEnvironmentVariableService envService, ILogger logger)
+    {
+        if (lockfileVersion != 3)
+        {
+            return lockfileVersion;
+        }
+
+        var envVarSet =
+            !string.IsNullOrEmpty(envService.GetEnvironmentVariable(LockFile3EnvFlag));
+
+        if (!envVarSet)
+        {
+            return 2;
+        }
+
+        logger.LogInformation("Enabling experimental NPM lockfile v3 support");
+        return lockfileVersion; // Lockfile v3 is enabled
     }
 }
