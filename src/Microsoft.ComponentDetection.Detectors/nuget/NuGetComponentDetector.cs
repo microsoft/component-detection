@@ -195,10 +195,22 @@ public class NuGetComponentDetector : FileComponentDetector
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var stream = processRequest.ComponentStream;
 
-        var lockfile = await JsonSerializer.DeserializeAsync<NugetLockfileShape>(stream.Stream);
+        NuGetLockfileShape lockfile;
+        try
+        {
+            lockfile = await JsonSerializer.DeserializeAsync<NuGetLockfileShape>(stream.Stream).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogError(e, "Error loading NuGet lockfile from {Location}", stream.Location);
+            singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
+            return;
+        }
+
         if (lockfile.Version != 1)
         {
             // only version 1 is supported
+            this.Logger.LogError("Unsupported NuGet lockfile version {Version}", lockfile.Version);
             singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
             return;
         }
