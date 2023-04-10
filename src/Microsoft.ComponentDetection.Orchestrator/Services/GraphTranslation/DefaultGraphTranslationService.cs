@@ -12,6 +12,7 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 public class DefaultGraphTranslationService : IGraphTranslationService
 {
@@ -70,7 +71,9 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                 //  to look like a pipeline.
                 foreach (var component in detectedComponents)
                 {
-                    // Reinitialize properties that might still be getting populated in ways we don't want to support, because the data is authoritatively stored in the graph.
+                    // clone custom locations and make them relative to root.
+                    var declaredRawFilePaths = component.FilePaths ?? new HashSet<string>();
+                    var componentCustomLocations = JsonConvert.DeserializeObject<HashSet<string>>(JsonConvert.SerializeObject(declaredRawFilePaths));
                     component.FilePaths?.Clear();
 
                     // Information about each component is relative to all of the graphs it is present in, so we take all graphs containing a given component and apply the graph data.
@@ -87,7 +90,14 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
                         // Return in a format that allows us to add the additional files for the components
                         var locations = dependencyGraph.GetAdditionalRelatedFiles();
+
+                        // graph authoritatively stores the location of the component
                         locations.Add(location);
+
+                        foreach (var customLocation in componentCustomLocations)
+                        {
+                            locations.Add(customLocation);
+                        }
 
                         var relativePaths = this.MakeFilePathsRelative(this.logger, rootDirectory, locations);
 
