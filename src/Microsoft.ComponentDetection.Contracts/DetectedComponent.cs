@@ -60,7 +60,8 @@ public class DetectedComponent
 
     private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
 
-    /// <summary>Adds a filepath to the FilePaths hashset for this detected component.</summary>
+    /// <summary>Adds a filepath to the FilePaths hashset for this detected component.
+    /// Note: Dependency Graph automatically captures the location where a component is found, no need to call it at all inside package manager detectors.</summary>
     /// <param name="filePath">The file path to add to the hashset.</param>
     public void AddComponentFilePath(string filePath)
     {

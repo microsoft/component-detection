@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
+namespace Microsoft.ComponentDetection.Contracts;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
@@ -45,6 +45,9 @@ public interface ISingleFileComponentRecorder
 
     DetectedComponent GetComponent(string componentId);
 
+    /// <summary>
+    /// Any file added here will be reported as a location on ALL components found in current graph.
+    /// </summary>
     void AddAdditionalRelatedFile(string relatedFilePath);
 
     IReadOnlyDictionary<string, DetectedComponent> GetDetectedComponents();

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -87,6 +87,9 @@ internal class DependencyGraph : IDependencyGraph
         return explicitReferencedDependencyIds;
     }
 
+    /// <summary>
+    /// Any file added here will be reported as a location on ALL components found in current graph.
+    /// </summary>
     public void AddAdditionalRelatedFile(string additionalRelatedFile)
     {
         this.AdditionalRelatedFiles.AddOrUpdate(additionalRelatedFile, 0, (notUsed, notUsed2) => 0);
