@@ -190,31 +190,4 @@ public static class NpmComponentUtilities
                  || name.StartsWith('_')
                  || UnsafeCharactersRegex.IsMatch(name));
     }
-
-    /// <summary>
-    /// Updates the lockfile version based on the a feature gate environment variable. If the lock file version is 3,
-    /// and the environment variable <see cref="LockFile3EnvFlag"/> is not set, the lock file version is downgraded to 2.
-    /// </summary>
-    /// <param name="lockfileVersion">The lockfileVersion read from the package-lock.json.</param>
-    /// <param name="envService">The environment variable service.</param>
-    /// <param name="logger">The logger.</param>
-    /// <returns>The lockfileVersion to treat the package lock as.</returns>
-    public static int UpdateLockFileVersion(int lockfileVersion, IEnvironmentVariableService envService, ILogger logger)
-    {
-        if (lockfileVersion != 3)
-        {
-            return lockfileVersion;
-        }
-
-        var envVarSet =
-            !string.IsNullOrEmpty(envService.GetEnvironmentVariable(LockFile3EnvFlag));
-
-        if (!envVarSet)
-        {
-            return 2;
-        }
-
-        logger.LogInformation("Enabling experimental NPM lockfile v3 support");
-        return lockfileVersion; // Lockfile v3 is enabled
-    }
 }
