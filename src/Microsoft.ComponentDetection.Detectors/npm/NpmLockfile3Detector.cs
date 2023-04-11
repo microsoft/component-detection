@@ -7,7 +7,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
-public class NpmLockfile3Detector : NpmLockfileDetectorBase, IDefaultOffComponentDetector
+public class NpmLockfile3Detector : NpmLockfileDetectorBase, IExperimentalDetector
 {
     private static readonly string NodeModules = NpmComponentUtilities.NodeModules;
 
