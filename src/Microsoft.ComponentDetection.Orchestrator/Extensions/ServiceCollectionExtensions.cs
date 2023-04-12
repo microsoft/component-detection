@@ -93,6 +93,7 @@ public static class ServiceCollectionExtensions
         // npm
         services.AddSingleton<IComponentDetector, NpmComponentDetector>();
         services.AddSingleton<IComponentDetector, NpmComponentDetectorWithRoots>();
+        services.AddSingleton<IComponentDetector, NpmLockfile3Detector>();
 
         // NuGet
         services.AddSingleton<IComponentDetector, NuGetComponentDetector>();
