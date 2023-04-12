@@ -22,6 +22,8 @@ using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Experiments;
+using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.DependencyInjection;
@@ -64,6 +66,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDetectorProcessingService, DetectorProcessingService>();
         services.AddSingleton<IDetectorRestrictionService, DetectorRestrictionService>();
         services.AddSingleton<IArgumentHelper, ArgumentHelper>();
+
+        // Experiments
+        services.AddSingleton<IExperimentService, ExperimentService>();
+        services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
+        services.AddSingleton<IExperimentConfiguration, NewNugetExperiment>();
 
         // Detectors
         // CocoaPods

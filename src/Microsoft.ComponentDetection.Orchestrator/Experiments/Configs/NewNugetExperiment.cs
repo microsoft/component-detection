@@ -1,6 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 
-using Microsoft.ComponentDetection.Common.Experiments;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 
@@ -18,5 +17,5 @@ public class NewNugetExperiment : IExperimentConfiguration
 
     /// <inheritdoc />
     public bool IsInExperimentGroup(IComponentDetector componentDetector) =>
-        componentDetector is NuGetComponentDetector or NuGetPackagesConfigDetector;
+        componentDetector is NuGetProjectModelProjectCentricComponentDetector or NuGetPackagesConfigDetector;
 }

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common.Experiments;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 
 using Microsoft.ComponentDetection.Contracts;
 
