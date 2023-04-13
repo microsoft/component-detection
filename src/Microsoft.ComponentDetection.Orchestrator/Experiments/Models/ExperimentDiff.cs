@@ -11,14 +11,14 @@ public class ExperimentDiff
     /// <summary>
     /// Creates a new <see cref="ExperimentDiff"/>.
     /// </summary>
-    /// <param name="oldComponents">A set of components from the control group.</param>
-    /// <param name="newComponents">A set of components from the experimental group.</param>
+    /// <param name="controlGroupComponents">A set of components from the control group.</param>
+    /// <param name="experimentGroupComponents">A set of components from the experimental group.</param>
     public ExperimentDiff(
-        IEnumerable<ExperimentComponent> oldComponents,
-        IEnumerable<ExperimentComponent> newComponents)
+        IEnumerable<ExperimentComponent> controlGroupComponents,
+        IEnumerable<ExperimentComponent> experimentGroupComponents)
     {
-        var oldComponentDictionary = oldComponents.ToDictionary(x => x.Id);
-        var newComponentDictionary = newComponents.ToDictionary(x => x.Id);
+        var oldComponentDictionary = controlGroupComponents.ToDictionary(x => x.Id);
+        var newComponentDictionary = experimentGroupComponents.ToDictionary(x => x.Id);
 
         this.AddedIds = newComponentDictionary.Keys.Except(oldComponentDictionary.Keys).ToList();
         this.RemovedIds = oldComponentDictionary.Keys.Except(newComponentDictionary.Keys).ToList();
