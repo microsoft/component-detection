@@ -1,10 +1,8 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
@@ -33,11 +31,7 @@ public class ExperimentServiceTests
     [TestMethod]
     public void RecordDetectorRun_AddsComponentsToControlAndExperimentGroup()
     {
-        var components = new List<DetectedComponent>
-        {
-            new(new NpmComponent("ComponentA", "1.0.0")),
-            new(new NpmComponent("ComponentB", "1.0.0")),
-        };
+        var components = ExperimentTestUtils.CreateRandomComponents();
 
         this.experimentConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
         this.experimentConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
@@ -56,11 +50,7 @@ public class ExperimentServiceTests
     [TestMethod]
     public async Task FinishAsync_ProcessesExperimentsAsync()
     {
-        var components = new List<DetectedComponent>
-        {
-            new(new NpmComponent("ComponentA", "1.0.0")),
-            new(new NpmComponent("ComponentB", "1.0.0")),
-        };
+        var components = ExperimentTestUtils.CreateRandomComponents();
 
         this.experimentConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
         this.experimentConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
