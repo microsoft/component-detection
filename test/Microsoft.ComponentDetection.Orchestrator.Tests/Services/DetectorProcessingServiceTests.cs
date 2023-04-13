@@ -512,14 +512,12 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_FinishesExperimentsAsync()
     {
-        var args = DefaultArgs;
-
         this.detectorsToUse = new[]
         {
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
         };
 
-        await this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions());
+        await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
         this.experimentServiceMock.Verify(x => x.FinishAsync(), Times.Once());
     }
