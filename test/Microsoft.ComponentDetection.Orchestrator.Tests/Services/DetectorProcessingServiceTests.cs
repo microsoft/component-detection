@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +11,7 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -36,6 +38,7 @@ public class DetectorProcessingServiceTests
     private readonly Mock<ILogger<DetectorProcessingService>> loggerMock;
     private readonly DetectorProcessingService serviceUnderTest;
     private readonly Mock<IObservableDirectoryWalkerFactory> directoryWalkerFactory;
+    private readonly Mock<IExperimentService> experimentServiceMock;
 
     private readonly Mock<FileComponentDetector> firstFileComponentDetectorMock;
     private readonly Mock<FileComponentDetector> secondFileComponentDetectorMock;
@@ -49,10 +52,11 @@ public class DetectorProcessingServiceTests
 
     public DetectorProcessingServiceTests()
     {
+        this.experimentServiceMock = new Mock<IExperimentService>();
         this.loggerMock = new Mock<ILogger<DetectorProcessingService>>();
         this.directoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
         this.serviceUnderTest =
-            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.loggerMock.Object);
+            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.experimentServiceMock.Object, this.loggerMock.Object);
 
         this.firstFileComponentDetectorMock = this.SetupFileDetectorMock("firstFileDetectorId");
         this.secondFileComponentDetectorMock = this.SetupFileDetectorMock("secondFileDetectorId");
@@ -503,6 +507,49 @@ public class DetectorProcessingServiceTests
             .Should().Contain("arg1", "val1")
             .And.NotContainKey("arg2")
             .And.Contain("arg3", "val3");
+    }
+
+    [TestMethod]
+    public async Task ProcessDetectorsAsync_FinishesExperimentsAsync()
+    {
+        var args = DefaultArgs;
+
+        this.detectorsToUse = new[]
+        {
+            this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
+        };
+
+        await this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions());
+
+        this.experimentServiceMock.Verify(x => x.FinishAsync(), Times.Once());
+    }
+
+    [TestMethod]
+    public async Task ProcessDetectorsAsync_RecordsDetectorRunsAsync()
+    {
+        this.detectorsToUse = new[]
+        {
+            this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
+        };
+
+        var firstComponents = new[] { this.componentDictionary[this.firstFileComponentDetectorMock.Object.Id] };
+        var secondComponents = new[] { this.componentDictionary[this.secondFileComponentDetectorMock.Object.Id] };
+
+        await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
+
+        this.experimentServiceMock.Verify(
+            x =>
+                x.RecordDetectorRun(
+                    It.Is<IComponentDetector>(detector => detector == this.firstFileComponentDetectorMock.Object),
+                    It.Is<IEnumerable<DetectedComponent>>(components => components.SequenceEqual(firstComponents))),
+            Times.Once());
+
+        this.experimentServiceMock.Verify(
+            x =>
+                x.RecordDetectorRun(
+                    It.Is<IComponentDetector>(detector => detector == this.secondFileComponentDetectorMock.Object),
+                    It.Is<IEnumerable<DetectedComponent>>(components => components.SequenceEqual(secondComponents))),
+            Times.Once());
     }
 
     private Mock<FileComponentDetector> SetupFileDetectorMock(string id)
