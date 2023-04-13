@@ -48,6 +48,13 @@ public sealed class FileWritingService : IFileWritingService
         }
     }
 
+    public async Task WriteFileAsync(string relativeFilePath, string text)
+    {
+        relativeFilePath = this.ResolveFilePath(relativeFilePath);
+
+        await File.WriteAllTextAsync(relativeFilePath, text);
+    }
+
     public void WriteFile(FileInfo relativeFilePath, string text)
     {
         File.WriteAllText(relativeFilePath.FullName, text);

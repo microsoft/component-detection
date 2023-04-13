@@ -1,9 +1,9 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
 
 using System;
-using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 using Microsoft.Extensions.Logging;
@@ -13,24 +13,28 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public class DefaultExperimentProcessor : IExperimentProcessor
 {
+    private readonly IFileWritingService fileWritingService;
     private readonly ILogger<DefaultExperimentProcessor> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultExperimentProcessor"/> class.
     /// </summary>
+    /// <param name="fileWritingService">The file writing service.</param>
     /// <param name="logger">The logger.</param>
-    public DefaultExperimentProcessor(ILogger<DefaultExperimentProcessor> logger) => this.logger = logger;
+    public DefaultExperimentProcessor(IFileWritingService fileWritingService, ILogger<DefaultExperimentProcessor> logger)
+    {
+        this.fileWritingService = fileWritingService;
+        this.logger = logger;
+    }
 
     /// <inheritdoc />
     public async Task ProcessExperimentAsync(IExperimentConfiguration config, ExperimentDiff diff)
     {
-        var filename = Path.Combine(
-            Path.GetTempPath(),
-            $"Experiment_{config.Name}_{DateTime.Now:yyyyMMddHHmmssfff}_{Environment.ProcessId}.json");
+        var filename = $"Experiment_{config.Name}_{{timestamp}}_{Environment.ProcessId}.json";
 
-        this.logger.LogInformation("Writing experiment {Name} results to {Filename}", config.Name, filename);
+        this.logger.LogInformation("Writing experiment {Name} results to {Filename}", config.Name, this.fileWritingService.ResolveFilePath(filename));
 
-        await using var file = File.Create(filename);
-        await JsonSerializer.SerializeAsync(file, diff, new JsonSerializerOptions { WriteIndented = true });
+        var serializedDiff = JsonSerializer.Serialize(diff, new JsonSerializerOptions { WriteIndented = true });
+        await this.fileWritingService.WriteFileAsync(filename, serializedDiff);
     }
 }
