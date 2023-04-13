@@ -6,7 +6,8 @@ using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
-/// Stores the results of a detector execution for an experiment. Buckets components into a control group and an experimental group.
+/// Stores the results of a detector execution for an experiment. Buckets components into a control group and an
+/// experimental group.
 /// </summary>
 public class Experiment
 {
