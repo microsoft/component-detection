@@ -71,6 +71,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentService, ExperimentService>();
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, NewNugetExperiment>();
+        services.AddSingleton<IExperimentConfiguration, NpmLockfile3Experiment>();
 
         // Detectors
         // CocoaPods
