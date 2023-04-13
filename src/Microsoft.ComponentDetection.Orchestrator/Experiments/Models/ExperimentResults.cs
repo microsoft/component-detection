@@ -9,7 +9,7 @@ using Microsoft.ComponentDetection.Contracts;
 /// Stores the results of a detector execution for an experiment. Buckets components into a control group and an
 /// experimental group.
 /// </summary>
-public class Experiment
+public class ExperimentResults
 {
     private readonly HashSet<ExperimentComponent> controlGroupComponents = new();
 

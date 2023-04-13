@@ -7,12 +7,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class ExperimentTests
+public class ExperimentResultsTests
 {
     [TestMethod]
-    public void Experiment_AddsToOnlyControlGroup()
+    public void ExperimentResults_AddsToOnlyControlGroup()
     {
-        var experiment = new Experiment();
+        var experiment = new ExperimentResults();
         var testComponents = ExperimentTestUtils.CreateRandomComponents();
 
         experiment.AddComponentsToControlGroup(testComponents);
@@ -22,9 +22,9 @@ public class ExperimentTests
     }
 
     [TestMethod]
-    public void Experiment_AddsToOnlyExperimentGroup()
+    public void ExperimentResults_AddsToOnlyExperimentGroup()
     {
-        var experiment = new Experiment();
+        var experiment = new ExperimentResults();
         var testComponents = ExperimentTestUtils.CreateRandomComponents();
 
         experiment.AddComponentsToExperimentalGroup(testComponents);

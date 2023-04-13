@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 /// <inheritdoc />
 public class ExperimentService : IExperimentService
 {
-    private readonly List<(IExperimentConfiguration Config, Experiment Experiment)> experiments;
+    private readonly List<(IExperimentConfiguration Config, ExperimentResults ExperimentResults)> experiments;
     private readonly IEnumerable<IExperimentProcessor> experimentProcessors;
     private readonly ILogger<ExperimentService> logger;
 
@@ -26,7 +26,7 @@ public class ExperimentService : IExperimentService
         IEnumerable<IExperimentProcessor> experimentProcessors,
         ILogger<ExperimentService> logger)
     {
-        this.experiments = configs.Select(x => (x, new Experiment())).ToList();
+        this.experiments = configs.Select(x => (x, new ExperimentResults())).ToList();
         this.experimentProcessors = experimentProcessors;
         this.logger = logger;
     }
@@ -34,11 +34,11 @@ public class ExperimentService : IExperimentService
     /// <inheritdoc />
     public void RecordDetectorRun(IComponentDetector detector, IEnumerable<DetectedComponent> components)
     {
-        foreach (var (config, experiment) in this.experiments)
+        foreach (var (config, experimentResults) in this.experiments)
         {
             if (config.IsInControlGroup(detector))
             {
-                experiment.AddComponentsToControlGroup(components);
+                experimentResults.AddComponentsToControlGroup(components);
                 this.logger.LogDebug(
                     "Adding {Count} Components from {Id} to Control Group for {Experiment}",
                     components.Count(),
@@ -48,7 +48,7 @@ public class ExperimentService : IExperimentService
 
             if (config.IsInExperimentGroup(detector))
             {
-                experiment.AddComponentsToExperimentalGroup(components);
+                experimentResults.AddComponentsToExperimentalGroup(components);
                 this.logger.LogDebug(
                     "Adding {Count} Components from {Id} to Experiment Group for {Experiment}",
                     components.Count(),
