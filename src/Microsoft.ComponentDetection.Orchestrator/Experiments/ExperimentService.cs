@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -76,7 +77,14 @@ public class ExperimentService : IExperimentService
 
             foreach (var processor in this.experimentProcessors)
             {
-                await processor.ProcessExperimentAsync(config, diff);
+                try
+                {
+                    await processor.ProcessExperimentAsync(config, diff);
+                }
+                catch (Exception e)
+                {
+                    this.logger.LogWarning(e, "Error processing experiment {Experiment}", config.Name);
+                }
             }
         }
     }
