@@ -1,7 +1,9 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
@@ -66,5 +68,28 @@ public class ExperimentServiceTests
         this.experimentProcessorMock.Verify(
             x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
             Times.Once());
+    }
+
+    [TestMethod]
+    public async Task FinishAsync_SwallowsExceptionsAsync()
+    {
+        this.experimentProcessorMock
+            .Setup(x =>
+                x.ProcessExperimentAsync(It.IsAny<IExperimentConfiguration>(), It.IsAny<ExperimentDiff>()))
+            .ThrowsAsync(new IOException("test exception"));
+
+        var components = ExperimentTestUtils.CreateRandomComponents();
+
+        this.experimentConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
+        this.experimentConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
+
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.loggerMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, components);
+
+        var act = async () => await service.FinishAsync();
+        await act.Should().NotThrowAsync<IOException>();
     }
 }
