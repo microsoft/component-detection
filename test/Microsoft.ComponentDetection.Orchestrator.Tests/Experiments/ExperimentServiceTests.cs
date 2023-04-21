@@ -92,4 +92,18 @@ public class ExperimentServiceTests
         var act = async () => await service.FinishAsync();
         await act.Should().NotThrowAsync<IOException>();
     }
+
+    [TestMethod]
+    public async Task FinishAsync_SkipsEmptyExperimentsAsync()
+    {
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.loggerMock.Object);
+        await service.FinishAsync();
+
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(It.IsAny<IExperimentConfiguration>(), It.IsAny<ExperimentDiff>()),
+            Times.Never());
+    }
 }
