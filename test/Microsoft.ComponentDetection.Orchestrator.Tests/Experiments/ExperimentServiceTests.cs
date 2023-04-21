@@ -28,15 +28,16 @@ public class ExperimentServiceTests
         this.experimentProcessorMock = new Mock<IExperimentProcessor>();
         this.loggerMock = new Mock<ILogger<ExperimentService>>();
         this.detectorMock = new Mock<IComponentDetector>();
+
+        this.experimentConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
+        this.experimentConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
+        this.experimentConfigMock.Setup(x => x.ShouldRecord(this.detectorMock.Object, It.IsAny<int>())).Returns(true);
     }
 
     [TestMethod]
     public void RecordDetectorRun_AddsComponentsToControlAndExperimentGroup()
     {
         var components = ExperimentTestUtils.CreateRandomComponents();
-
-        this.experimentConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
-        this.experimentConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
 
         var service = new ExperimentService(
             new[] { this.experimentConfigMock.Object },
@@ -50,12 +51,38 @@ public class ExperimentServiceTests
     }
 
     [TestMethod]
+    public async Task RecordDetectorRun_FiltersExperimentsAsync()
+    {
+        var filterConfigMock = new Mock<IExperimentConfiguration>();
+        filterConfigMock
+            .Setup(x => x.ShouldRecord(It.IsAny<IComponentDetector>(), It.IsAny<int>()))
+            .Returns(false);
+        filterConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
+        filterConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
+
+        var components = ExperimentTestUtils.CreateRandomComponents();
+
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object, filterConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.loggerMock.Object);
+
+        service.RecordDetectorRun(this.detectorMock.Object, components);
+        await service.FinishAsync();
+
+        filterConfigMock.Verify(x => x.ShouldRecord(this.detectorMock.Object, components.Count), Times.Once());
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(filterConfigMock.Object, It.IsAny<ExperimentDiff>()),
+            Times.Never());
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
+            Times.Once());
+    }
+
+    [TestMethod]
     public async Task FinishAsync_ProcessesExperimentsAsync()
     {
         var components = ExperimentTestUtils.CreateRandomComponents();
-
-        this.experimentConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
-        this.experimentConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
 
         var service = new ExperimentService(
             new[] { this.experimentConfigMock.Object },
@@ -79,9 +106,6 @@ public class ExperimentServiceTests
             .ThrowsAsync(new IOException("test exception"));
 
         var components = ExperimentTestUtils.CreateRandomComponents();
-
-        this.experimentConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
-        this.experimentConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
 
         var service = new ExperimentService(
             new[] { this.experimentConfigMock.Object },

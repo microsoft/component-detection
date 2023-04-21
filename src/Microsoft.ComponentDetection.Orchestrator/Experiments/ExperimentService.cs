@@ -35,6 +35,8 @@ public class ExperimentService : IExperimentService
     /// <inheritdoc />
     public void RecordDetectorRun(IComponentDetector detector, IEnumerable<DetectedComponent> components)
     {
+        this.FilterExperiments(detector, components.Count());
+
         foreach (var (config, experimentResults) in this.experiments)
         {
             if (config.IsInControlGroup(detector))
@@ -58,6 +60,23 @@ public class ExperimentService : IExperimentService
             }
         }
     }
+
+    private void FilterExperiments(IComponentDetector detector, int count) =>
+        this.experiments.RemoveAll(experiment =>
+        {
+            var shouldRemove = !experiment.Config.ShouldRecord(detector, count);
+
+            if (shouldRemove)
+            {
+                this.logger.LogDebug(
+                    "Removing {Experiment} from active experiments because {Id} has {Count} components",
+                    experiment.Config.Name,
+                    detector.Id,
+                    count);
+            }
+
+            return shouldRemove;
+        });
 
     /// <inheritdoc />
     public async Task FinishAsync()

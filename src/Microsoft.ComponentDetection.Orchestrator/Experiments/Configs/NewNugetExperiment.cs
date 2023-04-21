@@ -18,4 +18,7 @@ public class NewNugetExperiment : IExperimentConfiguration
     /// <inheritdoc />
     public bool IsInExperimentGroup(IComponentDetector componentDetector) =>
         componentDetector is NuGetProjectModelProjectCentricComponentDetector or NuGetPackagesConfigDetector;
+
+    /// <inheritdoc />
+    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) => true;
 }

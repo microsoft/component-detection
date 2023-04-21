@@ -28,4 +28,15 @@ public interface IExperimentConfiguration
     /// <param name="componentDetector">The detector.</param>
     /// <returns><c>true</c> if the detector is in the experiment group; otherwise, <c>false</c>.</returns>
     bool IsInExperimentGroup(IComponentDetector componentDetector);
+
+    /// <summary>
+    /// Determines if the experiment should be recorded, given a list of all the detectors that ran and the number of
+    /// components that were detected. If any call to this method returns <c>false</c>, the experiment will not be
+    /// recorded.
+    /// </summary>
+    /// <example><see cref="NpmLockfile3Experiment.ShouldRecord"/>.</example>
+    /// <param name="componentDetector">The component detector.</param>
+    /// <param name="numComponents">The number of components found by the <paramref name="componentDetector"/>.</param>
+    /// <returns><c>true</c> if the experiment should be recorded; otherwise, <c>false</c>.</returns>
+    bool ShouldRecord(IComponentDetector componentDetector, int numComponents);
 }
