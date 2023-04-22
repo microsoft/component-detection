@@ -23,12 +23,12 @@ jobs:
           fetch-depth: 0
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2.2.12
+      uses: github/codeql-action/init@v2.3.0
       with:
         languages: 'csharp'
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v2.2.12
+      uses: github/codeql-action/autobuild@v2.3.0
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2.2.12
+      uses: github/codeql-action/analyze@v2.3.0
