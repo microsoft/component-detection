@@ -98,16 +98,14 @@ public class ExperimentService : IExperimentService
 
             var diff = new ExperimentDiff(controlComponents, experimentComponents);
 
-            foreach (var processor in this.experimentProcessors)
+            try
             {
-                try
-                {
-                    await processor.ProcessExperimentAsync(config, diff);
-                }
-                catch (Exception e)
-                {
-                    this.logger.LogWarning(e, "Error processing experiment {Experiment}", config.Name);
-                }
+                var tasks = this.experimentProcessors.Select(x => x.ProcessExperimentAsync(config, diff));
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError(e, "Error processing experiment {Experiment}", config.Name);
             }
         }
     }
