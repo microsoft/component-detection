@@ -35,6 +35,8 @@ public class ExperimentService : IExperimentService
     /// <inheritdoc />
     public void RecordDetectorRun(IComponentDetector detector, IEnumerable<DetectedComponent> components)
     {
+        this.FilterExperiments(detector, components.Count());
+
         foreach (var (config, experimentResults) in this.experiments)
         {
             if (config.IsInControlGroup(detector))
@@ -59,21 +61,42 @@ public class ExperimentService : IExperimentService
         }
     }
 
+    private void FilterExperiments(IComponentDetector detector, int count) =>
+        this.experiments.RemoveAll(experiment =>
+        {
+            var shouldRemove = !experiment.Config.ShouldRecord(detector, count);
+
+            if (shouldRemove)
+            {
+                this.logger.LogDebug("Removing {Experiment} from active experiments", experiment.Config.Name);
+            }
+
+            return shouldRemove;
+        });
+
     /// <inheritdoc />
     public async Task FinishAsync()
     {
         foreach (var (config, experiment) in this.experiments)
         {
-            var oldComponents = experiment.ControlGroupComponents;
-            var newComponents = experiment.ExperimentGroupComponents;
+            var controlComponents = experiment.ControlGroupComponents;
+            var experimentComponents = experiment.ExperimentGroupComponents;
 
             this.logger.LogInformation(
-                "Experiment {Experiment} finished and has {Count} components in the control group and {Count} components in the experiment group.",
+                "Experiment {Experiment} finished with {ControlCount} components in the control group and {ExperimentCount} components in the experiment group",
                 config.Name,
-                oldComponents.Count,
-                newComponents.Count);
+                controlComponents.Count,
+                experimentComponents.Count);
 
-            var diff = new ExperimentDiff(experiment.ControlGroupComponents, experiment.ExperimentGroupComponents);
+            // If there are no components recorded in the experiment, skip processing experiments. We still want to
+            // process empty diffs as this means the experiment was successful.
+            if (!experimentComponents.Any() && !controlComponents.Any())
+            {
+                this.logger.LogWarning("Experiment {Experiment} has no components in either group, skipping processing", config.Name);
+                continue;
+            }
+
+            var diff = new ExperimentDiff(controlComponents, experimentComponents);
 
             foreach (var processor in this.experimentProcessors)
             {
