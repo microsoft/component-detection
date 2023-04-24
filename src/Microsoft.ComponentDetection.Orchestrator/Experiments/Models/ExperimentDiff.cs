@@ -1,6 +1,7 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 /// <summary>
@@ -20,12 +21,12 @@ public class ExperimentDiff
         var oldComponentDictionary = controlGroupComponents.ToDictionary(x => x.Id);
         var newComponentDictionary = experimentGroupComponents.ToDictionary(x => x.Id);
 
-        this.AddedIds = newComponentDictionary.Keys.Except(oldComponentDictionary.Keys).ToList();
-        this.RemovedIds = oldComponentDictionary.Keys.Except(newComponentDictionary.Keys).ToList();
+        this.AddedIds = newComponentDictionary.Keys.Except(oldComponentDictionary.Keys).ToImmutableList();
+        this.RemovedIds = oldComponentDictionary.Keys.Except(newComponentDictionary.Keys).ToImmutableList();
 
-        this.DevelopmentDependencyChanges = new List<DevelopmentDependencyChange>();
-        this.AddedRootIds = new Dictionary<string, HashSet<string>>();
-        this.RemovedRootIds = new Dictionary<string, HashSet<string>>();
+        var developmentDependencyChanges = new List<DevelopmentDependencyChange>();
+        var addedRootIds = new Dictionary<string, IReadOnlySet<string>>();
+        var removedRootIds = new Dictionary<string, IReadOnlySet<string>>();
 
         // Need performance benchmark to see if this is worth parallelization
         foreach (var id in newComponentDictionary.Keys.Intersect(oldComponentDictionary.Keys))
@@ -35,53 +36,57 @@ public class ExperimentDiff
 
             if (oldComponent.DevelopmentDependency != newComponent.DevelopmentDependency)
             {
-                this.DevelopmentDependencyChanges.Add(new DevelopmentDependencyChange(
+                developmentDependencyChanges.Add(new DevelopmentDependencyChange(
                     id,
                     oldComponent.DevelopmentDependency,
                     newComponent.DevelopmentDependency));
             }
 
-            var addedRootIds = newComponent.RootIds.Except(oldComponent.RootIds).ToHashSet();
-            var removedRootIds = oldComponent.RootIds.Except(newComponent.RootIds).ToHashSet();
+            var newRoots = newComponent.RootIds.Except(oldComponent.RootIds).ToImmutableHashSet();
+            var removedRoots = oldComponent.RootIds.Except(newComponent.RootIds).ToImmutableHashSet();
 
-            if (addedRootIds.Count > 0)
+            if (newRoots.Count > 0)
             {
-                this.AddedRootIds[id] = addedRootIds;
+                addedRootIds[id] = newRoots;
             }
 
-            if (removedRootIds.Count > 0)
+            if (removedRoots.Count > 0)
             {
-                this.RemovedRootIds[id] = removedRootIds;
+                removedRootIds[id] = removedRoots;
             }
         }
+
+        this.DevelopmentDependencyChanges = developmentDependencyChanges.AsReadOnly();
+        this.AddedRootIds = addedRootIds.ToImmutableDictionary();
+        this.RemovedRootIds = removedRootIds.ToImmutableDictionary();
     }
 
     /// <summary>
     /// Gets a list of component IDs that were present in the experimental group but not the control group.
     /// </summary>
-    public List<string> AddedIds { get; }
+    public IReadOnlyCollection<string> AddedIds { get; }
 
     /// <summary>
     /// Gets a list of component IDs that were present in the control group but not the experimental group.
     /// </summary>
-    public List<string> RemovedIds { get; }
+    public IReadOnlyCollection<string> RemovedIds { get; }
 
     /// <summary>
     /// Gets a list of changes to the development dependency status of components.
     /// </summary>
-    public List<DevelopmentDependencyChange> DevelopmentDependencyChanges { get; }
+    public IReadOnlyCollection<DevelopmentDependencyChange> DevelopmentDependencyChanges { get; }
 
     /// <summary>
     /// Gets a dictionary of component IDs to the set of root IDs that were added to the component. The component ID
     /// is the key.
     /// </summary>
-    public Dictionary<string, HashSet<string>> AddedRootIds { get; }
+    public IReadOnlyDictionary<string, IReadOnlySet<string>> AddedRootIds { get; }
 
     /// <summary>
     /// Gets a dictionary of component IDs to the set of root IDs that were removed from the component. The component
     /// ID is the key.
     /// </summary>
-    public Dictionary<string, HashSet<string>> RemovedRootIds { get; }
+    public IReadOnlyDictionary<string, IReadOnlySet<string>> RemovedRootIds { get; }
 
     /// <summary>
     /// Stores information about a change to the development dependency status of a component.
