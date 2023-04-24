@@ -68,11 +68,7 @@ public class ExperimentService : IExperimentService
 
             if (shouldRemove)
             {
-                this.logger.LogDebug(
-                    "Removing {Experiment} from active experiments because {Id} has {Count} components",
-                    experiment.Config.Name,
-                    detector.Id,
-                    count);
+                this.logger.LogDebug("Removing {Experiment} from active experiments", experiment.Config.Name);
             }
 
             return shouldRemove;
