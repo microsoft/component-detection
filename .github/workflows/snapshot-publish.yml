@@ -20,6 +20,13 @@ jobs:
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v3
 
+      - name: Setup NuGet cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
       - run: dotnet restore
 
       - name: Install Apache Ivy
