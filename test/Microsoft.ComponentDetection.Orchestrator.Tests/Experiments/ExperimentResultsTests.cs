@@ -1,6 +1,9 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
+using System.Linq;
 using FluentAssertions;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -31,5 +34,20 @@ public class ExperimentResultsTests
 
         experiment.ControlGroupComponents.Should().BeEmpty();
         experiment.ExperimentGroupComponents.Should().HaveCount(testComponents.Count);
+    }
+
+    [TestMethod]
+    public void ExperimentResults_DoesntAddDuplicateIds()
+    {
+        var testComponent = new NpmComponent("test", "1.0.0");
+        var componentA = new DetectedComponent(testComponent);
+        var componentB = new DetectedComponent(testComponent) { DevelopmentDependency = true };
+
+        var experiment = new ExperimentResults();
+        experiment.AddComponentsToControlGroup(new[] { componentA, componentB });
+
+        experiment.ControlGroupComponents.Should().HaveCount(1);
+        experiment.ExperimentGroupComponents.Should().BeEmpty();
+        experiment.ControlGroupComponents.First().Should().BeEquivalentTo(new ExperimentComponent(componentA));
     }
 }

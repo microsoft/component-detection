@@ -18,8 +18,8 @@ public class ExperimentDiff
         IEnumerable<ExperimentComponent> controlGroupComponents,
         IEnumerable<ExperimentComponent> experimentGroupComponents)
     {
-        var oldComponentDictionary = controlGroupComponents.ToDictionary(x => x.Id);
-        var newComponentDictionary = experimentGroupComponents.ToDictionary(x => x.Id);
+        var oldComponentDictionary = controlGroupComponents.DistinctBy(x => x.Id).ToDictionary(x => x.Id);
+        var newComponentDictionary = experimentGroupComponents.DistinctBy(x => x.Id).ToDictionary(x => x.Id);
 
         this.AddedIds = newComponentDictionary.Keys.Except(oldComponentDictionary.Keys).ToImmutableList();
         this.RemovedIds = oldComponentDictionary.Keys.Except(newComponentDictionary.Keys).ToImmutableList();

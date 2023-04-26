@@ -11,9 +11,11 @@ using Microsoft.ComponentDetection.Contracts;
 /// </summary>
 public class ExperimentResults
 {
-    private readonly HashSet<ExperimentComponent> controlGroupComponents = new();
+    private static readonly IEqualityComparer<ExperimentComponent> ComponentComparer = new ExperimentComponentComparer();
 
-    private readonly HashSet<ExperimentComponent> experimentGroupComponents = new();
+    private readonly HashSet<ExperimentComponent> controlGroupComponents = new(ComponentComparer);
+
+    private readonly HashSet<ExperimentComponent> experimentGroupComponents = new(ComponentComparer);
 
     /// <summary>
     /// The set of components in the control group.
