@@ -56,7 +56,7 @@ public class DetectorProcessingServiceTests
         this.loggerMock = new Mock<ILogger<DetectorProcessingService>>();
         this.directoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
         this.serviceUnderTest =
-            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.experimentServiceMock.Object, this.loggerMock.Object);
+            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.loggerMock.Object);
 
         this.firstFileComponentDetectorMock = this.SetupFileDetectorMock("firstFileDetectorId");
         this.secondFileComponentDetectorMock = this.SetupFileDetectorMock("secondFileDetectorId");
