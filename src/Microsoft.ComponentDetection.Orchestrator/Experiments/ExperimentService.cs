@@ -1,6 +1,7 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ using Microsoft.Extensions.Logging;
 /// <inheritdoc />
 public class ExperimentService : IExperimentService
 {
-    private readonly List<(IExperimentConfiguration Config, ExperimentResults ExperimentResults)> experiments;
+    private readonly ConcurrentDictionary<IExperimentConfiguration, ExperimentResults> experiments;
     private readonly IEnumerable<IExperimentProcessor> experimentProcessors;
     private readonly ILogger<ExperimentService> logger;
 
@@ -27,7 +28,8 @@ public class ExperimentService : IExperimentService
         IEnumerable<IExperimentProcessor> experimentProcessors,
         ILogger<ExperimentService> logger)
     {
-        this.experiments = configs.Select(x => (x, new ExperimentResults())).ToList();
+        this.experiments = new ConcurrentDictionary<IExperimentConfiguration, ExperimentResults>(
+            configs.ToDictionary(config => config, _ => new ExperimentResults()));
         this.experimentProcessors = experimentProcessors;
         this.logger = logger;
     }
@@ -61,18 +63,18 @@ public class ExperimentService : IExperimentService
         }
     }
 
-    private void FilterExperiments(IComponentDetector detector, int count) =>
-        this.experiments.RemoveAll(experiment =>
+    private void FilterExperiments(IComponentDetector detector, int count)
+    {
+        var experimentsToRemove = this.experiments
+            .Where(x => !x.Key.ShouldRecord(detector, count))
+            .Select(x => x.Key)
+            .ToList();
+
+        foreach (var config in experimentsToRemove.Where(config => this.experiments.TryRemove(config, out _)))
         {
-            var shouldRemove = !experiment.Config.ShouldRecord(detector, count);
-
-            if (shouldRemove)
-            {
-                this.logger.LogDebug("Removing {Experiment} from active experiments", experiment.Config.Name);
-            }
-
-            return shouldRemove;
-        });
+            this.logger.LogDebug("Removing {Experiment} from active experiments", config.Name);
+        }
+    }
 
     /// <inheritdoc />
     public async Task FinishAsync()
