@@ -4,12 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 
 [TestClass]
 public class ComponentDetectionIntegrationTests
@@ -150,7 +150,7 @@ public class ComponentDetectionIntegrationTests
                         rightDependencies.Should().Contain(leftDependency, $"Component dependency {leftDependency} for component {leftComponent} was not in the {rightGraphName} dependency graph.");
                     }
 
-                    leftDependencies.Should().BeEquivalentTo(rightDependencies, $"{rightGraphName} has the following components that were not found in {leftGraphName}, please verify this is expected behavior. {JsonConvert.SerializeObject(rightDependencies.Except(leftDependencies))}");
+                    leftDependencies.Should().BeEquivalentTo(rightDependencies, $"{rightGraphName} has the following components that were not found in {leftGraphName}, please verify this is expected behavior. {JsonSerializer.Serialize(rightDependencies.Except(leftDependencies))}");
                 }
             }
         }
@@ -258,11 +258,11 @@ public class ComponentDetectionIntegrationTests
     {
         var oldGithubDirectory = new DirectoryInfo(oldGithubArtifactsDir);
         this.oldLogFileContents = this.GetFileTextWithPattern("GovCompDisc_Log*.log", oldGithubDirectory);
-        this.oldScanResult = JsonConvert.DeserializeObject<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", oldGithubDirectory));
+        this.oldScanResult = JsonSerializer.Deserialize<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", oldGithubDirectory));
 
         var newGithubDirectory = new DirectoryInfo(newGithubArtifactsDir);
         this.newLogFileContents = this.GetFileTextWithPattern("GovCompDisc_Log*.log", newGithubDirectory);
-        this.newScanResult = JsonConvert.DeserializeObject<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", newGithubDirectory));
+        this.newScanResult = JsonSerializer.Deserialize<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", newGithubDirectory));
     }
 
     private string GetFileTextWithPattern(string pattern, DirectoryInfo directory)

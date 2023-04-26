@@ -2,12 +2,12 @@
 
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class BcdeScanCommandService : IArgumentHandlingService
 {
@@ -54,7 +54,7 @@ public class BcdeScanCommandService : IArgumentHandlingService
             this.logger.LogInformation("Scan Manifest file: {ManifestFile}", this.fileWritingService.ResolveFilePath(ManifestRelativePath));
         }
 
-        var manifestJson = JsonConvert.SerializeObject(scanResult, Formatting.Indented);
+        var manifestJson = JsonSerializer.Serialize(scanResult);
 
         if (userRequestedManifestPath == null)
         {
