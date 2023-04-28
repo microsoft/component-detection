@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
+namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
 
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry;
@@ -97,6 +97,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMavenCommandService, MavenCommandService>();
         services.AddSingleton<IMavenStyleDependencyGraphParserService, MavenStyleDependencyGraphParserService>();
         services.AddSingleton<IComponentDetector, MvnCliComponentDetector>();
+        services.AddSingleton<IComponentDetector, MvnPomCliComponentDetector>();
 
         // npm
         services.AddSingleton<IComponentDetector, NpmComponentDetector>();
