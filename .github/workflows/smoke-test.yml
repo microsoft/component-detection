@@ -85,7 +85,7 @@ jobs:
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: 'TEST: Smoke Test Failure',
+              title: 'Smoke Test Failure',
               body: issue_body,
               labels: ['bug']
             })
