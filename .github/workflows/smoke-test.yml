@@ -31,8 +31,6 @@ jobs:
     steps:
       - name: Checkout Component Detection
         uses: actions/checkout@v3.5.2
-        with:
-          ref: 555523e957a86c2876f1a91c5073029e2e67b4e0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3.0.3
