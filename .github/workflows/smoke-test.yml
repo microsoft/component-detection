@@ -1,0 +1,91 @@
+name: Smoke Tests
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *" # every day at midnight
+
+jobs:
+  smoke-test:
+    runs-on: ["self-hosted", "1ES.Pool=1ES-OSE-GH-Pool"]
+    strategy:
+      matrix:
+        language:
+          [
+            { name: "CocoaPods", repo: "realm/realm-swift" },
+            { name: "Gradle", repo: "microsoft/ApplicationInsights-Java" },
+            { name: "Go", repo: "kubernetes/kubernetes" },
+            { name: "Maven", repo: "apache/kafka" },
+            { name: "NPM", repo: "axios/axios" },
+            { name: "NuGet", repo: "PowerShell/PowerShell" },
+            { name: "Pip", repo: "django/django" },
+            { name: "Pnpm", repo: "pnpm/pnpm" },
+            { name: "Poetry", repo: "Textualize/rich" },
+            { name: "Ruby", repo: "rails/rails" },
+            { name: "Rust", repo: "alacritty/alacritty" },
+            { name: "Yarn", repo: "gatsbyjs/gatsby" },
+          ]
+      fail-fast: false
+    name: ${{ matrix.language.name }}
+    steps:
+      - name: Checkout Component Detection
+        uses: actions/checkout@v3.5.2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3.0.3
+
+      - name: Setup NuGet cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Install Apache Ivy
+        run: curl https://downloads.apache.org/ant/ivy/2.5.1/apache-ivy-2.5.1-bin.tar.gz | tar xOz apache-ivy-2.5.1/ivy-2.5.1.jar > /usr/share/ant/lib/ivy.jar
+
+      - name: Checkout Smoke Test Repo
+        uses: actions/checkout@v3.5.2
+        with:
+          repository: ${{ matrix.language.repo }}
+          path: smoke-test-repo
+
+      - name: Run Smoke Test
+        working-directory: src/Microsoft.ComponentDetection
+        run: |
+          for i in $(seq 1 10); do
+              dotnet run -c Release -- scan --SourceDirectory ${{ github.workspace }}/smoke-test-repo --Verbosity Verbose || exit 1
+          done
+
+  create-issue:
+    runs-on: ubuntu-latest
+    needs: smoke-test
+    name: Create Issue
+    if: always() && github.event_name == 'schedule' && needs.smoke-test.result == 'failure'
+    permissions:
+      issues: write
+    steps:
+      - name: Create GitHub Issue
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const failed_tests = [];
+            const jobs = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+            for (const job of jobs.data.jobs) {
+              if (job.status === 'completed' && job.conclusion === 'failure') {
+                failed_tests.push('* ' + job.name);
+              }
+            }
+            const issue_body = `# :x: Smoke Test Failure\nThe following smoke tests failed:\n\n${failed_tests.join('\n')}\n\n[View Run](${context.payload.repository.html_url}/actions/runs/${context.runId})\n\ncc: @microsoft/ose-component-detection-maintainers`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Smoke Test Failure',
+              body: issue_body,
+              labels: ['bug']
+            })

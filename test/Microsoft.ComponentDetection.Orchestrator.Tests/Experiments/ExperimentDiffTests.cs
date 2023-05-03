@@ -123,4 +123,19 @@ public class ExperimentDiffTests
         diff.RemovedIds.Should().BeEmpty();
         diff.DevelopmentDependencyChanges.Should().BeEmpty();
     }
+
+    [TestMethod]
+    public void ExperimentDiff_MultipleIds_ShouldntThrow()
+    {
+        var testComponent = new NpmComponent("test", "1.0.0");
+        var componentA = new DetectedComponent(testComponent);
+        var componentB = new DetectedComponent(testComponent) { DevelopmentDependency = true };
+
+        var controlGroup = new[] { componentA, componentB }.Select(x => new ExperimentComponent(x));
+        var experimentGroup = new[] { componentA, componentB }.Select(x => new ExperimentComponent(x));
+
+        var action = () => new ExperimentDiff(controlGroup, experimentGroup);
+
+        action.Should().NotThrow();
+    }
 }
