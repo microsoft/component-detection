@@ -18,7 +18,7 @@ jobs:
             { name: "Go", repo: "kubernetes/kubernetes" },
             { name: "Maven", repo: "apache/kafka" },
             { name: "NPM", repo: "axios/axios" },
-            { name: "NuGet", repo: "PowerShell/PowerShell" },
+            { name: "NuGet", repo: "Radarr/Radarr" },
             { name: "Pip", repo: "django/django" },
             { name: "Pnpm", repo: "pnpm/pnpm" },
             { name: "Poetry", repo: "Textualize/rich" },
@@ -50,6 +50,11 @@ jobs:
         with:
           repository: ${{ matrix.language.repo }}
           path: smoke-test-repo
+      
+      - name: Restore Smoke Test NuGet Packages
+        if: ${{ matrix.language.name == 'NuGet'}}
+        working-directory: smoke-test-repo/src
+        run: dotnet restore
 
       - name: Run Smoke Test
         working-directory: src/Microsoft.ComponentDetection
