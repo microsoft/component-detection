@@ -11,7 +11,7 @@ jobs:
   comment:
     runs-on: ubuntu-latest
     steps:
-      - uses: mshick/add-pr-comment@d0b6b97ab0e4a1a9e6eac325f68f428d31957db4 # v2
+      - uses: mshick/add-pr-comment@a624db19fc8c3598f5850d5d7aea647ee9045fee # v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           message: |
