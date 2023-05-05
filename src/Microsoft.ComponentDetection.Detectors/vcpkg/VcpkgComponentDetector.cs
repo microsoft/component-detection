@@ -4,13 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
 {
@@ -63,11 +63,10 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
         ISingleFileComponentRecorder singleFileComponentRecorder,
         IComponentStream file)
     {
-        using var reader = new StreamReader(file.Stream);
         VcpkgSBOM sbom;
         try
         {
-            sbom = JsonConvert.DeserializeObject<VcpkgSBOM>(await reader.ReadToEndAsync());
+            sbom = await JsonSerializer.DeserializeAsync<VcpkgSBOM>(file.Stream);
         }
         catch (Exception)
         {

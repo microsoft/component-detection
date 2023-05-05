@@ -6,13 +6,13 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Detector for Maven components declared in ivy.xml files for Java projects that are built using Apache Ant
@@ -105,7 +105,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         }
     }
 
-    private static MavenComponent JsonGavToComponent(JToken gav)
+    private static MavenComponent JsonGavToComponent(IvyGav gav)
     {
         if (gav == null)
         {
@@ -113,9 +113,9 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         }
 
         return new MavenComponent(
-            gav.Value<string>("g"),
-            gav.Value<string>("a"),
-            gav.Value<string>("v"));
+            gav.GroupId,
+            gav.ArtifactId,
+            gav.Version);
     }
 
     private async Task ProcessIvyAndIvySettingsFilesAsync(
@@ -217,14 +217,17 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     private void RegisterUsagesFromFile(ISingleFileComponentRecorder singleFileComponentRecorder, string instructionsFile)
     {
-        var instructionsJson = JObject.Parse(File.ReadAllText(instructionsFile));
-        var instructionsList = (JContainer)instructionsJson["RegisterUsage"];
+        var instructionsJson = JsonSerializer.Deserialize<IvyUsage>(File.ReadAllText(instructionsFile), new JsonSerializerOptions
+        {
+            AllowTrailingCommas = true,
+        });
+        var instructionsList = instructionsJson.RegisterUsage;
         foreach (var dep in instructionsList)
         {
-            var component = JsonGavToComponent(dep["gav"]);
-            var isDevDependency = dep.Value<bool>("DevelopmentDependency");
-            var parentComponent = JsonGavToComponent(dep["parent_gav"]);
-            var isResolved = dep.Value<bool>("resolved");
+            var component = JsonGavToComponent(dep.Gav);
+            var isDevDependency = dep.IsDevelopmentDependency;
+            var parentComponent = JsonGavToComponent(dep.ParentGav);
+            var isResolved = dep.IsResolved;
             if (isResolved)
             {
                 singleFileComponentRecorder.RegisterUsage(

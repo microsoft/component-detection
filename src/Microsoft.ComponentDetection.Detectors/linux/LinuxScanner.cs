@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -11,7 +12,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class LinuxScanner : ILinuxScanner
 {
@@ -24,7 +24,7 @@ public class LinuxScanner : ILinuxScanner
 
     private static readonly IEnumerable<string> AllowedArtifactTypes = new[] { "apk", "deb", "rpm" };
 
-    private static readonly SemaphoreSlim DockerSemaphore = new SemaphoreSlim(2);
+    private static readonly SemaphoreSlim DockerSemaphore = new(2);
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(TimeSpan.FromHours(1).TotalMilliseconds);
 
@@ -63,7 +63,7 @@ public class LinuxScanner : ILinuxScanner
                 }
                 catch (Exception e)
                 {
-                    syftTelemetryRecord.Exception = JsonConvert.SerializeObject(e);
+                    syftTelemetryRecord.Exception = JsonSerializer.Serialize(e);
                     this.logger.LogError(e, "Failed to run syft");
                     throw;
                 }
@@ -99,7 +99,10 @@ public class LinuxScanner : ILinuxScanner
 
         try
         {
-            var syftOutput = JsonConvert.DeserializeObject<SyftOutput>(stdout);
+            var syftOutput = JsonSerializer.Deserialize<SyftOutput>(stdout, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
             var linuxComponentsWithLayers = syftOutput.Artifacts
                 .DistinctBy(artifact => (artifact.Name, artifact.Version))
                 .Where(artifact => AllowedArtifactTypes.Contains(artifact.Type))
@@ -121,7 +124,7 @@ public class LinuxScanner : ILinuxScanner
                 };
             });
 
-            syftTelemetryRecord.LinuxComponents = JsonConvert.SerializeObject(linuxComponentsWithLayers.Select(linuxComponentWithLayer =>
+            syftTelemetryRecord.LinuxComponents = JsonSerializer.Serialize(linuxComponentsWithLayers.Select(linuxComponentWithLayer =>
                 new LinuxComponentRecord
                 {
                     Name = linuxComponentWithLayer.Component.Name,

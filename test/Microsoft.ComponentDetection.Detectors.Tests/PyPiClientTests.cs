@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -15,7 +16,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
-using Newtonsoft.Json;
 
 [TestClass]
 public class PyPiClientTests
@@ -39,7 +39,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
@@ -59,7 +59,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
@@ -87,7 +87,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         Func<Task> action = async () =>
@@ -157,7 +157,7 @@ public class PyPiClientTests
             },
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
         var mockLogger = new Mock<ILogger<PyPiClient>>();

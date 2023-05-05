@@ -11,12 +11,13 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Polly;
 
 [assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Detectors.Tests")]
 
 namespace Microsoft.ComponentDetection.Detectors.Pip;
+
+using System.Text.Json;
 
 public interface IPyPiClient
 {
@@ -194,7 +195,7 @@ public class PyPiClient : IPyPiClient
         }
 
         var response = await request.Content.ReadAsStringAsync();
-        var project = JsonConvert.DeserializeObject<PythonProject>(response);
+        var project = JsonSerializer.Deserialize<PythonProject>(response);
         var versions = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
 
         foreach (var release in project.Releases)
@@ -215,7 +216,7 @@ public class PyPiClient : IPyPiClient
                     ae,
                     "Component {ReleaseKey} : {ReleaseValue)} could not be added to the sorted list of pip components for spec={SpecName}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions).",
                     release.Key,
-                    JsonConvert.SerializeObject(release.Value),
+                    JsonSerializer.Serialize(release.Value),
                     spec.Name);
                 continue;
             }

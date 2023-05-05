@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using global::NuGet.Packaging.Core;
 using global::NuGet.ProjectModel;
@@ -13,7 +14,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDetector
 {
@@ -250,7 +250,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     protected override Task OnDetectionFinishedAsync()
     {
-        this.Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonConvert.SerializeObject(this.frameworkComponentsThatWereOmmittedWithCount));
+        this.Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonSerializer.Serialize(this.frameworkComponentsThatWereOmmittedWithCount));
 
         return Task.CompletedTask;
     }
