@@ -4,7 +4,6 @@
         <PackageReference Include="Docker.DotNet" />
         <PackageReference Include="Microsoft.AspNet.WebApi.Client" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
-        <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
