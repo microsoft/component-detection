@@ -19,5 +19,5 @@ public class NpmLockfile3Experiment : IExperimentConfiguration
 
     /// <inheritdoc />
     public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) =>
-        componentDetector is not NpmComponentDetector || numComponents == 0;
+        componentDetector is not NpmComponentDetectorWithRoots || numComponents == 0;
 }
