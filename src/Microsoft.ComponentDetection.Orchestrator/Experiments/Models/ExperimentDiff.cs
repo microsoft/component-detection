@@ -10,7 +10,7 @@ using System.Linq;
 public class ExperimentDiff
 {
     /// <summary>
-    /// Creates a new <see cref="ExperimentDiff"/>.
+    /// Initializes a new instance of the <see cref="ExperimentDiff"/> class.
     /// </summary>
     /// <param name="controlGroupComponents">A set of components from the control group.</param>
     /// <param name="experimentGroupComponents">A set of components from the experimental group.</param>
@@ -62,6 +62,28 @@ public class ExperimentDiff
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="ExperimentDiff"/> class.
+    /// </summary>
+    /// <param name="addedIds">The added IDs.</param>
+    /// <param name="removedIds">The removed IDs.</param>
+    /// <param name="developmentDependencyChanges">The development dependency changes.</param>
+    /// <param name="addedRootIds">The added root IDs.</param>
+    /// <param name="removedRootIds">The removed root IDs.</param>
+    public ExperimentDiff(
+        IReadOnlyCollection<string> addedIds,
+        IReadOnlyCollection<string> removedIds,
+        IReadOnlyCollection<DevelopmentDependencyChange> developmentDependencyChanges,
+        IReadOnlyDictionary<string, IReadOnlySet<string>> addedRootIds,
+        IReadOnlyDictionary<string, IReadOnlySet<string>> removedRootIds)
+    {
+        this.AddedIds = addedIds;
+        this.RemovedIds = removedIds;
+        this.DevelopmentDependencyChanges = developmentDependencyChanges;
+        this.AddedRootIds = addedRootIds;
+        this.RemovedRootIds = removedRootIds;
+    }
+
+    /// <summary>
     /// Gets a list of component IDs that were present in the experimental group but not the control group.
     /// </summary>
     public IReadOnlyCollection<string> AddedIds { get; }
@@ -94,7 +116,7 @@ public class ExperimentDiff
     public class DevelopmentDependencyChange
     {
         /// <summary>
-        /// Creates a new <see cref="DevelopmentDependencyChange"/>.
+        /// Initializes a new instance of the <see cref="DevelopmentDependencyChange"/> class.
         /// </summary>
         /// <param name="id">The component ID.</param>
         /// <param name="oldValue">The old value of the development dependency status.</param>
