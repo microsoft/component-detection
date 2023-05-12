@@ -98,6 +98,11 @@ public class YarnLockComponentDetector : FileComponentDetector
         foreach (var dependency in yarnRoots)
         {
             var root = new DetectedComponent(new NpmComponent(dependency.Name, dependency.Version));
+            if (dependency.Location != null && dependency.Location.Length > 0)
+            {
+                root.AddComponentFilePath(dependency.Location);
+            }
+
             this.AddDetectedComponentToGraph(root, null, singleFileComponentRecorder, isRootComponent: true);
         }
 
@@ -207,9 +212,10 @@ public class YarnLockComponentDetector : FileComponentDetector
             return false;
         }
 
+        var workspaceDependencyVsLocationMap = new Dictionary<string, string>();
         if (yarnWorkspaces.Count > 0)
         {
-            this.GetWorkspaceDependencies(yarnWorkspaces, new FileInfo(location).Directory, combinedDependencies);
+            this.GetWorkspaceDependencies(yarnWorkspaces, new FileInfo(location).Directory, combinedDependencies, workspaceDependencyVsLocationMap);
         }
 
         // Convert all of the dependencies we retrieved from package.json
@@ -232,13 +238,19 @@ public class YarnLockComponentDetector : FileComponentDetector
                 entry.DevDependency = version.Value;
 
                 yarnRoots.Add(entry);
+
+                var locationMapDictonaryKey = name + "-" + version.Key;
+                if (workspaceDependencyVsLocationMap.ContainsKey(locationMapDictonaryKey))
+                {
+                    entry.Location = workspaceDependencyVsLocationMap[locationMapDictonaryKey];
+                }
             }
         }
 
         return true;
     }
 
-    private void GetWorkspaceDependencies(IList<string> yarnWorkspaces, DirectoryInfo root, IDictionary<string, IDictionary<string, bool>> dependencies)
+    private void GetWorkspaceDependencies(IList<string> yarnWorkspaces, DirectoryInfo root, IDictionary<string, IDictionary<string, bool>> dependencies, IDictionary<string, string> workspaceDependencyVsLocationMap)
     {
         var ignoreCase = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
@@ -263,30 +275,55 @@ public class YarnLockComponentDetector : FileComponentDetector
 
                 foreach (var dependency in combinedDependencies)
                 {
-                    this.ProcessWorkspaceDependency(dependencies, dependency);
+                    this.ProcessWorkspaceDependency(dependencies, dependency, workspaceDependencyVsLocationMap, stream.Location);
                 }
             }
         }
     }
 
-    private void ProcessWorkspaceDependency(IDictionary<string, IDictionary<string, bool>> dependencies, KeyValuePair<string, IDictionary<string, bool>> newDependency)
+    private void ProcessWorkspaceDependency(IDictionary<string, IDictionary<string, bool>> dependencies, KeyValuePair<string, IDictionary<string, bool>> newDependency, IDictionary<string, string> workspaceDependencyVsLocationMap, string streamLocation)
     {
-        if (!dependencies.TryGetValue(newDependency.Key, out var existingDependency))
+        try
         {
-            dependencies.Add(newDependency.Key, newDependency.Value);
-            return;
-        }
+            if (!dependencies.TryGetValue(newDependency.Key, out var existingDependency))
+            {
+                dependencies.Add(newDependency.Key, newDependency.Value);
+                foreach (var item in newDependency.Value)
+                {
+                    // Adding 'Package.json stream's location'(in which workspacedependency of Yarn.lock file was found) as location of respective WorkSpaceDependency.
+                    this.AddLocationInfoToWorkspaceDependency(workspaceDependencyVsLocationMap, streamLocation, newDependency.Key, item.Key);
+                }
 
-        foreach (var item in newDependency.Value)
+                return;
+            }
+
+            foreach (var item in newDependency.Value)
+            {
+                if (existingDependency.TryGetValue(item.Key, out var wasDev))
+                {
+                    existingDependency[item.Key] = wasDev && item.Value;
+                }
+                else
+                {
+                    existingDependency[item.Key] = item.Value;
+                }
+
+                // Adding 'Package.json stream's location'(in which workspacedependency of Yarn.lock file was found) as location of respective WorkSpaceDependency.
+                this.AddLocationInfoToWorkspaceDependency(workspaceDependencyVsLocationMap, streamLocation, newDependency.Key, item.Key);
+            }
+        }
+        catch (Exception ex)
         {
-            if (existingDependency.TryGetValue(item.Key, out var wasDev))
-            {
-                existingDependency[item.Key] = wasDev && item.Value;
-            }
-            else
-            {
-                existingDependency[item.Key] = item.Value;
-            }
+            this.Logger.LogError(ex, "Could not process workspace dependency from file {PackageJsonStreamLocation}.", streamLocation);
+        }
+    }
+
+    private void AddLocationInfoToWorkspaceDependency(IDictionary<string, string> workspaceDependencyVsLocationMap, string streamLocation, string dependencyName, string dependencyVersion)
+    {
+        var locationMapDictionaryKey = dependencyName + "-" + dependencyVersion;
+        if (!workspaceDependencyVsLocationMap.ContainsKey(locationMapDictionaryKey))
+        {
+            workspaceDependencyVsLocationMap[locationMapDictionaryKey] = streamLocation;
         }
     }
 
