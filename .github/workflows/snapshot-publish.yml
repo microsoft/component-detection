@@ -18,13 +18,13 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3
 
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@607fce577a46308457984d59e4954e075820f10a # v3
 
       - name: Setup NuGet cache
-        uses: actions/cache@v3
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props') }}
@@ -55,7 +55,7 @@ jobs:
                                                  --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff
 
       - name: Upload output folder
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3
         with:
           name: release-snapshot-output-${{ matrix.os }}
           path: ${{ github.workspace }}/output

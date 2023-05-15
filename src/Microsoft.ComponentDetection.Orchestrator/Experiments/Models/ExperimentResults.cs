@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -11,23 +12,23 @@ using Microsoft.ComponentDetection.Contracts;
 /// </summary>
 public class ExperimentResults
 {
-    private static readonly IEqualityComparer<ExperimentComponent> ComponentComparer = new ExperimentComponentComparer();
+    private static readonly IEqualityComparer<ExperimentComponent> Comparer = new ExperimentComponentComparer();
 
-    private readonly HashSet<ExperimentComponent> controlGroupComponents = new(ComponentComparer);
+    private readonly ConcurrentDictionary<ExperimentComponent, byte> controlGroupComponents = new(Comparer);
 
-    private readonly HashSet<ExperimentComponent> experimentGroupComponents = new(ComponentComparer);
+    private readonly ConcurrentDictionary<ExperimentComponent, byte> experimentGroupComponents = new(Comparer);
 
     /// <summary>
     /// The set of components in the control group.
     /// </summary>
     public IImmutableSet<ExperimentComponent> ControlGroupComponents =>
-        this.controlGroupComponents.ToImmutableHashSet();
+        this.controlGroupComponents.Keys.ToImmutableHashSet();
 
     /// <summary>
     /// The set of components in the experimental group.
     /// </summary>
     public IImmutableSet<ExperimentComponent> ExperimentGroupComponents =>
-        this.experimentGroupComponents.ToImmutableHashSet();
+        this.experimentGroupComponents.Keys.ToImmutableHashSet();
 
     /// <summary>
     /// Adds the components to the control group.
@@ -43,11 +44,11 @@ public class ExperimentResults
     public void AddComponentsToExperimentalGroup(IEnumerable<DetectedComponent> components) =>
         AddComponents(this.experimentGroupComponents, components);
 
-    private static void AddComponents(ISet<ExperimentComponent> group, IEnumerable<DetectedComponent> components)
+    private static void AddComponents(ConcurrentDictionary<ExperimentComponent, byte> group, IEnumerable<DetectedComponent> components)
     {
         foreach (var experimentComponent in components.Select(x => new ExperimentComponent(x)))
         {
-            group.Add(experimentComponent);
+            _ = group.TryAdd(experimentComponent, 0);
         }
     }
 }

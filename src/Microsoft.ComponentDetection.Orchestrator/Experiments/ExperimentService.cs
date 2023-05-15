@@ -37,29 +37,36 @@ public class ExperimentService : IExperimentService
     /// <inheritdoc />
     public void RecordDetectorRun(IComponentDetector detector, IEnumerable<DetectedComponent> components)
     {
-        this.FilterExperiments(detector, components.Count());
-
-        foreach (var (config, experimentResults) in this.experiments)
+        try
         {
-            if (config.IsInControlGroup(detector))
-            {
-                experimentResults.AddComponentsToControlGroup(components);
-                this.logger.LogDebug(
-                    "Adding {Count} Components from {Id} to Control Group for {Experiment}",
-                    components.Count(),
-                    detector.Id,
-                    config.Name);
-            }
+            this.FilterExperiments(detector, components.Count());
 
-            if (config.IsInExperimentGroup(detector))
+            foreach (var (config, experimentResults) in this.experiments)
             {
-                experimentResults.AddComponentsToExperimentalGroup(components);
-                this.logger.LogDebug(
-                    "Adding {Count} Components from {Id} to Experiment Group for {Experiment}",
-                    components.Count(),
-                    detector.Id,
-                    config.Name);
+                if (config.IsInControlGroup(detector))
+                {
+                    experimentResults.AddComponentsToControlGroup(components);
+                    this.logger.LogDebug(
+                        "Adding {Count} Components from {Id} to Control Group for {Experiment}",
+                        components.Count(),
+                        detector.Id,
+                        config.Name);
+                }
+
+                if (config.IsInExperimentGroup(detector))
+                {
+                    experimentResults.AddComponentsToExperimentalGroup(components);
+                    this.logger.LogDebug(
+                        "Adding {Count} Components from {Id} to Experiment Group for {Experiment}",
+                        components.Count(),
+                        detector.Id,
+                        config.Name);
+                }
             }
+        }
+        catch (Exception e)
+        {
+            this.logger.LogWarning(e, "Failed to record detector run");
         }
     }
 
@@ -98,10 +105,9 @@ public class ExperimentService : IExperimentService
                 continue;
             }
 
-            var diff = new ExperimentDiff(controlComponents, experimentComponents);
-
             try
             {
+                var diff = new ExperimentDiff(controlComponents, experimentComponents);
                 var tasks = this.experimentProcessors.Select(x => x.ProcessExperimentAsync(config, diff));
                 await Task.WhenAll(tasks);
             }

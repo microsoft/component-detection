@@ -10,6 +10,6 @@ Otherwise, the Go detector uses go-cli command: `go list -m all` to discover Go 
 ## `PyPiMaxCacheEntries`
 
 The environment variable `PyPiMaxCacheEntries` is used to control the size of the in-memory LRU cache that caches responses from PyPi.
-The default value is 128.
+The default value is 4096.
 
 [1]: https://go.dev/ref/mod#go-mod-graph
