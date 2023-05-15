@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Docker.DotNet;
@@ -12,7 +13,6 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class DockerService : IDockerService
 {
@@ -52,7 +52,7 @@ public class DockerService : IDockerService
         try
         {
             var systemInfoResponse = await Client.System.GetSystemInfoAsync(cancellationToken);
-            record.SystemInfo = JsonConvert.SerializeObject(systemInfoResponse);
+            record.SystemInfo = JsonSerializer.Serialize(systemInfoResponse);
             return string.Equals(systemInfoResponse.OSType, "linux", StringComparison.OrdinalIgnoreCase);
         }
         catch (Exception e)
@@ -72,7 +72,7 @@ public class DockerService : IDockerService
         try
         {
             var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
-            record.ImageInspectResponse = JsonConvert.SerializeObject(imageInspectResponse);
+            record.ImageInspectResponse = JsonSerializer.Serialize(imageInspectResponse);
             return true;
         }
         catch (Exception e)
@@ -97,10 +97,10 @@ public class DockerService : IDockerService
             var createImageProgress = new List<string>();
             var progress = new Progress<JSONMessage>(message =>
             {
-                createImageProgress.Add(JsonConvert.SerializeObject(message));
+                createImageProgress.Add(JsonSerializer.Serialize(message));
             });
             await Client.Images.CreateImageAsync(parameters, null, progress, cancellationToken);
-            record.CreateImageProgress = JsonConvert.SerializeObject(createImageProgress);
+            record.CreateImageProgress = JsonSerializer.Serialize(createImageProgress);
             return true;
         }
         catch (Exception e)
@@ -119,7 +119,7 @@ public class DockerService : IDockerService
         try
         {
             var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
-            record.ImageInspectResponse = JsonConvert.SerializeObject(imageInspectResponse);
+            record.ImageInspectResponse = JsonSerializer.Serialize(imageInspectResponse);
 
             var baseImageRef = string.Empty;
             var baseImageDigest = string.Empty;
@@ -162,11 +162,11 @@ public class DockerService : IDockerService
         using var record = new DockerServiceTelemetryRecord
         {
             Image = image,
-            Command = JsonConvert.SerializeObject(command),
+            Command = JsonSerializer.Serialize(command),
         };
         await this.TryPullImageAsync(image, cancellationToken);
         var container = await CreateContainerAsync(image, command, cancellationToken);
-        record.Container = JsonConvert.SerializeObject(container);
+        record.Container = JsonSerializer.Serialize(container);
         var stream = await AttachContainerAsync(container.ID, cancellationToken);
         await StartContainerAsync(container.ID, cancellationToken);
         var (stdout, stderr) = await stream.ReadOutputToEndAsync(cancellationToken);

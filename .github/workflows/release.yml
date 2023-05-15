@@ -22,12 +22,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@607fce577a46308457984d59e4954e075820f10a # v3
 
       - name: Restore packages
         run: dotnet restore
@@ -36,7 +36,7 @@ jobs:
         run: dotnet publish --configuration Release --output ./bin --self-contained --runtime ${{ matrix.rid }} -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:DebugType=None -p:PublishTrimmed=false ./src/Microsoft.ComponentDetection
 
       - name: Publish CLI tool
-        uses: shogo82148/actions-upload-release-asset@v1.6.4
+        uses: shogo82148/actions-upload-release-asset@b016af922a61601d647ff60226adadbe146b7651 # v1.6.4
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/*

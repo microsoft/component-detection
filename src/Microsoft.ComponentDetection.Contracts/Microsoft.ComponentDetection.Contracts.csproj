@@ -10,6 +10,7 @@
         <PackageReference Include="packageurl-dotnet" />
         <PackageReference Include="System.Memory" />
         <PackageReference Include="System.Reactive" />
+        <PackageReference Include="System.Text.Json" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
 
