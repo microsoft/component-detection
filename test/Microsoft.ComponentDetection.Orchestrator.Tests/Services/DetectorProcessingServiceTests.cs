@@ -56,7 +56,7 @@ public class DetectorProcessingServiceTests
         this.loggerMock = new Mock<ILogger<DetectorProcessingService>>();
         this.directoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
         this.serviceUnderTest =
-            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.loggerMock.Object);
+            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.experimentServiceMock.Object, this.loggerMock.Object);
 
         this.firstFileComponentDetectorMock = this.SetupFileDetectorMock("firstFileDetectorId");
         this.secondFileComponentDetectorMock = this.SetupFileDetectorMock("secondFileDetectorId");
@@ -507,6 +507,47 @@ public class DetectorProcessingServiceTests
             .Should().Contain("arg1", "val1")
             .And.NotContainKey("arg2")
             .And.Contain("arg3", "val3");
+    }
+
+    [TestMethod]
+    public async Task ProcessDetectorsAsync_FinishesExperimentsAsync()
+    {
+        this.detectorsToUse = new[]
+        {
+            this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
+        };
+
+        await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
+
+        this.experimentServiceMock.Verify(x => x.FinishAsync(), Times.Once());
+    }
+
+    [TestMethod]
+    public async Task ProcessDetectorsAsync_RecordsDetectorRunsAsync()
+    {
+        this.detectorsToUse = new[]
+        {
+            this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
+        };
+
+        var firstComponents = new[] { this.componentDictionary[this.firstFileComponentDetectorMock.Object.Id] };
+        var secondComponents = new[] { this.componentDictionary[this.secondFileComponentDetectorMock.Object.Id] };
+
+        await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
+
+        this.experimentServiceMock.Verify(
+            x =>
+                x.RecordDetectorRun(
+                    It.Is<IComponentDetector>(detector => detector == this.firstFileComponentDetectorMock.Object),
+                    It.Is<IEnumerable<DetectedComponent>>(components => components.SequenceEqual(firstComponents))),
+            Times.Once());
+
+        this.experimentServiceMock.Verify(
+            x =>
+                x.RecordDetectorRun(
+                    It.Is<IComponentDetector>(detector => detector == this.secondFileComponentDetectorMock.Object),
+                    It.Is<IEnumerable<DetectedComponent>>(components => components.SequenceEqual(secondComponents))),
+            Times.Once());
     }
 
     private Mock<FileComponentDetector> SetupFileDetectorMock(string id)

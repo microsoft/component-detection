@@ -15,6 +15,7 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using static System.Environment;
@@ -23,12 +24,15 @@ public class DetectorProcessingService : IDetectorProcessingService
 {
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
+    private readonly IExperimentService experimentService;
 
     public DetectorProcessingService(
         IObservableDirectoryWalkerFactory scanner,
+        IExperimentService experimentService,
         ILogger<DetectorProcessingService> logger)
     {
         this.scanner = scanner;
+        this.experimentService = experimentService;
         this.logger = logger;
     }
 
@@ -105,6 +109,8 @@ public class DetectorProcessingService : IDetectorProcessingService
                     exitCode = resultCode;
                 }
 
+                this.experimentService.RecordDetectorRun(detector, detectedComponents);
+
                 if (isExperimentalDetector)
                 {
                     return (new IndividualDetectorScanResult(), new ComponentRecorder(), detector);
@@ -116,6 +122,7 @@ public class DetectorProcessingService : IDetectorProcessingService
             }).ToList();
 
         var results = await Task.WhenAll(scanTasks);
+        await this.experimentService.FinishAsync();
 
         var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 

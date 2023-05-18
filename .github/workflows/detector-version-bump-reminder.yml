@@ -3,12 +3,15 @@ on:
   push:
     paths:
       - 'src/Microsoft.ComponentDetection.Detectors/**'
+      
+permissions:
+  pull-requests: write
 
 jobs:
   comment:
     runs-on: ubuntu-latest
     steps:
-      - uses: mshick/add-pr-comment@v2
+      - uses: mshick/add-pr-comment@918f1387735fff58f77804b013a95a4887ec4d85 # v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           message: |
