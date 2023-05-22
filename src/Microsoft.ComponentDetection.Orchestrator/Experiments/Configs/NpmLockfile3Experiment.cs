@@ -30,8 +30,7 @@ public class NpmLockfile3Experiment : IExperimentConfiguration
 
         return componentDetector switch
         {
-            NpmComponentDetector
-                or NpmComponentDetectorWithRoots
+            NpmComponentDetectorWithRoots
                 or PnpmComponentDetector
                 or PoetryComponentDetector
                 or YarnLockComponentDetector => false,
