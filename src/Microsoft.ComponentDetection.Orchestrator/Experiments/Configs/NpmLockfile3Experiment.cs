@@ -2,6 +2,7 @@
 
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Npm;
+using Microsoft.ComponentDetection.Detectors.Yarn;
 
 /// <summary>
 /// Validating the <see cref="NpmLockfile3Detector"/>.
@@ -18,6 +19,15 @@ public class NpmLockfile3Experiment : IExperimentConfiguration
     public bool IsInExperimentGroup(IComponentDetector componentDetector) => componentDetector is NpmLockfile3Detector;
 
     /// <inheritdoc />
-    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) =>
-        componentDetector is not NpmComponentDetectorWithRoots || numComponents == 0;
+    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents)
+    {
+        switch (componentDetector)
+        {
+            case NpmComponentDetector when numComponents != 0:
+            case YarnLockComponentDetector when numComponents != 0:
+                return false;
+            default:
+                return true;
+        }
+    }
 }
