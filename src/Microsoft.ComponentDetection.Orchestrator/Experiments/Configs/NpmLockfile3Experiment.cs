@@ -2,6 +2,8 @@
 
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Npm;
+using Microsoft.ComponentDetection.Detectors.Pnpm;
+using Microsoft.ComponentDetection.Detectors.Poetry;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 
 /// <summary>
@@ -21,13 +23,19 @@ public class NpmLockfile3Experiment : IExperimentConfiguration
     /// <inheritdoc />
     public bool ShouldRecord(IComponentDetector componentDetector, int numComponents)
     {
-        switch (componentDetector)
+        if (numComponents == 0)
         {
-            case NpmComponentDetector when numComponents != 0:
-            case YarnLockComponentDetector when numComponents != 0:
-                return false;
-            default:
-                return true;
+            return true;
         }
+
+        return componentDetector switch
+        {
+            NpmComponentDetector
+                or NpmComponentDetectorWithRoots
+                or PnpmComponentDetector
+                or PoetryComponentDetector
+                or YarnLockComponentDetector => false,
+            _ => true,
+        };
     }
 }
