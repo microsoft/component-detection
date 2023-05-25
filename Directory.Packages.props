@@ -27,7 +27,7 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="NuGet.ProjectModel" Version="6.6.0" />
     <PackageVersion Include="NuGet.Versioning" Version="6.6.0" />
-    <PackageVersion Include="packageurl-dotnet" Version="1.0.0" />
+    <PackageVersion Include="packageurl-dotnet" Version="1.3.0" />
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="SemanticVersioning" Version="2.0.2" />
     <PackageVersion Include="Serilog" Version="2.12.0" />
