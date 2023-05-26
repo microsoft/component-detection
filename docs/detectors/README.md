@@ -6,7 +6,7 @@
 - [Linux](linux.md)
 - [Maven](maven.md)
 - NPM
-- NuGet
+- [NuGet](nuget.md)
 - [Pip](pip.md)
 - [Poetry](poetry.md)
 - Ruby
