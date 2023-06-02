@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
+namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -64,51 +64,36 @@ public class ExperimentDiff
     /// <summary>
     /// Initializes a new instance of the <see cref="ExperimentDiff"/> class.
     /// </summary>
-    /// <param name="addedIds">The added IDs.</param>
-    /// <param name="removedIds">The removed IDs.</param>
-    /// <param name="developmentDependencyChanges">The development dependency changes.</param>
-    /// <param name="addedRootIds">The added root IDs.</param>
-    /// <param name="removedRootIds">The removed root IDs.</param>
-    public ExperimentDiff(
-        IReadOnlyCollection<string> addedIds,
-        IReadOnlyCollection<string> removedIds,
-        IReadOnlyCollection<DevelopmentDependencyChange> developmentDependencyChanges,
-        IReadOnlyDictionary<string, IReadOnlySet<string>> addedRootIds,
-        IReadOnlyDictionary<string, IReadOnlySet<string>> removedRootIds)
+    public ExperimentDiff()
     {
-        this.AddedIds = addedIds;
-        this.RemovedIds = removedIds;
-        this.DevelopmentDependencyChanges = developmentDependencyChanges;
-        this.AddedRootIds = addedRootIds;
-        this.RemovedRootIds = removedRootIds;
     }
 
     /// <summary>
     /// Gets a list of component IDs that were present in the experimental group but not the control group.
     /// </summary>
-    public IReadOnlyCollection<string> AddedIds { get; }
+    public IReadOnlyCollection<string> AddedIds { get; init; }
 
     /// <summary>
     /// Gets a list of component IDs that were present in the control group but not the experimental group.
     /// </summary>
-    public IReadOnlyCollection<string> RemovedIds { get; }
+    public IReadOnlyCollection<string> RemovedIds { get; init; }
 
     /// <summary>
     /// Gets a list of changes to the development dependency status of components.
     /// </summary>
-    public IReadOnlyCollection<DevelopmentDependencyChange> DevelopmentDependencyChanges { get; }
+    public IReadOnlyCollection<DevelopmentDependencyChange> DevelopmentDependencyChanges { get; init; }
 
     /// <summary>
     /// Gets a dictionary of component IDs to the set of root IDs that were added to the component. The component ID
     /// is the key.
     /// </summary>
-    public IReadOnlyDictionary<string, IReadOnlySet<string>> AddedRootIds { get; }
+    public IReadOnlyDictionary<string, IReadOnlySet<string>> AddedRootIds { get; init; }
 
     /// <summary>
     /// Gets a dictionary of component IDs to the set of root IDs that were removed from the component. The component
     /// ID is the key.
     /// </summary>
-    public IReadOnlyDictionary<string, IReadOnlySet<string>> RemovedRootIds { get; }
+    public IReadOnlyDictionary<string, IReadOnlySet<string>> RemovedRootIds { get; init; }
 
     /// <summary>
     /// Stores information about a change to the development dependency status of a component.
