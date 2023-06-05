@@ -9,12 +9,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 public class PurlGenerationTests
 {
     [TestMethod]
-    public void NpmPackageNameShouldBeLowerCase()
+    public void NpmPackageNameShouldBeCaseSentitive()
     {
         // According to the spec package name should not have uppercase letters
         // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L656
         var npmComponent = new NpmComponent("TEST", "1.2.3");
-        npmComponent.PackageUrl.Name.Should().Be("test");
+        npmComponent.PackageUrl.Name.Should().Be("TEST");
     }
 
     [TestMethod]
