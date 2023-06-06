@@ -1,5 +1,7 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Tests;
+
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using FluentAssertions;
@@ -11,6 +13,17 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestCategory("Governance/ComponentDetection")]
 public class FileWritingServiceTests
 {
+    private const string SampleObjectJson = @"{
+  ""key1"": ""value1"",
+  ""key2"": ""value2""
+}";
+
+    private static readonly IDictionary<string, string> SampleObject = new Dictionary<string, string>
+    {
+        { "key1", "value1" },
+        { "key2", "value2" },
+    };
+
     private FileWritingService serviceUnderTest;
     private string tempFolder;
 
@@ -29,22 +42,20 @@ public class FileWritingServiceTests
     }
 
     [TestCleanup]
-    public void TestCleanup()
-    {
-        Directory.Delete(this.tempFolder, true);
-    }
+    public void TestCleanup() => Directory.Delete(this.tempFolder, true);
 
     [TestMethod]
     public void AppendToFile_AppendsToFiles()
     {
-        var relativeDir = "someOtherFileName.txt";
+        var relativeDir = "someOtherFileName.json";
         var fileLocation = Path.Combine(this.tempFolder, relativeDir);
         File.Create(fileLocation).Dispose();
-        this.serviceUnderTest.AppendToFile(relativeDir, "someSampleText");
+
+        this.serviceUnderTest.AppendToFile(relativeDir, SampleObject);
         this.serviceUnderTest.Dispose();
+
         var text = File.ReadAllText(Path.Combine(this.tempFolder, relativeDir));
-        text
-            .Should().Be("someSampleText");
+        text.Should().Be(SampleObjectJson);
     }
 
     [TestMethod]
@@ -53,22 +64,33 @@ public class FileWritingServiceTests
         var relativeDir = "someFileName.txt";
         this.serviceUnderTest.WriteFile(relativeDir, "sampleText");
         var text = File.ReadAllText(Path.Combine(this.tempFolder, relativeDir));
-        text
-            .Should().Be("sampleText");
+        text.Should().Be("sampleText");
+    }
+
+    [TestMethod]
+    public void WriteFile_WritesJson()
+    {
+        var relativeDir = "someFileName.txt";
+        var fileInfo = new FileInfo(Path.Combine(this.tempFolder, relativeDir));
+
+        this.serviceUnderTest.WriteFile(fileInfo, SampleObject);
+
+        var text = File.ReadAllText(Path.Combine(this.tempFolder, relativeDir));
+        text.Should().Be(SampleObjectJson);
     }
 
     [TestMethod]
     public void WriteFile_AppendToFile_WorkWithTemplatizedPaths()
     {
         var relativeDir = "somefile_{timestamp}.txt";
+
         this.serviceUnderTest.WriteFile(relativeDir, "sampleText");
-        this.serviceUnderTest.AppendToFile(relativeDir, "sampleText2");
+        this.serviceUnderTest.AppendToFile(relativeDir, SampleObject);
         this.serviceUnderTest.Dispose();
+
         var files = Directory.GetFiles(this.tempFolder);
-        files
-            .Should().NotBeEmpty();
-        File.ReadAllText(files[0])
-            .Should().Contain($"sampleTextsampleText2");
+        files.Should().NotBeEmpty();
+        File.ReadAllText(files[0]).Should().Contain($"sampleText{SampleObjectJson}");
         this.VerifyTimestamp(files[0], "somefile_", ".txt");
     }
 
@@ -76,7 +98,9 @@ public class FileWritingServiceTests
     public void ResolveFilePath_ResolvedTemplatizedPaths()
     {
         var relativeDir = "someOtherFile_{timestamp}.txt";
+
         this.serviceUnderTest.WriteFile(relativeDir, string.Empty);
+
         var fullPath = this.serviceUnderTest.ResolveFilePath(relativeDir);
         this.VerifyTimestamp(fullPath, "someOtherFile_", ".txt");
     }
@@ -86,7 +110,8 @@ public class FileWritingServiceTests
     {
         var relativeDir = Guid.NewGuid();
         var actualServiceUnderTest = new FileWritingService();
-        Action action = () => actualServiceUnderTest.Init(Path.Combine(this.serviceUnderTest.BasePath, relativeDir.ToString()));
+
+        var action = () => actualServiceUnderTest.Init(Path.Combine(this.serviceUnderTest.BasePath, relativeDir.ToString()));
 
         action.Should().Throw<InvalidUserInputException>();
     }
