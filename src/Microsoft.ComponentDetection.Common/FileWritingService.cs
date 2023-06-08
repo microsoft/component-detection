@@ -1,20 +1,32 @@
 namespace Microsoft.ComponentDetection.Common;
+
 using System;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Exceptions;
+using Newtonsoft.Json;
 
+/// <inheritdoc />
 public sealed class FileWritingService : IFileWritingService
 {
+    /// <summary>
+    /// The format string used to generate the timestamp for the manifest file.
+    /// </summary>
     public const string TimestampFormatString = "yyyyMMddHHmmssfff";
-
-    private readonly object lockObject = new object();
-    private readonly string timestamp = DateTime.Now.ToString(TimestampFormatString);
     private readonly ConcurrentDictionary<string, StreamWriter> bufferedStreams = new();
 
+    private readonly object lockObject = new();
+    private readonly string timestamp = DateTime.Now.ToString(TimestampFormatString, CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// The base path to write files to.
+    /// If null or empty, the temp path will be used.
+    /// </summary>
     public string BasePath { get; private set; }
 
+    /// <inheritdoc />
     public void Init(string basePath)
     {
         if (!string.IsNullOrEmpty(basePath) && !Directory.Exists(basePath))
@@ -25,19 +37,25 @@ public sealed class FileWritingService : IFileWritingService
         this.BasePath = string.IsNullOrEmpty(basePath) ? Path.GetTempPath() : basePath;
     }
 
-    public void AppendToFile(string relativeFilePath, string text)
+    /// <inheritdoc />
+    public void AppendToFile<T>(string relativeFilePath, T obj)
     {
         relativeFilePath = this.ResolveFilePath(relativeFilePath);
 
         if (!this.bufferedStreams.TryGetValue(relativeFilePath, out var streamWriter))
         {
             streamWriter = new StreamWriter(relativeFilePath, true);
-            this.bufferedStreams.TryAdd(relativeFilePath, streamWriter);
+            _ = this.bufferedStreams.TryAdd(relativeFilePath, streamWriter);
         }
 
-        streamWriter.Write(text);
+        var serializer = new JsonSerializer
+        {
+            Formatting = Formatting.Indented,
+        };
+        serializer.Serialize(streamWriter, obj);
     }
 
+    /// <inheritdoc />
     public void WriteFile(string relativeFilePath, string text)
     {
         relativeFilePath = this.ResolveFilePath(relativeFilePath);
@@ -48,6 +66,7 @@ public sealed class FileWritingService : IFileWritingService
         }
     }
 
+    /// <inheritdoc />
     public async Task WriteFileAsync(string relativeFilePath, string text)
     {
         relativeFilePath = this.ResolveFilePath(relativeFilePath);
@@ -55,21 +74,42 @@ public sealed class FileWritingService : IFileWritingService
         await File.WriteAllTextAsync(relativeFilePath, text);
     }
 
-    public void WriteFile(FileInfo relativeFilePath, string text)
+    /// <inheritdoc />
+    public void WriteFile<T>(FileInfo relativeFilePath, T obj)
     {
-        File.WriteAllText(relativeFilePath.FullName, text);
+        using var streamWriter = new StreamWriter(relativeFilePath.FullName);
+        using var jsonWriter = new JsonTextWriter(streamWriter);
+        var serializer = new JsonSerializer
+        {
+            Formatting = Formatting.Indented,
+        };
+        serializer.Serialize(jsonWriter, obj);
     }
 
+    /// <inheritdoc />
     public string ResolveFilePath(string relativeFilePath)
     {
         this.EnsureInit();
-        if (relativeFilePath.Contains("{timestamp}"))
+        if (relativeFilePath.Contains("{timestamp}", StringComparison.Ordinal))
         {
-            relativeFilePath = relativeFilePath.Replace("{timestamp}", this.timestamp);
+            relativeFilePath = relativeFilePath.Replace("{timestamp}", this.timestamp, StringComparison.Ordinal);
         }
 
         relativeFilePath = Path.Combine(this.BasePath, relativeFilePath);
         return relativeFilePath;
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => this.Dispose(true);
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var (filename, streamWriter) in this.bufferedStreams)
+        {
+            await streamWriter.DisposeAsync();
+            _ = this.bufferedStreams.TryRemove(filename, out _);
+        }
     }
 
     private void EnsureInit()
@@ -90,22 +130,7 @@ public sealed class FileWritingService : IFileWritingService
         foreach (var (filename, streamWriter) in this.bufferedStreams)
         {
             streamWriter.Dispose();
-            this.bufferedStreams.TryRemove(filename, out _);
-        }
-    }
-
-    public void Dispose()
-    {
-        this.Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        foreach (var (filename, streamWriter) in this.bufferedStreams)
-        {
-            await streamWriter.DisposeAsync();
-            this.bufferedStreams.TryRemove(filename, out _);
+            _ = this.bufferedStreams.TryRemove(filename, out _);
         }
     }
 }

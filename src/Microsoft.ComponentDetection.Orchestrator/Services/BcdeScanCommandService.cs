@@ -54,20 +54,23 @@ public class BcdeScanCommandService : IArgumentHandlingService
             this.logger.LogInformation("Scan Manifest file: {ManifestFile}", this.fileWritingService.ResolveFilePath(ManifestRelativePath));
         }
 
-        var manifestJson = JsonConvert.SerializeObject(scanResult, Formatting.Indented);
-
         if (userRequestedManifestPath == null)
         {
-            this.fileWritingService.AppendToFile(ManifestRelativePath, manifestJson);
+            this.fileWritingService.AppendToFile(ManifestRelativePath, scanResult);
         }
         else
         {
-            this.fileWritingService.WriteFile(userRequestedManifestPath, manifestJson);
+            this.fileWritingService.WriteFile(userRequestedManifestPath, scanResult);
         }
 
         if (detectionArguments.PrintManifest)
         {
-            Console.WriteLine(manifestJson);
+            using var jsonWriter = new JsonTextWriter(Console.Out);
+            var serializer = new JsonSerializer
+            {
+                Formatting = Formatting.Indented,
+            };
+            serializer.Serialize(jsonWriter, scanResult);
         }
     }
 }
