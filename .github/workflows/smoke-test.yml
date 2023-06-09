@@ -30,7 +30,7 @@ jobs:
     name: ${{ matrix.language.name }}
     steps:
       - name: Checkout Component Detection
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
       - name: Setup .NET
         uses: actions/setup-dotnet@3447fd6a9f9e57506b15f895c5b76d3b197dc7c2 # v3.2.0
@@ -46,7 +46,7 @@ jobs:
         run: curl https://downloads.apache.org/ant/ivy/2.5.1/apache-ivy-2.5.1-bin.tar.gz | tar xOz apache-ivy-2.5.1/ivy-2.5.1.jar > /usr/share/ant/lib/ivy.jar
 
       - name: Checkout Smoke Test Repo
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           repository: ${{ matrix.language.repo }}
           path: smoke-test-repo
