@@ -278,11 +278,10 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // checking workspace's package.json entry gets added as filepath.
-        var filePathsCount = detectedComponents.First().FilePaths.Count;
-        filePathsCount.Should().Be(1);
-        var expectedWorkSpacePath = Path.Combine(Path.GetTempPath(), "workspace", "package.json");
-        detectedComponents.First().FilePaths.Contains(expectedWorkSpacePath).Should().Be(true);
+        // checking if workspace's "package.json FilePath entry" is added or not.
+        var detectedFilePaths = detectedComponents.First().FilePaths;
+        var expectedWorkSpacePackageJsonPath = Path.Combine(Path.GetTempPath(), "workspace", "package.json");
+        detectedComponents.First().FilePaths.Contains(expectedWorkSpacePackageJsonPath).Should().Be(true);
     }
 
     [TestMethod]

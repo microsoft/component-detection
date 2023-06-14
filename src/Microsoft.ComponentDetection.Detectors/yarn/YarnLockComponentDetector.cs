@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
+namespace Microsoft.ComponentDetection.Detectors.Yarn;
 
 using System;
 using System.Collections.Generic;
@@ -98,7 +98,8 @@ public class YarnLockComponentDetector : FileComponentDetector
         foreach (var dependency in yarnRoots)
         {
             var root = new DetectedComponent(new NpmComponent(dependency.Name, dependency.Version));
-            if (dependency.Location != null && dependency.Location.Length > 0)
+
+            if (!string.IsNullOrWhiteSpace(dependency.Location))
             {
                 root.AddComponentFilePath(dependency.Location);
             }
@@ -239,7 +240,7 @@ public class YarnLockComponentDetector : FileComponentDetector
 
                 yarnRoots.Add(entry);
 
-                var locationMapDictonaryKey = name + "-" + version.Key;
+                var locationMapDictonaryKey = this.GetLocationMapKey(name, version.Key);
                 if (workspaceDependencyVsLocationMap.ContainsKey(locationMapDictonaryKey))
                 {
                     entry.Location = workspaceDependencyVsLocationMap[locationMapDictonaryKey];
@@ -320,11 +321,16 @@ public class YarnLockComponentDetector : FileComponentDetector
 
     private void AddLocationInfoToWorkspaceDependency(IDictionary<string, string> workspaceDependencyVsLocationMap, string streamLocation, string dependencyName, string dependencyVersion)
     {
-        var locationMapDictionaryKey = dependencyName + "-" + dependencyVersion;
+        var locationMapDictionaryKey = this.GetLocationMapKey(dependencyName, dependencyVersion);
         if (!workspaceDependencyVsLocationMap.ContainsKey(locationMapDictionaryKey))
         {
             workspaceDependencyVsLocationMap[locationMapDictionaryKey] = streamLocation;
         }
+    }
+
+    private string GetLocationMapKey(string dependencyName, string dependencyVersion)
+    {
+        return dependencyName + "-" + dependencyVersion;
     }
 
     private void AddDetectedComponentToGraph(DetectedComponent componentToAdd, DetectedComponent parentComponent, ISingleFileComponentRecorder singleFileComponentRecorder, bool isRootComponent = false, bool? isDevDependency = null)
