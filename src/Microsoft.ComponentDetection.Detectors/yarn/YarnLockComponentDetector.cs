@@ -330,7 +330,7 @@ public class YarnLockComponentDetector : FileComponentDetector
 
     private string GetLocationMapKey(string dependencyName, string dependencyVersion)
     {
-        return dependencyName + "-" + dependencyVersion;
+        return $"{dependencyName}-{dependencyVersion}";
     }
 
     private void AddDetectedComponentToGraph(DetectedComponent componentToAdd, DetectedComponent parentComponent, ISingleFileComponentRecorder singleFileComponentRecorder, bool isRootComponent = false, bool? isDevDependency = null)
