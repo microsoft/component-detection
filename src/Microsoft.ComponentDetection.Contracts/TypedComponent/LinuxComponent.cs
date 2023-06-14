@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 using PackageUrl;
 
 public class LinuxComponent : TypedComponent
@@ -45,7 +45,7 @@ public class LinuxComponent : TypedComponent
 
             if (packageType != null)
             {
-                return new PackageURL(packageType, this.Distribution, this.Name, this.Version, null, null);
+                return new PackageURL(packageType, this.Distribution.ToLower(), this.Name, this.Version, null, null);
             }
 
             return null;
