@@ -5,7 +5,7 @@
 - [Gradle](gradle.md)
 - [Linux](linux.md)
 - [Maven](maven.md)
-- NPM
+- [NPM](npm.md)
 - NuGet
 - [Pip](pip.md)
 - [Poetry](poetry.md)
