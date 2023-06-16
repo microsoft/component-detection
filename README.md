@@ -89,7 +89,7 @@ Detectors have 3 levels of "stability":
 * `Experimental`
 * `Stable`
 
-DefaultOff detectors need to be explicitly enabled to run and produce a final graph output. Experimental detectors run by default but **will not** produce a final graph output. Stable detectors run and produce a final graph output by default. Here is how you can [enable default off/experimental](./docs/enable-default-off.md) detectors.
+DefaultOff detectors need to be explicitly enabled to run and produce a final graph output. Experimental detectors run by default but **will not** produce a final graph output. Stable detectors run and produce a final graph output by default. Here is how you can [enable default off/experimental](./docs/enable-default-off.md) detectors. The status of each detector can also be found [here](./docs/detectors/README.md)
 
 # Telemetry
 By default, telemetry will output to your output file path and will be a JSON blob. No data is submitted to Microsoft.
