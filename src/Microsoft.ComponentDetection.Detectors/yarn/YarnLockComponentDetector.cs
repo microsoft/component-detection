@@ -35,7 +35,7 @@ public class YarnLockComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
-    public override int Version => 6;
+    public override int Version => 7;
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
 
