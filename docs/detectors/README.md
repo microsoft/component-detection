@@ -37,6 +37,8 @@
 | LinuxContainerDetector | Stable |
 
 - [Maven](maven.md)
+- NPM
+- [NuGet](nuget.md)
 
 | Detector                  | Status |
 | ------------------------- | ------ |
