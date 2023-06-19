@@ -173,11 +173,6 @@ public class ComponentRecorder : IComponentRecorder
             }
 
 #if DEBUG
-            if (detectedComponent.FilePaths?.Any() ?? false)
-            {
-                this.logger.LogWarning("Detector should not populate DetectedComponent.FilePaths!");
-            }
-
             if (detectedComponent.DependencyRoots?.Any() ?? false)
             {
                 this.logger.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");

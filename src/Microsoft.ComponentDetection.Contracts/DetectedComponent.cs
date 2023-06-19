@@ -61,7 +61,10 @@ public class DetectedComponent
     private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
 
     /// <summary>Adds a filepath to the FilePaths hashset for this detected component.
-    /// Note: Dependency Graph automatically captures the location where a component is found, no need to call it at all inside package manager detectors.</summary>
+    /// Note:
+    /// (1) Dependency Graph automatically captures the location where a component is found, no need to call it at all inside package manager detectors.</summary>
+    /// (2) Only usecase where Detectors allowed to call this API is, in scenarios where "Detectors(eg:Yarn) further process other config files to get workspace dependencies recursively"
+    /// and detectors need to add WorkspaceDependency found path too.
     /// <param name="filePath">The file path to add to the hashset.</param>
     public void AddComponentFilePath(string filePath)
     {

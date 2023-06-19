@@ -241,6 +241,52 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
     }
 
     [TestMethod]
+    public async Task WellFormedYarnLockV1WithWorkspace_CheckFilePathsAsync()
+    {
+        var directory = new DirectoryInfo(Path.GetTempPath());
+
+        var version0 = NewRandomVersion();
+        var componentA = new YarnTestComponentDefinition
+        {
+            ActualVersion = version0,
+            RequestedVersion = $"^{version0}",
+            ResolvedVersion = "https://resolved0/a/resolved",
+            Name = Guid.NewGuid().ToString("N"),
+        };
+
+        var componentStream = YarnTestUtilities.GetMockedYarnLockStream("yarn.lock", this.CreateYarnLockV1FileContent(new List<YarnTestComponentDefinition> { componentA }));
+
+        var workspaceJson = new
+        {
+            name = "testworkspace",
+            version = "1.0.0",
+            @private = true,
+            workspaces = new[] { "workspace" },
+        };
+        var str = JsonConvert.SerializeObject(workspaceJson);
+        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = str.ToStream() };
+
+        var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("yarn.lock", componentStream.Stream)
+            .WithFile("package.json", workspaceJsonComponentStream.Stream, new[] { "package.json" }, Path.Combine(Path.GetTempPath(), "package.json"))
+            .WithFile("package.json", packageStream.Stream, new[] { "package.json" }, Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(1);
+
+        // checking if workspace's "package.json FilePath entry" is added or not.
+        var detectedFilePaths = detectedComponents.First().FilePaths;
+        detectedFilePaths.Should().HaveCount(1);
+        var expectedWorkSpacePackageJsonPath = Path.Combine(Path.GetTempPath(), "workspace", "package.json");
+        detectedComponents.First().FilePaths.Contains(expectedWorkSpacePackageJsonPath).Should().Be(true);
+    }
+
+    [TestMethod]
     public async Task WellFormedYarnLockV2WithWorkspace_FindsComponentAsync()
     {
         var directory = new DirectoryInfo(Path.GetTempPath());

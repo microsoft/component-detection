@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.TestsUtilities;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -192,6 +193,26 @@ public class DetectorTestUtilityBuilder<T>
                         return filesToSend
                             .Where(fileToSend =>
                                 Directory.GetParent(fileToSend.Location).FullName == directoryInfo.FullName)
+                            .Select(fileToSend =>
+                                this.CreateProcessRequest(
+                                    FindMatchingPattern(
+                                        fileToSend.Name,
+                                        searchPatterns),
+                                    fileToSend.Location,
+                                    fileToSend.Contents)).Select(pr => pr.ComponentStream);
+                    });
+
+            this.mockComponentStreamEnumerableFactory.Setup(x =>
+                    x.GetComponentStreams(
+                        It.IsAny<DirectoryInfo>(),
+                        It.IsAny<Func<FileInfo, bool>>(),
+                        It.IsAny<ExcludeDirectoryPredicate>(),
+                        It.IsAny<bool>()))
+                .Returns<DirectoryInfo, Func<FileInfo, bool>, ExcludeDirectoryPredicate, bool>(
+                    (directoryInfo, fileMatchingPredicate, _, recurse) =>
+                    {
+                        return filesToSend
+                            .Where(fileToSend => fileMatchingPredicate(new FileInfo(fileToSend.Location)))
                             .Select(fileToSend =>
                                 this.CreateProcessRequest(
                                     FindMatchingPattern(

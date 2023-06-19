@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
+namespace Microsoft.ComponentDetection.Detectors.Yarn;
 using System.Collections.Generic;
 
 public class YarnEntry
@@ -39,4 +39,9 @@ public class YarnEntry
     /// Gets or sets a value indicating whether or not the component is a dev dependency.
     /// </summary>
     public bool DevDependency { get; set; }
+
+    /// <summary>
+    /// Gets or Sets the location for this yarnentry. Often a file path if not in test circumstances.
+    /// </summary>
+    public string Location { get; set; }
 }
