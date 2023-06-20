@@ -30,7 +30,7 @@
     <PackageVersion Include="packageurl-dotnet" Version="1.0.0" />
     <PackageVersion Include="Polly" Version="7.2.4" />
     <PackageVersion Include="SemanticVersioning" Version="2.0.2" />
-    <PackageVersion Include="Serilog" Version="2.12.0" />
+    <PackageVersion Include="Serilog" Version="3.0.0" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="7.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="7.0.0" />
     <PackageVersion Include="Serilog.Sinks.Async" Version="1.5.0" />
