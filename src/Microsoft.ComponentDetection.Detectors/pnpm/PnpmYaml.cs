@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Pnpm;
+
 using System.Collections.Generic;
 
 #pragma warning disable SA1300 // Used for deserialization and the process is case sensitive

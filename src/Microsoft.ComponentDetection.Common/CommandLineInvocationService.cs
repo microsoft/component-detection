@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Common;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,10 +11,12 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 
+/// <inheritdoc/>
 public class CommandLineInvocationService : ICommandLineInvocationService
 {
     private readonly IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
 
+    /// <inheritdoc/>
     public async Task<bool> CanCommandBeLocatedAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
     {
         additionalCandidateCommands ??= Enumerable.Empty<string>();
@@ -48,6 +51,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         return !string.IsNullOrWhiteSpace(validCommand);
     }
 
+    /// <inheritdoc/>
     public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
     {
         var isCommandLocatable = await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands);
@@ -80,16 +84,19 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         }
     }
 
+    /// <inheritdoc/>
     public bool IsCommandLineExecution()
     {
         return true;
     }
 
+    /// <inheritdoc/>
     public async Task<bool> CanCommandBeLocatedAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
     {
         return await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands, workingDirectory: null, parameters);
     }
 
+    /// <inheritdoc/>
     public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
     {
         return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, parameters);

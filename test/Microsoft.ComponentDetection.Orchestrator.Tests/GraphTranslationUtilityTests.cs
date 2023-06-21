@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests;
+
 using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;

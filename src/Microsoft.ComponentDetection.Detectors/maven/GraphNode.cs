@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+
 using System.Collections.Generic;
 
 /// <summary>

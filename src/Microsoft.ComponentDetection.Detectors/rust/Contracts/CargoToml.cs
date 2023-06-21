@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts;
+
 using System.Runtime.Serialization;
 
 public class CargoToml

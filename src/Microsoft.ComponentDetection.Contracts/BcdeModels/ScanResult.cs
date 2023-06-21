@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;

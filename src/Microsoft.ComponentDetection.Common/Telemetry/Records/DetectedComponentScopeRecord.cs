@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+
 using System.Runtime.CompilerServices;
 
 public class DetectedComponentScopeRecord : BaseDetectionTelemetryRecord

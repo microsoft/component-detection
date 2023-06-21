@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+
 using System;
 using Microsoft.ComponentDetection.Contracts;
 

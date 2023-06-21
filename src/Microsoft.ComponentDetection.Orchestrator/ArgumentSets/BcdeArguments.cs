@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+
 using System.Collections.Generic;
 using System.IO;
 using CommandLine;

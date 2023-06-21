@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Rust;
+
 using System;
 using System.Runtime.Serialization;
 

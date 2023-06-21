@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Tests;
+
 using System;
 using System.Linq;
 using FluentAssertions;

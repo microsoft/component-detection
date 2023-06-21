@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Common;
+
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.ComponentDetection.Contracts;

@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
+
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator;
+
 using CommandLine;
 
 public interface IArgumentHelper

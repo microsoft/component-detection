@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts.Tests;
+
 using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;

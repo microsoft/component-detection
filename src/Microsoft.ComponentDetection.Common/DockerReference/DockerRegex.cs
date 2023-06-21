@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Common;
+
 using System.Linq;
 using System.Text.RegularExpressions;
 

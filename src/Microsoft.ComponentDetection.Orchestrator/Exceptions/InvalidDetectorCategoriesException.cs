@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Exceptions;
+
 using System;
 using System.Runtime.Serialization;
 

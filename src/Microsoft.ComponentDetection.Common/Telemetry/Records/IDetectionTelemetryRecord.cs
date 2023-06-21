@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+
 using System;
 
 public interface IDetectionTelemetryRecord : IDisposable

@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;

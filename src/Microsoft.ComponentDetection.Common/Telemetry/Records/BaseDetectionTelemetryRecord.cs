@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+
 using System;
 using System.Diagnostics;
 using Microsoft.ComponentDetection.Common.Telemetry.Attributes;

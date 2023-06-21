@@ -1,5 +1,6 @@
 #pragma warning disable SA1402
 namespace Microsoft.ComponentDetection.Common;
+
 using System;
 
 public class DockerReferenceException : Exception

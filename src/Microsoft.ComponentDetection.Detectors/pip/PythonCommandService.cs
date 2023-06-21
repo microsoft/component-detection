@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
+
 using System;
 using System.Collections.Generic;
 using System.IO;

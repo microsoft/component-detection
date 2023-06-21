@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.TestsUtilities;
+
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;

@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System.IO;
 using System.Text;
 using Microsoft.ComponentDetection.Contracts;

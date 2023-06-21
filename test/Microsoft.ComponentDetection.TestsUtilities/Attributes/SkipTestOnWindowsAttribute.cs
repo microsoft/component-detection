@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.TestsUtilities;
+
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

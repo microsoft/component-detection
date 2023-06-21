@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+
 using System.Diagnostics.CodeAnalysis;
 using PackageUrl;
 
