@@ -25,6 +25,7 @@
 // identifier                      := /[a-f0-9]{64}/
 // short-identifier                := /[a-f0-9]{6,64}/
 namespace Microsoft.ComponentDetection.Common;
+
 using Microsoft.ComponentDetection.Contracts;
 
 public static class DockerReferenceUtility

@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+
 using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Detectors.Rust;

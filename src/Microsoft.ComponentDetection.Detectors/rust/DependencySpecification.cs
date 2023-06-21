@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Rust;
+
 using System;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;

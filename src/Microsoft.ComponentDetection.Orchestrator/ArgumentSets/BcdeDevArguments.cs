@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+
 using CommandLine;
 
 [Verb("dev", HelpText = "Dev command", Hidden = true)]

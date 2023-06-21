@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Contracts;
+
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;

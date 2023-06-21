@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
+
 using System.Collections.Generic;
 
 public class YarnLockFile

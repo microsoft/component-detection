@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.NuGet;
+
 using System;
 using System.IO;
 using System.IO.Compression;

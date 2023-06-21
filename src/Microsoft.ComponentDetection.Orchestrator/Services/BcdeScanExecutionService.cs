@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;

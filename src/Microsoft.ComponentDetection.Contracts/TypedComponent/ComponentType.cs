@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+
 using System.Runtime.Serialization;
 
 // This is used in BcdeModels as well

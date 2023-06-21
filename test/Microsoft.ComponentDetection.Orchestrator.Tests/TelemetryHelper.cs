@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

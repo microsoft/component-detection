@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;

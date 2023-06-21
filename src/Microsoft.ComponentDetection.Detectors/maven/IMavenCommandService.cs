@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.Internal;
 

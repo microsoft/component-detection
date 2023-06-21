@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
+
 using System;
 using System.Runtime.Serialization;
 

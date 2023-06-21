@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -110,6 +111,7 @@ public class GoComponentDetector : FileComponentDetector
         }
     }
 
+    [SuppressMessage("Maintainability", "CA1508:Avoid dead conditional code", Justification = "False positive")]
     private async Task<bool> UseGoCliToScanAsync(string location, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         using var record = new GoGraphTelemetryRecord();

@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+
 using System.Net;
 
 public class PypiFailureTelemetryRecord : BaseDetectionTelemetryRecord

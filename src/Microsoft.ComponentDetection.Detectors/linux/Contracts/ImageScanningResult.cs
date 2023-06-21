@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Linux.Contracts;
+
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;

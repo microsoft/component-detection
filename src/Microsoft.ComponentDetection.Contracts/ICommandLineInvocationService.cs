@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts;
+
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -54,6 +55,9 @@ public interface ICommandLineInvocationService
     Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters);
 }
 
+/// <summary>
+/// Represents the result of executing a command line command.
+/// </summary>
 public class CommandLineExecutionResult
 {
     /// <summary>

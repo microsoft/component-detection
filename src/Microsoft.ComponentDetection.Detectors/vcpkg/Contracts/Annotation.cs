@@ -1,4 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
+
 using System;
 
 public class Annotation

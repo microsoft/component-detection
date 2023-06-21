@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts.Internal;
+
 using System;
 
 public class NpmAuthor

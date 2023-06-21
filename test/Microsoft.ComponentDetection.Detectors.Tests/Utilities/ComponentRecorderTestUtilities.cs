@@ -1,4 +1,5 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
