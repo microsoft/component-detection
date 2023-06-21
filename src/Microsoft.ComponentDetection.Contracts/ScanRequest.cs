@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Extensions.Logging;
 
-/// <summary>Request object for a component scan.</summary>
+/// <summary>
+/// Represents a request to scan a directory for components.
+/// </summary>
 public class ScanRequest
 {
-    /// <summary>Creates a new ScanRequest.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScanRequest"/> class.
+    /// </summary>
     /// <param name="sourceDirectory">The source directory to consider the working directory for the detection operation.</param>
     /// <param name="directoryExclusionPredicate">A predicate which evaluates directories, if the predicate returns true the directory will be excluded.</param>
     /// <param name="logger">The logger for this detection session.</param>
@@ -22,16 +26,28 @@ public class ScanRequest
         this.ComponentRecorder = componentRecorder;
     }
 
-    /// <summary> Gets the source directory to consider the working directory for the detection operation.</summary>
+    /// <summary>
+    /// Gets the source directory to consider the working directory for the detection operation.
+    /// </summary>
     public DirectoryInfo SourceDirectory { get; private set; }
 
-    /// <summary> Gets a predicate which evaluates directories, if the predicate returns true the directory will be excluded.</summary>
+    /// <summary>
+    /// Gets a predicate which evaluates directories, if the predicate returns true the directory will be excluded.
+    /// </summary>
     public ExcludeDirectoryPredicate DirectoryExclusionPredicate { get; private set; }
 
-    /// <summary> Gets the dictionary of custom detector arguments supplied externally.</summary>
+    /// <summary>
+    /// Gets the dictionary of custom detector arguments supplied externally.
+    /// </summary>
     public IDictionary<string, string> DetectorArgs { get; private set; }
 
+    /// <summary>
+    /// Gets the container images to scan.
+    /// </summary>
     public IEnumerable<string> ImagesToScan { get; private set; }
 
+    /// <summary>
+    /// Gets the detector component recorder.
+    /// </summary>
     public IComponentRecorder ComponentRecorder { get; private set; }
 }

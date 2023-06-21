@@ -1,6 +1,9 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts;
 using System.IO;
 
+/// <summary>
+/// Represents a stream that was discovered by the provided pattern to <see cref="IComponentStreamEnumerableFactory" /> />.
+/// </summary>
 public interface IComponentStream
 {
     /// <summary>
