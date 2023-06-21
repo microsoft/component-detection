@@ -212,7 +212,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         {
             try
             {
-                var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
+                var relativePath = rootUri.MakeRelativeUri(new Uri(new Uri("file://"), path)).ToString();
                 if (!relativePath.StartsWith("/"))
                 {
                     relativePath = "/" + relativePath;

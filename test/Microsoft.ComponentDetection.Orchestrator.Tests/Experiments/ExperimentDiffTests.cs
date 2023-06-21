@@ -1,9 +1,9 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -44,12 +44,14 @@ public class ExperimentDiffTests
     [TestMethod]
     public void ExperimentDiff_DiffsDevDependencies()
     {
-        var detectedComponent = ExperimentTestUtils.CreateRandomComponent();
-        var componentA = new DetectedComponent(detectedComponent.Component);
-        var componentB = new DetectedComponent(detectedComponent.Component);
+        var componentA = ExperimentTestUtils.CreateRandomScannedComponent();
+        var componentB = new ScannedComponent()
+        {
+            Component = componentA.Component,
+        };
 
-        componentA.DevelopmentDependency = false;
-        componentB.DevelopmentDependency = true;
+        componentA.IsDevelopmentDependency = false;
+        componentB.IsDevelopmentDependency = true;
 
         var diff = new ExperimentDiff(
             new[] { new ExperimentComponent(componentA) },
@@ -58,7 +60,7 @@ public class ExperimentDiffTests
         diff.DevelopmentDependencyChanges.Should().HaveCount(1);
 
         var change = diff.DevelopmentDependencyChanges.First();
-        change.Id.Should().Be(detectedComponent.Component.Id);
+        change.Id.Should().Be(componentA.Component.Id);
         change.OldValue.Should().BeFalse();
         change.NewValue.Should().BeTrue();
 
@@ -71,13 +73,13 @@ public class ExperimentDiffTests
     [TestMethod]
     public void ExperimentDiff_DiffsAddedRootIds()
     {
-        var rootComponent = ExperimentTestUtils.CreateRandomComponent();
-        var component = ExperimentTestUtils.CreateRandomComponent();
+        var rootComponent = ExperimentTestUtils.CreateRandomTypedComponent();
+        var componentA = ExperimentTestUtils.CreateRandomScannedComponent();
 
-        var componentA = new DetectedComponent(component.Component);
-        var componentB = new DetectedComponent(component.Component)
+        var componentB = new ScannedComponent()
         {
-            DependencyRoots = new HashSet<TypedComponent> { rootComponent.Component },
+            Component = componentA.Component,
+            TopLevelReferrers = new HashSet<TypedComponent> { rootComponent },
         };
 
         var diff = new ExperimentDiff(
@@ -87,9 +89,9 @@ public class ExperimentDiffTests
         diff.AddedRootIds.Should().HaveCount(1);
         diff.RemovedRootIds.Should().BeEmpty();
 
-        var addedRoot = diff.AddedRootIds[component.Component.Id];
+        var addedRoot = diff.AddedRootIds[componentA.Component.Id];
         addedRoot.Should().HaveCount(1);
-        addedRoot.Should().BeEquivalentTo(rootComponent.Component.Id);
+        addedRoot.Should().BeEquivalentTo(rootComponent.Id);
 
         diff.AddedIds.Should().BeEmpty();
         diff.RemovedIds.Should().BeEmpty();
@@ -99,25 +101,25 @@ public class ExperimentDiffTests
     [TestMethod]
     public void ExperimentDiff_DiffsRemovedRootIds()
     {
-        var rootComponent = ExperimentTestUtils.CreateRandomComponent();
-        var component = ExperimentTestUtils.CreateRandomComponent();
+        var rootComponent = ExperimentTestUtils.CreateRandomTypedComponent();
+        var componentA = ExperimentTestUtils.CreateRandomScannedComponent();
 
-        var componentA = new DetectedComponent(component.Component)
+        var componentB = new ScannedComponent()
         {
-            DependencyRoots = new HashSet<TypedComponent> { rootComponent.Component },
+            Component = componentA.Component,
+            TopLevelReferrers = new HashSet<TypedComponent> { rootComponent },
         };
-        var componentB = new DetectedComponent(component.Component);
 
         var diff = new ExperimentDiff(
-            new[] { new ExperimentComponent(componentA), },
-            new[] { new ExperimentComponent(componentB), });
+            new[] { new ExperimentComponent(componentB), },
+            new[] { new ExperimentComponent(componentA), });
 
         diff.RemovedRootIds.Should().HaveCount(1);
         diff.AddedRootIds.Should().BeEmpty();
 
-        var removedRoot = diff.RemovedRootIds[component.Component.Id];
+        var removedRoot = diff.RemovedRootIds[componentA.Component.Id];
         removedRoot.Should().HaveCount(1);
-        removedRoot.Should().BeEquivalentTo(rootComponent.Component.Id);
+        removedRoot.Should().BeEquivalentTo(rootComponent.Id);
 
         diff.AddedIds.Should().BeEmpty();
         diff.RemovedIds.Should().BeEmpty();
@@ -127,9 +129,12 @@ public class ExperimentDiffTests
     [TestMethod]
     public void ExperimentDiff_MultipleIds_ShouldntThrow()
     {
-        var testComponent = new NpmComponent("test", "1.0.0");
-        var componentA = new DetectedComponent(testComponent);
-        var componentB = new DetectedComponent(testComponent) { DevelopmentDependency = true };
+        var componentA = ExperimentTestUtils.CreateRandomScannedComponent();
+        var componentB = new ScannedComponent()
+        {
+            Component = componentA.Component,
+            IsDevelopmentDependency = true,
+        };
 
         var controlGroup = new[] { componentA, componentB }.Select(x => new ExperimentComponent(x));
         var experimentGroup = new[] { componentA, componentB }.Select(x => new ExperimentComponent(x));
