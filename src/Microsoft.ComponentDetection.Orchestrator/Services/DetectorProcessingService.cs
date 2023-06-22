@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 using System;
 using System.Collections.Concurrent;
@@ -109,7 +109,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                     exitCode = resultCode;
                 }
 
-                this.experimentService.RecordDetectorRun(detector, detectedComponents);
+                this.experimentService.RecordDetectorRun(detector, componentRecorder, detectionArguments);
 
                 if (isExperimentalDetector)
                 {

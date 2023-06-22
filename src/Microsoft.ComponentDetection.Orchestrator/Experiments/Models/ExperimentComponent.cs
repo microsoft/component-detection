@@ -1,8 +1,8 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
+namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 /// <summary>
 /// A model representing a component detected by a detector, as relevant to an experiment.
@@ -10,14 +10,14 @@ using Microsoft.ComponentDetection.Contracts;
 public record ExperimentComponent
 {
     /// <summary>
-    /// Creates a new <see cref="ExperimentComponent"/> from a <see cref="DetectedComponent"/>.
+    /// Creates a new <see cref="ExperimentComponent"/> from a <see cref="ScannedComponent"/>.
     /// </summary>
     /// <param name="detectedComponent">The detected component.</param>
-    public ExperimentComponent(DetectedComponent detectedComponent)
+    public ExperimentComponent(ScannedComponent detectedComponent)
     {
         this.Id = detectedComponent.Component.Id;
-        this.DevelopmentDependency = detectedComponent.DevelopmentDependency ?? false;
-        this.RootIds = detectedComponent.DependencyRoots?.Select(x => x.Id).ToHashSet() ?? new HashSet<string>();
+        this.DevelopmentDependency = detectedComponent.IsDevelopmentDependency ?? false;
+        this.RootIds = detectedComponent.TopLevelReferrers?.Select(x => x.Id).ToHashSet() ?? new HashSet<string>();
     }
 
     /// <summary>

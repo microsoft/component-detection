@@ -1,13 +1,18 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
+namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
 
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
+using Microsoft.ComponentDetection.Orchestrator.Services;
+using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.Logging;
 
 /// <inheritdoc />
@@ -15,6 +20,7 @@ public class ExperimentService : IExperimentService
 {
     private readonly ConcurrentDictionary<IExperimentConfiguration, ExperimentResults> experiments;
     private readonly IEnumerable<IExperimentProcessor> experimentProcessors;
+    private readonly IGraphTranslationService graphTranslationService;
     private readonly ILogger<ExperimentService> logger;
 
     /// <summary>
@@ -22,23 +28,36 @@ public class ExperimentService : IExperimentService
     /// </summary>
     /// <param name="configs">The experiment configurations.</param>
     /// <param name="experimentProcessors">The experiment processors.</param>
+    /// <param name="graphTranslationService">The graph translation service.</param>
     /// <param name="logger">The logger.</param>
     public ExperimentService(
         IEnumerable<IExperimentConfiguration> configs,
         IEnumerable<IExperimentProcessor> experimentProcessors,
+        IGraphTranslationService graphTranslationService,
         ILogger<ExperimentService> logger)
     {
         this.experiments = new ConcurrentDictionary<IExperimentConfiguration, ExperimentResults>(
             configs.ToDictionary(config => config, _ => new ExperimentResults()));
         this.experimentProcessors = experimentProcessors;
+        this.graphTranslationService = graphTranslationService;
         this.logger = logger;
     }
 
     /// <inheritdoc />
-    public void RecordDetectorRun(IComponentDetector detector, IEnumerable<DetectedComponent> components)
+    public void RecordDetectorRun(IComponentDetector detector, ComponentRecorder componentRecorder, IDetectionArguments detectionArguments)
     {
         try
         {
+            var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(
+                new DetectorProcessingResult()
+                {
+                    ComponentRecorders = new[] { (detector, componentRecorder) },
+                    ContainersDetailsMap = new Dictionary<int, ContainerDetails>(),
+                    ResultCode = ProcessingResultCode.Success,
+                },
+                detectionArguments);
+
+            var components = scanResult.ComponentsFound;
             this.FilterExperiments(detector, components.Count());
 
             foreach (var (config, experimentResults) in this.experiments)

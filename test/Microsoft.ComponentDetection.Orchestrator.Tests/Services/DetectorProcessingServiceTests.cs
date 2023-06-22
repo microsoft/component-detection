@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -539,14 +540,16 @@ public class DetectorProcessingServiceTests
             x =>
                 x.RecordDetectorRun(
                     It.Is<IComponentDetector>(detector => detector == this.firstFileComponentDetectorMock.Object),
-                    It.Is<IEnumerable<DetectedComponent>>(components => components.SequenceEqual(firstComponents))),
+                    It.IsAny<ComponentRecorder>(),
+                    It.Is<IDetectionArguments>(x => x == DefaultArgs)),
             Times.Once());
 
         this.experimentServiceMock.Verify(
             x =>
                 x.RecordDetectorRun(
                     It.Is<IComponentDetector>(detector => detector == this.secondFileComponentDetectorMock.Object),
-                    It.Is<IEnumerable<DetectedComponent>>(components => components.SequenceEqual(secondComponents))),
+                    It.IsAny<ComponentRecorder>(),
+                    It.Is<IDetectionArguments>(x => x == DefaultArgs)),
             Times.Once());
     }
 
