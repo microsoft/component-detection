@@ -4,6 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
+/// <summary>
+/// Factory for creating <see cref="IEnumerable{T}"/> of <see cref="IComponentStream"/> from a given directory.
+/// </summary>
 public interface IComponentStreamEnumerableFactory
 {
     /// <summary>
