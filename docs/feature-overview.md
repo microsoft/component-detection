@@ -3,7 +3,7 @@
 | Ecosystem | Detection Mechanism | Requirements | Development Dependencies labeling | Graph Creation |
 | - | - | - | - | - |
 | CocoaPods | <ul><li>podfile.lock</li></ul> | - | ❌ | - |
-| Conda (Python) (Beta) | <ul><li>environment.yml</li><li>environment.yaml</li></ul> | <ul><li>Conda v4.10.2+</li></ul> | ❌ | ❌ |
+| Conda (Python) | <ul><li>conda-lock.yml</li><li>*.conda-lock.yml</li></ul> | - | ❌ | ✔ |
 | Linux (Debian, Alpine, Rhel, Centos, Fedora, Ubuntu)| <ul><li>(via [syft](https://github.com/anchore/syft))</li></ul> | - | - | - | - |
 | Gradle | <ul><li>*.lockfile</li></ul> | <ul><li>Gradle 7 or prior using [Single File lock](https://docs.gradle.org/6.8.1/userguide/dependency_locking.html#single_lock_file_per_project)</li></ul> | ❌ | ❌ |
 | Go | <ul><li>*go list -m -json all*</li><li>*go mod graph* (edge information only)</li></ul>Fallback</br><ul><li>go.mod</li><li>go.sum</li></ul> | <ul><li>Go 1.11+ (will fallback if not present)</li></ul> | ❌ | ✔ (root idenditication only for fallback) |

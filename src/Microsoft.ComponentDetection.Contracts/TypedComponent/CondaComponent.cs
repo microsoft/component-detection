@@ -1,17 +1,21 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+
+using System.Collections.Generic;
 
 public class CondaComponent : TypedComponent
 {
-    public CondaComponent(string name, string version, string build, string channel, string subdir, string @namespace, string url, string md5)
+    public CondaComponent(string name, string version, string category, Dictionary<string, string> dependencies, Dictionary<string, string> hash, string manager, bool optional, string platform, string url)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Conda));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Conda));
-        this.Build = build;
-        this.Channel = channel;
-        this.Subdir = subdir;
-        this.Namespace = @namespace;
+        this.Category = category;
+        this.Dependencies = dependencies;
+        this.Hash = hash;
+        this.Manager = manager;
+        this.Optional = optional;
+        this.Platform = platform;
         this.Url = url;
-        this.MD5 = md5;
+        this.Version = version;
     }
 
     private CondaComponent()
@@ -19,23 +23,25 @@ public class CondaComponent : TypedComponent
         /* Reserved for deserialization */
     }
 
-    public string Build { get; set; }
+    public string Category { get; set; }
 
-    public string Channel { get; set; }
+    public Dictionary<string, string> Dependencies { get; set; }
+
+    public Dictionary<string, string> Hash { get; set; }
+
+    public string Manager { get; set; }
 
     public string Name { get; set; }
 
-    public string Namespace { get; set; }
+    public bool Optional { get; set; }
 
-    public string Subdir { get; set; }
-
-    public string Version { get; set; }
+    public string Platform { get; set; }
 
     public string Url { get; set; }
 
-    public string MD5 { get; set; }
+    public string Version { get; set; }
 
     public override ComponentType Type => ComponentType.Conda;
 
-    public override string Id => $"{this.Name} {this.Version} {this.Build} {this.Channel} {this.Subdir} {this.Namespace} {this.Url} {this.MD5} - {this.Type}";
+    public override string Id => $"{this.Name} {this.Version} {this.Manager} {this.Platform} {this.Url} {this.Category} - {this.Type}";
 }

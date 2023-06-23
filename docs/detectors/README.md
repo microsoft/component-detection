@@ -6,6 +6,12 @@
 | -------------------- | ------ |
 | PodComponentDetector | Stable |
 
+- Conda
+
+| Detector               | Status     |
+| ---------------------- | ---------- |
+| CondaComponentDetector | DefaultOff |
+
 - DockerFile
 
 | Detector           | Status     |
