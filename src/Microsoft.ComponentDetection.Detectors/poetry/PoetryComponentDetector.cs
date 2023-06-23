@@ -53,12 +53,12 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
             if (package.Source != null && package.Source.Type == "git")
             {
                 var component = new DetectedComponent(new GitComponent(new Uri(package.Source.Url), package.Source.ResolvedReference));
-                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
+                singleFileComponentRecorder.RegisterUsage(component, isExplicitReferencedDependency: true, isDevelopmentDependency: isDevelopmentDependency);
             }
             else
             {
                 var component = new DetectedComponent(new PipComponent(package.Name, package.Version));
-                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
+                singleFileComponentRecorder.RegisterUsage(component, isExplicitReferencedDependency: true, isDevelopmentDependency: isDevelopmentDependency);
             }
         });
         await Task.CompletedTask;
