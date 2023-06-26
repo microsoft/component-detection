@@ -9,7 +9,7 @@ using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 public static class CondaDependencyResolver
 {
     /// <summary>
-    /// Iterate through all dependencis that are explicitly referenced in the conda environment
+    /// Iterate through all dependencies that are explicitly referenced in the conda environment
     /// and build as well as register the full dependency tree for each of them.
     /// </summary>
     /// <param name="condaLock">The full condaLock object.</param>
