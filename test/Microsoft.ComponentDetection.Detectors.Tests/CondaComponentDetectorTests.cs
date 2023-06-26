@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class CondaComponentDetectorTests : BaseDetectorTest<CondaComponentDetector>
+public class CondaComponentDetectorTests : BaseDetectorTest<CondaLockComponentDetector>
 {
     [TestMethod]
     public async Task CondaComponentDetector_TestCondaLockFileAsync()
@@ -101,21 +101,31 @@ channels:
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
         // packages from the conda section
-        this.AssertCondaComponentNameAndVersion(detectedComponents, "conda-lock", "2.1.0");
-        this.AssertCondaComponentNameAndVersion(detectedComponents, "urllib3", "1.26.16");
+        this.AssertCondaLockComponentNameAndVersion(detectedComponents, "conda-lock", "2.1.0");
+        this.AssertCondaLockComponentNameAndVersion(detectedComponents, "urllib3", "1.26.16");
 
         // packages from the pip section
-        this.AssertCondaComponentNameAndVersion(detectedComponents, "certifi", "2023.5.7");
-        this.AssertCondaComponentNameAndVersion(detectedComponents, "requests", "2.31.0");
+        this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2023.5.7");
+        this.AssertPipComponentNameAndVersion(detectedComponents, "requests", "2.31.0");
 
         Assert.AreEqual(4, detectedComponents.Count());
     }
 
-    private void AssertCondaComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
+    private void AssertCondaLockComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
         Assert.IsNotNull(
             detectedComponents.SingleOrDefault(c =>
-                c.Component is CondaComponent component &&
+                c.Component is CondaLockComponent component &&
+                component.Name.Equals(name) &&
+                component.Version.Equals(version)),
+            $"Component with name {name} and version {version} was not found");
+    }
+
+    private void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
+    {
+        Assert.IsNotNull(
+            detectedComponents.SingleOrDefault(c =>
+                c.Component is PipComponent component &&
                 component.Name.Equals(name) &&
                 component.Version.Equals(version)),
             $"Component with name {name} and version {version} was not found");

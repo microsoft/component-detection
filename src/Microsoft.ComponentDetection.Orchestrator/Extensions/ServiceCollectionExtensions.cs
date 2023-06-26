@@ -77,8 +77,8 @@ public static class ServiceCollectionExtensions
         // CocoaPods
         services.AddSingleton<IComponentDetector, PodComponentDetector>();
 
-        // CocoaPods
-        services.AddSingleton<IComponentDetector, CondaComponentDetector>();
+        // Conda
+        services.AddSingleton<IComponentDetector, CondaLockComponentDetector>();
 
         // Dockerfile
         services.AddSingleton<IComponentDetector, DockerfileComponentDetector>();

@@ -12,12 +12,12 @@ using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization;
 
-public class CondaComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class CondaLockComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
-    public CondaComponentDetector(
+    public CondaLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger<CondaComponentDetector> logger)
+        ILogger<CondaLockComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
