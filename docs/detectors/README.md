@@ -6,11 +6,11 @@
 | -------------------- | ------ |
 | PodComponentDetector | Stable |
 
-- Conda
+- [Conda](conda.md)
 
-| Detector               | Status     |
-| ---------------------- | ---------- |
-| CondaComponentDetector | DefaultOff |
+| Detector                   | Status     |
+| -------------------------- | ---------- |
+| CondaLockComponentDetector | DefaultOff |
 
 - DockerFile
 
