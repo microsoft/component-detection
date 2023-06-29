@@ -4,6 +4,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +41,12 @@ public class PyPiClient : IPyPiClient
 
     // time to wait before retrying a failed call to pypi.org
     private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
+
+    private static readonly ProductInfoHeaderValue ProductValue = new(
+        "ComponentDetection",
+        Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
+
+    private static readonly ProductInfoHeaderValue CommentValue = new("(+https://github.com/microsoft/component-detection)");
 
     // Keep telemetry on how the cache is being used for future refinements
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
@@ -245,7 +253,10 @@ public class PyPiClient : IPyPiClient
         }
 
         this.logger.LogInformation("Getting Python data from {Uri}", uri);
-        var response = await HttpClient.GetAsync(uri);
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.UserAgent.Add(ProductValue);
+        request.Headers.UserAgent.Add(CommentValue);
+        var response = await HttpClient.SendAsync(request);
 
         // The `first - wins` response accepted into the cache. This might be different from the input if another caller wins the race.
         return await this.cachedResponses.GetOrCreateAsync(uri, cacheEntry =>

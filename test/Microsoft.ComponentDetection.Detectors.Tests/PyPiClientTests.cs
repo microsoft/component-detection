@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -183,6 +184,35 @@ public class PyPiClientTests
             It.IsAny<Exception>(),
             (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
             Times.Exactly(3));
+    }
+
+    [TestMethod]
+    public async Task GetReleases_AddsUserAgentHeadersAsync()
+    {
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
+        var pythonProject = new PythonProject
+        {
+            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            {
+                { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
+            },
+        };
+
+        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
+
+        var action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
+
+        await action.Should().NotThrowAsync();
+
+        mockHandler.Protected().Verify(
+            "SendAsync",
+            Times.Once(),
+            ItExpr.Is<HttpRequestMessage>(
+                req => req.Headers.UserAgent.Count == 2 &&
+                       req.Headers.UserAgent.First().Product.Name == "ComponentDetection"
+                       && req.Headers.UserAgent.Last().Comment == "(+https://github.com/microsoft/component-detection)"),
+            ItExpr.IsAny<CancellationToken>());
     }
 
     private Mock<HttpMessageHandler> MockHttpMessageHandler(string content)
