@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 using Microsoft.ComponentDetection.Orchestrator.Services;
@@ -44,7 +44,10 @@ public class ExperimentService : IExperimentService
     }
 
     /// <inheritdoc />
-    public void RecordDetectorRun(IComponentDetector detector, ComponentRecorder componentRecorder, IDetectionArguments detectionArguments)
+    public void RecordDetectorRun(
+        IComponentDetector detector,
+        ComponentRecorder componentRecorder,
+        ScanSettings settings)
     {
         if (!DetectorExperiments.AreExperimentsEnabled)
         {
@@ -60,7 +63,7 @@ public class ExperimentService : IExperimentService
                     ContainersDetailsMap = new Dictionary<int, ContainerDetails>(),
                     ResultCode = ProcessingResultCode.Success,
                 },
-                detectionArguments,
+                settings,
                 false);
 
             var components = scanResult.ComponentsFound;

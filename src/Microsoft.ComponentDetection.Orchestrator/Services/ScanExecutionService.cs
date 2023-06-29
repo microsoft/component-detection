@@ -7,24 +7,24 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.Logging;
 
-public class BcdeScanExecutionService : IBcdeScanExecutionService
+public class ScanExecutionService : IScanExecutionService
 {
     private readonly IEnumerable<IComponentDetector> detectors;
     private readonly IDetectorProcessingService detectorProcessingService;
     private readonly IDetectorRestrictionService detectorRestrictionService;
     private readonly IGraphTranslationService graphTranslationService;
-    private readonly ILogger<BcdeScanExecutionService> logger;
+    private readonly ILogger<ScanExecutionService> logger;
 
-    public BcdeScanExecutionService(
+    public ScanExecutionService(
         IEnumerable<IComponentDetector> detectors,
         IDetectorProcessingService detectorProcessingService,
         IDetectorRestrictionService detectorRestrictionService,
         IGraphTranslationService graphTranslationService,
-        ILogger<BcdeScanExecutionService> logger)
+        ILogger<ScanExecutionService> logger)
     {
         this.detectors = detectors;
         this.detectorProcessingService = detectorProcessingService;
@@ -33,20 +33,19 @@ public class BcdeScanExecutionService : IBcdeScanExecutionService
         this.logger = logger;
     }
 
-    public async Task<ScanResult> ExecuteScanAsync(IDetectionArguments detectionArguments)
+    public async Task<ScanResult> ExecuteScanAsync(ScanSettings settings)
     {
         using var scope = this.logger.BeginScope("Executing BCDE scan");
 
-        var detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
-        var restrictedDetectors = this.detectorRestrictionService.ApplyRestrictions(detectorRestrictions, this.detectors).ToImmutableList();
-        detectorRestrictions.DisabledDetectors = this.detectors.Except(restrictedDetectors).ToList();
+        var detectorRestrictions = this.GetDetectorRestrictions(settings);
+        var detectors = this.detectorRestrictionService.ApplyRestrictions(detectorRestrictions, this.detectors).ToImmutableList();
 
         this.logger.LogDebug("Finished applying restrictions to detectors.");
 
-        var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(detectionArguments, restrictedDetectors, detectorRestrictions);
-        var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, detectionArguments);
+        var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(settings, detectors, detectorRestrictions);
+        var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, settings);
 
-        scanResult.DetectorsInScan = restrictedDetectors.Select(x => ConvertToContract(x)).ToList();
+        scanResult.DetectorsInScan = detectors.Select(ConvertToContract).ToList();
         scanResult.ResultCode = processingResult.ResultCode;
 
         return scanResult;
@@ -63,18 +62,17 @@ public class BcdeScanExecutionService : IBcdeScanExecutionService
         };
     }
 
-    private DetectorRestrictions GetDetectorRestrictions(IDetectionArguments detectionArguments)
+    private DetectorRestrictions GetDetectorRestrictions(ScanSettings settings)
     {
         var detectorRestrictions = new DetectorRestrictions
         {
-            AllowedDetectorIds = detectionArguments.DetectorsFilter,
-            AllowedDetectorCategories = detectionArguments.DetectorCategories,
+            AllowedDetectorIds = settings.DetectorsFilter,
+            AllowedDetectorCategories = settings.DetectorCategories,
         };
 
-        if (detectionArguments.DetectorArgs != null && detectionArguments.DetectorArgs.Any())
+        if (settings.DetectorArgs != null && settings.DetectorArgs.Any())
         {
-            var args = ArgumentHelper.GetDetectorArgs(detectionArguments.DetectorArgs);
-            var allEnabledDetectorIds = args.Where(x => string.Equals("EnableIfDefaultOff", x.Value, StringComparison.OrdinalIgnoreCase) || string.Equals("Enable", x.Value, StringComparison.OrdinalIgnoreCase));
+            var allEnabledDetectorIds = settings.DetectorArgs.Where(x => string.Equals("EnableIfDefaultOff", x.Value, StringComparison.OrdinalIgnoreCase) || string.Equals("Enable", x.Value, StringComparison.OrdinalIgnoreCase));
             detectorRestrictions.ExplicitlyEnabledDetectorIds = new HashSet<string>(allEnabledDetectorIds.Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
         }
 

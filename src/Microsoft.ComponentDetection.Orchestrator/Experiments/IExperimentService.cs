@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 
 /// <summary>
 /// Service for recording detector results and processing the results for any active experiments.
@@ -16,8 +16,8 @@ public interface IExperimentService
     /// </summary>
     /// <param name="detector">The detector.</param>
     /// <param name="componentRecorder">The detected components from the <paramref name="detector"/>.</param>
-    /// <param name="detectionArguments">The detection arguments.</param>
-    void RecordDetectorRun(IComponentDetector detector, ComponentRecorder componentRecorder, IDetectionArguments detectionArguments);
+    /// <param name="settings">The detection settings.</param>
+    void RecordDetectorRun(IComponentDetector detector, ComponentRecorder componentRecorder, ScanSettings settings);
 
     /// <summary>
     /// Called when all detectors have finished executing. Processes the experiments and reports the results.

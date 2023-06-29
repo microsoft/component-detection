@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.Logging;
@@ -75,12 +75,12 @@ public class DefaultGraphTranslationServiceTests
         singleFileComponentRecorder.RegisterUsage(detectedNpmComponent, isDevelopmentDependency: false);
         singleFileComponentRecorder.RegisterUsage(detectedNugetComponent, isDevelopmentDependency: true);
 
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
 
-        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(processingResult, args);
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(processingResult, settings);
         result.Should().NotBeNull();
         result.ComponentsFound.Should().HaveCount(2);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);

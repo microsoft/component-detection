@@ -3,13 +3,13 @@ namespace Microsoft.ComponentDetection.Orchestrator;
 using System.Collections.Generic;
 using System.Linq;
 using CommandLine;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 
 public class ArgumentHelper : IArgumentHelper
 {
-    private readonly IEnumerable<IScanArguments> argumentSets;
+    private readonly IEnumerable<ScanSettings> argumentSets;
 
-    public ArgumentHelper(IEnumerable<IScanArguments> argumentSets) => this.argumentSets = argumentSets;
+    public ArgumentHelper(IEnumerable<ScanSettings> argumentSets) => this.argumentSets = argumentSets;
 
     public static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
     {

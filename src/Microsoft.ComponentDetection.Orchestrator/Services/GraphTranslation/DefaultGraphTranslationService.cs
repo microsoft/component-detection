@@ -11,7 +11,7 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -21,12 +21,14 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
     public DefaultGraphTranslationService(ILogger<DefaultGraphTranslationService> logger) => this.logger = logger;
 
-    /// <inheritdoc/>
-    public ScanResult GenerateScanResultFromProcessingResult(DetectorProcessingResult detectorProcessingResult, IDetectionArguments detectionArguments, bool updateLocations = true)
+    public ScanResult GenerateScanResultFromProcessingResult(
+        DetectorProcessingResult detectorProcessingResult,
+        ScanSettings settings,
+        bool updateLocations = true)
     {
         var recorderDetectorPairs = detectorProcessingResult.ComponentRecorders;
 
-        var unmergedComponents = this.GatherSetOfDetectedComponentsUnmerged(recorderDetectorPairs, detectionArguments.SourceDirectory, updateLocations);
+        var unmergedComponents = this.GatherSetOfDetectedComponentsUnmerged(recorderDetectorPairs, settings.SourceDirectory, updateLocations);
 
         var mergedComponents = this.FlattenAndMergeComponents(unmergedComponents);
 
@@ -40,7 +42,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                 .Select(tuple => tuple.Recorder)
                 .Where(x => x != null)
                 .Select(x => x.GetDependencyGraphsByLocation())),
-            SourceDirectory = detectionArguments.SourceDirectory.ToString(),
+            SourceDirectory = settings.SourceDirectory.ToString(),
         };
     }
 

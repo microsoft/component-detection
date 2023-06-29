@@ -14,7 +14,7 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -36,7 +36,10 @@ public class DetectorProcessingService : IDetectorProcessingService
         this.logger = logger;
     }
 
-    public async Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions)
+    public async Task<DetectorProcessingResult> ProcessDetectorsAsync(
+        ScanSettings settings,
+        IEnumerable<IComponentDetector> detectors,
+        DetectorRestrictions detectorRestrictions)
     {
         using var scope = this.logger.BeginScope("Processing detectors");
         this.logger.LogInformation($"Finding components...");
@@ -46,11 +49,10 @@ public class DetectorProcessingService : IDetectorProcessingService
 
         // Run the scan on all protocol scanners and union the results
         var providerElapsedTime = new ConcurrentDictionary<string, DetectorRunResult>();
-        var detectorArguments = GetDetectorArgs(detectionArguments.DetectorArgs);
 
         var exclusionPredicate = this.IsOSLinuxOrMac()
-            ? this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: false, ignoreCase: false)
-            : this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
+            ? this.GenerateDirectoryExclusionPredicate(settings.SourceDirectory.ToString(), settings.DirectoryExclusionList, settings.DirectoryExclusionListObsolete, allowWindowsPaths: false, ignoreCase: false)
+            : this.GenerateDirectoryExclusionPredicate(settings.SourceDirectory.ToString(), settings.DirectoryExclusionList, settings.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
 
         this.experimentService.RemoveUnwantedExperimentsbyDetectors(detectorRestrictions.DisabledDetectors);
 
@@ -71,7 +73,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
-                        () => detector.ExecuteDetectorAsync(new ScanRequest(detectionArguments.SourceDirectory, exclusionPredicate, this.logger, detectorArguments, detectionArguments.DockerImagesToScan, componentRecorder)),
+                        () => detector.ExecuteDetectorAsync(new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder)),
                         isExperimentalDetector,
                         record);
 
@@ -111,7 +113,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                     exitCode = resultCode;
                 }
 
-                this.experimentService.RecordDetectorRun(detector, componentRecorder, detectionArguments);
+                this.experimentService.RecordDetectorRun(detector, componentRecorder, settings);
 
                 if (isExperimentalDetector)
                 {
@@ -241,25 +243,6 @@ public class DetectorProcessingService : IDetectorProcessingService
                 return false;
             });
         };
-    }
-
-    private static IDictionary<string, string> GetDetectorArgs(IEnumerable<string> detectorArgsList)
-    {
-        var detectorArgs = new Dictionary<string, string>();
-
-        foreach (var arg in detectorArgsList)
-        {
-            var keyValue = arg.Split('=');
-
-            if (keyValue.Length != 2)
-            {
-                continue;
-            }
-
-            detectorArgs.Add(keyValue[0], keyValue[1]);
-        }
-
-        return detectorArgs;
     }
 
     private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
