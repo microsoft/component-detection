@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts.Tests;
 
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -17,12 +18,10 @@ public class DetectedComponentTests
 
         var component = new DetectedComponent(new NpmComponent(componentName, componentVersion));
 
-        Assert.IsNotNull(component.FilePaths);
-        Assert.AreEqual(0, component.FilePaths.Count);
+        component.FilePaths.Should().NotBeNull().And.HaveCount(0);
 
         component.AddComponentFilePath(filePathToAdd);
 
-        Assert.AreEqual(1, component.FilePaths.Count);
-        Assert.IsTrue(component.FilePaths.Contains(filePathToAdd));
+        component.FilePaths.Should().HaveCount(1).And.Contain(filePathToAdd);
     }
 }
