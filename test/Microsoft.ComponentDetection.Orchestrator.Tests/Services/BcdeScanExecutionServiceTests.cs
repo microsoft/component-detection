@@ -257,8 +257,7 @@ public class BcdeScanExecutionServiceTests
         var matchingGraph = result.DependencyGraphs.First();
         matchingGraph.Key.Should().Be(mockGraphLocation);
         var explicitlyReferencedComponents = matchingGraph.Value.ExplicitlyReferencedComponentIds;
-        explicitlyReferencedComponents.Count.Should().Be(1);
-        explicitlyReferencedComponents.Should().Contain(this.detectedComponents[0].Component.Id);
+        explicitlyReferencedComponents.Should().ContainSingle().And.Contain(this.detectedComponents[0].Component.Id);
 
         var actualGraph = matchingGraph.Value.Graph;
         actualGraph.Keys.Count.Should().Be(2);
@@ -331,7 +330,7 @@ public class BcdeScanExecutionServiceTests
         var matchingGraph = result.DependencyGraphs.First();
         matchingGraph.Key.Should().Be(mockGraphLocation);
         var explicitlyReferencedComponents = matchingGraph.Value.ExplicitlyReferencedComponentIds;
-        explicitlyReferencedComponents.Count.Should().Be(2);
+        explicitlyReferencedComponents.Should().HaveCount(2);
         explicitlyReferencedComponents.Should().Contain(this.detectedComponents[0].Component.Id);
         explicitlyReferencedComponents.Should().Contain(this.detectedComponents[1].Component.Id);
 

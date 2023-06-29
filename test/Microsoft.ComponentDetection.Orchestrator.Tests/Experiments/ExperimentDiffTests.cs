@@ -90,8 +90,7 @@ public class ExperimentDiffTests
         diff.RemovedRootIds.Should().BeEmpty();
 
         var addedRoot = diff.AddedRootIds[componentA.Component.Id];
-        addedRoot.Should().HaveCount(1);
-        addedRoot.Should().BeEquivalentTo(rootComponent.Id);
+        addedRoot.Should().ContainSingle().And.BeEquivalentTo(rootComponent.Id);
 
         diff.AddedIds.Should().BeEmpty();
         diff.RemovedIds.Should().BeEmpty();
@@ -118,8 +117,7 @@ public class ExperimentDiffTests
         diff.AddedRootIds.Should().BeEmpty();
 
         var removedRoot = diff.RemovedRootIds[componentA.Component.Id];
-        removedRoot.Should().HaveCount(1);
-        removedRoot.Should().BeEquivalentTo(rootComponent.Id);
+        removedRoot.Should().ContainSingle().And.BeEquivalentTo(rootComponent.Id);
 
         diff.AddedIds.Should().BeEmpty();
         diff.RemovedIds.Should().BeEmpty();
