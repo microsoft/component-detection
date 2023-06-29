@@ -24,7 +24,7 @@ public class CondaLockComponentDetector : FileComponentDetector, IDefaultOffComp
         this.Logger = logger;
     }
 
-    public override string Id => "CondaLock2";
+    public override string Id => "CondaLock";
 
     public override IList<string> SearchPatterns { get; } = new List<string> { "conda-lock.yml", "*.conda-lock.yml" };
 
