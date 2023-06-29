@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
+namespace Microsoft.ComponentDetection.Detectors.CondaLock.Contracts;
 
 using System.Collections.Generic;
 using YamlDotNet.Serialization;

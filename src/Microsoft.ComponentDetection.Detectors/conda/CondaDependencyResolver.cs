@@ -1,110 +1,127 @@
-namespace Microsoft.ComponentDetection.Detectors.Poetry;
+namespace Microsoft.ComponentDetection.Detectors.CondaLock;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
+using Microsoft.ComponentDetection.Detectors.CondaLock.Contracts;
+using MoreLinq;
 
 public static class CondaDependencyResolver
 {
     /// <summary>
-    /// Iterate through all dependencies that are explicitly referenced in the conda environment
-    /// and build as well as register the full dependency tree for each of them.
+    /// Registers all packages in he conda-lock file including all dependencies of the package.
+    /// This way the full dependency tree will be recoded.
     /// </summary>
     /// <param name="condaLock">The full condaLock object.</param>
-    /// <param name="explicitDependencies">The list of all dependencies that are explicitly specified in the conda environment.</param>
     /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
-    public static void RecordDependencyGraphFromFile(CondaLock condaLock, List<string> explicitDependencies, ISingleFileComponentRecorder singleFileComponentRecorder)
-    {
-        if (condaLock != null && condaLock.Package != null)
-        {
-            condaLock.Package.ForEach(package =>
-            {
-                var isExplicitDependency = explicitDependencies.Any(dependency => dependency.Contains(package.Name)) || !explicitDependencies.Any();
+    public static void RecordDependencyGraphFromFile(CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
+        => GetPackages(condaLock).ForEach(package => RegisterPackageWithDependencies(package, null, condaLock, singleFileComponentRecorder));
 
-                // Register package as direct as explicit dependency if it is either
-                // referenced in the parsed environment.yml, or if the environment.yml
-                // was not parsed successful and thus explicitDependencies is empty.
-                // In case explicitDependencies is empty. We will register every
-                // package as explicit dependency, to ensure alerts will still be generated.
-                if (isExplicitDependency)
+    /// <summary>
+    /// Updates all registered packages that don't have any ancestors.
+    /// These packages will be registered as directely referenced.
+    /// dependency tree will be recoded.
+    /// </summary>
+    /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
+    public static void UpdateDirectlyReferencedPackages(ISingleFileComponentRecorder singleFileComponentRecorder)
+        => singleFileComponentRecorder.GetDetectedComponents().Keys.ForEach(componentId =>
+            {
+                if (!singleFileComponentRecorder.DependencyGraph.GetAncestors(componentId).Any())
                 {
-                    RecordPackage(package, true, package.Platform, null, condaLock, singleFileComponentRecorder);
+                    singleFileComponentRecorder.RegisterUsage(
+                        singleFileComponentRecorder.GetComponent(componentId),
+                        isExplicitReferencedDependency: true,
+                        parentComponentId: null);
                 }
             });
+
+    /// <summary>
+    /// Register a package a including all of dependencies of the package.
+    /// This way the full dependency tree will be recoded.
+    /// </summary>
+    /// <example>
+    /// Assuming the following examplary dependency tree:
+    /// A
+    ///  \
+    ///   C   D
+    ///  /|\ /
+    /// E F G
+    ///
+    /// In that case, for package A, this will register:
+    ///  1. A -> C -> E
+    ///  2. A -> C -> F
+    ///  3. A -> C -> G
+    /// This happens recursively.
+    /// </example>
+    /// <param name="package">The package to register.</param>
+    /// <param name="parentId">The id of the parent package.</param>
+    /// <param name="condaLock">The full condaLock object.</param>
+    /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
+    private static void RegisterPackageWithDependencies(CondaPackage package, string parentId, CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
+    {
+        if (package == null)
+        {
+            return;
         }
-    }
 
-    /// <summary>
-    /// Recursively walk through the dependency tree.
-    /// </summary>
-    /// <param name="dependencyName">The name of the dependency that should be expanded.</param>
-    /// <param name="dependencyPlatform">The platform of the dependency that should expanded.</param>
-    /// <param name="parentId">The id of the parent component of the dependency that should expanded.</param>
-    /// <param name="condaLock">The full condaLock object.</param>
-    /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
-    public static void RecordTransitiveDependencies(string dependencyName, string dependencyPlatform, string parentId, CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
-    {
-        condaLock.Package.ForEach(package =>
-        {
-            if (package.Name == dependencyName && package.Platform == dependencyPlatform)
-            {
-                RecordPackage(package, false, dependencyPlatform, parentId, condaLock, singleFileComponentRecorder);
-            }
-        });
-    }
+        var component = CreateComponent(package);
 
-    /// <summary>
-    /// Registers the usage of a package.
-    /// </summary>
-    /// <param name="package">The conda package to register.</param>
-    /// <param name="isExplicitDependency">True if the package is explicitly referenced.</param>
-    /// <param name="dependencyPlatform">The platform of the dependency that should expanded.</param>
-    /// <param name="parentId">The id of the parent component of the dependency that should expanded.</param>
-    /// <param name="condaLock">The full condaLock object.</param>
-    /// <param name="singleFileComponentRecorder">The SingleFileComponentRecorder.</param>
-    public static void RecordPackage(CondaPackage package, bool isExplicitDependency, string dependencyPlatform, string parentId, CondaLock condaLock, ISingleFileComponentRecorder singleFileComponentRecorder)
-    {
-        var condaLockComponent = CreateCondaLockComponentFromPackage(package);
-        var pipComponent = CreatePipComponentFromPackage(package);
-        var componentId = package.Manager == "pip" ? pipComponent.Id : condaLockComponent.Id;
+        //// Register the package itself.
+        RegisterPackage(component, parentId, false, singleFileComponentRecorder);
 
-        singleFileComponentRecorder.RegisterUsage(
-            new DetectedComponent(package.Manager == "pip" ? pipComponent : condaLockComponent),
-            isExplicitReferencedDependency: isExplicitDependency,
-            parentComponentId: parentId);
-
+        //// Register all dependencies of the package.
         package.Dependencies.Keys.ToList().ForEach(dependency =>
-        {
-            RecordTransitiveDependencies(dependency, dependencyPlatform, componentId, condaLock, singleFileComponentRecorder);
-        });
+            RegisterPackageWithDependencies(
+                condaLock?.Package.FirstOrDefault(condaPackage => condaPackage.Name == dependency && condaPackage.Platform == package.Platform),
+                component.Id,
+                condaLock,
+                singleFileComponentRecorder));
     }
 
     /// <summary>
-    /// Converts a CondaPackage to a CondaLockComponent.
+    /// Registers a package using the SingleFileComponentRecorder.
     /// </summary>
-    /// <param name="package">The CondaPackage to convert.</param>
-    /// <returns>The CondaLockComponent.</returns>
-    public static CondaLockComponent CreateCondaLockComponentFromPackage(CondaPackage package)
-        => new CondaLockComponent(
-            package.Name,
-            package.Version,
-            package.Category,
-            package.Dependencies,
-            package.Hash,
-            package.Manager,
-            package.Optional,
-            package.Platform,
-            package.Url);
+    /// <param name="package">The package to register.</param>
+    /// <param name="parentComponentId">The id of the parent of the package.</param>
+    /// <param name="isExplicitlyReferenced">Indicating if the package is a direct or transitive dependency.</param>
+    /// <param name="singleFileComponentRecorder">The singleFileComponentRecorder.</param>
+    private static void RegisterPackage(TypedComponent package, string parentComponentId, bool isExplicitlyReferenced, ISingleFileComponentRecorder singleFileComponentRecorder)
+        => singleFileComponentRecorder.RegisterUsage(
+                new DetectedComponent(package),
+                isExplicitReferencedDependency: isExplicitlyReferenced,
+                parentComponentId: parentComponentId);
 
     /// <summary>
-    /// Converts a CondaPackage to a PipComponent.
+    /// Returns a list of all packages in the given conda-lock file.
+    /// </summary>
+    /// <param name="condaLock">The full condaLock object that contains a list of all package.</param>
+    /// <returns>A list of packages without dependencies.</returns>
+    private static List<CondaPackage> GetPackages(CondaLock condaLock)
+        => condaLock?.Package == null
+                ? new List<CondaPackage>()
+                : condaLock.Package;
+
+    /// <summary>
+    /// Converts a CondaPackage to a TypedComponent.
+    /// If the condapackage is managed by pip it will be converted to a
+    /// PipComponent. Otherwise it will be converted to a CondaComponent.
+    ///
+    /// For the conda component, only the most necessary information that are
+    /// required for component governance are passed. This way duplicates
+    /// will be avoided. For example the URL of the package is platform-specific.
+    /// That is, the same package with the same version will exist multiple
+    /// times in the conda-lock files with different urls. If we were to add
+    /// the url, we would register these duplicates. As the information is
+    /// anyway not required for compoment governance, we don't pass it and
+    /// this way avoid duplicates.
+    ///
     /// </summary>
     /// <param name="package">The CondaPackage to convert.</param>
-    /// <returns>The CondaLockComponent.</returns>
-    public static PipComponent CreatePipComponentFromPackage(CondaPackage package)
-        => new PipComponent(
-            package.Name,
-            package.Version);
+    /// <returns>The TypedComponent.</returns>
+    private static TypedComponent CreateComponent(CondaPackage package)
+        => package.Manager.Equals("pip", StringComparison.OrdinalIgnoreCase)
+                ? new PipComponent(package.Name, package.Version)
+                : new CondaComponent(package.Name, package.Version, null, null, null, null, null, null);
 }

@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class CondaComponentDetectorTests : BaseDetectorTest<CondaLockComponentDetector>
+public class CondaLockComponentDetectorTests : BaseDetectorTest<CondaLockComponentDetector>
 {
     [TestMethod]
     public async Task CondaComponentDetector_TestCondaLockFileAsync()
@@ -81,19 +81,8 @@ package:
   optional: false
 ";
 
-        var condaEnvironmentContent =
-@"name: cgtest
-dependencies:
-  - conda-forge::conda-lock=2.1.0
-  - pip:
-    - requests
-channels:
-  - defaults
-";
-
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("conda-lock.yml", condaLockContent)
-            .WithFile("environment.yml", condaEnvironmentContent)
             .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
@@ -115,7 +104,7 @@ channels:
     {
         Assert.IsNotNull(
             detectedComponents.SingleOrDefault(c =>
-                c.Component is CondaLockComponent component &&
+                c.Component is CondaComponent component &&
                 component.Name.Equals(name) &&
                 component.Version.Equals(version)),
             $"Component with name {name} and version {version} was not found");

@@ -1,7 +1,0 @@
-name: cgtest
-dependencies:
-  - conda-forge::conda-lock=2.1.0
-  - pip:
-    - requests
-channels:
-  - defaults
