@@ -123,5 +123,5 @@ public static class CondaDependencyResolver
     private static TypedComponent CreateComponent(CondaPackage package)
         => package.Manager.Equals("pip", StringComparison.OrdinalIgnoreCase)
                 ? new PipComponent(package.Name, package.Version)
-                : new CondaComponent(package.Name, package.Version, null, null, null, null, null, null);
+                : new CondaComponent(package.Name, package.Version, null, package.Category, null, null, null, null);
 }
