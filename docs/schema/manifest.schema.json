@@ -1,0 +1,420 @@
+{
+  "definitions": {
+    "ContainerDetails": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "imageId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "integer"
+        },
+        "digests": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "baseImageRef": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "baseImageDigest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tags": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "layers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/DockerLayer"
+          }
+        }
+      },
+      "required": [
+        "imageId",
+        "id",
+        "digests",
+        "baseImageRef",
+        "baseImageDigest",
+        "createdAt",
+        "tags",
+        "layers"
+      ]
+    },
+    "Detector": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "detectorId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "isExperimental": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "supportedComponentTypes": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16
+            ]
+          }
+        }
+      },
+      "required": [
+        "detectorId",
+        "isExperimental",
+        "version",
+        "supportedComponentTypes"
+      ]
+    },
+    "DockerLayer": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "CreatedBy": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "DiffId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "IsBaseImage": {
+          "type": "boolean"
+        },
+        "LayerIndex": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "CreatedBy",
+        "DiffId",
+        "IsBaseImage",
+        "LayerIndex"
+      ]
+    },
+    "PackageURL": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "Scheme": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "Type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "Namespace": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "Name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "Version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "Qualifiers": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "Subpath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "Scheme",
+        "Type",
+        "Namespace",
+        "Name",
+        "Version",
+        "Qualifiers",
+        "Subpath"
+      ]
+    },
+    "ScannedComponent": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "locationsFoundAt": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "component": {
+          "$ref": "#/definitions/TypedComponent"
+        },
+        "detectorId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "isDevelopmentDependency": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "dependencyScope": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "enum": [
+            null,
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        "topLevelReferrers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/TypedComponent"
+          }
+        },
+        "containerDetailIds": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "integer"
+          }
+        },
+        "containerLayerIds": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "required": [
+        "locationsFoundAt",
+        "component",
+        "detectorId",
+        "isDevelopmentDependency",
+        "dependencyScope",
+        "topLevelReferrers",
+        "containerDetailIds",
+        "containerLayerIds"
+      ]
+    },
+    "TypedComponent": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "type": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16
+          ]
+        },
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "packageUrl": {
+          "$ref": "#/definitions/PackageURL"
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "packageUrl"
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "componentsFound": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/ScannedComponent"
+      }
+    },
+    "detectorsInScan": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/Detector"
+      }
+    },
+    "containerDetailsMap": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "$ref": "#/definitions/ContainerDetails"
+      }
+    },
+    "resultCode": {
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "sourceDirectory": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "componentsFound",
+    "detectorsInScan",
+    "containerDetailsMap",
+    "resultCode",
+    "sourceDirectory"
+  ]
+}
