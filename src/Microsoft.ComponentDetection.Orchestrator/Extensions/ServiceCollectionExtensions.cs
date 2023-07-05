@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
+namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
 
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry;
@@ -76,6 +76,9 @@ public static class ServiceCollectionExtensions
         // Detectors
         // CocoaPods
         services.AddSingleton<IComponentDetector, PodComponentDetector>();
+
+        // Conda
+        services.AddSingleton<IComponentDetector, CondaLockComponentDetector>();
 
         // Dockerfile
         services.AddSingleton<IComponentDetector, DockerfileComponentDetector>();
