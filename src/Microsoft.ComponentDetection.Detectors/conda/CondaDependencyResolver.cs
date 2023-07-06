@@ -105,7 +105,7 @@ public static class CondaDependencyResolver
 
     /// <summary>
     /// Converts a CondaPackage to a TypedComponent.
-    /// If the condapackage is managed by pip it will be converted to a
+    /// If the condapackage is a python package it will be converted to a
     /// PipComponent. Otherwise it will be converted to a CondaComponent.
     ///
     /// For the conda component, only the most necessary information that are
@@ -121,7 +121,19 @@ public static class CondaDependencyResolver
     /// <param name="package">The CondaPackage to convert.</param>
     /// <returns>The TypedComponent.</returns>
     private static TypedComponent CreateComponent(CondaPackage package)
-        => package.Manager.Equals("pip", StringComparison.OrdinalIgnoreCase)
+        => IsPythonPackage(package)
                 ? new PipComponent(package.Name, package.Version)
                 : new CondaComponent(package.Name, package.Version, null, package.Category, null, null, null, null);
+
+    /// <summary>
+    /// Checks if a package is a python package.
+    ///
+    /// If the package is either managed by pip, or if it depends on python
+    /// it is considered a python package.
+    /// </summary>
+    /// <param name="package">The CondaPackage.</param>
+    /// <returns>True if the package is a python package.</returns>
+    private static bool IsPythonPackage(CondaPackage package)
+        => package.Manager.Equals("pip", StringComparison.OrdinalIgnoreCase) ||
+           package.Dependencies.Keys.Any(dependency => dependency.Equals("python", StringComparison.OrdinalIgnoreCase));
 }
