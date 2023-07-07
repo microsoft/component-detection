@@ -100,24 +100,24 @@
             "null"
           ],
           "items": {
-            "type": "integer",
+            "type": "string",
             "enum": [
-              0,
-              1,
-              2,
-              3,
-              4,
-              6,
-              7,
-              8,
-              9,
-              10,
-              11,
-              12,
-              13,
-              14,
-              15,
-              16
+              "Other",
+              "NuGet",
+              "Npm",
+              "Maven",
+              "Git",
+              "RubyGems",
+              "Cargo",
+              "Pip",
+              "Go",
+              "DockerImage",
+              "Pod",
+              "Linux",
+              "Conda",
+              "Spdx",
+              "Vcpkg",
+              "DockerReference"
             ]
           }
         }
@@ -262,16 +262,16 @@
         },
         "dependencyScope": {
           "type": [
-            "integer",
+            "string",
             "null"
           ],
           "enum": [
             null,
-            0,
-            1,
-            2,
-            3,
-            4
+            "MavenCompile",
+            "MavenRuntime",
+            "MavenProvided",
+            "MavenSystem",
+            "MavenTest"
           ]
         },
         "topLevelReferrers": {
@@ -326,24 +326,24 @@
       ],
       "properties": {
         "type": {
-          "type": "integer",
+          "type": "string",
           "enum": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            16
+            "Other",
+            "NuGet",
+            "Npm",
+            "Maven",
+            "Git",
+            "RubyGems",
+            "Cargo",
+            "Pip",
+            "Go",
+            "DockerImage",
+            "Pod",
+            "Linux",
+            "Conda",
+            "Spdx",
+            "Vcpkg",
+            "DockerReference"
           ]
         },
         "id": {
@@ -394,13 +394,13 @@
       }
     },
     "resultCode": {
-      "type": "integer",
+      "type": "string",
       "enum": [
-        0,
-        1,
-        2,
-        3,
-        4
+        "Success",
+        "PartialSuccess",
+        "Error",
+        "InputError",
+        "TimeoutError"
       ]
     },
     "sourceDirectory": {
