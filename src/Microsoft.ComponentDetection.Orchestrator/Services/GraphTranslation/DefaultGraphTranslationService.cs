@@ -92,6 +92,8 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         // Return in a format that allows us to add the additional files for the components
                         var locations = dependencyGraph.GetAdditionalRelatedFiles();
 
+                        // Experiments uses this service to build the dependency graph for analysis. In this case, we do not want to update the locations of the component.
+                        // Updating the locations of the component will propogate to the final depenendcy graph and cause the graph to be incorrect.
                         if (updateLocations)
                         {
                             // graph authoritatively stores the location of the component
