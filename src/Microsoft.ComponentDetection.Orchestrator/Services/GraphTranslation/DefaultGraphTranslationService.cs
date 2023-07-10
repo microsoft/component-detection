@@ -21,11 +21,11 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
     public DefaultGraphTranslationService(ILogger<DefaultGraphTranslationService> logger) => this.logger = logger;
 
-    public ScanResult GenerateScanResultFromProcessingResult(DetectorProcessingResult detectorProcessingResult, IDetectionArguments detectionArguments)
+    public ScanResult GenerateScanResultFromProcessingResult(DetectorProcessingResult detectorProcessingResult, IDetectionArguments detectionArguments, bool updateLocations = true)
     {
         var recorderDetectorPairs = detectorProcessingResult.ComponentRecorders;
 
-        var unmergedComponents = this.GatherSetOfDetectedComponentsUnmerged(recorderDetectorPairs, detectionArguments.SourceDirectory);
+        var unmergedComponents = this.GatherSetOfDetectedComponentsUnmerged(recorderDetectorPairs, detectionArguments.SourceDirectory, updateLocations);
 
         var mergedComponents = this.FlattenAndMergeComponents(unmergedComponents);
 
@@ -57,7 +57,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         });
     }
 
-    private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector Detector, ComponentRecorder Recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory)
+    private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector Detector, ComponentRecorder Recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory, bool updateLocations)
     {
         return recorderDetectorPairs
             .Where(recorderDetectorPair => recorderDetectorPair.Recorder != null)
@@ -92,19 +92,22 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         // Return in a format that allows us to add the additional files for the components
                         var locations = dependencyGraph.GetAdditionalRelatedFiles();
 
-                        // graph authoritatively stores the location of the component
-                        locations.Add(location);
-
-                        foreach (var customLocation in componentCustomLocations)
+                        if (updateLocations)
                         {
-                            locations.Add(customLocation);
-                        }
+                            // graph authoritatively stores the location of the component
+                            locations.Add(location);
 
-                        var relativePaths = this.MakeFilePathsRelative(this.logger, rootDirectory, locations);
+                            foreach (var customLocation in componentCustomLocations)
+                            {
+                                locations.Add(customLocation);
+                            }
 
-                        foreach (var additionalRelatedFile in relativePaths ?? Enumerable.Empty<string>())
-                        {
-                            component.AddComponentFilePath(additionalRelatedFile);
+                            var relativePaths = this.MakeFilePathsRelative(this.logger, rootDirectory, locations);
+
+                            foreach (var additionalRelatedFile in relativePaths ?? Enumerable.Empty<string>())
+                            {
+                                component.AddComponentFilePath(additionalRelatedFile);
+                            }
                         }
                     }
                 }
