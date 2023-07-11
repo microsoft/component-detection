@@ -5,5 +5,13 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 
 public interface IGraphTranslationService
 {
-    ScanResult GenerateScanResultFromProcessingResult(DetectorProcessingResult detectorProcessingResult, IDetectionArguments detectionArguments);
+    /// <summary>
+    /// Merges the results of multiple detectors into a single <see cref="ScanResult"/>, building the dependency graph.
+    /// </summary>
+    /// <param name="detectorProcessingResult">The detector processing result.</param>
+    /// <param name="detectionArguments">The detector arguments.</param>
+    /// <param name="updateLocations"><c>true</c> to set the component's locations found at. This should typically be set to true.
+    /// Since the components are passed by reference, any updates to the components will be propogated globally.</param>
+    /// <returns>A <see cref="ScanResult"/> with the final output of component detection.</returns>
+    ScanResult GenerateScanResultFromProcessingResult(DetectorProcessingResult detectorProcessingResult, IDetectionArguments detectionArguments, bool updateLocations = true);
 }

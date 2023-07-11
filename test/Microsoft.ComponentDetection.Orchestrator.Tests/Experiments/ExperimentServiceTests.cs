@@ -50,7 +50,7 @@ public class ExperimentServiceTests
     private void SetupGraphMock(IEnumerable<ScannedComponent> components)
     {
         this.graphTranslationServiceMock
-            .Setup(x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<IDetectionArguments>()))
+            .Setup(x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<IDetectionArguments>(), It.IsAny<bool>()))
             .Returns(new ScanResult() { ComponentsFound = components });
     }
 
@@ -70,6 +70,12 @@ public class ExperimentServiceTests
 
         this.experimentConfigMock.Verify(x => x.IsInControlGroup(this.detectorMock.Object), Times.Once());
         this.experimentConfigMock.Verify(x => x.IsInExperimentGroup(this.detectorMock.Object), Times.Once());
+
+        // verify that we always call the graph translation service with updateLocations = false so we dont
+        // corrupt file location paths
+        this.graphTranslationServiceMock.Verify(
+            x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<IDetectionArguments>(), It.Is<bool>(x => !x)),
+            Times.Once());
     }
 
     [TestMethod]

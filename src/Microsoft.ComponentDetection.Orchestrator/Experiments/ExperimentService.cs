@@ -55,7 +55,8 @@ public class ExperimentService : IExperimentService
                     ContainersDetailsMap = new Dictionary<int, ContainerDetails>(),
                     ResultCode = ProcessingResultCode.Success,
                 },
-                detectionArguments);
+                detectionArguments,
+                false);
 
             var components = scanResult.ComponentsFound;
             this.FilterExperiments(detector, components.Count());
