@@ -21,6 +21,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
     public DefaultGraphTranslationService(ILogger<DefaultGraphTranslationService> logger) => this.logger = logger;
 
+    /// <inheritdoc/>
     public ScanResult GenerateScanResultFromProcessingResult(DetectorProcessingResult detectorProcessingResult, IDetectionArguments detectionArguments, bool updateLocations = true)
     {
         var recorderDetectorPairs = detectorProcessingResult.ComponentRecorders;
