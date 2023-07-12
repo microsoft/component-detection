@@ -85,15 +85,6 @@ This is similar to Codespaces:
 1. Open this repo in VS Code
 1. A notification should popup to reopen the workspace in the container. If it doesn't, open the [`Command Palette`](https://code.visualstudio.com/docs/getstarted/tips-and-tricks#_command-palette) and type `Remote-Containers: Reopen in Container`.
 
-# A detector is marked as DefaultOff/Experimental. What does that mean?
-
-Detectors have 3 levels of "stability":
-* `DefaultOff`
-* `Experimental`
-* `Stable`
-
-DefaultOff detectors need to be explicitly enabled to run and produce a final graph output. Experimental detectors run by default but **will not** produce a final graph output. Stable detectors run and produce a final graph output by default. Here is how you can [enable default off/experimental](./docs/enable-default-off.md) detectors. The status of each detector can also be found [here](./docs/detectors/README.md)
-
 # Telemetry
 
 By default, telemetry will output to your output file path and will be a JSON blob. No data is submitted to Microsoft.
