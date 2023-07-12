@@ -74,6 +74,15 @@ You can [download](https://github.com/microsoft/component-detection/releases/tag
 
 You can also use [GitHub Codespaces](https://docs.github.com/en/codespaces/overview) to run and develop Component Detection in the cloud. To do so, click the green "Code" button at the top of the repository and select "Open with Codespaces". This will open a new Codespace with the repository cloned and ready to go.
 
+## Using VS Code DevContainer
+
+This is similar to Codespaces:
+
+1. Make sure you meet [the requirements](https://code.visualstudio.com/docs/remote/containers#_getting-started) and follow the installation steps for DevContainers in VS Code
+1. `git clone https://github.com/microsoft/component-detection`
+1. Open this repo in VS Code
+1. A notification should popup to reopen the workspace in the container. If it doesn't, open the [`Command Palette`](https://code.visualstudio.com/docs/getstarted/tips-and-tricks#_command-palette) and type `Remote-Containers: Reopen in Container`.
+
 # A detector is marked as DefaultOff/Experimental. What does that mean?
 
 Detectors have 3 levels of "stability":
