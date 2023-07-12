@@ -19,8 +19,9 @@
 
 <p align="center">
   <a href="#features">Features</a> •
-  <a href="#how-to-use">How To Use</a> •
-  <a href="#download">Download</a>
+  <a href="#getting-started">Getting started</a> •
+  <a href="#download">Download</a> •
+  <a href="#contributing">Contributing</a> 
 </p>
 
 **Component Detection** (CD) is a package scanning tool that is intended to be used at build time. It produces a graph-based output of all detected components across a variety of package ecosystems.
