@@ -49,7 +49,7 @@ Component Detection supports detecting libraries from the following ecosystem:
 
 For a complete feature overview refer to [feature-overview.md](docs/feature-overview.md)
 
-## How To Use
+## Getting Started
 
 To clone and run this application, you'll need [Git](https://git-scm.com) and [.NET 6](https://aka.ms/download-dotnet) installed on your computer. From your command line:
 
