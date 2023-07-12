@@ -1,7 +1,7 @@
 
 <h1 align="center">
   <br>
-  <a href="<What link>"><img src="docs/images/readme/component-detection.png" alt="Component Detection" width="200"></a>
+  <img src="docs/images/readme/component-detection.png" alt="Component Detection" width="200">
   <br>
   Component Detection
   <br>
