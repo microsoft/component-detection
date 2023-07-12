@@ -10,17 +10,17 @@
 <h4 align="center">Automatically detect the open-source libraries you use.</h4>
 
 <p align="center">
-    <img alt="Nuget" src="https://img.shields.io/nuget/v/Microsoft.ComponentDetection.Common">
-    <img alt="GitHub Workflow Status (with event)" src="https://github.com/microsoft/component-detection/actions/workflows/build.yml/badge.svg">
-    <img alt="GitHub CodeQL Status" src="https://github.com/microsoft/component-detection/actions/workflows/codeql-analysis.yml/badge.svg">
-    <img alt="OSSF-Scorecard Score" src="https://img.shields.io/ossf-scorecard/github.com/microsoft/component-detection">
-    <img alt="GitHub" src="https://img.shields.io/github/license/microsoft/component-detection">
+   <a href="https://www.nuget.org/packages?q=Microsoft.ComponentDetection"><img alt="Nuget" src="https://img.shields.io/nuget/v/Microsoft.ComponentDetection.Common"></a>
+   <a href="https://github.com/microsoft/component-detection/actions/workflows/build.yml"><img alt="GitHub Workflow Status (with event)" src="https://github.com/microsoft/component-detection/actions/workflows/build.yml/badge.svg"></a>
+   <a href="https://github.com/microsoft/component-detection/actions/workflows/codeql-analysis.yml"><img alt="GitHub CodeQL Status" src="https://github.com/microsoft/component-detection/actions/workflows/codeql-analysis.yml/badge.svg"></a>
+   <a href="https://securityscorecards.dev/viewer/?uri=github.com/microsoft/component-detection"><img alt="OSSF-Scorecard Score" src="https://img.shields.io/ossf-scorecard/github.com/microsoft/component-detection"></a>
+   <a href="https://github.com/microsoft/component-detection/blob/main/LICENSE.txt"><img alt="GitHub" src="https://img.shields.io/github/license/microsoft/component-detection"></a>
 </p>
 
 <p align="center">
   <a href="#features">Features</a> •
   <a href="#how-to-use">How To Use</a> •
-  <a href="#download">Download</a> •
+  <a href="#download">Download</a>
 </p>
 
 **Component Detection** (CD) is a package scanning tool that is intended to be used at build time. It produces a graph-based output of all detected components across a variety of package ecosystems.
