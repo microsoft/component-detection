@@ -1,7 +1,7 @@
 
 <h1 align="center">
   <br>
-  <a href="<What link>"><img src=".github/component-detection.png" alt="Component Detection" width="200"></a>
+  <a href="<What link>"><img src="docs/images/readme/component-detection.png" alt="Component Detection" width="200"></a>
   <br>
   Component Detection
   <br>
@@ -27,7 +27,7 @@
 
 Component Detection can also be used as a library to detect dependencies in your own applications.
 
-![screenshot](.github/component-detection-screenshot.png)
+![screenshot](docs/images/readme/component-detection-screenshot.png)
 
 ## Features
 
