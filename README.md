@@ -74,7 +74,7 @@ You can [download](https://github.com/microsoft/component-detection/releases/tag
 
 ### Using Codespaces
 
-You can also use [GitHub Codespaces](https://docs.github.com/en/codespaces/overview) to run and develop Component Detection in the cloud. To do so, click the green "Code" button at the top of the repository and select "Open with Codespaces". This will open a new Codespace with the repository cloned and ready to go.
+You can use [GitHub Codespaces](https://docs.github.com/en/codespaces/overview) to run and develop Component Detection in the cloud. To do so, click the green "Code" button at the top of the repository and select "Open with Codespaces". This will open a new Codespace with the repository cloned and ready to go.
 
 ### Using VS Code DevContainer
 
