@@ -90,7 +90,9 @@ This is similar to Codespaces:
 
 Once a month, we host a community meeting that anyone is allowed to join and discuss the project. We typically cover the changes over the last month, the roadmap and issues, and any questions or concerns that the community has. 
 
-You can find the meeting details in the [Discussions Tab](https://github.com/microsoft/component-detection/discussions).
+You can find the future and past meeting details in the [Community Meeting Overview](https://github.com/microsoft/component-detection/issues/47).
+
+You can additionally find the details in the [Discussions Tab](https://github.com/microsoft/component-detection/discussions).
 
 # Telemetry
 
