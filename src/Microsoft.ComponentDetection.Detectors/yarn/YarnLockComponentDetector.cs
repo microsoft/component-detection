@@ -60,6 +60,7 @@ public class YarnLockComponentDetector : FileComponentDetector
         try
         {
             var parsed = await this.yarnLockFileFactory.ParseYarnLockFileAsync(singleFileComponentRecorder, file.Stream, this.Logger);
+            this.RecordLockfileVersion(parsed.LockfileVersion);
             this.DetectComponents(parsed, file.Location, singleFileComponentRecorder);
         }
         catch (Exception ex)
