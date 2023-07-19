@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using YamlDotNet.Serialization;
 
 /// <summary>
-/// Represents the yarn.lock file for yarn v2+.
+/// Represents the yarn.lock file for yarn v2+ (berry).
+/// There is no official documentation for the format of the yarn.lock file.
+/// This is based on the source code of https://github.com/yarnpkg/berry/blob/master/packages/yarnpkg-core/sources/Project.ts.
 /// </summary>
 public sealed record YarnBerryLockfile
 {
