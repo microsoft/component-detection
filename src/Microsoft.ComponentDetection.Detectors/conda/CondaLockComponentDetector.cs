@@ -44,6 +44,7 @@ public class CondaLockComponentDetector : FileComponentDetector, IDefaultOffComp
         {
             // Parse conda lock file
             var condaLock = this.ParseCondaLock(processRequest);
+            this.RecordLockfileVersion(condaLock.Version);
 
             // Register the full dependency graph
             CondaDependencyResolver.RecordDependencyGraphFromFile(condaLock, singleFileComponentRecorder);

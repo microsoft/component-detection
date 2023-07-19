@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 
 using System;
 using System.Collections.Generic;
@@ -39,7 +39,7 @@ public class YarnLockParser : IYarnLockParser
             throw new ArgumentNullException(nameof(fileLines));
         }
 
-        var file = new YarnLockFile { LockVersion = fileLines.YarnLockVersion };
+        var file = new YarnLockFile { LockVersion = fileLines.YarnLockVersion, LockfileVersion = fileLines.LockfileVersion };
         IList<YarnEntry> entries = new List<YarnEntry>();
 
         foreach (var block in fileLines)

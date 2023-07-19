@@ -50,6 +50,7 @@ public class PnpmComponentDetector : FileComponentDetector
         try
         {
             var pnpmYaml = await PnpmParsingUtilities.DeserializePnpmYamlFileAsync(file);
+            this.RecordLockfileVersion(pnpmYaml.lockfileVersion);
             this.RecordDependencyGraphFromFile(pnpmYaml, singleFileComponentRecorder);
         }
         catch (Exception e)
