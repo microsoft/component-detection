@@ -77,6 +77,7 @@ public class RustCrateDetector : FileComponentDetector
                 IgnoreMissingProperties = true,
             };
             var cargoLock = Toml.ToModel<CargoLock>(await reader.ReadToEndAsync(), options: options);
+            this.RecordLockfileVersion(cargoLock.Version);
 
             var seenAsDependency = new HashSet<CargoPackage>();
 

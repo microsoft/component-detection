@@ -214,6 +214,8 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         {
             var lockFile = new LockFileFormat().Read(processRequest.ComponentStream.Stream, processRequest.ComponentStream.Location);
 
+            this.RecordLockfileVersion(lockFile.Version);
+
             if (lockFile.PackageSpec == null)
             {
                 throw new FormatException("Lockfile did not contain a PackageSpec");

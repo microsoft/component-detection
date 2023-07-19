@@ -46,6 +46,12 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
             IgnoreMissingProperties = true,
         };
         var poetryLock = Toml.ToModel<PoetryLock>(await reader.ReadToEndAsync(), options: options);
+
+        if (poetryLock.Metadata != null && poetryLock.Metadata.TryGetValue("lock-version", out var lockVersion))
+        {
+            this.RecordLockfileVersion(lockVersion.ToString());
+        }
+
         poetryLock.Package.ToList().ForEach(package =>
         {
             var isDevelopmentDependency = package.Category != "main";
