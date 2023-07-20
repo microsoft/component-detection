@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Rust;
+namespace Microsoft.ComponentDetection.Detectors.Rust;
 
 using System;
 using System.Collections.Generic;
@@ -213,12 +213,7 @@ public class RustCrateDetector : FileComponentDetector
 
             if (IsLocalPackage(childPackage))
             {
-                if (!IsLocalPackage(parentPackage))
-                {
-                    throw new FormatException($"In package with source '{parentComponent.Id}' found non-source dependency string: '{dependency}'");
-                }
-
-                // This is a dependency between packages without source
+                // This is a dependency on a package without a source
                 return;
             }
 
