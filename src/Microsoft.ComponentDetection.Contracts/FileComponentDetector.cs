@@ -1,14 +1,17 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
-
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
+
+[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Detectors.Fuzzer")]
+
+namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>Specialized base class for file based component detection.</summary>
 public abstract class FileComponentDetector : IComponentDetector
@@ -126,7 +129,7 @@ public abstract class FileComponentDetector : IComponentDetector
         return Task.FromResult(processRequests);
     }
 
-    protected abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
+    protected internal abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
 
     protected virtual Task OnDetectionFinishedAsync()
     {

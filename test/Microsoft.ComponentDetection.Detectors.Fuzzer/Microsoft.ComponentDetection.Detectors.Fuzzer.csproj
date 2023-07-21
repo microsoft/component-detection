@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup Label="Package References">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="System.Threading.Tasks.Dataflow" />
+  </ItemGroup>
+
+  <ItemGroup Label="Project References">
+    <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Common\Microsoft.ComponentDetection.Common.csproj" />
+    <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Contracts\Microsoft.ComponentDetection.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Detectors\Microsoft.ComponentDetection.Detectors.csproj" />
+    <ProjectReference Include="..\..\src\Microsoft.ComponentDetection.Orchestrator\Microsoft.ComponentDetection.Orchestrator.csproj" />
+  </ItemGroup>
+
+</Project>

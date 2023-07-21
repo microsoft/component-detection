@@ -41,6 +41,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{FA0D23F6-D
 		test\Directory.Build.props = test\Directory.Build.props
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.ComponentDetection.Detectors.Fuzzer", "test\Microsoft.ComponentDetection.Detectors.Fuzzer\Microsoft.ComponentDetection.Detectors.Fuzzer.csproj", "{53D59820-55D4-4732-9644-5963FF75C30C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +173,18 @@ Global
 		{AB674039-1D82-43CF-BDE5-21A14FE1B1F0}.Release|x64.Build.0 = Release|Any CPU
 		{AB674039-1D82-43CF-BDE5-21A14FE1B1F0}.Release|x86.ActiveCfg = Release|Any CPU
 		{AB674039-1D82-43CF-BDE5-21A14FE1B1F0}.Release|x86.Build.0 = Release|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Debug|x64.Build.0 = Debug|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Debug|x86.Build.0 = Debug|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Release|x64.ActiveCfg = Release|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Release|x64.Build.0 = Release|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Release|x86.ActiveCfg = Release|Any CPU
+		{53D59820-55D4-4732-9644-5963FF75C30C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -186,6 +200,7 @@ Global
 		{5CC31737-F845-4056-9DD1-8F8838DD4EBD} = {FA0D23F6-DAF3-48AE-80B7-AB44B4B4659A}
 		{411CBBC3-DA4B-4922-B5D9-3FEFC0A7696F} = {FA0D23F6-DAF3-48AE-80B7-AB44B4B4659A}
 		{AB674039-1D82-43CF-BDE5-21A14FE1B1F0} = {FA0D23F6-DAF3-48AE-80B7-AB44B4B4659A}
+		{53D59820-55D4-4732-9644-5963FF75C30C} = {FA0D23F6-DAF3-48AE-80B7-AB44B4B4659A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4EA56A5D-4CD8-4D3D-A4E9-6A1A9AADD903}
