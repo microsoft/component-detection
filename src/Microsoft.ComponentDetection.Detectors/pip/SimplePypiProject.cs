@@ -5,7 +5,7 @@ using System.Collections.Generic;
 /// <summary>
 /// A project from the new simple pypi api.
 /// </summary>
-public class SimplePypiProject
+public sealed record SimplePypiProject
 {
-    public IList<SimplePypiProjectRelease> Files { get; set; }
+    public IList<SimplePypiProjectRelease> Files { get; init; }
 }

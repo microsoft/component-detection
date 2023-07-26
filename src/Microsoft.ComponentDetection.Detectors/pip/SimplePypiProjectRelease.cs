@@ -5,11 +5,11 @@ using System;
 /// <summary>
 /// A specific release of a project from the new simple pypi api.
 /// </summary>
-public class SimplePypiProjectRelease
+public sealed record SimplePypiProjectRelease
 {
-    public string FileName { get; set; }
+    public string FileName { get; init; }
 
-    public double Size { get; set; }
+    public double Size { get; init; }
 
-    public Uri Url { get; set; }
+    public Uri Url { get; init; }
 }
