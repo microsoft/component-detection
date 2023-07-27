@@ -24,7 +24,6 @@ try
         .CreateBootstrapLogger();
 
     var serviceProvider = new ServiceCollection()
-        .AddHttpClient()
         .AddComponentDetection()
         .ConfigureLoggingProviders()
         .BuildServiceProvider();

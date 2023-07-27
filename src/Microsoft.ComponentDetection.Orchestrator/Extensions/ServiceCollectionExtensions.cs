@@ -140,6 +140,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IYarnLockFileFactory, YarnLockFileFactory>();
         services.AddSingleton<IComponentDetector, YarnLockComponentDetector>();
 
+        // HttpClient
+        services.AddHttpClient();
+
         return services;
     }
 
