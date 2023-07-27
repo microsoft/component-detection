@@ -6,13 +6,13 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Polly;
 
 public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
@@ -24,7 +24,6 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     // max number of retries allowed, to cap the total delay period
     public const long MAXRETRIES = 15;
 
-    private static readonly HttpClientHandler HttpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
     private static readonly ProductInfoHeaderValue ProductValue = new(
     "ComponentDetection",
     Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
@@ -39,6 +38,8 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
 
     // Keep telemetry on how the cache is being used for future refinements
     private readonly SimplePypiCacheTelemetryRecord cacheTelemetry = new SimplePypiCacheTelemetryRecord();
+
+    private readonly HttpClient httpClient;
 
     /// <summary>
     /// A thread safe cache implementation which contains a mapping of URI -> SimpleProject for simplepypi api projects
@@ -57,13 +58,12 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     // retries used so far for calls to pypi.org
     private long retries;
 
-    public SimplePyPiClient(IEnvironmentVariableService environmentVariableService, ILogger<SimplePyPiClient> logger)
+    public SimplePyPiClient(IEnvironmentVariableService environmentVariableService, IHttpClientFactory httpClientFactory, ILogger<SimplePyPiClient> logger)
     {
         this.environmentVariableService = environmentVariableService;
         this.logger = logger;
+        this.httpClient = httpClientFactory.CreateClient();
     }
-
-    public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);
 
     /// <inheritdoc />
     public async Task<SimplePypiProject> GetSimplePypiProjectAsync(PipDependencySpecification spec)
@@ -156,9 +156,9 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
 
         try
         {
-            pythonProject = JsonConvert.DeserializeObject<SimplePypiProject>(responseContent);
+            pythonProject = JsonSerializer.Deserialize<SimplePypiProject>(responseContent);
         }
-        catch (Exception e)
+        catch (JsonException e)
         {
             this.logger.LogError(
                     e,
@@ -271,7 +271,7 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
         request.Headers.UserAgent.Add(ProductValue);
         request.Headers.UserAgent.Add(CommentValue);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.pypi.simple.v1+json"));
-        var response = await HttpClient.SendAsync(request);
+        var response = await this.httpClient.SendAsync(request);
         return response;
     }
 
@@ -282,5 +282,6 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
         this.cacheTelemetry.Dispose();
         this.cachedProjectWheelFiles.Dispose();
         this.cachedSimplePyPiProjects.Dispose();
+        this.httpClient.Dispose();
     }
 }

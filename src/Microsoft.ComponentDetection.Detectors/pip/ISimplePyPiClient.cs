@@ -1,10 +1,7 @@
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-
-[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Detectors.Tests")]
-
 namespace Microsoft.ComponentDetection.Detectors.Pip;
+
+using System.IO;
+using System.Threading.Tasks;
 
 public interface ISimplePyPiClient
 {
