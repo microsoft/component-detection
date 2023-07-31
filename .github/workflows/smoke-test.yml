@@ -1,8 +1,11 @@
 name: Smoke Tests
 
+env:
+  CD_DETECTOR_EXPERIMENTS: 1
+
 on:
   push:
-    branches: 
+    branches:
       - main
   pull_request:
   schedule:
@@ -52,7 +55,7 @@ jobs:
         with:
           repository: ${{ matrix.language.repo }}
           path: smoke-test-repo
-      
+
       - name: Restore Smoke Test NuGet Packages
         if: ${{ matrix.language.name == 'NuGet'}}
         working-directory: smoke-test-repo/src

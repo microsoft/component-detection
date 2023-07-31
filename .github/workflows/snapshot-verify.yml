@@ -1,5 +1,8 @@
 name: Verify snapshot of test scan
 
+env:
+  CD_DETECTOR_EXPERIMENTS: 1
+
 on: [pull_request]
 
 permissions:
