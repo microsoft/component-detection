@@ -247,7 +247,7 @@ public class SimplePyPiClientTests
 
         var mockedPyPi = this.CreateSimplePypiClient(mockHandler.Object, mockEvs.Object, mockLogger.Object);
 
-        var action = async () => await mockedPyPi.FetchPackageFileStreamAsync("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://testurl") });
+        var action = async () => await mockedPyPi.FetchPackageFileStreamAsync(new Uri($"https://testurl"));
 
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
@@ -270,7 +270,7 @@ public class SimplePyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(string.Empty, HttpStatusCode.OK);
         var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
-        var action = async () => await simplePypiClient.FetchPackageFileStreamAsync("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://testurl") });
+        var action = async () => await simplePypiClient.FetchPackageFileStreamAsync(new Uri($"https://testurl"));
 
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
@@ -289,7 +289,7 @@ public class SimplePyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(string.Empty, HttpStatusCode.OK);
         var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
-        var action = async () => await simplePypiClient.FetchPackageFileStreamAsync("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") });
+        var action = async () => await simplePypiClient.FetchPackageFileStreamAsync(new Uri($"https://{Guid.NewGuid()}"));
 
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
@@ -308,7 +308,7 @@ public class SimplePyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(string.Empty, HttpStatusCode.InternalServerError);
         var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
-        var action = async () => { return await simplePypiClient.FetchPackageFileStreamAsync("a", "1.0.0", new PythonProjectRelease { PackageType = "bdist_wheel", PythonVersion = "3.5.2", Size = 1000, Url = new Uri($"https://{Guid.NewGuid()}") }); };
+        var action = async () => { return await simplePypiClient.FetchPackageFileStreamAsync(new Uri($"https://{Guid.NewGuid()}")); };
 
         await action.Should().NotThrowAsync();
     }
