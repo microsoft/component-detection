@@ -116,6 +116,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPythonCommandService, PythonCommandService>();
         services.AddSingleton<IPythonResolver, PythonResolver>();
         services.AddSingleton<IComponentDetector, PipComponentDetector>();
+        services.AddSingleton<IComponentDetector, SimplePipComponentDetector>();
 
         // pnpm
         services.AddSingleton<IComponentDetector, PnpmComponentDetector>();

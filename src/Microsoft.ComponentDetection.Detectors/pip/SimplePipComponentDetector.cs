@@ -20,7 +20,7 @@ public class SimplePipComponentDetector : FileComponentDetector
         IObservableDirectoryWalkerFactory walkerFactory,
         IPythonCommandService pythonCommandService,
         ISimplePythonResolver pythonResolver,
-        ILogger<PipComponentDetector> logger)
+        ILogger<SimplePipComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
