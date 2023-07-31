@@ -46,6 +46,11 @@ public class ExperimentService : IExperimentService
     /// <inheritdoc />
     public void RecordDetectorRun(IComponentDetector detector, ComponentRecorder componentRecorder, IDetectionArguments detectionArguments)
     {
+        if (!DetectorExperiments.RunExperiments)
+        {
+            return;
+        }
+
         try
         {
             var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(
@@ -106,6 +111,11 @@ public class ExperimentService : IExperimentService
     /// <inheritdoc />
     public async Task FinishAsync()
     {
+        if (!DetectorExperiments.RunExperiments)
+        {
+            return;
+        }
+
         foreach (var (config, experiment) in this.experiments)
         {
             var controlComponents = experiment.ControlGroupComponents;
