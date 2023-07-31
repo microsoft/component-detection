@@ -46,7 +46,7 @@ public class ExperimentService : IExperimentService
     /// <inheritdoc />
     public void RecordDetectorRun(IComponentDetector detector, ComponentRecorder componentRecorder, IDetectionArguments detectionArguments)
     {
-        if (!DetectorExperiments.RunExperiments)
+        if (!DetectorExperiments.AreExperimentsEnabled)
         {
             return;
         }
@@ -111,7 +111,7 @@ public class ExperimentService : IExperimentService
     /// <inheritdoc />
     public async Task FinishAsync()
     {
-        if (!DetectorExperiments.RunExperiments)
+        if (!DetectorExperiments.AreExperimentsEnabled)
         {
             return;
         }

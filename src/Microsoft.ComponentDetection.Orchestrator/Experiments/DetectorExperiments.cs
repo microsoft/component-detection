@@ -15,5 +15,5 @@ public static class DetectorExperiments
     private static bool EnvironmentEnabled =>
         !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CD_DETECTOR_EXPERIMENTS"));
 
-    internal static bool RunExperiments => Enable || EnvironmentEnabled;
+    internal static bool AreExperimentsEnabled => Enable || EnvironmentEnabled;
 }
