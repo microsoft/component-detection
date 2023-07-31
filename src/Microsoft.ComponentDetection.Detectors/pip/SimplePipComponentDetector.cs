@@ -10,7 +10,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class SimplePipComponentDetector : FileComponentDetector
+public class SimplePipComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private readonly IPythonCommandService pythonCommandService;
     private readonly ISimplePythonResolver pythonResolver;
