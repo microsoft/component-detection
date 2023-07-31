@@ -21,7 +21,7 @@ public class SimplePipComponentDetectorTests : BaseDetectorTest<SimplePipCompone
 {
     private readonly Mock<IPythonCommandService> pythonCommandService;
     private readonly Mock<ISimplePythonResolver> pythonResolver;
-    private readonly Mock<ILogger<PipComponentDetector>> mockLogger;
+    private readonly Mock<ILogger<SimplePipComponentDetector>> mockLogger;
 
     public SimplePipComponentDetectorTests()
     {
@@ -31,7 +31,7 @@ public class SimplePipComponentDetectorTests : BaseDetectorTest<SimplePipCompone
         this.pythonResolver = new Mock<ISimplePythonResolver>();
         this.DetectorTestUtility.AddServiceMock(this.pythonResolver);
 
-        this.mockLogger = new Mock<ILogger<PipComponentDetector>>();
+        this.mockLogger = new Mock<ILogger<SimplePipComponentDetector>>();
         this.DetectorTestUtility.AddServiceMock(this.mockLogger);
     }
 
