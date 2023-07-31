@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -8,11 +9,9 @@ public interface ISimplePyPiClient
     /// <summary>
     /// Uses the release url to retrieve the project file.
     /// </summary>
-    /// <param name="name">The package name. </param>
-    /// <param name="version">The package version. </param>
-    /// <param name="release">The PythonProjectRelease. </param>
+    /// <param name="releaseUrl">The url to fetch dependencies from. </param>
     /// <returns>Returns a project from the simplepypi api. </returns>
-    Task<Stream> FetchPackageFileStreamAsync(string name, string version, PythonProjectRelease release);
+    Task<Stream> FetchPackageFileStreamAsync(Uri releaseUrl);
 
     /// <summary>
     /// Calls simplepypi and retrieves the project specified with the spec name.

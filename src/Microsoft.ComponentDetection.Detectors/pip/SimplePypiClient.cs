@@ -76,11 +76,9 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     }
 
     /// <inheritdoc />
-    public async Task<Stream> FetchPackageFileStreamAsync(string name, string version, PythonProjectRelease release)
+    public async Task<Stream> FetchPackageFileStreamAsync(Uri releaseUrl)
     {
-        var uri = release.Url;
-
-        var projectStream = await this.GetAndCacheProjectFileAsync(uri);
+        var projectStream = await this.GetAndCacheProjectFileAsync(releaseUrl);
 
         return projectStream;
     }
