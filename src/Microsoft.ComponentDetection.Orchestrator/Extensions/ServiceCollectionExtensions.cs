@@ -114,8 +114,10 @@ public static class ServiceCollectionExtensions
 
         // PIP
         services.AddSingleton<IPyPiClient, PyPiClient>();
+        services.AddSingleton<ISimplePyPiClient, SimplePyPiClient>();
         services.AddSingleton<IPythonCommandService, PythonCommandService>();
         services.AddSingleton<IPythonResolver, PythonResolver>();
+        services.AddSingleton<ISimplePythonResolver, SimplePythonResolver>();
         services.AddSingleton<IComponentDetector, PipComponentDetector>();
         services.AddSingleton<IComponentDetector, SimplePipComponentDetector>();
 
