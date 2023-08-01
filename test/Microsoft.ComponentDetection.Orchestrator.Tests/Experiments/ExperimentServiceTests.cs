@@ -54,6 +54,9 @@ public class ExperimentServiceTests
             .Returns(new ScanResult() { ComponentsFound = components });
     }
 
+    [TestInitialize]
+    public void EnableDetectorExperiments() => DetectorExperiments.Enable = true;
+
     [TestMethod]
     public void RecordDetectorRun_AddsComponentsToControlAndExperimentGroup()
     {
@@ -110,6 +113,32 @@ public class ExperimentServiceTests
     }
 
     [TestMethod]
+    public async Task RecordDetectorRun_Respects_DetectorExperiments_EnableAsync()
+    {
+        DetectorExperiments.Enable = false;
+        var filterConfigMock = new Mock<IExperimentConfiguration>();
+
+        var components = ExperimentTestUtils.CreateRandomComponents();
+
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object, filterConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.graphTranslationServiceMock.Object,
+            this.loggerMock.Object);
+
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        await service.FinishAsync();
+
+        filterConfigMock.Verify(x => x.ShouldRecord(this.detectorMock.Object, components.Count), Times.Never());
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(filterConfigMock.Object, It.IsAny<ExperimentDiff>()),
+            Times.Never());
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
+            Times.Never());
+    }
+
+    [TestMethod]
     public async Task FinishAsync_ProcessesExperimentsAsync()
     {
         var components = ExperimentTestUtils.CreateRandomComponents();
@@ -163,6 +192,28 @@ public class ExperimentServiceTests
 
         this.experimentProcessorMock.Verify(
             x => x.ProcessExperimentAsync(It.IsAny<IExperimentConfiguration>(), It.IsAny<ExperimentDiff>()),
+            Times.Never());
+    }
+
+    [TestMethod]
+    public async Task FinishAsync_Respects_DetectorExperiments_EnableAsync()
+    {
+        DetectorExperiments.Enable = false;
+
+        var components = ExperimentTestUtils.CreateRandomComponents();
+        this.SetupGraphMock(components);
+
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.graphTranslationServiceMock.Object,
+            this.loggerMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+
+        await service.FinishAsync();
+
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
             Times.Never());
     }
 }
