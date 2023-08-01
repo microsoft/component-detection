@@ -205,8 +205,7 @@ public class SimplePythonResolver : ISimplePythonResolver
     /// <returns> returns a string representing the release version. </returns>
     private string GetVersionFromFileName(string fileName)
     {
-        fileName = fileName.Replace(".tar", "-tar");
-        var version = Regex.Match(fileName, @"-(\d+\.((\d+)|(\d+\.(\d+))))-").Groups[1];
+        var version = Regex.Match(fileName, @"-(\d+\.\d+(\.\d)*)(.tar|-)").Groups[1];
         return version.Value;
     }
 
@@ -217,8 +216,8 @@ public class SimplePythonResolver : ISimplePythonResolver
     /// <param name="spec"> The PipDependencySpecification. </param>
     /// <returns> Returns a list of PipDependencySpecification. </returns>
     private async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(
-    PythonResolverState state,
-    PipDependencySpecification spec)
+        PythonResolverState state,
+        PipDependencySpecification spec)
     {
         var candidateVersion = state.NodeReferences[spec.Name].Value.Version;
 
@@ -294,9 +293,9 @@ public class SimplePythonResolver : ISimplePythonResolver
     /// <param name="newSpec"> The PipDependencySpecification. </param>
     /// <returns> Returns true if the node can be reprocessed else false. </returns>
     private async Task<bool> InvalidateAndReprocessAsync(
-    PythonResolverState state,
-    PipGraphNode node,
-    PipDependencySpecification newSpec)
+        PythonResolverState state,
+        PipGraphNode node,
+        PipDependencySpecification newSpec)
     {
         var pipComponent = node.Value;
 
