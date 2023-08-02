@@ -32,7 +32,7 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentA, parentComponentId: componentC.Id);
 
         var componentAChildren = this.dependencyGraph.GetDependenciesForComponent(componentA.Id);
-        componentAChildren.Should().HaveCount(0);
+        componentAChildren.Should().BeEmpty();
 
         var componentBChildren = this.dependencyGraph.GetDependenciesForComponent(componentB.Id);
         componentBChildren.Should().HaveCount(2);
@@ -40,11 +40,11 @@ public class DependencyGraphTests
         componentBChildren.Should().Contain(componentC.Id);
 
         var componentCChildren = this.dependencyGraph.GetDependenciesForComponent(componentC.Id);
-        componentCChildren.Should().HaveCount(1);
+        componentCChildren.Should().ContainSingle();
         componentCChildren.Should().Contain(componentA.Id);
 
         var componentDChildren = this.dependencyGraph.GetDependenciesForComponent(componentD.Id);
-        componentDChildren.Should().HaveCount(1);
+        componentDChildren.Should().ContainSingle();
         componentDChildren.Should().Contain(componentB.Id);
     }
 
@@ -112,17 +112,17 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentF, componentC.Id);
 
         var rootsForComponentA = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
-        rootsForComponentA.Should().HaveCount(1);
+        rootsForComponentA.Should().ContainSingle();
 
         var rootsForComponentE = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentE.Id);
-        rootsForComponentE.Should().HaveCount(1);
+        rootsForComponentE.Should().ContainSingle();
 
         var rootsForComponentB = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
-        rootsForComponentB.Should().HaveCount(1);
+        rootsForComponentB.Should().ContainSingle();
         rootsForComponentB.Should().Contain(componentA.Id);
 
         var rootsForComponentD = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentD.Id);
-        rootsForComponentD.Should().HaveCount(1);
+        rootsForComponentD.Should().ContainSingle();
         rootsForComponentD.Should().Contain(componentE.Id);
 
         var rootsForComponentC = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
@@ -146,10 +146,10 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentB, componentA.Id);
 
         var rootsForComponentA = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
-        rootsForComponentA.Should().HaveCount(0);
+        rootsForComponentA.Should().BeEmpty();
 
         var rootsForComponentB = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
-        rootsForComponentB.Should().HaveCount(0);
+        rootsForComponentB.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -159,7 +159,7 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentA);
 
         var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
-        aRoots.Should().HaveCount(1);
+        aRoots.Should().ContainSingle();
         aRoots.Should().Contain(componentA.Id);
     }
 
@@ -175,7 +175,7 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentC, componentB.Id);
 
         var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
-        aRoots.Should().HaveCount(1);
+        aRoots.Should().ContainSingle();
         aRoots.Should().Contain(componentA.Id);
 
         var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
@@ -217,7 +217,7 @@ public class DependencyGraphTests
         bRoots.Should().Contain(componentC.Id);
 
         var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
-        cRoots.Should().HaveCount(1);
+        cRoots.Should().ContainSingle();
         cRoots.Should().Contain(componentC.Id);
     }
 
@@ -235,17 +235,17 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
         var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
-        aRoots.Should().HaveCount(1);
+        aRoots.Should().ContainSingle();
         aRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentA.Id).Should().BeFalse();
 
         var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
-        bRoots.Should().HaveCount(1);
+        bRoots.Should().ContainSingle();
         bRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentB.Id).Should().BeFalse();
 
         var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
-        cRoots.Should().HaveCount(1);
+        cRoots.Should().ContainSingle();
         cRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentC.Id).Should().BeTrue();
     }
@@ -264,17 +264,17 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
         var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
-        aRoots.Should().HaveCount(1);
+        aRoots.Should().ContainSingle();
         aRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentA.Id).Should().BeFalse();
 
         var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
-        bRoots.Should().HaveCount(1);
+        bRoots.Should().ContainSingle();
         bRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentB.Id).Should().BeFalse();
 
         var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
-        cRoots.Should().HaveCount(1);
+        cRoots.Should().ContainSingle();
         cRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentC.Id).Should().BeTrue();
     }
@@ -368,7 +368,7 @@ public class DependencyGraphTests
         ancestors.Should().Contain(componentB.Id);
 
         ancestors = this.dependencyGraph.GetAncestors(componentB.Id);
-        ancestors.Should().HaveCount(1);
+        ancestors.Should().ContainSingle();
         ancestors.Should().Contain(componentA.Id);
 
         ancestors = this.dependencyGraph.GetAncestors(componentA.Id);
