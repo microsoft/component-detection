@@ -46,6 +46,11 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
         {
             var conanLock = JsonSerializer.Deserialize<ConanLock>(conanLockFile.Stream);
             this.RecordLockfileVersion(conanLock.Version);
+            if (conanLock.Version != "0.4")
+            {
+                this.Logger.LogWarning("Unsupported conan.lock file version '{ConanLockVersion}'. Failed to process conan.lock file '{ConanLockLocation}'", conanLock.Version, conanLockFile.Location);
+                return;
+            }
 
             if (!conanLock.HasNodes())
             {
@@ -58,8 +63,8 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
             if (packagesDictionary.ContainsKey("0"))
             {
                 packagesDictionary.Remove("0", out var rootNode);
-                explicitReferencedDependencies = rootNode.Requires;
-                developmentDependencies = rootNode.BuildRequires;
+                explicitReferencedDependencies = rootNode.Requires ?? Array.Empty<string>();
+                developmentDependencies = rootNode.BuildRequires ?? Array.Empty<string>();
             }
 
             foreach (var (packageIndex, package) in packagesDictionary)
