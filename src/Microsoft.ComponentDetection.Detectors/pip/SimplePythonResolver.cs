@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 
 public class SimplePythonResolver : ISimplePythonResolver
 {
-    private static readonly Regex VersionRegex = new(@"-(\d+\.\d+(\.\d)*)(.tar|-)", RegexOptions.Compiled);
+    private static readonly Regex VersionRegex = new(@"-(\d+(\.)\w+((\+|\.)\w*)*)(.tar|-)", RegexOptions.Compiled);
 
     private readonly ISimplePyPiClient simplePypiClient;
     private readonly ILogger<SimplePythonResolver> logger;
@@ -100,10 +100,18 @@ public class SimplePythonResolver : ISimplePythonResolver
 
             var simplePythonProject = await this.simplePypiClient.GetSimplePypiProjectAsync(rootPackage);
 
-            if (simplePythonProject != null && simplePythonProject.Files.Any())
+            if (simplePythonProject == null || !simplePythonProject.Files.Any())
             {
-                var pythonProject = this.ConvertSimplePypiProjectToSortedDictionary(simplePythonProject, rootPackage);
+                this.logger.LogWarning(
+                    "Root dependency {RootPackageName} not found on pypi. Skipping package.",
+                    rootPackage.Name);
+                singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
+            }
 
+            var pythonProject = this.ConvertSimplePypiProjectToSortedDictionary(simplePythonProject, rootPackage);
+
+            if (pythonProject.Keys.Any())
+            {
                 state.ValidVersionMap[rootPackage.Name] = pythonProject;
 
                 // Grab the latest version as our candidate version
@@ -121,7 +129,7 @@ public class SimplePythonResolver : ISimplePythonResolver
             else
             {
                 this.logger.LogWarning(
-                    "Root dependency {RootPackageName} not found on pypi. Skipping package.",
+                    "Unable to resolve package: {RootPackageName} gotten from pypi possibly due to invalid versions. Skipping package.",
                     rootPackage.Name);
                 singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
             }
@@ -169,9 +177,17 @@ public class SimplePythonResolver : ISimplePythonResolver
                     // We haven't encountered this package before, so let's fetch it and find a candidate
                     var newProject = await this.simplePypiClient.GetSimplePypiProjectAsync(dependencyNode);
 
-                    if (newProject != null && newProject.Files.Any())
+                    if (newProject == null || !newProject.Files.Any())
                     {
-                        var result = this.ConvertSimplePypiProjectToSortedDictionary(newProject, dependencyNode);
+                        this.logger.LogWarning(
+                             "Dependency Package {DependencyName} not found in Pypi. Skipping package",
+                             dependencyNode.Name);
+                        singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
+                    }
+
+                    var result = this.ConvertSimplePypiProjectToSortedDictionary(newProject, dependencyNode);
+                    if (result.Keys.Any())
+                    {
                         state.ValidVersionMap[dependencyNode.Name] = result;
                         var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
                             ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
@@ -183,7 +199,7 @@ public class SimplePythonResolver : ISimplePythonResolver
                     else
                     {
                         this.logger.LogWarning(
-                            "Dependency Package {DependencyName} not found in Pypi. Skipping package",
+                            "Unable to resolve dependency package {DependencyName} gotten from pypi possibly due to invalid versions. Skipping package",
                             dependencyNode.Name);
                         singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                     }
@@ -202,7 +218,7 @@ public class SimplePythonResolver : ISimplePythonResolver
     /// <returns> Returns a SortedDictionary of PythonProjectReleases. </returns>
     private SortedDictionary<string, IList<PythonProjectRelease>> ConvertSimplePypiProjectToSortedDictionary(SimplePypiProject simplePypiProject, PipDependencySpecification spec)
     {
-        var sortedProjectVersions = new SortedDictionary<string, IList<PythonProjectRelease>>();
+        var sortedProjectVersions = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
         foreach (var file in simplePypiProject.Files)
         {
             try
