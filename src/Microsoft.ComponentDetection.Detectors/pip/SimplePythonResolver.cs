@@ -132,7 +132,7 @@ public class SimplePythonResolver : ISimplePythonResolver
                         else
                         {
                             this.logger.LogWarning(
-                            "Unable to reolve dependency Package {DependencyName} gotten from Pypi possibly due to invalid versions. Skipping package",
+                            "Unable to resolve dependency Package {DependencyName} gotten from Pypi possibly due to invalid versions. Skipping package",
                             dependencyNode.Name);
                             singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                         }
