@@ -54,27 +54,25 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
 
             var packagesDictionary = conanLock.GraphLock.Nodes;
             var explicitReferencedDependencies = Array.Empty<string>();
-            string rootComponentId = null;
+            var developmentDependencies = Array.Empty<string>();
             if (packagesDictionary.ContainsKey("0"))
             {
                 packagesDictionary.Remove("0", out var rootNode);
-                var rootComponent = rootNode.ToComponent();
-                rootComponentId = rootComponent.Id;
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(rootComponent), true);
                 explicitReferencedDependencies = rootNode.Requires;
+                developmentDependencies = rootNode.BuildRequires;
             }
 
             foreach (var (packageIndex, package) in packagesDictionary)
             {
-                var isExplicitReferencedDependency = explicitReferencedDependencies.Contains(packageIndex);
-                var parentId = isExplicitReferencedDependency ? rootComponentId : null;
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(package.ToComponent()), isExplicitReferencedDependency, parentId);
+                singleFileComponentRecorder.RegisterUsage(
+                    new DetectedComponent(package.ToComponent()),
+                    isExplicitReferencedDependency: explicitReferencedDependencies.Contains(packageIndex),
+                    isDevelopmentDependency: developmentDependencies.Contains(packageIndex));
             }
 
-            var packages = packagesDictionary.Values;
             foreach (var (conanPackageIndex, package) in packagesDictionary)
             {
-                var parentPackages = packages.Where(package => package.Requires?.Contains(conanPackageIndex) == true);
+                var parentPackages = packagesDictionary.Values.Where(package => package.Requires?.Contains(conanPackageIndex) == true);
                 foreach (var parentPackage in parentPackages)
                 {
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(package.ToComponent()), false, parentPackage.ToComponent().Id, isDevelopmentDependency: false);

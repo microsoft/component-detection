@@ -7,6 +7,9 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 public class ConanLockNode
 {
+    private string[] requires;
+    private string[] buildRequires;
+
     [JsonPropertyName("context")]
     public string Context { get; set; }
 
@@ -29,10 +32,10 @@ public class ConanLockNode
     public string Reference { get; set; }
 
     [JsonPropertyName("requires")]
-    public string[] Requires { get; set; }
+    public string[] Requires { get => this.requires; set => this.requires = value ?? Array.Empty<string>(); }
 
     [JsonPropertyName("build_requires")]
-    public string[] BuildRequires { get; set; }
+    public string[] BuildRequires { get => this.buildRequires; set => this.buildRequires = value ?? Array.Empty<string>(); }
 
     public override bool Equals(object obj) => obj is ConanLockNode node && this.Context == node.Context && this.Modified == node.Modified && this.Options == node.Options && this.PackageId == node.PackageId && this.Path == node.Path && this.Previous == node.Previous && this.Reference == node.Reference && Enumerable.SequenceEqual(this.Requires, node.Requires);
 

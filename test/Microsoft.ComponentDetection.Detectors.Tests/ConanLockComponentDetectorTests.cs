@@ -161,14 +161,13 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
+        Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 
         // Verify explicitly referenced roots
         var rootComponents = new List<string>
         {
-            "MyConanProject None - Conan",
             "libabc 1.2.12#someHashOfLibAbc - Conan",
             "libawesomelibrary 3.2.1#someHashOfLibAwesomeLibrary - Conan",
             "libanotherlibrary1 2.3.4#someHashOfLibAnotherLibrary1 - Conan",
@@ -211,11 +210,10 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
+        Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
 
         IDictionary<string, string> packageVersions = new Dictionary<string, string>()
         {
-            { "MyConanProject", "None" },
             { "libabc", "1.2.12#someHashOfLibAbc" },
             { "libawesomelibrary", "3.2.1#someHashOfLibAwesomeLibrary" },
             { "libanotherlibrary1", "2.3.4#someHashOfLibAnotherLibrary1" },
@@ -226,13 +224,12 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
 
         IDictionary<string, ISet<string>> packageDependencyRoots = new Dictionary<string, ISet<string>>()
         {
-            { "MyConanProject", new HashSet<string>() { "MyConanProject" } },
-            { "libabc", new HashSet<string>() { "libabc", "MyConanProject", "libawesomelibrary" } },
-            { "libawesomelibrary", new HashSet<string>() { "libawesomelibrary", "MyConanProject" } },
-            { "libanotherlibrary1", new HashSet<string>() { "libanotherlibrary1", "MyConanProject" } },
-            { "libanotherlibrary2", new HashSet<string>() { "libanotherlibrary2", "MyConanProject", "libanotherlibrary1" } },
-            { "libanotherlibrary3", new HashSet<string>() { "libanotherlibrary3", "MyConanProject", "libanotherlibrary1", "libanotherlibrary2" } },
-            { "libanotherlibrary4", new HashSet<string>() { "libanotherlibrary4", "MyConanProject", "libanotherlibrary1" } },
+            { "libabc", new HashSet<string>() { "libabc", "libawesomelibrary" } },
+            { "libawesomelibrary", new HashSet<string>() { "libawesomelibrary" } },
+            { "libanotherlibrary1", new HashSet<string>() { "libanotherlibrary1" } },
+            { "libanotherlibrary2", new HashSet<string>() { "libanotherlibrary2", "libanotherlibrary1" } },
+            { "libanotherlibrary3", new HashSet<string>() { "libanotherlibrary3", "libanotherlibrary1", "libanotherlibrary2" } },
+            { "libanotherlibrary4", new HashSet<string>() { "libanotherlibrary4", "libanotherlibrary1" } },
         };
 
         ISet<string> componentNames = new HashSet<string>();
@@ -269,6 +266,6 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
     }
 }
