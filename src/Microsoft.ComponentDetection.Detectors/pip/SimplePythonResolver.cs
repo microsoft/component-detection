@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class SimplePythonResolver : ISimplePythonResolver
 {
@@ -40,19 +40,29 @@ public class SimplePythonResolver : ISimplePythonResolver
                 {
                     var pythonProject = this.ConvertSimplePypiProjectToSortedDictionary(simplePythonProject, rootPackage);
 
-                    state.ValidVersionMap[rootPackage.Name] = pythonProject;
+                    if (pythonProject.Keys.Any())
+                    {
+                        state.ValidVersionMap[rootPackage.Name] = pythonProject;
 
-                    // Grab the latest version as our candidate version
-                    var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
-                        ? state.ValidVersionMap[rootPackage.Name].Keys.Last() : null;
+                        // Grab the latest version as our candidate version
+                        var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
+                            ? state.ValidVersionMap[rootPackage.Name].Keys.Last() : null;
 
-                    var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion));
+                        var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion));
 
-                    state.NodeReferences[rootPackage.Name] = node;
+                        state.NodeReferences[rootPackage.Name] = node;
 
-                    state.Roots.Add(node);
+                        state.Roots.Add(node);
 
-                    state.ProcessingQueue.Enqueue((rootPackage.Name, rootPackage));
+                        state.ProcessingQueue.Enqueue((rootPackage.Name, rootPackage));
+                    }
+                    else
+                    {
+                        this.logger.LogWarning(
+                        "Unable to resolve package: {RootPackageName} gotten from pypi, possibly due to invalid versions. Skipping package.",
+                        rootPackage.Name);
+                        singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
+                    }
                 }
                 else
                 {
@@ -109,13 +119,23 @@ public class SimplePythonResolver : ISimplePythonResolver
                     if (newProject != null && newProject.Files.Any())
                     {
                         var result = this.ConvertSimplePypiProjectToSortedDictionary(newProject, dependencyNode);
-                        state.ValidVersionMap[dependencyNode.Name] = result;
-                        var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
-                            ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
+                        if (result.Keys.Any())
+                        {
+                            state.ValidVersionMap[dependencyNode.Name] = result;
+                            var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
+                                ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
 
-                        this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
+                            this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
 
-                        state.ProcessingQueue.Enqueue((root, dependencyNode));
+                            state.ProcessingQueue.Enqueue((root, dependencyNode));
+                        }
+                        else
+                        {
+                            this.logger.LogWarning(
+                            "Unable to reolve dependency Package {DependencyName} gotten from Pypi possibly due to invalid versions. Skipping package",
+                            dependencyNode.Name);
+                            singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
+                        }
                     }
                     else
                     {
@@ -139,7 +159,7 @@ public class SimplePythonResolver : ISimplePythonResolver
     /// <returns> Returns a SortedDictionary of PythonProjectReleases. </returns>
     private SortedDictionary<string, IList<PythonProjectRelease>> ConvertSimplePypiProjectToSortedDictionary(SimplePypiProject simplePypiProject, PipDependencySpecification spec)
     {
-        var sortedProjectVersions = new SortedDictionary<string, IList<PythonProjectRelease>>();
+        var sortedProjectVersions = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
         foreach (var file in simplePypiProject.Files)
         {
             try
@@ -164,7 +184,7 @@ public class SimplePythonResolver : ISimplePythonResolver
                 this.logger.LogError(
                     ae,
                     "Release {Release} could not be added to the sorted list of pip components for spec={SpecName}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions).",
-                    JsonConvert.SerializeObject(file),
+                    JsonSerializer.Serialize(file),
                     spec.Name);
                 continue;
             }
@@ -205,7 +225,7 @@ public class SimplePythonResolver : ISimplePythonResolver
     /// <returns> returns a string representing the release version. </returns>
     private string GetVersionFromFileName(string fileName)
     {
-        var version = Regex.Match(fileName, @"-(\d+\.\d+(\.\d)*)(.tar|-)").Groups[1];
+        var version = Regex.Match(fileName, @"-(\d+(\.)\w+((\+|\.)\w*)*)(.tar|-)").Groups[1];
         return version.Value;
     }
 

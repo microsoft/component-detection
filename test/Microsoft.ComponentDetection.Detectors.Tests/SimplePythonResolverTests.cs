@@ -211,7 +211,7 @@ public class SimplePythonResolverTests
     {
         var a = "a==1.15.0";
         var b = "b==1.19";
-        var c = "c==3.1.1";
+        var c = "c==3.1.11";
 
         var specA = new PipDependencySpecification(a);
         var specB = new PipDependencySpecification(b);
@@ -219,7 +219,7 @@ public class SimplePythonResolverTests
 
         var aReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.15.0", "bdist_wheel") });
         var bReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.19", "bdist_wheel") });
-        var cReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("3.1.1", "bdist_wheel") });
+        var cReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("3.1.11", "bdist_wheel") });
 
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("a")))).ReturnsAsync(aReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
@@ -239,7 +239,7 @@ public class SimplePythonResolverTests
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.15.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.19"));
-        var expectedC = new PipGraphNode(new PipComponent("c", "3.1.1"));
+        var expectedC = new PipGraphNode(new PipComponent("c", "3.1.11"));
 
         expectedA.Children.Add(expectedB);
         expectedB.Parents.Add(expectedA);
@@ -285,6 +285,107 @@ public class SimplePythonResolverTests
 
         expectedA.Children.Add(expectedB);
         expectedB.Parents.Add(expectedA);
+
+        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+    }
+
+    [TestMethod]
+    public async Task TestPipResolverVersionExtractionWithUnconventionalVersionsAsync()
+    {
+        var versions = new List<string>()
+        {
+            "1.dev0",
+            "1.0.dev456",
+            "1.0a1",
+            "1.0a2.dev456",
+            "1.0a12.dev456",
+            "1.0a12",
+            "1.0b1.dev456",
+            "1.0b2",
+            "1.0b2.post345.dev456",
+            "1.0b2.post345",
+            "1.0rc1.dev456",
+            "1.0rc1",
+            "1.0",
+            "1.0+abc.5",
+            "1.0+abc.7",
+            "1.0+5",
+            "1.0.post456.dev34",
+            "1.0.post456",
+            "1.0.15",
+            "1.1.dev1",
+        };
+
+        var dependencies = new List<PipDependencySpecification>();
+
+        var previous = string.Empty;
+        for (var i = 0; i < versions.Count; i++)
+        {
+            var index = i;
+            var specString = $"{index}=={versions[i]}";
+            var spec = new PipDependencySpecification(specString);
+            dependencies.Add(spec);
+            var releases = this.CreateSimplePypiProject(new List<(string, string)> { (versions[index], "bdist_wheel") });
+            this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals(index.ToString())))).ReturnsAsync(releases);
+            if (index > 0)
+            {
+                this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(releases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip(index.ToString(), versions[index], this.CreateMetadataString(new List<string>() { previous })));
+            }
+            else if (index == versions.Count - 1)
+            {
+                this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(releases.Files.First().Url)).ReturnsAsync(new MemoryStream());
+            }
+
+            previous = specString;
+        }
+
+        var resolver = new SimplePythonResolver(this.simplePyPiClient.Object, this.loggerMock.Object);
+
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
+
+        Assert.IsNotNull(resolveResult);
+    }
+
+    [TestMethod]
+    public async Task TestPipResolverWithMultipleReleasesAsync()
+    {
+        var a = "a==10.0.0";
+        var b = "b==1.0";
+        var c = "c>=1.9.0";
+
+        var specA = new PipDependencySpecification(a);
+        var specB = new PipDependencySpecification(b);
+        var specC = new PipDependencySpecification(c);
+
+        var aReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("10.0.0", "bdist_wheel") });
+        var bReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.0", "bdist_wheel") });
+        var cReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.9.0", "bdist_wheel"), ("1.13.0", "bdist_wheel") });
+
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("a")))).ReturnsAsync(aReleases);
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c")))).ReturnsAsync(cReleases);
+
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "10.0.0", this.CreateMetadataString(new List<string>() { b })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { c })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.First().Url)).ReturnsAsync(new MemoryStream());
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.Last().Url)).ReturnsAsync(new MemoryStream());
+
+        var dependencies = new List<PipDependencySpecification> { specA };
+
+        var resolver = new SimplePythonResolver(this.simplePyPiClient.Object, this.loggerMock.Object);
+
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
+
+        Assert.IsNotNull(resolveResult);
+
+        var expectedA = new PipGraphNode(new PipComponent("a", "10.0.0"));
+        var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
+        var expectedC = new PipGraphNode(new PipComponent("c", "1.13.0"));
+
+        expectedA.Children.Add(expectedB);
+        expectedB.Parents.Add(expectedA);
+        expectedB.Children.Add(expectedC);
+        expectedC.Parents.Add(expectedB);
 
         Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
     }
