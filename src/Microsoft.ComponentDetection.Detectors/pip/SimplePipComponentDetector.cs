@@ -29,7 +29,7 @@ public class SimplePipComponentDetector : FileComponentDetector, IExperimentalDe
         this.Logger = logger;
     }
 
-    public override string Id => "Pip";
+    public override string Id => "SimplePip";
 
     public override IList<string> SearchPatterns => new List<string> { "setup.py", "requirements.txt" };
 
@@ -37,7 +37,7 @@ public class SimplePipComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 6;
+    public override int Version { get; } = 1;
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
