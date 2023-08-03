@@ -42,11 +42,6 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
         {
             var conanLock = await JsonSerializer.DeserializeAsync<ConanLock>(conanLockFile.Stream);
             this.RecordLockfileVersion(conanLock.Version);
-            if (conanLock.Version != "0.4")
-            {
-                this.Logger.LogWarning("Unsupported conan.lock file version '{ConanLockVersion}'. Failed to process conan.lock file '{ConanLockLocation}'", conanLock.Version, conanLockFile.Location);
-                return;
-            }
 
             if (!conanLock.HasNodes())
             {
