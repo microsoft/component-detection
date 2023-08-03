@@ -34,10 +34,6 @@ public class ConanLockNode
     [JsonPropertyName("build_requires")]
     public string[] BuildRequires { get; set; }
 
-    public override bool Equals(object obj) => obj is ConanLockNode node && this.Context == node.Context && this.Modified == node.Modified && this.Options == node.Options && this.PackageId == node.PackageId && this.Path == node.Path && this.Previous == node.Previous && this.Reference == node.Reference && Enumerable.SequenceEqual(this.Requires, node.Requires);
-
-    public override int GetHashCode() => HashCode.Combine(this.Context, this.Modified, this.Options, this.PackageId, this.Path, this.Previous, this.Reference, this.Requires);
-
     internal string Name() => this.Reference == null ? string.Empty : this.Reference.Split('/', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault("Unknown");
 
     internal TypedComponent ToComponent() => new ConanComponent(this.Name(), this.Version());

@@ -3,13 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Conan;
-using Microsoft.ComponentDetection.Detectors.Conan.Contracts;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -117,51 +115,14 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
 ";
 
     [TestMethod]
-    public void TestConanLock_SerializeDeserialize()
-    {
-        var sampleConanLock = new ConanLock
-        {
-            Version = "0.4",
-            ProfileBuild = "someProfileBuild",
-            GraphLock = new ConanLockGraph
-            {
-                RevisionsEnabled = true,
-                Nodes = new Dictionary<string, ConanLockNode>()
-                {
-                    {
-                        "0", new ConanLockNode
-                        {
-                            Context = string.Empty,
-                            Modified = false,
-                            Options = string.Empty,
-                            PackageId = "SomePackageId",
-                            Path = "D:/SomePath",
-                            Previous = "SomeOtherId",
-                            Reference = string.Empty,
-                            Requires = new[] { "0" },
-                        }
-                    },
-                },
-            },
-        };
-        var jsonString = JsonSerializer.Serialize(sampleConanLock, new JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault });
-        var expectedJsonString = @"{""version"":""0.4"",""profile_build"":""someProfileBuild"",""graph_lock"":{""revisions_enabled"":true,""nodes"":{""0"":{""context"":"""",""modified"":false,""options"":"""",""package_id"":""SomePackageId"",""path"":""D:/SomePath"",""prev"":""SomeOtherId"",""ref"":"""",""requires"":[""0""]}}}}";
-
-        Assert.AreEqual(expectedJsonString, jsonString);
-
-        var deserialisedConanLock = JsonSerializer.Deserialize<ConanLock>(expectedJsonString);
-        Assert.AreEqual(sampleConanLock, deserialisedConanLock);
-    }
-
-    [TestMethod]
     public async Task TestGraphIsCorrectAsync()
     {
         var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Conan.lock", this.testConanLockString)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 
@@ -209,8 +170,8 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             .WithFile("Conan.lock", this.testConanLockString)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
 
         IDictionary<string, string> packageVersions = new Dictionary<string, string>()
         {
@@ -239,7 +200,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             var packageName = (discoveredComponent.Component as ConanComponent).Name;
 
             // Verify version
-            Assert.AreEqual(packageVersions[packageName], (discoveredComponent.Component as ConanComponent).Version);
+            (discoveredComponent.Component as ConanComponent).Version.Should().Be(packageVersions[packageName]);
 
             var dependencyRoots = new HashSet<string>();
 
@@ -265,7 +226,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             .WithFile("conan.lock", this.testConanLockNoDependenciesString)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 }

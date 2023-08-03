@@ -13,8 +13,6 @@ using Microsoft.Extensions.Logging;
 
 public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
-    private const string ConanLockSearchPattern = "conan.lock";
-
     public ConanLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -27,7 +25,7 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
 
     public override string Id => "ConanLock";
 
-    public override IList<string> SearchPatterns => new List<string> { ConanLockSearchPattern };
+    public override IList<string> SearchPatterns => new List<string> { "conan.lock" };
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Conan };
 
@@ -40,11 +38,9 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var conanLockFile = processRequest.ComponentStream;
 
-        await Task.CompletedTask;   // Satisfy the async signature of the overridden method.
-
         try
         {
-            var conanLock = JsonSerializer.Deserialize<ConanLock>(conanLockFile.Stream);
+            var conanLock = await JsonSerializer.DeserializeAsync<ConanLock>(conanLockFile.Stream);
             this.RecordLockfileVersion(conanLock.Version);
             if (conanLock.Version != "0.4")
             {
