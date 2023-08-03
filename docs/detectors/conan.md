@@ -3,7 +3,7 @@
 Conan detection relies on a conan.lock file being present.
 
 ## Detection strategy
-Conan detection is performed by parsing every <em>conan.lock</em> found under the scan directory.
+Conan detection is performed by parsing every **conan.lock** found under the scan directory.
 
 ## Known limitations
 Conan detection will not work if lock files are not being used or not yet generated. So ensure to run the conan build to generate the lock file(s) before running the scan.
