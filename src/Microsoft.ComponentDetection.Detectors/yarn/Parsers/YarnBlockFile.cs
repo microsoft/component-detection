@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 
 using System;
 using System.Collections;
@@ -68,6 +68,9 @@ public class YarnBlockFile : IYarnBlockFile
 
     public YarnLockVersion YarnLockVersion { get; set; }
 
+    /// <inheritdoc/>
+    public string LockfileVersion { get; set; } = "1";
+
     public static async Task<YarnBlockFile> CreateBlockFileAsync(Stream stream)
     {
         if (stream == null)
@@ -131,6 +134,7 @@ public class YarnBlockFile : IYarnBlockFile
 
                         if (metadataBlock.Values.ContainsKey("version") && metadataBlock.Values.ContainsKey("cacheKey"))
                         {
+                            this.LockfileVersion = metadataBlock.Values["version"];
                             break;
                         }
 

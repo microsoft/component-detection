@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -27,7 +27,7 @@ public interface IPyPiClient
     Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec);
 }
 
-public class PyPiClient : IPyPiClient
+public sealed class PyPiClient : IPyPiClient, IDisposable
 {
     // Values used for cache creation
     private const long CACHEINTERVALSECONDS = 60;
@@ -80,12 +80,6 @@ public class PyPiClient : IPyPiClient
             FinalCacheSize = 0,
         };
         this.logger = logger;
-    }
-
-    ~PyPiClient()
-    {
-        this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
-        this.cacheTelemetry.Dispose();
     }
 
     public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);
@@ -291,5 +285,12 @@ public class PyPiClient : IPyPiClient
         }
 
         this.checkedMaxEntriesVariable = true;
+    }
+
+    public void Dispose()
+    {
+        this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
+        this.cacheTelemetry.Dispose();
+        this.cachedResponses.Dispose();
     }
 }

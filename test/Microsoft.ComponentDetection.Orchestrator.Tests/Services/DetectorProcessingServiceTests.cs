@@ -348,32 +348,32 @@ public class DetectorProcessingServiceTests
         // Exclusion predicate is case sensitive and allow windows path, the exclusion list follow the windows path structure and has a case mismatch with the directory path, should not exclude
         args.DirectoryExclusionList = new[] { @"**\source\**" };
         var exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: false);
-        Assert.IsFalse(exclusionPredicate(dn, dp));
+        exclusionPredicate(dn, dp).Should().BeFalse();
 
         // Exclusion predicate is case sensitive and allow windows path, the exclusion list follow the windows path structure and match directory path case, should exclude
         args.DirectoryExclusionList = new[] { @"**\Source\**" };
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: false);
-        Assert.IsTrue(exclusionPredicate(dn, dp));
+        exclusionPredicate(dn, dp).Should().BeTrue();
 
         // Exclusion predicate is not case sensitive and allow windows path, the exclusion list follow the windows path, should exclude
         args.DirectoryExclusionList = new[] { @"**\sOuRce\**" };
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
-        Assert.IsTrue(exclusionPredicate(dn, dp));
+        exclusionPredicate(dn, dp).Should().BeTrue();
 
         // Exclusion predicate does not support windows path and the exclusion list define the path as a windows path, should not exclude
         args.DirectoryExclusionList = new[] { @"**\Source\**" };
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: false, ignoreCase: true);
-        Assert.IsFalse(exclusionPredicate(dn, dp));
+        exclusionPredicate(dn, dp).Should().BeFalse();
 
         // Exclusion predicate support windows path and the exclusion list define the path as a windows path, should exclude
         args.DirectoryExclusionList = new[] { @"**\Source\**" };
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
-        Assert.IsTrue(exclusionPredicate(dn, dp));
+        exclusionPredicate(dn, dp).Should().BeTrue();
 
         // Exclusion predicate support windows path and the exclusion list does not define a windows path, should exclude
         args.DirectoryExclusionList = new[] { @"**/Source/**", @"**/Source\**" };
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
-        Assert.IsTrue(exclusionPredicate(dn, dp));
+        exclusionPredicate(dn, dp).Should().BeTrue();
     }
 
     [TestMethod]
@@ -602,7 +602,7 @@ public class DetectorProcessingServiceTests
         var check = isPresent.Select(i => i.GetType());
 
         isPresent.All(discovered => shouldBePresent.Contains(discovered));
-        shouldBePresent.Should().HaveCount(isPresent.Count());
+        shouldBePresent.Should().HaveSameCount(isPresent);
     }
 
     private Mock<IComponentDetector> SetupCommandDetectorMock(string id)

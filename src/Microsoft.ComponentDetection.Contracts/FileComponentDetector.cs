@@ -88,6 +88,18 @@ public abstract class FileComponentDetector : IComponentDetector
         return Task.FromResult(this.ComponentStreamEnumerableFactory.GetComponentStreams(sourceDirectory, this.SearchPatterns, exclusionPredicate));
     }
 
+    /// <summary>
+    /// Records the lockfile version in the telemetry.
+    /// </summary>
+    /// <param name="lockfileVersion">The lockfile version.</param>
+    protected void RecordLockfileVersion(int lockfileVersion) => this.RecordLockfileVersion(lockfileVersion.ToString());
+
+    /// <summary>
+    /// Records the lockfile version in the telemetry.
+    /// </summary>
+    /// <param name="lockfileVersion">The lockfile version.</param>
+    protected void RecordLockfileVersion(string lockfileVersion) => this.Telemetry["LockfileVersion"] = lockfileVersion;
+
     private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs));

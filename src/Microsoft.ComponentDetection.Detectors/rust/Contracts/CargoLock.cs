@@ -12,4 +12,7 @@ public class CargoLock
 
     [DataMember(Name = "metadata")]
     public Dictionary<string, object> Metadata { get; set; }
+
+    [DataMember(Name = "version")]
+    public int Version { get; set; }
 }

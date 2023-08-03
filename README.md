@@ -1,67 +1,83 @@
 
-# Component Detection
-![Component Detection CI](https://github.com/microsoft/component-detection/workflows/Component%20Detection%20CI/badge.svg)
+<h1 align="center">
+  <br>
+  <img src="docs/images/readme/component-detection.png" alt="Component Detection" width="200">
+  <br>
+  Component Detection
+  <br>
+</h1>
 
-**For bugs, issues, and support please create an issue.**
+<h4 align="center">Automatically detect the open-source libraries you use.</h4>
 
-# Introduction
+<p align="center">
+   <a href="https://www.nuget.org/packages?q=Microsoft.ComponentDetection"><img alt="Nuget" src="https://img.shields.io/nuget/v/Microsoft.ComponentDetection.Common"></a>
+   <a href="https://github.com/microsoft/component-detection/actions/workflows/build.yml"><img alt="GitHub Workflow Status (with event)" src="https://github.com/microsoft/component-detection/actions/workflows/build.yml/badge.svg"></a>
+   <a href="https://github.com/microsoft/component-detection/actions/workflows/codeql-analysis.yml"><img alt="GitHub CodeQL Status" src="https://github.com/microsoft/component-detection/actions/workflows/codeql-analysis.yml/badge.svg"></a>
+   <a href="https://securityscorecards.dev/viewer/?uri=github.com/microsoft/component-detection"><img alt="OSSF-Scorecard Score" src="https://img.shields.io/ossf-scorecard/github.com/microsoft/component-detection"></a>
+   <a href="https://github.com/microsoft/component-detection/blob/main/LICENSE.txt"><img alt="GitHub" src="https://img.shields.io/github/license/microsoft/component-detection"></a>
+</p>
 
-ComponentDetection is a package scanning tool intended to be used at build time. CD produces a graph-based output of all detected components and supports a variety of open source package ecosystems.
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#getting-started">Getting started</a> •
+  <a href="#download">Download</a> •
+  <a href="#contributing">Contributing</a> 
+</p>
 
-# Table of Contents
+**Component Detection** (CD) is a package scanning tool that is intended to be used at build time. It produces a graph-based output of all detected components across a variety of package ecosystems.
 
-* [Feature Overview](#Feature-Overview)
-* [My favorite language/ecosystem isn't supported!](#My-favorite-language/ecosystem-isn't-supported!)
-* [Building and running Component Detection](#Building-and-running-Component-Detection)
-    * [Running in Visual Studio (2019+)](#Running-in-Visual-Studio-(2019+))
-	* [Running from command line](#Running-from-command-line)
-	* [After building](#After-building)
-* [A detector is marked as DefaultOff/Experimental. What does that mean?](#A-detector-is-marked-as-DefaultOff/Experimental.-What-does-that-mean?)
-* [Telemetry](#Telemetry)
+Component Detection can also be used as a library to detect dependencies in your own applications.
 
-# Feature Overview
+![screenshot](docs/images/readme/component-detection-screenshot.png)
 
-| Ecosystem | Scanning | Graph Creation |
-| - | - | - |
-| CocoaPods | ✔ | ✔ |
-| Linux (Debian, Alpine, Rhel, Centos, Fedora, Ubuntu)| ✔ (via [syft](https://github.com/anchore/syft)) | ❌ |
-| Gradle (lockfiles only) | ✔ | ❌ |
-| Go | ✔ | ❌ |
-| Maven | ✔ | ✔ |
-| NPM (including Yarn, Pnpm) | ✔ | ✔ |
-| NuGet (including Paket) | ✔ | ✔ |
-| Pip (Python) | ✔ | ✔ |
-| Poetry (Python, lockfiles only) | ✔ | ❌ |
-| Ruby | ✔ | ✔ |
-| Rust | ✔ | ✔ |
+## Features
+
+Component Detection supports detecting libraries from the following ecosystem:
+
+| Ecosystem                                                                        | Scanning                                        | Graph Creation |
+| -------------------------------------------------------------------------------- | ----------------------------------------------- | -------------- |
+| CocoaPods                                                                        | ✔                                               | ✔              |
+| [Go](docs/detectors/go.md)                                                       | ✔                                               | ❌              |
+| [Gradle (lockfiles only)](docs/detectors/gradle.md)                              | ✔                                               | ❌              |
+| [Linux (Debian, Alpine, Rhel, Centos, Fedora, Ubuntu)](docs/detectors//linux.md) | ✔ (via [syft](https://github.com/anchore/syft)) | ❌              |
+| [Maven](docs/detectors/maven.md)                                                 | ✔                                               | ✔              |
+| [NPM (including Yarn, Pnpm)](docs/detectors/npm.md)                              | ✔                                               | ✔              |
+| [NuGet (including Paket)](docs/detectors/nuget.md)                               | ✔                                               | ✔              |
+| [Pip (Python)](docs/detectors/pip.md)                                            | ✔                                               | ✔              |
+| [Poetry (Python, lockfiles only)](docs/detectors/poetry.md)                      | ✔                                               | ❌              |
+| Ruby                                                                             | ✔                                               | ✔              |
+| Rust                                                                             | ✔                                               | ✔              |
 
 For a complete feature overview refer to [feature-overview.md](docs/feature-overview.md)
 
-# My favorite language/ecosystem isn't supported!
+## Getting Started
 
-Component Detection is built with extensibility in mind! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) to get started where you can find additional docs on adding your own detector.
+To clone and run this application, you'll need [Git](https://git-scm.com) and [.NET 6](https://aka.ms/download-dotnet) installed on your computer. From your command line:
 
+```bash
+# Clone this repository
+$ git clone https://github.com/microsoft/component-detection
 
-# Building and running Component Detection
-.NET Core 3.1 is currently in use, you can install it from https://dotnet.microsoft.com/download/dotnet/3.1
+# Go into the repository
+$ cd component-detection 
 
-The below commands mirror what we do to setup our CI environments:
+# Run the app
+$ dotnet run 
+```
 
-From the base folder:
-``` dotnet build ```
+View the [detector arguments](docs/detector-arguments.md) for more information on how to use the tool.
 
-## Running in Visual Studio (2019+)
-1. open [ComponentDetection.sln](ComponentDetection.sln) in Visual Studio
-1. Set the Loader project as the startup project (rightclick-> Set as Startup Project)
-1. Set Run arguments for the Loader project (rightclick->properties->Debug)  
-	*Minimum:* `scan --SourceDirectory <Repo to scan>`
-1. Now, any time you make a change, you can press `F5`. This will build the changes, and start the process in debug mode (hitting any breakpoints you set)
+## Download
 
-## Using Codespaces
+You can [download](https://github.com/microsoft/component-detection/releases/tag/latest) the latest version of Component Detection for Windows, macOS and Linux.
 
-If you have access to [GitHub Codespaces](https://docs.github.com/en/free-pro-team@latest/github/developing-online-with-codespaces/about-codespaces), select the `Code` button from the [repository homepage](https://github.com/microsoft/component-detection) then select `Open with Codespaces`. That's it! You have a full developer environment that supports debugging, testing, auto complete, jump to definition, everything you would expect.
+## Contributing
 
-## Using VS Code DevContainer
+### Using Codespaces
+
+You can use [GitHub Codespaces](https://docs.github.com/en/codespaces/overview) to run and develop Component Detection in the cloud. To do so, click the green "Code" button at the top of the repository and select "Open with Codespaces". This will open a new Codespace with the repository cloned and ready to go.
+
+### Using VS Code DevContainer
 
 This is similar to Codespaces:
 
@@ -70,34 +86,24 @@ This is similar to Codespaces:
 1. Open this repo in VS Code
 1. A notification should popup to reopen the workspace in the container. If it doesn't, open the [`Command Palette`](https://code.visualstudio.com/docs/getstarted/tips-and-tricks#_command-palette) and type `Remote-Containers: Reopen in Container`.
 
-## Running from command line
-The most basic run:
-```
-dotnet run --project src/Microsoft.ComponentDetection scan --SourceDirectory .\ 
-```
-You can add `--no-restore` or `--no-build` if you don't want to rebuild before the run
-	
-You can add `--Debug` to get the application to wait for debugger attachment to complete.
+### Community Meetings
 
-## After building
-Additional arguments for detection can be found in [detector arguments](docs/detector-arguments.md)
+Once a month, we host a community meeting that anyone is allowed to join and discuss the project. We typically cover the changes over the last month, the roadmap and issues, and any questions or concerns that the community has. 
 
-# A detector is marked as DefaultOff/Experimental. What does that mean?
+You can find the future and past meeting details in the [Community Meeting Overview](https://github.com/microsoft/component-detection/issues/47).
 
-Detectors have 3 levels of "stability":
-* `DefaultOff`
-* `Experimental`
-* `Stable`
-
-DefaultOff detectors need to be explicitly enabled to run and produce a final graph output. Experimental detectors run by default but **will not** produce a final graph output. Stable detectors run and produce a final graph output by default. Here is how you can [enable default off/experimental](./docs/enable-default-off.md) detectors. The status of each detector can also be found [here](./docs/detectors/README.md)
+You can additionally find the details in the [Discussions Tab](https://github.com/microsoft/component-detection/discussions).
 
 # Telemetry
+
 By default, telemetry will output to your output file path and will be a JSON blob. No data is submitted to Microsoft.
 
 # Code of Conduct
+
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
 or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 # Trademarks
+
 This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow Microsoft's Trademark & Brand Guidelines. Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party's policies.

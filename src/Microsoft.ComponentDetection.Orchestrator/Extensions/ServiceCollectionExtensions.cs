@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
+namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
 
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry;
@@ -77,6 +77,9 @@ public static class ServiceCollectionExtensions
         // CocoaPods
         services.AddSingleton<IComponentDetector, PodComponentDetector>();
 
+        // Conda
+        services.AddSingleton<IComponentDetector, CondaLockComponentDetector>();
+
         // Dockerfile
         services.AddSingleton<IComponentDetector, DockerfileComponentDetector>();
 
@@ -110,8 +113,10 @@ public static class ServiceCollectionExtensions
 
         // PIP
         services.AddSingleton<IPyPiClient, PyPiClient>();
+        services.AddSingleton<ISimplePyPiClient, SimplePyPiClient>();
         services.AddSingleton<IPythonCommandService, PythonCommandService>();
         services.AddSingleton<IPythonResolver, PythonResolver>();
+        services.AddSingleton<ISimplePythonResolver, SimplePythonResolver>();
         services.AddSingleton<IComponentDetector, PipComponentDetector>();
 
         // pnpm
@@ -136,6 +141,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IYarnLockParser, YarnLockParser>();
         services.AddSingleton<IYarnLockFileFactory, YarnLockFileFactory>();
         services.AddSingleton<IComponentDetector, YarnLockComponentDetector>();
+
+        // HttpClient
+        services.AddHttpClient();
 
         return services;
     }
