@@ -24,37 +24,40 @@ public class CommandLineInvocationServiceTests
     [SkipTestIfNotWindows]
     public async Task ShowsCmdExeAsExecutableAsync()
     {
-        Assert.IsTrue(await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C"));
+        var result = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
+        result.Should().BeTrue();
     }
 
     [SkipTestIfNotWindows]
     public async Task FallbackWorksIfBadCommandsAreFirstAsync()
     {
-        Assert.IsTrue(await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe", "cmd.exe" }, "/C"));
+        var result = await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe", "cmd.exe" }, "/C");
+        result.Should().BeTrue();
     }
 
     [SkipTestIfNotWindows]
     public async Task ReturnsFalseIfNoValidCommandIsFoundAsync()
     {
-        Assert.IsFalse(await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe" }, "/C"));
+        var result = await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe" }, "/C");
+        result.Should().BeFalse();
     }
 
     [SkipTestIfNotWindows]
     public async Task ReturnsStandardOutputAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
-        Assert.IsTrue(isLocated);
+        isLocated.Should().BeTrue();
         var taskResult = await this.commandLineService.ExecuteCommandAsync("cmd.exe", default, "/C echo Expected Output");
-        Assert.AreEqual(0, taskResult.ExitCode);
-        Assert.AreEqual(string.Empty, taskResult.StdErr);
-        Assert.AreEqual("Expected Output", taskResult.StdOut.Replace(Environment.NewLine, string.Empty));
+        taskResult.ExitCode.Should().Be(0);
+        taskResult.StdErr.Should().Be(string.Empty);
+        taskResult.StdOut.Replace(Environment.NewLine, string.Empty).Should().Be("Expected Output");
     }
 
     [SkipTestIfNotWindows]
     public async Task ExecutesCommandEvenWithLargeStdOutAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
-        Assert.IsTrue(isLocated);
+        isLocated.Should().BeTrue();
         var largeStringBuilder = new StringBuilder();
 
         // Cmd.exe command limit is in the 8100s
@@ -64,16 +67,19 @@ public class CommandLineInvocationServiceTests
         }
 
         var taskResult = await this.commandLineService.ExecuteCommandAsync("cmd.exe", default, $"/C echo {largeStringBuilder}");
-        Assert.AreEqual(0, taskResult.ExitCode);
-        Assert.AreEqual(string.Empty, taskResult.StdErr);
-        Assert.IsTrue(taskResult.StdOut.Length > 8099, taskResult.StdOut.Length < 100 ? $"Stdout was '{taskResult.StdOut}', which is shorter than 8100 chars" : $"Length was {taskResult.StdOut.Length}, which is less than 8100");
+        taskResult.ExitCode.Should().Be(0);
+        taskResult.StdErr.Should().Be(string.Empty);
+        taskResult.StdOut.Length.Should()
+            .BeGreaterThan(
+                8099,
+                taskResult.StdOut.Length < 100 ? $"Stdout was '{taskResult.StdOut}', which is shorter than 8100 chars" : $"Length was {taskResult.StdOut.Length}, which is less than 8100");
     }
 
     [SkipTestIfNotWindows]
     public async Task ExecutesCommandCapturingErrorOutputAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
-        Assert.IsTrue(isLocated);
+        isLocated.Should().BeTrue();
         var largeStringBuilder = new StringBuilder();
 
         // Pick a command that is "too big" for cmd.
@@ -83,16 +89,16 @@ public class CommandLineInvocationServiceTests
         }
 
         var taskResult = await this.commandLineService.ExecuteCommandAsync("cmd.exe", default, $"/C echo {largeStringBuilder}");
-        Assert.AreEqual(1, taskResult.ExitCode);
-        Assert.IsTrue(taskResult.StdErr.Contains("too long"), $"Expected '{taskResult.StdErr}' to contain 'too long'");
-        Assert.AreEqual(string.Empty, taskResult.StdOut);
+        taskResult.ExitCode.Should().Be(1);
+        taskResult.StdErr.Should().Contain("too long", $"Expected '{taskResult.StdErr}' to contain 'too long'");
+        taskResult.StdOut.Should().BeEmpty();
     }
 
     [SkipTestIfNotWindows]
     public async Task ExecutesInAWorkingDirectoryAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
-        Assert.IsTrue(isLocated);
+        isLocated.Should().BeTrue();
         var tempDirectoryPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var tempDirectory = Directory.CreateDirectory(tempDirectoryPath);
 
@@ -105,7 +111,7 @@ public class CommandLineInvocationServiceTests
     public async Task ThrowsIfWorkingDirectoryDoesNotExistAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
-        Assert.IsTrue(isLocated);
+        isLocated.Should().BeTrue();
 
         var tempDirectory = new DirectoryInfo(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
 
