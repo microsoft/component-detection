@@ -95,7 +95,12 @@ public class PyPiClient : IPyPiClient
         var dependencies = new List<PipDependencySpecification>();
 
         var uri = release.Url;
-        var response = await this.GetAndCachePyPiResponseAsync(uri);
+        var response = PythonResolverSharedCache.GetFromCache(uri);
+        if (response == null)
+        {
+            response = await this.GetAndCachePyPiResponseAsync(uri);
+            PythonResolverSharedCache.AddToCache(uri, response);
+        }
 
         if (!response.IsSuccessStatusCode)
         {
@@ -144,61 +149,66 @@ public class PyPiClient : IPyPiClient
     {
         var requestUri = new Uri($"https://pypi.org/pypi/{spec.Name}/json");
 
-        var request = await Policy
-            .HandleResult<HttpResponseMessage>(message =>
-            {
-                // stop retrying if MAXRETRIES was hit!
-                if (message == null)
-                {
-                    return false;
-                }
-
-                var statusCode = (int)message.StatusCode;
-
-                // only retry if server doesn't classify the call as a client error!
-                var isRetryable = statusCode < 400 || statusCode > 499;
-                return !message.IsSuccessStatusCode && isRetryable;
-            })
-            .WaitAndRetryAsync(1, i => RETRYDELAY, (result, timeSpan, retryCount, context) =>
-            {
-                using var r = new PypiRetryTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = result.Result.StatusCode };
-
-                this.logger.LogWarning(
-                    "Received {StatusCode} {ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
-                    result.Result.StatusCode,
-                    result.Result.ReasonPhrase,
-                    requestUri,
-                    timeSpan,
-                    retryCount);
-
-                Interlocked.Increment(ref this.retries);
-            })
-            .ExecuteAsync(() =>
-            {
-                if (Interlocked.Read(ref this.retries) >= MAXRETRIES)
-                {
-                    return Task.FromResult<HttpResponseMessage>(null);
-                }
-
-                return this.GetAndCachePyPiResponseAsync(requestUri);
-            });
-
+        var request = PythonResolverSharedCache.GetFromCache(requestUri);
         if (request == null)
         {
-            using var r = new PypiMaxRetriesReachedTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray() };
+            request = await Policy
+                .HandleResult<HttpResponseMessage>(message =>
+                {
+                    // stop retrying if MAXRETRIES was hit!
+                    if (message == null)
+                    {
+                        return false;
+                    }
 
-            this.logger.LogWarning($"Call to pypi.org failed, but no more retries allowed!");
+                    var statusCode = (int)message.StatusCode;
 
-            return new SortedDictionary<string, IList<PythonProjectRelease>>();
-        }
+                    // only retry if server doesn't classify the call as a client error!
+                    var isRetryable = statusCode < 400 || statusCode > 499;
+                    return !message.IsSuccessStatusCode && isRetryable;
+                })
+                .WaitAndRetryAsync(1, i => RETRYDELAY, (result, timeSpan, retryCount, context) =>
+                {
+                    using var r = new PypiRetryTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = result.Result.StatusCode };
 
-        if (!request.IsSuccessStatusCode)
-        {
-            using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
+                    this.logger.LogWarning(
+                        "Received {StatusCode} {ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
+                        result.Result.StatusCode,
+                        result.Result.ReasonPhrase,
+                        requestUri,
+                        timeSpan,
+                        retryCount);
 
-            this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
+                    Interlocked.Increment(ref this.retries);
+                })
+                .ExecuteAsync(() =>
+                {
+                    if (Interlocked.Read(ref this.retries) >= MAXRETRIES)
+                    {
+                        return Task.FromResult<HttpResponseMessage>(null);
+                    }
 
-            return new SortedDictionary<string, IList<PythonProjectRelease>>();
+                    return this.GetAndCachePyPiResponseAsync(requestUri);
+                });
+            if (request == null)
+            {
+                using var r = new PypiMaxRetriesReachedTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray() };
+
+                this.logger.LogWarning($"Call to pypi.org failed, but no more retries allowed!");
+
+                return new SortedDictionary<string, IList<PythonProjectRelease>>();
+            }
+
+            if (!request.IsSuccessStatusCode)
+            {
+                using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
+
+                this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
+
+                return new SortedDictionary<string, IList<PythonProjectRelease>>();
+            }
+
+            PythonResolverSharedCache.AddToCache(requestUri, request);
         }
 
         var response = await request.Content.ReadAsStringAsync();
