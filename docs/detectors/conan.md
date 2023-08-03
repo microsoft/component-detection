@@ -8,4 +8,4 @@ Conan detection is performed by parsing every **conan.lock** found under the sca
 ## Known limitations
 Conan detection will not work if lock files are not being used or not yet generated. So ensure to run the conan build to generate the lock file(s) before running the scan.
 
-Full dependency graph generation is not supported. However, dependency relationships identified/present in the <em>conan.lock</em> file is captured.
+Full dependency graph generation is not supported. However, dependency relationships identified/present in the **conan.lock** file is captured.
