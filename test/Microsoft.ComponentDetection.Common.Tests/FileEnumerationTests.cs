@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -35,11 +36,11 @@ public class FileEnumerationTests
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.AreEqual(48, foundFiles.Count);
+            foundFiles.Should().HaveCount(48);
         }
         else
         {
-            Assert.AreEqual(24, foundFiles.Count);
+            foundFiles.Should().HaveCount(24);
         }
     }
 }

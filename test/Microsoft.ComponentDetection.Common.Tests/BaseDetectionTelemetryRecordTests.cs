@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.Serialization;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -34,15 +35,15 @@ public class BaseDetectionTelemetryRecordTests
         foreach (var type in this.recordTypes)
         {
             var inst = Activator.CreateInstance(type) as IDetectionTelemetryRecord;
-            Assert.IsNotNull(inst);
+            inst.Should().NotBeNull();
 
             var recordName = inst.RecordName;
 
-            Assert.IsTrue(!string.IsNullOrEmpty(recordName), $"RecordName not set for {type.FullName}!");
+            recordName.Should().NotBeNullOrEmpty($"RecordName not set for {type.FullName}!");
 
-            if (dic.ContainsKey(recordName))
+            if (dic.TryGetValue(recordName, out var value))
             {
-                Assert.Fail($"Duplicate RecordName:`{recordName}` found for {type.FullName} and {dic[recordName].FullName}!");
+                Assert.Fail($"Duplicate RecordName:`{recordName}` found for {type.FullName} and {value.FullName}!");
             }
             else
             {
