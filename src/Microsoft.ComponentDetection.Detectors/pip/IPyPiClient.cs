@@ -202,7 +202,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                 return new SortedDictionary<string, IList<PythonProjectRelease>>();
             }
 
-            PythonResolverSharedCache.GetFromProjectCache(spec.Name);
+            PythonResolverSharedCache.AddToProjectCache(spec.Name, request);
         }
 
         var response = await request.Content.ReadAsStringAsync();
