@@ -89,11 +89,11 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         var dependencies = new List<PipDependencySpecification>();
 
         var uri = release.Url;
-        var response = PythonResolverSharedCache.GetFromCache(uri);
+        var response = PythonResolverSharedCache.GetFromWheelFileCache(uri);
         if (response == null)
         {
             response = await this.GetAndCachePyPiResponseAsync(uri);
-            PythonResolverSharedCache.AddToCache(uri, response);
+            PythonResolverSharedCache.AddToWheelFileCache(uri, response);
         }
 
         if (!response.IsSuccessStatusCode)
@@ -143,7 +143,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
     {
         var requestUri = new Uri($"https://pypi.org/pypi/{spec.Name}/json");
 
-        var request = PythonResolverSharedCache.GetFromCache(requestUri);
+        var request = PythonResolverSharedCache.GetFromProjectCache(spec.Name);
         if (request == null)
         {
             request = await Policy
@@ -202,7 +202,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                 return new SortedDictionary<string, IList<PythonProjectRelease>>();
             }
 
-            PythonResolverSharedCache.AddToCache(requestUri, request);
+            PythonResolverSharedCache.GetFromProjectCache(spec.Name);
         }
 
         var response = await request.Content.ReadAsStringAsync();

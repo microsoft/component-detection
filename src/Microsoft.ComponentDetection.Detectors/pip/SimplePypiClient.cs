@@ -91,19 +91,24 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     /// <returns>The cached project file or a new result from Simple PyPi.</returns>
     private async Task<Stream> GetAndCacheProjectFileAsync(Uri uri)
     {
-        if (!this.checkedMaxEntriesVariable)
+        var response = PythonResolverSharedCache.GetFromWheelFileCache(uri);
+        if (response == null)
         {
-            this.cachedProjectWheelFiles = this.InitializeNonDefaultMemoryCache(this.cachedProjectWheelFiles);
-        }
+            if (!this.checkedMaxEntriesVariable)
+            {
+                this.cachedProjectWheelFiles = this.InitializeNonDefaultMemoryCache(this.cachedProjectWheelFiles);
+            }
 
-        if (this.cachedProjectWheelFiles.TryGetValue(uri, out Stream result))
-        {
-            this.cacheTelemetry.NumProjectFileCacheHits++;
-            this.logger.LogDebug("Retrieved cached Python data from {Uri}", uri);
-            return result;
-        }
+            if (this.cachedProjectWheelFiles.TryGetValue(uri, out Stream result))
+            {
+                this.cacheTelemetry.NumProjectFileCacheHits++;
+                this.logger.LogDebug("Retrieved cached Python data from {Uri}", uri);
+                return result;
+            }
 
-        var response = await this.GetPypiResponseAsync(uri);
+            response = await this.GetPypiResponseAsync(uri);
+            PythonResolverSharedCache.AddToWheelFileCache(uri, response);
+        }
 
         if (!response.IsSuccessStatusCode)
         {
@@ -144,7 +149,12 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
             return result;
         }
 
-        var response = await this.RetryPypiRequestAsync(uri, spec);
+        var response = PythonResolverSharedCache.GetFromProjectCache(spec.Name);
+        if (response == null)
+        {
+            response = await this.RetryPypiRequestAsync(uri, spec);
+            PythonResolverSharedCache.AddToProjectCache(spec.Name, response);
+        }
 
         var responseContent = await response.Content.ReadAsStringAsync();
         if (string.IsNullOrEmpty(responseContent))
@@ -264,22 +274,12 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     /// <returns> Returns the httpresponsemessage. </returns>
     private async Task<HttpResponseMessage> GetPypiResponseAsync(Uri uri)
     {
-        var cacheEntry = PythonResolverSharedCache.GetFromCache(uri);
-        if (cacheEntry != null)
-        {
-            return cacheEntry;
-        }
-
         this.logger.LogInformation("Getting Python data from {Uri}", uri);
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.UserAgent.Add(ProductValue);
         request.Headers.UserAgent.Add(CommentValue);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.pypi.simple.v1+json"));
         var response = await this.httpClient.SendAsync(request);
-        if (response.IsSuccessStatusCode)
-        {
-            PythonResolverSharedCache.AddToCache(uri, response);
-        }
 
         return response;
     }
