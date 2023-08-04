@@ -96,6 +96,26 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
 }
 ";
 
+    private readonly string testConanLockStringWithNullValueForRootNode = @"{
+ ""graph_lock"": {
+  ""nodes"": {
+   ""0"": null,
+   ""1"": {
+    ""ref"": ""libabc/1.2.12#someHashOfLibAbc"",
+    ""options"": ""someOptionsString"",
+    ""package_id"": ""packageIdOfLibAbc"",
+    ""prev"": ""someHashOfLibAbc"",
+    ""context"": ""host""
+   }
+  },
+  ""revisions_enabled"": true
+ },
+ ""version"": ""0.4"",
+ ""profile_host"": ""someLongProfileHostSettingsString\n"",
+ ""profile_build"": ""someLongProfileBuildSettingsString\n""
+}
+";
+
     private readonly string testConanLockNoDependenciesString = @"{
  ""graph_lock"": {
   ""nodes"": {
@@ -161,6 +181,20 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
         var a = graph.GetDependenciesForComponent("libanotherlibrary1 2.3.4#someHashOfLibAnotherLibrary1 - Conan");
         graph.GetDependenciesForComponent("libanotherlibrary1 2.3.4#someHashOfLibAnotherLibrary1 - Conan").Should().BeEquivalentTo(new[] { "libanotherlibrary2 3.4.5#someHashOfLibAnotherLibrary2 - Conan", "libanotherlibrary4 5.6.7#someHashOfLibAnotherLibrary4 - Conan" });
         graph.GetDependenciesForComponent("libanotherlibrary2 3.4.5#someHashOfLibAnotherLibrary2 - Conan").Should().BeEquivalentTo(new[] { "libanotherlibrary3 4.5.6#someHashOfLibAnotherLibrary3 - Conan" });
+    }
+
+    [TestMethod]
+    public async Task TestDetectionForConanLockFileWithNullValuesForRootNodeAsync()
+    {
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Conan.lock", this.testConanLockStringWithNullValueForRootNode)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
+
+        (componentRecorder.GetDetectedComponents().First().Component as ConanComponent).Name.Should().Be("libabc");
+        (componentRecorder.GetDetectedComponents().First().Component as ConanComponent).Version.Should().Be("1.2.12#someHashOfLibAbc");
     }
 
     [TestMethod]

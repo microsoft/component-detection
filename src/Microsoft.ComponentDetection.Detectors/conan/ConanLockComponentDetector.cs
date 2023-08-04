@@ -54,12 +54,12 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
             if (packagesDictionary.ContainsKey("0"))
             {
                 packagesDictionary.Remove("0", out var rootNode);
-                if (rootNode.Requires != null)
+                if (rootNode?.Requires != null)
                 {
                     explicitReferencedDependencies = new HashSet<string>(rootNode.Requires);
                 }
 
-                if (rootNode.BuildRequires != null)
+                if (rootNode?.BuildRequires != null)
                 {
                     developmentDependencies = new HashSet<string>(rootNode.BuildRequires);
                 }
