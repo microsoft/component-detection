@@ -161,14 +161,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
 
         rootComponents.ForEach(rootComponentId =>
         {
-            try
-            {
-                graph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue();
-            }
-            catch
-            {
-                Assert.Fail($"Expected Component to be explicitly referenced but it is not: {rootComponentId}");
-            }
+                graph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue($"Expected Component to be explicitly referenced but it is not: {rootComponentId}");
         });
 
         // components without any dependencies
