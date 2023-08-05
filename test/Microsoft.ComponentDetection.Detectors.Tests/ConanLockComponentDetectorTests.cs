@@ -254,6 +254,6 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 }
