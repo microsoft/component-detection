@@ -242,7 +242,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
         // Verify all packages were detected
         foreach (var expectedPackage in packageVersions.Keys)
         {
-            Assert.IsTrue(componentNames.Contains(expectedPackage));
+            componentNames.Should().Contain(expectedPackage);
         }
     }
 
