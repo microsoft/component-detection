@@ -88,14 +88,18 @@ public class SimplePythonResolver : ISimplePythonResolver
     public async Task<IList<PipGraphNode>> ResolveRootsAsync(ISingleFileComponentRecorder singleFileComponentRecorder, IList<PipDependencySpecification> initialPackages)
     {
         var state = new PythonResolverState();
+        var syncRoot = new object();
 
         // Fill the dictionary with valid packages for the roots
-        foreach (var rootPackage in initialPackages)
+        await Parallel.ForEachAsync(initialPackages, async (rootPackage, ct) =>
         {
             // If we have it, we probably just want to skip at this phase as this indicates duplicates
-            if (state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
+            lock (syncRoot)
             {
-                continue;
+                if (state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
+                {
+                    return;
+                }
             }
 
             var simplePythonProject = await this.simplePypiClient.GetSimplePypiProjectAsync(rootPackage);
@@ -108,32 +112,36 @@ public class SimplePythonResolver : ISimplePythonResolver
                 singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
             }
 
-            var pythonProject = this.ConvertSimplePypiProjectToSortedDictionary(simplePythonProject, rootPackage);
-
-            if (pythonProject.Keys.Any())
+            lock (syncRoot)
             {
-                state.ValidVersionMap[rootPackage.Name] = pythonProject;
+                var pythonProject = this.ConvertSimplePypiProjectToSortedDictionary(simplePythonProject, rootPackage);
 
-                // Grab the latest version as our candidate version
-                var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
-                    ? state.ValidVersionMap[rootPackage.Name].Keys.Last() : null;
+                if (pythonProject.Keys.Any())
+                {
+                    state.ValidVersionMap[rootPackage.Name] = pythonProject;
 
-                var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion));
+                    // Grab the latest version as our candidate version
+                    var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
+                        ? state.ValidVersionMap[rootPackage.Name].Keys.Last()
+                        : null;
 
-                state.NodeReferences[rootPackage.Name] = node;
+                    var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion));
 
-                state.Roots.Add(node);
+                    state.NodeReferences[rootPackage.Name] = node;
 
-                state.ProcessingQueue.Enqueue((rootPackage.Name, rootPackage));
+                    state.Roots.Add(node);
+
+                    state.ProcessingQueue.Enqueue((rootPackage.Name, rootPackage));
+                }
+                else
+                {
+                    this.logger.LogWarning(
+                        "Unable to resolve package: {RootPackageName} gotten from pypi possibly due to invalid versions. Skipping package.",
+                        rootPackage.Name);
+                    singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
+                }
             }
-            else
-            {
-                this.logger.LogWarning(
-                    "Unable to resolve package: {RootPackageName} gotten from pypi possibly due to invalid versions. Skipping package.",
-                    rootPackage.Name);
-                singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
-            }
-        }
+        });
 
         // Now queue packages for processing
         return await this.ProcessQueueAsync(singleFileComponentRecorder, state) ?? new List<PipGraphNode>();
@@ -292,7 +300,7 @@ public class SimplePythonResolver : ISimplePythonResolver
     private async Task<IList<PipDependencySpecification>> FetchDependenciesFromPackageStreamAsync(string name, string version, Stream packageStream)
     {
         var dependencies = new List<PipDependencySpecification>();
-        using var package = new ZipArchive(packageStream);
+        var package = new ZipArchive(packageStream);
 
         var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
 
