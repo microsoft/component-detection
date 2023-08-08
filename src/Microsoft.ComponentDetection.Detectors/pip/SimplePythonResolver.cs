@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 
 public class SimplePythonResolver : ISimplePythonResolver
 {
-    private static readonly Regex VersionRegex = new(@"-(\d+(\.)\w+((\+|\.)\w*)*)(.tar|-)", RegexOptions.Compiled);
+    private static readonly Regex VersionRegex = new(@"-((\d+)((\.)\w+((\+|\.)\w*)*)*)(.tar|-)", RegexOptions.Compiled);
 
     private readonly ISimplePyPiClient simplePypiClient;
     private readonly ILogger<SimplePythonResolver> logger;
