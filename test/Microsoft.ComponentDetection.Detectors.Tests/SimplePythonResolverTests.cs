@@ -314,6 +314,7 @@ public class SimplePythonResolverTests
             "1.0.post456",
             "1.0.15",
             "1.1.dev1",
+            "100",
         };
 
         var dependencies = new List<PipDependencySpecification>();
