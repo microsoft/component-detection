@@ -4,6 +4,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
+using Microsoft.ComponentDetection.Detectors.Conan;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
@@ -77,6 +78,9 @@ public static class ServiceCollectionExtensions
         // Detectors
         // CocoaPods
         services.AddSingleton<IComponentDetector, PodComponentDetector>();
+
+        // Conan
+        services.AddSingleton<IComponentDetector, ConanLockComponentDetector>();
 
         // Conda
         services.AddSingleton<IComponentDetector, CondaLockComponentDetector>();

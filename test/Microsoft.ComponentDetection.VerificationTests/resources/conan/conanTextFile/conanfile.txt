@@ -1,0 +1,5 @@
+[requires]
+boost/1.82.0
+
+[tool_requires]
+gtest/1.8.1
