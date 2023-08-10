@@ -34,7 +34,7 @@ Given a dependency tree A -> B -> C, C's root dependency is A.
 - Go detection will fallback if no Go v1.11+ is present.
 
 - Due to the nature of `go.sum` containing references for all dependencies, including historical, no-longer-needed dependencies; the fallback strategy can result in over detection.
-Executing [go mod tidy](https://go.dev/ref/mod#go-mod-tidy) before detection via default strategy is encouraged.
+Executing [go mod tidy](https://go.dev/ref/mod#go-mod-tidy) before detection via the fallback strategy is encouraged.
 
 - Some legacy dependencies may report stale transitive dependencies in their manifests, in this case you can remove them safely from your binaries by using [exclude directive](https://go.dev/doc/modules/gomod-ref#exclude).
 
