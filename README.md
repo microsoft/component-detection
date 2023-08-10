@@ -62,7 +62,7 @@ $ git clone https://github.com/microsoft/component-detection
 $ cd component-detection 
 
 # Run the app
-$ dotnet run 
+$ dotnet run --project ".\src\Microsoft.ComponentDetection\Microsoft.ComponentDetection.csproj" scan --SourceDirectory [PATH TO THE REPO TO SCAN]
 ```
 
 View the [detector arguments](docs/detector-arguments.md) for more information on how to use the tool.
