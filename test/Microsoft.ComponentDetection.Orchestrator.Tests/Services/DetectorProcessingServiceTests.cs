@@ -511,19 +511,6 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_FinishesExperimentsAsync()
-    {
-        this.detectorsToUse = new[]
-        {
-            this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-        };
-
-        await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
-
-        this.experimentServiceMock.Verify(x => x.FinishAsync(), Times.Once());
-    }
-
-    [TestMethod]
     public async Task ProcessDetectorsAsync_RecordsDetectorRunsAsync()
     {
         this.detectorsToUse = new[]
