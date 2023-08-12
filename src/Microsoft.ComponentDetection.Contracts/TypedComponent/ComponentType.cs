@@ -53,4 +53,7 @@ public enum ComponentType : byte
 
     [EnumMember]
     DockerReference = 16,
+
+    [EnumMember]
+    Conan = 17,
 }

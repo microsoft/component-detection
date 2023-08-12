@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Go;
+namespace Microsoft.ComponentDetection.Detectors.Go;
 
 using System;
 using System.Collections.Generic;
@@ -53,6 +53,9 @@ public class GoComponentDetector : FileComponentDetector
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
+        using var record = new GoGraphTelemetryRecord();
+        record.WasGoCliDisabled = false;
+        record.WasGoFallbackStrategyUsed = false;
 
         var projectRootDirectory = Directory.GetParent(file.Location);
         if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
@@ -65,10 +68,11 @@ public class GoComponentDetector : FileComponentDetector
         {
             if (!this.IsGoCliManuallyDisabled())
             {
-                wasGoCliScanSuccessful = await this.UseGoCliToScanAsync(file.Location, singleFileComponentRecorder);
+                wasGoCliScanSuccessful = await this.UseGoCliToScanAsync(file.Location, singleFileComponentRecorder, record);
             }
             else
             {
+                record.WasGoCliDisabled = true;
                 this.Logger.LogInformation("Go cli scan was manually disabled, fallback strategy performed." +
                                     " More info: https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy");
             }
@@ -85,6 +89,7 @@ public class GoComponentDetector : FileComponentDetector
             }
             else
             {
+                record.WasGoFallbackStrategyUsed = true;
                 var fileExtension = Path.GetExtension(file.Location).ToUpperInvariant();
                 switch (fileExtension)
                 {
@@ -112,11 +117,10 @@ public class GoComponentDetector : FileComponentDetector
     }
 
     [SuppressMessage("Maintainability", "CA1508:Avoid dead conditional code", Justification = "False positive")]
-    private async Task<bool> UseGoCliToScanAsync(string location, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private async Task<bool> UseGoCliToScanAsync(string location, ISingleFileComponentRecorder singleFileComponentRecorder, GoGraphTelemetryRecord record)
     {
-        using var record = new GoGraphTelemetryRecord();
         record.WasGraphSuccessful = false;
-
+        record.WasGoCliNotFound = false;
         var projectRootDirectory = Directory.GetParent(location);
         record.ProjectRoot = projectRootDirectory.FullName;
 
@@ -126,6 +130,7 @@ public class GoComponentDetector : FileComponentDetector
         if (!isGoAvailable)
         {
             this.Logger.LogInformation("Go CLI was not found in the system");
+            record.WasGoCliNotFound = true;
             return false;
         }
 

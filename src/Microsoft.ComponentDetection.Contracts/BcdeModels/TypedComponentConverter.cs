@@ -17,6 +17,7 @@ public class TypedComponentConverter : JsonConverter
         { ComponentType.Git, typeof(GitComponent) },
         { ComponentType.RubyGems, typeof(RubyGemsComponent) },
         { ComponentType.Cargo, typeof(CargoComponent) },
+        { ComponentType.Conan, typeof(ConanComponent) },
         { ComponentType.Pip, typeof(PipComponent) },
         { ComponentType.Go, typeof(GoComponent) },
         { ComponentType.DockerImage, typeof(DockerImageComponent) },

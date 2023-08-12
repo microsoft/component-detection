@@ -27,14 +27,14 @@ public class DockerServiceTests
     public async Task DockerService_CanPingDockerAsync()
     {
         var canPingDocker = await this.dockerService.CanPingDockerAsync();
-        Assert.IsTrue(canPingDocker);
+        canPingDocker.Should().BeTrue();
     }
 
     [SkipTestOnWindows]
     public async Task DockerService_CanRunLinuxContainersAsync()
     {
         var isLinuxContainerModeEnabled = await this.dockerService.CanRunLinuxContainersAsync();
-        Assert.IsTrue(isLinuxContainerModeEnabled);
+        isLinuxContainerModeEnabled.Should().BeTrue();
     }
 
     [SkipTestOnWindows]
@@ -65,7 +65,7 @@ public class DockerServiceTests
         var expectedCreatedAt = DateTime.Parse("2021-09-23T23:47:57.442225064Z").ToUniversalTime();
 
         details.Should().NotBeNull();
-        details.Id.Should().BeGreaterThan(0);
+        details.Id.Should().BePositive();
         details.ImageId.Should().BeEquivalentTo(expectedImageId);
         details.CreatedAt.ToUniversalTime().Should().Be(expectedCreatedAt);
         details.BaseImageDigest.Should().Be("sha256:feb5d9fea6a5e9606aa995e879d862b825965ba48de054caab5ef356dc6b3412");

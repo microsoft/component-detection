@@ -123,6 +123,18 @@ public class TypedComponentSerializationTests
     }
 
     [TestMethod]
+    public void TypedComponent_Serialization_Conan()
+    {
+        TypedComponent tc = new ConanComponent("SomeConanPackage", "1.2.3");
+        var result = JsonConvert.SerializeObject(tc);
+        var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
+        deserializedTC.Should().BeOfType(typeof(ConanComponent));
+        var conanComponent = (ConanComponent)deserializedTC;
+        conanComponent.Name.Should().Be("SomeConanPackage");
+        conanComponent.Version.Should().Be("1.2.3");
+    }
+
+    [TestMethod]
     public void TypedComponent_Serialization_Pip()
     {
         TypedComponent tc = new PipComponent("SomePipPackage", "1.2.3");
