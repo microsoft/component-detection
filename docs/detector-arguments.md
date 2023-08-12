@@ -1,7 +1,7 @@
 # Detector arguments
 
 ``` shell
-dotnet run -p "src\Microsoft.ComponentDetection\Microsoft.ComponentDetection.csproj" help scan
+dotnet run --project "src\Microsoft.ComponentDetection\Microsoft.ComponentDetection.csproj" help scan
 ```
 
 ```

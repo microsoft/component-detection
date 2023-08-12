@@ -1,0 +1,60 @@
+{
+ "graph_lock": {
+  "nodes": {
+   "0": {
+    "options": "",
+    "requires": [
+     "1"
+    ],
+    "build_requires": [
+     "5"
+    ],
+    "path": "conanfile.txt",
+    "context": "host"
+   },
+   "1": {
+    "ref": "boost/1.82.0",
+    "options": "",
+    "package_id": "dd7f5f958c7381cfd81e611a16062de0c827160a",
+    "prev": "0",
+    "requires": [
+     "2",
+     "3",
+     "4"
+    ],
+    "context": "host"
+   },
+   "2": {
+    "ref": "zlib/1.2.13",
+    "options": "",
+    "package_id": "240c2182163325b213ca6886a7614c8ed2bf1738",
+    "prev": "0",
+    "context": "host"
+   },
+   "3": {
+    "ref": "bzip2/1.0.8",
+    "options": "",
+    "package_id": "238a93dc813ca1550968399f1f8925565feeff8e",
+    "prev": "0",
+    "context": "host"
+   },
+   "4": {
+    "ref": "libbacktrace/cci.20210118",
+    "options": "",
+    "package_id": "240c2182163325b213ca6886a7614c8ed2bf1738",
+    "prev": "0",
+    "context": "host"
+   },
+   "5": {
+    "ref": "gtest/1.8.1",
+    "options": "",
+    "package_id": "fb16a498e820fb09d04ff9374a782b5b21da0601",
+    "prev": "0",
+    "context": "host"
+   }
+  },
+  "revisions_enabled": false
+ },
+ "version": "0.4",
+ "profile_host": "\n"
+}

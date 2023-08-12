@@ -4,6 +4,7 @@ using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
+using Microsoft.ComponentDetection.Detectors.Conan;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
@@ -72,10 +73,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, NewNugetExperiment>();
         services.AddSingleton<IExperimentConfiguration, NpmLockfile3Experiment>();
+        services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
 
         // Detectors
         // CocoaPods
         services.AddSingleton<IComponentDetector, PodComponentDetector>();
+
+        // Conan
+        services.AddSingleton<IComponentDetector, ConanLockComponentDetector>();
 
         // Conda
         services.AddSingleton<IComponentDetector, CondaLockComponentDetector>();
@@ -113,9 +118,12 @@ public static class ServiceCollectionExtensions
 
         // PIP
         services.AddSingleton<IPyPiClient, PyPiClient>();
+        services.AddSingleton<ISimplePyPiClient, SimplePyPiClient>();
         services.AddSingleton<IPythonCommandService, PythonCommandService>();
         services.AddSingleton<IPythonResolver, PythonResolver>();
+        services.AddSingleton<ISimplePythonResolver, SimplePythonResolver>();
         services.AddSingleton<IComponentDetector, PipComponentDetector>();
+        services.AddSingleton<IComponentDetector, SimplePipComponentDetector>();
 
         // pnpm
         services.AddSingleton<IComponentDetector, PnpmComponentDetector>();
@@ -139,6 +147,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IYarnLockParser, YarnLockParser>();
         services.AddSingleton<IYarnLockFileFactory, YarnLockFileFactory>();
         services.AddSingleton<IComponentDetector, YarnLockComponentDetector>();
+
+        // HttpClient
+        services.AddHttpClient();
 
         return services;
     }

@@ -1,6 +1,7 @@
 ﻿namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
+using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
@@ -25,17 +26,17 @@ public class EnvironmentVariableServiceTests
     [TestMethod]
     public void DoesEnvironmentVariableExist_ChecksAreCaseInsensitive()
     {
-        Assert.IsFalse(this.testSubject.DoesEnvironmentVariableExist("THIS_ENVIRONMENT_VARIABLE_DOES_NOT_EXIST"));
+        this.testSubject.DoesEnvironmentVariableExist("THIS_ENVIRONMENT_VARIABLE_DOES_NOT_EXIST").Should().BeFalse();
 
-        Assert.IsTrue(this.testSubject.DoesEnvironmentVariableExist(MyEnvVar));
-        Assert.IsTrue(this.testSubject.DoesEnvironmentVariableExist(MyEnvVar.ToLower()));
-        Assert.IsTrue(this.testSubject.DoesEnvironmentVariableExist(MyEnvVar.ToUpper()));
+        this.testSubject.DoesEnvironmentVariableExist(MyEnvVar).Should().BeTrue();
+        this.testSubject.DoesEnvironmentVariableExist(MyEnvVar.ToLower()).Should().BeTrue();
+        this.testSubject.DoesEnvironmentVariableExist(MyEnvVar.ToUpper()).Should().BeTrue();
     }
 
     [TestMethod]
     public void GetEnvironmentVariable_returnNullIfVariableDoesNotExist()
     {
-        Assert.IsNull(this.testSubject.GetEnvironmentVariable("NonExistentVar"));
+        this.testSubject.GetEnvironmentVariable("NonExistentVar").Should().BeNull();
     }
 
     [TestMethod]
@@ -45,8 +46,8 @@ public class EnvironmentVariableServiceTests
         string envVariableValue = nameof(envVariableValue);
         Environment.SetEnvironmentVariable(envVariableKey, envVariableValue);
         var result = this.testSubject.GetEnvironmentVariable(envVariableKey);
-        Assert.IsNotNull(result);
-        Assert.AreEqual(envVariableValue, result);
+        result.Should().NotBeNull();
+        envVariableValue.Should().Be(result);
         Environment.SetEnvironmentVariable(envVariableKey, null);
     }
 
@@ -59,8 +60,8 @@ public class EnvironmentVariableServiceTests
         Environment.SetEnvironmentVariable(envVariableKey2, "tRuE");
         var result1 = this.testSubject.IsEnvironmentVariableValueTrue(envVariableKey1);
         var result2 = this.testSubject.IsEnvironmentVariableValueTrue(envVariableKey1);
-        Assert.IsTrue(result1);
-        Assert.IsTrue(result2);
+        result1.Should().BeTrue();
+        result2.Should().BeTrue();
         Environment.SetEnvironmentVariable(envVariableKey1, null);
         Environment.SetEnvironmentVariable(envVariableKey2, null);
     }
@@ -74,8 +75,8 @@ public class EnvironmentVariableServiceTests
         Environment.SetEnvironmentVariable(envVariableKey2, "fAlSe");
         var result1 = this.testSubject.IsEnvironmentVariableValueTrue(envVariableKey1);
         var result2 = this.testSubject.IsEnvironmentVariableValueTrue(envVariableKey1);
-        Assert.IsFalse(result1);
-        Assert.IsFalse(result2);
+        result1.Should().BeFalse();
+        result2.Should().BeFalse();
         Environment.SetEnvironmentVariable(envVariableKey1, null);
         Environment.SetEnvironmentVariable(envVariableKey2, null);
     }
@@ -88,8 +89,8 @@ public class EnvironmentVariableServiceTests
         Environment.SetEnvironmentVariable(envVariableKey1, "notABoolean");
         var result1 = this.testSubject.IsEnvironmentVariableValueTrue(envVariableKey1);
         var result2 = this.testSubject.IsEnvironmentVariableValueTrue(nonExistentKey);
-        Assert.IsFalse(result1);
-        Assert.IsFalse(result2);
+        result1.Should().BeFalse();
+        result2.Should().BeFalse();
         Environment.SetEnvironmentVariable(envVariableKey1, null);
     }
 }

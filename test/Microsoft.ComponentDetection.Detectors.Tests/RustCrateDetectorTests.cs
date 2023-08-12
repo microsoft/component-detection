@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -849,5 +849,42 @@ source = ""registry+sparse+https://other.registry/index/""
         };
 
         componentIds.ForEach(componentId => dependencyGraph.Contains(componentId).Should().BeTrue());
+    }
+
+    [TestMethod]
+    public async Task TestRustV2Detector_StdWorkspaceDependencyAsync()
+    {
+        var testCargoLock = @"
+[[package]]
+name = ""addr2line""
+version = ""0.17.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+checksum = ""b9ecd88a8c8378ca913a680cd98f0f13ac67383d35993f86c90a70e3f137816b""
+dependencies = [
+ ""rustc-std-workspace-alloc"",
+]
+
+[[package]]
+name = ""rustc-std-workspace-alloc""
+version = ""1.99.0""
+dependencies = []
+";
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Cargo.lock", testCargoLock)
+            .ExecuteDetectorAsync();
+
+        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
+
+        // Verify explicitly referenced roots
+        var rootComponents = new List<string>
+        {
+            "addr2line 0.17.0 - Cargo",
+        };
+
+        rootComponents.ForEach(rootComponentId => graph.IsComponentExplicitlyReferenced(rootComponentId).Should().BeTrue());
     }
 }

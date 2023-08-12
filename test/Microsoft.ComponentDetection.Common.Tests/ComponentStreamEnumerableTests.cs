@@ -42,8 +42,7 @@ public class ComponentStreamEnumerableTests
             },
             this.loggerMock.Object);
 
-        enumerable.Count()
-            .Should().Be(2);
+        enumerable.Should().HaveCount(2);
         foreach (var file in enumerable)
         {
             file.Stream
@@ -84,8 +83,7 @@ public class ComponentStreamEnumerableTests
             },
             this.loggerMock.Object).ToList();
 
-        enumerable.Count
-            .Should().Be(1);
+        enumerable.Should().ContainSingle();
 
         this.loggerMock.VerifyAll();
     }
