@@ -122,7 +122,6 @@ public class DetectorProcessingService : IDetectorProcessingService
             }).ToList();
 
         var results = await Task.WhenAll(scanTasks);
-        await this.experimentService.FinishAsync();
 
         var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
