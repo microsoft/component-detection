@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
@@ -20,6 +21,7 @@ public class NuGetComponentDetector : FileComponentDetector
     private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
 
     public const string NugetConfigFileName = "nuget.config";
+    public const string NugetLockfileName = "packages.lock.json";
 
     private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
 
@@ -37,7 +39,15 @@ public class NuGetComponentDetector : FileComponentDetector
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "*.nupkg", "*.nuspec", NugetConfigFileName, "paket.lock" };
+    public override IList<string> SearchPatterns { get; }
+        = new List<string>
+        {
+            "*.nupkg",
+            "*.nuspec",
+            NugetConfigFileName,
+            NugetLockfileName,
+            "paket.lock",
+        };
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.NuGet };
 
@@ -105,6 +115,12 @@ public class NuGetComponentDetector : FileComponentDetector
             else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
                 this.ParsePaketLock(processRequest);
+                return;
+            }
+            else if (NugetLockfileName.Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
+            {
+                await this.ParseNugetLockfileAsync(processRequest);
+                return;
             }
             else
             {
@@ -169,6 +185,41 @@ public class NuGetComponentDetector : FileComponentDetector
                 var name = match.Groups[1].Value;
                 var version = match.Groups[2].Value;
                 var component = new NuGetComponent(name, version);
+                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
+            }
+        }
+    }
+
+    private async Task ParseNugetLockfileAsync(ProcessRequest processRequest)
+    {
+        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+        var stream = processRequest.ComponentStream;
+
+        NuGetLockfileShape lockfile;
+        try
+        {
+            lockfile = await JsonSerializer.DeserializeAsync<NuGetLockfileShape>(stream.Stream).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogError(e, "Error loading NuGet lockfile from {Location}", stream.Location);
+            singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
+            return;
+        }
+
+        if (lockfile.Version != 1)
+        {
+            // only version 1 is supported
+            this.Logger.LogError("Unsupported NuGet lockfile version {Version}", lockfile.Version);
+            singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
+            return;
+        }
+
+        foreach (var framework in lockfile.Dependencies.Values)
+        {
+            foreach (var (name, value) in framework)
+            {
+                var component = new NuGetComponent(name, value.Resolved);
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
             }
         }

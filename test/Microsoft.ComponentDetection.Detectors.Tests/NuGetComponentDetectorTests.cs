@@ -12,6 +12,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
+using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -23,14 +24,17 @@ using Moq;
 public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetector>
 {
     private static readonly IEnumerable<string> DetectorSearchPattern =
-        new List<string> { "*.nupkg", "*.nuspec", "nuget.config", "paket.lock" };
+        new List<string> { "*.nupkg", "*.nuspec", "nuget.config", "packages.lock.json", "paket.lock" };
 
-    private readonly Mock<ILogger<NuGetComponentDetector>> mockLogger;
+    private ILogger<NuGetComponentDetector> logger;
 
-    public NuGetComponentDetectorTests()
+    public TestContext TestContext { get; set; }
+
+    [TestInitialize]
+    public void Setup()
     {
-        this.mockLogger = new Mock<ILogger<NuGetComponentDetector>>();
-        this.DetectorTestUtility.AddServiceMock(this.mockLogger);
+        this.logger = new TestLogger<NuGetComponentDetector>(this.TestContext);
+        this.DetectorTestUtility.AddService(this.logger);
     }
 
     [TestMethod]
@@ -115,6 +119,57 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
     }
 
     [TestMethod]
+    public async Task TestNugetDetector_ReturnsPackagesLockfileAsync()
+    {
+        var lockfile = @"{
+  ""version"": 1,
+  ""dependencies"": {
+    ""net7.0"": {
+      ""Azure.Core"": {
+        ""type"": ""Direct"",
+        ""requested"": ""[1.25.0, )"",
+        ""resolved"": ""1.25.0"",
+        ""contentHash"": ""X8Dd4sAggS84KScWIjEbFAdt2U1KDolQopTPoHVubG2y3CM54f9l6asVrP5Uy384NWXjsspPYaJgz5xHc+KvTA=="",
+        ""dependencies"": {
+          ""Microsoft.Bcl.AsyncInterfaces"": ""1.1.1"",
+          ""System.Diagnostics.DiagnosticSource"": ""4.6.0"",
+          ""System.Memory.Data"": ""1.0.2"",
+          ""System.Numerics.Vectors"": ""4.5.0"",
+          ""System.Text.Encodings.Web"": ""4.7.2"",
+          ""System.Text.Json"": ""4.7.2"",
+          ""System.Threading.Tasks.Extensions"": ""4.5.4""
+        }
+      }
+    },
+    ""net6.0"": {
+      ""Azure.Data.Tables"": {
+        ""type"": ""Direct"",
+        ""requested"": ""[12.5.0, )"",
+        ""resolved"": ""12.5.0"",
+        ""contentHash"": ""XeIxPf+rF1NXkX3NJSB0ZTNgU233vyPXGmaFsR0lUVibtWP/lj+Qu1FcPxoslURcX0KC+UgTb226nqVdHjoweQ=="",
+        ""dependencies"": {
+          ""Azure.Core"": ""1.22.0"",
+          ""System.Text.Json"": ""4.7.2""
+        }
+      }
+    }
+  } 
+}";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("packages.lock.json", lockfile)
+            .ExecuteDetectorAsync();
+
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+
+        // should be 2 components found; one per framework
+        var components = new HashSet<string>(componentRecorder.GetDetectedComponents().Select(x => x.Component.Id));
+        Assert.AreEqual(2, components.Count);
+        Assert.IsTrue(components.Contains("Azure.Core 1.25.0 - NuGet"));
+        Assert.IsTrue(components.Contains("Azure.Data.Tables 12.5.0 - NuGet"));
+    }
+
+    [TestMethod]
     public async Task TestNugetDetector_ReturnsValidPaketComponentAsync()
     {
         var paketLock = @"
@@ -170,15 +225,8 @@ NUGET
             .WithFile("test.nuspec", nuspec)
             .WithFile("test.nupkg", validNupkg)
             .WithFile("malformed.nupkg", malformedNupkg)
-            .AddServiceMock(this.mockLogger)
+            .AddService(this.logger)
             .ExecuteDetectorAsync();
-
-        this.mockLogger.Verify(x => x.Log(
-            It.IsAny<LogLevel>(),
-            It.IsAny<EventId>(),
-            It.IsAny<It.IsAnyType>(),
-            It.IsAny<Exception>(),
-            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
         Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
