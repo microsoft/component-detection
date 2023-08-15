@@ -105,6 +105,7 @@ public class NuGetComponentDetector : FileComponentDetector
             else if ("paket.lock".Equals(stream.Pattern, StringComparison.OrdinalIgnoreCase))
             {
                 this.ParsePaketLock(processRequest);
+                return;
             }
             else
             {
@@ -166,10 +167,18 @@ public class NuGetComponentDetector : FileComponentDetector
             var matches = Regex.Matches(line, @"\s*([a-zA-Z0-9-.]*) \([<>=]*[ ]*([0-9a-zA-Z-.]*)\)", RegexOptions.Singleline);
             foreach (var match in matches.Cast<Match>())
             {
-                var name = match.Groups[1].Value;
-                var version = match.Groups[2].Value;
-                var component = new NuGetComponent(name, version);
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
+                try
+                {
+                    var name = match.Groups[1].Value;
+                    var version = match.Groups[2].Value;
+                    var component = new NuGetComponent(name, version);
+                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component));
+                }
+                catch (Exception e)
+                {
+                    this.Logger.LogError(e, "Failed to parse paket.lock component from line `{Line}` in {Location}", line, stream.Location);
+                    singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
+                }
             }
         }
     }
