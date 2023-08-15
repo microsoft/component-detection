@@ -22,5 +22,5 @@ public interface IExperimentService
     /// Called when all detectors have finished executing. Processes the experiments and reports the results.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task FinishAsync();
+    Task FinishAsync(bool shouldCheckAutomaticProcessFlag = false);
 }

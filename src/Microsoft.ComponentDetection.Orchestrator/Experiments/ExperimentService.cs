@@ -109,9 +109,14 @@ public class ExperimentService : IExperimentService
     }
 
     /// <inheritdoc />
-    public async Task FinishAsync()
+    public async Task FinishAsync(bool shouldCheckAutomaticProcessFlag = false)
     {
         if (!DetectorExperiments.AreExperimentsEnabled)
+        {
+            return;
+        }
+
+        if (!shouldCheckAutomaticProcessFlag && !Orchestrator.AutomaticallyProcessExperiments)
         {
             return;
         }

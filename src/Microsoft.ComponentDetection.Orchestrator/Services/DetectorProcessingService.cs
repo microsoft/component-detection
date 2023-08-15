@@ -86,9 +86,9 @@ public class DetectorProcessingService : IDetectorProcessingService
                     record.DetectedComponentCount = detectedComponents.Count();
                     var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation().Values;
                     record.ExplicitlyReferencedComponentCount = dependencyGraphs.Select(dependencyGraph =>
-                        {
-                            return dependencyGraph.GetAllExplicitlyReferencedComponents();
-                        })
+                    {
+                        return dependencyGraph.GetAllExplicitlyReferencedComponents();
+                    })
                         .SelectMany(x => x)
                         .Distinct()
                         .Count();
@@ -122,6 +122,7 @@ public class DetectorProcessingService : IDetectorProcessingService
             }).ToList();
 
         var results = await Task.WhenAll(scanTasks);
+        await this.experimentService.FinishAsync();
 
         var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
