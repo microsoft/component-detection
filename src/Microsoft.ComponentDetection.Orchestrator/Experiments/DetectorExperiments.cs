@@ -7,6 +7,8 @@ using System;
 /// </summary>
 public static class DetectorExperiments
 {
+    public const bool AutomaticallyProcessExperiments = false;
+
     /// <summary>
     /// Manually enables detector experiments.
     /// </summary>
