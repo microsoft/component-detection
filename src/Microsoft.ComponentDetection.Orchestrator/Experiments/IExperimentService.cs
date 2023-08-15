@@ -19,7 +19,8 @@ public interface IExperimentService
     void RecordDetectorRun(IComponentDetector detector, ComponentRecorder componentRecorder, IDetectionArguments detectionArguments);
 
     /// <summary>
-    /// Called when all detectors have finished executing. Processes the experiments and reports the results.
+    /// Determines whether the the automatic processing flag should be checked.
+    /// The AutomaticallyProcessDetectors flag determins if experiments should be auotmatically processed. 
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task FinishAsync(bool shouldCheckAutomaticProcessFlag = false);
