@@ -109,7 +109,7 @@ public class ExperimentService : IExperimentService
     }
 
     /// <inheritdoc />
-    public async Task FinishAsync(bool shouldCheckAutomaticProcessFlag = false)
+    public async Task FinishAsync()
     {
         if (!DetectorExperiments.AreExperimentsEnabled)
         {
