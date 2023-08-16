@@ -139,6 +139,33 @@ public class ExperimentServiceTests
     }
 
     [TestMethod]
+    public async Task FinishAsync_AutomaticallyProcessesExperimentsAsync()
+    {
+        DetectorExperiments.AutomaticallyProcessExperiments = false;
+
+        var filterConfigMock = new Mock<IExperimentConfiguration>();
+
+        var components = ExperimentTestUtils.CreateRandomComponents();
+
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object, filterConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.graphTranslationServiceMock.Object,
+            this.loggerMock.Object);
+
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        await service.FinishAsync();
+
+        filterConfigMock.Verify(x => x.ShouldRecord(this.detectorMock.Object, components.Count), Times.Never());
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(filterConfigMock.Object, It.IsAny<ExperimentDiff>()),
+            Times.Once());
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
+            Times.Once());
+    }
+
+    [TestMethod]
     public async Task FinishAsync_DoesNotAutomaticallyProcessExperimentsAsync()
     {
         DetectorExperiments.AutomaticallyProcessExperiments = false;
