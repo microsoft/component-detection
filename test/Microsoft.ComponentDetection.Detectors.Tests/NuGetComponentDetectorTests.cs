@@ -151,12 +151,23 @@ NUGET
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("paket.lock", paketLock)
+            .AddServiceMock(this.mockLogger)
             .ExecuteDetectorAsync();
 
         Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
 
         // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches.
         Assert.AreEqual(11, componentRecorder.GetDetectedComponents().Count());
+
+        // Verify that we stop executing after parsing the paket.lock file.
+        this.mockLogger.Verify(
+            x => x.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+            Times.Once());
     }
 
     [TestMethod]
