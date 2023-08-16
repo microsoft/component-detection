@@ -520,7 +520,9 @@ public class DetectorProcessingServiceTests
 
         await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
-        this.experimentServiceMock.Verify(x => x.FinishAsync(It.Is<bool>(x => !x)), Times.Once());
+        DetectorExperiments.AutomaticallyProcessExperiments = true;
+
+        this.experimentServiceMock.Verify(x => x.FinishAsync(), Times.Once());
     }
 
     [TestMethod]
