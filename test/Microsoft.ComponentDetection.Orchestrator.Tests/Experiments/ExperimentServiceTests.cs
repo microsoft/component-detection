@@ -101,7 +101,6 @@ public class ExperimentServiceTests
             this.loggerMock.Object);
 
         service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
-        DetectorExperiments.AutomaticallyProcessExperiments = true;
         await service.FinishAsync();
 
         filterConfigMock.Verify(x => x.ShouldRecord(this.detectorMock.Object, components.Count), Times.Once());
@@ -152,35 +151,11 @@ public class ExperimentServiceTests
             this.loggerMock.Object);
         service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
 
-        DetectorExperiments.AutomaticallyProcessExperiments = true;
-
         await service.FinishAsync();
 
         this.experimentProcessorMock.Verify(
             x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
             Times.Once());
-    }
-
-    [TestMethod]
-    public async Task FinishAsync_DoNotAutomaticallyProcess_ProcessesExperimentsAsync()
-    {
-        var components = ExperimentTestUtils.CreateRandomComponents();
-        this.SetupGraphMock(components);
-
-        var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
-            this.graphTranslationServiceMock.Object,
-            this.loggerMock.Object);
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
-
-        DetectorExperiments.AutomaticallyProcessExperiments = false;
-
-        await service.FinishAsync();
-
-        this.experimentProcessorMock.Verify(
-            x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
-            Times.Never);
     }
 
     [TestMethod]
