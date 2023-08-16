@@ -116,7 +116,7 @@ public class ExperimentService : IExperimentService
             return;
         }
 
-        if (!shouldCheckAutomaticProcessFlag && !DetectorExperiments.AutomaticallyProcessExperiments)
+        if (!DetectorExperiments.AutomaticallyProcessExperiments)
         {
             return;
         }
