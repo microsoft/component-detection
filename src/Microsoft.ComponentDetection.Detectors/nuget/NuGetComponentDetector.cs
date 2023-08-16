@@ -176,7 +176,7 @@ public class NuGetComponentDetector : FileComponentDetector
                 }
                 catch (Exception e)
                 {
-                    this.Logger.LogError(e, "Failed to parse paket.lock component from line `{Line}` in {Location}", line, stream.Location);
+                    this.Logger.LogWarning(e, "Failed to parse paket.lock component from line `{Line}` in {Location}", line, stream.Location);
                     singleFileComponentRecorder.RegisterPackageParseFailure(stream.Location);
                 }
             }
