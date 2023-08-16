@@ -29,8 +29,6 @@ using Serilog.Extensions.Logging;
 
 public class Orchestrator
 {
-    public const bool AutomaticallyProcessExperiments = false;
-
     private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
     private readonly IServiceProvider serviceProvider;
