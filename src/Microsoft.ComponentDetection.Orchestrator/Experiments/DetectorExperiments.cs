@@ -10,7 +10,7 @@ public static class DetectorExperiments
     /// <summary>
     /// Check to automatically proccess experiments.
     /// </summary>
-    public static bool AutomaticallyProcessExperiments => true;
+    public static bool AutomaticallyProcessExperiments { get; set; } = true;
 
     /// <summary>
     /// Manually enables detector experiments.
