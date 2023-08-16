@@ -20,7 +20,7 @@ public interface IExperimentService
 
     /// <summary>
     /// Determines whether the the automatic processing flag should be checked.
-    /// The AutomaticallyProcessDetectors flag determins if experiments should be auotmatically processed. 
+    /// The AutomaticallyProcessDetectors flag determins if experiments should be auotmatically processed.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task FinishAsync(bool shouldCheckAutomaticProcessFlag = false);
