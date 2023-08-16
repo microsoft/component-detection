@@ -101,7 +101,7 @@ public class ExperimentServiceTests
             this.loggerMock.Object);
 
         service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
-        await service.FinishAsync();
+        await service.FinishAsync(It.Is<bool>(x => !x));
 
         filterConfigMock.Verify(x => x.ShouldRecord(this.detectorMock.Object, components.Count), Times.Once());
         this.experimentProcessorMock.Verify(
@@ -151,7 +151,7 @@ public class ExperimentServiceTests
             this.loggerMock.Object);
         service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
 
-        await service.FinishAsync();
+        await service.FinishAsync(It.Is<bool>(x => x));
 
         this.experimentProcessorMock.Verify(
             x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
