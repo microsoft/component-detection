@@ -116,6 +116,11 @@ public class ExperimentService : IExperimentService
             return;
         }
 
+        if (!DetectorExperiments.AutomaticallyProcessExperiments)
+        {
+            return;
+        }
+
         foreach (var (config, experiment) in this.experiments)
         {
             var controlComponents = experiment.ControlGroupComponents;
