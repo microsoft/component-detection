@@ -28,7 +28,7 @@ public class GraphTranslationUtilityTests
 
         var convertedGraphContract = GraphTranslationUtility.AccumulateAndConvertToContract(dependencyGraphs);
 
-        convertedGraphContract.Count.Should().Be(2);
+        convertedGraphContract.Should().HaveCount(2);
         convertedGraphContract.Keys.Should().BeEquivalentTo(new List<string>() { "file1.json", "file2.json" });
 
         var graph1 = convertedGraphContract["file1.json"];
