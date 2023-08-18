@@ -25,10 +25,29 @@ public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesCo
             .WithFile("packages.config", packagesConfig)
             .ExecuteDetectorAsync();
 
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().NotBeEmpty()
             .And.HaveCount(2)
             .And.ContainEquivalentOf(new DetectedComponent(new NuGetComponent("jQuery", "3.1.1")))
             .And.ContainEquivalentOf(new DetectedComponent(new NuGetComponent("NLog", "4.3.10")));
+    }
+
+    [TestMethod]
+    public async Task Should_SkipWithInvalidVersionAsync()
+    {
+        var packagesConfig =
+            @"<?xml version=""1.0"" encoding=""utf-8""?>
+                <packages>
+                    <package id=""jQuery"" version=""3.1.1"" targetFramework=""net46"" />
+                    <package id=""NLog"" version=""
+                 </packages>";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("packages.config", packagesConfig)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeNull();
     }
 }
