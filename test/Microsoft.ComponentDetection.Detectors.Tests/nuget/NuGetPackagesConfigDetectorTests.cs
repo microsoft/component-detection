@@ -48,6 +48,6 @@ public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesCo
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().BeNull();
+        detectedComponents.Should().BeEmpty();
     }
 }
