@@ -11,6 +11,9 @@ on:
   schedule:
     - cron: "0 0 * * *" # every day at midnight
 
+permissions:
+  contents: read
+
 jobs:
   smoke-test:
     runs-on: ["self-hosted", "1ES.Pool=1ES-OSE-GH-Pool"]
