@@ -51,7 +51,7 @@ jobs:
           restore-keys: ${{ runner.os }}-nuget-
 
       - name: Install Apache Ivy
-        run: curl https://downloads.apache.org/ant/ivy/2.5.1/apache-ivy-2.5.1-bin.tar.gz | tar xOz apache-ivy-2.5.1/ivy-2.5.1.jar > /usr/share/ant/lib/ivy.jar
+        run: curl https://downloads.apache.org/ant/ivy/2.5.2/apache-ivy-2.5.2-bin.tar.gz | tar xOz apache-ivy-2.5.2/ivy-2.5.2.jar > /usr/share/ant/lib/ivy.jar
 
       - name: Checkout Smoke Test Repo
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
