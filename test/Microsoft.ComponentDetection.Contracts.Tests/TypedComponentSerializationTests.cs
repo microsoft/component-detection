@@ -125,13 +125,18 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Conan()
     {
-        TypedComponent tc = new ConanComponent("SomeConanPackage", "1.2.3");
+        var md5 = Guid.NewGuid().ToString();
+        var sha1Hash = Guid.NewGuid().ToString();
+        TypedComponent tc = new ConanComponent("SomeConanPackage", "1.2.3", md5, sha1Hash);
         var result = JsonConvert.SerializeObject(tc);
         var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(ConanComponent));
         var conanComponent = (ConanComponent)deserializedTC;
         conanComponent.Name.Should().Be("SomeConanPackage");
         conanComponent.Version.Should().Be("1.2.3");
+        conanComponent.Md5Hash.Should().Be(md5);
+        conanComponent.Sha1Hash.Should().Be(sha1Hash);
+        conanComponent.PackageSourceURL.Should().Be("https://conan.io/center/recipes/SomeConanPackage?version=1.2.3");
     }
 
     [TestMethod]

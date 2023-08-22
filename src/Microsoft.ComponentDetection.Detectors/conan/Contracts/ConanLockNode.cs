@@ -36,7 +36,7 @@ public class ConanLockNode
 
     internal string Name() => this.Reference == null ? string.Empty : this.Reference.Split('/', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault("Unknown");
 
-    internal TypedComponent ToComponent() => new ConanComponent(this.Name(), this.Version());
+    internal TypedComponent ToComponent() => new ConanComponent(this.Name(), this.Version(), this.Previous, this.PackageId);
 
     internal string Version() => this.Reference == null ? string.Empty : this.Reference.Split('/', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Skip(1).FirstOrDefault("None");
 }
