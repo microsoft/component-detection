@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
@@ -23,4 +24,10 @@ public interface IExperimentService
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task FinishAsync();
+
+    /// <summary>
+    /// Removes any experimentsthat contains a detector that is not needed.
+    /// </summary>
+    /// <param name="detectors"> List of all detectors. </param>
+    void RemoveUnwantedExperimentsbyDetectors(IEnumerable<IComponentDetector> detectors);
 }

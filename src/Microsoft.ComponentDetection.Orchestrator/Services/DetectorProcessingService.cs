@@ -25,6 +25,7 @@ public class DetectorProcessingService : IDetectorProcessingService
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
     private readonly IExperimentService experimentService;
+    private IEnumerable<IComponentDetector> unusedDetectors;
 
     public DetectorProcessingService(
         IObservableDirectoryWalkerFactory scanner,
@@ -51,6 +52,8 @@ public class DetectorProcessingService : IDetectorProcessingService
         var exclusionPredicate = this.IsOSLinuxOrMac()
             ? this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: false, ignoreCase: false)
             : this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
+
+        this.experimentService.RemoveUnwantedExperimentsbyDetectors(this.unusedDetectors);
 
         IEnumerable<Task<(IndividualDetectorScanResult, ComponentRecorder, IComponentDetector)>> scanTasks = detectors
             .Select(async detector =>
@@ -349,4 +352,6 @@ public class DetectorProcessingService : IDetectorProcessingService
             this.logger.LogInformation("{Line}", line);
         }
     }
+
+    public void SetUnusedDetectors(IEnumerable<IComponentDetector> detectors) => this.unusedDetectors = detectors;
 }

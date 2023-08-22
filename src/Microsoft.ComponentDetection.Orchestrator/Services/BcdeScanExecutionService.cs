@@ -42,6 +42,7 @@ public class BcdeScanExecutionService : IBcdeScanExecutionService
 
         this.logger.LogDebug("Finished applying restrictions to detectors.");
 
+        this.detectorProcessingService.SetUnusedDetectors(this.detectors.Except(detectors).ToList());
         var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
         var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, detectionArguments);
 
