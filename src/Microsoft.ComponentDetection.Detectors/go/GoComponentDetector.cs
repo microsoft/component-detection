@@ -97,7 +97,7 @@ public class GoComponentDetector : FileComponentDetector
                     case ".MOD":
                     {
                         this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
-                        this.ParseGoModFile(singleFileComponentRecorder, file);
+                        this.ParseGoModFile(singleFileComponentRecorder, file, record);
                         break;
                     }
 
@@ -161,13 +161,19 @@ public class GoComponentDetector : FileComponentDetector
 
     private void ParseGoModFile(
         ISingleFileComponentRecorder singleFileComponentRecorder,
-        IComponentStream file)
+        IComponentStream file,
+        GoGraphTelemetryRecord goGraphTelemetryRecord)
     {
         using var reader = new StreamReader(file.Stream);
 
         var line = reader.ReadLine();
         while (line != null && !line.StartsWith("require ("))
         {
+            if (line.StartsWith("go "))
+            {
+                goGraphTelemetryRecord.GoModVersion = line[3..].Trim();
+            }
+
             line = reader.ReadLine();
         }
 
