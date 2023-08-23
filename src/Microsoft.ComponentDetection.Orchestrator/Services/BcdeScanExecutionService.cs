@@ -38,15 +38,15 @@ public class BcdeScanExecutionService : IBcdeScanExecutionService
         using var scope = this.logger.BeginScope("Executing BCDE scan");
 
         var detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
-        var detectors = this.detectorRestrictionService.ApplyRestrictions(detectorRestrictions, this.detectors).ToImmutableList();
-        detectorRestrictions.DisabledDetectors = this.detectors.Except(detectors).ToList();
+        var restrictedDetectors = this.detectorRestrictionService.ApplyRestrictions(detectorRestrictions, this.detectors).ToImmutableList();
+        detectorRestrictions.DisabledDetectors = this.detectors.Except(restrictedDetectors).ToList();
 
         this.logger.LogDebug("Finished applying restrictions to detectors.");
 
-        var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
+        var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(detectionArguments, restrictedDetectors, detectorRestrictions);
         var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, detectionArguments);
 
-        scanResult.DetectorsInScan = detectors.Select(x => ConvertToContract(x)).ToList();
+        scanResult.DetectorsInScan = restrictedDetectors.Select(x => ConvertToContract(x)).ToList();
         scanResult.ResultCode = processingResult.ResultCode;
 
         return scanResult;

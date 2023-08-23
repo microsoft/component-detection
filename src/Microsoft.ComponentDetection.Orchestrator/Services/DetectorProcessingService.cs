@@ -25,7 +25,6 @@ public class DetectorProcessingService : IDetectorProcessingService
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
     private readonly IExperimentService experimentService;
-    private IEnumerable<IComponentDetector> unusedDetectors;
 
     public DetectorProcessingService(
         IObservableDirectoryWalkerFactory scanner,
@@ -352,6 +351,4 @@ public class DetectorProcessingService : IDetectorProcessingService
             this.logger.LogInformation("{Line}", line);
         }
     }
-
-    public void SetUnusedDetectors(IEnumerable<IComponentDetector> detectors) => this.unusedDetectors = detectors;
 }
