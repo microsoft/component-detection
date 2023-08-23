@@ -8,6 +8,7 @@ using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
@@ -261,5 +262,67 @@ public class ExperimentServiceTests
         this.experimentProcessorMock.Verify(
             x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
             Times.Never());
+    }
+
+    [TestMethod]
+    public async Task RecordDetectorRun_CheckUnwantedDetectors_RemoveExperimentAsync()
+    {
+        var components = ExperimentTestUtils.CreateRandomComponents();
+
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.graphTranslationServiceMock.Object,
+            this.loggerMock.Object);
+        this.SetupGraphMock(components);
+
+        var detectorList = new List<IComponentDetector>
+        {
+            new NuGetComponentDetector(
+            new Mock<IComponentStreamEnumerableFactory>().Object,
+            new Mock<IObservableDirectoryWalkerFactory>().Object,
+            new Mock<ILogger<NuGetComponentDetector>>().Object), this.detectorMock.Object,
+        };
+
+        service.RemoveUnwantedExperimentsbyDetectors(detectorList);
+
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+
+        await service.FinishAsync();
+
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
+            Times.Never());
+    }
+
+    [TestMethod]
+    public async Task RecordDetectorRun_CheckUnwantedDetectors_KeepExperimentAsync()
+    {
+        var components = ExperimentTestUtils.CreateRandomComponents();
+
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.graphTranslationServiceMock.Object,
+            this.loggerMock.Object);
+        this.SetupGraphMock(components);
+
+        var detectorList = new List<IComponentDetector>
+        {
+            new NuGetComponentDetector(
+            new Mock<IComponentStreamEnumerableFactory>().Object,
+            new Mock<IObservableDirectoryWalkerFactory>().Object,
+            new Mock<ILogger<NuGetComponentDetector>>().Object),
+        };
+
+        service.RemoveUnwantedExperimentsbyDetectors(detectorList);
+
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+
+        await service.FinishAsync();
+
+        this.experimentProcessorMock.Verify(
+            x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
+            Times.Once());
     }
 }

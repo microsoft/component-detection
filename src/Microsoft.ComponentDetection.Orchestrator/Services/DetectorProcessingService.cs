@@ -53,7 +53,7 @@ public class DetectorProcessingService : IDetectorProcessingService
             ? this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: false, ignoreCase: false)
             : this.GenerateDirectoryExclusionPredicate(detectionArguments.SourceDirectory.ToString(), detectionArguments.DirectoryExclusionList, detectionArguments.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
 
-        this.experimentService.RemoveUnwantedExperimentsbyDetectors(this.unusedDetectors);
+        this.experimentService.RemoveUnwantedExperimentsbyDetectors(detectorRestrictions.DisabledDetectors);
 
         IEnumerable<Task<(IndividualDetectorScanResult, ComponentRecorder, IComponentDetector)>> scanTasks = detectors
             .Select(async detector =>

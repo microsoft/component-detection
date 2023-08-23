@@ -110,15 +110,9 @@ public class ExperimentService : IExperimentService
 
     public void RemoveUnwantedExperimentsbyDetectors(IEnumerable<IComponentDetector> detectors)
     {
-        var experimentsToRemove = new List<IExperimentConfiguration>();
-
-        foreach (var detector in detectors)
-        {
-            experimentsToRemove.AddRange(this.experiments
-                .Where(x => x.Key.IsInControlGroup(detector) || x.Key.IsInExperimentGroup(detector))
-                .Select(x => x.Key)
-                .ToList());
-        }
+        var experimentsToRemove = this.experiments
+            .Where(x => detectors.Any(detector => x.Key.IsInControlGroup(detector) || x.Key.IsInExperimentGroup(detector)))
+            .Select(x => x.Key).ToList();
 
         foreach (var config in experimentsToRemove.Where(config => this.experiments.TryRemove(config, out _)))
         {

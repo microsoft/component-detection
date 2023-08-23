@@ -8,6 +8,4 @@ using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 public interface IDetectorProcessingService
 {
     Task<DetectorProcessingResult> ProcessDetectorsAsync(IDetectionArguments detectionArguments, IEnumerable<IComponentDetector> detectors, DetectorRestrictions detectorRestrictions);
-
-    void SetUnusedDetectors(IEnumerable<IComponentDetector> detectors);
 }

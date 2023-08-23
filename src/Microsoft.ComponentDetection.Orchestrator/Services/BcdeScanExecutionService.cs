@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 using System;
 using System.Collections.Generic;
@@ -42,7 +42,6 @@ public class BcdeScanExecutionService : IBcdeScanExecutionService
 
         this.logger.LogDebug("Finished applying restrictions to detectors.");
 
-        this.detectorProcessingService.SetUnusedDetectors(this.detectors.Except(detectors).ToList());
         var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(detectionArguments, detectors, detectorRestrictions);
         var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, detectionArguments);
 
@@ -77,6 +76,8 @@ public class BcdeScanExecutionService : IBcdeScanExecutionService
             var allEnabledDetectorIds = args.Where(x => string.Equals("EnableIfDefaultOff", x.Value, StringComparison.OrdinalIgnoreCase) || string.Equals("Enable", x.Value, StringComparison.OrdinalIgnoreCase));
             detectorRestrictions.ExplicitlyEnabledDetectorIds = new HashSet<string>(allEnabledDetectorIds.Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
         }
+
+        detectorRestrictions.DisabledDetectors = this.detectors.Where(x => x is IDefaultOffComponentDetector && (!detectorRestrictions.ExplicitlyEnabledDetectorIds?.Contains(x.Id)).GetValueOrDefault()).ToList();
 
         return detectorRestrictions;
     }
