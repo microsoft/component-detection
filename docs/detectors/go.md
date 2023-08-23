@@ -29,7 +29,7 @@ The fallback detection strategy is known to overreport by nature of parsing `go.
 
 1. Ensure that Go v1.11+ is installed on the build agent.  
 
-1. Resolve `go list` errors. Errors are logged in the the Component Detection build task output and begin with `#[error]Go CLI command "go list -m -json all" failed with error: `. These errors are typically caused by version resolution problems or incorrectly formatted `go.mod` files. 
+1. Resolve `go list` errors. Errors are logged in the Component Detection build task output and begin with `#[error]Go CLI command "go list -m -json all" failed with error:`. These errors are typically caused by version resolution problems or incorrectly formatted `go.mod` files. 
 
 1. Ensure that `DisableGoCliScan` is **not** set to `true`. The variable should not be set or should be set to `false`.
 
