@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Go;
+﻿namespace Microsoft.ComponentDetection.Detectors.Go;
 
 using System;
 using System.Collections.Generic;
@@ -53,15 +53,16 @@ public class GoComponentDetector : FileComponentDetector
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
-        using var record = new GoGraphTelemetryRecord();
-        record.WasGoCliDisabled = false;
-        record.WasGoFallbackStrategyUsed = false;
 
         var projectRootDirectory = Directory.GetParent(file.Location);
         if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
         {
             return;
         }
+
+        using var record = new GoGraphTelemetryRecord();
+        record.WasGoCliDisabled = false;
+        record.WasGoFallbackStrategyUsed = false;
 
         var wasGoCliScanSuccessful = false;
         try
@@ -96,7 +97,7 @@ public class GoComponentDetector : FileComponentDetector
                     case ".MOD":
                     {
                         this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
-                        this.ParseGoModFile(singleFileComponentRecorder, file);
+                        this.ParseGoModFile(singleFileComponentRecorder, file, record);
                         break;
                     }
 
@@ -120,7 +121,7 @@ public class GoComponentDetector : FileComponentDetector
     private async Task<bool> UseGoCliToScanAsync(string location, ISingleFileComponentRecorder singleFileComponentRecorder, GoGraphTelemetryRecord record)
     {
         record.WasGraphSuccessful = false;
-        record.WasGoCliNotFound = false;
+        record.DidGoCliCommandFail = false;
         var projectRootDirectory = Directory.GetParent(location);
         record.ProjectRoot = projectRootDirectory.FullName;
 
@@ -130,7 +131,6 @@ public class GoComponentDetector : FileComponentDetector
         if (!isGoAvailable)
         {
             this.Logger.LogInformation("Go CLI was not found in the system");
-            record.WasGoCliNotFound = true;
             return false;
         }
 
@@ -142,6 +142,8 @@ public class GoComponentDetector : FileComponentDetector
         {
             this.Logger.LogError("Go CLI command \"go list -m -json all\" failed with error: {GoDependenciesProcessStdErr}", goDependenciesProcess.StdErr);
             this.Logger.LogError("Go CLI could not get dependency build list at location: {Location}. Fallback go.sum/go.mod parsing will be used.", location);
+            record.DidGoCliCommandFail = true;
+            record.GoCliCommandError = goDependenciesProcess.StdErr;
             return false;
         }
 
@@ -159,13 +161,19 @@ public class GoComponentDetector : FileComponentDetector
 
     private void ParseGoModFile(
         ISingleFileComponentRecorder singleFileComponentRecorder,
-        IComponentStream file)
+        IComponentStream file,
+        GoGraphTelemetryRecord goGraphTelemetryRecord)
     {
         using var reader = new StreamReader(file.Stream);
 
         var line = reader.ReadLine();
         while (line != null && !line.StartsWith("require ("))
         {
+            if (line.StartsWith("go "))
+            {
+                goGraphTelemetryRecord.GoModVersion = line[3..].Trim();
+            }
+
             line = reader.ReadLine();
         }
 
