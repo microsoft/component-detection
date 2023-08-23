@@ -39,6 +39,7 @@ public class BcdeScanExecutionService : IBcdeScanExecutionService
 
         var detectorRestrictions = this.GetDetectorRestrictions(detectionArguments);
         var detectors = this.detectorRestrictionService.ApplyRestrictions(detectorRestrictions, this.detectors).ToImmutableList();
+        detectorRestrictions.DisabledDetectors = this.detectors.Except(detectors).ToList();
 
         this.logger.LogDebug("Finished applying restrictions to detectors.");
 
@@ -76,8 +77,6 @@ public class BcdeScanExecutionService : IBcdeScanExecutionService
             var allEnabledDetectorIds = args.Where(x => string.Equals("EnableIfDefaultOff", x.Value, StringComparison.OrdinalIgnoreCase) || string.Equals("Enable", x.Value, StringComparison.OrdinalIgnoreCase));
             detectorRestrictions.ExplicitlyEnabledDetectorIds = new HashSet<string>(allEnabledDetectorIds.Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
         }
-
-        detectorRestrictions.DisabledDetectors = this.detectors.Where(x => x is IDefaultOffComponentDetector && (!detectorRestrictions.ExplicitlyEnabledDetectorIds?.Contains(x.Id)).GetValueOrDefault()).ToList();
 
         return detectorRestrictions;
     }
