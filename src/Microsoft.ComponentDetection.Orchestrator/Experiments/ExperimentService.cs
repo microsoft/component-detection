@@ -108,6 +108,18 @@ public class ExperimentService : IExperimentService
         }
     }
 
+    public void RemoveUnwantedExperimentsbyDetectors(IEnumerable<IComponentDetector> detectors)
+    {
+        var experimentsToRemove = this.experiments
+            .Where(x => detectors.Any(detector => x.Key.IsInControlGroup(detector) || x.Key.IsInExperimentGroup(detector)))
+            .Select(x => x.Key).ToList();
+
+        foreach (var config in experimentsToRemove.Where(config => this.experiments.TryRemove(config, out _)))
+        {
+            this.logger.LogDebug("Removing {Experiment} from active experiments", config.Name);
+        }
+    }
+
     /// <inheritdoc />
     public async Task FinishAsync()
     {
@@ -125,7 +137,6 @@ public class ExperimentService : IExperimentService
         {
             var controlComponents = experiment.ControlGroupComponents;
             var experimentComponents = experiment.ExperimentGroupComponents;
-
             this.logger.LogInformation(
                 "Experiment {Experiment} finished with {ControlCount} components in the control group and {ExperimentCount} components in the experiment group",
                 config.Name,
