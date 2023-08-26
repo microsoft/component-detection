@@ -15,7 +15,6 @@ public class ConanComponent : TypedComponent
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Conan));
         this.Md5Hash = this.ValidateRequiredInput(previous, nameof(this.Md5Hash), nameof(ComponentType.Conan));
         this.Sha1Hash = this.ValidateRequiredInput(packageId, nameof(this.Sha1Hash), nameof(ComponentType.Conan));
-        this.Supplier = "ConanCenter";
     }
 
     public string Name { get; set; }
@@ -25,8 +24,6 @@ public class ConanComponent : TypedComponent
     public string Md5Hash { get; set; }
 
     public string Sha1Hash { get; set; }
-
-    public string Supplier { get; }
 
     public string PackageSourceURL => $"https://conan.io/center/recipes/{this.Name}?version={this.Version}";
 
