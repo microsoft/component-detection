@@ -123,20 +123,20 @@ public class BcdeScanExecutionServiceTests
 
         result.Result.Should().Be(ProcessingResultCode.Success);
         this.ValidateDetectedComponents(result.DetectedComponents);
-        result.DetectorsInRun.Count().Should().Be(2);
+        result.DetectorsInRun.Should().HaveCount(2);
         var detector2 = result.DetectorsInRun.Single(x => x.DetectorId == "Detector2");
         detector2.Version.Should().Be(1);
         var detector3 = result.DetectorsInRun.Single(x => x.DetectorId == "Detector3");
         detector3.Version.Should().Be(10);
 
         var npmComponent = result.DetectedComponents.Single(x => x.Component is NpmComponent);
-        npmComponent.LocationsFoundAt.Count().Should().Be(1);
+        npmComponent.LocationsFoundAt.Should().ContainSingle();
         npmComponent.LocationsFoundAt.First().Should().Be("/some/file/path");
         npmComponent.IsDevelopmentDependency.Should().Be(true);
         npmComponent.ContainerDetailIds.Contains(1).Should().Be(true);
 
         var nugetComponent = result.DetectedComponents.Single(x => x.Component is NuGetComponent);
-        nugetComponent.TopLevelReferrers.Count().Should().Be(1);
+        nugetComponent.TopLevelReferrers.Should().ContainSingle();
         (nugetComponent.TopLevelReferrers.First() as PipComponent).Name.Should().Be("sample-root");
         nugetComponent.IsDevelopmentDependency.Should().Be(null);
     }
@@ -213,7 +213,7 @@ public class BcdeScanExecutionServiceTests
 
         result.Result.Should().Be(ProcessingResultCode.Success);
         this.ValidateDetectedComponents(result.DetectedComponents);
-        result.DetectorsInRun.All(x => x.IsExperimental).Should().BeTrue();
+        result.DetectorsInRun.Should().OnlyContain(x => x.IsExperimental);
     }
 
     [TestMethod]
@@ -253,7 +253,7 @@ public class BcdeScanExecutionServiceTests
         result.SourceDirectory.Should().Be(this.sourceDirectory.ToString());
 
         result.Result.Should().Be(ProcessingResultCode.Success);
-        result.DependencyGraphs.Count.Should().Be(1);
+        result.DependencyGraphs.Should().ContainSingle();
         var matchingGraph = result.DependencyGraphs.First();
         matchingGraph.Key.Should().Be(mockGraphLocation);
         var explicitlyReferencedComponents = matchingGraph.Value.ExplicitlyReferencedComponentIds;
@@ -326,7 +326,7 @@ public class BcdeScanExecutionServiceTests
         result.SourceDirectory.Should().Be(this.sourceDirectory.ToString());
 
         result.Result.Should().Be(ProcessingResultCode.Success);
-        result.DependencyGraphs.Count.Should().Be(1);
+        result.DependencyGraphs.Should().ContainSingle();
         var matchingGraph = result.DependencyGraphs.First();
         matchingGraph.Key.Should().Be(mockGraphLocation);
         var explicitlyReferencedComponents = matchingGraph.Value.ExplicitlyReferencedComponentIds;
@@ -401,7 +401,7 @@ public class BcdeScanExecutionServiceTests
         var detectedComponents = results.ComponentsFound;
 
         var storedComponent1 = detectedComponents.First(dc => dc.Component.Id == detectedComponent1.Component.Id);
-        storedComponent1.TopLevelReferrers.Should().HaveCount(1);
+        storedComponent1.TopLevelReferrers.Should().ContainSingle();
         storedComponent1.TopLevelReferrers.Should().Contain(detectedComponent1.Component);
 
         var storedComponent2 = detectedComponents.First(dc => dc.Component.Id == detectedComponent2.Component.Id);
@@ -432,11 +432,11 @@ public class BcdeScanExecutionServiceTests
         var detectedComponents = results.ComponentsFound;
 
         var storedComponent1 = detectedComponents.First(dc => dc.Component.Id == detectedComponent1.Component.Id);
-        storedComponent1.TopLevelReferrers.Should().HaveCount(1, "If a component is a root, then is root of itself");
+        storedComponent1.TopLevelReferrers.Should().ContainSingle("If a component is a root, then is root of itself");
         storedComponent1.TopLevelReferrers.Should().Contain(detectedComponent1.Component);
 
         var storedComponent2 = detectedComponents.First(dc => dc.Component.Id == detectedComponent2.Component.Id);
-        storedComponent2.TopLevelReferrers.Should().HaveCount(1);
+        storedComponent2.TopLevelReferrers.Should().ContainSingle();
         storedComponent2.TopLevelReferrers.Should().Contain(detectedComponent1.Component);
     }
 
@@ -516,7 +516,7 @@ public class BcdeScanExecutionServiceTests
 
         var actualComponent = results.ComponentsFound.Single();
 
-        actualComponent.LocationsFoundAt.Count().Should().Be(4);
+        actualComponent.LocationsFoundAt.Should().HaveCount(4);
         foreach (var path in new[]
                  {
                      "/some/file/path",
@@ -559,7 +559,7 @@ public class BcdeScanExecutionServiceTests
         var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
 
         var actualComponent = results.ComponentsFound.First(c => c.Component.Id == firstComponent.Component.Id);
-        actualComponent.TopLevelReferrers.Count().Should().Be(2);
+        actualComponent.TopLevelReferrers.Should().HaveCount(2);
         actualComponent.TopLevelReferrers.OfType<NpmComponent>()
             .FirstOrDefault(x => x.Name == "test1" && x.Version == "2.0.0")
             .Should().NotBeNull();

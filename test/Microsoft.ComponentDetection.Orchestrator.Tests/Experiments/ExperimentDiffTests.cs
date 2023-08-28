@@ -57,7 +57,7 @@ public class ExperimentDiffTests
             new[] { new ExperimentComponent(componentA) },
             new[] { new ExperimentComponent(componentB) });
 
-        diff.DevelopmentDependencyChanges.Should().HaveCount(1);
+        diff.DevelopmentDependencyChanges.Should().ContainSingle();
 
         var change = diff.DevelopmentDependencyChanges.First();
         change.Id.Should().Be(componentA.Component.Id);
@@ -86,7 +86,7 @@ public class ExperimentDiffTests
             new[] { new ExperimentComponent(componentA), },
             new[] { new ExperimentComponent(componentB), });
 
-        diff.AddedRootIds.Should().HaveCount(1);
+        diff.AddedRootIds.Should().ContainSingle();
         diff.RemovedRootIds.Should().BeEmpty();
 
         var addedRoot = diff.AddedRootIds[componentA.Component.Id];
@@ -113,7 +113,7 @@ public class ExperimentDiffTests
             new[] { new ExperimentComponent(componentB), },
             new[] { new ExperimentComponent(componentA), });
 
-        diff.RemovedRootIds.Should().HaveCount(1);
+        diff.RemovedRootIds.Should().ContainSingle();
         diff.AddedRootIds.Should().BeEmpty();
 
         var removedRoot = diff.RemovedRootIds[componentA.Component.Id];
