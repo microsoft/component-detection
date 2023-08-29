@@ -31,4 +31,9 @@ jobs:
         run: dotnet build --no-restore --configuration Debug
 
       - name: Run tests
-        run: dotnet test --no-build --configuration Debug
+        run: dotnet test --no-build --configuration Debug --collect:"XPlat Code Coverage"
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
