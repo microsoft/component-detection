@@ -184,6 +184,67 @@ $#26^#25%4";
     }
 
     [TestMethod]
+    public async Task TestGoModDetector_SkipsGoSumFilesAsync()
+    {
+        var goMod =
+            @"module contoso.com/greetings
+go 1.18
+
+require github.com/go-sql-driver/mysql v1.7.1 // indirect";
+
+        var goSum =
+            @"github.com/go-sql-driver/mysql v1.7.1 h1:lUIinVbN1DY0xBg0eMOzmmtGoHwWBbvnWubQUrtU8EI=
+github.com/go-sql-driver/mysql v1.7.1/go.mod h1:OXbVy3sEdcQ2Doequ6Z5BW6fXNQTmx+9S1MCJN5yJMI=
+github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.mod", goMod)
+            .WithFile("go.mod", goMod, new[] { "go.mod" })
+            .WithFile("go.sum", goSum)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+
+        var component = componentRecorder.GetDetectedComponents().First();
+        component.Component.Id.Should().Be("github.com/go-sql-driver/mysql v1.7.1 - Go");
+    }
+
+    [TestMethod]
+    public async Task TestGoModDetector_HandlesTwoRequiresSectionsAsync()
+    {
+        var goMod =
+            @"module microsoft/component-detection
+
+go 1.18
+
+require (
+        github.com/go-sql-driver/mysql v1.7.1
+        rsc.io/quote v1.5.2
+)
+
+require (
+        golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c // indirect
+        rsc.io/sampler v1.3.0 // indirect
+)";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.mod", goMod)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(4);
+
+        var expectedComponentIds = new[]
+        {
+            "github.com/go-sql-driver/mysql v1.7.1 - Go", "rsc.io/quote v1.5.2 - Go",
+            "golang.org/x/text v0.0.0-20170915032832-14c0d48ead0c - Go", "rsc.io/sampler v1.3.0 - Go",
+        };
+
+        componentRecorder.GetDetectedComponents().Select(c => c.Component.Id).Should().BeEquivalentTo(expectedComponentIds);
+    }
+
+    [TestMethod]
     public async Task TestGoSumDetection_TwoEntriesForTheSameComponent_ReturnsSuccessfullyAsync()
     {
         var goSum =
