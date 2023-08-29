@@ -62,12 +62,35 @@ public class GoComponentDetector : FileComponentDetector
                 return true;
             }
 
-            // find the adjacent go.mod file
-            var x = this.ComponentStreamEnumerableFactory.GetComponentStreams(
+            var goModFile = this.FindAdjacentGoModComponentStreams(processRequest).FirstOrDefault();
+
+            if (goModFile == null)
+            {
+                this.Logger.LogDebug(
+                    "go.sum file found without an adjacent go.mod file. Location: {Location}",
+                    processRequest.ComponentStream.Location);
+
+                return true;
+            }
+
+            // parse the go.mod file to get the go version
+            using var reader = new StreamReader(goModFile.Stream);
+            var goModFileContents = reader.ReadToEnd();
+            goModFile.Stream.Dispose();
+
+            return this.CheckGoModVersion(goModFileContents, processRequest, goModFile);
+        });
+
+        return Task.FromResult(goModProcessRequests);
+    }
+
+    private IEnumerable<ComponentStream> FindAdjacentGoModComponentStreams(ProcessRequest processRequest) =>
+        this.ComponentStreamEnumerableFactory.GetComponentStreams(
                 new FileInfo(processRequest.ComponentStream.Location).Directory,
                 new[] { "go.mod" },
                 (_, _) => false,
-                false).Select(x =>
+                false)
+            .Select(x =>
             {
                 // The stream will be disposed at the end of this method, so we need to copy it to a new stream.
                 var memoryStream = new MemoryStream();
@@ -83,45 +106,43 @@ public class GoComponentDetector : FileComponentDetector
                 };
             });
 
-            var goModFile = x.FirstOrDefault();
+    private bool CheckGoModVersion(string goModFileContents, ProcessRequest processRequest, ComponentStream goModFile)
+    {
+        var goVersionMatch = Regex.Match(goModFileContents, @"go\s(?<version>\d+\.\d+)");
 
-            if (goModFile == null)
-            {
-                this.Logger.LogDebug("go.sum file found without an adjacent go.mod file. Location: {Location}", processRequest.ComponentStream.Location);
-                return true;
-            }
-
-            // parse the go.mod file to get the go version
-            using var reader = new StreamReader(goModFile.Stream);
-            var goModFileContents = reader.ReadToEnd();
-            goModFile.Stream.Dispose();
-
-            var goVersionMatch = Regex.Match(goModFileContents, @"go\s(?<version>\d+\.\d+)");
-
-            if (!goVersionMatch.Success)
-            {
-                this.Logger.LogDebug("go.sum file found with an adjacent go.mod file that does not contain a go version. Location: {Location}", processRequest.ComponentStream.Location);
-                return true;
-            }
-
-            var goVersion = goVersionMatch.Groups["version"].Value;
-            if (System.Version.TryParse(goVersion, out var version))
-            {
-                if (version < new Version(1, 17))
-                {
-                    this.Logger.LogWarning("go.mod file at {GoModLocation} does not have a go version >= 1.17. Scanning this go.sum file: {GoSumLocation} which may lead to over reporting components", goModFile.Location, processRequest.ComponentStream.Location);
-                    return true;
-                }
-
-                this.Logger.LogInformation("go.sum file found with an adjacent go.mod file that has a go version >= 1.17. Will not scan this go.sum file. Location: {Location}", processRequest.ComponentStream.Location);
-                return false;
-            }
-
-            this.Logger.LogWarning("go.sum file found with an adjacent go.mod file that has an invalid go version. Scanning both for components. Location: {Location}", processRequest.ComponentStream.Location);
+        if (!goVersionMatch.Success)
+        {
+            this.Logger.LogDebug(
+                "go.sum file found with an adjacent go.mod file that does not contain a go version. Location: {Location}",
+                processRequest.ComponentStream.Location);
             return true;
-        });
+        }
 
-        return Task.FromResult(goModProcessRequests);
+        var goVersion = goVersionMatch.Groups["version"].Value;
+        if (System.Version.TryParse(goVersion, out var version))
+        {
+            if (version < new Version(1, 17))
+            {
+                this.Logger.LogWarning(
+                    "go.mod file at {GoModLocation} does not have a go version >= 1.17. Scanning this go.sum file: {GoSumLocation} which may lead to over reporting components",
+                    goModFile.Location,
+                    processRequest.ComponentStream.Location);
+
+                return true;
+            }
+
+            this.Logger.LogInformation(
+                "go.sum file found with an adjacent go.mod file that has a go version >= 1.17. Will not scan this go.sum file. Location: {Location}",
+                processRequest.ComponentStream.Location);
+
+            return false;
+        }
+
+        this.Logger.LogWarning(
+            "go.sum file found with an adjacent go.mod file that has an invalid go version. Scanning both for components. Location: {Location}",
+            processRequest.ComponentStream.Location);
+
+        return true;
     }
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
@@ -234,25 +255,25 @@ public class GoComponentDetector : FileComponentDetector
         return true;
     }
 
+    private void TryRegisterDependencyFromModLine(string line, ISingleFileComponentRecorder singleFileComponentRecorder)
+    {
+        if (this.TryToCreateGoComponentFromModLine(line, out var goComponent))
+        {
+            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
+        }
+        else
+        {
+            var lineTrim = line.Trim();
+            this.Logger.LogWarning("Line could not be parsed for component [{LineTrim}]", lineTrim);
+            singleFileComponentRecorder.RegisterPackageParseFailure(lineTrim);
+        }
+    }
+
     private async Task ParseGoModFileAsync(
         ISingleFileComponentRecorder singleFileComponentRecorder,
         IComponentStream file,
         GoGraphTelemetryRecord goGraphTelemetryRecord)
     {
-        void TryRegisterDependency(string s)
-        {
-            if (this.TryToCreateGoComponentFromModLine(s, out var goComponent))
-            {
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
-            }
-            else
-            {
-                var lineTrim = s.Trim();
-                this.Logger.LogWarning("Line could not be parsed for component [{LineTrim}]", lineTrim);
-                singleFileComponentRecorder.RegisterPackageParseFailure(lineTrim);
-            }
-        }
-
         using var reader = new StreamReader(file.Stream);
 
         // There can be multiple require( ) sections in go 1.17+. loop over all of them.
@@ -271,7 +292,7 @@ public class GoComponentDetector : FileComponentDetector
                 // are listed in the require () section
                 if (line.StartsWith("require "))
                 {
-                    TryRegisterDependency(line[8..]);
+                    this.TryRegisterDependencyFromModLine(line[8..], singleFileComponentRecorder);
                 }
 
                 line = await reader.ReadLineAsync();
@@ -280,7 +301,7 @@ public class GoComponentDetector : FileComponentDetector
             // Stopping at the first ) restrict the detection to only the require section.
             while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(")"))
             {
-                TryRegisterDependency(line);
+                this.TryRegisterDependencyFromModLine(line, singleFileComponentRecorder);
             }
         }
     }
