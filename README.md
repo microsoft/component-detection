@@ -13,6 +13,7 @@
    <a href="https://www.nuget.org/packages?q=Microsoft.ComponentDetection"><img alt="Nuget" src="https://img.shields.io/nuget/v/Microsoft.ComponentDetection.Common"></a>
    <a href="https://github.com/microsoft/component-detection/actions/workflows/build.yml"><img alt="GitHub Workflow Status (with event)" src="https://github.com/microsoft/component-detection/actions/workflows/build.yml/badge.svg"></a>
    <a href="https://github.com/microsoft/component-detection/actions/workflows/codeql-analysis.yml"><img alt="GitHub CodeQL Status" src="https://github.com/microsoft/component-detection/actions/workflows/codeql-analysis.yml/badge.svg"></a>
+   <a href="https://codecov.io/gh/microsoft/component-detection"><img src="https://codecov.io/gh/microsoft/component-detection/graph/badge.svg"/></a>
    <a href="https://securityscorecards.dev/viewer/?uri=github.com/microsoft/component-detection"><img alt="OSSF-Scorecard Score" src="https://img.shields.io/ossf-scorecard/github.com/microsoft/component-detection"></a>
    <a href="https://github.com/microsoft/component-detection/blob/main/LICENSE.txt"><img alt="GitHub" src="https://img.shields.io/github/license/microsoft/component-detection"></a>
 </p>
