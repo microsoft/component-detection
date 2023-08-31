@@ -77,4 +77,27 @@ public class TabularStringFormatTests
                 .Should().Contain(this.rows[0][i].ToString());
         }
     }
+
+    [TestMethod]
+    public void GenerateString_ThrowsInvalidOperationException()
+    {
+        // add an extra row
+        this.rows = this.rows.Concat(new[] { new[] { "a", "b", "c", "d" } }).ToArray();
+
+        var action = () => this.tsf.GenerateString(this.rows);
+
+        action.Should().Throw<InvalidOperationException>();
+    }
+
+    [TestMethod]
+    public void GenerateString_GeneratesTitleSection()
+    {
+        var tableTitle = "Table Title";
+
+        this.tsf = new TabularStringFormat(this.columns, tableTitle: tableTitle);
+        var generatedString = this.tsf.GenerateString(this.rows);
+
+        var splitStrings = generatedString.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+        splitStrings[1].Should().Contain(tableTitle);
+    }
 }
