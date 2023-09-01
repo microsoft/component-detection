@@ -64,7 +64,7 @@ public class ScanResultSerializationTests
 
         actual.ResultCode.Should().Be(ProcessingResultCode.PartialSuccess);
         actual.SourceDirectory.Should().Be("D:\\test\\directory");
-        actual.ComponentsFound.Count().Should().Be(1);
+        actual.ComponentsFound.Should().ContainSingle();
         var actualDetectedComponent = actual.ComponentsFound.First();
         actualDetectedComponent.DetectorId.Should().Be("NpmDetectorId");
         actualDetectedComponent.IsDevelopmentDependency.Should().Be(true);

@@ -22,6 +22,6 @@ public class DetectedComponentTests
 
         component.AddComponentFilePath(filePathToAdd);
 
-        component.FilePaths.Should().HaveCount(1).And.Contain(filePathToAdd);
+        component.FilePaths.Should().ContainSingle().And.Contain(filePathToAdd);
     }
 }
