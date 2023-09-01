@@ -197,7 +197,7 @@ public class DetectorProcessingServiceTests
         experimentalDetectorRecord.IsExperimental.Should().BeTrue();
 
         // We should have all components except the ones that came from our experimental detector
-        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Count().Should().Be(records.Sum(x => x.DetectedComponentCount) - experimentalDetectorRecord.DetectedComponentCount);
+        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount(records.Sum(x => x.DetectedComponentCount ?? 0) - experimentalDetectorRecord.DetectedComponentCount ?? 0);
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results).All(x => (x.Component as NuGetComponent)?.Name != experimentalComponent.Name)
             .Should().BeTrue("Experimental component should not be in component list");
         results.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -225,7 +225,7 @@ public class DetectorProcessingServiceTests
         });
 
         // We should have all components except the ones that came from our experimental detector
-        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Count().Should().Be(records.Sum(x => x.DetectedComponentCount));
+        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount(records.Sum(x => x.DetectedComponentCount ?? 0));
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results).FirstOrDefault(x => (x.Component as NuGetComponent)?.Name == (this.componentDictionary[experimentalDetectorId].Component as NuGetComponent).Name)
             .Should().NotBeNull();
         results.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -261,7 +261,7 @@ public class DetectorProcessingServiceTests
         experimentalDetectorRecord.ExperimentalInformation.Contains("Simulated experimental failure");
 
         // We should have all components except the ones that came from our experimental detector
-        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Count().Should().Be(records.Sum(x => x.DetectedComponentCount));
+        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount(records.Sum(x => x.DetectedComponentCount ?? 0));
         results.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));

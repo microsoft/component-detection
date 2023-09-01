@@ -48,7 +48,7 @@ public class ExperimentResultsTests
         var experiment = new ExperimentResults();
         experiment.AddComponentsToControlGroup(new[] { componentA, componentB });
 
-        experiment.ControlGroupComponents.Should().HaveCount(1);
+        experiment.ControlGroupComponents.Should().ContainSingle();
         experiment.ExperimentGroupComponents.Should().BeEmpty();
         experiment.ControlGroupComponents.First().Should().BeEquivalentTo(new ExperimentComponent(componentA));
     }

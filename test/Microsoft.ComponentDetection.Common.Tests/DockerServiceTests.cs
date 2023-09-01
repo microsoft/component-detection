@@ -70,7 +70,7 @@ public class DockerServiceTests
         details.CreatedAt.ToUniversalTime().Should().Be(expectedCreatedAt);
         details.BaseImageDigest.Should().Be("sha256:feb5d9fea6a5e9606aa995e879d862b825965ba48de054caab5ef356dc6b3412");
         details.BaseImageRef.Should().Be("docker.io/library/hello-world:latest");
-        details.Layers.Should().HaveCount(1);
+        details.Layers.Should().ContainSingle();
     }
 
     [SkipTestOnWindows]
