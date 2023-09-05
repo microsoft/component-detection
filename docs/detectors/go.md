@@ -55,9 +55,10 @@ detector time execution.
 
 - Go detection will fallback if no Go v1.11+ is present.
 
-- Prior to 1.17, the nature of `go.sum` containing references for all
-dependencies, including historical, no-longer-needed dependencies; the
-fallback strategy can result in over detection. Executing [go mod
+- (Prior to Go 1.17) Due to the nature of `go.sum` containing
+references for all dependencies, including historical,
+no-longer-needed dependencies; the fallback strategy can result in
+over detection. Executing [go mod
 tidy](https://go.dev/ref/mod#go-mod-tidy) before detection via the
 fallback strategy is encouraged. 
 
@@ -184,7 +185,7 @@ following key steps:
 
 2. **Filtering go.sum Files**: The detector filters out go.sum files when
    there is no adjacent go.mod file or when the go.mod file specifies
-   a Go version lower than 0.17. This filtering reduces the risk of
+   a Go version lower than 1.17. This filtering reduces the risk of
    over-reporting components. More on this later.
 
 3. **Go CLI Scanning (Optional)**: If the Go CLI (go) is available and not
