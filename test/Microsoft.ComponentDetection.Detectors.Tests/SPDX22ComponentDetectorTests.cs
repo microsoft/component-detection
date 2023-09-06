@@ -57,7 +57,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
     }],
     ""packages"": [
         {
-            ""name"": ""Test"",
+            ""name"": ""package"",
             ""SPDXID"": ""SPDXRef-RootPackage"",
             ""downloadLocation"": ""NOASSERTION"",
             ""packageVerificationCode"": {
@@ -108,24 +108,34 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
-        var sbomComponent = (SpdxComponent)components.FirstOrDefault()?.Component;
 
-        if (sbomComponent is null)
+        if (!components.Any())
         {
-            throw new AssertFailedException($"{nameof(sbomComponent)} is null");
+            throw new AssertFailedException($"{nameof(SpdxComponent)} is null");
         }
+
+        var sbomComponent = (SpdxComponent)components.First(x => x.Component.GetType() == typeof(SpdxComponent))?.Component;
+        var spdxPackageComponent = (SpdxPackageComponent)components.First(x => x.Component.GetType() == typeof(SpdxPackageComponent))?.Component;
+
+        var spdxFilePath = Path.Combine(Path.GetTempPath(), spdxFileName);
 
 #pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
         var checksum = BitConverter.ToString(SHA1.HashData(Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350
 
-        Assert.AreEqual(1, components.Count);
+        Assert.AreEqual(2, components.Count);
         Assert.AreEqual(sbomComponent.Name, "Test 1.0.0");
         Assert.AreEqual(sbomComponent.RootElementId, "SPDXRef-RootPackage");
         Assert.AreEqual(sbomComponent.DocumentNamespace, new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
         Assert.AreEqual(sbomComponent.SpdxVersion, "SPDX-2.2");
         Assert.AreEqual(sbomComponent.Checksum, checksum);
-        Assert.AreEqual(sbomComponent.Path, Path.Combine(Path.GetTempPath(), spdxFileName));
+        Assert.AreEqual(sbomComponent.Path, spdxFilePath);
+
+        Assert.AreEqual(spdxPackageComponent.Name, "package");
+        Assert.AreEqual(spdxPackageComponent.Version, "1.0.0");
+        Assert.AreEqual(spdxPackageComponent.CopyrightText, "NOASSERTION");
+        Assert.AreEqual(spdxPackageComponent.Supplier, "Organization: Microsoft");
+        Assert.AreEqual(spdxPackageComponent.PackageSource, spdxFilePath);
     }
 
     [TestMethod]
