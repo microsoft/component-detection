@@ -59,7 +59,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
         {
             ""name"": ""package"",
             ""SPDXID"": ""SPDXRef-RootPackage"",
-            ""downloadLocation"": ""NOASSERTION"",
+            ""downloadLocation"": ""https://www.sbom.microsoft"",
             ""packageVerificationCode"": {
                 ""packageVerificationCodeValue"": ""12fa1211046c12118936384b6c8683f1ac9b790a""
             },
@@ -135,6 +135,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
         Assert.AreEqual(spdxPackageComponent.Version, "1.0.0");
         Assert.AreEqual(spdxPackageComponent.CopyrightText, "NOASSERTION");
         Assert.AreEqual(spdxPackageComponent.Supplier, "Organization: Microsoft");
+        Assert.AreEqual(spdxPackageComponent.DownloadLocation, "https://www.sbom.microsoft");
         Assert.AreEqual(spdxPackageComponent.PackageSource, spdxFilePath);
     }
 

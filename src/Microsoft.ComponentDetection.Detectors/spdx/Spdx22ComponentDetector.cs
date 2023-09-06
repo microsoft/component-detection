@@ -80,7 +80,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
             {
                 foreach (var package in spdxFileData.Packages)
                 {
-                    var spdxPackageComponent = new SpdxPackageComponent(package.Name, package.Version, package.Supplier, processRequest.ComponentStream.Location, package.CopyrightText);
+                    var spdxPackageComponent = new SpdxPackageComponent(package.Name, package.Version, package.Supplier, processRequest.ComponentStream.Location, package.DownloadLocation, package.CopyrightText);
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(spdxPackageComponent));
                 }
             }

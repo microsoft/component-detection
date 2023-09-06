@@ -2,13 +2,14 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 public class SpdxPackageComponent : TypedComponent
 {
-    public SpdxPackageComponent(string name, string version, string supplier, string packageSource, string copyrightText)
+    public SpdxPackageComponent(string name, string version, string supplier, string packageSource, string downloadLocation, string copyrightText)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Spdx));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Spdx));
         this.Supplier = this.ValidateRequiredInput(supplier, nameof(this.Supplier), nameof(ComponentType.Spdx));
-        this.CopyrightText = this.ValidateRequiredInput(copyrightText, nameof(this.CopyrightText), nameof(ComponentType.Spdx));
         this.PackageSource = this.ValidateRequiredInput(packageSource, nameof(this.PackageSource), nameof(ComponentType.Spdx));
+        this.DownloadLocation = this.ValidateRequiredInput(downloadLocation, nameof(this.DownloadLocation), nameof(ComponentType.Spdx));
+        this.CopyrightText = this.ValidateRequiredInput(copyrightText, nameof(this.CopyrightText), nameof(ComponentType.Spdx));
     }
 
     private SpdxPackageComponent()
@@ -17,6 +18,8 @@ public class SpdxPackageComponent : TypedComponent
     }
 
     public string CopyrightText { get; }
+
+    public string DownloadLocation { get; }
 
     public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
