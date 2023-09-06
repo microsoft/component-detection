@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -14,7 +15,7 @@ public class BroadcastChannelServiceTests
 {
     [TestMethod]
     [Timeout(1000)]
-    public async Task BroadcastsMessagesToAllConsumersAsync()
+    public async Task BroadMessage_SendsToAllConsumersAsync()
     {
         var bc = new BroadcastChannelService<int>();
 
@@ -54,5 +55,40 @@ public class BroadcastChannelServiceTests
         await Task.WhenAll(task1, task2);
 
         results.Should().BeEquivalentTo(new[] { 10, 20, 10, 20 });
+    }
+
+    [TestMethod]
+    [Timeout(60 * 1000)]
+    public async Task BroadcastMessage_DoesNotDropMessagesAsync()
+    {
+        var bc = new BroadcastChannelService<int>();
+
+        var reader = bc.CreateBroadcastChannel();
+
+        var results = new ConcurrentBag<int>();
+        var readerTask = Task.Factory.StartNew(
+            async () =>
+            {
+                await foreach (var msg in reader.ReadAllAsync())
+                {
+                    results.Add(msg);
+                }
+            },
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+
+        var values = Enumerable.Range(0, BroadcastChannelService<int>.Capacity * 2).ToList();
+
+        foreach (var value in values)
+        {
+            await bc.BroadcastMessageAsync(value);
+        }
+
+        bc.Complete();
+
+        await readerTask;
+
+        results.Should().BeEquivalentTo(values);
     }
 }

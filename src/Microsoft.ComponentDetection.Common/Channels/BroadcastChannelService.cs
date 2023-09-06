@@ -8,7 +8,11 @@ using System.Threading.Tasks;
 /// <inheritdoc />
 public class BroadcastChannelService<T> : IBroadcastChannelService<T>
 {
-    private const int Capacity = 1024;
+    /// <summary>
+    /// The capacity of the broadcast channel. Writes will be blocked until there is space in the channel.
+    /// </summary>
+    public const int Capacity = 1024;
+
     private readonly ConcurrentBag<ChannelWriter<T>> writers = new();
 
     /// <inheritdoc />
