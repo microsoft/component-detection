@@ -71,6 +71,13 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
             ""licenseDeclared"": ""NOASSERTION"",
             ""copyrightText"": ""NOASSERTION"",
             ""versionInfo"": ""1.0.0"",
+            ""externalRefs"": [
+                {
+                    ""referenceCategory"": ""PACKAGE-MANAGER"",
+                    ""referenceType"": ""purl"",
+                    ""referenceLocator"": ""pkg:nuget/openssl@2.10.0""
+                }
+            ],
             ""supplier"": ""Organization: Microsoft"",
             ""hasFiles"": [""SPDXRef-File--.eslintrc.js-76586927C59544FB23BE1CF4D269882217EE21AB""]
         }
@@ -136,7 +143,96 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
         Assert.AreEqual(spdxPackageComponent.CopyrightText, "NOASSERTION");
         Assert.AreEqual(spdxPackageComponent.Supplier, "Organization: Microsoft");
         Assert.AreEqual(spdxPackageComponent.DownloadLocation, "https://www.sbom.microsoft");
-        Assert.AreEqual(spdxPackageComponent.PackageSource, spdxFilePath);
+        Assert.AreEqual(spdxPackageComponent.PackageUrl.ToString(), "pkg:nuget/openssl@2.10.0");
+        Assert.AreEqual(spdxPackageComponent.Type, ComponentType.Spdx);
+    }
+
+    [TestMethod]
+    public async Task TestSbomDetector_MissingExternalRefsAsync()
+    {
+        var spdxFile = /*lang=json,strict*/ @"{
+    ""files"": [{
+        ""fileName"": ""./.eslintrc.js"",
+        ""SPDXID"": ""SPDXRef-File--.eslintrc.js-76586927C59544FB23BE1CF4D269882217EE21AB"",
+        ""checksums"": [
+            {
+                ""algorithm"": ""SHA256"",
+                ""checksumValue"": ""5c9c9d7eb9d31320bd621b3089ec0ae87d97e9ee7ed03cde2d20383928f72958""
+            },
+            {
+                ""algorithm"": ""SHA1"",
+                ""checksumValue"": ""76586927c59544fb23be1cf4d269882217ee21ab""
+            }
+        ]
+    }],
+    ""packages"": [
+        {
+            ""name"": ""package"",
+            ""SPDXID"": ""SPDXRef-RootPackage"",
+            ""downloadLocation"": ""https://www.sbom.microsoft"",
+            ""packageVerificationCode"": {
+                ""packageVerificationCodeValue"": ""12fa1211046c12118936384b6c8683f1ac9b790a""
+            },
+            ""filesAnalyzed"": true,
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseInfoFromFiles"": [
+                ""NOASSERTION""
+            ],
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""versionInfo"": ""1.0.0"",
+            ""supplier"": ""Organization: Microsoft"",
+            ""hasFiles"": [""SPDXRef-File--.eslintrc.js-76586927C59544FB23BE1CF4D269882217EE21AB""]
+        }
+    ],
+    ""relationships"": [
+        {
+            ""relationshipType"": ""DESCRIBES"",
+            ""relatedSpdxElement"": ""SPDXRef-RootPackage"",
+            ""spdxElementId"": ""SPDXRef-DOCUMENT""
+        }
+    ],
+    ""spdxVersion"": ""SPDX-2.2"",
+    ""dataLicense"": ""CC0-1.0"",
+    ""SPDXID"": ""SPDXRef-DOCUMENT"",
+    ""name"": ""Test 1.0.0"",
+    ""documentNamespace"": ""https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"",
+    ""creationInfo"": {
+        ""created"": ""2022-02-14T20:26:41Z"",
+        ""creators"": [
+            ""Organization: Microsoft"",
+            ""Tool: Microsoft.SBOMTool-1.0.0""
+        ]
+    },
+    ""documentDescribes"": [
+        ""SPDXRef-RootPackage""
+    ]
+}";
+
+        var spdxFileName = "manifest.spdx.json";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(spdxFileName, spdxFile)
+            .ExecuteDetectorAsync();
+
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+
+        if (!detectedComponents.Any())
+        {
+            throw new AssertFailedException($"{nameof(SpdxComponent)} is null");
+        }
+
+        var spdxPackageComponent = (SpdxPackageComponent)detectedComponents.First(x => x.Component.GetType() == typeof(SpdxPackageComponent))?.Component;
+
+        Assert.IsNotNull(spdxPackageComponent);
+        Assert.AreEqual(spdxPackageComponent.Name, "package");
+        Assert.AreEqual(spdxPackageComponent.Version, "1.0.0");
+        Assert.AreEqual(spdxPackageComponent.CopyrightText, "NOASSERTION");
+        Assert.AreEqual(spdxPackageComponent.Supplier, "Organization: Microsoft");
+        Assert.AreEqual(spdxPackageComponent.DownloadLocation, "https://www.sbom.microsoft");
+        Assert.IsNull(spdxPackageComponent.PackageUrl);
+        Assert.AreEqual(spdxPackageComponent.Type, ComponentType.Spdx);
     }
 
     [TestMethod]

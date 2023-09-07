@@ -80,7 +80,18 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
             {
                 foreach (var package in spdxFileData.Packages)
                 {
-                    var spdxPackageComponent = new SpdxPackageComponent(package.Name, package.Version, package.Supplier, processRequest.ComponentStream.Location, package.DownloadLocation, package.CopyrightText);
+                    SpdxPackageComponent spdxPackageComponent;
+
+                    var extRefLocator = package.ExternalRefs?.FirstOrDefault(x => x.Type == "purl")?.Locator;
+                    if (extRefLocator is not null)
+                    {
+                        spdxPackageComponent = new SpdxPackageComponent(package.Name, package.Version, package.Supplier, package.CopyrightText, package.DownloadLocation, extRefLocator);
+                    }
+                    else
+                    {
+                        spdxPackageComponent = new SpdxPackageComponent(package.Name, package.Version, package.Supplier, package.CopyrightText, package.DownloadLocation);
+                    }
+
                     singleFileComponentRecorder.RegisterUsage(new DetectedComponent(spdxPackageComponent));
                 }
             }
