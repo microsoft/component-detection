@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
@@ -62,33 +63,33 @@ public class BroadcastChannelServiceTests
     public async Task BroadcastMessage_DoesNotDropMessagesAsync()
     {
         var bc = new BroadcastChannelService<int>();
+        var results = new ConcurrentBag<int>();
 
         var reader = bc.CreateBroadcastChannel();
-
-        var results = new ConcurrentBag<int>();
-        var readerTask = Task.Factory.StartNew(
-            async () =>
+        var readerThread = CreateAndStartThread(async () =>
+        {
+            await foreach (var msg in reader.ReadAllAsync())
             {
-                await foreach (var msg in reader.ReadAllAsync())
-                {
-                    results.Add(msg);
-                }
-            },
-            CancellationToken.None,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
+                results.Add(msg);
+            }
+        });
 
         var values = Enumerable.Range(0, BroadcastChannelService<int>.Capacity * 2).ToList();
-
         foreach (var value in values)
         {
             await bc.BroadcastMessageAsync(value);
         }
 
         bc.Complete();
-
-        await readerTask;
+        readerThread.Join();
 
         results.Should().BeEquivalentTo(values);
+    }
+
+    private static Thread CreateAndStartThread(Func<Task> func)
+    {
+        var thread = new Thread(async () => await func());
+        thread.Start();
+        return thread;
     }
 }
