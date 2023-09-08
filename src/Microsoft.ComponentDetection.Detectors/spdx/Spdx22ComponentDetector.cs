@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Spdx;
+namespace Microsoft.ComponentDetection.Detectors.Spdx;
 
 using System;
 using System.Collections.Generic;
@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Spdx.Contracts;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// Spdx22ComponentDetector discover SPDX SBOM files in JSON format and create components with the information about
@@ -46,6 +46,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
     {
         this.Logger.LogDebug("Discovered SPDX2.2 manifest file at: {ManifestLocation}", processRequest.ComponentStream.Location);
         var file = processRequest.ComponentStream;
+        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
 
         try
         {
@@ -58,30 +59,46 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
             using var reader = new JsonTextReader(sr);
             var serializer = new JsonSerializer();
 
-            try
+            var spdxFileData = serializer.Deserialize<SpdxFileData>(reader);
+
+            if (spdxFileData == null)
             {
-                var document = serializer.Deserialize<JObject>(reader);
-                if (document != null)
+                this.Logger.LogWarning("Discovered SPDX file at {ManifestLocation} is not a valid document, skipping", processRequest.ComponentStream.Location);
+                return Task.CompletedTask;
+            }
+
+            if (!this.IsSPDXVersionSupported(spdxFileData.Version))
+            {
+                this.Logger.LogWarning("Discovered SPDX at {ManifestLocation} is not SPDX-2.2 document, skipping", processRequest.ComponentStream.Location);
+                return Task.CompletedTask;
+            }
+
+            var sbomComponent = this.ConvertJObjectToSbomComponent(processRequest, spdxFileData, hash);
+            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(sbomComponent));
+
+            if (spdxFileData.HasPackages())
+            {
+                foreach (var package in spdxFileData.Packages)
                 {
-                    if (this.IsSPDXVersionSupported(document))
+                    SpdxPackageComponent spdxPackageComponent;
+
+                    var extRefLocator = package.ExternalRefs?.FirstOrDefault(x => x.Type == "purl")?.Locator;
+                    if (extRefLocator is not null)
                     {
-                        var sbomComponent = this.ConvertJObjectToSbomComponent(processRequest, document, hash);
-                        processRequest.SingleFileComponentRecorder.RegisterUsage(new DetectedComponent(sbomComponent));
+                        spdxPackageComponent = new SpdxPackageComponent(package.Name, package.Version, package.Supplier, package.CopyrightText, package.DownloadLocation, extRefLocator);
                     }
                     else
                     {
-                        this.Logger.LogWarning("Discovered SPDX at {ManifestLocation} is not SPDX-2.2 document, skipping", processRequest.ComponentStream.Location);
+                        spdxPackageComponent = new SpdxPackageComponent(package.Name, package.Version, package.Supplier, package.CopyrightText, package.DownloadLocation);
                     }
-                }
-                else
-                {
-                    this.Logger.LogWarning("Discovered SPDX file at {ManifestLocation} is not a valid document, skipping", processRequest.ComponentStream.Location);
+
+                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(spdxPackageComponent));
                 }
             }
-            catch (JsonReaderException)
-            {
-                this.Logger.LogWarning("Unable to parse file at {ManifestLocation}, skipping", processRequest.ComponentStream.Location);
-            }
+        }
+        catch (JsonException je)
+        {
+            this.Logger.LogWarning(je, "Unable to parse file at {ManifestLocation}, skipping", processRequest.ComponentStream.Location);
         }
         catch (Exception e)
         {
@@ -91,16 +108,13 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
         return Task.CompletedTask;
     }
 
-    private bool IsSPDXVersionSupported(JObject document) => this.supportedSPDXVersions.Contains(document["spdxVersion"]?.ToString(), StringComparer.OrdinalIgnoreCase);
+    private bool IsSPDXVersionSupported(string version) => this.supportedSPDXVersions.Contains(version?.ToString(), StringComparer.OrdinalIgnoreCase);
 
-    private SpdxComponent ConvertJObjectToSbomComponent(ProcessRequest processRequest, JObject document, string fileHash)
+    private SpdxComponent ConvertJObjectToSbomComponent(ProcessRequest processRequest, SpdxFileData spdxFileData, string fileHash)
     {
-        var sbomNamespace = document["documentNamespace"]?.ToString();
-        var rootElements = document["documentDescribes"]?.ToObject<string[]>();
-        var name = document["name"]?.ToString();
-        var spdxVersion = document["spdxVersion"]?.ToString();
+        var rootElements = spdxFileData.DocumentDescribes;
 
-        if (rootElements?.Length > 1)
+        if (rootElements?.Count() > 1)
         {
             this.Logger.LogWarning("SPDX file at {ManifestLocation} has more than one element in documentDescribes, first will be selected as root element.", processRequest.ComponentStream.Location);
         }
@@ -112,7 +126,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
         var rootElementId = rootElements?.FirstOrDefault() ?? "SPDXRef-Document";
         var path = processRequest.ComponentStream.Location;
-        var component = new SpdxComponent(spdxVersion, new Uri(sbomNamespace), name, fileHash, rootElementId, path);
+        var component = new SpdxComponent(spdxFileData.Version, new Uri(spdxFileData.DocumentNamespace), spdxFileData.Name, fileHash, rootElementId, path);
 
         return component;
     }
