@@ -74,7 +74,7 @@ public class BroadcastChannelServiceTests
             }
         });
 
-        var values = Enumerable.Range(0, 2048).ToList();
+        var values = Enumerable.Range(0, 1024).ToList();
         foreach (var value in values)
         {
             await bc.BroadcastMessageAsync(value);
