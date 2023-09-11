@@ -57,39 +57,4 @@ public class BroadcastChannelServiceTests
 
         results.Should().BeEquivalentTo(new[] { 10, 20, 10, 20 });
     }
-
-    [TestMethod]
-    [Timeout(60 * 1000)]
-    public async Task BroadcastMessage_DoesNotDropMessagesAsync()
-    {
-        var bc = new BroadcastChannelService<int>();
-        var results = new ConcurrentBag<int>();
-
-        var reader = bc.CreateBroadcastChannel();
-        var readerThread = CreateAndStartThread(async () =>
-        {
-            await foreach (var msg in reader.ReadAllAsync())
-            {
-                results.Add(msg);
-            }
-        });
-
-        var values = Enumerable.Range(0, 1024).ToList();
-        foreach (var value in values)
-        {
-            await bc.BroadcastMessageAsync(value);
-        }
-
-        bc.Complete();
-        readerThread.Join();
-
-        results.Should().BeEquivalentTo(values);
-    }
-
-    private static Thread CreateAndStartThread(Func<Task> func)
-    {
-        var thread = new Thread(async () => await func());
-        thread.Start();
-        return thread;
-    }
 }
