@@ -55,7 +55,7 @@ public class DetectorProcessingService : IDetectorProcessingService
         this.experimentService.RemoveUnwantedExperimentsbyDetectors(detectorRestrictions.DisabledDetectors);
 
         IEnumerable<Task<(IndividualDetectorScanResult, ComponentRecorder, IComponentDetector)>> scanTasks = detectors
-            .Select(async detector =>
+            .Select(detector => Task.Run(async () =>
             {
                 var providerStopwatch = new Stopwatch();
                 providerStopwatch.Start();
@@ -121,7 +121,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                 {
                     return (result, componentRecorder, detector);
                 }
-            }).ToList();
+            })).ToList();
 
         var results = await Task.WhenAll(scanTasks);
         await this.experimentService.FinishAsync();
