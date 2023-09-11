@@ -1,0 +1,134 @@
+namespace Microsoft.ComponentDetection.Detectors.Rust;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.Internal;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
+using Microsoft.Extensions.Logging;
+
+/// <summary>
+/// A Rust CLI detector that uses the cargo metadata command to detect Rust components.
+/// </summary>
+public class RustCliDetector : FileComponentDetector, IExperimentalDetector
+{
+    private readonly ICommandLineInvocationService cliService;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RustCliDetector"/> class.
+    /// </summary>
+    /// <param name="componentStreamEnumerableFactory">The component stream enumerable factory.</param>
+    /// <param name="walkerFactory">The walker factory.</param>
+    /// <param name="cliService">The command line invocation service.</param>
+    /// <param name="logger">The logger.</param>
+    public RustCliDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService cliService,
+        ILogger<RustCliDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.cliService = cliService;
+        this.Logger = logger;
+    }
+
+    /// <inheritdoc />
+    public override string Id => "RustCli";
+
+    /// <inheritdoc />
+    public override IEnumerable<string> Categories { get; } = new[] { "Rust" };
+
+    /// <inheritdoc />
+    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
+
+    /// <inheritdoc />
+    public override int Version => 1;
+
+    /// <inheritdoc />
+    public override IList<string> SearchPatterns { get; } = new[] { "Cargo.toml" };
+
+    /// <inheritdoc />
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    {
+        var componentStream = processRequest.ComponentStream;
+
+        try
+        {
+            if (!await this.cliService.CanCommandBeLocatedAsync("cargo", null))
+            {
+                this.Logger.LogWarning("Could not locate cargo command. Skipping Rust CLI detection");
+                return;
+            }
+
+            var cliResult = await this.cliService.ExecuteCommandAsync(
+                "cargo",
+                null,
+                "metadata",
+                "--manifest-path",
+                componentStream.Location,
+                "--format-version=1",
+                "--locked");
+
+            var metadata = CargoMetadata.FromJson(cliResult.StdOut);
+            var graph = BuildGraph(metadata);
+            var root = metadata.Resolve.Root;
+
+            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null);
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogWarning(e, "Failed to parse Cargo.toml file: {Location}", processRequest.ComponentStream.Location);
+        }
+    }
+
+    private static Dictionary<string, Node> BuildGraph(CargoMetadata cargoMetadata) => cargoMetadata.Resolve.Nodes.ToDictionary(x => x.Id);
+
+    private static (string Name, string Version) ParseNameAndVersion(string nameAndVersion)
+    {
+        var parts = nameAndVersion.Split(' ');
+        return (parts[0], parts[1]);
+    }
+
+    private void TraverseAndRecordComponents(
+        ISingleFileComponentRecorder recorder,
+        string location,
+        IReadOnlyDictionary<string, Node> graph,
+        string id,
+        DetectedComponent parent,
+        Dep depInfo,
+        bool explicitlyReferencedDependency = false)
+    {
+        try
+        {
+            var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev or Kind.Build) ?? false;
+            var (name, version) = ParseNameAndVersion(id);
+            var detectedComponent = new DetectedComponent(new CargoComponent(name, version));
+
+            recorder.RegisterUsage(
+                detectedComponent,
+                explicitlyReferencedDependency,
+                isDevelopmentDependency: isDevelopmentDependency,
+                parentComponentId: parent?.Component.Id);
+
+            if (!graph.TryGetValue(id, out var node))
+            {
+                this.Logger.LogWarning("Could not find {Id} at {Location} in cargo metadata output", id, location);
+                return;
+            }
+
+            foreach (var dep in node.Deps)
+            {
+                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, parent == null);
+            }
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogWarning(e, "Could not parse {Id} at {Location}", id, location);
+            recorder.RegisterPackageParseFailure(id);
+        }
+    }
+}
