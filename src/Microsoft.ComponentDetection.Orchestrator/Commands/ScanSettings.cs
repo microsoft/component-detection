@@ -58,5 +58,6 @@ public class ScanSettings : BaseSettings
     [CommandOption("--DockerImagesToScan")]
     [Description(
         "Comma separated list of docker image names or hashes to execute container scanning on, ex: ubuntu:16.04, 56bab49eef2ef07505f6a1b0d5bd3a601dfc3c76ad4460f24c91d6fa298369ab")]
+    [TypeConverter(typeof(CommaDelimitedConverter))]
     public IEnumerable<string> DockerImagesToScan { get; set; }
 }
