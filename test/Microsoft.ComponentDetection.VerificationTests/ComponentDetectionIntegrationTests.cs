@@ -267,10 +267,12 @@ public class ComponentDetectionIntegrationTests
 
         var oldLocations = this.oldScanResult.ComponentsFound
             .Where(x => inScopeComponents.Contains(GetKey(x)))
+            .DistinctBy(GetKey)
             .ToDictionary(GetKey, x => x.LocationsFoundAt.ToHashSet());
 
         var newLocations = this.newScanResult.ComponentsFound
             .Where(x => inScopeComponents.Contains(GetKey(x)))
+            .DistinctBy(GetKey)
             .ToDictionary(GetKey, x => x.LocationsFoundAt.ToHashSet());
 
         oldLocations.Should().BeEquivalentTo(newLocations, "The locations found for each component should be the same.");
