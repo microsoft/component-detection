@@ -257,7 +257,7 @@ public class ComponentDetectionIntegrationTests
     [TestMethod]
     public void VerifyLocationsFoundAt()
     {
-        static string GetKey(ScannedComponent component) => $"{component.DetectorId}|{component.Component.Id}|${component.Component.PackageUrl}";
+        static string GetKey(ScannedComponent component) => $"{component.DetectorId}|{component.Component.Id}|{component.Component.PackageUrl}";
 
         // The other tests check that both graphs have the same components, so we will assume that the components are the same.
         var inScopeComponents = this.oldScanResult.ComponentsFound
