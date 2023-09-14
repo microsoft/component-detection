@@ -38,6 +38,6 @@ jobs:
         run: dotnet test --no-build --configuration Debug --collect:"XPlat Code Coverage"
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3
+        uses: codecov/codecov-action@c4cf8a4f03f0ac8585acb7c1b7ce3460ec15782f # v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
