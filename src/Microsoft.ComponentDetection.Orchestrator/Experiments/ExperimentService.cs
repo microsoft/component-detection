@@ -113,6 +113,11 @@ public class ExperimentService : IExperimentService
 
     public void RemoveUnwantedExperimentsbyDetectors(IEnumerable<IComponentDetector> detectors)
     {
+        if (detectors == null)
+        {
+            return;
+        }
+
         var experimentsToRemove = this.experiments
             .Where(x => detectors.Any(detector => x.Key.IsInControlGroup(detector) || x.Key.IsInExperimentGroup(detector)))
             .Select(x => x.Key).ToList();

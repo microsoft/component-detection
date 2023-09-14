@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 
 using System;
 using System.ComponentModel;
-using Microsoft.ComponentDetection.Contracts;
+using Serilog.Events;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -24,9 +24,9 @@ public abstract class BaseSettings : CommandSettings
     public Guid CorrelationId { get; set; }
 
     [Description("Flag indicating what level of logging to output to console during execution. Options are: Verbose, Normal, or Quiet.")]
-    [DefaultValue(VerbosityMode.Normal)]
-    [CommandOption("--Verbosity")]
-    public VerbosityMode Verbosity { get; set; }
+    [DefaultValue(LogEventLevel.Information)]
+    [CommandOption("--LogLevel")]
+    public LogEventLevel LogLevel { get; set; }
 
     [Description("An integer representing the time limit (in seconds) before detection is cancelled")]
     [CommandOption("--Timeout")]
