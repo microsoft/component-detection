@@ -23,7 +23,7 @@ public abstract class BaseSettings : CommandSettings
     [CommandOption("--CorrelationId")]
     public Guid CorrelationId { get; set; }
 
-    [Description("Flag indicating what level of logging to output to console during execution. Options are: Verbose, Normal, or Quiet.")]
+    [Description("Flag indicating what level of logging to output to console during execution. Options are: Verbose, Debug, Information, Warning, Error, or Fatal.")]
     [DefaultValue(LogEventLevel.Information)]
     [CommandOption("--LogLevel")]
     public LogEventLevel LogLevel { get; set; }
@@ -41,7 +41,7 @@ public abstract class BaseSettings : CommandSettings
     {
         if (this.Timeout is <= 0)
         {
-            return ValidationResult.Error("Timeout must be a positive integer");
+            return ValidationResult.Error($"{nameof(this.Timeout)} must be a positive integer");
         }
 
         return base.Validate();
