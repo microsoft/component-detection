@@ -259,6 +259,8 @@ public class ComponentDetectionIntegrationTests
     {
         static string GetKey(ScannedComponent component) => $"{component.DetectorId}|{component.Component.Id}|{component.Component.PackageUrl}";
 
+        AssertionOptions.FormattingOptions.MaxDepth = 100;
+
         // The other tests check that both graphs have the same components, so we will assume that the components are the same.
         var inScopeComponents = this.oldScanResult.ComponentsFound
             .Select(GetKey)
