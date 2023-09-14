@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Orchestrator;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
-using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -24,7 +23,7 @@ if (args.Contains("--debug", StringComparer.OrdinalIgnoreCase))
 var serviceCollection = new ServiceCollection()
     .AddComponentDetection()
     .AddLogging(l => l.AddSerilog(new LoggerConfiguration()
-        .MinimumLevel.ControlledBy(LogLevelInterceptor.LogLevel)
+        .MinimumLevel.ControlledBy(Interceptor.LogLevel)
         .Enrich.With<LoggingEnricher>()
         .WriteTo.Map(
             LoggingEnricher.LogFilePathPropertyName,
@@ -47,8 +46,6 @@ app.Configure(
         var logger = resolver.Resolve(typeof(ILogger<Program>)) as ILogger<Program>;
 
         config.SetInterceptor(new Interceptor(resolver, resolver.Resolve(typeof(ILogger<Interceptor>)) as ILogger<Interceptor>));
-        config.SetInterceptor(new LogLevelInterceptor());
-        config.SetInterceptor(new PrintManifestInterceptor());
 
         config.Settings.ApplicationName = "component-detection";
 
