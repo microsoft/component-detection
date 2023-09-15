@@ -9,7 +9,7 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Detectors.NuGet;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
@@ -29,7 +29,7 @@ public class ExperimentServiceTests
     private readonly Mock<IGraphTranslationService> graphTranslationServiceMock;
     private readonly Mock<ILogger<ExperimentService>> loggerMock;
     private readonly Mock<IComponentDetector> detectorMock;
-    private readonly Mock<IDetectionArguments> detectionArgsMock;
+    private readonly Mock<ScanSettings> scanSettingsMock;
     private readonly ComponentRecorder componentRecorder;
 
     public ExperimentServiceTests()
@@ -39,7 +39,7 @@ public class ExperimentServiceTests
         this.graphTranslationServiceMock = new Mock<IGraphTranslationService>();
         this.loggerMock = new Mock<ILogger<ExperimentService>>();
         this.detectorMock = new Mock<IComponentDetector>();
-        this.detectionArgsMock = new Mock<IDetectionArguments>();
+        this.scanSettingsMock = new Mock<ScanSettings>();
 
         this.componentRecorder = new ComponentRecorder();
 
@@ -51,7 +51,7 @@ public class ExperimentServiceTests
     private void SetupGraphMock(IEnumerable<ScannedComponent> components)
     {
         this.graphTranslationServiceMock
-            .Setup(x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<IDetectionArguments>(), It.IsAny<bool>()))
+            .Setup(x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<ScanSettings>(), It.IsAny<bool>()))
             .Returns(new ScanResult() { ComponentsFound = components });
     }
 
@@ -74,7 +74,7 @@ public class ExperimentServiceTests
             this.loggerMock.Object);
         this.SetupGraphMock(components);
 
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
 
         this.experimentConfigMock.Verify(x => x.IsInControlGroup(this.detectorMock.Object), Times.Once());
         this.experimentConfigMock.Verify(x => x.IsInExperimentGroup(this.detectorMock.Object), Times.Once());
@@ -82,7 +82,7 @@ public class ExperimentServiceTests
         // verify that we always call the graph translation service with updateLocations = false so we dont
         // corrupt file location paths
         this.graphTranslationServiceMock.Verify(
-            x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<IDetectionArguments>(), It.Is<bool>(x => !x)),
+            x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<ScanSettings>(), It.Is<bool>(x => !x)),
             Times.Once());
     }
 
@@ -105,7 +105,7 @@ public class ExperimentServiceTests
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
 
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
         await service.FinishAsync();
 
         filterConfigMock.Verify(x => x.ShouldRecord(this.detectorMock.Object, components.Count), Times.Once());
@@ -131,7 +131,7 @@ public class ExperimentServiceTests
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
 
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
         await service.FinishAsync();
 
         filterConfigMock.Verify(x => x.ShouldRecord(this.detectorMock.Object, components.Count), Times.Never());
@@ -154,7 +154,7 @@ public class ExperimentServiceTests
             new[] { this.experimentProcessorMock.Object },
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
 
         await service.FinishAsync();
 
@@ -179,7 +179,7 @@ public class ExperimentServiceTests
             new[] { this.experimentProcessorMock.Object },
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
 
         var act = async () => await service.FinishAsync();
         await act.Should().NotThrowAsync<IOException>();
@@ -211,7 +211,7 @@ public class ExperimentServiceTests
             new[] { this.experimentProcessorMock.Object },
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
 
         await service.FinishAsync();
 
@@ -233,7 +233,7 @@ public class ExperimentServiceTests
             new[] { this.experimentProcessorMock.Object },
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
 
         await service.FinishAsync();
 
@@ -255,7 +255,7 @@ public class ExperimentServiceTests
             new[] { this.experimentProcessorMock.Object },
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
 
         await service.FinishAsync();
 
@@ -286,7 +286,7 @@ public class ExperimentServiceTests
 
         service.RemoveUnwantedExperimentsbyDetectors(detectorList);
 
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
 
         await service.FinishAsync();
 
@@ -317,7 +317,7 @@ public class ExperimentServiceTests
 
         service.RemoveUnwantedExperimentsbyDetectors(detectorList);
 
-        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.detectionArgsMock.Object);
+        service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
 
         await service.FinishAsync();
 

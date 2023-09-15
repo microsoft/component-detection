@@ -2,52 +2,73 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Events;
+using Serilog.Filters;
+using Spectre.Console.Cli;
 
-try
+if (args.Contains("--debug", StringComparer.OrdinalIgnoreCase))
 {
-    if (args.Contains("--debug", StringComparer.OrdinalIgnoreCase))
+    Console.WriteLine($"Waiting for debugger attach. PID: {Process.GetCurrentProcess().Id}");
+    while (!Debugger.IsAttached)
     {
-        Console.WriteLine($"Waiting for debugger attach. PID: {Process.GetCurrentProcess().Id}");
-        while (!Debugger.IsAttached)
-        {
-            await Task.Delay(1000);
-        }
+        await Task.Delay(1000);
     }
+}
 
-    Log.Logger = new LoggerConfiguration()
-        .WriteTo.Console(outputTemplate: "[BOOTSTRAP] [{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-        .CreateBootstrapLogger();
+var serviceCollection = new ServiceCollection()
+    .AddComponentDetection()
+    .AddLogging(l => l.AddSerilog(new LoggerConfiguration()
+        .MinimumLevel.ControlledBy(Interceptor.LogLevel)
+        .Enrich.With<LoggingEnricher>()
+        .Enrich.FromLogContext()
+        .WriteTo.Map(
+            LoggingEnricher.LogFilePathPropertyName,
+            (logFilePath, wt) => wt.Async(x => x.File($"{logFilePath}")),
+            1) // sinkMapCountLimit
+        .WriteTo.Map<bool>(
+            LoggingEnricher.PrintStderrPropertyName,
+            (printLogsToStderr, wt) => wt.Logger(lc => lc
+                .WriteTo.Console(standardErrorFromLevel: printLogsToStderr ? LogEventLevel.Debug : null)
 
-    var serviceProvider = new ServiceCollection()
-        .AddComponentDetection()
-        .ConfigureLoggingProviders()
-        .BuildServiceProvider();
-    var orchestrator = serviceProvider.GetRequiredService<Orchestrator>();
-    var result = await orchestrator.LoadAsync(args);
+                // Don't write the detection times table from DetectorProcessingService to the console, only the log file
+                .Filter.ByExcluding(Matching.WithProperty<string>("DetectionTimeLine", x => !string.IsNullOrEmpty(x)))),
+            1) // sinkMapCountLimit
+        .CreateLogger()));
 
-    var exitCode = (int)result.ResultCode;
-    if (result.ResultCode is ProcessingResultCode.Error or ProcessingResultCode.InputError)
+using var registrar = new TypeRegistrar(serviceCollection);
+var app = new CommandApp<ListDetectorsCommand>(registrar);
+app.Configure(
+    config =>
     {
-        exitCode = -1;
-    }
+        var resolver = registrar.Build();
 
-    Console.WriteLine($"Execution finished, status: {exitCode}.");
+        // Create the logger here as the serviceCollection will be disposed by the time we need to use the exception handler.
+        var logger = resolver.Resolve(typeof(ILogger<Program>)) as ILogger<Program>;
 
-    // Manually dispose to flush logs as we force exit
-    await serviceProvider.DisposeAsync();
+        config.SetInterceptor(new Interceptor(resolver));
 
-    await Log.CloseAndFlushAsync();
+        config.Settings.ApplicationName = "component-detection";
 
-    // force an exit, not letting any lingering threads not responding.
-    Environment.Exit(exitCode);
-}
-catch (ArgumentException ae)
-{
-    await Console.Error.WriteLineAsync(ae.ToString());
-    Environment.Exit(-1);
-}
+        config.CaseSensitivity(CaseSensitivity.None);
+
+        config.AddCommand<ListDetectorsCommand>("list-detectors")
+            .WithDescription("Lists available detectors");
+
+        config.AddCommand<ScanCommand>("scan")
+            .WithDescription("Initiates a scan");
+        config.SetExceptionHandler((e) =>
+            {
+                logger.LogError(e, "An error occurred while executing the command");
+            });
+    });
+var result = await app.RunAsync(args).ConfigureAwait(false);
+
+await Log.CloseAndFlushAsync();
+
+return result;

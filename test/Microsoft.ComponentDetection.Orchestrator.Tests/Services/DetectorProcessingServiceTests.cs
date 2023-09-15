@@ -11,7 +11,7 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.Logging;
@@ -25,7 +25,7 @@ using Newtonsoft.Json;
 public class DetectorProcessingServiceTests
 {
     private static readonly DirectoryInfo DefaultSourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SomeSource", "Directory"));
-    private static readonly BcdeArguments DefaultArgs = new BcdeArguments { SourceDirectory = DefaultSourceDirectory, DetectorArgs = Enumerable.Empty<string>() };
+    private static readonly ScanSettings DefaultArgs = new() { SourceDirectory = DefaultSourceDirectory, DetectorArgs = new Dictionary<string, string>() };
 
     private readonly Dictionary<string, DetectedComponent> componentDictionary = new Dictionary<string, DetectedComponent>()
     {
@@ -297,10 +297,10 @@ public class DetectorProcessingServiceTests
         capturedRequest.DirectoryExclusionPredicate(DefaultArgs.SourceDirectory.Name, DefaultArgs.SourceDirectory.Parent.Name).Should().BeFalse();
         capturedRequest.DirectoryExclusionPredicate(d1.Name, d1.Parent.FullName).Should().BeFalse();
 
-        var argsWithExclusion = new BcdeArguments()
+        var argsWithExclusion = new ScanSettings()
         {
             SourceDirectory = DefaultSourceDirectory,
-            DetectorArgs = Enumerable.Empty<string>(),
+            DetectorArgs = new Dictionary<string, string>(),
             DirectoryExclusionList = new[] { Path.Combine("**", "SomeSource", "**"), Path.Combine("**", "shouldExclude", "**") },
         };
 
@@ -340,7 +340,7 @@ public class DetectorProcessingServiceTests
 
         // This unit test previously depended on defaultArgs.   But the author assumed that \Source\ was in the default source path, which may not be true on all developers machines.
         // control this more explicitly.
-        var args = new BcdeArguments { SourceDirectory = new DirectoryInfo(this.isWin ? @"C:\Some\Source\Directory" : "/c/Some/Source/Directory"), DetectorArgs = Enumerable.Empty<string>() };
+        var args = new ScanSettings { SourceDirectory = new DirectoryInfo(this.isWin ? @"C:\Some\Source\Directory" : "/c/Some/Source/Directory"), DetectorArgs = new Dictionary<string, string>() };
 
         var dn = args.SourceDirectory.Name.AsSpan();
         var dp = args.SourceDirectory.Parent.FullName.AsSpan();
@@ -492,25 +492,6 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
-    public async Task ProcessDetectorsAsync_HandlesDetectorArgsAsync()
-    {
-        ScanRequest capturedRequest = null;
-        this.firstFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>()))
-            .ReturnsAsync(this.ExpectedResultForDetector(this.firstFileComponentDetectorMock.Object.Id))
-            .Callback<ScanRequest>(request => capturedRequest = request);
-
-        var args = DefaultArgs;
-        args.DetectorArgs = new string[] { "arg1=val1", "arg2", "arg3=val3" };
-
-        await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, new[] { this.firstFileComponentDetectorMock.Object }, new DetectorRestrictions());
-
-        capturedRequest.DetectorArgs
-            .Should().Contain("arg1", "val1")
-            .And.NotContainKey("arg2")
-            .And.Contain("arg3", "val3");
-    }
-
-    [TestMethod]
     public async Task ProcessDetectorsAsync_FinishesExperimentsAsync()
     {
         this.detectorsToUse = new[]
@@ -541,7 +522,7 @@ public class DetectorProcessingServiceTests
                 x.RecordDetectorRun(
                     It.Is<IComponentDetector>(detector => detector == this.firstFileComponentDetectorMock.Object),
                     It.IsAny<ComponentRecorder>(),
-                    It.Is<IDetectionArguments>(x => x == DefaultArgs)),
+                    It.Is<ScanSettings>(x => x == DefaultArgs)),
             Times.Once());
 
         this.experimentServiceMock.Verify(
@@ -549,7 +530,7 @@ public class DetectorProcessingServiceTests
                 x.RecordDetectorRun(
                     It.Is<IComponentDetector>(detector => detector == this.secondFileComponentDetectorMock.Object),
                     It.IsAny<ComponentRecorder>(),
-                    It.Is<IDetectionArguments>(x => x == DefaultArgs)),
+                    It.Is<ScanSettings>(x => x == DefaultArgs)),
             Times.Once());
     }
 

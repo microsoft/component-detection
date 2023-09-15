@@ -22,14 +22,11 @@ using Microsoft.ComponentDetection.Detectors.Spdx;
 using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Serilog.Extensions.Logging;
 
 public static class ServiceCollectionExtensions
 {
@@ -40,8 +37,6 @@ public static class ServiceCollectionExtensions
     /// <returns>The <see cref="IServiceCollection" /> so that additional calls can be chained.</returns>
     public static IServiceCollection AddComponentDetection(this IServiceCollection services)
     {
-        services.AddSingleton<Orchestrator>();
-
         // Shared services
         services.AddSingleton<ITelemetryService, CommandLineTelemetryService>();
         services.AddSingleton<ICommandLineInvocationService, CommandLineInvocationService>();
@@ -57,13 +52,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISafeFileEnumerableFactory, SafeFileEnumerableFactory>();
 
         // Command line services
-        services.AddSingleton<IScanArguments, BcdeArguments>();
-        services.AddSingleton<IScanArguments, BcdeDevArguments>();
-        services.AddSingleton<IScanArguments, ListDetectionArgs>();
-        services.AddSingleton<IArgumentHandlingService, BcdeDevCommandService>();
-        services.AddSingleton<IArgumentHandlingService, BcdeScanCommandService>();
-        services.AddSingleton<IArgumentHandlingService, DetectorListingCommandService>();
-        services.AddSingleton<IBcdeScanExecutionService, BcdeScanExecutionService>();
+        services.AddSingleton<IScanExecutionService, ScanExecutionService>();
         services.AddSingleton<IDetectorProcessingService, DetectorProcessingService>();
         services.AddSingleton<IDetectorRestrictionService, DetectorRestrictionService>();
         services.AddSingleton<IArgumentHelper, ArgumentHelper>();
@@ -152,27 +141,6 @@ public static class ServiceCollectionExtensions
 
         // HttpClient
         services.AddHttpClient();
-
-        return services;
-    }
-
-    public static IServiceCollection ConfigureLoggingProviders(this IServiceCollection services)
-    {
-        var providers = new LoggerProviderCollection();
-        services.AddSingleton(providers);
-        services.AddSingleton<ILoggerFactory>(sc =>
-        {
-            var providerCollection = sc.GetService<LoggerProviderCollection>();
-            var factory = new SerilogLoggerFactory(null, true, providerCollection);
-
-            foreach (var provider in sc.GetServices<ILoggerProvider>())
-            {
-                factory.AddProvider(provider);
-            }
-
-            return factory;
-        });
-        services.AddLogging(l => l.AddFilter<SerilogLoggerProvider>(null, LogLevel.Trace));
 
         return services;
     }

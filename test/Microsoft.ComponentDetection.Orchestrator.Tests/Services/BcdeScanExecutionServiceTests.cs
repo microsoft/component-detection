@@ -10,7 +10,7 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Orchestrator.ArgumentSets;
+using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.Logging;
@@ -22,7 +22,7 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class BcdeScanExecutionServiceTests
 {
-    private readonly Mock<ILogger<BcdeScanExecutionService>> loggerMock;
+    private readonly Mock<ILogger<ScanExecutionService>> loggerMock;
     private readonly Mock<IDetectorProcessingService> detectorProcessingServiceMock;
     private readonly Mock<IEnumerable<IComponentDetector>> detectorsMock;
     private readonly Mock<IDetectorRestrictionService> detectorRestrictionServiceMock;
@@ -34,13 +34,13 @@ public class BcdeScanExecutionServiceTests
     private readonly DetectedComponent[] detectedComponents;
     private readonly ContainerDetails sampleContainerDetails;
 
-    private readonly BcdeScanExecutionService serviceUnderTest;
+    private readonly ScanExecutionService serviceUnderTest;
 
     private readonly DirectoryInfo sourceDirectory;
 
     public BcdeScanExecutionServiceTests()
     {
-        this.loggerMock = new Mock<ILogger<BcdeScanExecutionService>>();
+        this.loggerMock = new Mock<ILogger<ScanExecutionService>>();
         this.detectorProcessingServiceMock = new Mock<IDetectorProcessingService>();
         this.detectorsMock = new Mock<IEnumerable<IComponentDetector>>();
         this.detectorRestrictionServiceMock = new Mock<IDetectorRestrictionService>();
@@ -56,7 +56,7 @@ public class BcdeScanExecutionServiceTests
             new DetectedComponent(new NuGetComponent("SomeNugetComponent", "1.2.3.4")),
         };
 
-        this.serviceUnderTest = new BcdeScanExecutionService(
+        this.serviceUnderTest = new ScanExecutionService(
             this.detectorsMock.Object,
             this.detectorProcessingServiceMock.Object,
             this.detectorRestrictionServiceMock.Object,
@@ -108,12 +108,12 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(new DetectedComponent(parentPipComponent, detector: new Mock<IComponentDetector>().Object), isExplicitReferencedDependency: true);
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1], parentComponentId: parentPipComponent.Id);
 
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
         var result = await this.DetectComponentsHappyPathAsync(
-            args,
+            settings,
             restrictions =>
             {
                 restrictions.AllowedDetectorCategories.Should().BeNull();
@@ -144,7 +144,7 @@ public class BcdeScanExecutionServiceTests
     [TestMethod]
     public async Task DetectComponents_DetectOnlyWithIdAndCategoryRestrictionsAsync()
     {
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             DetectorCategories = new[] { "Category1", "Category2" },
             DetectorsFilter = new[] { "Detector1", "Detector2" },
@@ -157,11 +157,11 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1]);
 
         var result = await this.DetectComponentsHappyPathAsync(
-            args,
+            settings,
             restrictions =>
             {
-                restrictions.AllowedDetectorCategories.Should().Contain(args.DetectorCategories);
-                restrictions.AllowedDetectorIds.Should().Contain(args.DetectorsFilter);
+                restrictions.AllowedDetectorCategories.Should().Contain(settings.DetectorCategories);
+                restrictions.AllowedDetectorIds.Should().Contain(settings.DetectorsFilter);
             },
             new List<ComponentRecorder> { componentRecorder });
 
@@ -172,7 +172,7 @@ public class BcdeScanExecutionServiceTests
     [TestMethod]
     public async Task DetectComponents_DetectOnlyWithNoUrlAsync()
     {
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -183,7 +183,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1]);
 
         var result = await this.DetectComponentsHappyPathAsync(
-            args,
+            settings,
             restrictions =>
             {
             },
@@ -199,7 +199,7 @@ public class BcdeScanExecutionServiceTests
         this.componentDetector2Mock.As<IExperimentalDetector>();
         this.componentDetector3Mock.As<IExperimentalDetector>();
 
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -209,7 +209,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0]);
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1]);
 
-        var result = await this.DetectComponentsHappyPathAsync(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
+        var result = await this.DetectComponentsHappyPathAsync(settings, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
         result.Result.Should().Be(ProcessingResultCode.Success);
         this.ValidateDetectedComponents(result.DetectedComponents);
@@ -221,7 +221,7 @@ public class BcdeScanExecutionServiceTests
     {
         var mockGraphLocation = "/some/dependency/graph";
 
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -247,7 +247,7 @@ public class BcdeScanExecutionServiceTests
         mockDependencyGraphA.Setup(x => x.IsDevelopmentDependency(this.detectedComponents[0].Component.Id)).Returns(true);
         mockDependencyGraphA.Setup(x => x.IsDevelopmentDependency(this.detectedComponents[1].Component.Id)).Returns(false);
 
-        var result = await this.DetectComponentsHappyPathAsync(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
+        var result = await this.DetectComponentsHappyPathAsync(settings, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
         result.SourceDirectory.Should().NotBeNull();
         result.SourceDirectory.Should().Be(this.sourceDirectory.ToString());
@@ -277,7 +277,7 @@ public class BcdeScanExecutionServiceTests
     {
         var mockGraphLocation = "/some/dependency/graph";
 
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -320,7 +320,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorderB.RegisterUsage(this.detectedComponents[1], isExplicitReferencedDependency: true);
         singleFileComponentRecorderB.RegisterUsage(this.detectedComponents[0], parentComponentId: this.detectedComponents[1].Component.Id);
 
-        var result = await this.DetectComponentsHappyPathAsync(args, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
+        var result = await this.DetectComponentsHappyPathAsync(settings, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
         result.SourceDirectory.Should().NotBeNull();
         result.SourceDirectory.Should().Be(this.sourceDirectory.ToString());
@@ -347,7 +347,7 @@ public class BcdeScanExecutionServiceTests
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new Mock<IComponentDetector>();
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -361,7 +361,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(detectedComponent2, isDevelopmentDependency: false);
         singleFileComponentRecorder.RegisterUsage(detectedComponent3);
 
-        var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var detectedComponents = results.ComponentsFound;
 
@@ -380,7 +380,7 @@ public class BcdeScanExecutionServiceTests
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new Mock<IComponentDetector>();
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -396,7 +396,7 @@ public class BcdeScanExecutionServiceTests
         var detectedComponent2NewLocation = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2NewLocation, isExplicitReferencedDependency: true);
 
-        var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var detectedComponents = results.ComponentsFound;
 
@@ -415,7 +415,7 @@ public class BcdeScanExecutionServiceTests
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new Mock<IComponentDetector>();
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -427,7 +427,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(detectedComponent1, isExplicitReferencedDependency: true);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2, parentComponentId: detectedComponent1.Component.Id);
 
-        var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var detectedComponents = results.ComponentsFound;
 
@@ -445,7 +445,7 @@ public class BcdeScanExecutionServiceTests
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new Mock<IComponentDetector>();
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -481,7 +481,7 @@ public class BcdeScanExecutionServiceTests
             firstRecorder.RegisterUsage(component, isDevelopmentDependency: isDevDep);
         }
 
-        var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var components = results.ComponentsFound;
 
@@ -496,7 +496,7 @@ public class BcdeScanExecutionServiceTests
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new Mock<IComponentDetector>();
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -512,7 +512,7 @@ public class BcdeScanExecutionServiceTests
         firstRecorder.RegisterUsage(firstComponent);
         secondRecorder.RegisterUsage(secondComponent);
 
-        var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var actualComponent = results.ComponentsFound.Single();
 
@@ -536,7 +536,7 @@ public class BcdeScanExecutionServiceTests
     {
         var componentRecorder = new ComponentRecorder();
         var npmDetector = new Mock<IComponentDetector>();
-        var args = new BcdeArguments
+        var settings = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -556,7 +556,7 @@ public class BcdeScanExecutionServiceTests
         secondRecorder.RegisterUsage(root2, isExplicitReferencedDependency: true);
         secondRecorder.RegisterUsage(secondComponent, parentComponentId: root2.Component.Id);
 
-        var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var actualComponent = results.ComponentsFound.First(c => c.Component.Id == firstComponent.Component.Id);
         actualComponent.TopLevelReferrers.Should().HaveCount(2);
@@ -573,7 +573,7 @@ public class BcdeScanExecutionServiceTests
     {
         var componentRecorder = new ComponentRecorder(new Mock<ILogger>().Object);
         var npmDetector = new Mock<IComponentDetector>();
-        var args = new BcdeArguments
+        var args = new ScanSettings
         {
             SourceDirectory = this.sourceDirectory,
         };
@@ -593,7 +593,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     private async Task<TestOutput> DetectComponentsHappyPathAsync(
-        BcdeArguments args,
+        ScanSettings settings,
         Action<DetectorRestrictions> restrictionAsserter = null,
         IEnumerable<ComponentRecorder> componentRecorders = null)
     {
@@ -636,15 +636,15 @@ public class BcdeScanExecutionServiceTests
 
         this.detectorProcessingServiceMock.Setup(x =>
                 x.ProcessDetectorsAsync(
-                    args,
+                    settings,
                     It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Length),
                     Match.Create<DetectorRestrictions>(restriction => true)))
             .ReturnsAsync(processingResult);
 
-        var result = await this.serviceUnderTest.ExecuteScanAsync(args);
+        var result = await this.serviceUnderTest.ExecuteScanAsync(settings);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.SourceDirectory.Should().NotBeNull();
-        result.SourceDirectory.Should().Be(args.SourceDirectorySerialized);
+        result.SourceDirectory.Should().Be(settings.SourceDirectory.ToString());
 
         var testOutput = new TestOutput((DefaultGraphScanResult)result);
 
@@ -652,7 +652,7 @@ public class BcdeScanExecutionServiceTests
     }
 
     private async Task<ScanResult> SetupRecorderBasedScanningAsync(
-        BcdeArguments args,
+        ScanSettings settings,
         IEnumerable<ComponentRecorder> componentRecorders)
     {
         IEnumerable<IComponentDetector> registeredDetectors = new[]
@@ -692,15 +692,15 @@ public class BcdeScanExecutionServiceTests
 
         this.detectorProcessingServiceMock.Setup(x =>
                 x.ProcessDetectorsAsync(
-                    args,
+                    settings,
                     It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Length),
                     Match.Create<DetectorRestrictions>(restriction => true)))
             .ReturnsAsync(processingResult);
 
-        var result = await this.serviceUnderTest.ExecuteScanAsync(args);
+        var result = await this.serviceUnderTest.ExecuteScanAsync(settings);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.SourceDirectory.Should().NotBeNull();
-        result.SourceDirectory.Should().Be(args.SourceDirectorySerialized);
+        result.SourceDirectory.Should().Be(settings.SourceDirectory.ToString());
 
         return result;
     }
