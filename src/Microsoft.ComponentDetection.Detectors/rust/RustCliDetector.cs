@@ -73,15 +73,21 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                 "--format-version=1",
                 "--locked");
 
+            if (cliResult.ExitCode < 0)
+            {
+                this.Logger.LogWarning("`cargo metadata` failed with {Location}. Ensure the Cargo.lock is up to date. stderr: {StdErr}", processRequest.ComponentStream.Location, cliResult.StdErr);
+                return;
+            }
+
             var metadata = CargoMetadata.FromJson(cliResult.StdOut);
             var graph = BuildGraph(metadata);
             var root = metadata.Resolve.Root;
 
             this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null);
         }
-        catch (Exception e)
+        catch (InvalidOperationException e)
         {
-            this.Logger.LogWarning(e, "Failed to parse Cargo.toml file: {Location}", processRequest.ComponentStream.Location);
+            this.Logger.LogWarning(e, "Failed attempting to call `cargo` with file: {Location}", processRequest.ComponentStream.Location);
         }
     }
 
@@ -125,7 +131,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                 this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, parent == null);
             }
         }
-        catch (Exception e)
+        catch (IndexOutOfRangeException e)
         {
             this.Logger.LogWarning(e, "Could not parse {Id} at {Location}", id, location);
             recorder.RegisterPackageParseFailure(id);
