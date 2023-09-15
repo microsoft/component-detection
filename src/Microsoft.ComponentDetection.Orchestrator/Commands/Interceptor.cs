@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Common.Telemetry;
-using Microsoft.Extensions.Logging;
 using Serilog.Core;
 using Spectre.Console.Cli;
 
@@ -20,18 +19,12 @@ public class Interceptor : ICommandInterceptor
     public static readonly LoggingLevelSwitch LogLevel = new();
 
     private readonly ITypeResolver typeResolver;
-    private readonly ILogger<Interceptor> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Interceptor"/> class.
     /// </summary>
     /// <param name="typeResolver">The type resolver.</param>
-    /// <param name="logger">The logger.</param>
-    public Interceptor(ITypeResolver typeResolver, ILogger<Interceptor> logger)
-    {
-        this.typeResolver = typeResolver;
-        this.logger = logger;
-    }
+    public Interceptor(ITypeResolver typeResolver) => this.typeResolver = typeResolver;
 
     /// <inheritdoc />
     public void Intercept(CommandContext context, CommandSettings settings)

@@ -25,6 +25,7 @@ var serviceCollection = new ServiceCollection()
     .AddLogging(l => l.AddSerilog(new LoggerConfiguration()
         .MinimumLevel.ControlledBy(Interceptor.LogLevel)
         .Enrich.With<LoggingEnricher>()
+        .Enrich.FromLogContext()
         .WriteTo.Map(
             LoggingEnricher.LogFilePathPropertyName,
             (logFilePath, wt) => wt.Async(x => x.File($"{logFilePath}")),
@@ -45,7 +46,7 @@ app.Configure(
         // Create the logger here as the serviceCollection will be disposed by the time we need to use the exception handler.
         var logger = resolver.Resolve(typeof(ILogger<Program>)) as ILogger<Program>;
 
-        config.SetInterceptor(new Interceptor(resolver, resolver.Resolve(typeof(ILogger<Interceptor>)) as ILogger<Interceptor>));
+        config.SetInterceptor(new Interceptor(resolver));
 
         config.Settings.ApplicationName = "component-detection";
 
