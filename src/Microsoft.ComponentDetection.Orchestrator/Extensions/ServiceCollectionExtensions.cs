@@ -74,6 +74,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, NewNugetExperiment>();
         services.AddSingleton<IExperimentConfiguration, NpmLockfile3Experiment>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
+        services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
 
         // Detectors
         // CocoaPods
@@ -136,6 +137,7 @@ public static class ServiceCollectionExtensions
 
         // Rust
         services.AddSingleton<IComponentDetector, RustCrateDetector>();
+        services.AddSingleton<IComponentDetector, RustCliDetector>();
 
         // SPDX
         services.AddSingleton<IComponentDetector, Spdx22ComponentDetector>();
