@@ -19,7 +19,7 @@ public class ScanSettings : BaseSettings
     [CommandOption("--IgnoreDirectories", IsHidden = true)]
     [Description(
         "Filters out specific directories, providing individual directory paths separated by semicolon. Obsolete in favor of DirectoryExclusionList")]
-    [TypeConverter(typeof(CommaDelimitedConverter))]
+    [TypeConverter(typeof(SemicolonDelimitedConverter))]
     public IEnumerable<string> DirectoryExclusionListObsolete { get; set; }
 
     [CommandOption("--SourceDirectory")]
