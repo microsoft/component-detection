@@ -10,6 +10,7 @@
         <PackageReference Include="Polly" />
         <PackageReference Include="Serilog" />
         <PackageReference Include="Serilog.Sinks.Async" />
+        <PackageReference Include="Spectre.Console" />
         <PackageReference Include="Spectre.Console.Cli" />
         <PackageReference Include="Spectre.Console.Cli.Extensions.DependencyInjection" />
         <PackageReference Include="System.Runtime.Loader" />

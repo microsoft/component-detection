@@ -2,7 +2,7 @@
 
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.Extensions.Logging;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 /// <summary>
@@ -11,30 +11,33 @@ using Spectre.Console.Cli;
 public sealed class ListDetectorsCommand : Command<ListDetectorsSettings>
 {
     private readonly IEnumerable<IComponentDetector> detectors;
-    private readonly ILogger<ListDetectorsCommand> logger;
+    private readonly IAnsiConsole console;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ListDetectorsCommand"/> class.
     /// </summary>
     /// <param name="detectors">The detectors.</param>
-    /// <param name="logger">The logger.</param>
+    /// <param name="console">The console.</param>
     public ListDetectorsCommand(
         IEnumerable<IComponentDetector> detectors,
-        ILogger<ListDetectorsCommand> logger)
+        IAnsiConsole console)
     {
         this.detectors = detectors;
-        this.logger = logger;
+        this.console = console;
     }
 
     /// <inheritdoc/>
     public override int Execute(CommandContext context, ListDetectorsSettings settings)
     {
-        this.logger.LogInformation("Detectors:");
+        var table = new Table();
+        table.AddColumn("Name");
 
         foreach (var detector in this.detectors)
         {
-            this.logger.LogInformation("{DetectorId}", detector.Id);
+            table.AddRow(detector.Id);
         }
+
+        this.console.Write(table);
 
         return (int)ProcessingResultCode.Success;
     }
