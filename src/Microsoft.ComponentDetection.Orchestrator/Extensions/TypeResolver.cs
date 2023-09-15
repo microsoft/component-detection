@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
 
 /// <inheritdoc cref="ITypeResolver" />
-internal sealed class TypeResolver : ITypeResolver, IDisposable
+public sealed class TypeResolver : ITypeResolver, IDisposable
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TypeResolver"/> class.

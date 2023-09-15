@@ -22,8 +22,14 @@ public class LoggingEnricher : ILogEventEnricher
     private bool? cachedPrintStderr;
     private LogEventProperty cachedPrintStderrProperty;
 
+    /// <summary>
+    /// The path to the log file.
+    /// </summary>
     public static string Path { get; set; } = string.Empty;
 
+    /// <summary>
+    /// <c>true</c> if logs should be printed to stderr; otherwise, <c>false</c>.
+    /// </summary>
     public static bool PrintStderr { get; set; }
 
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)

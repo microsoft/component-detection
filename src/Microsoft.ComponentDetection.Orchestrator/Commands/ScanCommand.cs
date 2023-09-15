@@ -70,7 +70,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
 
         if (settings.PrintManifest)
         {
-            using var jsonWriter = new JsonTextWriter(Console.Out);
+            var jsonWriter = new JsonTextWriter(Console.Out);
             var serializer = new JsonSerializer
             {
                 Formatting = Formatting.Indented,
