@@ -257,7 +257,7 @@ public class ComponentDetectionIntegrationTests
     [TestMethod]
     public void VerifyLocationsFoundAt()
     {
-        static string GetKey(ScannedComponent component) => component.DetectorId + component.Component.Id;
+        static string GetKey(ScannedComponent component) => $"{component.DetectorId}|{component.Component.Id}|{component.Component.PackageUrl}";
 
         // The other tests check that both graphs have the same components, so we will assume that the components are the same.
         var inScopeComponents = this.oldScanResult.ComponentsFound
@@ -267,13 +267,15 @@ public class ComponentDetectionIntegrationTests
 
         var oldLocations = this.oldScanResult.ComponentsFound
             .Where(x => inScopeComponents.Contains(GetKey(x)))
+            .DistinctBy(GetKey)
             .ToDictionary(GetKey, x => x.LocationsFoundAt.ToHashSet());
 
         var newLocations = this.newScanResult.ComponentsFound
             .Where(x => inScopeComponents.Contains(GetKey(x)))
+            .DistinctBy(GetKey)
             .ToDictionary(GetKey, x => x.LocationsFoundAt.ToHashSet());
 
-        oldLocations.Should().BeEquivalentTo(newLocations, "The locations found for each component should be the same.");
+        oldLocations.Should().BeEquivalentTo(newLocations, options => options.AllowingInfiniteRecursion(), "The locations found for each component should be the same.");
     }
 
     private void SetupGithub(string oldGithubArtifactsDir, string newGithubArtifactsDir)
