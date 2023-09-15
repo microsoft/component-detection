@@ -18,6 +18,7 @@ using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Spectre.Console;
 using static System.Environment;
 
 public class DetectorProcessingService : IDetectorProcessingService
@@ -131,7 +132,7 @@ public class DetectorProcessingService : IDetectorProcessingService
         var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
         var totalElapsedTime = stopwatch.Elapsed.TotalSeconds;
-        this.LogTabularOutput(this.logger, providerElapsedTime, totalElapsedTime);
+        this.LogTabularOutput(providerElapsedTime, totalElapsedTime);
 
         // If there are components which are skipped due to connection or parsing
         // errors, log them by detector.
@@ -298,8 +299,35 @@ public class DetectorProcessingService : IDetectorProcessingService
         return OSVersion.Platform == PlatformID.MacOSX || OSVersion.Platform == PlatformID.Unix;
     }
 
-    private void LogTabularOutput(ILogger logger, ConcurrentDictionary<string, DetectorRunResult> providerElapsedTime, double totalElapsedTime)
+    private void LogTabularOutput(ConcurrentDictionary<string, DetectorRunResult> providerElapsedTime, double totalElapsedTime)
     {
+        var table = new Table();
+        table.Title("Detection Summary")
+            .AddColumn("[bold]Component Detector Id[/]", x => x.Width(30))
+            .AddColumn("[bold]Detection Time[/]", x => x.Width(30))
+            .AddColumn("[bold]# Components Found[/]", x => x.Width(30))
+            .AddColumn("[bold]# Explicitly Referenced[/]", x => x.Width(30));
+
+        static string MarkupRelevantDetectors(int count, string tag, string value) => count == 0 ? value : $"[{tag}]{value}[/]";
+
+        foreach (var (detectorId, detectorRunResult) in providerElapsedTime.OrderBy(x => x.Key))
+        {
+            table.AddRow(
+                MarkupRelevantDetectors(detectorRunResult.ComponentsFoundCount, "cyan", detectorId),
+                $"{detectorRunResult.ExecutionTime.TotalSeconds:g2} seconds",
+                detectorRunResult.ComponentsFoundCount.ToString(),
+                detectorRunResult.ExplicitlyReferencedComponentCount.ToString());
+        }
+
+        table.AddRow(Enumerable.Range(0, 4).Select(x => new Rule()));
+        table.AddRow(
+            "[bold underline]Total[/]",
+            $"{totalElapsedTime:g2} seconds",
+            providerElapsedTime.Sum(x => x.Value.ComponentsFoundCount).ToString(),
+            providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount).ToString());
+
+        AnsiConsole.Write(table);
+
         var tsf = new TabularStringFormat(new Column[]
         {
             new Column { Header = "Component Detector Id", Width = 30 },
@@ -328,10 +356,9 @@ public class DetectorProcessingService : IDetectorProcessingService
             providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount),
         });
 
-        foreach (var line in tsf.GenerateString(rows)
-                     .Split(new string[] { NewLine }, StringSplitOptions.None))
+        foreach (var line in tsf.GenerateString(rows).Split(new[] { NewLine }, StringSplitOptions.None))
         {
-            this.logger.LogInformation("{Line}", line);
+            this.logger.LogInformation("{DetectionTimeLine}", line);
         }
     }
 }

@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
+using Serilog.Filters;
 using Spectre.Console.Cli;
 
 if (args.Contains("--debug", StringComparer.OrdinalIgnoreCase))
@@ -32,7 +33,11 @@ var serviceCollection = new ServiceCollection()
             1) // sinkMapCountLimit
         .WriteTo.Map<bool>(
             LoggingEnricher.PrintStderrPropertyName,
-            (printLogsToStderr, wt) => wt.Console(standardErrorFromLevel: printLogsToStderr ? LogEventLevel.Debug : null),
+            (printLogsToStderr, wt) => wt.Logger(lc => lc
+                .WriteTo.Console(standardErrorFromLevel: printLogsToStderr ? LogEventLevel.Debug : null)
+
+                // Don't write the detection times table from DetectorProcessingService to the console, only the log file
+                .Filter.ByExcluding(Matching.WithProperty<string>("DetectionTimeLine", x => !string.IsNullOrEmpty(x)))),
             1) // sinkMapCountLimit
         .CreateLogger()));
 
