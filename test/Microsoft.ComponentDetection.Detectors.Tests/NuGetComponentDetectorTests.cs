@@ -22,9 +22,6 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetector>
 {
-    private static readonly IEnumerable<string> DetectorSearchPattern =
-        new List<string> { "*.nupkg", "*.nuspec", "nuget.config", "paket.lock" };
-
     private readonly Mock<ILogger<NuGetComponentDetector>> mockLogger;
     private readonly Mock<IObservableDirectoryWalkerFactory> walkerMock;
 
@@ -209,45 +206,12 @@ NUGET
         var streamsDetectedInAdditionalDirectoryPass = new List<IComponentStream> { nugetConfigComponent };
 
         var componentRecorder = new ComponentRecorder();
-        var mockLogger = new Mock<ILogger>();
         var sourceDirectoryPath = this.CreateTemporaryDirectory();
 
-        // Use strict mock evaluation because we're doing some "fun" stuff with this mock.
-        var componentStreamEnumerableFactoryMock = new Mock<IComponentStreamEnumerableFactory>(MockBehavior.Strict);
-        var directoryWalkerMock = this.walkerMock;
-
-        directoryWalkerMock.Setup(x => x.Initialize(It.IsAny<DirectoryInfo>(), It.IsAny<ExcludeDirectoryPredicate>(), It.IsAny<int>(), It.IsAny<IEnumerable<string>>()));
-
-        // First setup is for the invocation of stream enumerable factory used to find NuGet.Configs -- a special case the detector supports to locate repos located outside the source dir
-        //  We return a nuget config that targets a different temp folder that is NOT in a subtree of the sourcedirectory.
-        componentStreamEnumerableFactoryMock.Setup(
-                x => x.GetComponentStreams(
-                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
-                    Match.Create<IEnumerable<string>>(stuff => stuff.Contains(NuGetComponentDetector.NugetConfigFileName)),
-                    It.IsAny<ExcludeDirectoryPredicate>(),
-                    It.IsAny<bool>()))
-            .Returns(streamsDetectedInAdditionalDirectoryPass);
+        this.walkerMock.Setup(x => x.Initialize(It.IsAny<DirectoryInfo>(), It.IsAny<ExcludeDirectoryPredicate>(), It.IsAny<int>(), It.IsAny<IEnumerable<string>>()));
 
         // Normal detection setup here -- we have it returning empty.
-        componentStreamEnumerableFactoryMock.Setup(
-                x => x.GetComponentStreams(
-                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
-                    Match.Create<IEnumerable<string>>(stuff => DetectorSearchPattern.Intersect(stuff).Count() == DetectorSearchPattern.Count()),
-                    It.IsAny<ExcludeDirectoryPredicate>(),
-                    It.IsAny<bool>()))
-            .Returns(Enumerable.Empty<IComponentStream>());
-
-        // This is matching the additional directory that is ONLY sourced in the nuget.config. If this works, we would see the component in our results.
-        componentStreamEnumerableFactoryMock.Setup(
-                x => x.GetComponentStreams(
-                    Match.Create<DirectoryInfo>(info => info.FullName.Contains(additionalDirectory)),
-                    Match.Create<IEnumerable<string>>(stuff => DetectorSearchPattern.Intersect(stuff).Count() == DetectorSearchPattern.Count()),
-                    It.IsAny<ExcludeDirectoryPredicate>(),
-                    It.IsAny<bool>()))
-            .Returns(streamsDetectedInNormalPass);
-
-        // Normal detection setup here -- we have it returning empty.
-        directoryWalkerMock.Setup(
+        this.walkerMock.Setup(
                 x => x.GetFilteredComponentStreamObservable(
                     Match.Create<DirectoryInfo>(info => info.FullName.Contains(sourceDirectoryPath)),
                     It.IsAny<IEnumerable<string>>(),
@@ -255,24 +219,19 @@ NUGET
             .Returns(() => streamsDetectedInAdditionalDirectoryPass.Select(cs => new ProcessRequest { ComponentStream = cs, SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location) }).ToObservable());
 
         // This is matching the additional directory that is ONLY sourced in the nuget.config. If this works, we would see the component in our results.
-        directoryWalkerMock.Setup(
+        this.walkerMock.Setup(
                 x => x.GetFilteredComponentStreamObservable(
                     Match.Create<DirectoryInfo>(info => info.FullName.Contains(additionalDirectory)),
                     It.IsAny<IEnumerable<string>>(),
                     It.IsAny<ComponentRecorder>()))
             .Returns(() => streamsDetectedInNormalPass.Select(cs => new ProcessRequest { ComponentStream = cs, SingleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(cs.Location) }).ToObservable());
 
-        var detector = new NuGetComponentDetector(
-            componentStreamEnumerableFactoryMock.Object,
-            directoryWalkerMock.Object,
-            Mock.Of<IDirectoryWalkerFactory>(),
-            new Mock<ILogger<NuGetComponentDetector>>().Object);
+        var (scanResult, _) = await this.DetectorTestUtility
+            .WithFile("nuget.config", nugetConfigComponent.Stream)
+            .ExecuteDetectorAsync();
 
-        var scanResult = await detector.ExecuteDetectorAsync(new ScanRequest(new DirectoryInfo(sourceDirectoryPath), (name, directoryName) => false, null, new Dictionary<string, string>(), null, componentRecorder));
-
-        directoryWalkerMock.VerifyAll();
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
     }
 
     [TestMethod]
