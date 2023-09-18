@@ -279,9 +279,11 @@ public class ExperimentServiceTests
         var detectorList = new List<IComponentDetector>
         {
             new NuGetComponentDetector(
-            new Mock<IComponentStreamEnumerableFactory>().Object,
-            new Mock<IObservableDirectoryWalkerFactory>().Object,
-            new Mock<ILogger<NuGetComponentDetector>>().Object), this.detectorMock.Object,
+                Mock.Of<IComponentStreamEnumerableFactory>(),
+                Mock.Of<IObservableDirectoryWalkerFactory>(),
+                Mock.Of<IDirectoryWalkerFactory>(),
+                Mock.Of<ILogger<NuGetComponentDetector>>()),
+            this.detectorMock.Object,
         };
 
         service.RemoveUnwantedExperimentsbyDetectors(detectorList);
@@ -310,9 +312,10 @@ public class ExperimentServiceTests
         var detectorList = new List<IComponentDetector>
         {
             new NuGetComponentDetector(
-            new Mock<IComponentStreamEnumerableFactory>().Object,
-            new Mock<IObservableDirectoryWalkerFactory>().Object,
-            new Mock<ILogger<NuGetComponentDetector>>().Object),
+                Mock.Of<IComponentStreamEnumerableFactory>(),
+                Mock.Of<IObservableDirectoryWalkerFactory>(),
+                Mock.Of<IDirectoryWalkerFactory>(),
+                Mock.Of<ILogger<NuGetComponentDetector>>()),
         };
 
         service.RemoveUnwantedExperimentsbyDetectors(detectorList);

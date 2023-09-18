@@ -26,11 +26,14 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
         new List<string> { "*.nupkg", "*.nuspec", "nuget.config", "paket.lock" };
 
     private readonly Mock<ILogger<NuGetComponentDetector>> mockLogger;
+    private readonly Mock<IObservableDirectoryWalkerFactory> walkerMock;
 
     public NuGetComponentDetectorTests()
     {
         this.mockLogger = new Mock<ILogger<NuGetComponentDetector>>();
+        this.walkerMock = new Mock<IObservableDirectoryWalkerFactory>(MockBehavior.Strict);
         this.DetectorTestUtility.AddServiceMock(this.mockLogger);
+        this.DetectorTestUtility.AddServiceMock(this.walkerMock);
     }
 
     [TestMethod]
@@ -211,7 +214,7 @@ NUGET
 
         // Use strict mock evaluation because we're doing some "fun" stuff with this mock.
         var componentStreamEnumerableFactoryMock = new Mock<IComponentStreamEnumerableFactory>(MockBehavior.Strict);
-        var directoryWalkerMock = new Mock<IObservableDirectoryWalkerFactory>(MockBehavior.Strict);
+        var directoryWalkerMock = this.walkerMock;
 
         directoryWalkerMock.Setup(x => x.Initialize(It.IsAny<DirectoryInfo>(), It.IsAny<ExcludeDirectoryPredicate>(), It.IsAny<int>(), It.IsAny<IEnumerable<string>>()));
 
@@ -262,6 +265,7 @@ NUGET
         var detector = new NuGetComponentDetector(
             componentStreamEnumerableFactoryMock.Object,
             directoryWalkerMock.Object,
+            Mock.Of<IDirectoryWalkerFactory>(),
             new Mock<ILogger<NuGetComponentDetector>>().Object);
 
         var scanResult = await detector.ExecuteDetectorAsync(new ScanRequest(new DirectoryInfo(sourceDirectoryPath), (name, directoryName) => false, null, new Dictionary<string, string>(), null, componentRecorder));

@@ -21,7 +21,7 @@ public class DetectorTestUtilityBuilder<T>
         filesToAdd = new();
 
     private readonly Mock<IComponentStreamEnumerableFactory> mockComponentStreamEnumerableFactory;
-    private readonly Mock<IObservableDirectoryWalkerFactory> mockObservableDirectoryWalkerFactory;
+    private readonly Mock<IDirectoryWalkerFactory> mockObservableDirectoryWalkerFactory;
     private readonly Mock<ILogger<T>> mockLogger;
 
     private readonly IServiceCollection serviceCollection;
@@ -38,7 +38,7 @@ public class DetectorTestUtilityBuilder<T>
         this.serviceCollection.AddSingleton(_ =>
             this.mockComponentStreamEnumerableFactory?.Object);
 
-        this.mockObservableDirectoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
+        this.mockObservableDirectoryWalkerFactory = new Mock<IDirectoryWalkerFactory>();
         this.serviceCollection.AddSingleton(_ =>
             this.mockObservableDirectoryWalkerFactory?.Object);
 
@@ -130,11 +130,13 @@ public class DetectorTestUtilityBuilder<T>
         if (!this.filesToAdd.Any())
         {
             this.mockObservableDirectoryWalkerFactory.Setup(x =>
-                    x.GetFilteredComponentStreamObservable(
+                    x.WalkDirectoryAsync(
                         It.IsAny<DirectoryInfo>(),
-                        this.detector.SearchPatterns ?? this.detector.SearchPatterns,
-                        It.IsAny<IComponentRecorder>()))
-                .Returns(Enumerable.Empty<ProcessRequest>().ToObservable());
+                        It.IsAny<ExcludeDirectoryPredicate>(),
+                        It.IsAny<IComponentRecorder>(),
+                        It.IsAny<Func<ProcessRequest, Task>>(),
+                        this.detector.SearchPatterns ?? this.detector.SearchPatterns))
+                .Returns(Task.CompletedTask);
         }
 
         if (!this.filesToAdd.Any())
@@ -156,18 +158,19 @@ public class DetectorTestUtilityBuilder<T>
             var filesToSend = group.Select(grouping => (grouping.Name, grouping.Contents, grouping.Location));
 
             this.mockObservableDirectoryWalkerFactory.Setup(x =>
-                    x.GetFilteredComponentStreamObservable(
+                    x.WalkDirectoryAsync(
                         It.IsAny<DirectoryInfo>(),
-                        searchPatterns,
-                        It.IsAny<IComponentRecorder>()))
-                .Returns<DirectoryInfo, IEnumerable<string>, IComponentRecorder>(
-                    (_, searchPatterns, _) =>
-                        filesToSend
-                            .Select(fileToSend =>
-                                this.CreateProcessRequest(
-                                    FindMatchingPattern(fileToSend.Name, searchPatterns),
-                                    fileToSend.Location,
-                                    fileToSend.Contents)).ToObservable());
+                        It.IsAny<ExcludeDirectoryPredicate>(),
+                        It.IsAny<IComponentRecorder>(),
+                        It.IsAny<Func<ProcessRequest, Task>>(),
+                        searchPatterns))
+                .Callback<DirectoryInfo, ExcludeDirectoryPredicate, IComponentRecorder, Func<ProcessRequest, Task>, IEnumerable<string>>(async (_, _, _, callback, _) =>
+                {
+                    foreach (var file in filesToSend.Select(x => this.CreateProcessRequest(FindMatchingPattern(x.Name, searchPatterns), x.Location, x.Contents)))
+                    {
+                        await callback(file);
+                    }
+                });
 
             this.mockComponentStreamEnumerableFactory.Setup(x =>
                     x.GetComponentStreams(

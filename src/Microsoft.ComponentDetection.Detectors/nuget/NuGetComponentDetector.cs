@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 public class NuGetComponentDetector : FileComponentDetector
 {
     private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
+    private readonly IObservableDirectoryWalkerFactory observableDirectoryWalkerFactory;
 
     public const string NugetConfigFileName = "nuget.config";
 
@@ -25,9 +26,11 @@ public class NuGetComponentDetector : FileComponentDetector
 
     public NuGetComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory observableDirectoryWalkerFactory,
         IDirectoryWalkerFactory walkerFactory,
         ILogger<NuGetComponentDetector> logger)
     {
+        this.observableDirectoryWalkerFactory = observableDirectoryWalkerFactory;
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.Logger = logger;
@@ -58,7 +61,7 @@ public class NuGetComponentDetector : FileComponentDetector
         }
     }
 
-    private Task ProcessAdditionalDirectoryAsync(ProcessRequest processRequest, bool ignoreNugetConfig)
+    private async Task ProcessAdditionalDirectoryAsync(ProcessRequest processRequest, bool ignoreNugetConfig)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var stream = processRequest.ComponentStream;
@@ -76,15 +79,17 @@ public class NuGetComponentDetector : FileComponentDetector
                     this.Logger.LogInformation("Found path override in nuget configuration file. Adding {NuGetAdditionalPath} to the package search path.", additionalPath);
                     this.Logger.LogWarning("Path {NuGetAdditionalPath} is not rooted in the source tree. More components may be detected than expected if this path is shared across code projects.", additionalPath);
 
-                    // this.Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
-                    //
-                    // await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
-                    //     .ForEachAsync(async fi => await this.ProcessFileAsync(fi));
+                    this.observableDirectoryWalkerFactory.Initialize(additionalPath, (name, directoryName) => false, 1);
+
+                    await this.observableDirectoryWalkerFactory
+                        .GetFilteredComponentStreamObservable(
+                            additionalPath,
+                            this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)),
+                            singleFileComponentRecorder.GetParentComponentRecorder())
+                        .ForEachAsync(async fi => await this.ProcessFileAsync(fi));
                 }
             }
         }
-
-        return Task.CompletedTask;
     }
 
     private async Task ProcessFileAsync(ProcessRequest processRequest)
