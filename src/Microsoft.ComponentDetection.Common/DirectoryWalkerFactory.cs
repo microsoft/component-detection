@@ -12,17 +12,24 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.Extensions.Logging;
 
+/// <inheritdoc />
 public class DirectoryWalkerFactory : IDirectoryWalkerFactory
 {
     private readonly IPathUtilityService pathUtilityService;
     private readonly ILogger<DirectoryWalkerFactory> logger;
 
+    /// <summary>
+    /// Constructs a new instance of <see cref="DirectoryWalkerFactory"/>.
+    /// </summary>
+    /// <param name="pathUtilityService">The path utility service.</param>
+    /// <param name="logger">The logger.</param>
     public DirectoryWalkerFactory(IPathUtilityService pathUtilityService, ILogger<DirectoryWalkerFactory> logger)
     {
         this.logger = logger;
         this.pathUtilityService = pathUtilityService;
     }
 
+    /// <inheritdoc />
     public async Task WalkDirectoryAsync(DirectoryInfo root, ExcludeDirectoryPredicate directoryExclusionPredicate, IComponentRecorder recorder, Func<ProcessRequest, Task> callback, IEnumerable<string> filePatterns)
     {
         if (!root.Exists)
