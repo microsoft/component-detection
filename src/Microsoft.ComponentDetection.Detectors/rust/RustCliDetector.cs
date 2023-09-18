@@ -26,7 +26,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
     /// <param name="logger">The logger.</param>
     public RustCliDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService cliService,
         ILogger<RustCliDetector> logger)
     {

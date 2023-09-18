@@ -15,7 +15,7 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
 {
     public ConanLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ILogger<ConanLockComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;

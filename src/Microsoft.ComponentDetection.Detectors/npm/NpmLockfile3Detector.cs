@@ -13,7 +13,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase, IExperimentalDetect
 
     public NpmLockfile3Detector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         IPathUtilityService pathUtilityService,
         ILogger<NpmLockfile3Detector> logger)
         : base(

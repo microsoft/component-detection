@@ -20,7 +20,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public DockerfileComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         IEnvironmentVariableService envVarService,
         ILogger<DockerfileComponentDetector> logger)

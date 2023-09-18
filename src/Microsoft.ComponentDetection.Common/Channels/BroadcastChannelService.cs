@@ -13,7 +13,7 @@ public class BroadcastChannelService<T> : IBroadcastChannelService<T>
     /// <inheritdoc />
     public ChannelReader<T> CreateBroadcastChannel()
     {
-        var channel = Channel.CreateUnbounded<T>();
+        var channel = Channel.CreateBounded<T>(new BoundedChannelOptions(1024));
 
         this.writers.Add(channel.Writer);
         return channel.Reader;

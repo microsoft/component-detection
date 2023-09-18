@@ -29,7 +29,7 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
 
     protected NpmLockfileDetectorBase(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         IPathUtilityService pathUtilityService,
         ILogger logger)
     {
@@ -46,16 +46,30 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
     protected delegate bool JTokenProcessingDelegate(JToken token);
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
+    public override IEnumerable<string> Categories => new[]
+    {
+        Enum.GetName(typeof(DetectorClass), DetectorClass.Npm),
+    };
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "package-lock.json", "npm-shrinkwrap.json", LernaSearchPattern };
+    public override IList<string> SearchPatterns { get; } = new List<string>
+    {
+        "package-lock.json",
+        "npm-shrinkwrap.json",
+        LernaSearchPattern,
+    };
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[]
+    {
+        ComponentType.Npm,
+    };
 
     private List<ProcessRequest> LernaFiles { get; } = new();
 
     /// <inheritdoc />
-    protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
+    protected override IList<string> SkippedFolders => new List<string>
+    {
+        "node_modules", "pnpm-store",
+    };
 
     protected abstract bool IsSupportedLockfileVersion(int lockfileVersion);
 
@@ -75,7 +89,7 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         TypedComponent parentComponent = null,
         bool skipValidation = false);
 
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) =>
+    protected override Task<IEnumerable<ProcessRequest>> OnPrepareDetectionAsync(IEnumerable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) =>
         Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
             .Where(pr =>
             {
@@ -94,7 +108,10 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
-        IEnumerable<string> packageJsonPattern = new List<string> { "package.json" };
+        IEnumerable<string> packageJsonPattern = new List<string>
+        {
+            "package.json",
+        };
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
@@ -191,78 +208,76 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         this.TraverseRequirementAndDependencyTree(topLevelDependencies, dependencyLookup, singleFileComponentRecorder);
     }
 
-    private IObservable<ProcessRequest> RemoveNodeModuleNestedFiles(IObservable<ProcessRequest> componentStreams)
+    private IEnumerable<ProcessRequest> RemoveNodeModuleNestedFiles(IEnumerable<ProcessRequest> componentStreams)
     {
         var directoryItemFacades = new List<DirectoryItemFacade>();
         var directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
 
-        return Observable.Create<ProcessRequest>(s =>
-        {
-            return componentStreams.Subscribe(
-                processRequest =>
+        return componentStreams.Where(
+            processRequest =>
+            {
+                var item = processRequest.ComponentStream;
+                var currentDir = item.Location;
+                DirectoryItemFacade last = null;
+                do
                 {
-                    var item = processRequest.ComponentStream;
-                    var currentDir = item.Location;
-                    DirectoryItemFacade last = null;
-                    do
+                    currentDir = this.pathUtilityService.GetParentDirectory(currentDir);
+
+                    // We've reached the top / root
+                    if (currentDir == null)
                     {
-                        currentDir = this.pathUtilityService.GetParentDirectory(currentDir);
-
-                        // We've reached the top / root
-                        if (currentDir == null)
+                        // If our last directory isn't in our list of top level nodes, it should be added. This happens for the first processed item and then subsequent times we have a new root (edge cases with multiple hard drives, for example)
+                        if (!directoryItemFacades.Contains(last))
                         {
-                            // If our last directory isn't in our list of top level nodes, it should be added. This happens for the first processed item and then subsequent times we have a new root (edge cases with multiple hard drives, for example)
-                            if (!directoryItemFacades.Contains(last))
-                            {
-                                directoryItemFacades.Add(last);
-                            }
-
-                            var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => item.Location.Contains(folder));
-
-                            // When node_modules is part of the path down to a given item, we skip the item. Otherwise, we yield the item.
-                            if (string.IsNullOrEmpty(skippedFolder))
-                            {
-                                s.OnNext(processRequest);
-                            }
-                            else
-                            {
-                                this.Logger.LogDebug("Ignoring package-lock.json at {PackageLockJsonLocation}, as it is inside a {SkippedFolder} folder.", item.Location, skippedFolder);
-                            }
-
-                            break;
+                            directoryItemFacades.Add(last);
                         }
 
-                        var directoryExisted = directoryItemFacadesByPath.TryGetValue(currentDir, out var current);
-                        if (!directoryExisted)
-                        {
-                            directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
-                            {
-                                Name = currentDir,
-                                Files = new List<IComponentStream>(),
-                                Directories = new List<DirectoryItemFacade>(),
-                            };
-                        }
+                        var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => item.Location.Contains(folder));
 
-                        // If we came from a directory, we add it to our graph.
-                        if (last != null)
+                        // When node_modules is part of the path down to a given item, we skip the item. Otherwise, we yield the item.
+                        if (string.IsNullOrEmpty(skippedFolder))
                         {
-                            current.Directories.Add(last);
                         }
-
-                        // If we didn't come from a directory, it's because we're just getting started. Our current directory should include the file that led to it showing up in the graph.
                         else
                         {
-                            current.Files.Add(item);
+                            this.Logger.LogDebug("Ignoring package-lock.json at {PackageLockJsonLocation}, as it is inside a {SkippedFolder} folder.", item.Location, skippedFolder);
+                            continue;
                         }
 
-                        last = current;
+                        break;
                     }
 
-                    // Go all the way up
-                    while (currentDir != null);
-                },
-                s.OnCompleted);
-        });
+                    var directoryExisted = directoryItemFacadesByPath.TryGetValue(currentDir, out var current);
+                    if (!directoryExisted)
+                    {
+                        directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
+                        {
+                            Name = currentDir,
+                            Files = new List<IComponentStream>(),
+                            Directories = new List<DirectoryItemFacade>(),
+                        };
+                    }
+
+                    // If we came from a directory, we add it to our graph.
+                    if (last != null)
+                    {
+                        current.Directories.Add(last);
+                    }
+
+                    // If we didn't come from a directory, it's because we're just getting started. Our current directory should include the file that led to it showing up in the graph.
+                    else
+                    {
+                        current.Files.Add(item);
+                    }
+
+                    last = current;
+                }
+
+                // Go all the way up
+                while (currentDir != null);
+
+                return true;
+            });
     }
 
     private async Task SafeProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
@@ -292,7 +307,10 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
                 continue;
             }
 
-            var previouslyAddedComponents = new HashSet<string> { typedComponent.Id };
+            var previouslyAddedComponents = new HashSet<string>
+            {
+                typedComponent.Id,
+            };
             var subQueue = new Queue<(JProperty, TypedComponent)>();
 
             NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder, typedComponent, explicitReferencedDependency: typedComponent);

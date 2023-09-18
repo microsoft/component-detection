@@ -25,7 +25,7 @@ public class RustCrateDetector : FileComponentDetector
 
     public RustCrateDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ILogger<RustCrateDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;

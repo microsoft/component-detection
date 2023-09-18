@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -48,7 +47,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     public IvyDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         ILogger<IvyDetector> logger)
     {
@@ -68,7 +67,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IEnumerable<ProcessRequest>> OnPrepareDetectionAsync(IEnumerable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         if (await this.IsAntLocallyAvailableAsync())
         {
@@ -76,7 +75,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         }
 
         this.Logger.LogDebug("Skipping Ivy detection as ant is not available in the local PATH.");
-        return Enumerable.Empty<ProcessRequest>().ToObservable();
+        return Enumerable.Empty<ProcessRequest>();
     }
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)

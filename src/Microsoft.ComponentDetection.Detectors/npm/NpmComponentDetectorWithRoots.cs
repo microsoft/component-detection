@@ -11,7 +11,7 @@ public class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
 {
     public NpmComponentDetectorWithRoots(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         IPathUtilityService pathUtilityService,
         ILogger<NpmComponentDetectorWithRoots> logger)
         : base(

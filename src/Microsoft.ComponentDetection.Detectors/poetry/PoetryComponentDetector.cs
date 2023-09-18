@@ -16,7 +16,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 {
     public PoetryComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ILogger<PoetryComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;

@@ -25,7 +25,7 @@ public class NuGetComponentDetector : FileComponentDetector
 
     public NuGetComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ILogger<NuGetComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
@@ -58,7 +58,7 @@ public class NuGetComponentDetector : FileComponentDetector
         }
     }
 
-    private async Task ProcessAdditionalDirectoryAsync(ProcessRequest processRequest, bool ignoreNugetConfig)
+    private Task ProcessAdditionalDirectoryAsync(ProcessRequest processRequest, bool ignoreNugetConfig)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var stream = processRequest.ComponentStream;
@@ -76,13 +76,15 @@ public class NuGetComponentDetector : FileComponentDetector
                     this.Logger.LogInformation("Found path override in nuget configuration file. Adding {NuGetAdditionalPath} to the package search path.", additionalPath);
                     this.Logger.LogWarning("Path {NuGetAdditionalPath} is not rooted in the source tree. More components may be detected than expected if this path is shared across code projects.", additionalPath);
 
-                    this.Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
-
-                    await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
-                        .ForEachAsync(async fi => await this.ProcessFileAsync(fi));
+                    // this.Scanner.Initialize(additionalPath, (name, directoryName) => false, 1);
+                    //
+                    // await this.Scanner.GetFilteredComponentStreamObservable(additionalPath, this.SearchPatterns.Where(sp => !NugetConfigFileName.Equals(sp)), singleFileComponentRecorder.GetParentComponentRecorder())
+                    //     .ForEachAsync(async fi => await this.ProcessFileAsync(fi));
                 }
             }
         }
+
+        return Task.CompletedTask;
     }
 
     private async Task ProcessFileAsync(ProcessRequest processRequest)

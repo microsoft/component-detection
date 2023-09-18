@@ -29,7 +29,7 @@ public class GoComponentDetector : FileComponentDetector
 
     public GoComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         IEnvironmentVariableService envVarService,
         ILogger<GoComponentDetector> logger)
@@ -51,8 +51,8 @@ public class GoComponentDetector : FileComponentDetector
 
     public override int Version => 7;
 
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
-        IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override Task<IEnumerable<ProcessRequest>> OnPrepareDetectionAsync(
+        IEnumerable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         // Filter out any go.sum process requests if the adjacent go.mod file is present and has a go version >= 1.17
         var goModProcessRequests = processRequests.Where(processRequest =>

@@ -16,7 +16,7 @@ public class CondaLockComponentDetector : FileComponentDetector, IDefaultOffComp
 {
     public CondaLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ILogger<CondaLockComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;

@@ -17,7 +17,7 @@ public class SimplePipComponentDetector : FileComponentDetector, IDefaultOffComp
 
     public SimplePipComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         IPythonCommandService pythonCommandService,
         ISimplePythonResolver pythonResolver,
         ILogger<SimplePipComponentDetector> logger)
@@ -39,14 +39,14 @@ public class SimplePipComponentDetector : FileComponentDetector, IDefaultOffComp
 
     public override int Version { get; } = 1;
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IEnumerable<ProcessRequest>> OnPrepareDetectionAsync(IEnumerable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         if (!await this.pythonCommandService.PythonExistsAsync(pythonExePath))
         {
             this.Logger.LogInformation($"No python found on system. Python detection will not run.");
 
-            return Enumerable.Empty<ProcessRequest>().ToObservable();
+            return Enumerable.Empty<ProcessRequest>();
         }
 
         return processRequests;

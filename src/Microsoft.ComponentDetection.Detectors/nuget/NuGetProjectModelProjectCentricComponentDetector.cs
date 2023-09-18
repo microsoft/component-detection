@@ -188,7 +188,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     public NuGetProjectModelProjectCentricComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         IFileUtilityService fileUtilityService,
         ILogger<NuGetProjectModelProjectCentricComponentDetector> logger)
     {

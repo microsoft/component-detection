@@ -23,7 +23,7 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
     /// <param name="logger">The logger to use.</param>
     public NuGetPackagesConfigDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ILogger<NuGetPackagesConfigDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;

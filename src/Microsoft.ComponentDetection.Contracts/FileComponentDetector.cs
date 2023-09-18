@@ -1,9 +1,8 @@
 ﻿namespace Microsoft.ComponentDetection.Contracts;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -18,7 +17,7 @@ public abstract class FileComponentDetector : IComponentDetector
     /// </summary>
     protected IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
 
-    protected IObservableDirectoryWalkerFactory Scanner { get; set; }
+    protected IDirectoryWalkerFactory Scanner { get; set; }
 
     /// <summary>
     /// Gets or sets the logger for writing basic logging message to both console and file.
@@ -62,30 +61,43 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <inheritdoc />
     public async virtual Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
     {
-        this.ComponentRecorder = request.ComponentRecorder;
-        this.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
-        return await this.ScanDirectoryAsync(request);
-    }
-
-    private Task<IndividualDetectorScanResult> ScanDirectoryAsync(ScanRequest request)
-    {
         this.CurrentScanRequest = request;
-
-        var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
+        this.ComponentRecorder = request.ComponentRecorder;
 
         this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
-        return this.ProcessAsync(filteredObservable, request.DetectorArgs);
-    }
 
-    /// <summary>
-    /// Gets the file streams for the Detector's declared <see cref="SearchPatterns"/> as an <see cref="IEnumerable{IComponentStream}"/>.
-    /// </summary>
-    /// <param name="sourceDirectory">The directory to search.</param>
-    /// <param name="exclusionPredicate">The exclusion predicate function.</param>
-    /// <returns>Awaitable task with enumerable streams <see cref="IEnumerable{IComponentStream}"/> for the declared detector. </returns>
-    protected Task<IEnumerable<IComponentStream>> GetFileStreamsAsync(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate exclusionPredicate)
-    {
-        return Task.FromResult(this.ComponentStreamEnumerableFactory.GetComponentStreams(sourceDirectory, this.SearchPatterns, exclusionPredicate));
+        var requests = new ConcurrentBag<ProcessRequest>();
+
+        await this.Scanner.WalkDirectoryAsync(
+            request.SourceDirectory,
+            request.DirectoryExclusionPredicate,
+            request.ComponentRecorder,
+            async (processRequest) =>
+            {
+                requests.Add(processRequest);
+                await Task.CompletedTask;
+            },
+            this.SearchPatterns);
+
+        var filteredRequests = await this.OnPrepareDetectionAsync(requests, request.DetectorArgs);
+
+        var actionBlock = new ActionBlock<ProcessRequest>(async pr => await this.OnFileFoundAsync(pr, request.DetectorArgs));
+
+        foreach (var processRequest in filteredRequests)
+        {
+            await actionBlock.SendAsync(processRequest);
+        }
+
+        actionBlock.Complete();
+        await actionBlock.Completion;
+
+        await this.OnDetectionFinishedAsync();
+
+        return new IndividualDetectorScanResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            AdditionalTelemetryDetails = this.Telemetry,
+        };
     }
 
     /// <summary>
@@ -100,28 +112,7 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <param name="lockfileVersion">The lockfile version.</param>
     protected void RecordLockfileVersion(string lockfileVersion) => this.Telemetry["LockfileVersion"] = lockfileVersion;
 
-    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
-    {
-        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs));
-
-        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
-
-        await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
-
-        processor.Complete();
-
-        await processor.Completion;
-
-        await this.OnDetectionFinishedAsync();
-
-        return new IndividualDetectorScanResult
-        {
-            ResultCode = ProcessingResultCode.Success,
-            AdditionalTelemetryDetails = this.Telemetry,
-        };
-    }
-
-    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected virtual Task<IEnumerable<ProcessRequest>> OnPrepareDetectionAsync(IEnumerable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         return Task.FromResult(processRequests);
     }

@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDockerService, DockerService>();
         services.AddSingleton<IEnvironmentVariableService, EnvironmentVariableService>();
         services.AddSingleton<IObservableDirectoryWalkerFactory, FastDirectoryWalkerFactory>();
+        services.AddSingleton<IDirectoryWalkerFactory, DirectoryWalkerFactory>();
         services.AddSingleton<IFileUtilityService, FileUtilityService>();
         services.AddSingleton<IFileWritingService, FileWritingService>();
         services.AddSingleton<IGraphTranslationService, DefaultGraphTranslationService>();

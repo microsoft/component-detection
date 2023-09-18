@@ -21,7 +21,7 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
 
     public VcpkgComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         IEnvironmentVariableService environmentVariableService,
         ILogger<VcpkgComponentDetector> logger)

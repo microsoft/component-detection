@@ -19,7 +19,7 @@ public class YarnLockComponentDetector : FileComponentDetector
 
     public YarnLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         IYarnLockFileFactory yarnLockFileFactory,
         ILogger<YarnLockComponentDetector> logger)
     {

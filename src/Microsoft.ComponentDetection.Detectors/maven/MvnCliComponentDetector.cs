@@ -13,6 +13,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
+using MoreLinq;
 
 public class MvnCliComponentDetector : FileComponentDetector
 {
@@ -20,7 +21,7 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     public MvnCliComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
+        IDirectoryWalkerFactory walkerFactory,
         IMavenCommandService mavenCommandService,
         ILogger<MvnCliComponentDetector> logger)
     {
@@ -40,17 +41,17 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IEnumerable<ProcessRequest>> OnPrepareDetectionAsync(IEnumerable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         if (!await this.mavenCommandService.MavenCLIExistsAsync())
         {
             this.Logger.LogDebug("Skipping maven detection as maven is not available in the local PATH.");
-            return Enumerable.Empty<ProcessRequest>().ToObservable();
+            return Enumerable.Empty<ProcessRequest>();
         }
 
         var processPomFile = new ActionBlock<ProcessRequest>(this.mavenCommandService.GenerateDependenciesFileAsync);
 
-        await this.RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest =>
+        this.RemoveNestedPomXmls(processRequests).ForEach(processRequest =>
         {
             processPomFile.Post(processRequest);
         });
@@ -59,7 +60,8 @@ public class MvnCliComponentDetector : FileComponentDetector
 
         await processPomFile.Completion;
 
-        return this.ComponentStreamEnumerableFactory.GetComponentStreams(this.CurrentScanRequest.SourceDirectory, new[] { this.mavenCommandService.BcdeMvnDependencyFileName }, this.CurrentScanRequest.DirectoryExclusionPredicate)
+        return this.ComponentStreamEnumerableFactory
+            .GetComponentStreams(this.CurrentScanRequest.SourceDirectory, new[] { this.mavenCommandService.BcdeMvnDependencyFileName, }, this.CurrentScanRequest.DirectoryExclusionPredicate)
             .Select(componentStream =>
             {
                 // The file stream is going to be disposed after the iteration is finished
@@ -77,8 +79,7 @@ public class MvnCliComponentDetector : FileComponentDetector
                     SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(
                         Path.Combine(Path.GetDirectoryName(componentStream.Location), "pom.xml")),
                 };
-            })
-            .ToObservable();
+            });
     }
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
@@ -90,72 +91,70 @@ public class MvnCliComponentDetector : FileComponentDetector
         await Task.CompletedTask;
     }
 
-    private IObservable<ProcessRequest> RemoveNestedPomXmls(IObservable<ProcessRequest> componentStreams)
+    private IEnumerable<ProcessRequest> RemoveNestedPomXmls(IEnumerable<ProcessRequest> componentStreams)
     {
         var directoryItemFacades = new List<DirectoryItemFacade>();
         var directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
-        return Observable.Create<ProcessRequest>(s =>
-        {
-            return componentStreams.Subscribe(
-                processRequest =>
+        return componentStreams.Where(
+            processRequest =>
+            {
+                var item = processRequest.ComponentStream;
+                var currentDir = item.Location;
+                DirectoryItemFacade last = null;
+                do
                 {
-                    var item = processRequest.ComponentStream;
-                    var currentDir = item.Location;
-                    DirectoryItemFacade last = null;
-                    do
+                    currentDir = Path.GetDirectoryName(currentDir);
+
+                    // We've reached the top / root
+                    if (currentDir == null)
                     {
-                        currentDir = Path.GetDirectoryName(currentDir);
-
-                        // We've reached the top / root
-                        if (currentDir == null)
+                        // If our last directory isn't in our list of top level nodes, it should be added. This happens for the first processed item and then subsequent times we have a new root (edge cases with multiple hard drives, for example)
+                        if (!directoryItemFacades.Contains(last))
                         {
-                            // If our last directory isn't in our list of top level nodes, it should be added. This happens for the first processed item and then subsequent times we have a new root (edge cases with multiple hard drives, for example)
-                            if (!directoryItemFacades.Contains(last))
-                            {
-                                directoryItemFacades.Add(last);
-                            }
-
-                            // If we got to the top without finding a directory that had a pom.xml on the way, we yield.
-                            s.OnNext(processRequest);
-                            break;
+                            directoryItemFacades.Add(last);
                         }
 
-                        var directoryExisted = directoryItemFacadesByPath.TryGetValue(currentDir, out var current);
-                        if (!directoryExisted)
-                        {
-                            directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
-                            {
-                                Name = currentDir,
-                                Files = new List<IComponentStream>(),
-                                Directories = new List<DirectoryItemFacade>(),
-                            };
-                        }
-
-                        // If we came from a directory, we add it to our graph.
-                        if (last != null)
-                        {
-                            current.Directories.Add(last);
-                        }
-
-                        // If we didn't come from a directory, it's because we're just getting started. Our current directory should include the file that led to it showing up in the graph.
-                        else
-                        {
-                            current.Files.Add(item);
-                        }
-
-                        if (last != null && current.Files.FirstOrDefault(x => string.Equals(Path.GetFileName(x.Location), "pom.xml", StringComparison.OrdinalIgnoreCase)) != null)
-                        {
-                            this.Logger.LogDebug("Ignoring pom.xml at {ChildPomXmlLocation}, as it has a parent pom.xml that will be processed at {ParentDirName}\\pom.xml .", item.Location, current.Name);
-                            break;
-                        }
-
-                        last = current;
+                        // If we got to the top without finding a directory that had a pom.xml on the way, we yield.
+                        // s.OnNext(processRequest);
+                        break;
                     }
 
-                    // Go all the way up
-                    while (currentDir != null);
-                },
-                s.OnCompleted);
-        });
+                    var directoryExisted = directoryItemFacadesByPath.TryGetValue(currentDir, out var current);
+                    if (!directoryExisted)
+                    {
+                        directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
+                        {
+                            Name = currentDir,
+                            Files = new List<IComponentStream>(),
+                            Directories = new List<DirectoryItemFacade>(),
+                        };
+                    }
+
+                    // If we came from a directory, we add it to our graph.
+                    if (last != null)
+                    {
+                        current.Directories.Add(last);
+                    }
+
+                    // If we didn't come from a directory, it's because we're just getting started. Our current directory should include the file that led to it showing up in the graph.
+                    else
+                    {
+                        current.Files.Add(item);
+                    }
+
+                    if (last != null && current.Files.FirstOrDefault(x => string.Equals(Path.GetFileName(x.Location), "pom.xml", StringComparison.OrdinalIgnoreCase)) != null)
+                    {
+                        this.Logger.LogDebug("Ignoring pom.xml at {ChildPomXmlLocation}, as it has a parent pom.xml that will be processed at {ParentDirName}\\pom.xml .", item.Location, current.Name);
+                        break;
+                    }
+
+                    last = current;
+                }
+
+                // Go all the way up
+                while (currentDir != null);
+
+                return true;
+            });
     }
 }
