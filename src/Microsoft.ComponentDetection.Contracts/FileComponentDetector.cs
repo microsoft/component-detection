@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
@@ -80,16 +80,7 @@ public abstract class FileComponentDetector : IComponentDetector
             this.SearchPatterns);
 
         var filteredRequests = await this.OnPrepareDetectionAsync(requests, request.DetectorArgs);
-
-        var actionBlock = new ActionBlock<ProcessRequest>(async pr => await this.OnFileFoundAsync(pr, request.DetectorArgs));
-
-        foreach (var processRequest in filteredRequests)
-        {
-            await actionBlock.SendAsync(processRequest);
-        }
-
-        actionBlock.Complete();
-        await actionBlock.Completion;
+        await Task.WhenAll(filteredRequests.Select(x => this.OnFileFoundAsync(x, request.DetectorArgs)));
 
         await this.OnDetectionFinishedAsync();
 
