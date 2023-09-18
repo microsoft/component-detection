@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
@@ -46,22 +45,11 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
     protected delegate bool JTokenProcessingDelegate(JToken token);
 
-    public override IEnumerable<string> Categories => new[]
-    {
-        Enum.GetName(typeof(DetectorClass), DetectorClass.Npm),
-    };
+    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm), };
 
-    public override IList<string> SearchPatterns { get; } = new List<string>
-    {
-        "package-lock.json",
-        "npm-shrinkwrap.json",
-        LernaSearchPattern,
-    };
+    public override IList<string> SearchPatterns { get; } = new List<string> { "package-lock.json", "npm-shrinkwrap.json", LernaSearchPattern, };
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[]
-    {
-        ComponentType.Npm,
-    };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm, };
 
     private List<ProcessRequest> LernaFiles { get; } = new();
 
@@ -89,29 +77,29 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         TypedComponent parentComponent = null,
         bool skipValidation = false);
 
-    protected override Task<IEnumerable<ProcessRequest>> OnPrepareDetectionAsync(IEnumerable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) =>
-        Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
-            .Where(pr =>
+    protected override Task<IEnumerable<ProcessRequest>> OnPrepareDetectionAsync(IEnumerable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    {
+        var packageLocks = processRequests.Where(pr =>
+        {
+            if (!pr.ComponentStream.Pattern.Equals(LernaSearchPattern))
             {
-                if (!pr.ComponentStream.Pattern.Equals(LernaSearchPattern))
-                {
-                    return true;
-                }
+                return true;
+            }
 
-                // Lock LernaFiles so we don't add while we are enumerating in processFiles
-                lock (this.lernaFilesLock)
-                {
-                    this.LernaFiles.Add(pr);
-                    return false;
-                }
-            }));
+            // Lock LernaFiles so we don't add while we are enumerating in processFiles
+            lock (this.lernaFilesLock)
+            {
+                this.LernaFiles.Add(pr);
+                return false;
+            }
+        }).ToArray(); // force enumeration to filter lerna files
+
+        return Task.FromResult(this.RemoveNodeModuleNestedFiles(packageLocks));
+    }
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
-        IEnumerable<string> packageJsonPattern = new List<string>
-        {
-            "package.json",
-        };
+        IEnumerable<string> packageJsonPattern = new List<string> { "package.json", };
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
@@ -303,10 +291,7 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
                 continue;
             }
 
-            var previouslyAddedComponents = new HashSet<string>
-            {
-                typedComponent.Id,
-            };
+            var previouslyAddedComponents = new HashSet<string> { typedComponent.Id, };
             var subQueue = new Queue<(JProperty, TypedComponent)>();
 
             NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder, typedComponent, explicitReferencedDependency: typedComponent);

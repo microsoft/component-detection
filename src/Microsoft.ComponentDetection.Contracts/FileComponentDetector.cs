@@ -72,10 +72,10 @@ public abstract class FileComponentDetector : IComponentDetector
             request.SourceDirectory,
             request.DirectoryExclusionPredicate,
             request.ComponentRecorder,
-            async (processRequest) =>
+            (processRequest) =>
             {
                 requests.Add(processRequest);
-                await Task.CompletedTask;
+                return Task.CompletedTask;
             },
             this.SearchPatterns);
 
