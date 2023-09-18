@@ -213,71 +213,67 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         var directoryItemFacades = new List<DirectoryItemFacade>();
         var directoryItemFacadesByPath = new Dictionary<string, DirectoryItemFacade>();
 
-        return componentStreams.Where(
-            processRequest =>
+        return componentStreams.Where(processRequest =>
+        {
+            var item = processRequest.ComponentStream;
+            var currentDir = item.Location;
+            DirectoryItemFacade last = null;
+            do
             {
-                var item = processRequest.ComponentStream;
-                var currentDir = item.Location;
-                DirectoryItemFacade last = null;
-                do
+                currentDir = this.pathUtilityService.GetParentDirectory(currentDir);
+
+                // We've reached the top / root
+                if (currentDir == null)
                 {
-                    currentDir = this.pathUtilityService.GetParentDirectory(currentDir);
-
-                    // We've reached the top / root
-                    if (currentDir == null)
+                    // If our last directory isn't in our list of top level nodes, it should be added. This happens for the first processed item and then subsequent times we have a new root (edge cases with multiple hard drives, for example)
+                    if (!directoryItemFacades.Contains(last))
                     {
-                        // If our last directory isn't in our list of top level nodes, it should be added. This happens for the first processed item and then subsequent times we have a new root (edge cases with multiple hard drives, for example)
-                        if (!directoryItemFacades.Contains(last))
-                        {
-                            directoryItemFacades.Add(last);
-                        }
-
-                        var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => item.Location.Contains(folder));
-
-                        // When node_modules is part of the path down to a given item, we skip the item. Otherwise, we yield the item.
-                        if (string.IsNullOrEmpty(skippedFolder))
-                        {
-                        }
-                        else
-                        {
-                            this.Logger.LogDebug("Ignoring package-lock.json at {PackageLockJsonLocation}, as it is inside a {SkippedFolder} folder.", item.Location, skippedFolder);
-                            continue;
-                        }
-
-                        break;
+                        directoryItemFacades.Add(last);
                     }
 
-                    var directoryExisted = directoryItemFacadesByPath.TryGetValue(currentDir, out var current);
-                    if (!directoryExisted)
+                    var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => item.Location.Contains(folder));
+
+                    // When node_modules is part of the path down to a given item, we skip the item. Otherwise, we yield the item.
+                    if (string.IsNullOrEmpty(skippedFolder))
                     {
-                        directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
-                        {
-                            Name = currentDir,
-                            Files = new List<IComponentStream>(),
-                            Directories = new List<DirectoryItemFacade>(),
-                        };
+                        return true;
                     }
 
-                    // If we came from a directory, we add it to our graph.
-                    if (last != null)
-                    {
-                        current.Directories.Add(last);
-                    }
-
-                    // If we didn't come from a directory, it's because we're just getting started. Our current directory should include the file that led to it showing up in the graph.
-                    else
-                    {
-                        current.Files.Add(item);
-                    }
-
-                    last = current;
+                    this.Logger.LogDebug("Ignoring package-lock.json at {PackageLockJsonLocation}, as it is inside a {SkippedFolder} folder.", item.Location, skippedFolder);
+                    break;
                 }
 
-                // Go all the way up
-                while (currentDir != null);
+                var directoryExisted = directoryItemFacadesByPath.TryGetValue(currentDir, out var current);
+                if (!directoryExisted)
+                {
+                    directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
+                    {
+                        Name = currentDir,
+                        Files = new List<IComponentStream>(),
+                        Directories = new List<DirectoryItemFacade>(),
+                    };
+                }
 
-                return true;
-            });
+                // If we came from a directory, we add it to our graph.
+                if (last != null)
+                {
+                    current.Directories.Add(last);
+                }
+
+                // If we didn't come from a directory, it's because we're just getting started. Our current directory should include the file that led to it showing up in the graph.
+                else
+                {
+                    current.Files.Add(item);
+                }
+
+                last = current;
+            }
+
+            // Go all the way up
+            while (currentDir != null);
+
+            return false;
+        });
     }
 
     private async Task SafeProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
