@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
+using Spectre.Console;
 using Spectre.Console.Cli;
 
 /// <summary>
@@ -60,4 +61,15 @@ public class ScanSettings : BaseSettings
         "Comma separated list of docker image names or hashes to execute container scanning on, ex: ubuntu:16.04, 56bab49eef2ef07505f6a1b0d5bd3a601dfc3c76ad4460f24c91d6fa298369ab")]
     [TypeConverter(typeof(CommaDelimitedConverter))]
     public IEnumerable<string> DockerImagesToScan { get; set; }
+
+    /// <inheritdoc />
+    public override ValidationResult Validate()
+    {
+        if (this.SourceDirectory is null)
+        {
+            return ValidationResult.Error($"{nameof(this.SourceDirectory)} is required");
+        }
+
+        return !this.SourceDirectory.Exists ? ValidationResult.Error($"The {nameof(this.SourceDirectory)} {this.SourceDirectory} does not exist") : base.Validate();
+    }
 }
