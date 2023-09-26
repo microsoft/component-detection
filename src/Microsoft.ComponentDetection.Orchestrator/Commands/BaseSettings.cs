@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 
 using System;
 using System.ComponentModel;
+using System.IO;
 using Serilog.Events;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -42,6 +43,11 @@ public abstract class BaseSettings : CommandSettings
         if (this.Timeout is <= 0)
         {
             return ValidationResult.Error($"{nameof(this.Timeout)} must be a positive integer");
+        }
+
+        if (!string.IsNullOrEmpty(this.Output) && !Directory.Exists(this.Output))
+        {
+            return ValidationResult.Error($"{nameof(this.Output)} must be a valid path");
         }
 
         return base.Validate();
