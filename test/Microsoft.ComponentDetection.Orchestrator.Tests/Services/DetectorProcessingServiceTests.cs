@@ -321,17 +321,17 @@ public class DetectorProcessingServiceTests
     public void GenerateDirectoryExclusionPredicate_IgnoreCaseAndAllowWindowsPathsWorksAsExpected()
     {
         /*
-        * We can't test a scenario like:
-        *
-        * SourceDirectory = /Some/Source/Directory
-        * DirectoryExclusionList = *Some/*
-        * allowWindowsPath = false
-        *
-        * and expect to exclude the directory, because when
-        * we pass the SourceDirectory path to DirectoryInfo and we are running the test on Windows,
-        * DirectoryInfo transalate it to C:\\Some\Source\Directory
-        * making the test fail
-        */
+         * We can't test a scenario like:
+         *
+         * SourceDirectory = /Some/Source/Directory
+         * DirectoryExclusionList = *Some/*
+         * allowWindowsPath = false
+         *
+         * and expect to exclude the directory, because when
+         * we pass the SourceDirectory path to DirectoryInfo and we are running the test on Windows,
+         * DirectoryInfo transalate it to C:\\Some\Source\Directory
+         * making the test fail
+         */
 
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -532,6 +532,19 @@ public class DetectorProcessingServiceTests
                     It.IsAny<ComponentRecorder>(),
                     It.Is<ScanSettings>(x => x == DefaultArgs)),
             Times.Once());
+    }
+
+    [TestMethod]
+    public async Task ProcessDetectorsAsync_InitializesExperimentsAsync()
+    {
+        this.detectorsToUse = new[]
+        {
+            this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
+        };
+
+        await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
+
+        this.experimentServiceMock.Verify(x => x.InitializeAsync(), Times.Once);
     }
 
     private Mock<FileComponentDetector> SetupFileDetectorMock(string id)

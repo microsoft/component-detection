@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Rust;
 
@@ -8,6 +9,15 @@ using Microsoft.ComponentDetection.Detectors.Rust;
 /// </summary>
 public class RustCliDetectorExperiment : IExperimentConfiguration
 {
+    private readonly ICommandLineInvocationService commandLineInvocationService;
+    private bool cargoCliAvailable;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RustCliDetectorExperiment"/> class.
+    /// </summary>
+    /// <param name="commandLineInvocationService">The command line invocation service.</param>
+    public RustCliDetectorExperiment(ICommandLineInvocationService commandLineInvocationService) => this.commandLineInvocationService = commandLineInvocationService;
+
     /// <inheritdoc />
     public string Name => "RustCliDetector";
 
@@ -18,5 +28,8 @@ public class RustCliDetectorExperiment : IExperimentConfiguration
     public bool IsInExperimentGroup(IComponentDetector componentDetector) => componentDetector is RustCliDetector;
 
     /// <inheritdoc />
-    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) => true;
+    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) => this.cargoCliAvailable;
+
+    /// <inheritdoc />
+    public async Task InitAsync() => this.cargoCliAvailable = await this.commandLineInvocationService.CanCommandBeLocatedAsync("cargo", null);
 }

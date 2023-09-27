@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
@@ -14,6 +15,12 @@ public interface IExperimentConfiguration
     /// The name of the experiment.
     /// </summary>
     string Name { get; }
+
+    /// <summary>
+    /// Initializes the experiment configuration.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task InitAsync() => Task.CompletedTask;
 
     /// <summary>
     /// Specifies if the detector is in the control group.

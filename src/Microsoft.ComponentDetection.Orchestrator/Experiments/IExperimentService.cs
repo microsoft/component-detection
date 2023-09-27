@@ -12,6 +12,12 @@ using Microsoft.ComponentDetection.Orchestrator.Commands;
 public interface IExperimentService
 {
     /// <summary>
+    /// Initializes the experiment services by preparing the experiment configurations.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task InitializeAsync();
+
+    /// <summary>
     /// Records the results of a detector execution and processes the results for any active experiments.
     /// </summary>
     /// <param name="detector">The detector.</param>
