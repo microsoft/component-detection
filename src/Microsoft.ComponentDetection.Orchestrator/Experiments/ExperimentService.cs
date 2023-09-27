@@ -44,6 +44,23 @@ public class ExperimentService : IExperimentService
     }
 
     /// <inheritdoc />
+    public async Task InitializeAsync()
+    {
+        foreach (var config in this.experiments.Keys)
+        {
+            try
+            {
+                await config.InitAsync();
+            }
+            catch (Exception e)
+            {
+                this.logger.LogWarning(e, "Failed to initialize experiment {Experiment}, skipping it", config.Name);
+                this.experiments.TryRemove(config, out _);
+            }
+        }
+    }
+
+    /// <inheritdoc />
     public void RecordDetectorRun(
         IComponentDetector detector,
         ComponentRecorder componentRecorder,

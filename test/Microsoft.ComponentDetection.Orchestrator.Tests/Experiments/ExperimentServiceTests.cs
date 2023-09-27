@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -279,9 +280,9 @@ public class ExperimentServiceTests
         var detectorList = new List<IComponentDetector>
         {
             new NuGetComponentDetector(
-            new Mock<IComponentStreamEnumerableFactory>().Object,
-            new Mock<IObservableDirectoryWalkerFactory>().Object,
-            new Mock<ILogger<NuGetComponentDetector>>().Object), this.detectorMock.Object,
+                new Mock<IComponentStreamEnumerableFactory>().Object,
+                new Mock<IObservableDirectoryWalkerFactory>().Object,
+                new Mock<ILogger<NuGetComponentDetector>>().Object), this.detectorMock.Object,
         };
 
         service.RemoveUnwantedExperimentsbyDetectors(detectorList);
@@ -310,9 +311,9 @@ public class ExperimentServiceTests
         var detectorList = new List<IComponentDetector>
         {
             new NuGetComponentDetector(
-            new Mock<IComponentStreamEnumerableFactory>().Object,
-            new Mock<IObservableDirectoryWalkerFactory>().Object,
-            new Mock<ILogger<NuGetComponentDetector>>().Object),
+                new Mock<IComponentStreamEnumerableFactory>().Object,
+                new Mock<IObservableDirectoryWalkerFactory>().Object,
+                new Mock<ILogger<NuGetComponentDetector>>().Object),
         };
 
         service.RemoveUnwantedExperimentsbyDetectors(detectorList);
@@ -324,5 +325,36 @@ public class ExperimentServiceTests
         this.experimentProcessorMock.Verify(
             x => x.ProcessExperimentAsync(this.experimentConfigMock.Object, It.IsAny<ExperimentDiff>()),
             Times.Once());
+    }
+
+    [TestMethod]
+    public async Task InitializeAsync_InitsConfigsAsync()
+    {
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.graphTranslationServiceMock.Object,
+            this.loggerMock.Object);
+
+        await service.InitializeAsync();
+
+        this.experimentConfigMock.Verify(x => x.InitAsync(), Times.Once());
+    }
+
+    [TestMethod]
+    public async Task InitializeAsync_SwallowsExceptionsAsync()
+    {
+        this.experimentConfigMock.Setup(x => x.InitAsync()).ThrowsAsync(new InvalidOperationException());
+
+        var service = new ExperimentService(
+            new[] { this.experimentConfigMock.Object },
+            new[] { this.experimentProcessorMock.Object },
+            this.graphTranslationServiceMock.Object,
+            this.loggerMock.Object);
+
+        var action = async () => await service.InitializeAsync();
+
+        await action.Should().NotThrowAsync();
+        this.experimentConfigMock.Verify(x => x.InitAsync(), Times.Once());
     }
 }
