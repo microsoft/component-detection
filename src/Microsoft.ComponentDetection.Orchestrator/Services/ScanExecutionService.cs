@@ -39,15 +39,15 @@ public class ScanExecutionService : IScanExecutionService
 
         var detectorRestrictions = this.GetDetectorRestrictions(settings);
         var detectors = this.detectors.ToList();
-        var restrictedDetectors = this.detectorRestrictionService.ApplyRestrictions(detectorRestrictions, detectors).ToImmutableList();
-        detectorRestrictions.DisabledDetectors = detectors.Except(restrictedDetectors).ToList();
+        var detectorsWithAppliedRestrictions = this.detectorRestrictionService.ApplyRestrictions(detectorRestrictions, detectors).ToImmutableList();
+        detectorRestrictions.DisabledDetectors = detectors.Except(detectorsWithAppliedRestrictions).ToList();
 
         this.logger.LogDebug("Finished applying restrictions to detectors.");
 
-        var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(settings, restrictedDetectors, detectorRestrictions);
+        var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(settings, detectorsWithAppliedRestrictions, detectorRestrictions);
         var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, settings);
 
-        scanResult.DetectorsInScan = restrictedDetectors.Select(ConvertToContract).ToList();
+        scanResult.DetectorsInScan = detectorsWithAppliedRestrictions.Select(ConvertToContract).ToList();
         scanResult.DetectorsNotInScan = detectorRestrictions.DisabledDetectors.Select(ConvertToContract).ToList();
         scanResult.ResultCode = processingResult.ResultCode;
 
