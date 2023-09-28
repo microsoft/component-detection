@@ -27,6 +27,8 @@ using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Http;
 
 public static class ServiceCollectionExtensions
 {
@@ -141,6 +143,9 @@ public static class ServiceCollectionExtensions
 
         // HttpClient
         services.AddHttpClient();
+
+        // Remove the default logging for http client
+        services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
 
         return services;
     }
