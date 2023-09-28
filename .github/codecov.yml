@@ -1,0 +1,11 @@
+# ref: https://docs.codecov.com/docs/codecovyml-reference
+coverage:
+  range: 60..80
+  round: down
+  precision: 1
+  status:
+    # ref: https://docs.codecov.com/docs/commit-status
+    project:
+      default:
+        # Avoid false negatives
+        threshold: 1%
