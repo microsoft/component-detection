@@ -143,6 +143,8 @@ public static class ServiceCollectionExtensions
 
         // HttpClient
         services.AddHttpClient();
+
+        // Remove the default logging for http client
         services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
 
         return services;
