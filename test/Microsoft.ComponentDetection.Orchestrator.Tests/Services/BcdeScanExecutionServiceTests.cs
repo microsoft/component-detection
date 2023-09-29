@@ -592,6 +592,131 @@ public class BcdeScanExecutionServiceTests
         results.ComponentsFound.Single(component => component.Component.Id == detectedComponent.Component.Id).IsDevelopmentDependency.Should().BeFalse();
     }
 
+    [TestMethod]
+    public async Task VerifyDisabledDetectorsisPopulatedAsync()
+    {
+        var componentRecorder = new ComponentRecorder(new Mock<ILogger>().Object);
+        var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/some/file/path"));
+        this.versionedComponentDetector1Mock.SetupGet(x => x.Id).Returns("Detector1");
+        this.componentDetector2Mock.SetupGet(x => x.Id).Returns("Detector2");
+        this.componentDetector3Mock.SetupGet(x => x.Id).Returns("Detector3");
+
+        IEnumerable<IComponentDetector> registeredDetectors = new[]
+        {
+            this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
+
+            this.versionedComponentDetector1Mock.Object,
+        };
+        var restrictedDetectors = new[]
+        {
+            this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
+        };
+
+        var settings = new ScanSettings
+        {
+            SourceDirectory = this.sourceDirectory,
+        };
+        var result = await this.DetectComponentsHappyPathAsync(
+            settings,
+            registeredDetectors,
+            restrictedDetectors,
+            restrictions =>
+            {
+                restrictions.AllowedDetectorCategories.Should().BeNull();
+                restrictions.AllowedDetectorIds.Should().BeNull();
+            },
+            new List<ComponentRecorder> { componentRecorder });
+
+        result.DetectorsNotInRun.Should().ContainSingle();
+        result.DetectorsNotInRun.Single(x => x.DetectorId == "Detector1");
+    }
+
+    [TestMethod]
+    public async Task VerifyNoDisabledDetectorsisPopulatedAsync()
+    {
+        var componentRecorder = new ComponentRecorder(new Mock<ILogger>().Object);
+        var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/some/file/path"));
+        this.versionedComponentDetector1Mock.SetupGet(x => x.Id).Returns("Detector1");
+        this.componentDetector2Mock.SetupGet(x => x.Id).Returns("Detector2");
+        this.componentDetector3Mock.SetupGet(x => x.Id).Returns("Detector3");
+
+        IEnumerable<IComponentDetector> registeredDetectors = new[]
+        {
+            this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
+        };
+        var restrictedDetectors = new[]
+        {
+            this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
+        };
+
+        var settings = new ScanSettings
+        {
+            SourceDirectory = this.sourceDirectory,
+        };
+        var result = await this.DetectComponentsHappyPathAsync(
+            settings,
+            registeredDetectors,
+            restrictedDetectors,
+            restrictions =>
+            {
+                restrictions.AllowedDetectorCategories.Should().BeNull();
+                restrictions.AllowedDetectorIds.Should().BeNull();
+            },
+            new List<ComponentRecorder> { componentRecorder });
+
+        result.DetectorsNotInRun.Should().BeEmpty();
+    }
+
+    private async Task<TestOutput> DetectComponentsHappyPathAsync(
+       ScanSettings settings,
+       IEnumerable<IComponentDetector> registeredDetectors,
+       IComponentDetector[] restrictedDetectors,
+       Action<DetectorRestrictions> restrictionAsserter = null,
+       IEnumerable<ComponentRecorder> componentRecorders = null)
+    {
+        this.detectorsMock.Setup(x => x.GetEnumerator())
+            .Returns(registeredDetectors.GetEnumerator());
+        this.detectorRestrictionServiceMock.Setup(
+                x => x.ApplyRestrictions(
+                    It.IsAny<DetectorRestrictions>(),
+                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => registeredDetectors.Intersect(inputDetectors).Count() == registeredDetectors.Count())))
+            .Returns(restrictedDetectors)
+            .Callback<DetectorRestrictions, IEnumerable<IComponentDetector>>(
+                (restrictions, detectors) => restrictionAsserter?.Invoke(restrictions));
+
+        // We initialize detected component's DetectedBy here because of a Moq constraint -- certain operations (Adding interfaces) have to happen before .Object
+        this.detectedComponents[0].DetectedBy = this.componentDetector2Mock.Object;
+        this.detectedComponents[1].DetectedBy = this.componentDetector3Mock.Object;
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = new Dictionary<int, ContainerDetails>
+            {
+                {
+                    this.sampleContainerDetails.Id, this.sampleContainerDetails
+                },
+            },
+            ComponentRecorders = componentRecorders.Select(componentRecorder => (this.componentDetector2Mock.Object, componentRecorder)),
+        };
+
+        this.detectorProcessingServiceMock.Setup(x =>
+                x.ProcessDetectorsAsync(
+                    settings,
+                    It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Length),
+                    Match.Create<DetectorRestrictions>(restriction => true)))
+            .ReturnsAsync(processingResult);
+
+        var result = await this.serviceUnderTest.ExecuteScanAsync(settings);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        result.SourceDirectory.Should().NotBeNull();
+        result.SourceDirectory.Should().Be(settings.SourceDirectory.ToString());
+
+        var testOutput = new TestOutput((DefaultGraphScanResult)result);
+
+        return testOutput;
+    }
+
     private async Task<TestOutput> DetectComponentsHappyPathAsync(
         ScanSettings settings,
         Action<DetectorRestrictions> restrictionAsserter = null,
@@ -722,6 +847,7 @@ public class BcdeScanExecutionServiceTests
             this.Result = result.ResultCode;
             this.DetectedComponents = result.ComponentsFound;
             this.DetectorsInRun = result.DetectorsInScan;
+            this.DetectorsNotInRun = result.DetectorsNotInScan;
             this.DependencyGraphs = result.DependencyGraphs;
             this.SourceDirectory = result.SourceDirectory;
         }
@@ -731,6 +857,8 @@ public class BcdeScanExecutionServiceTests
         internal IEnumerable<ScannedComponent> DetectedComponents { get; set; }
 
         internal IEnumerable<Detector> DetectorsInRun { get; set; }
+
+        internal IEnumerable<Detector> DetectorsNotInRun { get; set; }
 
         internal DependencyGraphCollection DependencyGraphs { get; set; }
 
