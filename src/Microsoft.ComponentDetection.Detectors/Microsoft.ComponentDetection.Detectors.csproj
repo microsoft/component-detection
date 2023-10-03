@@ -2,7 +2,6 @@
 
     <ItemGroup>
         <PackageReference Include="DotNet.Glob" />
-        <PackageReference Include="Microsoft.Extensions.Http" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="morelinq" />
         <PackageReference Include="NuGet.ProjectModel" />
