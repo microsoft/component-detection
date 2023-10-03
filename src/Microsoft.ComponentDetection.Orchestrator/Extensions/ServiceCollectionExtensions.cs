@@ -27,7 +27,6 @@ using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 public static class ServiceCollectionExtensions
 {
@@ -139,10 +138,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IYarnLockParser, YarnLockParser>();
         services.AddSingleton<IYarnLockFileFactory, YarnLockFileFactory>();
         services.AddSingleton<IComponentDetector, YarnLockComponentDetector>();
-
-        // Logging
-        services.AddSingleton<ILoggerFactory, LoggerFactory>();
-        services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
 
         return services;
     }
