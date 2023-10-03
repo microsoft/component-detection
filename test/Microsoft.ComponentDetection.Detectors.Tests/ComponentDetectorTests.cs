@@ -6,6 +6,8 @@ using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
@@ -18,7 +20,10 @@ public class ComponentDetectorTests
     [TestInitialize]
     public void Initialize()
     {
-        var serviceProvider = new ServiceCollection().AddComponentDetection().BuildServiceProvider();
+        var serviceProvider = new ServiceCollection()
+            .AddComponentDetection()
+            .AddSingleton(typeof(ILogger<>), typeof(NullLogger<>))
+            .BuildServiceProvider();
 
         this.detectors = serviceProvider.GetServices<IComponentDetector>().ToList();
     }
