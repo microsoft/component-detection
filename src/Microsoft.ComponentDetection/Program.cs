@@ -25,7 +25,6 @@ var serviceCollection = new ServiceCollection()
     .AddComponentDetection()
     .AddLogging(l => l.AddSerilog(new LoggerConfiguration()
         .MinimumLevel.ControlledBy(Interceptor.LogLevel)
-        .MinimumLevel.Override("Microsoft.Extensions.Http.DefaultHttpClientFactory", LogEventLevel.Information)
         .Enrich.With<LoggingEnricher>()
         .Enrich.FromLogContext()
         .WriteTo.Map(

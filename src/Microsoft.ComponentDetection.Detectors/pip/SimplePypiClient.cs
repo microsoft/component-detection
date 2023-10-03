@@ -33,13 +33,13 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     // time to wait before retrying a failed call to pypi.org
     private static readonly TimeSpan RETRYDELAY = TimeSpan.FromSeconds(1);
 
+    private static readonly HttpClientHandler HttpClientHandler = new HttpClientHandler() { CheckCertificateRevocationList = true };
+
     private readonly IEnvironmentVariableService environmentVariableService;
     private readonly ILogger<SimplePyPiClient> logger;
 
     // Keep telemetry on how the cache is being used for future refinements
     private readonly SimplePypiCacheTelemetryRecord cacheTelemetry = new SimplePypiCacheTelemetryRecord();
-
-    private readonly HttpClient httpClient;
 
     /// <summary>
     /// A thread safe cache implementation which contains a mapping of URI -> SimpleProject for simplepypi api projects
@@ -58,12 +58,13 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     // retries used so far for calls to pypi.org
     private long retries;
 
-    public SimplePyPiClient(IEnvironmentVariableService environmentVariableService, IHttpClientFactory httpClientFactory, ILogger<SimplePyPiClient> logger)
+    public SimplePyPiClient(IEnvironmentVariableService environmentVariableService, ILogger<SimplePyPiClient> logger)
     {
         this.environmentVariableService = environmentVariableService;
         this.logger = logger;
-        this.httpClient = httpClientFactory.CreateClient();
     }
+
+    public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);
 
     /// <inheritdoc />
     public async Task<SimplePypiProject> GetSimplePypiProjectAsync(PipDependencySpecification spec)
@@ -269,7 +270,7 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
         request.Headers.UserAgent.Add(ProductValue);
         request.Headers.UserAgent.Add(CommentValue);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.pypi.simple.v1+json"));
-        var response = await this.httpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request);
         return response;
     }
 
@@ -280,6 +281,6 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
         this.cacheTelemetry.Dispose();
         this.cachedProjectWheelFiles.Dispose();
         this.cachedSimplePyPiProjects.Dispose();
-        this.httpClient.Dispose();
+        HttpClient.Dispose();
     }
 }

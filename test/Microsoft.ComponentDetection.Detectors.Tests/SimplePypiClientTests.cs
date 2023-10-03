@@ -20,8 +20,6 @@ using Newtonsoft.Json;
 [TestClass]
 public class SimplePyPiClientTests
 {
-    private readonly Mock<IHttpClientFactory> mockHttpClientFactory = new Mock<IHttpClientFactory>();
-
     private Mock<HttpMessageHandler> MockHttpMessageHandler(string content, HttpStatusCode statusCode)
     {
         var handlerMock = new Mock<HttpMessageHandler>();
@@ -41,9 +39,8 @@ public class SimplePyPiClientTests
 
     private ISimplePyPiClient CreateSimplePypiClient(HttpMessageHandler messageHandler, IEnvironmentVariableService evs, ILogger<SimplePyPiClient> logger)
     {
-        var httpClient = new HttpClient(messageHandler);
-        this.mockHttpClientFactory.Setup(x => x.CreateClient(It.IsAny<string>())).Returns(httpClient);
-        return new SimplePyPiClient(evs, this.mockHttpClientFactory.Object, logger);
+        SimplePyPiClient.HttpClient = new HttpClient(messageHandler);
+        return new SimplePyPiClient(evs, logger);
     }
 
     [TestMethod]
