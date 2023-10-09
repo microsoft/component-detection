@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Commands;
 
 using System.IO;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -44,5 +45,21 @@ public class ScanSettingsTests
         var result = settings.Validate();
 
         result.Successful.Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void CanSerialize()
+    {
+        var settings = new ScanSettings
+        {
+            SourceDirectory = new DirectoryInfo(Path.GetTempPath()),
+            Output = "C:\\",
+            ManifestFile = new FileInfo(Path.GetTempFileName()),
+            SourceFileRoot = new DirectoryInfo(Path.GetTempPath()),
+        };
+
+        var action = () => JsonSerializer.Serialize(settings);
+
+        action.Should().NotThrow();
     }
 }
