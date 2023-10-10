@@ -54,6 +54,9 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
     private readonly IEnvironmentVariableService environmentVariableService;
     private readonly ILogger<PyPiClient> logger;
 
+    // Semaphore to limit the number of concurrent calls to pypi.org
+    private readonly SemaphoreSlim semaphore;
+
     private bool checkedMaxEntriesVariable;
 
     // retries used so far for calls to pypi.org
@@ -80,6 +83,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
             FinalCacheSize = 0,
         };
         this.logger = logger;
+        this.semaphore = new SemaphoreSlim(10, 10);
     }
 
     public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);
@@ -246,11 +250,13 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
             return result;
         }
 
+        await this.semaphore.WaitAsync();
         this.logger.LogInformation("Getting Python data from {Uri}", uri);
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.UserAgent.Add(ProductValue);
         request.Headers.UserAgent.Add(CommentValue);
         var response = await HttpClient.SendAsync(request);
+        this.semaphore.Release();
 
         // The `first - wins` response accepted into the cache. This might be different from the input if another caller wins the race.
         return await this.cachedResponses.GetOrCreateAsync(uri, cacheEntry =>
@@ -282,5 +288,6 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
         this.cacheTelemetry.Dispose();
         this.cachedResponses.Dispose();
+        this.semaphore.Dispose();
     }
 }
