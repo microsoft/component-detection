@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using PackageUrl;
 
@@ -20,6 +20,9 @@ public class VcpkgComponent : TypedComponent
         this.Triplet = triplet;
         this.Description = description;
         this.DownloadLocation = downloadLocation;
+        var locationArr = downloadLocation.Split('/');
+        this.GitRepositoryOwner = locationArr[3];
+        this.GitRepositoryName = locationArr[4].Split('@')[0];
     }
 
     public string SPDXID { get; set; }
@@ -27,6 +30,10 @@ public class VcpkgComponent : TypedComponent
     public string Name { get; set; }
 
     public string DownloadLocation { get; set; }
+
+    public string GitRepositoryOwner { get; set; }
+
+    public string GitRepositoryName { get; set; }
 
     public string Triplet { get; set; }
 
