@@ -22,7 +22,7 @@ public class VcpkgComponent : TypedComponent
         this.Description = description;
         this.DownloadLocation = downloadLocation;
 
-        if (downloadLocation.ToLower().Contains("https://github.com/"))
+        if (!string.IsNullOrEmpty(downloadLocation) && downloadLocation.ToLower().Contains("https://github.com/"))
         {
             this.SetGitRepoProperties();
         }
@@ -47,17 +47,6 @@ public class VcpkgComponent : TypedComponent
     public string GitRepositoryName { get; set; }
 
     public override ComponentType Type => ComponentType.Vcpkg;
-
-    private void SetGitRepoProperties()
-    {
-        /* example download locations
-         * "git+https://github.com/leethomason/tinyxml2@9.0.0"
-         * "git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"
-        */
-        var locationArr = this.DownloadLocation.Split('/');
-        this.GitRepositoryOwner = locationArr[2];
-        this.GitRepositoryName = locationArr[3].TakeWhile(ch => char.IsLetterOrDigit(ch)).ToString();
-    }
 
     public override string Id
     {
@@ -90,6 +79,24 @@ public class VcpkgComponent : TypedComponent
             {
                 return new PackageURL($"pkg:vcpkg/{this.Name}");
             }
+        }
+    }
+
+    private void SetGitRepoProperties()
+    {
+        /* example download locations
+         * "git+https://github.com/leethomason/tinyxml2@9.0.0"
+         * "git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"
+        */
+        var locationArr = this.DownloadLocation.Split('/');
+        if (!string.IsNullOrEmpty(locationArr[2]))
+        {
+            this.GitRepositoryOwner = locationArr[2];
+        }
+
+        if (!string.IsNullOrEmpty(locationArr[3]))
+        {
+            this.GitRepositoryName = locationArr[3].TakeWhile(ch => char.IsLetterOrDigit(ch)).ToString();
         }
     }
 }
