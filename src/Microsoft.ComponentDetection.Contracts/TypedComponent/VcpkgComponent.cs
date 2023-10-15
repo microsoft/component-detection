@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Linq;
 using PackageUrl;
 
 public class VcpkgComponent : TypedComponent
@@ -20,9 +21,11 @@ public class VcpkgComponent : TypedComponent
         this.Triplet = triplet;
         this.Description = description;
         this.DownloadLocation = downloadLocation;
-        var locationArr = downloadLocation.Split('/');
-        this.GitRepositoryOwner = locationArr[3];
-        this.GitRepositoryName = locationArr[4].Split('@')[0];
+
+        if (downloadLocation.ToLower().Contains("https://github.com/"))
+        {
+            this.SetGitRepoProperties();
+        }
     }
 
     public string SPDXID { get; set; }
@@ -30,10 +33,6 @@ public class VcpkgComponent : TypedComponent
     public string Name { get; set; }
 
     public string DownloadLocation { get; set; }
-
-    public string GitRepositoryOwner { get; set; }
-
-    public string GitRepositoryName { get; set; }
 
     public string Triplet { get; set; }
 
@@ -43,7 +42,22 @@ public class VcpkgComponent : TypedComponent
 
     public int PortVersion { get; set; }
 
+    public string GitRepositoryOwner { get; set; }
+
+    public string GitRepositoryName { get; set; }
+
     public override ComponentType Type => ComponentType.Vcpkg;
+
+    private void SetGitRepoProperties()
+    {
+        /* example download locations
+         * "git+https://github.com/leethomason/tinyxml2@9.0.0"
+         * "git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"
+        */
+        var locationArr = this.DownloadLocation.Split('/');
+        this.GitRepositoryOwner = locationArr[2];
+        this.GitRepositoryName = locationArr[3].TakeWhile(ch => char.IsLetterOrDigit(ch)).ToString();
+    }
 
     public override string Id
     {
