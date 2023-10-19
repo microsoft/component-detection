@@ -213,7 +213,6 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     ]
 }";
 
-        // testing optional parameters added
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
