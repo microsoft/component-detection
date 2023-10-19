@@ -1,8 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
+using System;
 using PackageUrl;
 
 public class VcpkgComponent : TypedComponent
@@ -90,23 +88,17 @@ public class VcpkgComponent : TypedComponent
          * "git+https://github.com/leethomason/tinyxml2@9.0.0"
          * "git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"
         */
-        var locationArr = this.DownloadLocation.Split('/');
 
-        if (locationArr.Length > 4)
+        if (Uri.TryCreate(this.DownloadLocation, UriKind.Absolute, out var tempUri))
         {
-            return;
-        }
+            var locationArr = tempUri.Segments;
+            if (locationArr.Length < 3)
+            {
+                return;
+            }
 
-        if (!string.IsNullOrEmpty(locationArr[2]))
-        {
-            this.GitRepositoryOwner = locationArr[2];
-        }
-
-        var allowedGitRepoNameChars = new List<char> { '_', '-', '.', '\'' };
-
-        if (!string.IsNullOrEmpty(locationArr[3]))
-        {
-            this.GitRepositoryName = locationArr[3].TakeWhile(ch => char.IsLetterOrDigit(ch) || allowedGitRepoNameChars.Contains(ch)).ToString();
+            this.GitRepositoryOwner = locationArr[1].TrimEnd('/');
+            this.GitRepositoryName = locationArr[2];
         }
     }
 }

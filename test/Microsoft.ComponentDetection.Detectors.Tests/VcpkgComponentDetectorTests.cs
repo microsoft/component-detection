@@ -176,4 +176,156 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         var components = detectedComponents.ToList();
         Assert.IsFalse(components.Any());
     }
+
+    [TestMethod]
+    public async Task TestOptionalParametersAsync()
+    {
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/tinyxml2-x64-linux-9.0.0-c99e4f03-5275-458b-8a69-b5f8dfa45f18"",
+    ""name"": ""tinyxml2:x64-linux@9.0.0 5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0"",
+    ""packages"": [
+        {
+            ""name"": ""tinyxml2:x64-linux"",
+            ""SPDXID"": ""SPDXRef-binary"",
+            ""versionInfo"": ""5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0"",
+            ""downloadLocation"": ""NONE"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""comment"": ""This is a binary package built by vcpkg.""
+        },
+        {
+            ""SPDXID"": ""SPDXRef-resource-1"",
+            ""name"": ""leethomason/tinyxml2"",
+            ""downloadLocation"": ""git+https://github.com/leethomason/tinyxml2@9.0.0"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""checksums"": [
+                {
+                    ""algorithm"": ""SHA512"",
+                    ""checksumValue"": ""9c5ce8131984690df302ca3e32314573b137180ed522c92fd631692979c942372a28f697fdb3d5e56bcf2d3dc596262b724d088153f3e1d721c9536f2a883367""
+                }
+            ]
+        }
+    ]
+}";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("vcpkg.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var components = detectedComponents.ToList();
+
+        Assert.AreEqual(2, components.Count);
+        var sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c?.Component).SPDXID.Equals("SPDXRef-binary")).Component;
+        Assert.IsNotNull(sbomComponent);
+        Assert.AreEqual("tinyxml2:x64-linux", sbomComponent.Name);
+        Assert.AreEqual("5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0", sbomComponent.Version);
+        Assert.AreEqual("SPDXRef-binary", sbomComponent.SPDXID);
+        Assert.AreEqual("NONE", sbomComponent.DownloadLocation);
+        Assert.AreEqual(null, sbomComponent.GitRepositoryOwner);
+        Assert.AreEqual(null, sbomComponent.GitRepositoryName);
+
+        sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c.Component).SPDXID.Equals("SPDXRef-resource-1")).Component;
+        Assert.AreEqual("leethomason/tinyxml2", sbomComponent.Name);
+        Assert.AreEqual("9.0.0", sbomComponent.Version);
+        Assert.AreEqual("SPDXRef-resource-1", sbomComponent.SPDXID);
+        Assert.AreEqual("git+https://github.com/leethomason/tinyxml2", sbomComponent.DownloadLocation);
+        Assert.AreEqual("leethomason", sbomComponent.GitRepositoryOwner);
+        Assert.AreEqual("tinyxml2", sbomComponent.GitRepositoryName);
+    }
+
+    [TestMethod]
+    public async Task TestOptionalParametersOnlyOneOptionalParameterAsync()
+    {
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/tinyxml2-x64-linux-9.0.0-c99e4f03-5275-458b-8a69-b5f8dfa45f18"",
+    ""name"": ""tinyxml2:x64-linux@9.0.0 5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0"",
+    ""packages"": [
+      
+        {
+            ""SPDXID"": ""SPDXRef-resource-1"",
+            ""name"": ""leethomason/tinyxml2"",
+            ""downloadLocation"": ""git+https://github.com/tinyxml2@9.0.0"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""checksums"": [
+                {
+                    ""algorithm"": ""SHA512"",
+                    ""checksumValue"": ""9c5ce8131984690df302ca3e32314573b137180ed522c92fd631692979c942372a28f697fdb3d5e56bcf2d3dc596262b724d088153f3e1d721c9536f2a883367""
+                }
+            ]
+        }
+    ]
+}";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("vcpkg.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var components = detectedComponents.ToList();
+
+        Assert.AreEqual(1, components.Count);
+        var sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c.Component).SPDXID.Equals("SPDXRef-resource-1")).Component;
+        Assert.AreEqual("leethomason/tinyxml2", sbomComponent.Name);
+        Assert.AreEqual("9.0.0", sbomComponent.Version);
+        Assert.AreEqual("SPDXRef-resource-1", sbomComponent.SPDXID);
+        Assert.AreEqual("git+https://github.com/tinyxml2", sbomComponent.DownloadLocation);
+        Assert.AreEqual(null, sbomComponent.GitRepositoryOwner);
+        Assert.AreEqual(null, sbomComponent.GitRepositoryName);
+    }
+
+    [TestMethod]
+    public async Task TestOptionalParametersNoOptionalParameterAsync()
+    {
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/tinyxml2-x64-linux-9.0.0-c99e4f03-5275-458b-8a69-b5f8dfa45f18"",
+    ""name"": ""tinyxml2:x64-linux@9.0.0 5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0"",
+    ""packages"": [
+      
+        {
+            ""SPDXID"": ""SPDXRef-resource-1"",
+            ""name"": ""leethomason/tinyxml2"",
+            ""downloadLocation"": ""git+https://github.com/@9.0.0"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""checksums"": [
+                {
+                    ""algorithm"": ""SHA512"",
+                    ""checksumValue"": ""9c5ce8131984690df302ca3e32314573b137180ed522c92fd631692979c942372a28f697fdb3d5e56bcf2d3dc596262b724d088153f3e1d721c9536f2a883367""
+                }
+            ]
+        }
+    ]
+}";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("vcpkg.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var components = detectedComponents.ToList();
+        Assert.AreEqual(1, components.Count);
+        var sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c.Component).SPDXID.Equals("SPDXRef-resource-1")).Component;
+        Assert.AreEqual("leethomason/tinyxml2", sbomComponent.Name);
+        Assert.AreEqual("9.0.0", sbomComponent.Version);
+        Assert.AreEqual("SPDXRef-resource-1", sbomComponent.SPDXID);
+        Assert.AreEqual("git+https://github.com/", sbomComponent.DownloadLocation);
+        Assert.AreEqual(null, sbomComponent.GitRepositoryOwner);
+        Assert.AreEqual(null, sbomComponent.GitRepositoryName);
+    }
 }
