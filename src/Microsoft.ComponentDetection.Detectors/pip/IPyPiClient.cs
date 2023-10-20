@@ -83,7 +83,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
             FinalCacheSize = 0,
         };
         this.logger = logger;
-        this.semaphore = new SemaphoreSlim(10, 10);
+        this.semaphore = new SemaphoreSlim(5);
     }
 
     public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);

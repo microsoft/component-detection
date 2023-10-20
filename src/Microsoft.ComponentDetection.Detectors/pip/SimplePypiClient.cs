@@ -65,7 +65,7 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     {
         this.environmentVariableService = environmentVariableService;
         this.logger = logger;
-        this.semaphore = new SemaphoreSlim(10, 10);
+        this.semaphore = new SemaphoreSlim(5);
     }
 
     public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);
@@ -287,7 +287,6 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
         this.cacheTelemetry.Dispose();
         this.cachedProjectWheelFiles.Dispose();
         this.cachedSimplePyPiProjects.Dispose();
-        HttpClient.Dispose();
         this.semaphore.Dispose();
     }
 }
