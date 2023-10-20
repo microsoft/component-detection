@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Text.Json.Serialization;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -25,11 +26,17 @@ public class ScanSettings : BaseSettings
 
     [CommandOption("--SourceDirectory")]
     [Description("Directory to operate on.")]
+    [JsonIgnore]
     public DirectoryInfo SourceDirectory { get; set; }
+
+    public string SourceDirectorySerialized => this.SourceDirectory?.ToString();
 
     [CommandOption("--SourceFileRoot")]
     [Description("Directory where source files can be found.")]
+    [JsonIgnore]
     public DirectoryInfo SourceFileRoot { get; set; }
+
+    public string SourceFileRootSerialized => this.SourceFileRoot?.ToString();
 
     [CommandOption("--DetectorArgs")]
     [Description(
@@ -50,7 +57,10 @@ public class ScanSettings : BaseSettings
 
     [CommandOption("--ManifestFile")]
     [Description("The file to write scan results to.")]
+    [JsonIgnore]
     public FileInfo ManifestFile { get; set; }
+
+    public string ManifestFileSerialized => this.ManifestFile?.ToString();
 
     [CommandOption("--PrintManifest")]
     [Description("Prints the manifest to standard output. Logging will be redirected to standard error.")]
