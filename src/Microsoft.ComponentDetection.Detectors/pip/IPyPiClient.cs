@@ -92,6 +92,17 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
     public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);
 
+    private static async Task<HttpResponseMessage> SendGetRequestAsync(
+        Uri uri,
+        HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.UserAgent.Add(ProductValue);
+        request.Headers.UserAgent.Add(CommentValue);
+        var response = await HttpClient.SendAsync(request, completionOption);
+        return response;
+    }
+
     public async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release)
     {
         var uri = release.Url;
@@ -102,7 +113,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         async Task<List<PipDependencySpecification>> FetchDependencies(ICacheEntry cacheEntry)
         {
             var dependencies = new List<PipDependencySpecification>();
-            using var response = await this.GetAndCachePyPiResponseAsync(uri);
+            using var response = await SendGetRequestAsync(uri, HttpCompletionOption.ResponseHeadersRead);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -264,15 +275,13 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         }
 
         this.logger.LogInformation("Getting Python data from {Uri}", uri);
-        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        request.Headers.UserAgent.Add(ProductValue);
-        request.Headers.UserAgent.Add(CommentValue);
-        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await SendGetRequestAsync(uri);
 
         // The `first - wins` response accepted into the cache. This might be different from the input if another caller wins the race.
         return await this.cachedResponses.GetOrCreateAsync(uri, cacheEntry =>
         {
-            cacheEntry.SlidingExpiration = CacheSlidingExpiration; // This entry will expire after CACHEINTERVALSECONDS seconds from last use
+            cacheEntry.SlidingExpiration =
+                CacheSlidingExpiration; // This entry will expire after CACHEINTERVALSECONDS seconds from last use
             cacheEntry.Size = 1; // Specify a size of 1 so a set number of entries can always be in the cache
             return Task.FromResult(response);
         });
