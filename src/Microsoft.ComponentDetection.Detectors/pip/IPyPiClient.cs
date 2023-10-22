@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Profiler.Api;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Caching.Memory;
@@ -48,6 +49,10 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
     private static readonly ProductInfoHeaderValue CommentValue = new("(+https://github.com/microsoft/component-detection)");
 
+    private static readonly TimeSpan CacheSlidingExpiration = TimeSpan.FromSeconds(CACHEINTERVALSECONDS);
+
+    private static int snapshots;
+
     // Keep telemetry on how the cache is being used for future refinements
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
 
@@ -63,7 +68,13 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
     /// A thread safe cache implementation which contains a mapping of URI -> HttpResponseMessage
     /// and has a limited number of entries which will expire after the cache fills or a specified interval.
     /// </summary>
-    private MemoryCache cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
+    private MemoryCache cachedResponses = new(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
+
+    /// <summary>
+    /// A thread safe cache mapping <see cref="Uri"/> -> <see cref="List&lt;PipDependencySpecification&gt;"/>
+    /// and has a limited number of entries which will expire after the cache fills or a specified interval.
+    /// </summary>
+    private MemoryCache cachedDependencies = new(new MemoryCacheOptions { SizeLimit = DEFAULTCACHEENTRIES });
 
     public PyPiClient() => this.cacheTelemetry = new PypiCacheTelemetryRecord()
     {
@@ -86,52 +97,78 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
     public async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release)
     {
-        var dependencies = new List<PipDependencySpecification>();
+        const int largePackageSize = 1024 * 1024 * 100;
+        if (release.Size > largePackageSize)
+        {
+            MemoryProfiler.CollectAllocations(true);
+            MemoryProfiler.GetSnapshot($"#{snapshots} - Before HTTP call");
+        }
 
         var uri = release.Url;
-        var response = await this.GetAndCachePyPiResponseAsync(uri);
+        var key = new CacheDependencyKey(name, version, uri);
 
-        if (!response.IsSuccessStatusCode)
+        return (await this.cachedDependencies.GetOrCreateAsync(key, FetchDependencies)).ToList();
+
+        async Task<List<PipDependencySpecification>> FetchDependencies(ICacheEntry cacheEntry)
         {
-            this.logger.LogWarning("Http GET at {ReleaseUrl} failed with status code {ResponseStatusCode}", release.Url, response.StatusCode);
-            return dependencies;
-        }
-
-        var package = new ZipArchive(await response.Content.ReadAsStreamAsync());
-
-        var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
-
-        // If there is no metadata file, the package doesn't have any declared dependencies
-        if (entry == null)
-        {
-            return dependencies;
-        }
-
-        var content = new List<string>();
-        using (var stream = entry.Open())
-        {
-            using var streamReader = new StreamReader(stream);
-
-            while (!streamReader.EndOfStream)
+            var dependencies = new List<PipDependencySpecification>();
+            using var response = await this.GetAndCachePyPiResponseAsync(uri);
+            if (release.Size > largePackageSize)
             {
-                var line = await streamReader.ReadLineAsync();
+                MemoryProfiler.GetSnapshot($"#{snapshots} - After HTTP call");
+            }
 
-                if (PipDependencySpecification.RequiresDistRegex.IsMatch(line))
+            if (!response.IsSuccessStatusCode)
+            {
+                this.logger.LogWarning("Http GET at {ReleaseUrl} failed with status code {ResponseStatusCode}", release.Url, response.StatusCode);
+                return new List<PipDependencySpecification>();
+            }
+
+            var package = new ZipArchive(await response.Content.ReadAsStreamAsync());
+            if (release.Size > largePackageSize)
+            {
+                MemoryProfiler.GetSnapshot($"#{snapshots} - After Zip");
+                MemoryProfiler.CollectAllocations(false);
+                snapshots++;
+            }
+
+            var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
+
+            // If there is no metadata file, the package doesn't have any declared dependencies
+            if (entry == null)
+            {
+                return new List<PipDependencySpecification>();
+            }
+
+            var content = new List<string>();
+            using (var stream = entry.Open())
+            {
+                using var streamReader = new StreamReader(stream);
+
+                while (!streamReader.EndOfStream)
                 {
-                    content.Add(line);
+                    var line = await streamReader.ReadLineAsync();
+
+                    if (PipDependencySpecification.RequiresDistRegex.IsMatch(line))
+                    {
+                        content.Add(line);
+                    }
                 }
             }
-        }
 
-        // Pull the packages that aren't conditional based on "extras"
-        // Right now we just want to resolve the graph as most comsumers will
-        // experience it
-        foreach (var deps in content.Where(x => !x.Contains("extra ==")))
-        {
-            dependencies.Add(new PipDependencySpecification(deps, true));
-        }
+            // Pull the packages that aren't conditional based on "extras"
+            // Right now we just want to resolve the graph as most consumers will
+            // experience it
+            foreach (var deps in content.Where(x => !x.Contains("extra ==")))
+            {
+                dependencies.Add(new PipDependencySpecification(deps, true));
+            }
 
-        return dependencies;
+            cacheEntry.SlidingExpiration = CacheSlidingExpiration;
+            cacheEntry.Size = 1;
+
+            return dependencies;
+        }
     }
 
     public async Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec)
@@ -250,12 +287,12 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.UserAgent.Add(ProductValue);
         request.Headers.UserAgent.Add(CommentValue);
-        var response = await HttpClient.SendAsync(request);
+        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
         // The `first - wins` response accepted into the cache. This might be different from the input if another caller wins the race.
         return await this.cachedResponses.GetOrCreateAsync(uri, cacheEntry =>
         {
-            cacheEntry.SlidingExpiration = TimeSpan.FromSeconds(CACHEINTERVALSECONDS); // This entry will expire after CACHEINTERVALSECONDS seconds from last use
+            cacheEntry.SlidingExpiration = CacheSlidingExpiration; // This entry will expire after CACHEINTERVALSECONDS seconds from last use
             cacheEntry.Size = 1; // Specify a size of 1 so a set number of entries can always be in the cache
             return Task.FromResult(response);
         });
@@ -272,6 +309,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         {
             this.logger.LogInformation("Setting IPyPiClient max cache entries to {MaxEntries}", maxEntries);
             this.cachedResponses = new MemoryCache(new MemoryCacheOptions { SizeLimit = maxEntries });
+            this.cachedDependencies = new MemoryCache(new MemoryCacheOptions { SizeLimit = maxEntries });
         }
 
         this.checkedMaxEntriesVariable = true;
@@ -282,5 +320,8 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
         this.cacheTelemetry.Dispose();
         this.cachedResponses.Dispose();
+        this.cachedDependencies.Dispose();
     }
+
+    private record CacheDependencyKey(string Name, string Version, Uri Uri);
 }
