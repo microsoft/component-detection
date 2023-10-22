@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Profiler.Api;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Caching.Memory;
@@ -50,8 +49,6 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
     private static readonly ProductInfoHeaderValue CommentValue = new("(+https://github.com/microsoft/component-detection)");
 
     private static readonly TimeSpan CacheSlidingExpiration = TimeSpan.FromSeconds(CACHEINTERVALSECONDS);
-
-    private static int snapshots;
 
     // Keep telemetry on how the cache is being used for future refinements
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
@@ -97,13 +94,6 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
     public async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release)
     {
-        const int largePackageSize = 1024 * 1024 * 100;
-        if (release.Size > largePackageSize)
-        {
-            MemoryProfiler.CollectAllocations(true);
-            MemoryProfiler.GetSnapshot($"#{snapshots} - Before HTTP call");
-        }
-
         var uri = release.Url;
         var key = new CacheDependencyKey(name, version, uri);
 
@@ -113,10 +103,6 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         {
             var dependencies = new List<PipDependencySpecification>();
             using var response = await this.GetAndCachePyPiResponseAsync(uri);
-            if (release.Size > largePackageSize)
-            {
-                MemoryProfiler.GetSnapshot($"#{snapshots} - After HTTP call");
-            }
 
             if (!response.IsSuccessStatusCode)
             {
@@ -125,12 +111,6 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
             }
 
             var package = new ZipArchive(await response.Content.ReadAsStreamAsync());
-            if (release.Size > largePackageSize)
-            {
-                MemoryProfiler.GetSnapshot($"#{snapshots} - After Zip");
-                MemoryProfiler.CollectAllocations(false);
-                snapshots++;
-            }
 
             var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
 
