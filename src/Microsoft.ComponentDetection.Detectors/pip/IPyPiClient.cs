@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Profiler.Api;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Caching.Memory;
@@ -49,6 +50,8 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
     private static readonly ProductInfoHeaderValue CommentValue = new("(+https://github.com/microsoft/component-detection)");
 
     private static readonly TimeSpan CacheSlidingExpiration = TimeSpan.FromSeconds(CACHEINTERVALSECONDS);
+
+    private static int snapshots;
 
     // Keep telemetry on how the cache is being used for future refinements
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
@@ -105,6 +108,20 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
     public async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release)
     {
+        const int largePackageSize = 1024 * 1024 * 100;
+        var shouldProfile = release.Size > largePackageSize;
+
+        // var shouldProfile = name == "torch";
+        if (shouldProfile)
+        {
+            MemoryProfiler.CollectAllocations(true);
+            MemoryProfiler.GetSnapshot($"#{snapshots} - Before HTTP call");
+            this.logger.LogInformation(
+                "Fetching {Name}, total memory: {Mem}",
+                name,
+                GC.GetTotalMemory(false));
+        }
+
         var uri = release.Url;
         var key = new CacheDependencyKey(name, version, uri);
 
@@ -112,33 +129,70 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
         async Task<List<PipDependencySpecification>> FetchDependencies(ICacheEntry cacheEntry)
         {
+            cacheEntry.SlidingExpiration = CacheSlidingExpiration;
+            cacheEntry.Size = 1;
             var dependencies = new List<PipDependencySpecification>();
             using var response = await SendGetRequestAsync(uri, HttpCompletionOption.ResponseHeadersRead);
+            if (shouldProfile)
+            {
+                MemoryProfiler.GetSnapshot($"#{snapshots} - After HTTP call");
+                this.logger.LogInformation(
+                    "Fetching {Name} completed! Total memory: {Mem}",
+                    name,
+                    GC.GetTotalMemory(false));
+            }
 
             if (!response.IsSuccessStatusCode)
             {
-                this.logger.LogWarning("Http GET at {ReleaseUrl} failed with status code {ResponseStatusCode}", release.Url, response.StatusCode);
+                this.logger.LogWarning(
+                    "Http GET at {ReleaseUrl} failed with status code {ResponseStatusCode}",
+                    release.Url,
+                    response.StatusCode);
                 return new List<PipDependencySpecification>();
             }
 
-            var package = new ZipArchive(await response.Content.ReadAsStreamAsync());
-
-            var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
-
-            // If there is no metadata file, the package doesn't have any declared dependencies
-            if (entry == null)
+            // Store the .whl file on the disk temporarily
+            var tempFilePath = Path.GetTempFileName();
+            await using (var fileStreamWrite =
+                         new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                return new List<PipDependencySpecification>();
+                await (await response.Content.ReadAsStreamAsync()).CopyToAsync(fileStreamWrite);
             }
 
             var content = new List<string>();
-            using (var stream = entry.Open())
+            await using (var fileStreamRead =
+                         new FileStream(tempFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
             {
+                using var package = new ZipArchive(fileStreamRead);
+                if (shouldProfile)
+                {
+                    MemoryProfiler.GetSnapshot($"#{snapshots} - After Zip");
+                    MemoryProfiler.CollectAllocations(false);
+                    snapshots++;
+                    this.logger.LogInformation(
+                        "Zip archive created for {Name}! Total memory: {Mem}",
+                        name,
+                        GC.GetTotalMemory(false));
+                }
+
+                var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
+
+                // If there is no metadata file, the package doesn't have any declared dependencies
+                if (entry == null)
+                {
+                    return new List<PipDependencySpecification>();
+                }
+
+                await using var stream = entry.Open();
                 using var streamReader = new StreamReader(stream);
 
                 while (!streamReader.EndOfStream)
                 {
                     var line = await streamReader.ReadLineAsync();
+                    if (line is null)
+                    {
+                        continue;
+                    }
 
                     if (PipDependencySpecification.RequiresDistRegex.IsMatch(line))
                     {
@@ -147,6 +201,8 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                 }
             }
 
+            File.Delete(tempFilePath);
+
             // Pull the packages that aren't conditional based on "extras"
             // Right now we just want to resolve the graph as most consumers will
             // experience it
@@ -154,9 +210,6 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
             {
                 dependencies.Add(new PipDependencySpecification(deps, true));
             }
-
-            cacheEntry.SlidingExpiration = CacheSlidingExpiration;
-            cacheEntry.Size = 1;
 
             return dependencies;
         }
