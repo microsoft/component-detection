@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Profiler.Api;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Caching.Memory;
@@ -50,8 +49,6 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
     private static readonly ProductInfoHeaderValue CommentValue = new("(+https://github.com/microsoft/component-detection)");
 
     private static readonly TimeSpan CacheSlidingExpiration = TimeSpan.FromSeconds(CACHEINTERVALSECONDS);
-
-    private static int snapshots;
 
     // Keep telemetry on how the cache is being used for future refinements
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
@@ -108,20 +105,6 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
     public async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release)
     {
-        const int largePackageSize = 1024 * 1024 * 100;
-        var shouldProfile = release.Size > largePackageSize;
-
-        // var shouldProfile = name == "torch";
-        if (shouldProfile)
-        {
-            MemoryProfiler.CollectAllocations(true);
-            MemoryProfiler.GetSnapshot($"#{snapshots} - Before HTTP call");
-            this.logger.LogInformation(
-                "Fetching {Name}, total memory: {Mem}",
-                name,
-                GC.GetTotalMemory(false));
-        }
-
         var uri = release.Url;
         var key = new CacheDependencyKey(name, version, uri);
 
@@ -131,16 +114,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         {
             cacheEntry.SlidingExpiration = CacheSlidingExpiration;
             cacheEntry.Size = 1;
-            var dependencies = new List<PipDependencySpecification>();
             using var response = await SendGetRequestAsync(uri, HttpCompletionOption.ResponseHeadersRead);
-            if (shouldProfile)
-            {
-                MemoryProfiler.GetSnapshot($"#{snapshots} - After HTTP call");
-                this.logger.LogInformation(
-                    "Fetching {Name} completed! Total memory: {Mem}",
-                    name,
-                    GC.GetTotalMemory(false));
-            }
 
             if (!response.IsSuccessStatusCode)
             {
@@ -164,16 +138,6 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                          new FileStream(tempFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 using var package = new ZipArchive(fileStreamRead);
-                if (shouldProfile)
-                {
-                    MemoryProfiler.GetSnapshot($"#{snapshots} - After Zip");
-                    MemoryProfiler.CollectAllocations(false);
-                    snapshots++;
-                    this.logger.LogInformation(
-                        "Zip archive created for {Name}! Total memory: {Mem}",
-                        name,
-                        GC.GetTotalMemory(false));
-                }
 
                 var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
 
@@ -206,12 +170,9 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
             // Pull the packages that aren't conditional based on "extras"
             // Right now we just want to resolve the graph as most consumers will
             // experience it
-            foreach (var deps in content.Where(x => !x.Contains("extra ==")))
-            {
-                dependencies.Add(new PipDependencySpecification(deps, true));
-            }
-
-            return dependencies;
+            return content.Where(x => !x.Contains("extra =="))
+                .Select(deps => new PipDependencySpecification(deps, true))
+                .ToList();
         }
     }
 
