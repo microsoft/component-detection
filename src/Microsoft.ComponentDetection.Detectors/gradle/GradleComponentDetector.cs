@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Gradle;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -12,7 +13,12 @@ using Microsoft.Extensions.Logging;
 
 public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 {
+    private const string ProdDepsEnvVar = "GRADLE_PROD_CONFIGURATIONS_REGEX";
+    private const string DevDepsEnvVar = "GRADLE_DEV_CONFIGURATIONS_REGEX";
     private static readonly Regex StartsWithLetterRegex = new Regex("^[A-Za-z]", RegexOptions.Compiled);
+
+    private readonly Regex prodDepsRegex;
+    private readonly Regex devDepsRegex;
 
     public GradleComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -22,6 +28,17 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.Logger = logger;
+        var envVar = Environment.GetEnvironmentVariable(ProdDepsEnvVar);
+        if (!string.IsNullOrEmpty(envVar))
+        {
+            this.prodDepsRegex = new Regex(envVar, RegexOptions.Compiled);
+        }
+
+        envVar = Environment.GetEnvironmentVariable(DevDepsEnvVar);
+        if (!string.IsNullOrEmpty(envVar))
+        {
+            this.devDepsRegex = new Regex(envVar, RegexOptions.Compiled);
+        }
     }
 
     public override string Id { get; } = "Gradle";
@@ -47,6 +64,9 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 
     private void ParseLockfile(ISingleFileComponentRecorder singleFileComponentRecorder, IComponentStream file)
     {
+        // Buildscript and Settings lockfiles are always development dependencies
+        var lockfileIsDevDependency = file.Location.EndsWith("buildscript-gradle.lockfile") || file.Location.EndsWith("settings-gradle.lockfile");
+
         string text;
         using (var reader = new StreamReader(file.Stream))
         {
@@ -68,7 +88,8 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
             if (line.Split(":").Length == 3)
             {
                 var detectedMavenComponent = new DetectedComponent(this.CreateMavenComponentFromFileLine(line));
-                singleFileComponentRecorder.RegisterUsage(detectedMavenComponent);
+                var devDependency = lockfileIsDevDependency || this.IsDevDependencyByConfigurations(line);
+                singleFileComponentRecorder.RegisterUsage(detectedMavenComponent, isDevelopmentDependency: devDependency);
             }
         }
     }
@@ -87,4 +108,38 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
     }
 
     private bool StartsWithLetter(string input) => StartsWithLetterRegex.IsMatch(input);
+
+    private bool IsDevDependencyByConfigurations(string line)
+    {
+        if (this.prodDepsRegex == null && this.devDepsRegex == null)
+        {
+            return false; // no regexes configured to check against
+        }
+
+        var equalsSeparatorIndex = line.IndexOf('=');
+        if (equalsSeparatorIndex == -1)
+        {
+            // We can't parse out the configuration. Maybe the project is using the one-lockfile-per-configuration format but
+            // this is deprecated in Gradle so we don't support it here, projects should upgrade to one-lockfile-per-project.
+            return false;
+        }
+
+        var configurations = line[(equalsSeparatorIndex + 1)..].Split(",");
+        return configurations.Select(c => this.IsDevDependencyByConfigurationName(c)).All(dev => dev);
+    }
+
+    private bool IsDevDependencyByConfigurationName(string configurationName)
+    {
+        if (this.devDepsRegex != null && this.devDepsRegex.IsMatch(configurationName))
+        {
+            return true;
+        }
+
+        if (this.prodDepsRegex != null && !this.prodDepsRegex.IsMatch(configurationName))
+        {
+            return true;
+        }
+
+        return false;
+    }
 }

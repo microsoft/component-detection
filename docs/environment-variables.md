@@ -18,4 +18,16 @@ When set to any value, enables detector experiments, a feature to compare the re
 same ecosystem. The available experiments are found in the [`Experiments\Config`](../src/Microsoft.ComponentDetection.Orchestrator/Experiments/Configs)
 folder.
 
+## `GRADLE_PROD_CONFIGURATIONS_REGEX`
+
+Enables dev-dependency categorization for the Gradle
+detector. Dependencies connected to Gradle configurations NOT matching
+the given regex are considered development dependencies.
+
+## `GRADLE_DEV_CONFIGURATIONS_REGEX`
+
+Enables dev-dependency categorization for the Gradle
+detector. Dependencies connected to Gradle configurations matching
+the given regex are considered development dependencies. 
+
 [1]: https://go.dev/ref/mod#go-mod-graph
