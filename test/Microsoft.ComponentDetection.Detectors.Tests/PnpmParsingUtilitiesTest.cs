@@ -45,7 +45,7 @@ shrinkwrapVersion: 3";
         parsedYaml.packages.Should().ContainKey("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
 
         var queryStringPackage = parsedYaml.packages["/query-string/4.3.4"];
-        queryStringPackage.dependencies.Should().HaveCount(1);
+        queryStringPackage.dependencies.Should().ContainSingle();
         queryStringPackage.dependencies.Should().ContainKey("@ms/items-view");
         queryStringPackage.dependencies["@ms/items-view"].Should().BeEquivalentTo("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
         queryStringPackage.dev.Should().BeEquivalentTo("false");

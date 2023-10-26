@@ -36,8 +36,8 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 0);
-        Assert.AreEqual(detectorResult.ResultCode, ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
     }
 
     [TestMethod]
@@ -51,15 +51,15 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(detectedComponents.Count(), 1);
-        Assert.AreEqual(detectorResult.ResultCode, ProcessingResultCode.Success);
+        detectedComponents.Should().ContainSingle();
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var mavenComponent = detectedComponents.First().Component as MavenComponent;
         var splitComponent = componentString.Split(':');
-        Assert.AreEqual(splitComponent[0], mavenComponent.GroupId);
-        Assert.AreEqual(splitComponent[1], mavenComponent.ArtifactId);
-        Assert.AreEqual(splitComponent[3], mavenComponent.Version);
-        Assert.AreEqual(ComponentType.Maven, mavenComponent.Type);
+        splitComponent.Should().HaveElementAt(0, mavenComponent.GroupId);
+        splitComponent.Should().HaveElementAt(1, mavenComponent.ArtifactId);
+        splitComponent.Should().HaveElementAt(3, mavenComponent.Version);
+        mavenComponent.Type.Should().Be(ComponentType.Maven);
     }
 
     [TestMethod]
@@ -103,14 +103,14 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(detectedComponents.Count(), 3);
-        Assert.AreEqual(detectorResult.ResultCode, ProcessingResultCode.Success);
+        detectedComponents.Should().HaveCount(3);
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var splitComponent = componentString.Split(':');
         var splitChildComponent = childComponentString.Split(':');
 
         var mavenComponent = detectedComponents.FirstOrDefault(x => (x.Component as MavenComponent).ArtifactId == splitChildComponent[1]);
-        Assert.IsNotNull(mavenComponent);
+        mavenComponent.Should().NotBeNull();
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<MavenComponent>(
             mavenComponent.Component.Id,

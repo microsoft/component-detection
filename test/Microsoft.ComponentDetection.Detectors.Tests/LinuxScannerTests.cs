@@ -60,7 +60,7 @@ public class LinuxScannerTests
     {
         var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", new[] { new DockerLayer { LayerIndex = 0, DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971" } }, 0)).First().LinuxComponents;
 
-        result.Should().HaveCount(1);
+        result.Should().ContainSingle();
         var package = result.First();
         package.Name.Should().Be("test");
         package.Version.Should().Be("1.0.0");

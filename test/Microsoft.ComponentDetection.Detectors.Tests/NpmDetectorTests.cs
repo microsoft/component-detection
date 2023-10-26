@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
@@ -28,12 +29,12 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
-        Assert.AreEqual(detectedComponents.First().Component.Type, ComponentType.Npm);
-        Assert.AreEqual(((NpmComponent)detectedComponents.First().Component).Name, componentName);
-        Assert.AreEqual(((NpmComponent)detectedComponents.First().Component).Version, version);
+        detectedComponents.Should().ContainSingle();
+        ComponentType.Npm.Should().Be(detectedComponents.First().Component.Type);
+        componentName.Should().Be(((NpmComponent)detectedComponents.First().Component).Name);
+        version.Should().Be(((NpmComponent)detectedComponents.First().Component).Version);
     }
 
     [TestMethod]
@@ -46,12 +47,12 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
-        Assert.AreEqual(authorName, ((NpmComponent)detectedComponents.First().Component).Author.Name);
-        Assert.AreEqual(authorEmail, ((NpmComponent)detectedComponents.First().Component).Author.Email);
+        ((NpmComponent)detectedComponents.First().Component).Author.Name.Should().Be(authorName);
+        ((NpmComponent)detectedComponents.First().Component).Author.Email.Should().Be(authorEmail);
     }
 
     [TestMethod]
@@ -64,12 +65,12 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
-        Assert.AreEqual(authorName, ((NpmComponent)detectedComponents.First().Component).Author.Name);
-        Assert.IsNull(((NpmComponent)detectedComponents.First().Component).Author.Email);
+        ((NpmComponent)detectedComponents.First().Component).Author.Name.Should().Be(authorName);
+        ((NpmComponent)detectedComponents.First().Component).Author.Email.Should().BeNull();
     }
 
     [TestMethod]
@@ -84,12 +85,12 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
-        Assert.AreEqual(authorName, ((NpmComponent)detectedComponents.First().Component).Author.Name);
-        Assert.AreEqual(authorEmail, ((NpmComponent)detectedComponents.First().Component).Author.Email);
+        ((NpmComponent)detectedComponents.First().Component).Author.Name.Should().Be(authorName);
+        ((NpmComponent)detectedComponents.First().Component).Author.Email.Should().Be(authorEmail);
     }
 
     [TestMethod]
@@ -103,12 +104,12 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
-        Assert.AreEqual(authorName, ((NpmComponent)detectedComponents.First().Component).Author.Name);
-        Assert.IsNull(((NpmComponent)detectedComponents.First().Component).Author.Email);
+        ((NpmComponent)detectedComponents.First().Component).Author.Name.Should().Be(authorName);
+        ((NpmComponent)detectedComponents.First().Component).Author.Email.Should().BeNull();
     }
 
     [TestMethod]
@@ -123,11 +124,11 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
-        Assert.IsNull(((NpmComponent)detectedComponents.First().Component).Author);
+        ((NpmComponent)detectedComponents.First().Component).Author.Should().BeNull();
     }
 
     [TestMethod]
@@ -141,12 +142,12 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
-        Assert.AreEqual(authorName, ((NpmComponent)detectedComponents.First().Component).Author.Name);
-        Assert.IsNull(((NpmComponent)detectedComponents.First().Component).Author.Email);
+        ((NpmComponent)detectedComponents.First().Component).Author.Name.Should().Be(authorName);
+        ((NpmComponent)detectedComponents.First().Component).Author.Email.Should().BeNull();
     }
 
     [TestMethod]
@@ -161,12 +162,12 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
-        Assert.AreEqual(authorName, ((NpmComponent)detectedComponents.First().Component).Author.Name);
-        Assert.AreEqual(authorEmail, ((NpmComponent)detectedComponents.First().Component).Author.Email);
+        ((NpmComponent)detectedComponents.First().Component).Author.Name.Should().Be(authorName);
+        ((NpmComponent)detectedComponents.First().Component).Author.Email.Should().Be(authorEmail);
     }
 
     [TestMethod]
@@ -181,11 +182,11 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
-        Assert.IsNull(((NpmComponent)detectedComponents.First().Component).Author);
+        ((NpmComponent)detectedComponents.First().Component).Author.Should().BeNull();
     }
 
     [TestMethod]
@@ -200,20 +201,20 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
-        Assert.IsNull(((NpmComponent)detectedComponents.First().Component).Author);
+        ((NpmComponent)detectedComponents.First().Component).Author.Should().BeNull();
     }
 
     private static void AssertDetectedComponentCount(IEnumerable<DetectedComponent> detectedComponents, int expectedCount)
     {
-        Assert.AreEqual(expectedCount, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(expectedCount);
     }
 
     private static void AssertNpmComponent(IEnumerable<DetectedComponent> detectedComponents)
     {
-        Assert.AreEqual(detectedComponents.First().Component.Type, ComponentType.Npm);
+        detectedComponents.First().Component.Type.Should().Be(ComponentType.Npm);
     }
 }

@@ -46,15 +46,15 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(4, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(4);
         foreach (var component in detectedComponents)
         {
             componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
                 component.Component.Id,
                 parentComponent0 => parentComponent0.Name == componentName0 && parentComponent0.Version == version0);
-            Assert.IsFalse(string.IsNullOrWhiteSpace(((NpmComponent)component.Component).Hash));
+            ((NpmComponent)component.Component).Hash.Should().NotBeNullOrWhiteSpace();
         }
     }
 
@@ -72,8 +72,8 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -85,8 +85,8 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -117,10 +117,10 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(4, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(4);
 
         var component0 = detectedComponents.FirstOrDefault(x => x.Component.Id.Contains(componentName0));
 
@@ -181,11 +181,11 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
         var npmComponent2Id = new NpmComponent(componentName2, version2).Id;
 
         var dependenciesFor0 = graph.GetDependenciesForComponent(npmComponent0Id);
-        Assert.AreEqual(dependenciesFor0.Count(), 2);
+        dependenciesFor0.Should().HaveCount(2);
         var dependenciesFor2 = graph.GetDependenciesForComponent(npmComponent2Id);
-        Assert.AreEqual(dependenciesFor2.Count(), 1);
+        dependenciesFor2.Should().ContainSingle();
 
-        Assert.IsTrue(dependenciesFor0.Contains(npmComponent2Id));
+        dependenciesFor0.Should().Contain(npmComponent2Id);
     }
 
     [TestMethod]
@@ -237,8 +237,8 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -290,8 +290,8 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -353,8 +353,8 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern, fileLocation: packageJsonFileLocation)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
     }
 
     [TestMethod]
@@ -408,10 +408,10 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(2, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(2);
 
         foreach (var component in detectedComponents)
         {
@@ -439,10 +439,10 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(4, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(4);
         foreach (var component in detectedComponents)
         {
             componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
@@ -488,10 +488,10 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .WithFile(this.packageJsonFileName, packageJsonTemplate2, this.packageJsonSearchPattern, fileLocation: packageJsonUnderNodeModules)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(4, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(4);
         foreach (var component in detectedComponents)
         {
             componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(

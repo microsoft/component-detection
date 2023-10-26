@@ -58,7 +58,7 @@ other=2.1";
 
         var service = new PythonCommandService(this.commandLineInvokationService.Object);
 
-        Assert.IsTrue(await service.PythonExistsAsync());
+        (await service.PythonExistsAsync()).Should().BeTrue();
     }
 
     [TestMethod]
@@ -68,7 +68,7 @@ other=2.1";
 
         var service = new PythonCommandService(this.commandLineInvokationService.Object);
 
-        Assert.IsFalse(await service.PythonExistsAsync());
+        (await service.PythonExistsAsync()).Should().BeFalse();
     }
 
     [TestMethod]
@@ -78,7 +78,7 @@ other=2.1";
 
         var service = new PythonCommandService(this.commandLineInvokationService.Object);
 
-        Assert.IsTrue(await service.PythonExistsAsync("test"));
+        (await service.PythonExistsAsync("test")).Should().BeTrue();
     }
 
     [TestMethod]
@@ -88,7 +88,7 @@ other=2.1";
 
         var service = new PythonCommandService(this.commandLineInvokationService.Object);
 
-        Assert.IsFalse(await service.PythonExistsAsync("test"));
+        (await service.PythonExistsAsync("test")).Should().BeFalse();
     }
 
     [TestMethod]
@@ -105,7 +105,7 @@ other=2.1";
 
         var result = await service.ParseFileAsync(fakePath);
 
-        Assert.AreEqual(0, result.Count);
+        result.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -122,7 +122,7 @@ other=2.1";
 
         var result = await service.ParseFileAsync(fakePath);
 
-        Assert.AreEqual(0, result.Count);
+        result.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -139,8 +139,8 @@ other=2.1";
 
         var result = await service.ParseFileAsync(fakePath);
 
-        Assert.AreEqual(1, result.Count);
-        Assert.AreEqual("None", result.First().PackageString);
+        result.Should().ContainSingle();
+        result.First().PackageString.Should().Be("None");
     }
 
     [TestMethod]
@@ -158,11 +158,11 @@ other=2.1";
         var result = await service.ParseFileAsync(fakePath);
         var expected = new string[] { "knack==0.4.1", "setuptools>=1.0,!=1.1", "vsts-cli-common==0.1.3", "vsts-cli-admin==0.1.3", "vsts-cli-build==0.1.3", "vsts-cli-code==0.1.3", "vsts-cli-team==0.1.3", "vsts-cli-package==0.1.3", "vsts-cli-work==0.1.3" }.Select<string, (string, GitComponent)>(dep => (dep, null)).ToArray();
 
-        Assert.AreEqual(9, result.Count);
+        result.Should().HaveCount(9);
 
         for (var i = 0; i < 9; i++)
         {
-            Assert.AreEqual(expected[i], result[i]);
+            result.Should().HaveElementAt(i, expected[i]);
         }
     }
 
@@ -187,11 +187,11 @@ other=2.1";
             var result = await service.ParseFileAsync(testPath);
             var expected = new string[] { "knack==0.4.1", "vsts-cli-common==0.1.3" }.Select<string, (string, GitComponent)>(dep => (dep, null)).ToArray();
 
-            Assert.AreEqual(expected.Length, result.Count);
+            result.Should().HaveCount(expected.Length);
 
             for (var i = 0; i < expected.Length; i++)
             {
-                Assert.AreEqual(expected[i], result[i]);
+                result.Should().HaveElementAt(i, expected[i]);
             }
         }
         finally
@@ -223,8 +223,8 @@ other=2.1";
             var result = await service.ParseFileAsync(testPath);
             (string, GitComponent) expected = ("knack==0.4.1", null);
 
-            Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(expected, result.First());
+            result.Should().ContainSingle();
+            result.First().Should().Be(expected);
         }
         finally
         {
@@ -240,7 +240,7 @@ other=2.1";
     {
         await this.SetupAndParseReqsTxtAsync(this.requirementstxtBasicGitComponent, parseResult =>
         {
-            parseResult.Count.Should().Be(1);
+            parseResult.Should().ContainSingle();
 
             var (packageString, component) = parseResult.Single();
             packageString.Should().BeNull();
@@ -257,7 +257,7 @@ other=2.1";
     {
         await this.SetupAndParseReqsTxtAsync(this.requirementstxtGitComponentAndEnvironmentMarker, parseResult =>
         {
-            parseResult.Count.Should().Be(1);
+            parseResult.Should().ContainSingle();
 
             var (packageString, component) = parseResult.Single();
             packageString.Should().BeNull();
@@ -274,7 +274,7 @@ other=2.1";
     {
         await this.SetupAndParseReqsTxtAsync(this.requirementstxtGitComponentAndComment, parseResult =>
         {
-            parseResult.Count.Should().Be(1);
+            parseResult.Should().ContainSingle();
 
             var (packageString, component) = parseResult.Single();
             packageString.Should().BeNull();
@@ -291,7 +291,7 @@ other=2.1";
     {
         await this.SetupAndParseReqsTxtAsync(this.requirementstxtGitComponentAndCommentAndEnvironmentMarker, parseResult =>
         {
-            parseResult.Count.Should().Be(1);
+            parseResult.Should().ContainSingle();
 
             var (packageString, component) = parseResult.Single();
             packageString.Should().BeNull();
@@ -308,7 +308,7 @@ other=2.1";
     {
         await this.SetupAndParseReqsTxtAsync(this.requirementstxtGitComponentBranchInsteadOfCommitId, parseResult =>
         {
-            parseResult.Count.Should().Be(0);
+            parseResult.Should().BeEmpty();
         });
     }
 
@@ -317,7 +317,7 @@ other=2.1";
     {
         await this.SetupAndParseReqsTxtAsync(this.requirementstxtGitComponentReleaseInsteadOfCommitId, parseResult =>
         {
-            parseResult.Count.Should().Be(0);
+            parseResult.Should().BeEmpty();
         });
     }
 
@@ -326,7 +326,7 @@ other=2.1";
     {
         await this.SetupAndParseReqsTxtAsync(this.requirementstxtGitComponentCommitIdWrongLength, parseResult =>
         {
-            parseResult.Count.Should().Be(0);
+            parseResult.Should().BeEmpty();
         });
     }
 
@@ -335,7 +335,7 @@ other=2.1";
     {
         await this.SetupAndParseReqsTxtAsync(this.requirementstxtDoubleGitComponents, parseResult =>
         {
-            parseResult.Count.Should().Be(2);
+            parseResult.Should().HaveCount(2);
 
             var (packageString, component) = parseResult.First();
             packageString.Should().BeNull();
@@ -360,7 +360,7 @@ other=2.1";
     {
         await this.SetupAndParseReqsTxtAsync(this.requirementstxtGitComponentWrappedinRegularComponents, parseResult =>
         {
-            parseResult.Count.Should().Be(3);
+            parseResult.Should().HaveCount(3);
 
             var (packageString, component) = parseResult.First();
             packageString.Should().NotBeNull();
