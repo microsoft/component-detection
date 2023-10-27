@@ -94,8 +94,9 @@ public class YarnBlockFileTests
         block.Title.Should().Be("block1");
         block.Children.Should().ContainSingle();
         block.Values["property"].Should().Be("value");
-        block.Children.Single(x => x.Title == "block2").Values.Should().ContainValue("otherProperty")
-            .Which.Should().Be("otherValue");
+        block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
+        var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
+        value.Should().Be("otherValue");
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
         file.YarnLockVersion.Should().Be(YarnLockVersion.V1);
     }
@@ -204,8 +205,8 @@ public class YarnBlockFileTests
         block.Title.Should().Be("block1");
         block.Children.Should().ContainSingle();
         block.Values["property"].Should().Be("value");
-        block.Children.Single(x => x.Title == "block2").Values.Should().ContainValue("otherProperty")
-            .Which.Should().Be("otherValue");
+        block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
+        var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
         file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
     }
@@ -243,8 +244,8 @@ public class YarnBlockFileTests
         block.Title.Should().Be("block1");
         block.Children.Should().ContainSingle();
         block.Values["property"].Should().Be("value");
-        block.Children.Single(x => x.Title == "block2").Values.Should().ContainValue("otherProperty")
-            .Which.Should().Be("otherValue");
+        block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
+        var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
         file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
     }
