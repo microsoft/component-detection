@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
@@ -29,9 +30,9 @@ public class YarnParserTests
     {
         var parser = new YarnLockParser(this.loggerMock.Object);
 
-        void Action() => parser.Parse(this.recorderMock.Object, null, this.loggerMock.Object);
+        var action = () => parser.Parse(this.recorderMock.Object, null, this.loggerMock.Object);
 
-        Assert.ThrowsException<ArgumentNullException>(Action);
+        action.Should().ThrowExactly<ArgumentNullException>();
     }
 
     [TestMethod]
@@ -44,7 +45,7 @@ public class YarnParserTests
         var blockFile = new Mock<IYarnBlockFile>();
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
 
-        Assert.IsTrue(parser.CanParse(blockFile.Object.YarnLockVersion));
+        parser.CanParse(blockFile.Object.YarnLockVersion).Should().BeTrue();
     }
 
     [TestMethod]
@@ -57,7 +58,7 @@ public class YarnParserTests
         var blockFile = new Mock<IYarnBlockFile>();
         blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
 
-        Assert.IsTrue(parser.CanParse(blockFile.Object.YarnLockVersion));
+        parser.CanParse(blockFile.Object.YarnLockVersion).Should().BeTrue();
     }
 
     [TestMethod]
@@ -74,8 +75,8 @@ public class YarnParserTests
 
         var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
-        Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
-        Assert.AreEqual(0, file.Entries.Count());
+        file.LockVersion.Should().Be(YarnLockVersion.V1);
+        file.Entries.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -104,8 +105,8 @@ public class YarnParserTests
 
         var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
-        Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
-        Assert.AreEqual(3, file.Entries.Count());
+        file.LockVersion.Should().Be(YarnLockVersion.V1);
+        file.Entries.Should().HaveCount(3);
 
         foreach (var entry in file.Entries)
         {
@@ -140,11 +141,11 @@ public class YarnParserTests
 
         var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
-        Assert.AreEqual(YarnLockVersion.V1, file.LockVersion);
-        Assert.AreEqual(2, file.Entries.Count());
+        file.LockVersion.Should().Be(YarnLockVersion.V1);
+        file.Entries.Should().HaveCount(2);
 
-        Assert.IsNotNull(file.Entries.FirstOrDefault(x => x.LookupKey == "a@1.0.0"));
-        Assert.IsNotNull(file.Entries.FirstOrDefault(x => x.LookupKey == "b@2.4.6"));
+        file.Entries.FirstOrDefault(x => x.LookupKey == "a@1.0.0").Should().NotBeNull();
+        file.Entries.FirstOrDefault(x => x.LookupKey == "b@2.4.6").Should().NotBeNull();
     }
 
     private YarnBlock CreateDependencyBlock(IDictionary<string, string> dependencies)
@@ -185,15 +186,15 @@ public class YarnParserTests
         var componentName = block.Title.Split(',').Select(x => x.Trim()).First().Split('@')[0];
         var blockVersions = block.Title.Split(',').Select(x => x.Trim()).Select(x => x.Split('@')[1]);
 
-        Assert.AreEqual(componentName, entry.Name);
+        entry.Name.Should().Be(componentName);
 
         foreach (var version in blockVersions)
         {
-            Assert.IsTrue(entry.Satisfied.Contains(YarnLockParser.NormalizeVersion(version)));
+            entry.Satisfied.Should().Contain(YarnLockParser.NormalizeVersion(version));
         }
 
-        Assert.AreEqual(block.Values["version"], entry.Version);
-        Assert.AreEqual(block.Values["resolved"], entry.Resolved);
+        entry.Version.Should().Be(block.Values["version"]);
+        entry.Resolved.Should().Be(block.Values["resolved"]);
 
         var dependencies = block.Children.SingleOrDefault(x => x.Title == "dependencies");
 
@@ -201,7 +202,7 @@ public class YarnParserTests
         {
             foreach (var dependency in dependencies.Values)
             {
-                Assert.IsNotNull(entry.Dependencies.SingleOrDefault(x => x.Name == dependency.Key && x.Version == dependency.Value));
+                entry.Dependencies.SingleOrDefault(x => x.Name == dependency.Key && x.Version == dependency.Value).Should().NotBeNull();
             }
         }
     }

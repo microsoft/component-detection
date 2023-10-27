@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -42,9 +43,9 @@ public class YarnBlockFileTests
             file = await YarnBlockFile.CreateBlockFileAsync(stream);
         }
 
-        Assert.AreEqual(0, file.Count());
-        Assert.AreEqual(string.Empty, file.VersionHeader);
-        Assert.AreEqual(YarnLockVersion.Invalid, file.YarnLockVersion);
+        file.Should().BeEmpty();
+        file.VersionHeader.Should().Be(string.Empty);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.Invalid);
     }
 
     [TestMethod]
@@ -62,9 +63,9 @@ public class YarnBlockFileTests
 
         var file = await YarnBlockFile.CreateBlockFileAsync(stream);
 
-        Assert.AreEqual(0, file.Count());
-        Assert.AreEqual(yarnLockFileVersionString, file.VersionHeader);
-        Assert.AreEqual(YarnLockVersion.V1, file.YarnLockVersion);
+        file.Should().BeEmpty();
+        file.VersionHeader.Should().Be(yarnLockFileVersionString);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.V1);
     }
 
     [TestMethod]
@@ -90,12 +91,14 @@ public class YarnBlockFileTests
 
         var block = file.Single();
 
-        Assert.AreEqual(block.Title, "block1");
-        Assert.AreEqual(1, block.Children.Count);
-        Assert.AreEqual("value", block.Values["property"]);
-        Assert.AreEqual("otherValue", block.Children.Single(x => x.Title == "block2").Values["otherProperty"]);
-        Assert.AreEqual(yarnLockFileVersionString, file.VersionHeader);
-        Assert.AreEqual(YarnLockVersion.V1, file.YarnLockVersion);
+        block.Title.Should().Be("block1");
+        block.Children.Should().ContainSingle();
+        block.Values["property"].Should().Be("value");
+        block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
+        var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
+        value.Should().Be("otherValue");
+        file.VersionHeader.Should().Be(yarnLockFileVersionString);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.V1);
     }
 
     [TestMethod]
@@ -137,9 +140,9 @@ public class YarnBlockFileTests
 
         var file = await YarnBlockFile.CreateBlockFileAsync(stream);
 
-        Assert.AreEqual(3, file.Count());
-        Assert.AreEqual(yarnLockFileVersionString, file.VersionHeader);
-        Assert.AreEqual(YarnLockVersion.V1, file.YarnLockVersion);
+        file.Should().HaveCount(3);
+        file.VersionHeader.Should().Be(yarnLockFileVersionString);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.V1);
     }
 
     [TestMethod]
@@ -164,9 +167,9 @@ public class YarnBlockFileTests
 
         var file = await YarnBlockFile.CreateBlockFileAsync(stream);
 
-        Assert.AreEqual(0, file.Count());
-        Assert.AreEqual(yarnLockFileVersionString, file.VersionHeader);
-        Assert.AreEqual(YarnLockVersion.V2, file.YarnLockVersion);
+        file.Should().BeEmpty();
+        file.VersionHeader.Should().Be(yarnLockFileVersionString);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
     }
 
     [TestMethod]
@@ -199,12 +202,13 @@ public class YarnBlockFileTests
 
         var block = file.Single();
 
-        Assert.AreEqual(block.Title, "block1");
-        Assert.AreEqual(1, block.Children.Count);
-        Assert.AreEqual("value", block.Values["property"]);
-        Assert.AreEqual("otherValue", block.Children.Single(x => x.Title == "block2").Values["otherProperty"]);
-        Assert.AreEqual(yarnLockFileVersionString, file.VersionHeader);
-        Assert.AreEqual(YarnLockVersion.V2, file.YarnLockVersion);
+        block.Title.Should().Be("block1");
+        block.Children.Should().ContainSingle();
+        block.Values["property"].Should().Be("value");
+        block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
+        var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
+        file.VersionHeader.Should().Be(yarnLockFileVersionString);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
     }
 
     [TestMethod]
@@ -237,12 +241,13 @@ public class YarnBlockFileTests
 
         var block = file.Single();
 
-        Assert.AreEqual(block.Title, "block1");
-        Assert.AreEqual(1, block.Children.Count);
-        Assert.AreEqual("value", block.Values["property"]);
-        Assert.AreEqual("otherValue", block.Children.Single(x => x.Title == "block2").Values["otherProperty"]);
-        Assert.AreEqual(yarnLockFileVersionString, file.VersionHeader);
-        Assert.AreEqual(YarnLockVersion.V2, file.YarnLockVersion);
+        block.Title.Should().Be("block1");
+        block.Children.Should().ContainSingle();
+        block.Values["property"].Should().Be("value");
+        block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
+        var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
+        file.VersionHeader.Should().Be(yarnLockFileVersionString);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
     }
 
     [TestMethod]
@@ -287,8 +292,8 @@ public class YarnBlockFileTests
 
         var file = await YarnBlockFile.CreateBlockFileAsync(stream);
 
-        Assert.AreEqual(3, file.Count());
-        Assert.AreEqual(yarnLockFileVersionString, file.VersionHeader);
-        Assert.AreEqual(YarnLockVersion.V2, file.YarnLockVersion);
+        file.Should().HaveCount(3);
+        file.VersionHeader.Should().Be(yarnLockFileVersionString);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
     }
 }

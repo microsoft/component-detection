@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
@@ -55,7 +56,7 @@ public class PipResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
@@ -66,7 +67,7 @@ public class PipResolverTests
         expectedB.Children.Add(expectedC);
         expectedC.Parents.Add(expectedB);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
     }
 
     [TestMethod]
@@ -98,7 +99,7 @@ public class PipResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
@@ -109,7 +110,7 @@ public class PipResolverTests
         expectedB.Children.Add(expectedC);
         expectedC.Parents.Add(expectedB);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
     }
 
     [TestMethod]
@@ -138,7 +139,7 @@ public class PipResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
@@ -146,7 +147,7 @@ public class PipResolverTests
         expectedA.Children.Add(expectedB);
         expectedB.Parents.Add(expectedA);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
         this.pyPiClient.Verify(x => x.FetchPackageDependenciesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PythonProjectRelease>()), Times.Exactly(2));
     }
 
@@ -181,7 +182,7 @@ public class PipResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
@@ -194,7 +195,7 @@ public class PipResolverTests
         expectedC.Parents.Add(expectedA);
         expectedC.Parents.Add(expectedB);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
         this.pyPiClient.Verify(x => x.FetchPackageDependenciesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PythonProjectRelease>()), Times.Exactly(4));
     }
 

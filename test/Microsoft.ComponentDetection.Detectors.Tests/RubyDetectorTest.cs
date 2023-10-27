@@ -70,10 +70,10 @@ BUNDLED WITH
             .WithFile("2Gemfile.lock", gemFileLockContent2)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(7, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(7);
 
         this.AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
         this.AssertRubyComponentNameAndVersion(detectedComponents, "actioncable", "5.2.1");
@@ -99,10 +99,10 @@ BUNDLED WITH
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(2, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(2);
 
         // we do not record invalid/unknown versions
         this.AssertRubyComponentNameAndVersion(detectedComponents, "CFPropertyList", "3.0.4");
@@ -132,10 +132,10 @@ BUNDLED WITH
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(6, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(6);
 
         this.AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
         this.AssertRubyComponentNameAndVersion(detectedComponents, "actioncable", "5.2.1");
@@ -166,10 +166,10 @@ BUNDLED WITH
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(5, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(5);
 
         this.AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
         this.AssertRubyComponentNameAndVersion(detectedComponents, "actioncable", "5.2.1");
@@ -196,10 +196,10 @@ BUNDLED WITH
             .WithFile("1Gemfile.lock", gemFileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(3, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(3);
 
         this.AssertRubyComponentNameAndVersion(detectedComponents, "acme-client", "2.0.0");
         this.AssertRubyComponentNameAndVersion(detectedComponents, "faraday", "1.0.0");
@@ -249,20 +249,20 @@ GEM
         acmeClientDependencies.Should().Contain(dep => dep == actioncableComponentId);
 
         var actionCableDependencies = dependencyGraph.GetDependenciesForComponent(actioncableComponentId);
-        actionCableDependencies.Should().HaveCount(1);
+        actionCableDependencies.Should().ContainSingle();
         actionCableDependencies.Should().Contain(dep => dep == nior4rComponentId);
 
         var faradayDependencies = dependencyGraph.GetDependenciesForComponent(faradayComponentId);
-        faradayDependencies.Should().HaveCount(0);
+        faradayDependencies.Should().BeEmpty();
 
         var niorDependencies = dependencyGraph.GetDependenciesForComponent(nior4rComponentId);
-        niorDependencies.Should().HaveCount(0);
+        niorDependencies.Should().BeEmpty();
 
         var websocketDependencies = dependencyGraph.GetDependenciesForComponent(websocketDriverComponentId);
-        websocketDependencies.Should().HaveCount(0);
+        websocketDependencies.Should().BeEmpty();
 
         var mailComponentDependencies = dependencyGraph.GetDependenciesForComponent(mailComponentId);
-        mailComponentDependencies.Should().HaveCount(1);
+        mailComponentDependencies.Should().ContainSingle();
         mailComponentDependencies.Should().Contain(dep => dep == websocketDriverComponentId);
     }
 
@@ -341,7 +341,7 @@ GEM
             .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(3, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(3);
         this.AssertGitComponentHashAndUrl(detectedComponents, commitHash: "commit-hash-1", repositoryUrl: "https://github.com/test/abc.git");
         this.AssertGitComponentHashAndUrl(detectedComponents, commitHash: "commit-hash-2", repositoryUrl: "https://github.com/mikel/mail.git");
         this.AssertRubyComponentNameAndVersion(detectedComponents, name: "mini_mime", version: "2.0.0");
@@ -395,7 +395,7 @@ PATH
             .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(3, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(3);
 
         this.AssertRubyComponentNameAndVersion(detectedComponents, name: "mini_mime", version: "2.0.0");
         this.AssertRubyComponentNameAndVersion(detectedComponents, name: "test", version: "1.0.0");
@@ -404,27 +404,26 @@ PATH
 
     private void AssertRubyComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
-        Assert.IsNotNull(
-            detectedComponents.SingleOrDefault(c =>
+        detectedComponents.SingleOrDefault(c =>
                 c.Component is RubyGemsComponent component &&
                 component.Name.Equals(name) &&
-                component.Version.Equals(version)),
+                component.Version.Equals(version)).Should().NotBeNull(
             $"Component with name {name} and version {version} was not found");
     }
 
     private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
     {
-        Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
+        detectedComponents.SingleOrDefault(c =>
             c.Component is GitComponent component &&
             component.CommitHash.Equals(commitHash) &&
-            component.RepositoryUrl.Equals(repositoryUrl)));
+            component.RepositoryUrl.Equals(repositoryUrl)).Should().NotBeNull();
     }
 
     private void AssertGitComponentAsRootAndGitComponentAsSubDependency(IComponentRecorder recorder, string rootHash, string subDependencyHash)
     {
         var childDep = recorder.GetDetectedComponents().First(x => (x.Component as GitComponent)?.CommitHash == subDependencyHash);
-        Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
+        recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
             childDep.Component.Id,
-            parent => parent.CommitHash == rootHash));
+            parent => parent.CommitHash == rootHash).Should().BeTrue();
     }
 }

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -104,7 +105,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
             .WithFile(spdxFileName, spdxFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
@@ -119,13 +120,13 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
         var checksum = BitConverter.ToString(SHA1.HashData(Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();
 #pragma warning restore CA5350
 
-        Assert.AreEqual(1, components.Count);
-        Assert.AreEqual(sbomComponent.Name, "Test 1.0.0");
-        Assert.AreEqual(sbomComponent.RootElementId, "SPDXRef-RootPackage");
-        Assert.AreEqual(sbomComponent.DocumentNamespace, new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
-        Assert.AreEqual(sbomComponent.SpdxVersion, "SPDX-2.2");
-        Assert.AreEqual(sbomComponent.Checksum, checksum);
-        Assert.AreEqual(sbomComponent.Path, Path.Combine(Path.GetTempPath(), spdxFileName));
+        components.Should().ContainSingle();
+        sbomComponent.Name.Should().Be("Test 1.0.0");
+        sbomComponent.RootElementId.Should().Be("SPDXRef-RootPackage");
+        sbomComponent.DocumentNamespace.Should().Be(new Uri("https://sbom.microsoft/Test/1.0.0/61de1a5-57cc-4732-9af5-edb321b4a7ee"));
+        sbomComponent.SpdxVersion.Should().Be("SPDX-2.2");
+        sbomComponent.Checksum.Should().Be(checksum);
+        sbomComponent.Path.Should().Be(Path.Combine(Path.GetTempPath(), spdxFileName));
     }
 
     [TestMethod]
@@ -137,11 +138,11 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
             .WithFile("manifest.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
-        Assert.IsFalse(components.Any());
+        components.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -153,10 +154,10 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
             .WithFile("manifest.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
-        Assert.IsFalse(components.Any());
+        components.Should().BeEmpty();
     }
 }

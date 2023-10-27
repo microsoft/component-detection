@@ -1,6 +1,7 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -22,10 +23,10 @@ public class GoComponentTests
     public void ConstructorTest_NameVersion()
     {
         var goComponent = new GoComponent(TestName, TestVersion);
-        Assert.AreEqual(TestName, goComponent.Name);
-        Assert.AreEqual(TestVersion, goComponent.Version);
-        Assert.AreEqual(string.Empty, goComponent.Hash);
-        Assert.AreEqual($"{TestName} {TestVersion} - Go", goComponent.Id);
+        goComponent.Name.Should().Be(TestName);
+        goComponent.Version.Should().Be(TestVersion);
+        goComponent.Hash.Should().Be(string.Empty);
+        goComponent.Id.Should().Be($"{TestName} {TestVersion} - Go");
     }
 
     [TestMethod]
@@ -46,10 +47,10 @@ public class GoComponentTests
     public void ConstructorTest_NameVersionHash()
     {
         var goComponent = new GoComponent(TestName, TestVersion, TestHash);
-        Assert.AreEqual(TestName, goComponent.Name);
-        Assert.AreEqual(TestVersion, goComponent.Version);
-        Assert.AreEqual(TestHash, goComponent.Hash);
-        Assert.AreEqual($"{TestName} {TestVersion} - Go", goComponent.Id);
+        goComponent.Name.Should().Be(TestName);
+        goComponent.Version.Should().Be(TestVersion);
+        goComponent.Hash.Should().Be(TestHash);
+        goComponent.Id.Should().Be($"{TestName} {TestVersion} - Go");
     }
 
     [TestMethod]
@@ -79,11 +80,11 @@ public class GoComponentTests
         var goComponent1 = new GoComponent(TestName, TestVersion, TestHash);
         var goComponent2 = new GoComponent(TestName, TestVersion, TestHash);
         var goComponent3 = new GoComponent(TestName, TestVersion, Guid.NewGuid().ToString());
-        Assert.IsTrue(goComponent1.Equals(goComponent2));
-        Assert.IsTrue(((object)goComponent1).Equals(goComponent2));
+        goComponent1.Equals(goComponent2).Should().BeTrue();
+        ((object)goComponent1).Equals(goComponent2).Should().BeTrue();
 
-        Assert.IsFalse(goComponent1.Equals(goComponent3));
-        Assert.IsFalse(((object)goComponent1).Equals(goComponent3));
+        goComponent1.Equals(goComponent3).Should().BeFalse();
+        ((object)goComponent1).Equals(goComponent3).Should().BeFalse();
     }
 
     [TestMethod]
@@ -91,6 +92,6 @@ public class GoComponentTests
     {
         var goComponent1 = new GoComponent(TestName, TestVersion, TestHash);
         var goComponent2 = new GoComponent(TestName, TestVersion, TestHash);
-        Assert.IsTrue(goComponent1.GetHashCode() == goComponent2.GetHashCode());
+        goComponent1.GetHashCode().Should().Be(goComponent2.GetHashCode());
     }
 }

@@ -34,8 +34,8 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
 
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
-        Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 0);
-        Assert.AreEqual(detectorResult.ResultCode, ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
     }
 
     [TestMethod]
@@ -54,22 +54,22 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents(); // IsDevelopmentDependency = true in componentRecorder but null in detectedComponents... why?
-        Assert.AreEqual(3, detectedComponents.Count());
-        Assert.AreEqual(ProcessingResultCode.Success, detectorResult.ResultCode);
+        detectedComponents.Should().HaveCount(3);
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         foreach (var detectedComponent in detectedComponents)
         {
             var dm = (MavenComponent)detectedComponent.Component;
-            Assert.AreEqual(dm.ArtifactId.Replace('a', 'g'), dm.GroupId);
-            Assert.AreEqual(dm.GroupId.Replace('g', 'a'), dm.ArtifactId);
-            Assert.AreEqual(string.Format("{0}.{0}.{0}", dm.ArtifactId.Substring(1, 1)), dm.Version);
-            Assert.AreEqual(ComponentType.Maven, dm.Type);
+            dm.GroupId.Should().Be(dm.ArtifactId.Replace('a', 'g'));
+            dm.ArtifactId.Should().Be(dm.GroupId.Replace('g', 'a'));
+            dm.Version.Should().Be(string.Format("{0}.{0}.{0}", dm.ArtifactId.Substring(1, 1)));
+            dm.Type.Should().Be(ComponentType.Maven);
 
             // "Detector should not populate DetectedComponent.DevelopmentDependency" - see ComponentRecorder.cs.  Hence we get null not true (for d1g:d1a:1.1.1) or false here.
-            Assert.IsNull(detectedComponent.DevelopmentDependency);
+            detectedComponent.DevelopmentDependency.Should().BeNull();
 
             // "Detector should not populate DetectedComponent.DependencyRoots!"
-            Assert.IsNull(detectedComponent.DependencyRoots);
+            detectedComponent.DependencyRoots.Should().BeNull();
         }
     }
 
@@ -104,8 +104,8 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents(); // IsDevelopmentDependency = true in componentRecorder but null in detectedComponents... why?
-        Assert.AreEqual(3, detectedComponents.Count());
-        Assert.AreEqual(ProcessingResultCode.Success, detectorResult.ResultCode);
+        detectedComponents.Should().HaveCount(3);
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         // There is only one graph
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
@@ -140,12 +140,12 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
                 IvyDetector.AdditionalValidCommands,
                 It.IsAny<string[]>())).Callback((string cmd, IEnumerable<string> cmd2, string[] parameters) =>
         {
-            Assert.AreEqual(parameters[0], "-buildfile");
+            parameters.Should().HaveElementAt(0, "-buildfile");
             var workingDir = parameters[1].Replace("build.xml", string.Empty);
             Directory.CreateDirectory(Path.Combine(workingDir, "target"));
             var jsonFileOutputPath = Path.Combine(workingDir, "target", "RegisterUsage.json");
             File.WriteAllText(jsonFileOutputPath, content);
-            Assert.AreEqual(parameters[2], "resolve-dependencies");
+            parameters.Should().HaveElementAt(2, "resolve-dependencies");
         }).ReturnsAsync(new CommandLineExecutionResult
         {
             ExitCode = 0,

@@ -44,13 +44,13 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
 
         // Number of unique nodes in ProjectAssetsJson
         Console.WriteLine(string.Join(",", detectedComponents.Select(x => x.Component.Id)));
-        Assert.AreEqual(3, detectedComponents.Count());
-        Assert.IsNotNull(detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("coverlet.msbuild")));
+        detectedComponents.Should().HaveCount(3);
+        detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("coverlet.msbuild")).Should().NotBeNull();
 
-        Assert.IsTrue(detectedComponents.All(x =>
+        detectedComponents.Should().OnlyContain(x =>
             componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NuGetComponent>(
                 x.Component.Id,
-                y => y.Id == x.Component.Id)));
+                y => y.Id == x.Component.Id));
 
         componentRecorder.ForAllComponents(grouping => Assert.IsTrue(grouping.AllFileLocations.Any(location => location.Contains("Loader.csproj"))));
     }
@@ -67,16 +67,16 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
 
         // Number of unique nodes in ProjectAssetsJson
         Console.WriteLine(string.Join(",", detectedComponents.Select(x => x.Component.Id)));
-        Assert.AreEqual(26, detectedComponents.Count());
-        Assert.IsNotNull(detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Polly")));
-        Assert.AreEqual(5, detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().Count(x => x.Name.Contains("System.Composition")));
+        detectedComponents.Should().HaveCount(26);
+        detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Polly")).Should().NotBeNull();
+        detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().Count(x => x.Name.Contains("System.Composition")).Should().Be(5);
 
         var nugetVersioning = detectedComponents.FirstOrDefault(x => (x.Component as NuGetComponent).Name.Contains("NuGet.DependencyResolver.Core"));
-        Assert.IsNotNull(nugetVersioning);
+        nugetVersioning.Should().NotBeNull();
 
-        Assert.IsTrue(componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NuGetComponent>(
+        componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NuGetComponent>(
             nugetVersioning.Component.Id,
-            x => x.Name.Contains("NuGet.ProjectModel")));
+            x => x.Name.Contains("NuGet.ProjectModel")).Should().BeTrue();
 
         componentRecorder.ForAllComponents(grouping => Assert.IsTrue(grouping.AllFileLocations.Any(location => location.Contains("Detectors.csproj"))));
     }
@@ -92,8 +92,8 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         var ommittedComponentInformationJson = scanResult.AdditionalTelemetryDetails[NuGetProjectModelProjectCentricComponentDetector.OmittedFrameworkComponentsTelemetryKey];
         var omittedComponentsWithCount = JsonConvert.DeserializeObject<Dictionary<string, int>>(ommittedComponentInformationJson);
 
-        Assert.IsTrue(omittedComponentsWithCount.Keys.Count > 5, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
-        Assert.AreEqual(omittedComponentsWithCount["Microsoft.NETCore.App"], 4, "There should be four cases of the NETCore.App library being omitted in the test data.");
+        (omittedComponentsWithCount.Keys.Count > 5).Should().BeTrue("Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
+        omittedComponentsWithCount["Microsoft.NETCore.App"].Should().Be(4, "There should be four cases of the NETCore.App library being omitted in the test data.");
     }
 
     [TestMethod]
@@ -116,12 +116,12 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         var dependencies = graph.GetDependenciesForComponent(componentDetectionCommon.Component.Id);
         foreach (var expectedId in expectedDependencyIdsForCompositionTypedParts)
         {
-            Assert.IsTrue(dependencies.Contains(expectedId));
+            dependencies.Should().Contain(expectedId);
         }
 
-        Assert.AreEqual(dependencies.Count(), expectedDependencyIdsForCompositionTypedParts.Length);
+        expectedDependencyIdsForCompositionTypedParts.Should().HaveSameCount(dependencies);
 
-        Assert.AreEqual(graph.GetComponents().Count(), detectedComponents.Count());
+        detectedComponents.Should().HaveCount(graph.GetComponents().Count());
 
         // Top level dependencies look like this:
         // (we expect all non-proj and non-framework to show up as explicit refs, so those will be absent from the check)
@@ -172,7 +172,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         {
             var component = detectedComponents.First(x => x.Component.Id == componentId);
             var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
-            Assert.AreEqual(expectedExplicitRefValue, graph.IsComponentExplicitlyReferenced(componentId));
+            graph.IsComponentExplicitlyReferenced(componentId).Should().Be(expectedExplicitRefValue);
         }
     }
 
@@ -186,14 +186,14 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
 
         // Number of unique nodes in ProjectAssetsJson
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(2, detectedComponents.Count());
-        Assert.IsNotNull(detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Microsoft.Extensions.DependencyModel")));
+        detectedComponents.Should().HaveCount(2);
+        detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Microsoft.Extensions.DependencyModel")).Should().NotBeNull();
 
         var systemTextJson = detectedComponents.FirstOrDefault(x => (x.Component as NuGetComponent).Name.Contains("System.Text.Json"));
 
-        Assert.IsTrue(componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NuGetComponent>(
+        componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NuGetComponent>(
             systemTextJson.Component.Id,
-            x => x.Name.Contains("Microsoft.Extensions.DependencyModel")));
+            x => x.Name.Contains("Microsoft.Extensions.DependencyModel")).Should().BeTrue();
 
         componentRecorder.ForAllComponents(grouping => Assert.IsTrue(grouping.AllFileLocations.Any(location => location.Contains("ExtCore.WebApplication.csproj"))));
     }
@@ -210,8 +210,8 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         var omittedComponentsWithCount = JsonConvert.DeserializeObject<Dictionary<string, int>>(ommittedComponentInformationJson);
 
         // With 3.X, we don't expect there to be a lot of these, but there are still netstandard libraries present which can bring things into the graph
-        Assert.AreEqual(omittedComponentsWithCount.Keys.Count, 4, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
-        Assert.AreEqual(omittedComponentsWithCount["System.Reflection"], 1, "There should be one case of the System.Reflection library being omitted in the test data.");
+        omittedComponentsWithCount.Keys.Should().HaveCount(4, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
+        omittedComponentsWithCount["System.Reflection"].Should().Be(1, "There should be one case of the System.Reflection library being omitted in the test data.");
     }
 
     [TestMethod]
@@ -236,10 +236,10 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         var dependencies = graph.GetDependenciesForComponent(componentDetectionCommon.Component.Id);
         foreach (var expectedId in expectedDependencyIdsForExtensionsDependencyModel)
         {
-            Assert.IsTrue(dependencies.Contains(expectedId));
+            dependencies.Should().Contain(expectedId);
         }
 
-        Assert.AreEqual(graph.GetComponents().Count(), detectedComponents.Count());
+        detectedComponents.Should().HaveCount(graph.GetComponents().Count());
 
         // Top level dependencies look like this:
         // (we expect all non-proj and non-framework to show up as explicit refs, so those will be absent from the check)
@@ -256,7 +256,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         {
             var component = detectedComponents.First(x => x.Component.Id == componentId);
             var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
-            Assert.AreEqual(expectedExplicitRefValue, graph.IsComponentExplicitlyReferenced(componentId));
+            graph.IsComponentExplicitlyReferenced(componentId).Should().Be(expectedExplicitRefValue);
         }
     }
 
@@ -279,7 +279,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
 
-        dependencyGraphs.Count.Should().Be(0);
+        dependencyGraphs.Should().BeEmpty();
     }
 
     private string Convert22SampleToOSAgnostic(string project_assets)
