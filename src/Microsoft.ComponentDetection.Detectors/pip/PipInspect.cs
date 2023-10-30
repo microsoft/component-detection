@@ -150,6 +150,7 @@ public partial class Metadata
     [JsonProperty("license", NullValueHandling = NullValueHandling.Ignore)]
     public string License { get; set; }
 }
+
 public partial class PipInspect
 {
     public static PipInspect FromJson(string json) => JsonConvert.DeserializeObject<PipInspect>(json, Microsoft.ComponentDetection.Detectors.Pip.Converter.Settings);
