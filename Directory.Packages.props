@@ -42,7 +42,7 @@
     <PackageVersion Include="Serilog.Sinks.Map" Version="1.0.2" />
     <PackageVersion Include="Spectre.Console" Version="0.47.0" />
     <PackageVersion Include="Spectre.Console.Cli" Version="0.47.0" />
-    <PackageVersion Include="Spectre.Console.Cli.Extensions.DependencyInjection" Version="0.1.0" />
+    <PackageVersion Include="Spectre.Console.Cli.Extensions.DependencyInjection" Version="0.2.0" />
     <PackageVersion Include="Spectre.Console.Testing" Version="0.47.0" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.507" />
     <PackageVersion Include="System.Memory" Version="4.5.5" />
