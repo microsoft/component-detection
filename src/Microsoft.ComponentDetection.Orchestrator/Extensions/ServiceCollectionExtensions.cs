@@ -16,6 +16,7 @@ using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Pnpm;
 using Microsoft.ComponentDetection.Detectors.Poetry;
+using Microsoft.ComponentDetection.Detectors.Pub;
 using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Spdx;
@@ -139,6 +140,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IYarnLockFileFactory, YarnLockFileFactory>();
         services.AddSingleton<IComponentDetector, YarnLockComponentDetector>();
 
+        // Pub
+        services.AddSingleton<IComponentDetector, PubComponentDetector>();
         return services;
     }
 }
