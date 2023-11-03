@@ -40,12 +40,12 @@ public class NpmUtilitiesTests
 
         var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
 
-        Assert.IsNotNull(componentFromJProperty);
-        Assert.AreEqual(componentFromJProperty.Type, ComponentType.Npm);
+        componentFromJProperty.Should().NotBeNull();
+        componentFromJProperty.Type.Should().Be(ComponentType.Npm);
 
         var npmComponent = (NpmComponent)componentFromJProperty;
-        Assert.AreEqual(npmComponent.Name, "async");
-        Assert.AreEqual(npmComponent.Version, "2.3.0");
+        npmComponent.Name.Should().Be("async");
+        npmComponent.Version.Should().Be("2.3.0");
     }
 
     [TestMethod]
@@ -63,7 +63,7 @@ public class NpmUtilitiesTests
 
         var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
 
-        Assert.IsNull(componentFromJProperty);
+        componentFromJProperty.Should().BeNull();
     }
 
     [TestMethod]
@@ -79,7 +79,7 @@ public class NpmUtilitiesTests
 
         var j = JObject.Parse(jsonInvalidCharacter);
         var componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
-        Assert.IsNull(componentFromJProperty);
+        componentFromJProperty.Should().BeNull();
 
         var jsonUrlName = @"{
                 ""http://thisis/my/packagename"": {
@@ -91,7 +91,7 @@ public class NpmUtilitiesTests
 
         j = JObject.Parse(jsonUrlName);
         componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
-        Assert.IsNull(componentFromJProperty);
+        componentFromJProperty.Should().BeNull();
 
         var jsonInvalidInitialCharacter1 = @"{
                 ""_async"": {
@@ -103,7 +103,7 @@ public class NpmUtilitiesTests
 
         j = JObject.Parse(jsonInvalidInitialCharacter1);
         componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
-        Assert.IsNull(componentFromJProperty);
+        componentFromJProperty.Should().BeNull();
 
         var jsonInvalidInitialCharacter2 = @"{
                 "".async"": {
@@ -115,7 +115,7 @@ public class NpmUtilitiesTests
 
         j = JObject.Parse(jsonInvalidInitialCharacter2);
         componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
-        Assert.IsNull(componentFromJProperty);
+        componentFromJProperty.Should().BeNull();
 
         var longPackageName = new string('a', 214);
         var jsonLongName = $@"{{
@@ -128,18 +128,18 @@ public class NpmUtilitiesTests
 
         j = JObject.Parse(jsonLongName);
         componentFromJProperty = NpmComponentUtilities.GetTypedComponent(j.Children<JProperty>().Single(), "registry.npmjs.org", this.loggerMock.Object);
-        Assert.IsNull(componentFromJProperty);
+        componentFromJProperty.Should().BeNull();
     }
 
     [TestMethod]
     public void TestTryParseNpmVersion()
     {
         var parsed = NpmComponentUtilities.TryParseNpmVersion("registry.npmjs.org", "archiver", "https://registry.npmjs.org/archiver-2.1.1.tgz", out var parsedVersion);
-        Assert.IsTrue(parsed);
-        Assert.AreEqual(parsedVersion.ToString(), "2.1.1");
+        parsed.Should().BeTrue();
+        parsedVersion.ToString().Should().Be("2.1.1");
 
         parsed = NpmComponentUtilities.TryParseNpmVersion("registry.npmjs.org", "archiver", "notavalidurl", out parsedVersion);
-        Assert.IsFalse(parsed);
+        parsed.Should().BeFalse();
     }
 
     [TestMethod]
@@ -173,15 +173,15 @@ public class NpmUtilitiesTests
         NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder1, typedComponent, typedComponent);
         NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder2, typedComponent, typedComponent);
 
-        Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 1);
-        Assert.IsNotNull(componentRecorder.GetComponent(typedComponent.Id));
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
+        componentRecorder.GetComponent(typedComponent.Id).Should().NotBeNull();
 
         var graph1 = componentRecorder.GetDependencyGraphsByLocation()["/this/is/a/test/path/"];
         var graph2 = componentRecorder.GetDependencyGraphsByLocation()["/this/is/a/different/path/"];
 
-        Assert.IsTrue(graph1.GetExplicitReferencedDependencyIds(typedComponent.Id).Contains(typedComponent.Id));
-        Assert.IsTrue(graph2.GetExplicitReferencedDependencyIds(typedComponent.Id).Contains(typedComponent.Id));
-        Assert.IsFalse(componentRecorder.GetEffectiveDevDependencyValue(typedComponent.Id).GetValueOrDefault(true));
+        graph1.GetExplicitReferencedDependencyIds(typedComponent.Id).Contains(typedComponent.Id).Should().BeTrue();
+        graph2.GetExplicitReferencedDependencyIds(typedComponent.Id).Contains(typedComponent.Id).Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue(typedComponent.Id).GetValueOrDefault(true).Should().BeFalse();
 
         var json1 = @"{
                 ""test"": {
@@ -200,18 +200,18 @@ public class NpmUtilitiesTests
 
         NpmComponentUtilities.TraverseAndRecordComponents(currentDependency1, singleFileComponentRecorder2, typedComponent1, typedComponent1);
 
-        Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 2);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
 
-        Assert.IsTrue(graph2.GetExplicitReferencedDependencyIds(typedComponent1.Id).Contains(typedComponent1.Id));
-        Assert.IsTrue(componentRecorder.GetEffectiveDevDependencyValue(typedComponent1.Id).GetValueOrDefault(false));
+        graph2.GetExplicitReferencedDependencyIds(typedComponent1.Id).Contains(typedComponent1.Id).Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue(typedComponent1.Id).GetValueOrDefault(false).Should().BeTrue();
 
         NpmComponentUtilities.TraverseAndRecordComponents(currentDependency1, singleFileComponentRecorder2, typedComponent, typedComponent1, parentComponentId: typedComponent1.Id);
 
-        Assert.AreEqual(componentRecorder.GetDetectedComponents().Count(), 2);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
         var explicitlyReferencedDependencyIds = graph2.GetExplicitReferencedDependencyIds(typedComponent.Id);
-        Assert.IsTrue(explicitlyReferencedDependencyIds.Contains(typedComponent.Id));
-        Assert.IsTrue(explicitlyReferencedDependencyIds.Contains(typedComponent1.Id));
-        Assert.AreEqual(2, explicitlyReferencedDependencyIds.Count);
+        explicitlyReferencedDependencyIds.Should().Contain(typedComponent.Id);
+        explicitlyReferencedDependencyIds.Should().Contain(typedComponent1.Id);
+        explicitlyReferencedDependencyIds.Should().HaveCount(2);
     }
 
     [TestMethod]

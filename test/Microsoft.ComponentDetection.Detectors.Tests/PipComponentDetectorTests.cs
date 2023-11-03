@@ -53,7 +53,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
             .WithFile("setup.py", string.Empty)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
         this.mockLogger.VerifyAll();
     }
 
@@ -62,7 +62,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
     {
         var (result, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
     }
 
     [TestMethod]
@@ -101,23 +101,23 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
             .WithFile("requirements.txt", string.Empty)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(8, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(8);
 
         var pipComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Id.Contains("pip")).ToList();
-        Assert.AreEqual("1.2.3", ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == "z").Component).Version);
+        ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == "z").Component).Version.Should().Be("1.2.3");
 
         foreach (var item in setupPyRoots)
         {
             var reference = item.Value;
 
-            Assert.AreEqual(reference.Version, ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == reference.Name).Component).Version);
+            ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == reference.Name).Component).Version.Should().Be(reference.Version);
         }
 
         var gitComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Type == ComponentType.Git);
-        gitComponents.Count().Should().Be(1);
+        gitComponents.Should().ContainSingle();
         var gitComponent = (GitComponent)gitComponents.Single().Component;
 
         gitComponent.RepositoryUrl.Should().Be("https://github.com/example/example");
@@ -157,8 +157,8 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
             .WithFile("requirements.txt", string.Empty, fileLocation: Path.Join(Path.GetTempPath(), "TEST", "requirements.txt"))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(5, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(5);
     }
 
     [TestMethod]
@@ -212,8 +212,8 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 
         var discoveredComponents = componentRecorder.GetDetectedComponents();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(11, discoveredComponents.Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        discoveredComponents.Should().HaveCount(11);
 
         var rootIds = new[]
         {
@@ -239,7 +239,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         this.CheckChild(componentRecorder, "dog 2.1 - pip", new[] { "c 1.0 - pip", });
 
         var graphsByLocations = componentRecorder.GetDependencyGraphsByLocation();
-        Assert.AreEqual(2, graphsByLocations.Count);
+        graphsByLocations.Should().HaveCount(2);
 
         var graph1ComponentsWithDeps = new Dictionary<string, string[]>
         {
@@ -252,8 +252,8 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         };
 
         var graph1 = graphsByLocations[file1];
-        Assert.IsTrue(graph1ComponentsWithDeps.Keys.Take(2).All(graph1.IsComponentExplicitlyReferenced));
-        Assert.IsTrue(graph1ComponentsWithDeps.Keys.Skip(2).All(a => !graph1.IsComponentExplicitlyReferenced(a)));
+        graph1ComponentsWithDeps.Keys.Take(2).All(graph1.IsComponentExplicitlyReferenced).Should().BeTrue();
+        graph1ComponentsWithDeps.Keys.Skip(2).Should().OnlyContain(a => !graph1.IsComponentExplicitlyReferenced(a));
         this.CheckGraphStructure(graph1, graph1ComponentsWithDeps);
 
         var graph2ComponentsWithDeps = new Dictionary<string, string[]>
@@ -269,38 +269,34 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         };
 
         var graph2 = graphsByLocations[file2];
-        Assert.IsTrue(graph2ComponentsWithDeps.Keys.Take(3).All(graph2.IsComponentExplicitlyReferenced));
-        Assert.IsTrue(graph2ComponentsWithDeps.Keys.Skip(3).All(a => !graph2.IsComponentExplicitlyReferenced(a)));
+        graph2ComponentsWithDeps.Keys.Take(3).All(graph2.IsComponentExplicitlyReferenced).Should().BeTrue();
+        graph2ComponentsWithDeps.Keys.Skip(3).Should().OnlyContain(a => !graph2.IsComponentExplicitlyReferenced(a));
         this.CheckGraphStructure(graph2, graph2ComponentsWithDeps);
     }
 
     private void CheckGraphStructure(IDependencyGraph graph, Dictionary<string, string[]> graphComponentsWithDeps)
     {
         var graphComponents = graph.GetComponents().ToArray();
-        Assert.AreEqual(
+        graphComponents.Should().HaveCount(
             graphComponentsWithDeps.Keys.Count,
-            graphComponents.Length,
             $"Expected {graphComponentsWithDeps.Keys.Count} component to be recorded but got {graphComponents.Length} instead!");
 
         foreach (var componentId in graphComponentsWithDeps.Keys)
         {
-            Assert.IsTrue(
-                graphComponents.Contains(componentId),
-                $"Component `{componentId}` not recorded!");
+            graphComponents.Should().Contain(
+                componentId, $"Component `{componentId}` not recorded!");
 
             var recordedDeps = graph.GetDependenciesForComponent(componentId).ToArray();
             var expectedDeps = graphComponentsWithDeps[componentId];
 
-            Assert.AreEqual(
+            recordedDeps.Should().HaveCount(
                 expectedDeps.Length,
-                recordedDeps.Length,
                 $"Count missmatch of expected dependencies ({JsonConvert.SerializeObject(expectedDeps)}) and recorded dependencies ({JsonConvert.SerializeObject(recordedDeps)}) for `{componentId}`!");
 
             foreach (var expectedDep in expectedDeps)
             {
-                Assert.IsTrue(
-                    recordedDeps.Contains(expectedDep),
-                    $"Expected `{expectedDep}` in the list of dependencies for `{componentId}` but only recorded: {JsonConvert.SerializeObject(recordedDeps)}");
+                recordedDeps.Should().Contain(
+                    expectedDep, $"Expected `{expectedDep}` in the list of dependencies for `{componentId}` but only recorded: {JsonConvert.SerializeObject(recordedDeps)}");
             }
         }
     }

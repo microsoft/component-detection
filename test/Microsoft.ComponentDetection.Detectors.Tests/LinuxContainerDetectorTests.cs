@@ -77,7 +77,7 @@ public class LinuxContainerDetectorTests
         detectedComponents.Should().ContainSingle();
         detectedComponents.First().Component.Id.Should().Be(BashPackageId);
         scanResult.ContainerDetails.Should().ContainSingle();
-        detectedComponents.All(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id)).Should().BeTrue();
+        detectedComponents.Should().OnlyContain(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id));
         componentRecorder.GetDetectedComponents().Select(detectedComponent => detectedComponent.Component.Id)
             .Should().BeEquivalentTo(detectedComponents.Select(detectedComponent => detectedComponent.Component.Id));
     }
@@ -102,8 +102,8 @@ public class LinuxContainerDetectorTests
         var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        detectedComponents.Should().HaveCount(0);
-        scanResult.ContainerDetails.Should().HaveCount(0);
+        detectedComponents.Should().BeEmpty();
+        scanResult.ContainerDetails.Should().BeEmpty();
         this.mockLinuxContainerDetectorLogger.Verify(logger => logger.Log(
             It.IsAny<LogLevel>(),
             It.IsAny<EventId>(),
@@ -129,8 +129,8 @@ public class LinuxContainerDetectorTests
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        detectedComponents.Should().HaveCount(0);
-        scanResult.ContainerDetails.Should().HaveCount(0);
+        detectedComponents.Should().BeEmpty();
+        scanResult.ContainerDetails.Should().BeEmpty();
         this.mockLinuxContainerDetectorLogger.Verify(logger => logger.Log(
             It.IsAny<LogLevel>(),
             It.IsAny<EventId>(),
@@ -158,8 +158,8 @@ public class LinuxContainerDetectorTests
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         detectedComponents.Should().ContainSingle();
         detectedComponents.First().Component.Id.Should().Be(BashPackageId);
-        scanResult.ContainerDetails.Should().HaveCount(1);
-        detectedComponents.All(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id)).Should().BeTrue();
+        scanResult.ContainerDetails.Should().ContainSingle();
+        detectedComponents.Should().OnlyContain(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id));
     }
 
     [TestMethod]
@@ -179,10 +179,10 @@ public class LinuxContainerDetectorTests
         var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        scanResult.ContainerDetails.Should().HaveCount(1);
-        detectedComponents.Should().HaveCount(1);
+        scanResult.ContainerDetails.Should().ContainSingle();
+        detectedComponents.Should().ContainSingle();
         detectedComponents.First().Component.Id.Should().Be(BashPackageId);
-        detectedComponents.All(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id)).Should().BeTrue();
+        detectedComponents.Should().OnlyContain(dc => dc.ContainerDetailIds.Contains(scanResult.ContainerDetails.First().Id));
         this.mockSyftLinuxScanner.Verify(scanner => scanner.ScanLinuxAsync(It.IsAny<string>(), It.IsAny<IEnumerable<DockerLayer>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 

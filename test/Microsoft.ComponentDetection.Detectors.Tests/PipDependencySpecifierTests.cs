@@ -1,6 +1,7 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.Collections.Generic;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -15,13 +16,12 @@ public class PipDependencySpecifierTests
         {
             var dependencySpecifier = new PipDependencySpecification(specString, requiresDist);
 
-            Assert.AreEqual(referenceDependencySpecification.Name, dependencySpecifier.Name);
+            dependencySpecifier.Name.Should().Be(referenceDependencySpecification.Name);
 
             for (var i = 0; i < referenceDependencySpecification.DependencySpecifiers.Count; i++)
             {
-                Assert.AreEqual(
-                    referenceDependencySpecification.DependencySpecifiers[i],
-                    dependencySpecifier.DependencySpecifiers[i]);
+                dependencySpecifier.DependencySpecifiers.Should().HaveElementAt(
+                    i, referenceDependencySpecification.DependencySpecifiers[i]);
             }
         }
     }

@@ -48,16 +48,16 @@ require (
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(4, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(4);
 
         var discoveredComponents = detectedComponents.ToArray();
-        discoveredComponents.Where(component => component.Component.Id == "github.com/Azure/azure-pipeline-go v0.2.1 - Go").Count().Should().Be(1);
-        discoveredComponents.Where(component => component.Component.Id == "github.com/dgrijalva/jwt-go v3.2.0+incompatible - Go").Count().Should().Be(1);
-        discoveredComponents.Where(component => component.Component.Id == "gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 - Go").Count().Should().Be(1);
-        discoveredComponents.Where(component => component.Component.Id == "github.com/kr/pretty v0.1.0 - Go").Count().Should().Be(1);
+        discoveredComponents.Where(component => component.Component.Id == "github.com/Azure/azure-pipeline-go v0.2.1 - Go").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "github.com/dgrijalva/jwt-go v3.2.0+incompatible - Go").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 - Go").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "github.com/kr/pretty v0.1.0 - Go").Should().ContainSingle();
     }
 
     [TestMethod]
@@ -79,23 +79,23 @@ github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
             .WithFile("go.sum", goSum)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(6, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(6);
         var typedComponents = detectedComponents.Select(d => d.Component).ToList();
-        Assert.IsTrue(typedComponents.Contains(
-            new GoComponent("github.com/golang/mock", "v1.1.1", "h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=")));
-        Assert.IsTrue(typedComponents.Contains(
-            new GoComponent("github.com/golang/mock", "v1.2.0", "h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=")));
-        Assert.IsTrue(typedComponents.Contains(
-            new GoComponent("github.com/golang/protobuf", "v0.0.0-20161109072736-4bd1920723d7", "h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=")));
-        Assert.IsTrue(typedComponents.Contains(
-            new GoComponent("github.com/golang/protobuf", "v1.2.0", "h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=")));
-        Assert.IsTrue(typedComponents.Contains(
-            new GoComponent("github.com/golang/protobuf", "v1.3.1", "h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=")));
-        Assert.IsTrue(typedComponents.Contains(
-            new GoComponent("github.com/golang/protobuf", "v1.3.2", "h1:6nsPYzhq5kReh6QImI3k5qWzO4PEbvbIW2cwSfR/6xs=")));
+        typedComponents.Should().Contain(
+            new GoComponent("github.com/golang/mock", "v1.1.1", "h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A="));
+        typedComponents.Should().Contain(
+            new GoComponent("github.com/golang/mock", "v1.2.0", "h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A="));
+        typedComponents.Should().Contain(
+            new GoComponent("github.com/golang/protobuf", "v0.0.0-20161109072736-4bd1920723d7", "h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U="));
+        typedComponents.Should().Contain(
+            new GoComponent("github.com/golang/protobuf", "v1.2.0", "h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U="));
+        typedComponents.Should().Contain(
+            new GoComponent("github.com/golang/protobuf", "v1.3.1", "h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg="));
+        typedComponents.Should().Contain(
+            new GoComponent("github.com/golang/protobuf", "v1.3.2", "h1:6nsPYzhq5kReh6QImI3k5qWzO4PEbvbIW2cwSfR/6xs="));
     }
 
     [TestMethod]
@@ -115,16 +115,16 @@ require (
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(4, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(4);
 
         var discoveredComponents = detectedComponents.ToArray();
-        discoveredComponents.Where(component => component.Component.Id == "github.com/Azure/azure-pipeline-go v0.2.1 - Go").Count().Should().Be(1);
-        discoveredComponents.Where(component => component.Component.Id == "github.com/dgrijalva/jwt-go v3.2.0+incompatible - Go").Count().Should().Be(1);
-        discoveredComponents.Where(component => component.Component.Id == "gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 - Go").Count().Should().Be(1);
-        discoveredComponents.Where(component => component.Component.Id == "github.com/kr/pretty v0.1.0 - Go").Count().Should().Be(1);
+        discoveredComponents.Where(component => component.Component.Id == "github.com/Azure/azure-pipeline-go v0.2.1 - Go").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "github.com/dgrijalva/jwt-go v3.2.0+incompatible - Go").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 - Go").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "github.com/kr/pretty v0.1.0 - Go").Should().ContainSingle();
     }
 
     [TestMethod]
@@ -154,11 +154,11 @@ require (
             .WithFile("go.mod", goMod2, fileLocation: Path.Join(Path.GetTempPath(), "another-location", "go.mod"))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(4, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(4);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
-        Assert.IsTrue(dependencyGraphs.Keys.Count() == 2);
+        dependencyGraphs.Keys.Should().HaveCount(2);
 
         var firstGraph = dependencyGraphs.Values.First();
         var secondGraph = dependencyGraphs.Values.Skip(1).First();
@@ -179,8 +179,8 @@ $#26^#25%4";
             .WithFile("go.mod", invalidGoMod)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -257,10 +257,10 @@ github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d/go.mod h1:ZZM
             .WithFile("go.sum", goSum)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
+        detectedComponents.Should().ContainSingle();
     }
 
     [TestMethod]
@@ -282,14 +282,14 @@ replace (
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(2, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(2);
 
         var discoveredComponents = detectedComponents.ToArray();
-        discoveredComponents.Where(component => component.Component.Id == "github.com/Azure/azure-pipeline-go v0.2.1 - Go").Count().Should().Be(1);
-        discoveredComponents.Where(component => component.Component.Id == "github.com/kr/pretty v0.1.0 - Go").Count().Should().Be(1);
+        discoveredComponents.Where(component => component.Component.Id == "github.com/Azure/azure-pipeline-go v0.2.1 - Go").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "github.com/kr/pretty v0.1.0 - Go").Should().ContainSingle();
     }
 
     [TestMethod]
@@ -402,15 +402,15 @@ replace (
             .WithFile("go.mod", string.Empty)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(4, detectedComponents.Count());
-        detectedComponents.Where(component => component.Component.Id == "other v1.0.0 - Go").Should().HaveCount(0);
-        detectedComponents.Where(component => component.Component.Id == "other v1.2.0 - Go").Should().HaveCount(1);
-        detectedComponents.Where(component => component.Component.Id == "some-package v1.2.3 - Go").Should().HaveCount(1);
-        detectedComponents.Where(component => component.Component.Id == "test v2.0.0 - Go").Should().HaveCount(1);
-        detectedComponents.Where(component => component.Component.Id == "a v1.5.0 - Go").Should().HaveCount(1);
+        detectedComponents.Should().HaveCount(4);
+        detectedComponents.Should().NotContain(component => component.Component.Id == "other v1.0.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "other v1.2.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "some-package v1.2.3 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "test v2.0.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "a v1.5.0 - Go");
     }
 
     [TestMethod]
@@ -464,10 +464,10 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
             .WithFile("go.mod", string.Empty)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(3, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(3);
     }
 
     [TestMethod]
