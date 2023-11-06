@@ -18,13 +18,13 @@ public class PubComponent : TypedComponent
 
     public string Name { get; }
 
-    public string Version { get; set; }
+    public string Version { get; }
 
-    public string Hash { get; set; }
+    public string Hash { get; }
 
-    public string Url { get; set; }
+    public string Url { get; }
 
-    public string Dependency { get; set; }
+    public string Dependency { get; }
 
     public override ComponentType Type => ComponentType.Pub;
 
@@ -57,16 +57,5 @@ public class PubComponent : TypedComponent
         return this.Equals((PubComponent)obj);
     }
 
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            var hashCode = this.Name != null ? this.Name.GetHashCode() : 0;
-            hashCode = (hashCode * 397) ^ (this.Version != null ? this.Version.GetHashCode() : 0);
-            hashCode = (hashCode * 397) ^ (this.Hash != null ? this.Hash.GetHashCode() : 0);
-            hashCode = (hashCode * 397) ^ (this.Url != null ? this.Url.GetHashCode() : 0);
-            hashCode = (hashCode * 397) ^ (this.Dependency != null ? this.Dependency.GetHashCode() : 0);
-            return hashCode;
-        }
-    }
+    public override int GetHashCode() => this.Name.GetHashCode() ^ this.Version.GetHashCode() ^ this.Hash.GetHashCode() ^ this.Url.GetHashCode() ^ this.Dependency.GetHashCode();
 }

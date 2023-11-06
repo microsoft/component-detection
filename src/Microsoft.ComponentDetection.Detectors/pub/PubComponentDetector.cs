@@ -10,7 +10,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization;
 
-public class PubComponentDetector : FileComponentDetector
+public class PubComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     public PubComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -34,12 +34,12 @@ public class PubComponentDetector : FileComponentDetector
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
-        using var reader = new StreamReader(processRequest.ComponentStream.Stream);
-        var text = await reader.ReadToEndAsync();
-
-        var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
         try
         {
+            using var reader = new StreamReader(processRequest.ComponentStream.Stream);
+            var text = await reader.ReadToEndAsync();
+
+            var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
             var parsedFile = deserializer.Deserialize<PubSpecLock>(text);
             this.Logger.LogDebug("SDK {Dart}", parsedFile.Sdks.Dart);
 
