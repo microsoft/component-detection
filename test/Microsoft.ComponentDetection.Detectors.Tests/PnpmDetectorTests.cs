@@ -80,53 +80,53 @@ shrinkwrapVersion: 3";
             .WithFile("shrinkwrap1.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(5, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(5);
 
         var queryString = detectedComponents.Single(component => ((NpmComponent)component.Component).Name.Contains("query-string"));
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             queryString.Component.Id,
             parentComponent => parentComponent.Name == "query-string-🙌");
 
-        Assert.AreEqual("4.3.4", ((NpmComponent)queryString.Component).Version);
-        Assert.IsTrue(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
+        ((NpmComponent)queryString.Component).Version.Should().Be("4.3.4");
+        componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false).Should().BeTrue();
 
         var objectAssign = detectedComponents.Single(component => ((NpmComponent)component.Component).Name.Contains("object-assign"));
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             objectAssign.Component.Id,
             parentComponent => parentComponent.Name == "query-string-🙌" && parentComponent.Version == "4.3.4");
-        Assert.AreEqual("4.1.1", ((NpmComponent)objectAssign.Component).Version);
-        Assert.IsTrue(componentRecorder.GetEffectiveDevDependencyValue(objectAssign.Component.Id).GetValueOrDefault(false));
+        ((NpmComponent)objectAssign.Component).Version.Should().Be("4.1.1");
+        componentRecorder.GetEffectiveDevDependencyValue(objectAssign.Component.Id).GetValueOrDefault(false).Should().BeTrue();
 
         var strictUriEncode = detectedComponents.Single(component => ((NpmComponent)component.Component).Name.Contains("strict-uri-encode"));
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             strictUriEncode.Component.Id,
             parentComponent => parentComponent.Name == "query-string-🙌" && parentComponent.Version == "4.3.4");
-        Assert.AreEqual("1.1.0", ((NpmComponent)strictUriEncode.Component).Version);
-        Assert.IsFalse(componentRecorder.GetEffectiveDevDependencyValue(strictUriEncode.Component.Id).GetValueOrDefault(true));
+        ((NpmComponent)strictUriEncode.Component).Version.Should().Be("1.1.0");
+        componentRecorder.GetEffectiveDevDependencyValue(strictUriEncode.Component.Id).GetValueOrDefault(true).Should().BeFalse();
 
         var babelHelperCompilation = detectedComponents.Single(component => ((NpmComponent)component.Component).Name.Contains("helper-compilation-targets"));
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             babelHelperCompilation.Component.Id,
             parentComponent => parentComponent.Name == "@babel/helper-compilation-targets" && parentComponent.Version == "7.10.4");
-        Assert.IsFalse(componentRecorder.GetEffectiveDevDependencyValue(babelHelperCompilation.Component.Id).GetValueOrDefault(true));
+        componentRecorder.GetEffectiveDevDependencyValue(babelHelperCompilation.Component.Id).GetValueOrDefault(true).Should().BeFalse();
 
         var test = detectedComponents.Single(component => ((NpmComponent)component.Component).Name.Contains("test"));
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             test.Component.Id,
             parentComponent => parentComponent.Name == "query-string-🙌" && parentComponent.Version == "4.3.4");
-        Assert.IsTrue(componentRecorder.GetEffectiveDevDependencyValue(test.Component.Id).GetValueOrDefault(false));
+        componentRecorder.GetEffectiveDevDependencyValue(test.Component.Id).GetValueOrDefault(false).Should().BeTrue();
 
         componentRecorder.ForAllComponents(grouping =>
         {
-            Assert.IsTrue(grouping.AllFileLocations.First().Contains("shrinkwrap1.yaml"));
+            grouping.AllFileLocations.First().Should().Contain("shrinkwrap1.yaml");
         });
 
         foreach (var component in detectedComponents)
         {
-            Assert.AreEqual(component.Component.Type, ComponentType.Npm);
+            ComponentType.Npm.Should().Be(component.Component.Type);
         }
     }
 
@@ -182,13 +182,13 @@ shrinkwrapVersion: 3";
             .WithFile("shrinkwrap2.yaml", yamlFile2)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(3, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(3);
         var strictUriEncodeComponent = detectedComponents.Select(x => new { Component = x.Component as NpmComponent, DetectedComponent = x }).FirstOrDefault(x => x.Component.Name.Contains("strict-uri-encode"));
 
-        Assert.IsNotNull(strictUriEncodeComponent);
+        strictUriEncodeComponent.Should().NotBeNull();
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             strictUriEncodeComponent.Component.Id,
@@ -227,13 +227,13 @@ shrinkwrapVersion: 3";
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(2, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(2);
         var msItemsViewComponent = detectedComponents.Select(x => new { Component = x.Component as NpmComponent, DetectedComponent = x }).FirstOrDefault(x => x.Component.Name.Contains("@ms/items-view"));
 
-        Assert.IsNotNull(msItemsViewComponent);
+        msItemsViewComponent.Should().NotBeNull();
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             msItemsViewComponent.Component.Id,
             parentComponent => parentComponent.Name == "query-string");
@@ -302,8 +302,8 @@ shrinkwrapVersion: 3";
             .WithFile("shrinkwrap1.yaml", yamlFile1)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -332,8 +332,8 @@ packages:
             .WithFile("shrinkwrap1.yaml", yamlFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(4, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(4);
 
         var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/query-string/4.3.4").Component.Id;
         var objectAssignComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/object-assign/4.1.1").Component.Id;
@@ -343,19 +343,19 @@ packages:
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
         var queryStringDependencies = dependencyGraph.GetDependenciesForComponent(queryStringComponentId);
-        Assert.AreEqual(2, queryStringDependencies.Count());
-        Assert.IsTrue(queryStringDependencies.Contains(objectAssignComponentId));
-        Assert.IsTrue(queryStringDependencies.Contains(testComponentId));
+        queryStringDependencies.Should().HaveCount(2);
+        queryStringDependencies.Should().Contain(objectAssignComponentId);
+        queryStringDependencies.Should().Contain(testComponentId);
 
         var objectAssignDependencies = dependencyGraph.GetDependenciesForComponent(objectAssignComponentId);
-        Assert.AreEqual(1, objectAssignDependencies.Count());
-        Assert.IsTrue(objectAssignDependencies.Contains(strictUriComponentId));
+        objectAssignDependencies.Should().ContainSingle();
+        objectAssignDependencies.Should().Contain(strictUriComponentId);
 
         var stringUriDependencies = dependencyGraph.GetDependenciesForComponent(strictUriComponentId);
-        Assert.AreEqual(0, stringUriDependencies.Count());
+        stringUriDependencies.Should().BeEmpty();
 
         var testDependencies = dependencyGraph.GetDependenciesForComponent(testComponentId);
-        Assert.AreEqual(0, testDependencies.Count());
+        testDependencies.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -389,10 +389,10 @@ packages:
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
         var queryStringDependencies = dependencyGraph.GetDependenciesForComponent(queryStringComponentId);
-        queryStringDependencies.Should().HaveCount(1);
+        queryStringDependencies.Should().ContainSingle();
         queryStringDependencies.Should().Contain(nthcheck);
 
         var nthCheckDependencies = dependencyGraph.GetDependenciesForComponent(nthcheck);
-        nthCheckDependencies.Should().HaveCount(0);
+        nthCheckDependencies.Should().BeEmpty();
     }
 }

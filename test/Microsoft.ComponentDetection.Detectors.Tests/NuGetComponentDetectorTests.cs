@@ -38,8 +38,8 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
     {
         var (scanResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -54,14 +54,14 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
             .WithFile("*.nuspec", nuspec)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success, "Result code does Not match.");
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1, "Component count does not match");
         var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
-        Assert.AreEqual(ComponentType.NuGet, detectedComponent.Type);
+        detectedComponent.Type.Should().Be(ComponentType.NuGet);
         var nuGetComponent = (NuGetComponent)detectedComponent;
-        Assert.AreEqual(testComponentName, nuGetComponent.Name, "Component name does not match.");
-        Assert.AreEqual(testVersion, nuGetComponent.Version, "Component version does not match.");
-        CollectionAssert.AreEqual(testAuthors, nuGetComponent.Authors, "Authors does not match.");
+        nuGetComponent.Name.Should().Be(testComponentName, "Component name does not match.");
+        nuGetComponent.Version.Should().Be(testVersion, "Component version does not match.");
+        nuGetComponent.Authors.Should().BeEquivalentTo(testAuthors, "Authors does not match.");
     }
 
     [TestMethod]
@@ -76,14 +76,14 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
             .WithFile("*.nuspec", nuspec)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode, "Result code does Not match.");
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count(), "Componet count does not match");
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success, "Result code does Not match.");
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1, "Component count does not match");
         var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
-        Assert.AreEqual(ComponentType.NuGet, detectedComponent.Type);
+        detectedComponent.Type.Should().Be(ComponentType.NuGet);
         var nuGetComponent = (NuGetComponent)detectedComponent;
-        Assert.AreEqual(testComponentName, nuGetComponent.Name, "Component name does not match.");
-        Assert.AreEqual(testVersion, nuGetComponent.Version, "Component version does not match.");
-        CollectionAssert.AreEqual(testAuthors, nuGetComponent.Authors, "Authors does not match.");
+        nuGetComponent.Name.Should().Be(testComponentName, "Component name does not match.");
+        nuGetComponent.Version.Should().Be(testVersion, "Component version does not match.");
+        nuGetComponent.Authors.Should().BeEquivalentTo(testAuthors, "Authors does not match.");
     }
 
     [TestMethod]
@@ -95,8 +95,8 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
             .WithFile("test.nupkg", nupkg)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
     }
 
     [TestMethod]
@@ -110,8 +110,8 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
             .WithFile("test.nupkg", nupkg)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
     }
 
     [TestMethod]
@@ -154,10 +154,10 @@ NUGET
             .AddServiceMock(this.mockLogger)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches.
-        Assert.AreEqual(11, componentRecorder.GetDetectedComponents().Count());
+        componentRecorder.GetDetectedComponents().Count().Should().Be(11);
 
         // Verify that we stop executing after parsing the paket.lock file.
         this.mockLogger.Verify(
@@ -191,8 +191,8 @@ NUGET
             It.IsAny<Exception>(),
             (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
     }
 
     [TestMethod]
@@ -267,8 +267,8 @@ NUGET
         var scanResult = await detector.ExecuteDetectorAsync(new ScanRequest(new DirectoryInfo(sourceDirectoryPath), (name, directoryName) => false, null, new Dictionary<string, string>(), null, componentRecorder));
 
         directoryWalkerMock.VerifyAll();
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
     }
 
     [TestMethod]

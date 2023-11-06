@@ -237,8 +237,8 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithFile("Cargo.lock", this.testCargoLockString)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 
@@ -288,11 +288,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithScanRequest(request)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var componentGraphs = componentRecorder.GetDependencyGraphsByLocation();
 
-        componentGraphs.Count.Should().Be(2); // 1 for each detector
+        componentGraphs.Should().HaveCount(2); // 1 for each detector
     }
 
     [TestMethod]
@@ -303,11 +303,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithFile("Cargo.lock", this.testCargoLockString, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var componentGraphs = componentRecorder.GetDependencyGraphsByLocation();
 
-        componentGraphs.Count.Should().Be(2); // 1 graph for each Cargo.lock
+        componentGraphs.Should().HaveCount(2); // 1 graph for each Cargo.lock
 
         var graph1 = componentGraphs.Values.First();
         var graph2 = componentGraphs.Values.Skip(1).First();
@@ -326,11 +326,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithFile("Cargo.lock", this.testCargoLockV2String, fileLocation: Path.Join(Path.GetTempPath(), "sub-path", "Cargo.lock"))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var componentGraphs = componentRecorder.GetDependencyGraphsByLocation();
 
-        componentGraphs.Count.Should().Be(2); // 1 graph for each Cargo.lock
+        componentGraphs.Should().HaveCount(2); // 1 graph for each Cargo.lock
 
         var graph1 = componentGraphs.Values.First();
         var graph2 = componentGraphs.Values.Skip(1).First();
@@ -348,8 +348,8 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithFile("Cargo.lock", this.testCargoLockString)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
 
         IDictionary<string, string> packageVersions = new Dictionary<string, string>()
         {
@@ -378,7 +378,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             var packageName = (discoveredComponent.Component as CargoComponent).Name;
 
             // Verify version
-            Assert.AreEqual(packageVersions[packageName], (discoveredComponent.Component as CargoComponent).Version);
+            (discoveredComponent.Component as CargoComponent).Version.Should().Be(packageVersions[packageName]);
 
             var dependencyRoots = new HashSet<string>();
 
@@ -393,7 +393,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         // Verify all packages were detected
         foreach (var expectedPackage in packageVersions.Keys)
         {
-            Assert.IsTrue(componentNames.Contains(expectedPackage));
+            componentNames.Should().Contain(expectedPackage);
         }
     }
 
@@ -404,8 +404,8 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithFile("Cargo.lock", this.testCargoLockV2String)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(7);
 
         var packageVersions = new List<string>()
         {
@@ -436,7 +436,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             var componentKey = $"{component.Name} {component.Version}";
 
             // Verify version
-            Assert.IsTrue(packageVersions.Contains(componentKey));
+            packageVersions.Should().Contain(componentKey);
 
             componentRecorder.AssertAllExplicitlyReferencedComponents(
                 discoveredComponent.Component.Id,
@@ -449,7 +449,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         // Verify all packages were detected
         foreach (var expectedPackage in packageVersions)
         {
-            Assert.IsTrue(componentNames.Contains(expectedPackage));
+            componentNames.Should().Contain(expectedPackage);
         }
     }
 
@@ -529,8 +529,8 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithFile("Cargo.lock", testCargoLock)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(7);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 
@@ -598,11 +598,11 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
-        dependencyGraphs.Count.Should().Be(1);
+        dependencyGraphs.Should().ContainSingle();
 
         var dependencyGraph = dependencyGraphs.Single().Value;
         var foundComponents = dependencyGraph.GetComponents();
-        foundComponents.Count().Should().Be(2);
+        foundComponents.Should().HaveCount(2);
 
         componentRecorder.ForOneComponent("other_dependency_dependency 0.1.12-alpha.6 - Cargo", (grouping) =>
         {
@@ -628,8 +628,8 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithFile("Cargo.lock", string.Concat(this.testWorkspaceLockBaseDependency, lockFile))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(7);
 
         var packageVersions = new List<string>()
         {
@@ -660,7 +660,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             var componentKey = $"{component.Name} {component.Version}";
 
             // Verify version
-            Assert.IsTrue(packageVersions.Contains(componentKey));
+            packageVersions.Should().Contain(componentKey);
 
             componentRecorder.AssertAllExplicitlyReferencedComponents(
                 discoveredComponent.Component.Id,
@@ -673,7 +673,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         // Verify all packages were detected
         foreach (var expectedPackage in packageVersions)
         {
-            Assert.IsTrue(componentNames.Contains(expectedPackage));
+            componentNames.Should().Contain(expectedPackage);
         }
     }
 
@@ -695,8 +695,8 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .WithFile("Cargo.lock", lockFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
     }
 
     [TestMethod]
@@ -719,10 +719,10 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
 
         var componentGraphs = componentRecorder.GetDependencyGraphsByLocation();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(6, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
 
-        Assert.AreEqual(1, componentGraphs.Count); // Only 1 Cargo.lock is specified
+        componentGraphs.Should().ContainSingle(); // Only 1 Cargo.lock is specified
 
         // A root Cargo.lock
         componentRecorder.ForAllComponents(x => x.AllFileLocations.Count().Should().Be(1));
@@ -758,8 +758,8 @@ dependencies = [
             .WithFile("Cargo.lock", testLockString)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(2, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 
@@ -796,11 +796,11 @@ source = ""git+https://github.com/microsoft/component-detection/?branch=main#abc
             .WithFile("Cargo.lock", testLockString)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
-        dependencyGraphs.Count.Should().Be(1);
+        dependencyGraphs.Should().ContainSingle();
 
         var dependencyGraph = dependencyGraphs.Single().Value;
         dependencyGraph.Contains("my_git_dep 0.1.0 - Cargo").Should().BeTrue();
@@ -832,13 +832,13 @@ source = ""registry+sparse+https://other.registry/index/""
             .WithFile("Cargo.lock", testLockString)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         // If registries have identity, this should be 2
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
-        dependencyGraphs.Count.Should().Be(1);
+        dependencyGraphs.Should().ContainSingle();
 
         var dependencyGraph = dependencyGraphs.Single().Value;
 
@@ -874,8 +874,8 @@ dependencies = []
             .WithFile("Cargo.lock", testCargoLock)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, result.ResultCode);
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 

@@ -17,12 +17,12 @@ public class PythonVersionTests
     {
         var pythonVersion = PythonVersion.Create("4!3.2.1.1rc2.post99.dev2");
 
-        Assert.AreEqual(4, pythonVersion.Epoch);
-        Assert.AreEqual("3.2.1.1", pythonVersion.Release);
-        Assert.AreEqual("rc", pythonVersion.PreReleaseLabel);
-        Assert.AreEqual(99, pythonVersion.PostNumber);
-        Assert.AreEqual("dev", pythonVersion.DevLabel);
-        Assert.AreEqual(2, pythonVersion.DevNumber);
+        pythonVersion.Epoch.Should().Be(4);
+        pythonVersion.Release.Should().Be("3.2.1.1");
+        pythonVersion.PreReleaseLabel.Should().Be("rc");
+        pythonVersion.PostNumber.Should().Be(99);
+        pythonVersion.DevLabel.Should().Be("dev");
+        pythonVersion.DevNumber.Should().Be(2);
     }
 
     [TestMethod]
@@ -30,13 +30,13 @@ public class PythonVersionTests
     {
         var pythonVersion = PythonVersion.Create("4!3.2.1.1rc2.post90.dev");
 
-        Assert.AreEqual(4, pythonVersion.Epoch);
-        Assert.AreEqual("3.2.1.1", pythonVersion.Release);
-        Assert.AreEqual("rc", pythonVersion.PreReleaseLabel);
-        Assert.AreEqual(2, pythonVersion.PreReleaseNumber);
-        Assert.AreEqual(90, pythonVersion.PostNumber);
-        Assert.AreEqual("dev", pythonVersion.DevLabel);
-        Assert.AreEqual(0, pythonVersion.DevNumber);
+        pythonVersion.Epoch.Should().Be(4);
+        pythonVersion.Release.Should().Be("3.2.1.1");
+        pythonVersion.PreReleaseLabel.Should().Be("rc");
+        pythonVersion.PreReleaseNumber.Should().Be(2);
+        pythonVersion.PostNumber.Should().Be(90);
+        pythonVersion.DevLabel.Should().Be("dev");
+        pythonVersion.DevNumber.Should().Be(0);
     }
 
     [TestMethod]
@@ -96,8 +96,8 @@ public class PythonVersionTests
 
         foreach (var (specs, validVersions, invalidVersions) in testCases)
         {
-            Assert.IsTrue(validVersions.All(x => PythonVersionUtilities.VersionValidForSpec(x, specs)));
-            Assert.IsTrue(invalidVersions.All(x => !PythonVersionUtilities.VersionValidForSpec(x, specs)));
+            validVersions.Should().OnlyContain(x => PythonVersionUtilities.VersionValidForSpec(x, specs));
+            invalidVersions.Should().OnlyContain(x => !PythonVersionUtilities.VersionValidForSpec(x, specs));
         }
     }
 

@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry;
@@ -87,7 +88,7 @@ package:
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         // packages from the conda section
         this.AssertCondaLockComponentNameAndVersion(detectedComponents, "conda-lock", "2.1.0");
@@ -97,26 +98,24 @@ package:
         this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2023.5.7");
         this.AssertPipComponentNameAndVersion(detectedComponents, "requests", "2.31.0");
 
-        Assert.AreEqual(4, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(4);
     }
 
     private void AssertCondaLockComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
-        Assert.IsNotNull(
-            detectedComponents.SingleOrDefault(c =>
+        detectedComponents.SingleOrDefault(c =>
                 c.Component is CondaComponent component &&
                 component.Name.Equals(name) &&
-                component.Version.Equals(version)),
+                component.Version.Equals(version)).Should().NotBeNull(
             $"Component with name {name} and version {version} was not found");
     }
 
     private void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
-        Assert.IsNotNull(
-            detectedComponents.SingleOrDefault(c =>
+        detectedComponents.SingleOrDefault(c =>
                 c.Component is PipComponent component &&
                 component.Name.Equals(name) &&
-                component.Version.Equals(version)),
+                component.Version.Equals(version)).Should().NotBeNull(
             $"Component with name {name} and version {version} was not found");
     }
 }

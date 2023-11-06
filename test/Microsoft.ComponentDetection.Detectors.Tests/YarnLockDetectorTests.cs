@@ -55,8 +55,8 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", packageJson, new List<string> { "package.json" })
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -70,8 +70,8 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", packageJson, new List<string> { "package.json" })
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -99,8 +99,8 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -126,8 +126,8 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -150,12 +150,12 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
-        Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
-        Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
+        detectedComponents.Should().ContainSingle();
+        ((NpmComponent)detectedComponents.Single().Component).Name.Should().Be(componentA.Name);
+        ((NpmComponent)detectedComponents.Single().Component).Version.Should().Be(version0);
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             detectedComponents.Single().Component.Id,
@@ -182,12 +182,12 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", packageJsonContent, new List<string> { "package.json" })
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
-        Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
-        Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
+        detectedComponents.Should().ContainSingle();
+        ((NpmComponent)detectedComponents.Single().Component).Name.Should().Be(componentA.Name);
+        ((NpmComponent)detectedComponents.Single().Component).Version.Should().Be(version0);
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             detectedComponents.Single().Component.Id,
@@ -228,12 +228,12 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", workspaceJsonComponentStream.Stream, new[] { "package.json" }, Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
-        Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
-        Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
+        detectedComponents.Should().ContainSingle();
+        ((NpmComponent)detectedComponents.Single().Component).Name.Should().Be(componentA.Name);
+        ((NpmComponent)detectedComponents.Single().Component).Version.Should().Be(version0);
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             detectedComponents.Single().Component.Id,
@@ -277,11 +277,11 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().HaveCount(1);
+        detectedComponents.Should().ContainSingle();
 
         // checking if workspace's "package.json FilePath entry" is added or not.
         var detectedFilePaths = detectedComponents.First().FilePaths;
-        detectedFilePaths.Should().HaveCount(1);
+        detectedFilePaths.Should().ContainSingle();
         var expectedWorkSpacePackageJsonPath = Path.Combine(Path.GetTempPath(), "workspace", "package.json");
         detectedComponents.First().FilePaths.Contains(expectedWorkSpacePackageJsonPath).Should().Be(true);
     }
@@ -320,12 +320,12 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", workspaceJsonComponentStream.Stream, new[] { "package.json" }, Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
-        Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
-        Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
+        detectedComponents.Should().ContainSingle();
+        ((NpmComponent)detectedComponents.Single().Component).Name.Should().Be(componentA.Name);
+        ((NpmComponent)detectedComponents.Single().Component).Version.Should().Be(version0);
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             detectedComponents.Single().Component.Id,
@@ -366,12 +366,12 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", workspaceJsonComponentStream.Stream, new[] { "package.json" }, Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
-        Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
-        Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
+        detectedComponents.Should().ContainSingle();
+        ((NpmComponent)detectedComponents.Single().Component).Name.Should().Be(componentA.Name);
+        ((NpmComponent)detectedComponents.Single().Component).Version.Should().Be(version0);
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             detectedComponents.Single().Component.Id,
@@ -412,12 +412,12 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             .WithFile("package.json", workspaceJsonComponentStream.Stream, new[] { "package.json" }, Path.Combine(Path.GetTempPath(), "workspace", "package.json"))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
-        Assert.AreEqual(componentA.Name, ((NpmComponent)detectedComponents.Single().Component).Name);
-        Assert.AreEqual(version0, ((NpmComponent)detectedComponents.Single().Component).Version);
+        detectedComponents.Should().ContainSingle();
+        ((NpmComponent)detectedComponents.Single().Component).Name.Should().Be(componentA.Name);
+        ((NpmComponent)detectedComponents.Single().Component).Version.Should().Be(version0);
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             detectedComponents.Single().Component.Id,
@@ -459,8 +459,8 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var component0 = detectedComponents.Select(x => x.Component).Cast<NpmComponent>().Single(x => x.Name == componentA.Name);
         var component1 = detectedComponents.Select(x => x.Component).Cast<NpmComponent>().Single(x => x.Name == componentB.Name);
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(2, detectedComponents.Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        detectedComponents.Should().HaveCount(2);
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             component0.Id,
@@ -506,8 +506,8 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var component0 = detectedComponents.Select(x => x.Component).Cast<NpmComponent>().Single(x => x.Name == componentA.Name);
         var component1 = detectedComponents.Select(x => x.Component).Cast<NpmComponent>().Single(x => x.Name == componentB.Name);
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(2, detectedComponents.Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        detectedComponents.Should().HaveCount(2);
 
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             component0.Id,
@@ -579,21 +579,21 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var componentA = detectedComponentes.Single(x => ((NpmComponent)x.Component).Name == componentNameA);
         var componentB = detectedComponentes.Single(x => ((NpmComponent)x.Component).Name == componentNameB);
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(2, detectedComponentes.Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        detectedComponentes.Should().HaveCount(2);
 
         // Component A
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             componentA.Component.Id,
             parentComponent => parentComponent.Id == componentA.Component.Id);
-        Assert.AreEqual(false, componentRecorder.GetEffectiveDevDependencyValue(componentA.Component.Id));
+        componentRecorder.GetEffectiveDevDependencyValue(componentA.Component.Id).Should().Be(false);
 
         // Component B
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             componentB.Component.Id,
             parentComponent1 => parentComponent1.Id == componentA.Component.Id,
             parentComponent2 => parentComponent2.Id == componentB.Component.Id);
-        Assert.AreEqual(false, componentRecorder.GetEffectiveDevDependencyValue(componentB.Component.Id));
+        componentRecorder.GetEffectiveDevDependencyValue(componentB.Component.Id).Should().Be(false);
     }
 
     [TestMethod]
@@ -655,21 +655,21 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
         var componentA = detectedComponentes.Single(x => ((NpmComponent)x.Component).Name == componentNameA);
         var componentB = detectedComponentes.Single(x => ((NpmComponent)x.Component).Name == componentNameB);
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(2, detectedComponentes.Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        detectedComponentes.Should().HaveCount(2);
 
         // Component A
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             componentA.Component.Id,
             parentComponent => parentComponent.Id == componentA.Component.Id);
-        Assert.AreEqual(false, componentRecorder.GetEffectiveDevDependencyValue(componentA.Component.Id));
+        componentRecorder.GetEffectiveDevDependencyValue(componentA.Component.Id).Should().Be(false);
 
         // Component B
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             componentB.Component.Id,
             parentComponent1 => parentComponent1.Id == componentA.Component.Id,
             parentComponent2 => parentComponent2.Id == componentB.Component.Id);
-        Assert.AreEqual(false, componentRecorder.GetEffectiveDevDependencyValue(componentB.Component.Id));
+        componentRecorder.GetEffectiveDevDependencyValue(componentB.Component.Id).Should().Be(false);
     }
 
     [TestMethod]
@@ -812,7 +812,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        detectedComponents.Should().HaveCount(1);
+        detectedComponents.Should().ContainSingle();
         var detectedComponent = detectedComponents.First();
     }
 

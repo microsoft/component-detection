@@ -22,8 +22,8 @@ public class GradleComponentDetectorTests : BaseDetectorTest<GradleComponentDete
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -38,23 +38,23 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
             .WithFile("gradle.lockfile", validFileOne)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var discoveredComponents = componentRecorder.GetDetectedComponents().Select(c => (MavenComponent)c.Component).OrderBy(c => c.ArtifactId).ToList();
 
-        Assert.AreEqual(3, discoveredComponents.Count);
+        discoveredComponents.Should().HaveCount(3);
 
-        Assert.AreEqual("org.springframework", discoveredComponents[0].GroupId);
-        Assert.AreEqual("spring-beans", discoveredComponents[0].ArtifactId);
-        Assert.AreEqual("5.0.5.RELEASE", discoveredComponents[0].Version);
+        discoveredComponents[0].GroupId.Should().Be("org.springframework");
+        discoveredComponents[0].ArtifactId.Should().Be("spring-beans");
+        discoveredComponents[0].Version.Should().Be("5.0.5.RELEASE");
 
-        Assert.AreEqual("org.springframework", discoveredComponents[1].GroupId);
-        Assert.AreEqual("spring-core", discoveredComponents[1].ArtifactId);
-        Assert.AreEqual("5.0.5.RELEASE", discoveredComponents[1].Version);
+        discoveredComponents[1].GroupId.Should().Be("org.springframework");
+        discoveredComponents[1].ArtifactId.Should().Be("spring-core");
+        discoveredComponents[1].Version.Should().Be("5.0.5.RELEASE");
 
-        Assert.AreEqual("org.springframework", discoveredComponents[2].GroupId);
-        Assert.AreEqual("spring-jcl", discoveredComponents[2].ArtifactId);
-        Assert.AreEqual("5.0.5.RELEASE", discoveredComponents[2].Version);
+        discoveredComponents[2].GroupId.Should().Be("org.springframework");
+        discoveredComponents[2].ArtifactId.Should().Be("spring-jcl");
+        discoveredComponents[2].Version.Should().Be("5.0.5.RELEASE");
     }
 
     [TestMethod]
@@ -69,24 +69,24 @@ org.springframework:spring-jcl:5.0.5.RELEASE=lintClassPath,debugCompile,releaseC
             .WithFile("gradle.lockfile", validFileOne)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var discoveredComponents = detectedComponents.Select(c => (MavenComponent)c.Component).OrderBy(c => c.ArtifactId).ToList();
 
-        Assert.AreEqual(3, discoveredComponents.Count);
+        discoveredComponents.Should().HaveCount(3);
 
-        Assert.AreEqual("org.springframework", discoveredComponents[0].GroupId);
-        Assert.AreEqual("spring-beans", discoveredComponents[0].ArtifactId);
-        Assert.AreEqual("5.0.5.RELEASE", discoveredComponents[0].Version);
+        discoveredComponents[0].GroupId.Should().Be("org.springframework");
+        discoveredComponents[0].ArtifactId.Should().Be("spring-beans");
+        discoveredComponents[0].Version.Should().Be("5.0.5.RELEASE");
 
-        Assert.AreEqual("org.springframework", discoveredComponents[1].GroupId);
-        Assert.AreEqual("spring-core", discoveredComponents[1].ArtifactId);
-        Assert.AreEqual("5.0.5.RELEASE", discoveredComponents[1].Version);
+        discoveredComponents[1].GroupId.Should().Be("org.springframework");
+        discoveredComponents[1].ArtifactId.Should().Be("spring-core");
+        discoveredComponents[1].Version.Should().Be("5.0.5.RELEASE");
 
-        Assert.AreEqual("org.springframework", discoveredComponents[2].GroupId);
-        Assert.AreEqual("spring-jcl", discoveredComponents[2].ArtifactId);
-        Assert.AreEqual("5.0.5.RELEASE", discoveredComponents[2].Version);
+        discoveredComponents[2].GroupId.Should().Be("org.springframework");
+        discoveredComponents[2].ArtifactId.Should().Be("spring-jcl");
+        discoveredComponents[2].Version.Should().Be("5.0.5.RELEASE");
     }
 
     [TestMethod]
@@ -109,11 +109,11 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
             .WithFile("gradle2.lockfile", validFileTwo)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(7, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(7);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
-        dependencyGraphs.Keys.Count().Should().Be(2);
+        dependencyGraphs.Keys.Should().HaveCount(2);
 
         var graph1 = dependencyGraphs.Values.Single(dependencyGraph => dependencyGraph.GetComponents().Count() == 3);
         var graph2 = dependencyGraphs.Values.Single(dependencyGraph => dependencyGraph.GetComponents().Count() == 5);
@@ -154,16 +154,16 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
             .WithFile("gradle2.lockfile", validFileTwo)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(1, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
 
         componentRecorder.ForOneComponent(componentRecorder.GetDetectedComponents().First().Component.Id, x =>
         {
-            Enumerable.Count<string>(x.AllFileLocations).Should().Be(2);
+            x.AllFileLocations.Should().HaveCount(2);
         });
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
-        dependencyGraphs.Keys.Count().Should().Be(2);
+        dependencyGraphs.Keys.Should().HaveCount(2);
 
         var graph1 = dependencyGraphs.Values.First();
         var graph2 = dependencyGraphs.Values.Skip(1).First();
@@ -192,11 +192,11 @@ $#26^#25%4";
             .WithFile("gradle2.lockfile", validFileTwo)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(5, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(5);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
-        dependencyGraphs.Keys.Count().Should().Be(1);
+        dependencyGraphs.Keys.Should().ContainSingle();
 
         var graph2 = dependencyGraphs.Values.Single();
 

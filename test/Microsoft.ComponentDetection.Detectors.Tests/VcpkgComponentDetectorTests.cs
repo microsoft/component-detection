@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -66,7 +67,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
@@ -77,13 +78,13 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
             throw new AssertFailedException($"{nameof(sbomComponent)} is null");
         }
 
-        Assert.AreEqual(1, components.Count);
-        Assert.AreEqual("nlohmann-json", sbomComponent.Name);
-        Assert.AreEqual("3.10.4", sbomComponent.Version);
-        Assert.AreEqual(5, sbomComponent.PortVersion);
-        Assert.AreEqual("SPDXRef-port", sbomComponent.SPDXID);
-        Assert.AreEqual("git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json", sbomComponent.DownloadLocation);
-        Assert.AreEqual("pkg:vcpkg/nlohmann-json@3.10.4?port_version=5", sbomComponent.PackageUrl.ToString());
+        components.Should().ContainSingle();
+        sbomComponent.Name.Should().Be("nlohmann-json");
+        sbomComponent.Version.Should().Be("3.10.4");
+        sbomComponent.PortVersion.Should().Be(5);
+        sbomComponent.SPDXID.Should().Be("SPDXRef-port");
+        sbomComponent.DownloadLocation.Should().Be("git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json");
+        sbomComponent.PackageUrl.ToString().Should().Be("pkg:vcpkg/nlohmann-json@3.10.4?port_version=5");
     }
 
     [TestMethod]
@@ -125,24 +126,24 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
 
-        Assert.AreEqual(2, components.Count);
+        components.Should().HaveCount(2);
         var sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c?.Component).SPDXID.Equals("SPDXRef-binary")).Component;
-        Assert.IsNotNull(sbomComponent);
-        Assert.AreEqual("tinyxml2:x64-linux", sbomComponent.Name);
-        Assert.AreEqual("5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0", sbomComponent.Version);
-        Assert.AreEqual("SPDXRef-binary", sbomComponent.SPDXID);
-        Assert.AreEqual("NONE", sbomComponent.DownloadLocation);
+        sbomComponent.Should().NotBeNull();
+        sbomComponent.Name.Should().Be("tinyxml2:x64-linux");
+        sbomComponent.Version.Should().Be("5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0");
+        sbomComponent.SPDXID.Should().Be("SPDXRef-binary");
+        sbomComponent.DownloadLocation.Should().Be("NONE");
 
         sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c.Component).SPDXID.Equals("SPDXRef-resource-1")).Component;
-        Assert.AreEqual("leethomason/tinyxml2", sbomComponent.Name);
-        Assert.AreEqual("9.0.0", sbomComponent.Version);
-        Assert.AreEqual("SPDXRef-resource-1", sbomComponent.SPDXID);
-        Assert.AreEqual("git+https://github.com/leethomason/tinyxml2", sbomComponent.DownloadLocation);
+        sbomComponent.Name.Should().Be("leethomason/tinyxml2");
+        sbomComponent.Version.Should().Be("9.0.0");
+        sbomComponent.SPDXID.Should().Be("SPDXRef-resource-1");
+        sbomComponent.DownloadLocation.Should().Be("git+https://github.com/leethomason/tinyxml2");
     }
 
     [TestMethod]
@@ -154,11 +155,11 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
-        Assert.IsFalse(components.Any());
+        components.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -170,11 +171,11 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
             .WithFile("vcpkg.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
-        Assert.IsFalse(components.Any());
+        components.Should().BeEmpty();
     }
 
     [TestMethod]

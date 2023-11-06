@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
@@ -28,8 +29,8 @@ COCOAPODS: 1.4.0.beta.1";
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
-        Assert.AreEqual(0, componentRecorder.GetDetectedComponents().Count());
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -64,10 +65,10 @@ COCOAPODS: 0.39.0";
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(6, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(6);
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
         this.AssertPodComponentNameAndVersion(detectedComponents, "AzureData", "0.5.0");
@@ -106,10 +107,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(2, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(2);
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "MSAL", "1.0.7");
         this.AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
@@ -150,10 +151,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
+        detectedComponents.Should().ContainSingle();
 
         this.AssertGitComponentHashAndUrl(detectedComponents, "da7223e3c455fe558de361c611df36c6dcc4229d", "https://github.com/microsoftgraph/msgraph-sdk-objc.git");
     }
@@ -193,10 +194,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
+        detectedComponents.Should().ContainSingle();
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
     }
@@ -236,10 +237,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
+        detectedComponents.Should().ContainSingle();
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "MSGraphClientSDK", "1.0.0");
     }
@@ -273,10 +274,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(2, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(2);
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "CocoaLumberjack", "3.6.0");
         this.AssertPodComponentNameAndVersion(detectedComponents, "SVGKit", "2.1.0");
@@ -306,10 +307,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
+        detectedComponents.Should().ContainSingle();
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "Keys", "1.0.1");
     }
@@ -372,10 +373,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent2)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(8, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(8);
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
         this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
@@ -456,10 +457,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent2)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(8, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(8);
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
         this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
@@ -553,10 +554,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent2)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(8, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(8);
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
         this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.1");
@@ -635,10 +636,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent3)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
+        detectedComponents.Should().ContainSingle();
 
         this.AssertPodComponentNameAndVersion(detectedComponents, "AzureCore", "0.5.0");
     }
@@ -681,10 +682,10 @@ COCOAPODS: 1.8.4";
             .WithFile("Podfile.lock", podfileLockContent2, fileLocation: Path.Join(Path.GetTempPath(), "sub-folder", "Podfile.lock"))
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
+        detectedComponents.Should().ContainSingle();
 
         var firstComponent = detectedComponents.First();
         componentRecorder.ForOneComponent(firstComponent.Component.Id, grouping => Assert.AreEqual(2, Enumerable.Count<string>(grouping.AllFileLocations)));
@@ -692,42 +693,40 @@ COCOAPODS: 1.8.4";
 
     private void AssertPodComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
-        Assert.IsNotNull(
-            detectedComponents.SingleOrDefault(component =>
+        detectedComponents.SingleOrDefault(component =>
                 component.Component is PodComponent &&
                 (component.Component as PodComponent).Name.Equals(name) &&
-                (component.Component as PodComponent).Version.Equals(version)),
+                (component.Component as PodComponent).Version.Equals(version)).Should().NotBeNull(
             $"Component with name {name} and version {version} was not found");
     }
 
     private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
     {
-        Assert.IsNotNull(
-            detectedComponents.SingleOrDefault(component =>
+        detectedComponents.SingleOrDefault(component =>
                 component.Component is GitComponent &&
                 (component.Component as GitComponent).CommitHash.Equals(commitHash) &&
-                (component.Component as GitComponent).RepositoryUrl.Equals(repositoryUrl)),
+                (component.Component as GitComponent).RepositoryUrl.Equals(repositoryUrl)).Should().NotBeNull(
             $"Component with commit hash {commitHash} and repository url {repositoryUrl} was not found");
     }
 
     private void AssertPodComponentHasPodComponentDependencyRoot(IComponentRecorder recorder, (string Name, string Version) component, (string Name, string Version) root)
     {
-        Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<PodComponent>(
+        recorder.IsDependencyOfExplicitlyReferencedComponents<PodComponent>(
             new PodComponent(component.Name, component.Version).Id,
-            x => x.Id == new PodComponent(root.Name, root.Version).Id));
+            x => x.Id == new PodComponent(root.Name, root.Version).Id).Should().BeTrue();
     }
 
     private void AssertPodComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string Name, string Version) component, (string Commit, string Repo) root)
     {
-        Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
+        recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
             new PodComponent(component.Name, component.Version).Id,
-            x => x.Id == new GitComponent(new Uri(root.Repo), root.Commit).Id));
+            x => x.Id == new GitComponent(new Uri(root.Repo), root.Commit).Id).Should().BeTrue();
     }
 
     private void AssertGitComponentHasGitComponentDependencyRoot(IComponentRecorder recorder, (string Commit, string Repo) component, (string Commit, string Repo) root)
     {
-        Assert.IsTrue(recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
+        recorder.IsDependencyOfExplicitlyReferencedComponents<GitComponent>(
             new GitComponent(new Uri(component.Repo), component.Commit).Id,
-            x => x.Id == new GitComponent(new Uri(root.Repo), root.Commit).Id));
+            x => x.Id == new GitComponent(new Uri(root.Repo), root.Commit).Id).Should().BeTrue();
     }
 }

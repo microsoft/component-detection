@@ -21,25 +21,25 @@ public class MavenStyleDependencyGraphParserTests
 
         var parser = new MavenStyleDependencyGraphParser();
         var parsedGraph = parser.Parse(sampleMavenDependencyTree);
-        Assert.AreEqual(parsedGraph.Children.Count, 20);
-        Assert.AreEqual(parsedGraph.Value, "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT");
+        parsedGraph.Children.Should().HaveCount(20);
+        parsedGraph.Value.Should().Be("org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT");
 
         // Verify a specific interesting path:
         var mavenCore = parsedGraph.Children.FirstOrDefault(x => x.Value == "org.apache.maven:maven-core:jar:3.6.1-SNAPSHOT:compile");
-        Assert.IsNotNull(mavenCore);
-        Assert.AreEqual(mavenCore.Children.Count, 7);
+        mavenCore.Should().NotBeNull();
+        mavenCore.Children.Should().HaveCount(7);
 
         var guice = mavenCore.Children.FirstOrDefault(x => x.Value == "com.google.inject:guice:jar:no_aop:4.2.1:compile");
-        Assert.IsNotNull(guice);
-        Assert.AreEqual(guice.Children.Count, 2);
+        guice.Should().NotBeNull();
+        guice.Children.Should().HaveCount(2);
 
         var guava = guice.Children.FirstOrDefault(x => x.Value == "com.google.guava:guava:jar:25.1-android:compile");
-        Assert.IsNotNull(guava);
-        Assert.AreEqual(guava.Children.Count, 5);
+        guava.Should().NotBeNull();
+        guava.Children.Should().HaveCount(5);
 
         var animalSnifferAnnotations = guava.Children.FirstOrDefault(x => x.Value == "org.codehaus.mojo:animal-sniffer-annotations:jar:1.14:compile");
-        Assert.IsNotNull(animalSnifferAnnotations);
-        Assert.AreEqual(animalSnifferAnnotations.Children.Count, 0);
+        animalSnifferAnnotations.Should().NotBeNull();
+        animalSnifferAnnotations.Children.Should().BeEmpty();
     }
 
     [TestMethod]
@@ -66,7 +66,7 @@ public class MavenStyleDependencyGraphParserTests
         var topLevelComponentDependencies = dependencyGraph.GetDependenciesForComponent(topLevelComponent.Component.Id);
         topLevelComponentDependencies.Should().HaveCount(20);
         topLevelComponentDependencies.Should().Contain(mavenCore.Component.Id);
-        topLevelComponentDependencies.All(componentId => dependencyGraph.IsComponentExplicitlyReferenced(componentId)).Should().BeTrue();
+        topLevelComponentDependencies.Should().OnlyContain(componentId => dependencyGraph.IsComponentExplicitlyReferenced(componentId));
 
         var mavenCoreDependencies = dependencyGraph.GetDependenciesForComponent(mavenCore.Component.Id);
         mavenCoreDependencies.Should().HaveCount(7);

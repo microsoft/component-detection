@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Poetry;
@@ -36,14 +37,14 @@ reference = ""custom""
             .WithFile("poetry.lock", poetryLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
+        detectedComponents.Should().ContainSingle();
 
         this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
         var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
-        Assert.IsFalse(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
+        componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false).Should().BeFalse();
     }
 
     [TestMethod]
@@ -62,15 +63,15 @@ python-versions = ""*""
             .WithFile("poetry.lock", poetryLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(1, detectedComponents.Count());
+        detectedComponents.Should().ContainSingle();
 
         this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
 
         var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
-        Assert.IsTrue(componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false));
+        componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false).Should().BeTrue();
     }
 
     [TestMethod]
@@ -113,29 +114,28 @@ resolved_reference = ""232a5596424c98d11c3cf2e29b2f6a6c591c2ff3""";
             .WithFile("poetry.lock", poetryLockContent)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(2, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(2);
 
         this.AssertGitComponentHashAndUrl(detectedComponents, "232a5596424c98d11c3cf2e29b2f6a6c591c2ff3", "https://github.com/requests/requests.git");
     }
 
     private void AssertPipComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)
     {
-        Assert.IsNotNull(
-            detectedComponents.SingleOrDefault(c =>
+        detectedComponents.SingleOrDefault(c =>
                 c.Component is PipComponent component &&
                 component.Name.Equals(name) &&
-                component.Version.Equals(version)),
+                component.Version.Equals(version)).Should().NotBeNull(
             $"Component with name {name} and version {version} was not found");
     }
 
     private void AssertGitComponentHashAndUrl(IEnumerable<DetectedComponent> detectedComponents, string commitHash, string repositoryUrl)
     {
-        Assert.IsNotNull(detectedComponents.SingleOrDefault(c =>
+        detectedComponents.SingleOrDefault(c =>
             c.Component is GitComponent component &&
             component.CommitHash.Equals(commitHash) &&
-            component.RepositoryUrl.Equals(repositoryUrl)));
+            component.RepositoryUrl.Equals(repositoryUrl)).Should().NotBeNull();
     }
 }
