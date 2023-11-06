@@ -1,6 +1,5 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-using System;
 using PackageUrl;
 
 public class VcpkgComponent : TypedComponent
