@@ -110,7 +110,7 @@ public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetect
     {
         try
         {
-            var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev or Kind.Build) ?? false;
+            var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
             var (name, version) = ParseNameAndVersion(id);
             var detectedComponent = new DetectedComponent(new CargoComponent(name, version));
 
