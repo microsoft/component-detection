@@ -68,6 +68,8 @@ public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetect
                 "cargo",
                 null,
                 "metadata",
+                // Use --all-features to ensure that even optional feature dependencies are detected.
+                "--all-features",
                 "--manifest-path",
                 componentStream.Location,
                 "--format-version=1",
