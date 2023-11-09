@@ -64,11 +64,11 @@ public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetect
                 return;
             }
 
+            // Use --all-features to ensure that even optional feature dependencies are detected.
             var cliResult = await this.cliService.ExecuteCommandAsync(
                 "cargo",
                 null,
                 "metadata",
-                // Use --all-features to ensure that even optional feature dependencies are detected.
                 "--all-features",
                 "--manifest-path",
                 componentStream.Location,
