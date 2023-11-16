@@ -72,6 +72,10 @@ public class ScanSettings : BaseSettings
     [TypeConverter(typeof(CommaDelimitedConverter))]
     public IEnumerable<string> DockerImagesToScan { get; set; }
 
+    [CommandOption("--NoSummary")]
+    [Description("Do not display the detection summary on the standard output nor in the logs.")]
+    public bool NoSummary { get; set; }
+
     /// <inheritdoc />
     public override ValidationResult Validate()
     {
