@@ -57,10 +57,12 @@ public class PythonCommandService : IPythonCommandService
             throw new PythonNotFoundException();
         }
 
+        var formattedFilePath = filePath.Replace('\\', '/');
+        var workingDir = new DirectoryInfo(string.Join('/', filePath.Split('/')[..^1]));
+
         // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
         // We need to have python interpret this file because install_requires can be composed at runtime
-        var command = await this.commandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
-
+        var command = await this.commandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, workingDir, $"-c \"import distutils.core; setup=distutils.core.run_setup('{formattedFilePath}'); print(setup.install_requires)\"");
         if (command.ExitCode != 0)
         {
             return new List<string>();
