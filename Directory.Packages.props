@@ -17,8 +17,8 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="7.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="7.0.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.7.30" />
     <PackageVersion Include="DotNet.Glob" Version="2.1.1" />
     <PackageVersion Include="MinVer" Version="4.3.0" />
@@ -31,9 +31,9 @@
     <PackageVersion Include="NuGet.ProjectModel" Version="6.7.0" />
     <PackageVersion Include="NuGet.Versioning" Version="6.7.0" />
     <PackageVersion Include="packageurl-dotnet" Version="1.0.0" />
-    <PackageVersion Include="Polly" Version="8.1.0" />
+    <PackageVersion Include="Polly" Version="8.2.0" />
     <PackageVersion Include="SemanticVersioning" Version="2.0.2" />
-    <PackageVersion Include="Serilog" Version="3.0.1" />
+    <PackageVersion Include="Serilog" Version="3.1.1" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="7.0.0" />
     <PackageVersion Include="Serilog.Sinks.Async" Version="1.5.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="4.1.0" />
