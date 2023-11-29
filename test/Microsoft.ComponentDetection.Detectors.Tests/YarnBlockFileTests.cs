@@ -169,7 +169,7 @@ public class YarnBlockFileTests
 
         file.Should().BeEmpty();
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
-        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.Berry);
     }
 
     [TestMethod]
@@ -208,7 +208,7 @@ public class YarnBlockFileTests
         block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
         var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
-        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.Berry);
     }
 
     [TestMethod]
@@ -247,7 +247,7 @@ public class YarnBlockFileTests
         block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
         var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
-        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.Berry);
     }
 
     [TestMethod]
@@ -294,6 +294,6 @@ public class YarnBlockFileTests
 
         file.Should().HaveCount(3);
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
-        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.Berry);
     }
 }

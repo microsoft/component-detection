@@ -51,7 +51,7 @@ public class YarnParserTests
     [TestMethod]
     public void YarnLockParser_CanParseV2LockFiles()
     {
-        var yarnLockFileVersion = YarnLockVersion.V2;
+        var yarnLockFileVersion = YarnLockVersion.Berry;
 
         var parser = new YarnLockParser(this.loggerMock.Object);
 

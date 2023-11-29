@@ -18,7 +18,7 @@ public class YarnLockParser : IYarnLockParser
 
     private const string OptionalDependencies = "optionalDependencies";
 
-    private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
+    private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.Berry };
 
     private readonly ILogger<YarnLockParser> logger;
 
