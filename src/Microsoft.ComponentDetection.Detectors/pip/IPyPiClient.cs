@@ -215,7 +215,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
             {
                 this.logger.LogError(
                     ae,
-                    "Component {ReleaseKey} : {ReleaseValue)} could not be added to the sorted list of pip components for spec={SpecName}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions).",
+                    "Component {ReleaseKey} : {ReleaseValue} could not be added to the sorted list of pip components for spec={SpecName}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions).",
                     release.Key,
                     JsonConvert.SerializeObject(release.Value),
                     spec.Name);
