@@ -23,14 +23,12 @@ public class PathUtilityService : IPathUtilityService
 
     public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
     {
-        if (searchPattern.StartsWith("*") &&
-            fse.FileName.EndsWith(searchPattern.AsSpan()[1..], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern.AsSpan()[1..], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        if (searchPattern.EndsWith("*") &&
-            fse.FileName.StartsWith(searchPattern.AsSpan()[..^1], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern.AsSpan()[..^1], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -46,8 +44,7 @@ public class PathUtilityService : IPathUtilityService
         var belowDirectoryPath = Path.GetDirectoryName(belowFilePath);
 
         // Return true if they are not the same path but the second has the first as its base
-        return (aboveDirectoryPath.Length != belowDirectoryPath.Length) &&
-               belowDirectoryPath.StartsWith(aboveDirectoryPath);
+        return (aboveDirectoryPath.Length != belowDirectoryPath.Length) && belowDirectoryPath.StartsWith(aboveDirectoryPath);
     }
 
     public bool MatchesPattern(string searchPattern, string fileName)
