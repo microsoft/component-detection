@@ -122,13 +122,13 @@ public class YarnBlockFile : IYarnBlockFile
             }
             else if (string.IsNullOrEmpty(this.fileLines[this.fileLineIndex]))
             {
-                // If the comment header does not specify V1, a V2 metadata block will follow a line break
+                // If the comment header does not specify V1, a Yarn Berry (>=v2) metadata block will follow a line break
                 if (this.IncrementIndex())
                 {
                     if (this.fileLines[this.fileLineIndex].StartsWith("__metadata:"))
                     {
                         this.VersionHeader = this.fileLines[this.fileLineIndex];
-                        this.YarnLockVersion = YarnLockVersion.V2;
+                        this.YarnLockVersion = YarnLockVersion.Berry;
 
                         var metadataBlock = this.ParseBlock();
 
