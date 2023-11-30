@@ -89,15 +89,13 @@ public class PythonCommandService : IPythonCommandService
             return new List<string>();
         }
 
-        return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Trim().Trim('\'').Trim()).ToList();
+        return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
     }
 
     private IList<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
     {
         var items = new List<(string, GitComponent)>();
-        foreach (var line in File.ReadAllLines(path).Select(x => x.Trim().TrimEnd('\\')).Where(x =>
-                     !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))
+        foreach (var line in File.ReadAllLines(path).Select(x => x.Trim().TrimEnd('\\')).Where(x => !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))
         {
             // We technically shouldn't be ignoring information after the ;
             // It's used to indicate environment markers like specific python versions
@@ -136,15 +134,13 @@ public class PythonCommandService : IPythonCommandService
                 if ((possibleCommit.Length == shortCommitHash || possibleCommit.Length == fullCommitHash)
                     && hexRegex.IsMatch(possibleCommit))
                 {
-                    var gitComponent =
-                        new GitComponent(new Uri($"https://{parsedUrl.Host}{repoProject}"), possibleCommit);
+                    var gitComponent = new GitComponent(new Uri($"https://{parsedUrl.Host}{repoProject}"), possibleCommit);
                     items.Add((null, gitComponent));
                 }
             }
             else
             {
-                toAdd = toAdd
-                    .Split("#")[0]; // Remove comment from the line that contains the component name and version.
+                toAdd = toAdd.Split("#")[0]; // Remove comment from the line that contains the component name and version.
                 toAdd = toAdd.Replace(" ", string.Empty);
                 items.Add((toAdd, null));
             }
@@ -155,7 +151,7 @@ public class PythonCommandService : IPythonCommandService
 
     private async Task<string> ResolvePythonAsync(string pythonPath = null)
     {
-        var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python3" : pythonPath;
+        var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : pythonPath;
 
         if (await this.CanCommandBeLocatedAsync(pythonCommand))
         {
@@ -167,7 +163,6 @@ public class PythonCommandService : IPythonCommandService
 
     private async Task<bool> CanCommandBeLocatedAsync(string pythonPath)
     {
-        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath,
-            new List<string> { "python3", "python2" }, "--version");
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, new List<string> { "python3", "python2" }, "--version");
     }
 }

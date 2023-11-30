@@ -19,9 +19,8 @@ public class DetectorRestrictionService : IDetectorRestrictionService
     public IEnumerable<IComponentDetector> ApplyRestrictions(DetectorRestrictions restrictions, IEnumerable<IComponentDetector> detectors)
     {
         // Get a list of our default off detectors beforehand so that they can always be considered
-        var componentDetectors = detectors as IComponentDetector[] ?? detectors.ToArray();
-        var defaultOffDetectors = componentDetectors.Where(x => x is IDefaultOffComponentDetector).ToList();
-        detectors = componentDetectors.Where(x => !(x is IDefaultOffComponentDetector)).ToList();
+        var defaultOffDetectors = detectors.Where(x => x is IDefaultOffComponentDetector).ToList();
+        detectors = detectors.Where(x => !(x is IDefaultOffComponentDetector)).ToList();
 
         // If someone specifies an "allow list", use it, otherwise assume everything is allowed
         if (restrictions.AllowedDetectorIds != null && restrictions.AllowedDetectorIds.Any())

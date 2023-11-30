@@ -32,12 +32,12 @@ public static class GraphTranslationUtility
 
                 foreach (var componentId in graphByLocation.Value.GetComponents())
                 {
-                    var componentDependencies = graphByLocation.Value.GetDependenciesForComponent(componentId).ToList();
+                    var componentDependencies = graphByLocation.Value.GetDependenciesForComponent(componentId);
 
                     // We set dependencies to null basically to make the serialized output look more consistent (instead of empty arrays). If another location gets merged that has dependencies, it needs to create and set the key to non-null.
                     if (!graphWithMetadata.Graph.TryGetValue(componentId, out var dependencies))
                     {
-                        dependencies = componentDependencies.Any() ? new HashSet<string>() : null;
+                        dependencies = componentDependencies != null && componentDependencies.Any() ? new HashSet<string>() : null;
                         graphWithMetadata.Graph[componentId] = dependencies;
                     }
                     else if (dependencies == null && componentDependencies != null && componentDependencies.Any())

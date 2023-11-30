@@ -51,7 +51,19 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
             var packagesDictionary = conanLock.GraphLock.Nodes;
             var explicitReferencedDependencies = new HashSet<string>();
             var developmentDependencies = new HashSet<string>();
-            packagesDictionary.Remove("0", out var rootNode);
+            if (packagesDictionary.ContainsKey("0"))
+            {
+                packagesDictionary.Remove("0", out var rootNode);
+                if (rootNode?.Requires != null)
+                {
+                    explicitReferencedDependencies = new HashSet<string>(rootNode.Requires);
+                }
+
+                if (rootNode?.BuildRequires != null)
+                {
+                    developmentDependencies = new HashSet<string>(rootNode.BuildRequires);
+                }
+            }
 
             foreach (var (packageIndex, package) in packagesDictionary)
             {
