@@ -12,20 +12,27 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 public class PythonCommandService : IPythonCommandService
 {
     private readonly ICommandLineInvocationService commandLineInvocationService;
+    private readonly IPathUtilityService pathUtilityService;
 
     public PythonCommandService()
     {
     }
 
-    public PythonCommandService(ICommandLineInvocationService commandLineInvocationService) =>
+    public PythonCommandService(
+        ICommandLineInvocationService commandLineInvocationService,
+        IPathUtilityService pathUtilityService)
+    {
         this.commandLineInvocationService = commandLineInvocationService;
+        this.pathUtilityService = pathUtilityService;
+    }
 
     public async Task<bool> PythonExistsAsync(string pythonPath = null)
     {
         return !string.IsNullOrEmpty(await this.ResolvePythonAsync(pythonPath));
     }
 
-    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(string path, string pythonPath = null)
+    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(string path,
+        string pythonPath = null)
     {
         if (string.IsNullOrEmpty(path))
         {
@@ -57,12 +64,16 @@ public class PythonCommandService : IPythonCommandService
             throw new PythonNotFoundException();
         }
 
-        var formattedFilePath = filePath.Replace('\\', '/');
-        var workingDir = new DirectoryInfo(string.Join('/', filePath.Split('/')[..^1]));
+        var formattedFilePath = this.pathUtilityService.NormalizePath(filePath);
+        var workingDir = this.pathUtilityService.GetParentDirectory(formattedFilePath);
 
         // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
         // We need to have python interpret this file because install_requires can be composed at runtime
-        var command = await this.commandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, workingDir, $"-c \"import distutils.core; setup=distutils.core.run_setup('{formattedFilePath}'); print(setup.install_requires)\"");
+        var command = await this.commandLineInvocationService.ExecuteCommandAsync(
+            pythonExecutable,
+            null,
+            workingDir,
+            $"-c \"import distutils.core; setup=distutils.core.run_setup('{formattedFilePath}'); print(setup.install_requires)\"");
         if (command.ExitCode != 0)
         {
             return new List<string>();
@@ -78,13 +89,15 @@ public class PythonCommandService : IPythonCommandService
             return new List<string>();
         }
 
-        return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
+        return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim().Trim('\'').Trim()).ToList();
     }
 
     private IList<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
     {
         var items = new List<(string, GitComponent)>();
-        foreach (var line in File.ReadAllLines(path).Select(x => x.Trim().TrimEnd('\\')).Where(x => !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))
+        foreach (var line in File.ReadAllLines(path).Select(x => x.Trim().TrimEnd('\\')).Where(x =>
+                     !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))
         {
             // We technically shouldn't be ignoring information after the ;
             // It's used to indicate environment markers like specific python versions
@@ -123,13 +136,15 @@ public class PythonCommandService : IPythonCommandService
                 if ((possibleCommit.Length == shortCommitHash || possibleCommit.Length == fullCommitHash)
                     && hexRegex.IsMatch(possibleCommit))
                 {
-                    var gitComponent = new GitComponent(new Uri($"https://{parsedUrl.Host}{repoProject}"), possibleCommit);
+                    var gitComponent =
+                        new GitComponent(new Uri($"https://{parsedUrl.Host}{repoProject}"), possibleCommit);
                     items.Add((null, gitComponent));
                 }
             }
             else
             {
-                toAdd = toAdd.Split("#")[0]; // Remove comment from the line that contains the component name and version.
+                toAdd = toAdd
+                    .Split("#")[0]; // Remove comment from the line that contains the component name and version.
                 toAdd = toAdd.Replace(" ", string.Empty);
                 items.Add((toAdd, null));
             }
@@ -140,7 +155,7 @@ public class PythonCommandService : IPythonCommandService
 
     private async Task<string> ResolvePythonAsync(string pythonPath = null)
     {
-        var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : pythonPath;
+        var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python3" : pythonPath;
 
         if (await this.CanCommandBeLocatedAsync(pythonCommand))
         {
@@ -152,6 +167,7 @@ public class PythonCommandService : IPythonCommandService
 
     private async Task<bool> CanCommandBeLocatedAsync(string pythonPath)
     {
-        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, new List<string> { "python3", "python2" }, "--version");
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath,
+            new List<string> { "python3", "python2" }, "--version");
     }
 }

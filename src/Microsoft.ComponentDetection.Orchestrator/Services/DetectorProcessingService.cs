@@ -144,7 +144,7 @@ public class DetectorProcessingService : IDetectorProcessingService
         var parseWarningShown = false;
         foreach (var (_, recorder, detector) in results)
         {
-            var skippedComponents = recorder.GetSkippedComponents();
+            var skippedComponents = recorder.GetSkippedComponents().ToList();
             if (!skippedComponents.Any())
             {
                 continue;

@@ -168,7 +168,8 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
 
         var dependencyLookup = dependencies.Children<JProperty>().ToDictionary(dependency => dependency.Name);
 
-        foreach (var stream in packageJsonComponentStream)
+        var jsonComponentStream = packageJsonComponentStream as IComponentStream[] ?? packageJsonComponentStream.ToArray();
+        foreach (var stream in jsonComponentStream)
         {
             using var file = new StreamReader(stream.Stream);
             using var reader = new JsonTextReader(file);
@@ -183,7 +184,7 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
             }
         }
 
-        if (!packageJsonComponentStream.Any())
+        if (!jsonComponentStream.Any())
         {
             throw new InvalidOperationException(string.Format("InvalidPackageJson -- There must be a package.json file at '{0}' for components to be registered", singleFileComponentRecorder.ManifestFileLocation));
         }

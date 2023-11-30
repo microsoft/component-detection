@@ -149,15 +149,16 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
     private DetectedComponent MergeComponents(IEnumerable<DetectedComponent> enumerable)
     {
-        if (enumerable.Count() == 1)
+        var detectedComponents = enumerable as DetectedComponent[] ?? enumerable.ToArray();
+        if (detectedComponents.Length == 1)
         {
-            return enumerable.First();
+            return detectedComponents.First();
         }
 
         // Multiple detected components for the same logical component id -- this happens when different files see the same component. This code should go away when we get all
         //  mutable data out of detected component -- we can just take any component.
-        var firstComponent = enumerable.First();
-        foreach (var nextComponent in enumerable.Skip(1))
+        var firstComponent = detectedComponents.First();
+        foreach (var nextComponent in detectedComponents.Skip(1))
         {
             foreach (var filePath in nextComponent.FilePaths ?? Enumerable.Empty<string>())
             {
