@@ -133,6 +133,7 @@ public class DetectorProcessingService : IDetectorProcessingService
         var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
         var totalElapsedTime = stopwatch.Elapsed.TotalSeconds;
+
         if (!settings.NoSummary)
         {
             this.LogTabularOutput(providerElapsedTime, totalElapsedTime);
