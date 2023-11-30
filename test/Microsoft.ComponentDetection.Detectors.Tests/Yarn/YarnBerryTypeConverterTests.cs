@@ -42,6 +42,28 @@ __metadata:
     }
 
     [TestMethod]
+    public void Deserialize_WithLockfileWithMetadata_ShouldNotReturnWorkspaceEntries()
+    {
+        var yaml = @"
+__metadata:
+  version: 8
+  cacheKey: a
+
+""internal-package@npm:0.0.0, internal-package@workspace:packages/internal-package"":
+  version: 0.0.0-use.local
+  resolution: ""internal-package@workspace:packages/internal-package""
+  languageName: unknown
+  linkType: soft
+";
+
+        var result = this.deserializer.Deserialize<YarnBerryLockfile>(yaml);
+
+        result.Should().NotBeNull();
+        result.Entries.Should().NotBeNull()
+            .And.HaveCount(1);
+    }
+
+    [TestMethod]
     public void Deserialize_WithLockfileWithSingleEntry_ShouldReturnLockfileSingleEntry()
     {
         var yaml = @"

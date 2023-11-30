@@ -61,6 +61,6 @@ Analysis rulesets are defined in [analyzers.ruleset](analyzers.ruleset) and vali
 
 ### Testing
 
-L0s are defined in `MS.VS.Services.Governance.CD.*.L0.Tests`.
+L0s are defined in `Microsoft.ComponentDetection.*.Tests`.
 
 Verification tests are run on the sample projects defined in [microsoft/componentdetection-verification](https://github.com/microsoft/componentdetection-verification).
