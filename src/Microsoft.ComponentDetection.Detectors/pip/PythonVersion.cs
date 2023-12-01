@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -15,7 +16,7 @@ public class PythonVersion : IComparable<PythonVersion>
 
     private static readonly Dictionary<string, int> PreReleaseMapping = new Dictionary<string, int> { { "a", 0 }, { "alpha", 0 }, { "b", 1 }, { "beta", 1 }, { "c", 2 }, { "rc", 2 }, { "pre", 2 }, { "preview", 2 } };
 
-    private static readonly Dictionary<string, PythonVersion> Cache = new();
+    private static readonly ConcurrentDictionary<string, PythonVersion> Cache = new();
 
     private readonly Match match;
 
@@ -121,7 +122,11 @@ public class PythonVersion : IComparable<PythonVersion>
         }
 
         var pythonVersion = new PythonVersion(version);
-        Cache.Add(version, pythonVersion);
+
+        // Multiple API call threads can be running at once, if the same version
+        // is parsed twice use the last entry since they will be the same.
+        Cache[version] = pythonVersion;
+
         return pythonVersion;
     }
 
