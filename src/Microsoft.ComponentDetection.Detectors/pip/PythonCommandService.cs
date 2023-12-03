@@ -31,7 +31,8 @@ public class PythonCommandService : IPythonCommandService
         return !string.IsNullOrEmpty(await this.ResolvePythonAsync(pythonPath));
     }
 
-    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(string path,
+    public async Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(
+        string path,
         string pythonPath = null)
     {
         if (string.IsNullOrEmpty(path))
