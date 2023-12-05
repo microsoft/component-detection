@@ -73,7 +73,7 @@ public class PythonCommandService : IPythonCommandService
         var command = await this.commandLineInvocationService.ExecuteCommandAsync(
             pythonExecutable,
             null,
-            workingDir,
+            new DirectoryInfo(workingDir),
             $"-c \"import distutils.core; setup=distutils.core.run_setup('{formattedFilePath}'); print(setup.install_requires)\"");
         if (command.ExitCode != 0)
         {
