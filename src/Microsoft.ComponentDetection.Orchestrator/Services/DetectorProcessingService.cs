@@ -65,13 +65,13 @@ public class DetectorProcessingService : IDetectorProcessingService
                 providerStopwatch.Start();
 
                 var componentRecorder = new ComponentRecorder(this.logger, !detector.NeedsAutomaticRootDependencyCalculation);
-
                 var isExperimentalDetector = detector is IExperimentalDetector && !(detectorRestrictions.ExplicitlyEnabledDetectorIds?.Contains(detector.Id)).GetValueOrDefault();
 
                 IEnumerable<DetectedComponent> detectedComponents;
                 ProcessingResultCode resultCode;
                 IEnumerable<ContainerDetails> containerDetails;
                 IndividualDetectorScanResult result;
+                DetectorRunResult runResult;
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
@@ -98,13 +98,14 @@ public class DetectorProcessingService : IDetectorProcessingService
 
                     record.ReturnCode = (int)resultCode;
                     record.StopExecutionTimer();
-                    providerElapsedTime.TryAdd(detector.Id + (isExperimentalDetector ? " (Beta)" : string.Empty), new DetectorRunResult
+                    runResult = new DetectorRunResult
                     {
                         ExecutionTime = record.ExecutionTime.Value,
                         ComponentsFoundCount = record.DetectedComponentCount.GetValueOrDefault(),
                         ExplicitlyReferencedComponentCount = record.ExplicitlyReferencedComponentCount.GetValueOrDefault(),
                         IsExperimental = isExperimentalDetector,
-                    });
+                    };
+                    providerElapsedTime.TryAdd(this.GetDetectorId(detector.Id, isExperimentalDetector), runResult);
                 }
 
                 if (exitCode < resultCode && !isExperimentalDetector)
@@ -112,7 +113,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                     exitCode = resultCode;
                 }
 
-                this.experimentService.RecordDetectorRun(detector, componentRecorder, settings, providerElapsedTime[detector.Id + (isExperimentalDetector ? " (Beta)" : string.Empty)]);
+                this.experimentService.RecordDetectorRun(detector, componentRecorder, settings, runResult);
 
                 if (isExperimentalDetector)
                 {
@@ -299,6 +300,11 @@ public class DetectorProcessingService : IDetectorProcessingService
     private bool IsOSLinuxOrMac()
     {
         return OSVersion.Platform == PlatformID.MacOSX || OSVersion.Platform == PlatformID.Unix;
+    }
+
+    private string GetDetectorId(string detectorId, bool isExperimentalDetector)
+    {
+        return detectorId + (isExperimentalDetector ? " (Beta)" : string.Empty);
     }
 
     private void LogTabularOutput(ConcurrentDictionary<string, DetectorRunResult> providerElapsedTime, double totalElapsedTime)
