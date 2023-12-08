@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// A Rust CLI detector that uses the cargo metadata command to detect Rust components.
 /// </summary>
-public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 {
     private readonly ICommandLineInvocationService cliService;
 

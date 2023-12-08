@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -18,6 +19,10 @@ public class ExperimentResults
 
     private readonly ConcurrentDictionary<ExperimentComponent, byte> experimentGroupComponents = new(Comparer);
 
+    private readonly ConcurrentDictionary<string, TimeSpan> controlDetectors = new();
+
+    private readonly ConcurrentDictionary<string, TimeSpan> experimentalDetectors = new();
+
     /// <summary>
     /// The set of components in the control group.
     /// </summary>
@@ -31,11 +36,39 @@ public class ExperimentResults
         this.experimentGroupComponents.Keys.ToImmutableHashSet();
 
     /// <summary>
+    /// The set of control detectors.
+    /// </summary>
+    public IImmutableSet<(string DetectorId, TimeSpan DetectorRunTime)> ControlDetectors =>
+        this.controlDetectors.Select(x => (x.Key, x.Value)).ToImmutableHashSet();
+
+    /// <summary>
+    /// The set of experimental detectors.
+    /// </summary>
+    public IImmutableSet<(string DetectorId, TimeSpan DetectorRunTime)> ExperimentalDetectors =>
+        this.experimentalDetectors.Select(x => (x.Key, x.Value)).ToImmutableHashSet();
+
+    /// <summary>
     /// Adds the components to the control group.
     /// </summary>
     /// <param name="components">The components.</param>
     public void AddComponentsToControlGroup(IEnumerable<ScannedComponent> components) =>
         AddComponents(this.controlGroupComponents, components);
+
+    /// <summary>
+    /// Adds the control detector run times to the experiment telemetry.
+    /// </summary>
+    /// <param name="controlDetectorId">Id of the control Detector.</param>
+    /// <param name="controlDetectorRunTime">Run time of the control detector.</param>
+    public void AddControlDetectorTime(string controlDetectorId, TimeSpan controlDetectorRunTime) =>
+        AddRunTime(this.controlDetectors, controlDetectorId, controlDetectorRunTime);
+
+    /// <summary>
+    /// Adds the experimental detector run times to the experiment telemetry.
+    /// </summary>
+    /// <param name="experimentalDetectorId">Id of the experimental Detector.</param>
+    /// <param name="experimentalDetectorRunTime">Run time of the experimental detector.</param>
+    public void AddExperimentalDetectorTime(string experimentalDetectorId, TimeSpan experimentalDetectorRunTime) =>
+        AddRunTime(this.experimentalDetectors, experimentalDetectorId, experimentalDetectorRunTime);
 
     /// <summary>
     /// Adds the components to the experimental group.
@@ -50,5 +83,10 @@ public class ExperimentResults
         {
             _ = group.TryAdd(experimentComponent, 0);
         }
+    }
+
+    private static void AddRunTime(ConcurrentDictionary<string, TimeSpan> group, string detectorId, TimeSpan runTime)
+    {
+        _ = group.TryAdd(detectorId, runTime);
     }
 }

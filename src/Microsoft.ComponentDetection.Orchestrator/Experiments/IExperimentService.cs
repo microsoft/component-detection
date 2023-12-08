@@ -23,7 +23,8 @@ public interface IExperimentService
     /// <param name="detector">The detector.</param>
     /// <param name="componentRecorder">The detected components from the <paramref name="detector"/>.</param>
     /// <param name="settings">The detection settings.</param>
-    void RecordDetectorRun(IComponentDetector detector, ComponentRecorder componentRecorder, ScanSettings settings);
+    /// <param name="detectorRunResult">The result of the detector run.</param>
+    void RecordDetectorRun(IComponentDetector detector, ComponentRecorder componentRecorder, ScanSettings settings, DetectorRunResult detectorRunResult);
 
     /// <summary>
     /// Called when all detectors have finished executing. Processes the experiments and reports the results.
