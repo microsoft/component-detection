@@ -91,10 +91,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                     record.DetectorId = detector.Id;
                     record.DetectedComponentCount = detectedComponents.Count();
                     var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation().Values;
-                    record.ExplicitlyReferencedComponentCount = dependencyGraphs.Select(dependencyGraph =>
-                        {
-                            return dependencyGraph.GetAllExplicitlyReferencedComponents();
-                        })
+                    record.ExplicitlyReferencedComponentCount = dependencyGraphs.Select(dependencyGraph => dependencyGraph.GetAllExplicitlyReferencedComponents())
                         .SelectMany(x => x)
                         .Distinct()
                         .Count();
@@ -115,7 +112,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                     exitCode = resultCode;
                 }
 
-                this.experimentService.RecordDetectorRun(detector, componentRecorder, settings);
+                this.experimentService.RecordDetectorRun(detector, componentRecorder, settings, providerElapsedTime[detector.Id + (isExperimentalDetector ? " (Beta)" : string.Empty)]);
 
                 if (isExperimentalDetector)
                 {
