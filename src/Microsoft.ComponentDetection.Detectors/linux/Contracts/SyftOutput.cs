@@ -371,6 +371,22 @@ public partial struct License
 
     public static implicit operator License(string String) => new License { String = String };
     public static implicit operator License(string[] StringArray) => new License { StringArray = StringArray };
+
+    // Override ToString method to provide a string representation of the struct
+    public override string ToString()
+    {
+        //if the input is a string array, return a comma separated string
+        if (StringArray != null)
+        {
+            return $"{String.Join(",", StringArray)}";
+        }
+        else if (String != null)
+        {
+            return $"{String}";
+        }
+
+        return "";
+    }
 }
 
 public partial struct SourceUnion
