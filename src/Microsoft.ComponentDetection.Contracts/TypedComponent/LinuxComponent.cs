@@ -9,14 +9,12 @@ public class LinuxComponent : TypedComponent
         /* Reserved for deserialization */
     }
 
-    public LinuxComponent(string distribution, string release, string name, string version, string license = null, string author = null)
+    public LinuxComponent(string distribution, string release, string name, string version)
     {
         this.Distribution = this.ValidateRequiredInput(distribution, nameof(this.Distribution), nameof(ComponentType.Linux));
         this.Release = this.ValidateRequiredInput(release, nameof(this.Release), nameof(ComponentType.Linux));
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Linux));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Linux));
-        this.License = license;
-        this.Author = author;
     }
 
     public string Distribution { get; set; }
@@ -26,10 +24,6 @@ public class LinuxComponent : TypedComponent
     public string Name { get; set; }
 
     public string Version { get; set; }
-
-    public string License { get; set; }
-
-    public string Author { get; set; }
 
     public override ComponentType Type => ComponentType.Linux;
 
