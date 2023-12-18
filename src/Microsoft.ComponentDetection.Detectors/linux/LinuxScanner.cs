@@ -156,8 +156,8 @@ public class LinuxScanner : ILinuxScanner
 
     private string GetLicenseFromArtifactElement(ArtifactElement artifact)
     {
-        var license = artifact.Metadata?.License.ToString();
-        if (!string.IsNullOrEmpty(license))
+        var license = artifact.Metadata?.License?.String;
+        if (license != null)
         {
             return license.ToString();
         }

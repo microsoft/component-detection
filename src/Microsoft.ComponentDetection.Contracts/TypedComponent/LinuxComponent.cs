@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using PackageUrl;
 
@@ -9,7 +9,8 @@ public class LinuxComponent : TypedComponent
         /* Reserved for deserialization */
     }
 
-    public LinuxComponent(string distribution, string release, string name, string version, string license = null, string author = null)
+#nullable enable
+    public LinuxComponent(string distribution, string release, string name, string version, string? license = null, string? author = null)
     {
         this.Distribution = this.ValidateRequiredInput(distribution, nameof(this.Distribution), nameof(ComponentType.Linux));
         this.Release = this.ValidateRequiredInput(release, nameof(this.Release), nameof(ComponentType.Linux));
@@ -27,9 +28,10 @@ public class LinuxComponent : TypedComponent
 
     public string Version { get; set; }
 
-    public string License { get; set; }
+    public string? License { get; set; }
 
-    public string Author { get; set; }
+    public string? Author { get; set; }
+#nullable disable
 
     public override ComponentType Type => ComponentType.Linux;
 
