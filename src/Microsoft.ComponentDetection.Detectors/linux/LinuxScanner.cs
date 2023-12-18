@@ -151,13 +151,6 @@ public class LinuxScanner : ILinuxScanner
             return supplier;
         }
 
-        // TODO: Determine if Vendor field is a good candidate for supplier
-        /*supplier = artifact.Metadata?.Vendor;
-        if (supplier != null)
-        {
-            return supplier;
-        }*/
-
         return null;
     }
 
