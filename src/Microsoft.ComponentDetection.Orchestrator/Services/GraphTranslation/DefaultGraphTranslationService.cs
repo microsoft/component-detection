@@ -221,7 +221,9 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         {
             try
             {
-                var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
+                // Normalize the path to remove any relative segments such as /../
+                var normalizedPath = Path.GetFullPath(path, rootDirectoryFullName);
+                var relativePath = rootUri.MakeRelativeUri(new Uri(normalizedPath)).ToString();
                 if (!relativePath.StartsWith("/"))
                 {
                     relativePath = "/" + relativePath;
