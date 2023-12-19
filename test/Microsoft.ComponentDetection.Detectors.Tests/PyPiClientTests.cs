@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -34,7 +34,7 @@ public class PyPiClientTests
 
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },
@@ -54,7 +54,7 @@ public class PyPiClientTests
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },
@@ -82,7 +82,7 @@ public class PyPiClientTests
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },
@@ -152,7 +152,7 @@ public class PyPiClientTests
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },
@@ -192,7 +192,7 @@ public class PyPiClientTests
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },

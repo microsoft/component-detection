@@ -35,7 +35,9 @@ public class PythonResolver : IPythonResolver
             // If we have it, we probably just want to skip at this phase as this indicates duplicates
             if (!state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
             {
-                var result = await this.pypiClient.GetReleasesAsync(rootPackage);
+                var project = await this.pypiClient.GetReleasesAsync(rootPackage);
+
+                var result = project.Releases;
 
                 if (result.Keys.Any())
                 {
@@ -45,7 +47,7 @@ public class PythonResolver : IPythonResolver
                     var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
                         ? state.ValidVersionMap[rootPackage.Name].Keys.Last() : null;
 
-                    var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion));
+                    var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion, license: this.GetLicenseFromProject(project), author: this.GetAuthorFromProject(project)));
 
                     state.NodeReferences[rootPackage.Name] = node;
 
@@ -103,7 +105,9 @@ public class PythonResolver : IPythonResolver
                 else
                 {
                     // We haven't encountered this package before, so let's fetch it and find a candidate
-                    var result = await this.pypiClient.GetReleasesAsync(dependencyNode);
+                    var project = await this.pypiClient.GetReleasesAsync(dependencyNode);
+
+                    var result = project.Releases;
 
                     if (result.Keys.Any())
                     {
@@ -111,7 +115,7 @@ public class PythonResolver : IPythonResolver
                         var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
                             ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
 
-                        this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
+                        this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion, license: this.GetLicenseFromProject(project), author: this.GetAuthorFromProject(project));
 
                         state.ProcessingQueue.Enqueue((root, dependencyNode));
                     }
@@ -155,7 +159,7 @@ public class PythonResolver : IPythonResolver
 
         var candidateVersion = state.ValidVersionMap[pipComponent.Name].Keys.Any() ? state.ValidVersionMap[pipComponent.Name].Keys.Last() : null;
 
-        node.Value = new PipComponent(pipComponent.Name, candidateVersion);
+        node.Value = new PipComponent(pipComponent.Name, candidateVersion, license: pipComponent.License, author: pipComponent.Author);
 
         var dependencies = (await this.FetchPackageDependenciesAsync(state, newSpec)).ToDictionary(x => x.Name, x => x);
 
@@ -201,7 +205,7 @@ public class PythonResolver : IPythonResolver
         return await this.pypiClient.FetchPackageDependenciesAsync(spec.Name, candidateVersion, packageToFetch);
     }
 
-    private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
+    private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version, string license = null, string author = null)
     {
         if (state.NodeReferences.TryGetValue(name, out var value))
         {
@@ -210,10 +214,57 @@ public class PythonResolver : IPythonResolver
         }
         else
         {
-            var node = new PipGraphNode(new PipComponent(name, version));
+            var node = new PipGraphNode(new PipComponent(name, version, license: license, author: author));
             state.NodeReferences[name] = node;
             parent.Children.Add(node);
             node.Parents.Add(parent);
         }
+    }
+
+    private string GetAuthorFromProject(PythonProject project)
+    {
+        if (!string.IsNullOrEmpty(project.Info?.Author))
+        {
+            return project.Info.Author;
+        }
+
+        if (!string.IsNullOrEmpty(project.Info?.Maintainer))
+        {
+            return project.Info.Maintainer;
+        }
+
+        if (!string.IsNullOrEmpty(project.Info?.AuthorEmail))
+        {
+            return project.Info.AuthorEmail;
+        }
+
+        if (!string.IsNullOrEmpty(project.Info?.MaintainerEmail))
+        {
+            return project.Info.MaintainerEmail;
+        }
+
+        // If none of the fields are populated, return null.
+        return null;
+    }
+
+    private string GetLicenseFromProject(PythonProject project)
+    {
+        if (project.Info?.Classifiers != null)
+        {
+            var licenseClassifiers = project.Info.Classifiers.Where(x => x.StartsWith("License ::")).ToList();
+
+            // Split the license classifiers by the " :: " and take the last part of the string
+            licenseClassifiers = licenseClassifiers.Select(x => x.Split(" :: ").Last()).ToList();
+
+            return string.Join(", ", licenseClassifiers);
+        }
+
+        // There are cases where the actual license text is found in the license field so we limit the length of this field to 100 characters.
+        if (project.Info?.License != null && project.Info?.License.Length < 100)
+        {
+            return project.Info.License;
+        }
+
+        return null;
     }
 }
