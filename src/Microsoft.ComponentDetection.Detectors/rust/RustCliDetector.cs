@@ -46,7 +46,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
 
     /// <inheritdoc />
-    public override int Version => 1;
+    public override int Version => 2;
 
     /// <inheritdoc />
     public override IList<string> SearchPatterns { get; } = new[] { "Cargo.toml" };
@@ -55,6 +55,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var componentStream = processRequest.ComponentStream;
+        this.Logger.LogInformation("Discovered Cargo.toml: {Location}", componentStream.Location);
 
         try
         {
@@ -75,7 +76,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                 "--format-version=1",
                 "--locked");
 
-            if (cliResult.ExitCode < 0)
+            if (cliResult.ExitCode != 0)
             {
                 this.Logger.LogWarning("`cargo metadata` failed with {Location}. Ensure the Cargo.lock is up to date. stderr: {StdErr}", processRequest.ComponentStream.Location, cliResult.StdErr);
                 return;
@@ -84,6 +85,15 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
             var metadata = CargoMetadata.FromJson(cliResult.StdOut);
             var graph = BuildGraph(metadata);
             var root = metadata.Resolve.Root;
+
+            // A cargo.toml can be used to declare a workspace and not a package (A Virtual Manifest).
+            // In this case, the root will be null as it will not be pulling in dependencies itself.
+            // https://doc.rust-lang.org/cargo/reference/workspaces.html#virtual-workspace
+            if (root == null)
+            {
+                this.Logger.LogWarning("Virtual Manifest: {Location}, skipping component mapping", processRequest.ComponentStream.Location);
+                return;
+            }
 
             this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null);
         }
