@@ -24,7 +24,7 @@ public interface IPyPiClient
 {
     Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release);
 
-    Task<PythonProject> GetReleasesAsync(PipDependencySpecification spec);
+    Task<PythonProject> GetProjectAsync(PipDependencySpecification spec);
 }
 
 public sealed class PyPiClient : IPyPiClient, IDisposable
@@ -134,7 +134,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         return dependencies;
     }
 
-    public async Task<PythonProject> GetReleasesAsync(PipDependencySpecification spec)
+    public async Task<PythonProject> GetProjectAsync(PipDependencySpecification spec)
     {
         var requestUri = new Uri($"https://pypi.org/pypi/{spec.Name}/json");
 

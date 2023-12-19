@@ -43,7 +43,7 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
+        Func<Task> action = async () => await this.pypiClient.GetProjectAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
     }
@@ -63,7 +63,7 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
+        Func<Task> action = async () => await this.pypiClient.GetProjectAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
@@ -94,7 +94,7 @@ public class PyPiClientTests
         Func<Task> action = async () =>
         {
             pythonSpecs.Name = Guid.NewGuid().ToString();
-            await this.pypiClient.GetReleasesAsync(pythonSpecs);
+            await this.pypiClient.GetProjectAsync(pythonSpecs);
         };
 
         await action.Should().NotThrowAsync();
@@ -169,7 +169,7 @@ public class PyPiClientTests
             mockEvs.Object,
             mockLogger.Object);
 
-        Func<Task> action = async () => await mockedPyPi.GetReleasesAsync(pythonSpecs);
+        Func<Task> action = async () => await mockedPyPi.GetProjectAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
@@ -201,7 +201,7 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        var action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
+        var action = async () => await this.pypiClient.GetProjectAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
 

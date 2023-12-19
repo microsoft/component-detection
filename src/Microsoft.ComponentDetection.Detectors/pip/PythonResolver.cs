@@ -35,7 +35,7 @@ public class PythonResolver : IPythonResolver
             // If we have it, we probably just want to skip at this phase as this indicates duplicates
             if (!state.ValidVersionMap.TryGetValue(rootPackage.Name, out _))
             {
-                var project = await this.pypiClient.GetReleasesAsync(rootPackage);
+                var project = await this.pypiClient.GetProjectAsync(rootPackage);
 
                 var result = project.Releases;
 
@@ -105,7 +105,7 @@ public class PythonResolver : IPythonResolver
                 else
                 {
                     // We haven't encountered this package before, so let's fetch it and find a candidate
-                    var project = await this.pypiClient.GetReleasesAsync(dependencyNode);
+                    var project = await this.pypiClient.GetProjectAsync(dependencyNode);
 
                     var result = project.Releases;
 

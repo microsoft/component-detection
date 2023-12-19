@@ -72,9 +72,9 @@ public class PipResolverTests
             },
         };
 
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(a)).ReturnsAsync(aProject);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(b)).ReturnsAsync(bProject);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(c)).ReturnsAsync(cProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(a)).ReturnsAsync(aProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
 
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
@@ -138,10 +138,10 @@ public class PipResolverTests
             Releases = new SortedDictionary<string, IList<PythonProjectRelease>>(),
         };
 
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(a)).ReturnsAsync(aProject);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(b)).ReturnsAsync(bProject);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(c)).ReturnsAsync(cProject);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(doesNotExist)).ReturnsAsync(dneProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(a)).ReturnsAsync(aProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(doesNotExist)).ReturnsAsync(dneProject);
 
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
@@ -195,9 +195,9 @@ public class PipResolverTests
             Releases = new SortedDictionary<string, IList<PythonProjectRelease>>(),
         };
 
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(a)).ReturnsAsync(aProject);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(b)).ReturnsAsync(bProject);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(c)).ReturnsAsync(dneProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(a)).ReturnsAsync(aProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(dneProject);
 
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
@@ -251,9 +251,9 @@ public class PipResolverTests
             Releases = cReleases,
         };
 
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(a)).ReturnsAsync(aProject);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(b)).ReturnsAsync(bProject);
-        this.pyPiClient.Setup(x => x.GetReleasesAsync(c)).ReturnsAsync(cProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(a)).ReturnsAsync(aProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
 
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b, c });
         this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { cAlt });
