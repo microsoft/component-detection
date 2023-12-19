@@ -104,7 +104,7 @@ public class LinuxScanner : ILinuxScanner
                 .DistinctBy(artifact => (artifact.Name, artifact.Version))
                 .Where(artifact => AllowedArtifactTypes.Contains(artifact.Type))
                 .Select(artifact =>
-                    (Component: new LinuxComponent(syftOutput.Distro.Id, syftOutput.Distro.VersionId, artifact.Name, artifact.Version), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
+                    (Component: new LinuxComponent(syftOutput.Distro.Id, syftOutput.Distro.VersionId, artifact.Name, artifact.Version, this.GetLicenseFromArtifactElement(artifact), this.GetSupplierFromArtifactElement(artifact)), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
 
             foreach (var (component, layers) in linuxComponentsWithLayers)
             {
@@ -135,6 +135,40 @@ public class LinuxScanner : ILinuxScanner
             record.FailedDeserializingScannerOutput = e.ToString();
             return null;
         }
+    }
+
+    private string GetSupplierFromArtifactElement(ArtifactElement artifact)
+    {
+        var supplier = artifact.Metadata?.Author;
+        if (!string.IsNullOrEmpty(supplier))
+        {
+            return supplier;
+        }
+
+        supplier = artifact.Metadata?.Maintainer;
+        if (!string.IsNullOrEmpty(supplier))
+        {
+            return supplier;
+        }
+
+        return null;
+    }
+
+    private string GetLicenseFromArtifactElement(ArtifactElement artifact)
+    {
+        var license = artifact.Metadata?.License?.String;
+        if (license != null)
+        {
+            return license.ToString();
+        }
+
+        var licenses = artifact.Licenses;
+        if (licenses != null && licenses.Any())
+        {
+            return string.Join(", ", licenses.Select(l => l.ToString()));
+        }
+
+        return null;
     }
 
     internal sealed class LinuxComponentRecord
