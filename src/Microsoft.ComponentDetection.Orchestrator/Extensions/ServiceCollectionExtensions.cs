@@ -60,8 +60,6 @@ public static class ServiceCollectionExtensions
         // Experiments
         services.AddSingleton<IExperimentService, ExperimentService>();
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
-        services.AddSingleton<IExperimentConfiguration, NewNugetExperiment>();
-        services.AddSingleton<IExperimentConfiguration, NpmLockfile3Experiment>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
 
