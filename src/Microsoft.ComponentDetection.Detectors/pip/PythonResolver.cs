@@ -13,6 +13,10 @@ public class PythonResolver : IPythonResolver
     private readonly IPyPiClient pypiClient;
     private readonly ILogger<PythonResolver> logger;
 
+    private readonly int maxLicenseFieldLength = 100;
+    private readonly string classifierFieldSeparator = " :: ";
+    private readonly string classifierFieldLicensePrefix = "License";
+
     public PythonResolver(IPyPiClient pypiClient, ILogger<PythonResolver> logger)
     {
         this.pypiClient = pypiClient;
@@ -47,7 +51,7 @@ public class PythonResolver : IPythonResolver
                     var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
                         ? state.ValidVersionMap[rootPackage.Name].Keys.Last() : null;
 
-                    var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion, license: this.GetLicenseFromProject(project), author: this.GetAuthorFromProject(project)));
+                    var node = new PipGraphNode(new PipComponent(rootPackage.Name, candidateVersion, license: this.GetLicenseFromProject(project), author: this.GetSupplierFromProject(project)));
 
                     state.NodeReferences[rootPackage.Name] = node;
 
@@ -115,7 +119,7 @@ public class PythonResolver : IPythonResolver
                         var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
                             ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
 
-                        this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion, license: this.GetLicenseFromProject(project), author: this.GetAuthorFromProject(project));
+                        this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion, license: this.GetLicenseFromProject(project), author: this.GetSupplierFromProject(project));
 
                         state.ProcessingQueue.Enqueue((root, dependencyNode));
                     }
@@ -221,26 +225,26 @@ public class PythonResolver : IPythonResolver
         }
     }
 
-    private string GetAuthorFromProject(PythonProject project)
+    private string GetSupplierFromProject(PythonProject project)
     {
-        if (!string.IsNullOrEmpty(project.Info?.Author))
-        {
-            return project.Info.Author;
-        }
-
-        if (!string.IsNullOrEmpty(project.Info?.Maintainer))
+        if (!string.IsNullOrWhiteSpace(project.Info?.Maintainer))
         {
             return project.Info.Maintainer;
         }
 
-        if (!string.IsNullOrEmpty(project.Info?.AuthorEmail))
-        {
-            return project.Info.AuthorEmail;
-        }
-
-        if (!string.IsNullOrEmpty(project.Info?.MaintainerEmail))
+        if (!string.IsNullOrWhiteSpace(project.Info?.MaintainerEmail))
         {
             return project.Info.MaintainerEmail;
+        }
+
+        if (!string.IsNullOrWhiteSpace(project.Info?.Author))
+        {
+            return project.Info.Author;
+        }
+
+        if (!string.IsNullOrWhiteSpace(project.Info?.AuthorEmail))
+        {
+            return project.Info.AuthorEmail;
         }
 
         // If none of the fields are populated, return null.
@@ -249,20 +253,20 @@ public class PythonResolver : IPythonResolver
 
     private string GetLicenseFromProject(PythonProject project)
     {
-        if (project.Info?.Classifiers != null)
-        {
-            var licenseClassifiers = project.Info.Classifiers.Where(x => x.StartsWith("License ::")).ToList();
-
-            // Split the license classifiers by the " :: " and take the last part of the string
-            licenseClassifiers = licenseClassifiers.Select(x => x.Split(" :: ").Last()).ToList();
-
-            return string.Join(", ", licenseClassifiers);
-        }
-
         // There are cases where the actual license text is found in the license field so we limit the length of this field to 100 characters.
-        if (project.Info?.License != null && project.Info?.License.Length < 100)
+        if (project.Info?.License != null && project.Info?.License.Length < this.maxLicenseFieldLength)
         {
             return project.Info.License;
+        }
+
+        if (project.Info?.Classifiers != null)
+        {
+            var licenseClassifiers = project.Info.Classifiers.Where(x => !string.IsNullOrWhiteSpace(x) && x.StartsWith(this.classifierFieldLicensePrefix));
+
+            // Split the license classifiers by the " :: " and take the last part of the string
+            licenseClassifiers = licenseClassifiers.Select(x => x.Split(this.classifierFieldSeparator).Last()).ToList();
+
+            return string.Join(", ", licenseClassifiers);
         }
 
         return null;
