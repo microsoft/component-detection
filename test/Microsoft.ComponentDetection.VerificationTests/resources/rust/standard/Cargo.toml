@@ -1,9 +1,8 @@
 [package]
-name = "component-detection"
+name = "component-detection-rust-standard"
 version = "0.1.0"
 authors = []
 edition = "2018"
-build = "build.rs"
 
 [[bin]]
 path = "main.rs"
