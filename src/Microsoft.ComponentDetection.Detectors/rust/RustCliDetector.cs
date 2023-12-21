@@ -83,9 +83,16 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
             var metadata = CargoMetadata.FromJson(cliResult.StdOut);
             var graph = BuildGraph(metadata);
+
+            var packages = metadata.Packages.ToDictionary(
+                x => $"{x.Name} {x.Version}",
+                x => (
+                    (x.Authors == null || x.Authors.All(a => string.IsNullOrWhiteSpace(a))) ? null : string.Join(", ", x.Authors),
+                    string.IsNullOrWhiteSpace(x.License) ? null : x.License));
+
             var root = metadata.Resolve.Root;
 
-            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null);
+            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages);
         }
         catch (InvalidOperationException e)
         {
@@ -108,13 +115,19 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         string id,
         DetectedComponent parent,
         Dep depInfo,
+        IReadOnlyDictionary<string, (string Authors, string License)> packages,
         bool explicitlyReferencedDependency = false)
     {
         try
         {
             var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
             var (name, version) = ParseNameAndVersion(id);
-            var detectedComponent = new DetectedComponent(new CargoComponent(name, version));
+
+            var (authors, license) = packages.TryGetValue($"{name} {version}", out var package)
+                ? package
+                : (null, null);
+
+            var detectedComponent = new DetectedComponent(new CargoComponent(name, version, authors, license));
 
             recorder.RegisterUsage(
                 detectedComponent,
@@ -130,7 +143,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
             foreach (var dep in node.Deps)
             {
-                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, parent == null);
+                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packages, parent == null);
             }
         }
         catch (IndexOutOfRangeException e)
