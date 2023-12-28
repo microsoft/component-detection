@@ -12,11 +12,13 @@ public class YarnLockParser : IYarnLockParser
 
     private const string Resolved = "resolved";
 
+    private const string Resolution = "resolution";
+
     private const string Dependencies = "dependencies";
 
     private const string OptionalDependencies = "optionalDependencies";
 
-    private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.V2 };
+    private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.Berry };
 
     private readonly ILogger<YarnLockParser> logger;
 
@@ -81,6 +83,18 @@ public class YarnLockParser : IYarnLockParser
             if (block.Values.TryGetValue(Resolved, out var resolved))
             {
                 yarnEntry.Resolved = resolved;
+            }
+
+            // Yarn berry renamed the "resolved" field to "resolution"
+            else if (block.Values.TryGetValue(Resolution, out var resolution))
+            {
+                yarnEntry.Resolved = resolution;
+
+                if (resolution.StartsWith(yarnEntry.Name + "@workspace:"))
+                {
+                    // Don't try to parse local workspace entries, which were never a part of the v1 lockfile
+                    continue;
+                }
             }
 
             var dependencyBlock = block.Children.SingleOrDefault(x => string.Equals(x.Title, Dependencies, StringComparison.OrdinalIgnoreCase));

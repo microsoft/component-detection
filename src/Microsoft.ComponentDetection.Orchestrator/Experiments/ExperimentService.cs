@@ -64,7 +64,8 @@ public class ExperimentService : IExperimentService
     public void RecordDetectorRun(
         IComponentDetector detector,
         ComponentRecorder componentRecorder,
-        ScanSettings settings)
+        ScanSettings settings,
+        DetectorRunResult detectorRunResult = null)
     {
         if (!DetectorExperiments.AreExperimentsEnabled)
         {
@@ -91,6 +92,8 @@ public class ExperimentService : IExperimentService
                 if (config.IsInControlGroup(detector))
                 {
                     experimentResults.AddComponentsToControlGroup(components);
+
+                    experimentResults.AddControlDetectorTime(detector.Id, detectorRunResult?.ExecutionTime ?? TimeSpan.Zero);
                     this.logger.LogDebug(
                         "Adding {Count} Components from {Id} to Control Group for {Experiment}",
                         components.Count(),
@@ -101,6 +104,8 @@ public class ExperimentService : IExperimentService
                 if (config.IsInExperimentGroup(detector))
                 {
                     experimentResults.AddComponentsToExperimentalGroup(components);
+
+                    experimentResults.AddExperimentalDetectorTime(detector.Id, detectorRunResult?.ExecutionTime ?? TimeSpan.Zero);
                     this.logger.LogDebug(
                         "Adding {Count} Components from {Id} to Experiment Group for {Experiment}",
                         components.Count(),
@@ -162,6 +167,8 @@ public class ExperimentService : IExperimentService
         {
             var controlComponents = experiment.ControlGroupComponents;
             var experimentComponents = experiment.ExperimentGroupComponents;
+            var controlDetectors = experiment.ControlDetectors;
+            var experimentDetectors = experiment.ExperimentalDetectors;
             this.logger.LogInformation(
                 "Experiment {Experiment} finished with {ControlCount} components in the control group and {ExperimentCount} components in the experiment group",
                 config.Name,
@@ -178,7 +185,7 @@ public class ExperimentService : IExperimentService
 
             try
             {
-                var diff = new ExperimentDiff(controlComponents, experimentComponents);
+                var diff = new ExperimentDiff(controlComponents, experimentComponents, controlDetectors, experimentDetectors);
                 var tasks = this.experimentProcessors.Select(x => x.ProcessExperimentAsync(config, diff));
                 await Task.WhenAll(tasks);
             }

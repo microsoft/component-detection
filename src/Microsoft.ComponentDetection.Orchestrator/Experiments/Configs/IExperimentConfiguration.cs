@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
+namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -41,7 +41,6 @@ public interface IExperimentConfiguration
     /// components that were detected. If any call to this method returns <c>false</c>, the experiment will not be
     /// recorded.
     /// </summary>
-    /// <example><see cref="NpmLockfile3Experiment.ShouldRecord"/>.</example>
     /// <param name="componentDetector">The component detector.</param>
     /// <param name="numComponents">The number of components found by the <paramref name="componentDetector"/>.</param>
     /// <returns><c>true</c> if the experiment should be recorded; otherwise, <c>false</c>.</returns>

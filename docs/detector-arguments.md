@@ -62,6 +62,12 @@ dotnet run --project "src\Microsoft.ComponentDetection\Microsoft.ComponentDetect
 
   --Output                    Output path for log files. Defaults to %TMP%
 
+  --PrintManifest             Prints the manifest to standard output.
+                              Logging will be redirected to standard error.
+
+  --NoSummary                 Do not display the detection summary on the standard
+                              output nor in the logs.
+
   --AdditionalDITargets       Comma separated list of paths to additional
                               dependency injection targets.
 
