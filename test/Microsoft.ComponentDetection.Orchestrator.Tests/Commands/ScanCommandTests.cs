@@ -82,4 +82,35 @@ public class ScanCommandTests
         await tw.FlushAsync();
         ms.Position.Should().BePositive();
     }
+
+    [TestMethod]
+    public async Task ExecuteScanCommandAsync_PrintsManifestAsync()
+    {
+        var settings = new ScanSettings { Output = "output", PrintManifest = true };
+        using var ms = new MemoryStream();
+        await using var tw = new StreamWriter(ms);
+        Console.SetOut(tw);
+
+        var result = await this.command.ExecuteScanCommandAsync(settings);
+
+        this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
+        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
+        this.fileWritingServiceMock.Verify(x => x.ResolveFilePath(It.IsAny<string>()), Times.Once);
+        this.fileWritingServiceMock.Verify(x => x.AppendToFile(It.IsAny<string>(), It.IsAny<ScanResult>()));
+
+        await tw.FlushAsync();
+        ms.Position.Should().BePositive();
+    }
+
+    [TestMethod]
+    public async Task ExecuteScanCommandAsync_WritesUserManifestAsync()
+    {
+        var settings = new ScanSettings { Output = "output", ManifestFile = new FileInfo("manifest.json") };
+
+        var result = await this.command.ExecuteScanCommandAsync(settings);
+
+        this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
+        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
+        this.fileWritingServiceMock.Verify(x => x.WriteFile(It.Is<FileInfo>(x => x == settings.ManifestFile), It.IsAny<ScanResult>()));
+    }
 }
