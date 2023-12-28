@@ -45,6 +45,19 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         return 0;
     }
 
+    /// <summary>
+    /// Method to provide a way to execute the scan command and obtain the ScanResult object.
+    /// </summary>
+    /// <param name="settings">ScanSettings object specifying the parameters for the scan execution.</param>
+    /// <returns>A ScanResult object.</returns>
+    public async Task<ScanResult> ExecuteScanCommandAsync(ScanSettings settings)
+    {
+        this.fileWritingService.Init(settings.Output);
+        var result = await this.scanExecutionService.ExecuteScanAsync(settings);
+        this.WriteComponentManifest(settings, result);
+        return result;
+    }
+
     private void WriteComponentManifest(ScanSettings settings, ScanResult scanResult)
     {
         FileInfo userRequestedManifestPath = null;
