@@ -19,7 +19,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.7.30" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.8.14" />
     <PackageVersion Include="DotNet.Glob" Version="2.1.1" />
     <PackageVersion Include="MinVer" Version="4.3.0" />
     <PackageVersion Include="Moq" Version="4.18.4" />
@@ -28,8 +28,8 @@
     <PackageVersion Include="MSTest.TestFramework" Version="3.1.1" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="3.0.15" />
-    <PackageVersion Include="NuGet.ProjectModel" Version="6.7.0" />
-    <PackageVersion Include="NuGet.Versioning" Version="6.7.0" />
+    <PackageVersion Include="NuGet.ProjectModel" Version="6.8.0" />
+    <PackageVersion Include="NuGet.Versioning" Version="6.8.0" />
     <PackageVersion Include="packageurl-dotnet" Version="1.0.0" />
     <PackageVersion Include="Polly" Version="8.2.0" />
     <PackageVersion Include="SemanticVersioning" Version="2.0.2" />
