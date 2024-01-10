@@ -7,5 +7,8 @@ using System.Collections.Generic;
 /// </summary>
 public class PythonProject
 {
-    public Dictionary<string, IList<PythonProjectRelease>> Releases { get; set; }
+    public SortedDictionary<string, IList<PythonProjectRelease>> Releases { get; set; }
+
+#nullable enable
+    public PythonProjectInfo? Info { get; set; }
 }
