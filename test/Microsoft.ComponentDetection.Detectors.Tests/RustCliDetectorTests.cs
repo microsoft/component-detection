@@ -644,7 +644,7 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
       ""metadata"": {},
       ""publish"": null,
       ""authors"": [
-        ""Sample Author""
+        """"
       ],
       ""categories"": [],
       ""keywords"": [],
