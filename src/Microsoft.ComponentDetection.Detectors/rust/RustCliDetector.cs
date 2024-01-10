@@ -88,7 +88,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
             var packages = metadata.Packages.ToDictionary(
                 x => $"{x.Name} {x.Version}",
                 x => (
-                    (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a))) ? null : string.Join(", ", x.Authors),
+                    (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || !x.Authors.Any()) ? null : string.Join(", ", x.Authors),
                     string.IsNullOrWhiteSpace(x.License) ? null : x.License));
 
             var root = metadata.Resolve.Root;
