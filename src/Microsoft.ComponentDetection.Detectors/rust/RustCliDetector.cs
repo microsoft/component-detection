@@ -88,7 +88,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
             var packages = metadata.Packages.ToDictionary(
                 x => $"{x.Name} {x.Version}",
                 x => (
-                    (x.Authors == null || x.Authors.All(a => string.IsNullOrWhiteSpace(a))) ? null : string.Join(", ", x.Authors),
+                    (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a))) ? null : string.Join(", ", x.Authors),
                     string.IsNullOrWhiteSpace(x.License) ? null : x.License));
 
             var root = metadata.Resolve.Root;
@@ -125,7 +125,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         string id,
         DetectedComponent parent,
         Dep depInfo,
-        IReadOnlyDictionary<string, (string Authors, string License)> packages,
+        IReadOnlyDictionary<string, (string Authors, string License)> packagesMetadata,
         bool explicitlyReferencedDependency = false)
     {
         try
@@ -133,7 +133,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
             var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
             var (name, version) = ParseNameAndVersion(id);
 
-            var (authors, license) = packages.TryGetValue($"{name} {version}", out var package)
+            var (authors, license) = packagesMetadata.TryGetValue($"{name} {version}", out var package)
                 ? package
                 : (null, null);
 
@@ -153,7 +153,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
             foreach (var dep in node.Deps)
             {
-                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packages, parent == null);
+                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, parent == null);
             }
         }
         catch (IndexOutOfRangeException e)
