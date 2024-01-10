@@ -84,6 +84,13 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
             var metadata = CargoMetadata.FromJson(cliResult.StdOut);
             var graph = BuildGraph(metadata);
+
+            var packages = metadata.Packages.ToDictionary(
+                x => $"{x.Name} {x.Version}",
+                x => (
+                    (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || !x.Authors.Any()) ? null : string.Join(", ", x.Authors),
+                    string.IsNullOrWhiteSpace(x.License) ? null : x.License));
+
             var root = metadata.Resolve.Root;
 
             // A cargo.toml can be used to declare a workspace and not a package (A Virtual Manifest).
@@ -95,7 +102,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                 return;
             }
 
-            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null);
+            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages);
         }
         catch (InvalidOperationException e)
         {
@@ -118,13 +125,19 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         string id,
         DetectedComponent parent,
         Dep depInfo,
+        IReadOnlyDictionary<string, (string Authors, string License)> packagesMetadata,
         bool explicitlyReferencedDependency = false)
     {
         try
         {
             var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
             var (name, version) = ParseNameAndVersion(id);
-            var detectedComponent = new DetectedComponent(new CargoComponent(name, version));
+
+            var (authors, license) = packagesMetadata.TryGetValue($"{name} {version}", out var package)
+                ? package
+                : (null, null);
+
+            var detectedComponent = new DetectedComponent(new CargoComponent(name, version, authors, license));
 
             recorder.RegisterUsage(
                 detectedComponent,
@@ -140,7 +153,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
             foreach (var dep in node.Deps)
             {
-                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, parent == null);
+                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, parent == null);
             }
         }
         catch (IndexOutOfRangeException e)
