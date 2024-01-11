@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
+using MoreLinq;
+using Newtonsoft.Json;
 
 public class PythonResolver : IPythonResolver
 {
@@ -43,7 +45,7 @@ public class PythonResolver : IPythonResolver
 
                 var result = project.Releases;
 
-                if (result.Keys.Any())
+                if (result is not null && result.Keys.Any())
                 {
                     state.ValidVersionMap[rootPackage.Name] = result;
 
@@ -62,8 +64,9 @@ public class PythonResolver : IPythonResolver
                 else
                 {
                     this.logger.LogWarning(
-                        "Root dependency {RootPackageName} not found on pypi. Skipping package.",
-                        rootPackage.Name);
+                        "Unable to resolve root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
+                        rootPackage.Name,
+                        JsonConvert.SerializeObject(rootPackage.DependencySpecifiers));
                     singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
                 }
             }
@@ -113,7 +116,7 @@ public class PythonResolver : IPythonResolver
 
                     var result = project.Releases;
 
-                    if (result.Keys.Any())
+                    if (result is not null && result.Keys.Any())
                     {
                         state.ValidVersionMap[dependencyNode.Name] = result;
                         var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
@@ -126,8 +129,9 @@ public class PythonResolver : IPythonResolver
                     else
                     {
                         this.logger.LogWarning(
-                            "Dependency Package {DependencyName} not found in Pypi. Skipping package",
-                            dependencyNode.Name);
+                            "Unable to resolve non-root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
+                            dependencyNode.Name,
+                            JsonConvert.SerializeObject(dependencyNode.DependencySpecifiers));
                         singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                     }
                 }
@@ -165,7 +169,24 @@ public class PythonResolver : IPythonResolver
 
         node.Value = new PipComponent(pipComponent.Name, candidateVersion, license: pipComponent.License, author: pipComponent.Author);
 
-        var dependencies = (await this.FetchPackageDependenciesAsync(state, newSpec)).ToDictionary(x => x.Name, x => x);
+        var fetchedDependences = await this.FetchPackageDependenciesAsync(state, newSpec);
+
+        // Multiple dependency specification versions can be given for a single package name
+        // Until a better method is divised, choose the latest entry
+        var dependencies = new Dictionary<string, PipDependencySpecification>();
+        fetchedDependences.ForEach(d =>
+        {
+            if (!dependencies.TryAdd(d.Name, d))
+            {
+                this.logger.LogWarning(
+                    "Duplicate package dependencies entry for component:{ComponentName} with dependency:{DependencyName}. Existing dependency specifiers: {ExistingSpecifiers}. New dependency specifiers: {NewSpecifiers}.",
+                    pipComponent.Name,
+                    d.Name,
+                    JsonConvert.SerializeObject(dependencies[d.Name].DependencySpecifiers),
+                    JsonConvert.SerializeObject(d.DependencySpecifiers));
+                dependencies[d.Name] = d;
+            }
+        });
 
         var toRemove = new List<PipGraphNode>();
         foreach (var child in node.Children)

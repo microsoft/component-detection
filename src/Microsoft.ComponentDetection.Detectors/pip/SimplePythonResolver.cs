@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
+using MoreLinq;
 using Newtonsoft.Json;
 
 public class SimplePythonResolver : ISimplePythonResolver
@@ -136,8 +137,9 @@ public class SimplePythonResolver : ISimplePythonResolver
                 else
                 {
                     this.logger.LogWarning(
-                        "Unable to resolve package: {RootPackageName} gotten from pypi possibly due to invalid versions. Skipping package.",
-                        rootPackage.Name);
+                        "Unable to resolve root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
+                        rootPackage.Name,
+                        JsonConvert.SerializeObject(rootPackage.DependencySpecifiers));
                     singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
                 }
             }
@@ -207,8 +209,9 @@ public class SimplePythonResolver : ISimplePythonResolver
                     else
                     {
                         this.logger.LogWarning(
-                            "Unable to resolve dependency package {DependencyName} gotten from pypi possibly due to invalid versions. Skipping package",
-                            dependencyNode.Name);
+                            "Unable to resolve non-root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
+                            dependencyNode.Name,
+                            JsonConvert.SerializeObject(dependencyNode.DependencySpecifiers));
                         singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                     }
                 }
@@ -227,7 +230,7 @@ public class SimplePythonResolver : ISimplePythonResolver
     private SortedDictionary<string, IList<PythonProjectRelease>> ConvertSimplePypiProjectToSortedDictionary(SimplePypiProject simplePypiProject, PipDependencySpecification spec)
     {
         var sortedProjectVersions = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
-        foreach (var file in simplePypiProject.Files)
+        foreach (var file in simplePypiProject?.Files)
         {
             try
             {
@@ -366,7 +369,24 @@ public class SimplePythonResolver : ISimplePythonResolver
 
         node.Value = new PipComponent(pipComponent.Name, candidateVersion);
 
-        var dependencies = (await this.FetchPackageDependenciesAsync(state, newSpec)).ToDictionary(x => x.Name, x => x);
+        var fetchedDependences = await this.FetchPackageDependenciesAsync(state, newSpec);
+
+        // Multiple dependency specification versions can be given for a single package name
+        // Until a better method is divised, choose the latest entry
+        var dependencies = new Dictionary<string, PipDependencySpecification>();
+        fetchedDependences.ForEach(d =>
+        {
+            if (!dependencies.TryAdd(d.Name, d))
+            {
+                this.logger.LogWarning(
+                    "Duplicate package dependencies entry for component:{ComponentName} with dependency:{DependencyName}. Existing dependency specifiers: {ExistingSpecifiers}. New dependency specifiers: {NewSpecifiers}.",
+                    pipComponent.Name,
+                    d.Name,
+                    JsonConvert.SerializeObject(dependencies[d.Name].DependencySpecifiers),
+                    JsonConvert.SerializeObject(d.DependencySpecifiers));
+                dependencies[d.Name] = d;
+            }
+        });
 
         var toRemove = new List<PipGraphNode>();
         foreach (var child in node.Children)
