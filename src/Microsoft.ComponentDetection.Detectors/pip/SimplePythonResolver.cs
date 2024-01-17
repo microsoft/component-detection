@@ -230,7 +230,12 @@ public class SimplePythonResolver : ISimplePythonResolver
     private SortedDictionary<string, IList<PythonProjectRelease>> ConvertSimplePypiProjectToSortedDictionary(SimplePypiProject simplePypiProject, PipDependencySpecification spec)
     {
         var sortedProjectVersions = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
-        foreach (var file in simplePypiProject?.Files)
+        if (simplePypiProject is null)
+        {
+            return sortedProjectVersions;
+        }
+
+        foreach (var file in simplePypiProject.Files)
         {
             try
             {
