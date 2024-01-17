@@ -48,6 +48,11 @@ public class PipComponentDetector : FileComponentDetector
 
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
+        else
+        {
+            var pythonVersion = await this.pythonCommandService.GetPythonVersionAsync(pythonExePath);
+            this.pythonResolver.SetPythonEnvironmentVariable("python_version", pythonVersion);
+        }
 
         return processRequests;
     }
@@ -66,6 +71,7 @@ public class PipComponentDetector : FileComponentDetector
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => new PipDependencySpecification(x))
                 .Where(x => !x.PackageIsUnsafe())
+                .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
                 .ToList();
 
             var roots = await this.pythonResolver.ResolveRootsAsync(singleFileComponentRecorder, listedPackage);
