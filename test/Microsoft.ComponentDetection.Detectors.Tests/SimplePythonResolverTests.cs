@@ -208,6 +208,55 @@ public class SimplePythonResolverTests
     }
 
     [TestMethod]
+    public async Task TestPipResolverInvalidVersionSpecAsync()
+    {
+        var a = "a==1.0";
+        var b = "b==1.0";
+        var c = "c<=1.1";
+        var cAlt = "c==1.0";
+
+        var specA = new PipDependencySpecification(a);
+        var specB = new PipDependencySpecification(b);
+        var specC = new PipDependencySpecification(c);
+        var specCAlt = new PipDependencySpecification(cAlt);
+
+        var aReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.0", "bdist_wheel") });
+        var bReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.0", "bdist_wheel") });
+        var cReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.2", "bdist_wheel") });
+
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("a")))).ReturnsAsync(aReleases);
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c") && x.DependencySpecifiers.First().Equals("<=1.1")))).ReturnsAsync(cReleases);
+
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString(new List<string>() { b, c })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { cAlt })));
+
+        var dependencies = new List<PipDependencySpecification> { specA };
+
+        var resolver = new SimplePythonResolver(this.simplePyPiClient.Object, this.loggerMock.Object);
+
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
+
+        resolveResult.Should().NotBeNull();
+
+        var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
+        var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
+
+        expectedA.Children.Add(expectedB);
+        expectedB.Parents.Add(expectedA);
+
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
+        this.simplePyPiClient.Verify(x => x.FetchPackageFileStreamAsync(It.IsAny<Uri>()), Times.Exactly(2));
+
+        this.loggerMock.Verify(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => string.Equals("Unable to resolve non-root dependency c with version specifiers [\"<=1.1\"] from pypi possibly due to computed version constraints. Skipping package.", o.ToString(), StringComparison.Ordinal)),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    [TestMethod]
     public async Task TestPipResolverVersionExtractionWithDifferentVersionFormatsAsync()
     {
         var a = "a==1.15.0";

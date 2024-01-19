@@ -102,7 +102,9 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                 return;
             }
 
-            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages);
+            HashSet<string> visitedDependencies = new();
+
+            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages, visitedDependencies);
         }
         catch (InvalidOperationException e)
         {
@@ -126,6 +128,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         DetectedComponent parent,
         Dep depInfo,
         IReadOnlyDictionary<string, (string Authors, string License)> packagesMetadata,
+        ISet<string> visitedDependencies,
         bool explicitlyReferencedDependency = false)
     {
         try
@@ -153,7 +156,12 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
             foreach (var dep in node.Deps)
             {
-                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, parent == null);
+                var componentKey = $"{detectedComponent.Component.Id}{dep.Pkg}";
+                if (!visitedDependencies.Contains(componentKey))
+                {
+                    visitedDependencies.Add(componentKey);
+                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, visitedDependencies, parent == null);
+                }
             }
         }
         catch (IndexOutOfRangeException e)
