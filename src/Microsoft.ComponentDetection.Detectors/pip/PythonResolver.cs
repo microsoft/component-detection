@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using MoreLinq;
 using Newtonsoft.Json;
 
-public class PythonResolver : IPythonResolver
+public class PythonResolver : PythonResolverBase, IPythonResolver
 {
     private readonly IPyPiClient pypiClient;
     private readonly ILogger<PythonResolver> logger;
@@ -20,6 +20,7 @@ public class PythonResolver : IPythonResolver
     private readonly string classifierFieldLicensePrefix = "License";
 
     public PythonResolver(IPyPiClient pypiClient, ILogger<PythonResolver> logger)
+        : base(logger)
     {
         this.pypiClient = pypiClient;
         this.logger = logger;
@@ -141,80 +142,7 @@ public class PythonResolver : IPythonResolver
         return state.Roots;
     }
 
-    private async Task<bool> InvalidateAndReprocessAsync(
-        PythonResolverState state,
-        PipGraphNode node,
-        PipDependencySpecification newSpec)
-    {
-        var pipComponent = node.Value;
-
-        var oldVersions = state.ValidVersionMap[pipComponent.Name].Keys.ToList();
-        var currentSelectedVersion = node.Value.Version;
-        var currentReleases = state.ValidVersionMap[pipComponent.Name][currentSelectedVersion];
-        foreach (var version in oldVersions)
-        {
-            if (!PythonVersionUtilities.VersionValidForSpec(version, newSpec.DependencySpecifiers))
-            {
-                state.ValidVersionMap[pipComponent.Name].Remove(version);
-            }
-        }
-
-        if (state.ValidVersionMap[pipComponent.Name].Count == 0)
-        {
-            state.ValidVersionMap[pipComponent.Name][currentSelectedVersion] = currentReleases;
-            return false;
-        }
-
-        var candidateVersion = state.ValidVersionMap[pipComponent.Name].Keys.Any() ? state.ValidVersionMap[pipComponent.Name].Keys.Last() : null;
-
-        node.Value = new PipComponent(pipComponent.Name, candidateVersion, license: pipComponent.License, author: pipComponent.Author);
-
-        var fetchedDependences = await this.FetchPackageDependenciesAsync(state, newSpec);
-
-        // Multiple dependency specification versions can be given for a single package name
-        // Until a better method is divised, choose the latest entry
-        var dependencies = new Dictionary<string, PipDependencySpecification>();
-        fetchedDependences.ForEach(d =>
-        {
-            if (!dependencies.TryAdd(d.Name, d))
-            {
-                this.logger.LogWarning(
-                    "Duplicate package dependencies entry for component:{ComponentName} with dependency:{DependencyName}. Existing dependency specifiers: {ExistingSpecifiers}. New dependency specifiers: {NewSpecifiers}.",
-                    pipComponent.Name,
-                    d.Name,
-                    JsonConvert.SerializeObject(dependencies[d.Name].DependencySpecifiers),
-                    JsonConvert.SerializeObject(d.DependencySpecifiers));
-                dependencies[d.Name] = d;
-            }
-        });
-
-        var toRemove = new List<PipGraphNode>();
-        foreach (var child in node.Children)
-        {
-            var pipChild = child.Value;
-
-            if (!dependencies.TryGetValue(pipChild.Name, out var newDependency))
-            {
-                toRemove.Add(child);
-            }
-            else if (!PythonVersionUtilities.VersionValidForSpec(pipChild.Version, newDependency.DependencySpecifiers))
-            {
-                if (!await this.InvalidateAndReprocessAsync(state, child, newDependency))
-                {
-                    return false;
-                }
-            }
-        }
-
-        foreach (var remove in toRemove)
-        {
-            node.Children.Remove(remove);
-        }
-
-        return true;
-    }
-
-    private async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(
+    protected override async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(
         PythonResolverState state,
         PipDependencySpecification spec)
     {
