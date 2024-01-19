@@ -37,10 +37,16 @@ public class LinuxScannerTests
                             ""author"": ""John Doe""
                         },
                         ""licenses"": [
-                                ""MIT"",
-                                ""GPLv2"",
-                                ""GPLv3""
-                            ]
+                            {
+                                ""value"": ""MIT"",
+                            },
+                            {
+                                ""value"": ""GPLv2"",
+                            },
+                            {
+                                ""value"": ""GPLv3"",
+                            }
+                        ]
                     }
                 ]
             }";

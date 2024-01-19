@@ -159,13 +159,13 @@ public class LinuxScanner : ILinuxScanner
         var license = artifact.Metadata?.License?.String;
         if (license != null)
         {
-            return license.ToString();
+            return license;
         }
 
         var licenses = artifact.Licenses;
         if (licenses != null && licenses.Any())
         {
-            return string.Join(", ", licenses.Select(l => l.ToString()));
+            return string.Join(", ", licenses.Select(l => l.Value));
         }
 
         return null;
