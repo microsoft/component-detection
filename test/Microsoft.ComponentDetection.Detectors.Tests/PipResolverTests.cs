@@ -168,6 +168,80 @@ public class PipResolverTests
     }
 
     [TestMethod]
+    public async Task TestPipResolverInvalidSpecAsync()
+    {
+        var a = new PipDependencySpecification("a==1.0");
+        var b = new PipDependencySpecification("b==1.0");
+        var c = new PipDependencySpecification("c==1.0");
+        var doesNotExist = new PipDependencySpecification("dne==1.0");
+
+        var versions = new List<string> { "1.0" };
+
+        var aReleases = this.CreateReleasesDictionary(versions);
+        var bReleases = this.CreateReleasesDictionary(versions);
+        var cReleases = this.CreateReleasesDictionary(versions);
+
+        var aProject = new PythonProject
+        {
+            Releases = aReleases,
+            Info = new PythonProjectInfo
+            {
+                MaintainerEmail = "Microsoft",
+            },
+        };
+
+        var bProject = new PythonProject
+        {
+            Releases = bReleases,
+        };
+
+        var cProject = new PythonProject
+        {
+            Releases = cReleases,
+        };
+
+        var dneProject = new PythonProject
+        {
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>(),
+        };
+
+        this.pyPiClient.Setup(x => x.GetProjectAsync(a)).ReturnsAsync(aProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(doesNotExist)).ReturnsAsync(dneProject);
+
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+
+        var dependencies = new List<PipDependencySpecification> { a, doesNotExist };
+
+        var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
+
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
+
+        resolveResult.Should().NotBeNull();
+
+        var expectedA = new PipGraphNode(new PipComponent("a", "1.0", "Microsoft", null));
+        var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
+        var expectedC = new PipGraphNode(new PipComponent("c", "1.0"));
+
+        expectedA.Children.Add(expectedB);
+        expectedB.Parents.Add(expectedA);
+        expectedB.Children.Add(expectedC);
+        expectedC.Parents.Add(expectedB);
+
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
+
+        this.loggerMock.Verify(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => string.Equals("Unable to resolve root dependency dne with version specifiers [\"==1.0\"] from pypi possibly due to computed version constraints. Skipping package.", o.ToString(), StringComparison.Ordinal)),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    [TestMethod]
     public async Task TestPipResolverNonExistantLeafAsync()
     {
         var a = new PipDependencySpecification("a==1.0");
