@@ -17,6 +17,8 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 {
     private readonly ICommandLineInvocationService cliService;
 
+    private readonly HashSet<string> visitedDependencies = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="RustCliDetector"/> class.
     /// </summary>
@@ -153,7 +155,12 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
             foreach (var dep in node.Deps)
             {
-                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, parent == null);
+                var componentKey = $"{detectedComponent.Component.Id}{dep.Pkg}";
+                if (!this.visitedDependencies.Contains(componentKey))
+                {
+                    this.visitedDependencies.Add(componentKey);
+                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, parent == null);
+                }
             }
         }
         catch (IndexOutOfRangeException e)
