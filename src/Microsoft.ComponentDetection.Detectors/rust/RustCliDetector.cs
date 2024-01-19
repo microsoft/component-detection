@@ -17,8 +17,6 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 {
     private readonly ICommandLineInvocationService cliService;
 
-    private readonly HashSet<string> visitedDependencies = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RustCliDetector"/> class.
     /// </summary>
@@ -104,7 +102,9 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                 return;
             }
 
-            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages);
+            HashSet<string> visitedDependencies = new();
+
+            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages, visitedDependencies);
         }
         catch (InvalidOperationException e)
         {
@@ -128,6 +128,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         DetectedComponent parent,
         Dep depInfo,
         IReadOnlyDictionary<string, (string Authors, string License)> packagesMetadata,
+        ISet<string> visitedDependencies,
         bool explicitlyReferencedDependency = false)
     {
         try
@@ -156,10 +157,10 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
             foreach (var dep in node.Deps)
             {
                 var componentKey = $"{detectedComponent.Component.Id}{dep.Pkg}";
-                if (!this.visitedDependencies.Contains(componentKey))
+                if (!visitedDependencies.Contains(componentKey))
                 {
-                    this.visitedDependencies.Add(componentKey);
-                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, parent == null);
+                    visitedDependencies.Add(componentKey);
+                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, visitedDependencies, parent == null);
                 }
             }
         }
