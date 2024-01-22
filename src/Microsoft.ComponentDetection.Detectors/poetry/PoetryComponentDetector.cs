@@ -30,7 +30,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 2;
+    public override int Version { get; } = 3;
 
     public override IEnumerable<string> Categories => new List<string> { "Python" };
 
@@ -59,12 +59,12 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
             if (package.Source != null && package.Source.Type == "git")
             {
                 var component = new DetectedComponent(new GitComponent(new Uri(package.Source.Url), package.Source.ResolvedReference));
-                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
+                singleFileComponentRecorder.RegisterUsage(component, isExplicitReferencedDependency: true, isDevelopmentDependency: isDevelopmentDependency);
             }
             else
             {
                 var component = new DetectedComponent(new PipComponent(package.Name, package.Version));
-                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
+                singleFileComponentRecorder.RegisterUsage(component, isExplicitReferencedDependency: true, isDevelopmentDependency: isDevelopmentDependency);
             }
         });
         await Task.CompletedTask;
