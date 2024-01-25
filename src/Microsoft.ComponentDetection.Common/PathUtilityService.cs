@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common;
+namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.IO;
@@ -73,6 +73,9 @@ public class PathUtilityService : IPathUtilityService
         var fileInfo = new FileInfo(path);
         return fileInfo.Exists ? this.ResolvePathFromInfo(fileInfo) : null;
     }
+
+    public string NormalizePath(string path) =>
+        path?.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
 
     private string ResolvePathFromInfo(FileSystemInfo info) => info.LinkTarget ?? info.FullName;
 }

@@ -8,17 +8,29 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 public class PythonCommandService : IPythonCommandService
 {
+    private const string ModuleImportError = "ModuleNotFoundError";
+
     private readonly ICommandLineInvocationService commandLineInvocationService;
+    private readonly IPathUtilityService pathUtilityService;
+    private readonly ILogger<PythonCommandService> logger;
 
     public PythonCommandService()
     {
     }
 
-    public PythonCommandService(ICommandLineInvocationService commandLineInvocationService) =>
+    public PythonCommandService(
+        ICommandLineInvocationService commandLineInvocationService,
+        IPathUtilityService pathUtilityService,
+        ILogger<PythonCommandService> logger)
+    {
         this.commandLineInvocationService = commandLineInvocationService;
+        this.pathUtilityService = pathUtilityService;
+        this.logger = logger;
+    }
 
     public async Task<bool> PythonExistsAsync(string pythonPath = null)
     {
@@ -57,12 +69,34 @@ public class PythonCommandService : IPythonCommandService
             throw new PythonNotFoundException();
         }
 
-        // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
-        // We need to have python interpret this file because install_requires can be composed at runtime
-        var command = await this.commandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
+        // File paths will need to be normalized before passing to the python cmdline
+        var formattedFilePath = this.pathUtilityService.NormalizePath(filePath);
+        var workingDirectory = new DirectoryInfo(this.pathUtilityService.GetParentDirectory(formattedFilePath));
 
+        // This calls out to python and prints out an array like: [ packageA, packageB, packageC ].
+        // We need to have python interpret this file because install_requires can be composed at runtime.
+        // Attempt to use setuptools which is the replacement for deprecated distutils.
+        var command = await this.commandLineInvocationService.ExecuteCommandAsync(
+            pythonExecutable,
+            null,
+            workingDirectory,
+            $"-c \"from setuptools import setup; result=setup(); print(result.install_requires)\"");
+
+        // If importing setuptools fails, try and fallback to distutils.
+        if (command.ExitCode != 0 && command.StdErr.Contains(ModuleImportError, StringComparison.OrdinalIgnoreCase))
+        {
+            this.logger.LogInformation("Python: setuptools is not available to the Python runtime. Attempting to fall back to distutils...");
+            command = await this.commandLineInvocationService.ExecuteCommandAsync(
+                pythonExecutable,
+                null,
+                workingDirectory,
+                $"-c \"import distutils.core; setup=distutils.core.run_setup('{formattedFilePath}'); print(setup.install_requires)\"");
+        }
+
+        // If both invocations fail, log a warning and exit without declaring any packages.
         if (command.ExitCode != 0)
         {
+            this.logger.LogWarning("Python: Failure while attempting to parse install_requires from {FilePath}. Message: {StdErrOutput}", filePath, command.StdErr);
             return new List<string>();
         }
 

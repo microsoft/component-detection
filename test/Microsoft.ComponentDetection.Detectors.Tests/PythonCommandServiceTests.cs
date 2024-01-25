@@ -9,6 +9,7 @@ using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -47,16 +48,23 @@ something=1.3
 git+git://github.com/path/to/package-two@41b95ec#egg=package-two
 other=2.1";
 
-    private readonly Mock<ICommandLineInvocationService> commandLineInvokationService;
+    private readonly Mock<ICommandLineInvocationService> mockCliService;
+    private readonly Mock<IPathUtilityService> mockPathUtilityService;
+    private readonly Mock<ILogger<PythonCommandService>> mockLogger;
 
-    public PythonCommandServiceTests() => this.commandLineInvokationService = new Mock<ICommandLineInvocationService>();
+    public PythonCommandServiceTests()
+    {
+        this.mockCliService = new();
+        this.mockPathUtilityService = new();
+        this.mockLogger = new();
+    }
 
     [TestMethod]
     public async Task PythonCommandService_ReturnsTrueWhenPythonExistsAsync()
     {
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         (await service.PythonExistsAsync()).Should().BeTrue();
     }
@@ -64,9 +72,9 @@ other=2.1";
     [TestMethod]
     public async Task PythonCommandService_ReturnsFalseWhenPythonExistsAsync()
     {
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         (await service.PythonExistsAsync()).Should().BeFalse();
     }
@@ -74,9 +82,9 @@ other=2.1";
     [TestMethod]
     public async Task PythonCommandService_ReturnsTrueWhenPythonExistsForAPathAsync()
     {
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         (await service.PythonExistsAsync("test")).Should().BeTrue();
     }
@@ -84,9 +92,9 @@ other=2.1";
     [TestMethod]
     public async Task PythonCommandService_ReturnsFalseWhenPythonExistsForAPathAsync()
     {
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         (await service.PythonExistsAsync("test")).Should().BeFalse();
     }
@@ -97,11 +105,14 @@ other=2.1";
         var fakePath = @"c:\the\fake\path.py";
         var fakePathAsPassedToPython = fakePath.Replace("\\", "/");
 
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
+        this.mockPathUtilityService.Setup(x => x.NormalizePath(fakePath)).Returns(fakePathAsPassedToPython);
+        this.mockPathUtilityService.Setup(x => x.GetParentDirectory(fakePathAsPassedToPython)).Returns(Path.GetDirectoryName(fakePathAsPassedToPython));
+
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "[]", StdErr = string.Empty });
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         var result = await service.ParseFileAsync(fakePath);
 
@@ -114,11 +125,14 @@ other=2.1";
         var fakePath = @"c:\the\fake\path.py";
         var fakePathAsPassedToPython = fakePath.Replace("\\", "/");
 
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
+        this.mockPathUtilityService.Setup(x => x.NormalizePath(fakePath)).Returns(fakePathAsPassedToPython);
+        this.mockPathUtilityService.Setup(x => x.GetParentDirectory(fakePathAsPassedToPython)).Returns(Path.GetDirectoryName(fakePathAsPassedToPython));
+
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "None", StdErr = string.Empty });
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         var result = await service.ParseFileAsync(fakePath);
 
@@ -131,11 +145,14 @@ other=2.1";
         var fakePath = @"c:\the\fake\path.py";
         var fakePathAsPassedToPython = fakePath.Replace("\\", "/");
 
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
+        this.mockPathUtilityService.Setup(x => x.NormalizePath(fakePath)).Returns(fakePathAsPassedToPython);
+        this.mockPathUtilityService.Setup(x => x.GetParentDirectory(fakePathAsPassedToPython)).Returns(Path.GetDirectoryName(fakePathAsPassedToPython));
+
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "['None']", StdErr = string.Empty });
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         var result = await service.ParseFileAsync(fakePath);
 
@@ -149,11 +166,14 @@ other=2.1";
         var fakePath = @"c:\the\fake\path.py";
         var fakePathAsPassedToPython = fakePath.Replace("\\", "/");
 
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
+        this.mockPathUtilityService.Setup(x => x.NormalizePath(fakePath)).Returns(fakePathAsPassedToPython);
+        this.mockPathUtilityService.Setup(x => x.GetParentDirectory(fakePathAsPassedToPython)).Returns(Path.GetDirectoryName(fakePathAsPassedToPython));
+
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "['knack==0.4.1', 'setuptools>=1.0,!=1.1', 'vsts-cli-common==0.1.3', 'vsts-cli-admin==0.1.3', 'vsts-cli-build==0.1.3', 'vsts-cli-code==0.1.3', 'vsts-cli-team==0.1.3', 'vsts-cli-package==0.1.3', 'vsts-cli-work==0.1.3']", StdErr = string.Empty });
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         var result = await service.ParseFileAsync(fakePath);
         var expected = new string[] { "knack==0.4.1", "setuptools>=1.0,!=1.1", "vsts-cli-common==0.1.3", "vsts-cli-admin==0.1.3", "vsts-cli-build==0.1.3", "vsts-cli-code==0.1.3", "vsts-cli-team==0.1.3", "vsts-cli-package==0.1.3", "vsts-cli-work==0.1.3" }.Select<string, (string, GitComponent)>(dep => (dep, null)).ToArray();
@@ -171,8 +191,8 @@ other=2.1";
     {
         var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         try
         {
@@ -208,8 +228,8 @@ other=2.1";
     {
         var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         try
         {
@@ -390,8 +410,8 @@ other=2.1";
     {
         var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
-        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        var service = new PythonCommandService(this.commandLineInvokationService.Object);
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+        var service = new PythonCommandService(this.mockCliService.Object, this.mockPathUtilityService.Object, this.mockLogger.Object);
 
         using (var writer = File.CreateText(testPath))
         {
