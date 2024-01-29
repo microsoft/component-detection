@@ -248,7 +248,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
 
         var discoveredComponents = componentRecorder.GetDetectedComponents().Select(c => (MavenComponent)c.Component).OrderBy(c => c.ArtifactId).ToList();
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
-        var gradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("\\gradle.lockfile"))];
+        var gradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("gradle.lockfile"))];
         var settingsGradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("settings-gradle.lockfile"))];
         var buildscriptGradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("buildscript-gradle.lockfile"))];
 
