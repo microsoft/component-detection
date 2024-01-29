@@ -58,9 +58,7 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
     }
 
     private List<string> ReadEnvVarStringList(IEnvironmentVariableService envVarService, string envVar)
-    {
-        return (envVarService.GetEnvironmentVariable(envVar) ?? string.Empty).Split(",", StringSplitOptions.RemoveEmptyEntries).ToList();
-    }
+        => (envVarService.GetEnvironmentVariable(envVar) ?? string.Empty).Split(",", StringSplitOptions.RemoveEmptyEntries).ToList();
 
     private void ParseLockfile(ISingleFileComponentRecorder singleFileComponentRecorder, IComponentStream file)
     {
