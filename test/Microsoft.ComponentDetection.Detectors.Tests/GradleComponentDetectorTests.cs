@@ -245,7 +245,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
             .WithFile("gradle.lockfile", regularLockfile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var discoveredComponents = componentRecorder.GetDetectedComponents().Select(c => (MavenComponent)c.Component).OrderBy(c => c.ArtifactId).ToList();
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
@@ -253,32 +253,32 @@ org.springframework:spring-core:5.0.5.RELEASE";
         var settingsGradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("settings-gradle.lockfile"))];
         var buildscriptGradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("buildscript-gradle.lockfile"))];
 
-        Assert.AreEqual(4, discoveredComponents.Count);
+        discoveredComponents.Count.Should().Be(4);
 
         // Dev dependency listed only in settings-gradle.lockfile
         var component = discoveredComponents[0];
-        Assert.AreEqual("org.hamcrest", component.GroupId);
-        Assert.AreEqual("hamcrest-core", component.ArtifactId);
-        Assert.IsTrue(settingsGradleLockfileGraph.IsDevelopmentDependency(component.Id));
+        component.GroupId.Should().Be("org.hamcrest");
+        component.ArtifactId.Should().Be("hamcrest-core");
+        settingsGradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
 
         // Dev dependency listed only in buildscript-gradle.lockfile
         component = discoveredComponents[1];
-        Assert.AreEqual("org.jacoco", component.GroupId);
-        Assert.AreEqual("org.jacoco.agent", component.ArtifactId);
-        Assert.IsTrue(buildscriptGradleLockfileGraph.IsDevelopmentDependency(component.Id));
+        component.GroupId.Should().Be("org.jacoco");
+        component.ArtifactId.Should().Be("org.jacoco.agent");
+        buildscriptGradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
 
         // This should be purely a prod dependency, just a basic confidence test
         component = discoveredComponents[2];
-        Assert.AreEqual("org.springframework", component.GroupId);
-        Assert.AreEqual("spring-beans", component.ArtifactId);
-        Assert.IsFalse(gradleLockfileGraph.IsDevelopmentDependency(component.Id));
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-beans");
+        gradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
 
         // This is listed as both a prod and a dev dependency in different files
         component = discoveredComponents[3];
-        Assert.AreEqual("org.springframework", component.GroupId);
-        Assert.AreEqual("spring-core", component.ArtifactId);
-        Assert.IsFalse(gradleLockfileGraph.IsDevelopmentDependency(component.Id));
-        Assert.IsTrue(settingsGradleLockfileGraph.IsDevelopmentDependency(component.Id));
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-core");
+        gradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
+        settingsGradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
     }
 
     [TestMethod]
@@ -313,27 +313,28 @@ org.springframework:spring-core:5.0.5.RELEASE";
 
         // Dev dependency listed only in dev1\gradle.lockfile
         var component = discoveredComponents[0];
-        Assert.AreEqual("org.hamcrest", component.GroupId);
-        Assert.AreEqual("hamcrest-core", component.ArtifactId);
-        Assert.IsTrue(dev1GradleLockfileGraph.IsDevelopmentDependency(component.Id));
+        component.GroupId.Should().Be("org.hamcrest");
+        component.ArtifactId.Should().Be("hamcrest-core");
+        dev1GradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
 
         // Dev dependency listed only in dev2\gradle.lockfile
         component = discoveredComponents[1];
-        Assert.AreEqual("org.jacoco", component.GroupId);
-        Assert.AreEqual("org.jacoco.agent", component.ArtifactId);
-        Assert.IsTrue(dev2GradleLockfileGraph.IsDevelopmentDependency(component.Id));
+        component.GroupId.Should().Be("org.jacoco");
+        component.ArtifactId.Should().Be("org.jacoco.agent");
+        dev2GradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
 
         // This should be purely a prod dependency, just a basic confidence test
         component = discoveredComponents[2];
-        Assert.AreEqual("org.springframework", component.GroupId);
-        Assert.AreEqual("spring-beans", component.ArtifactId);
-        Assert.IsFalse(gradleLockfileGraph.IsDevelopmentDependency(component.Id));
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-beans");
+        gradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
 
         // This is listed as both a prod and a dev dependency in different files
         component = discoveredComponents[3];
-        Assert.AreEqual("org.springframework", component.GroupId);
-        Assert.AreEqual("spring-core", component.ArtifactId);
-        Assert.IsFalse(gradleLockfileGraph.IsDevelopmentDependency(component.Id));
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-core");
+        gradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
+
         Assert.IsTrue(dev1GradleLockfileGraph.IsDevelopmentDependency(component.Id));
     }
 
