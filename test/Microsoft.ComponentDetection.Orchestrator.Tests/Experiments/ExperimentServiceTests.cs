@@ -44,6 +44,7 @@ public class ExperimentServiceTests
 
         this.componentRecorder = new ComponentRecorder();
 
+        this.detectorMock.SetupGet(x => x.Id).Returns(Guid.NewGuid().ToString());
         this.experimentConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
         this.experimentConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
         this.experimentConfigMock.Setup(x => x.ShouldRecord(this.detectorMock.Object, It.IsAny<int>())).Returns(true);

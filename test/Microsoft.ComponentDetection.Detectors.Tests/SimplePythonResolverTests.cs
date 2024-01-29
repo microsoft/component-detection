@@ -7,6 +7,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
@@ -58,7 +59,7 @@ public class SimplePythonResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
@@ -69,7 +70,7 @@ public class SimplePythonResolverTests
         expectedB.Children.Add(expectedC);
         expectedC.Parents.Add(expectedB);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
     }
 
     [TestMethod]
@@ -104,7 +105,7 @@ public class SimplePythonResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
@@ -115,7 +116,7 @@ public class SimplePythonResolverTests
         expectedB.Children.Add(expectedC);
         expectedC.Parents.Add(expectedB);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
     }
 
     [TestMethod]
@@ -145,7 +146,7 @@ public class SimplePythonResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
@@ -153,7 +154,7 @@ public class SimplePythonResolverTests
         expectedA.Children.Add(expectedB);
         expectedB.Parents.Add(expectedA);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
         this.simplePyPiClient.Verify(x => x.FetchPackageFileStreamAsync(It.IsAny<Uri>()), Times.Exactly(2));
     }
 
@@ -189,7 +190,7 @@ public class SimplePythonResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
@@ -202,8 +203,57 @@ public class SimplePythonResolverTests
         expectedC.Parents.Add(expectedA);
         expectedC.Parents.Add(expectedB);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
         this.simplePyPiClient.Verify(x => x.FetchPackageFileStreamAsync(It.IsAny<Uri>()), Times.Exactly(4));
+    }
+
+    [TestMethod]
+    public async Task TestPipResolverInvalidVersionSpecAsync()
+    {
+        var a = "a==1.0";
+        var b = "b==1.0";
+        var c = "c<=1.1";
+        var cAlt = "c==1.0";
+
+        var specA = new PipDependencySpecification(a);
+        var specB = new PipDependencySpecification(b);
+        var specC = new PipDependencySpecification(c);
+        var specCAlt = new PipDependencySpecification(cAlt);
+
+        var aReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.0", "bdist_wheel") });
+        var bReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.0", "bdist_wheel") });
+        var cReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.2", "bdist_wheel") });
+
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("a")))).ReturnsAsync(aReleases);
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c") && x.DependencySpecifiers.First().Equals("<=1.1")))).ReturnsAsync(cReleases);
+
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString(new List<string>() { b, c })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { cAlt })));
+
+        var dependencies = new List<PipDependencySpecification> { specA };
+
+        var resolver = new SimplePythonResolver(this.simplePyPiClient.Object, this.loggerMock.Object);
+
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
+
+        resolveResult.Should().NotBeNull();
+
+        var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
+        var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
+
+        expectedA.Children.Add(expectedB);
+        expectedB.Parents.Add(expectedA);
+
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
+        this.simplePyPiClient.Verify(x => x.FetchPackageFileStreamAsync(It.IsAny<Uri>()), Times.Exactly(2));
+
+        this.loggerMock.Verify(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => string.Equals("Unable to resolve non-root dependency c with version specifiers [\"<=1.1\"] from pypi possibly due to computed version constraints. Skipping package.", o.ToString(), StringComparison.Ordinal)),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
     }
 
     [TestMethod]
@@ -235,7 +285,7 @@ public class SimplePythonResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.15.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.19"));
@@ -246,7 +296,7 @@ public class SimplePythonResolverTests
         expectedB.Children.Add(expectedC);
         expectedC.Parents.Add(expectedB);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
     }
 
     [TestMethod]
@@ -278,7 +328,7 @@ public class SimplePythonResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "1.20"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0.0"));
@@ -286,7 +336,7 @@ public class SimplePythonResolverTests
         expectedA.Children.Add(expectedB);
         expectedB.Parents.Add(expectedA);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
     }
 
     [TestMethod]
@@ -344,7 +394,7 @@ public class SimplePythonResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
     }
 
     [TestMethod]
@@ -377,7 +427,7 @@ public class SimplePythonResolverTests
 
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
-        Assert.IsNotNull(resolveResult);
+        resolveResult.Should().NotBeNull();
 
         var expectedA = new PipGraphNode(new PipComponent("a", "10.0.0"));
         var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
@@ -388,7 +438,7 @@ public class SimplePythonResolverTests
         expectedB.Children.Add(expectedC);
         expectedC.Parents.Add(expectedB);
 
-        Assert.IsTrue(this.CompareGraphs(resolveResult.First(), expectedA));
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
     }
 
     private bool CompareGraphs(PipGraphNode a, PipGraphNode b)

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// A Rust CLI detector that uses the cargo metadata command to detect Rust components.
 /// </summary>
-public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 {
     private readonly ICommandLineInvocationService cliService;
 
@@ -46,7 +46,7 @@ public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetect
     public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
 
     /// <inheritdoc />
-    public override int Version => 1;
+    public override int Version => 2;
 
     /// <inheritdoc />
     public override IList<string> SearchPatterns { get; } = new[] { "Cargo.toml" };
@@ -55,6 +55,7 @@ public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetect
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
         var componentStream = processRequest.ComponentStream;
+        this.Logger.LogInformation("Discovered Cargo.toml: {Location}", componentStream.Location);
 
         try
         {
@@ -64,16 +65,18 @@ public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetect
                 return;
             }
 
+            // Use --all-features to ensure that even optional feature dependencies are detected.
             var cliResult = await this.cliService.ExecuteCommandAsync(
                 "cargo",
                 null,
                 "metadata",
+                "--all-features",
                 "--manifest-path",
                 componentStream.Location,
                 "--format-version=1",
                 "--locked");
 
-            if (cliResult.ExitCode < 0)
+            if (cliResult.ExitCode != 0)
             {
                 this.Logger.LogWarning("`cargo metadata` failed with {Location}. Ensure the Cargo.lock is up to date. stderr: {StdErr}", processRequest.ComponentStream.Location, cliResult.StdErr);
                 return;
@@ -81,9 +84,27 @@ public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetect
 
             var metadata = CargoMetadata.FromJson(cliResult.StdOut);
             var graph = BuildGraph(metadata);
+
+            var packages = metadata.Packages.ToDictionary(
+                x => $"{x.Name} {x.Version}",
+                x => (
+                    (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || !x.Authors.Any()) ? null : string.Join(", ", x.Authors),
+                    string.IsNullOrWhiteSpace(x.License) ? null : x.License));
+
             var root = metadata.Resolve.Root;
 
-            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null);
+            // A cargo.toml can be used to declare a workspace and not a package (A Virtual Manifest).
+            // In this case, the root will be null as it will not be pulling in dependencies itself.
+            // https://doc.rust-lang.org/cargo/reference/workspaces.html#virtual-workspace
+            if (root == null)
+            {
+                this.Logger.LogWarning("Virtual Manifest: {Location}, skipping component mapping", processRequest.ComponentStream.Location);
+                return;
+            }
+
+            HashSet<string> visitedDependencies = new();
+
+            this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages, visitedDependencies);
         }
         catch (InvalidOperationException e)
         {
@@ -106,13 +127,20 @@ public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetect
         string id,
         DetectedComponent parent,
         Dep depInfo,
+        IReadOnlyDictionary<string, (string Authors, string License)> packagesMetadata,
+        ISet<string> visitedDependencies,
         bool explicitlyReferencedDependency = false)
     {
         try
         {
-            var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev or Kind.Build) ?? false;
+            var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
             var (name, version) = ParseNameAndVersion(id);
-            var detectedComponent = new DetectedComponent(new CargoComponent(name, version));
+
+            var (authors, license) = packagesMetadata.TryGetValue($"{name} {version}", out var package)
+                ? package
+                : (null, null);
+
+            var detectedComponent = new DetectedComponent(new CargoComponent(name, version, authors, license));
 
             recorder.RegisterUsage(
                 detectedComponent,
@@ -128,7 +156,12 @@ public class RustCliDetector : FileComponentDetector, IDefaultOffComponentDetect
 
             foreach (var dep in node.Deps)
             {
-                this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, parent == null);
+                var componentKey = $"{detectedComponent.Component.Id}{dep.Pkg}";
+                if (!visitedDependencies.Contains(componentKey))
+                {
+                    visitedDependencies.Add(componentKey);
+                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, visitedDependencies, parent == null);
+                }
             }
         }
         catch (IndexOutOfRangeException e)

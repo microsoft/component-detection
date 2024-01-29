@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
+namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
 
 using System;
 using System.Collections.Generic;

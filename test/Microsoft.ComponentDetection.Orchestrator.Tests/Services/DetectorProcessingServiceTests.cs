@@ -522,7 +522,8 @@ public class DetectorProcessingServiceTests
                 x.RecordDetectorRun(
                     It.Is<IComponentDetector>(detector => detector == this.firstFileComponentDetectorMock.Object),
                     It.IsAny<ComponentRecorder>(),
-                    It.Is<ScanSettings>(x => x == DefaultArgs)),
+                    It.Is<ScanSettings>(x => x == DefaultArgs),
+                    It.IsAny<DetectorRunResult>()),
             Times.Once());
 
         this.experimentServiceMock.Verify(
@@ -530,7 +531,8 @@ public class DetectorProcessingServiceTests
                 x.RecordDetectorRun(
                     It.Is<IComponentDetector>(detector => detector == this.secondFileComponentDetectorMock.Object),
                     It.IsAny<ComponentRecorder>(),
-                    It.Is<ScanSettings>(x => x == DefaultArgs)),
+                    It.Is<ScanSettings>(x => x == DefaultArgs),
+                    It.IsAny<DetectorRunResult>()),
             Times.Once());
     }
 

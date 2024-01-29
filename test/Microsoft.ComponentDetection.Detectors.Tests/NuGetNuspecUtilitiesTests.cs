@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -22,7 +23,7 @@ public class NuGetNuspecUtilitiesTests
         await Assert.ThrowsExceptionAsync<ArgumentException>(ShouldThrow);
 
         // The position should always be reset to 0
-        Assert.AreEqual(0, stream.Position);
+        stream.Position.Should().Be(0);
     }
 
     [TestMethod]
@@ -42,7 +43,7 @@ public class NuGetNuspecUtilitiesTests
         await Assert.ThrowsExceptionAsync<ArgumentException>(ShouldThrow);
 
         // The position should always be reset to 0
-        Assert.AreEqual(0, stream.Position);
+        stream.Position.Should().Be(0);
     }
 
     [TestMethod]
@@ -63,7 +64,7 @@ public class NuGetNuspecUtilitiesTests
         await Assert.ThrowsExceptionAsync<FileNotFoundException>(ShouldThrow);
 
         // The position should always be reset to 0
-        Assert.AreEqual(0, stream.Position);
+        stream.Position.Should().Be(0);
     }
 
     [TestMethod]
@@ -86,14 +87,14 @@ public class NuGetNuspecUtilitiesTests
 
         var bytes = await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
 
-        Assert.AreEqual(randomBytes.Length, bytes.Length);
+        bytes.Should().HaveCount(randomBytes.Length);
 
         for (var i = 0; i < randomBytes.Length; i++)
         {
-            Assert.AreEqual(randomBytes[i], bytes[i]);
+            bytes.Should().HaveElementAt(i, randomBytes[i]);
         }
 
         // The position should always be reset to 0
-        Assert.AreEqual(0, stream.Position);
+        stream.Position.Should().Be(0);
     }
 }

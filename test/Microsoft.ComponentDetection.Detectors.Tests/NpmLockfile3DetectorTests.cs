@@ -45,15 +45,15 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        Assert.AreEqual(4, detectedComponents.Count());
+        detectedComponents.Should().HaveCount(4);
         foreach (var component in detectedComponents)
         {
             componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
                 component.Component.Id,
                 parentComponent0 => parentComponent0.Name == componentName0 && parentComponent0.Version == version0);
-            Assert.IsFalse(string.IsNullOrWhiteSpace(((NpmComponent)component.Component).Hash));
+            ((NpmComponent)component.Component).Hash.Should().NotBeNullOrWhiteSpace();
         }
     }
 
@@ -84,10 +84,10 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
-        Assert.AreEqual(4, detectedComponents.Count);
+        detectedComponents.Should().HaveCount(4);
 
         var component0 = detectedComponents.First(x => x.Component.Id.Contains(componentName0));
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
@@ -108,7 +108,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
             componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
                 component.Component.Id,
                 parentComponent0 => parentComponent0.Name == componentName0 || parentComponent0.Name == componentName1);
-            Assert.IsFalse(string.IsNullOrWhiteSpace(((NpmComponent)component.Component).Hash));
+            ((NpmComponent)component.Component).Hash.Should().NotBeNullOrWhiteSpace();
         }
     }
 

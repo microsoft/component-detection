@@ -1,6 +1,7 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,22 +18,22 @@ public class MavenParsingUtilitiesTests
         var componentAndMetaData =
             GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided");
 
-        Assert.IsNotNull(componentAndMetaData);
-        Assert.IsNotNull(componentAndMetaData.Component);
-        Assert.IsNotNull(componentAndMetaData.IsDevelopmentDependency);
-        Assert.IsNotNull(componentAndMetaData.DependencyScope);
+        componentAndMetaData.Should().NotBeNull();
+        componentAndMetaData.Component.Should().NotBeNull();
+        componentAndMetaData.IsDevelopmentDependency.Should().NotBeNull();
+        componentAndMetaData.DependencyScope.Should().NotBeNull();
 
         var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
-        Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
+        actualComponent.Should().BeOfType<MavenComponent>();
 
         var expectedComponent = new MavenComponent("org.apache.maven", "maven-artifact", "3.6.1-SNAPSHOT");
 
-        Assert.AreEqual(expectedComponent.ArtifactId, actualComponent.ArtifactId);
-        Assert.AreEqual(expectedComponent.GroupId, actualComponent.GroupId);
-        Assert.AreEqual(expectedComponent.Version, actualComponent.Version);
+        actualComponent.ArtifactId.Should().Be(expectedComponent.ArtifactId);
+        actualComponent.GroupId.Should().Be(expectedComponent.GroupId);
+        actualComponent.Version.Should().Be(expectedComponent.Version);
 
-        Assert.IsFalse(componentAndMetaData.IsDevelopmentDependency);
-        Assert.AreEqual(DependencyScope.MavenProvided, componentAndMetaData.DependencyScope);
+        componentAndMetaData.IsDevelopmentDependency.Should().BeFalse();
+        componentAndMetaData.DependencyScope.Should().Be(DependencyScope.MavenProvided);
     }
 
     [TestMethod]
@@ -41,12 +42,12 @@ public class MavenParsingUtilitiesTests
         var componentAndMetaData =
             GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT");
 
-        Assert.IsNotNull(componentAndMetaData);
-        Assert.IsNotNull(componentAndMetaData.DependencyScope);
+        componentAndMetaData.Should().NotBeNull();
+        componentAndMetaData.DependencyScope.Should().NotBeNull();
 
         var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
-        Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
-        Assert.AreEqual(DependencyScope.MavenCompile, componentAndMetaData.DependencyScope);
+        actualComponent.Should().BeOfType<MavenComponent>();
+        componentAndMetaData.DependencyScope.Should().Be(DependencyScope.MavenCompile);
     }
 
     [TestMethod]
@@ -55,12 +56,12 @@ public class MavenParsingUtilitiesTests
         var componentAndMetaData =
             GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided (optional)");
 
-        Assert.IsNotNull(componentAndMetaData);
-        Assert.IsNotNull(componentAndMetaData.DependencyScope);
+        componentAndMetaData.Should().NotBeNull();
+        componentAndMetaData.DependencyScope.Should().NotBeNull();
 
         var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
-        Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
-        Assert.AreEqual(DependencyScope.MavenProvided, componentAndMetaData.DependencyScope);
+        actualComponent.Should().BeOfType<MavenComponent>();
+        componentAndMetaData.DependencyScope.Should().Be(DependencyScope.MavenProvided);
     }
 
     [TestMethod]
@@ -69,12 +70,12 @@ public class MavenParsingUtilitiesTests
         var componentAndMetaData =
             GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:test");
 
-        Assert.IsNotNull(componentAndMetaData);
-        Assert.IsNotNull(componentAndMetaData.IsDevelopmentDependency);
+        componentAndMetaData.Should().NotBeNull();
+        componentAndMetaData.IsDevelopmentDependency.Should().NotBeNull();
 
         var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
-        Assert.IsInstanceOfType(actualComponent, typeof(MavenComponent));
-        Assert.IsTrue(componentAndMetaData.IsDevelopmentDependency);
+        actualComponent.Should().BeOfType<MavenComponent>();
+        componentAndMetaData.IsDevelopmentDependency.Should().BeTrue();
     }
 
     [TestMethod]
@@ -82,6 +83,6 @@ public class MavenParsingUtilitiesTests
     {
         var ex = Assert.ThrowsException<InvalidOperationException>(
             () => GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:invalidScope"));
-        Assert.IsTrue(ex.Message.Contains("invalid scope", StringComparison.OrdinalIgnoreCase));
+        ex.Message.Contains("invalid scope", StringComparison.OrdinalIgnoreCase).Should().BeTrue();
     }
 }
