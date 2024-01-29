@@ -13,32 +13,27 @@ using Microsoft.Extensions.Logging;
 
 public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 {
-    private const string ProdDepsEnvVar = "GRADLE_PROD_CONFIGURATIONS_REGEX";
-    private const string DevDepsEnvVar = "GRADLE_DEV_CONFIGURATIONS_REGEX";
+    private const string DevConfigurationsEnvVar = "CD_GRADLE_DEV_CONFIGURATIONS";
+    private const string DevLockfilesEnvVar = "CD_GRADLE_DEV_LOCKFILES";
     private static readonly Regex StartsWithLetterRegex = new Regex("^[A-Za-z]", RegexOptions.Compiled);
 
-    private readonly Regex prodDepsRegex;
-    private readonly Regex devDepsRegex;
+    private readonly List<string> devConfigurations;
+    private readonly List<string> devLockfiles;
 
     public GradleComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
+        IEnvironmentVariableService envVarService,
         ILogger<GradleComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.Logger = logger;
-        var envVar = Environment.GetEnvironmentVariable(ProdDepsEnvVar);
-        if (!string.IsNullOrEmpty(envVar))
-        {
-            this.prodDepsRegex = new Regex(envVar, RegexOptions.Compiled);
-        }
 
-        envVar = Environment.GetEnvironmentVariable(DevDepsEnvVar);
-        if (!string.IsNullOrEmpty(envVar))
-        {
-            this.devDepsRegex = new Regex(envVar, RegexOptions.Compiled);
-        }
+        this.devLockfiles = this.ReadEnvVarStringList(envVarService, DevLockfilesEnvVar);
+        this.devConfigurations = this.ReadEnvVarStringList(envVarService, DevConfigurationsEnvVar);
+        this.Logger.LogDebug("Gradle dev-only lockfiles {Lockfiles}", string.Join(", ", this.devLockfiles));
+        this.Logger.LogDebug("Gradle dev-only configurations {Configurations}", string.Join(", ", this.devConfigurations));
     }
 
     public override string Id { get; } = "Gradle";
@@ -62,10 +57,25 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
         return Task.CompletedTask;
     }
 
+    private List<string> ReadEnvVarStringList(IEnvironmentVariableService envVarService, string envVar)
+    {
+        return (envVarService.GetEnvironmentVariable(envVar) ?? string.Empty).Split(",", StringSplitOptions.RemoveEmptyEntries).ToList();
+    }
+
     private void ParseLockfile(ISingleFileComponentRecorder singleFileComponentRecorder, IComponentStream file)
     {
         // Buildscript and Settings lockfiles are always development dependencies
-        var lockfileIsDevDependency = file.Location.EndsWith("buildscript-gradle.lockfile") || file.Location.EndsWith("settings-gradle.lockfile");
+        var lockfileRelativePath = Path.GetRelativePath(this.CurrentScanRequest.SourceDirectory.FullName, file.Location);
+        var lockfileIsDevDependency = lockfileRelativePath.EndsWith("buildscript-gradle.lockfile") || lockfileRelativePath.EndsWith("settings-gradle.lockfile") || this.devLockfiles.Contains(lockfileRelativePath);
+
+        if (lockfileIsDevDependency)
+        {
+            this.Logger.LogDebug("Gradle lockfile {Location} contains dev dependencies only", lockfileRelativePath);
+        }
+        else
+        {
+            this.Logger.LogDebug("Gradle lockfile {Location} contains at least some production dependencies", lockfileRelativePath);
+        }
 
         string text;
         using (var reader = new StreamReader(file.Stream))
@@ -111,7 +121,7 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 
     private bool IsDevDependencyByConfigurations(string line)
     {
-        if (this.prodDepsRegex == null && this.devDepsRegex == null)
+        if (this.devConfigurations == null)
         {
             return false; // no regexes configured to check against
         }
@@ -130,16 +140,6 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 
     private bool IsDevDependencyByConfigurationName(string configurationName)
     {
-        if (this.devDepsRegex != null && this.devDepsRegex.IsMatch(configurationName))
-        {
-            return true;
-        }
-
-        if (this.prodDepsRegex != null && !this.prodDepsRegex.IsMatch(configurationName))
-        {
-            return true;
-        }
-
-        return false;
+        return this.devConfigurations.Contains(configurationName);
     }
 }

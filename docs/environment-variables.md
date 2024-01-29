@@ -18,16 +18,21 @@ When set to any value, enables detector experiments, a feature to compare the re
 same ecosystem. The available experiments are found in the [`Experiments\Config`](../src/Microsoft.ComponentDetection.Orchestrator/Experiments/Configs)
 folder.
 
-## `GRADLE_PROD_CONFIGURATIONS_REGEX`
+## `CD_GRADLE_DEV_LOCKFILES`
 
 Enables dev-dependency categorization for the Gradle
-detector. Dependencies connected to Gradle configurations NOT matching
-the given regex are considered development dependencies.
+detector. Comma-separated list of Gradle lockfiles which contain only
+development dependencies.  Dependencies connected to Gradle
+configurations matching the given regex are considered development
+dependencies. If a lockfile will contain a mix of development and
+production dependencies, see `CD_GRADLE_DEV_CONFIGURATIONS` below.
 
-## `GRADLE_DEV_CONFIGURATIONS_REGEX`
+## `CD_GRADLE_DEV_CONFIGURATIONS`
 
 Enables dev-dependency categorization for the Gradle
-detector. Dependencies connected to Gradle configurations matching
-the given regex are considered development dependencies. 
+detector. Comma-separated list of Gradle configurations which refer to development dependencies.
+Dependencies connected to Gradle configurations matching
+the given configurations are considered development dependencies. 
+If an entire lockfile will contain only dev dependencies, see `CD_GRADLE_DEV_LOCKFILES` above.
 
 [1]: https://go.dev/ref/mod#go-mod-graph
