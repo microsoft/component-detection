@@ -17,14 +17,17 @@ public class ExperimentDiff
     /// <param name="experimentGroupComponents">A set of components from the experimental group.</param>
     /// <param name="controlDetectors">The set of control detectors.</param>
     /// <param name="experimentalDetectors">The set of experimental detectors.</param>
+    /// <param name="additionalProperties">The set of additional metrics to be captured.</param>
     public ExperimentDiff(
         IEnumerable<ExperimentComponent> controlGroupComponents,
         IEnumerable<ExperimentComponent> experimentGroupComponents,
         IEnumerable<(string DetectorId, TimeSpan DetectorRunTime)> controlDetectors = null,
-        IEnumerable<(string DetectorId, TimeSpan DetectorRunTime)> experimentalDetectors = null)
+        IEnumerable<(string DetectorId, TimeSpan DetectorRunTime)> experimentalDetectors = null,
+        IEnumerable<(string PropertyKey, string PropertyValue)> additionalProperties = null)
     {
         var oldComponentDictionary = controlGroupComponents.DistinctBy(x => x.Id).ToDictionary(x => x.Id);
         var newComponentDictionary = experimentGroupComponents.DistinctBy(x => x.Id).ToDictionary(x => x.Id);
+        this.AdditionalProperties = additionalProperties.Select(kv => new KeyValuePair<string, string>(kv.PropertyKey, kv.PropertyValue)).ToImmutableList();
 
         this.AddedIds = newComponentDictionary.Keys.Except(oldComponentDictionary.Keys).ToImmutableList();
         this.RemovedIds = oldComponentDictionary.Keys.Except(newComponentDictionary.Keys).ToImmutableList();
@@ -131,6 +134,11 @@ public class ExperimentDiff
     /// ID is the key.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlySet<string>> RemovedRootIds { get; init; }
+
+    /// <summary>
+    /// Any additional metrics that were captured for the experiment.
+    /// </summary>
+    public IReadOnlyCollection<KeyValuePair<string, string>> AdditionalProperties { get; init; }
 
     /// <summary>
     /// Stores information about a change to the development dependency status of a component.
