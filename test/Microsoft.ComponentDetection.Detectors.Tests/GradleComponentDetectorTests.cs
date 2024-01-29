@@ -252,7 +252,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
         var settingsGradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("settings-gradle.lockfile"))];
         var buildscriptGradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("buildscript-gradle.lockfile"))];
 
-        discoveredComponents.Count.Should().Be(4);
+        discoveredComponents.Should().HaveCount(4);
 
         // Dev dependency listed only in settings-gradle.lockfile
         var component = discoveredComponents[0];
@@ -300,7 +300,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
             .WithFile("prod\\gradle.lockfile", regularLockfile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var discoveredComponents = componentRecorder.GetDetectedComponents().Select(c => (MavenComponent)c.Component).OrderBy(c => c.ArtifactId).ToList();
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
@@ -308,7 +308,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
         var dev1GradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("dev1\\gradle.lockfile"))];
         var dev2GradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("dev2\\gradle.lockfile"))];
 
-        Assert.AreEqual(4, discoveredComponents.Count);
+        discoveredComponents.Should().HaveCount(4);
 
         // Dev dependency listed only in dev1\gradle.lockfile
         var component = discoveredComponents[0];
@@ -334,7 +334,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
         component.ArtifactId.Should().Be("spring-core");
         gradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
 
-        Assert.IsTrue(dev1GradleLockfileGraph.IsDevelopmentDependency(component.Id));
+        dev1GradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
     }
 
     [TestMethod]
@@ -351,32 +351,32 @@ org.hamcrest:hamcrest-core:2.2=testReleaseUnitTest";
             .WithFile("gradle.lockfile", lockfile)
             .ExecuteDetectorAsync();
 
-        Assert.AreEqual(ProcessingResultCode.Success, scanResult.ResultCode);
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var discoveredComponents = componentRecorder.GetDetectedComponents().Select(c => (MavenComponent)c.Component).OrderBy(c => c.ArtifactId).ToList();
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
-        Assert.AreEqual(3, discoveredComponents.Count);
+        discoveredComponents.Should().HaveCount(3);
 
         var component = discoveredComponents[0];
-        Assert.AreEqual("org.hamcrest", component.GroupId);
-        Assert.AreEqual("hamcrest-core", component.ArtifactId);
+        component.GroupId.Should().Be("org.hamcrest");
+        component.ArtifactId.Should().Be("hamcrest-core");
 
         // Purely a dev dependency, only present in a test configuration
-        Assert.IsTrue(dependencyGraph.IsDevelopmentDependency(component.Id));
+        dependencyGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
 
         component = discoveredComponents[1];
-        Assert.AreEqual("org.springframework", component.GroupId);
-        Assert.AreEqual("spring-beans", component.ArtifactId);
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-beans");
 
         // Purely a prod dependency, only present in a prod configuration
-        Assert.IsFalse(dependencyGraph.IsDevelopmentDependency(component.Id));
+        dependencyGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
 
         component = discoveredComponents[2];
-        Assert.AreEqual("org.springframework", component.GroupId);
-        Assert.AreEqual("spring-core", component.ArtifactId);
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-core");
 
         // Present in both dev and prod configurations, prod should win
-        Assert.IsFalse(dependencyGraph.IsDevelopmentDependency(component.Id));
+        dependencyGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
     }
 }
