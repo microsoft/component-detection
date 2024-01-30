@@ -119,11 +119,6 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 
     private bool IsDevDependencyByConfigurations(string line)
     {
-        if (this.devConfigurations == null)
-        {
-            return false; // no regexes configured to check against
-        }
-
         var equalsSeparatorIndex = line.IndexOf('=');
         if (equalsSeparatorIndex == -1)
         {
