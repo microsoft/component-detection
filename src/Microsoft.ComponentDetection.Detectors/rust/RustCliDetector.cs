@@ -78,55 +78,57 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                 record.WasRustFallbackStrategyUsed = true;
                 record.FallbackReason = "Could not locate cargo command";
             }
-
-            // Use --all-features to ensure that even optional feature dependencies are detected.
-            var cliResult = await this.cliService.ExecuteCommandAsync(
-                "cargo",
-                null,
-                "metadata",
-                "--all-features",
-                "--manifest-path",
-                componentStream.Location,
-                "--format-version=1",
-                "--locked");
-
-            if (cliResult.ExitCode != 0)
+            else
             {
-                this.Logger.LogWarning("`cargo metadata` failed with {Location}. Ensure the Cargo.lock is up to date.", processRequest.ComponentStream.Location);
-                record.DidRustCliCommandFail = true;
-                record.WasRustFallbackStrategyUsed = true;
-                record.RustCliCommandError = cliResult.StdErr;
-                record.FallbackReason = "`cargo metadata` failed";
-            }
+                // Use --all-features to ensure that even optional feature dependencies are detected.
+                var cliResult = await this.cliService.ExecuteCommandAsync(
+                    "cargo",
+                    null,
+                    "metadata",
+                    "--all-features",
+                    "--manifest-path",
+                    componentStream.Location,
+                    "--format-version=1",
+                    "--locked");
 
-            if (!record.DidRustCliCommandFail)
-            {
-                var metadata = CargoMetadata.FromJson(cliResult.StdOut);
-                var graph = BuildGraph(metadata);
-
-                var packages = metadata.Packages.ToDictionary(
-                    x => $"{x.Name} {x.Version}",
-                    x => (
-                        (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || !x.Authors.Any()) ? null : string.Join(", ", x.Authors),
-                        string.IsNullOrWhiteSpace(x.License) ? null : x.License));
-
-                var root = metadata.Resolve.Root;
-
-                // A cargo.toml can be used to declare a workspace and not a package (A Virtual Manifest).
-                // In this case, the root will be null as it will not be pulling in dependencies itself.
-                // https://doc.rust-lang.org/cargo/reference/workspaces.html#virtual-workspace
-                if (root == null)
+                if (cliResult.ExitCode != 0)
                 {
-                    this.Logger.LogWarning("Virtual Manifest: {Location}, falling back to cargo.lock parsing", processRequest.ComponentStream.Location);
+                    this.Logger.LogWarning("`cargo metadata` failed with {Location}. Ensure the Cargo.lock is up to date.", processRequest.ComponentStream.Location);
                     record.DidRustCliCommandFail = true;
                     record.WasRustFallbackStrategyUsed = true;
-                    record.FallbackReason = "Virtual Manifest";
+                    record.RustCliCommandError = cliResult.StdErr;
+                    record.FallbackReason = "`cargo metadata` failed";
                 }
 
-                HashSet<string> visitedDependencies = new();
-                if (!record.WasRustFallbackStrategyUsed)
+                if (!record.DidRustCliCommandFail)
                 {
-                    this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages, visitedDependencies);
+                    var metadata = CargoMetadata.FromJson(cliResult.StdOut);
+                    var graph = BuildGraph(metadata);
+
+                    var packages = metadata.Packages.ToDictionary(
+                        x => $"{x.Name} {x.Version}",
+                        x => (
+                            (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || !x.Authors.Any()) ? null : string.Join(", ", x.Authors),
+                            string.IsNullOrWhiteSpace(x.License) ? null : x.License));
+
+                    var root = metadata.Resolve.Root;
+
+                    // A cargo.toml can be used to declare a workspace and not a package (A Virtual Manifest).
+                    // In this case, the root will be null as it will not be pulling in dependencies itself.
+                    // https://doc.rust-lang.org/cargo/reference/workspaces.html#virtual-workspace
+                    if (root == null)
+                    {
+                        this.Logger.LogWarning("Virtual Manifest: {Location}, falling back to cargo.lock parsing", processRequest.ComponentStream.Location);
+                        record.DidRustCliCommandFail = true;
+                        record.WasRustFallbackStrategyUsed = true;
+                        record.FallbackReason = "Virtual Manifest";
+                    }
+
+                    HashSet<string> visitedDependencies = new();
+                    if (!record.WasRustFallbackStrategyUsed)
+                    {
+                        this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages, visitedDependencies);
+                    }
                 }
             }
         }
