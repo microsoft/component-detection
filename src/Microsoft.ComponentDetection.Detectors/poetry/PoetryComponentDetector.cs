@@ -54,17 +54,15 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 
         poetryLock.Package.ToList().ForEach(package =>
         {
-            var isDevelopmentDependency = package.Category != "main";
-
             if (package.Source != null && package.Source.Type == "git")
             {
                 var component = new DetectedComponent(new GitComponent(new Uri(package.Source.Url), package.Source.ResolvedReference));
-                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
+                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: false);
             }
             else
             {
                 var component = new DetectedComponent(new PipComponent(package.Name, package.Version));
-                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
+                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: false);
             }
         });
         await Task.CompletedTask;
