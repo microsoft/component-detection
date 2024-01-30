@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -132,15 +133,13 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                 }
             }
         }
-        catch (InvalidOperationException e)
+        catch (Exception e)
         {
             this.Logger.LogWarning(e, "Failed attempting to call `cargo` with file: {Location}", processRequest.ComponentStream.Location);
             record.DidRustCliCommandFail = true;
             record.RustCliCommandError = e.Message;
             record.WasRustFallbackStrategyUsed = true;
             record.FallbackReason = "InvalidOperationException";
-            await this.ProcessCargoLockFallbackAsync(componentStream, processRequest.SingleFileComponentRecorder, record);
-            this.AdditionalProperties.Add(("FailedCargoMetadata", JsonConvert.SerializeObject(record)));
         }
         finally
         {
@@ -246,23 +245,41 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
     private IComponentStream FindCorrespondingCargoLock(IComponentStream cargoToml, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         var cargoLockLocation = Path.Combine(Path.GetDirectoryName(cargoToml.Location), "Cargo.lock");
-        return this.ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(cargoToml.Location).Directory, new List<string> { "Cargo.lock" }, (name, directoryName) => false, recursivelyScanDirectories: false).FirstOrDefault();
+        var cargoLockStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(cargoToml.Location).Directory, new List<string> { "Cargo.lock" }, (name, directoryName) => false, recursivelyScanDirectories: false).FirstOrDefault();
+        if (cargoLockStream == null)
+        {
+            return null;
+        }
+
+        if (cargoLockStream.Stream.CanRead)
+        {
+            return cargoLockStream;
+        }
+        else
+        {
+            using var fileStream = new FileStream(cargoLockStream.Location, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            return new ComponentStream()
+            {
+                Location = cargoLockStream.Location,
+                Pattern = cargoLockStream.Pattern,
+                Stream = fileStream,
+            };
+        }
     }
 
     private async Task ProcessCargoLockFallbackAsync(IComponentStream cargoTomlFile, ISingleFileComponentRecorder singleFileComponentRecorder, RustGraphTelemetryRecord record)
     {
-        var cargoLockFile = this.FindCorrespondingCargoLock(cargoTomlFile, singleFileComponentRecorder);
-        if (cargoLockFile == null)
+        var cargoLockFileStream = this.FindCorrespondingCargoLock(cargoTomlFile, singleFileComponentRecorder);
+        if (cargoLockFileStream == null)
         {
             this.Logger.LogWarning("Could not find Cargo.lock file for {CargoTomlLocation}, skipping processing", cargoTomlFile.Location);
             record.FallbackCargoLockFound = false;
             return;
         }
 
-        record.FallbackCargoLockLocation = cargoLockFile.Location;
+        record.FallbackCargoLockLocation = cargoLockFileStream.Location;
         record.FallbackCargoLockFound = true;
-        using var fileStream = new FileStream(cargoLockFile.Location, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        using var reader = new StreamReader(fileStream);
+        using var reader = new StreamReader(cargoLockFileStream.Stream);
         var content = await reader.ReadToEndAsync();
         var options = new TomlModelOptions
         {
@@ -320,7 +337,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                         // Process each dependency
                         foreach (var dependency in parentPackage.Dependencies)
                         {
-                            this.ProcessDependency(cargoLockFile, singleFileComponentRecorder, seenAsDependency, packagesByName, parentPackage, parentComponent, dependency);
+                            this.ProcessDependency(cargoLockFileStream, singleFileComponentRecorder, seenAsDependency, packagesByName, parentPackage, parentComponent, dependency);
                         }
                     }
                 }
@@ -343,7 +360,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         catch (Exception e)
         {
             // If something went wrong, just ignore the file
-            this.Logger.LogError(e, "Failed to process Cargo.lock file '{CargoLockLocation}'", cargoLockFile.Location);
+            this.Logger.LogError(e, "Failed to process Cargo.lock file '{CargoLockLocation}'", cargoLockFileStream.Location);
         }
     }
 
