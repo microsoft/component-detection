@@ -54,7 +54,7 @@ public class RustCrateDetector : FileComponentDetector
         version = versionMatch.Success ? versionMatch.Value : null;
         source = sourceMatch.Success ? sourceMatch.Value : null;
 
-        if (string.IsNullOrEmpty(source))
+        if (string.IsNullOrWhiteSpace(source))
         {
             source = null;
         }

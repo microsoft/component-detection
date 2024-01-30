@@ -26,6 +26,11 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
 
+    private static readonly TomlModelOptions TomlOptions = new TomlModelOptions
+    {
+        IgnoreMissingProperties = true,
+    };
+
     private readonly ICommandLineInvocationService cliService;
 
     /// <summary>
@@ -183,7 +188,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         version = versionMatch.Success ? versionMatch.Value : null;
         source = sourceMatch.Success ? sourceMatch.Value : null;
 
-        if (string.IsNullOrEmpty(source))
+        if (string.IsNullOrWhiteSpace(source))
         {
             source = null;
         }
@@ -281,11 +286,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         record.FallbackCargoLockFound = true;
         using var reader = new StreamReader(cargoLockFileStream.Stream);
         var content = await reader.ReadToEndAsync();
-        var options = new TomlModelOptions
-        {
-            IgnoreMissingProperties = true,
-        };
-        var cargoLock = Toml.ToModel<CargoLock>(content, options: options);
+        var cargoLock = Toml.ToModel<CargoLock>(content, options: TomlOptions);
         this.RecordLockfileVersion(cargoLock.Version);
         try
         {
