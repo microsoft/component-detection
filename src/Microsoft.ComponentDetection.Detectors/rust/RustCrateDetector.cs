@@ -54,7 +54,7 @@ public class RustCrateDetector : FileComponentDetector
         version = versionMatch.Success ? versionMatch.Value : null;
         source = sourceMatch.Success ? sourceMatch.Value : null;
 
-        if (string.IsNullOrEmpty(source))
+        if (string.IsNullOrWhiteSpace(source))
         {
             source = null;
         }
@@ -68,17 +68,20 @@ public class RustCrateDetector : FileComponentDetector
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var cargoLockFile = processRequest.ComponentStream;
+        var reader = new StreamReader(cargoLockFile.Stream);
+        var options = new TomlModelOptions
+        {
+            IgnoreMissingProperties = true,
+        };
+        var cargoLock = Toml.ToModel<CargoLock>(await reader.ReadToEndAsync(), options: options);
+        this.RecordLockfileVersion(cargoLock.Version);
+        this.ProcessCargoLock(cargoLock, singleFileComponentRecorder, cargoLockFile);
+    }
 
+    private void ProcessCargoLock(CargoLock cargoLock, ISingleFileComponentRecorder singleFileComponentRecorder, IComponentStream cargoLockFile)
+    {
         try
         {
-            var reader = new StreamReader(cargoLockFile.Stream);
-            var options = new TomlModelOptions
-            {
-                IgnoreMissingProperties = true,
-            };
-            var cargoLock = Toml.ToModel<CargoLock>(await reader.ReadToEndAsync(), options: options);
-            this.RecordLockfileVersion(cargoLock.Version);
-
             var seenAsDependency = new HashSet<CargoPackage>();
 
             // Pass 1: Create typed components and allow lookup by name.
@@ -152,8 +155,6 @@ public class RustCrateDetector : FileComponentDetector
             // If something went wrong, just ignore the file
             this.Logger.LogError(e, "Failed to process Cargo.lock file '{CargoLockLocation}'", cargoLockFile.Location);
         }
-
-        await Task.CompletedTask;
     }
 
     private void ProcessDependency(

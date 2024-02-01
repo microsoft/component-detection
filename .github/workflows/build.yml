@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@3447fd6a9f9e57506b15f895c5b76d3b197dc7c2 # v3
+        uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4.0.0
 
       - name: Restore packages
         run: dotnet restore
@@ -38,6 +38,6 @@ jobs:
         run: dotnet test --no-build --configuration Debug --collect:"XPlat Code Coverage"
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3
+        uses: codecov/codecov-action@f30e4959ba63075080d4f7f90cacc18d9f3fafd7 # v4.0.0
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

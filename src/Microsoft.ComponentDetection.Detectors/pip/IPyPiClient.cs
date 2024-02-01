@@ -24,7 +24,7 @@ public interface IPyPiClient
 {
     Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release);
 
-    Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec);
+    Task<PythonProject> GetProjectAsync(PipDependencySpecification spec);
 }
 
 public sealed class PyPiClient : IPyPiClient, IDisposable
@@ -134,7 +134,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         return dependencies;
     }
 
-    public async Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec)
+    public async Task<PythonProject> GetProjectAsync(PipDependencySpecification spec)
     {
         var requestUri = new Uri($"https://pypi.org/pypi/{spec.Name}/json");
 
@@ -158,7 +158,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                 using var r = new PypiRetryTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = result.Result.StatusCode };
 
                 this.logger.LogWarning(
-                    "Received {StatusCode} {ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
+                    "Received status:{StatusCode} with reason:{ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
                     result.Result.StatusCode,
                     result.Result.ReasonPhrase,
                     requestUri,
@@ -183,21 +183,25 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
             this.logger.LogWarning($"Call to pypi.org failed, but no more retries allowed!");
 
-            return new SortedDictionary<string, IList<PythonProjectRelease>>();
+            return new PythonProject();
         }
 
         if (!request.IsSuccessStatusCode)
         {
             using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
 
-            this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
+            this.logger.LogWarning("Received status:{StatusCode} with reason:{ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
 
-            return new SortedDictionary<string, IList<PythonProjectRelease>>();
+            return new PythonProject();
         }
 
         var response = await request.Content.ReadAsStringAsync();
         var project = JsonConvert.DeserializeObject<PythonProject>(response);
-        var versions = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
+        var versions = new PythonProject
+        {
+            Info = project.Info,
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer()),
+        };
 
         foreach (var release in project.Releases)
         {
@@ -208,7 +212,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                     parsedVersion.Valid && parsedVersion.IsReleasedPackage &&
                     PythonVersionUtilities.VersionValidForSpec(release.Key, spec.DependencySpecifiers))
                 {
-                    versions.Add(release.Key, release.Value);
+                    versions.Releases[release.Key] = release.Value;
                 }
             }
             catch (ArgumentException ae)

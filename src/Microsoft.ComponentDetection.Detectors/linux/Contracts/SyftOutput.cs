@@ -17,7 +17,6 @@ public partial class SyftOutput
     public Distro Distro { get; set; }
     public FileElement[] Files { get; set; }
     public Schema Schema { get; set; }
-    public SyftOutputSecret[] Secrets { get; set; }
     public SourceClass Source { get; set; }
 }
 
@@ -35,7 +34,7 @@ public partial class ArtifactElement
     public string FoundBy { get; set; }
     public string Id { get; set; }
     public string Language { get; set; }
-    public string[] Licenses { get; set; }
+    public ArtifactLicense[] Licenses { get; set; }
     public LocationElement[] Locations { get; set; }
     public MetadataClass Metadata { get; set; }
     public string MetadataType { get; set; }
@@ -45,8 +44,19 @@ public partial class ArtifactElement
     public string Version { get; set; }
 }
 
+public partial class ArtifactLicense
+{
+    public LocationElement[] Locations { get; set; }
+    public string SpdxExpression { get; set; }
+    public string Type { get; set; }
+    public string[] Urls { get; set; }
+    public string Value { get; set; }
+}
+
 public partial class LocationElement
 {
+    public string AccessPath { get; set; }
+    public Dictionary<string, string> Annotations { get; set; }
     public string LayerId { get; set; }
     public string Path { get; set; }
 }
@@ -58,12 +68,11 @@ public partial class MetadataClass
     public string Basepackage { get; set; }
     public string Description { get; set; }
     public File[] Files { get; set; }
-    public License? License { get; set; }
     public string Package { get; set; }
     public string Packager { get; set; }
     public long? Reason { get; set; }
     public long? Size { get; set; }
-    public string Url { get; set; }
+    public License? Url { get; set; }
     public string Validation { get; set; }
     public string Version { get; set; }
     public string GitCommitOfApkPort { get; set; }
@@ -74,45 +83,66 @@ public partial class MetadataClass
     public string PullChecksum { get; set; }
     public string[] PullDependencies { get; set; }
     public MatchElement[] Matches { get; set; }
-    public string Checksum { get; set; }
-    public string[] Dependencies { get; set; }
-    public string Name { get; set; }
-    public SourceUnion? Source { get; set; }
-    public string BuildRequires { get; set; }
+    public string Ref { get; set; }
+    public string PackageId { get; set; }
+    public string[] BuildRequires { get; set; }
     public string Context { get; set; }
     public Dictionary<string, string> Options { get; set; }
-    public string PackageId { get; set; }
     public string Path { get; set; }
     public string Prev { get; set; }
-    public string PyRequires { get; set; }
-    public string Ref { get; set; }
-    public string Requires { get; set; }
+    public string[] PyRequires { get; set; }
+    public string[] Requires { get; set; }
+    public string Checksum { get; set; }
     public string HostedUrl { get; set; }
+    public string Name { get; set; }
     public string VcsUrl { get; set; }
     public string HashPath { get; set; }
     public string Sha512 { get; set; }
+    public string AssemblyVersion { get; set; }
+    public string Comments { get; set; }
+    public string CompanyName { get; set; }
+    public string InternalName { get; set; }
+    public string LegalCopyright { get; set; }
+    public string ProductName { get; set; }
+    public string ProductVersion { get; set; }
+    public string[] Depends { get; set; }
+    public string[] PreDepends { get; set; }
+    public SourceUnion? Source { get; set; }
     public string SourceVersion { get; set; }
-    public Author[] Authors { get; set; }
-    public string Homepage { get; set; }
-    public string[] Licenses { get; set; }
+    public string PkgHash { get; set; }
+    public string PkgHashExt { get; set; }
     public Dictionary<string, string> GoBuildSettings { get; set; }
     public string GoCompiledVersion { get; set; }
+    public string[] GoCryptoSettings { get; set; }
     public string H1Digest { get; set; }
     public string MainModule { get; set; }
-    public string PkgHash { get; set; }
     public string SnapshotUrl { get; set; }
     public DigestElement[] Digest { get; set; }
     public Manifest Manifest { get; set; }
     public PomProject PomProject { get; set; }
     public PomProperties PomProperties { get; set; }
     public string VirtualPath { get; set; }
-    public string Kb { get; set; }
-    public string ProductId { get; set; }
-    public string PkgHashExt { get; set; }
     public string Author { get; set; }
+    public string Homepage { get; set; }
     public bool? Private { get; set; }
     public string Integrity { get; set; }
     public string Resolved { get; set; }
+    public string BuildTime { get; set; }
+    public string ExtendedVersion { get; set; }
+    public string Format { get; set; }
+    public long? RootDevice { get; set; }
+    public bool? RwRootFs { get; set; }
+    public long? SwapDevice { get; set; }
+    public string VideoMode { get; set; }
+    public string KernelVersion { get; set; }
+    public License? License { get; set; }
+    public Dictionary<string, ParameterValue> Parameters { get; set; }
+    public string VersionMagic { get; set; }
+    public string Kb { get; set; }
+    public string ProductId { get; set; }
+    public string Output { get; set; }
+    public string OutputHash { get; set; }
+    public Author[] Authors { get; set; }
     public string[] Bin { get; set; }
     public Dist Dist { get; set; }
     public string[] Keywords { get; set; }
@@ -128,13 +158,24 @@ public partial class MetadataClass
     public string Platform { get; set; }
     public string SitePackagesRootPath { get; set; }
     public string[] TopLevelPackages { get; set; }
+    public string[] Extras { get; set; }
+    public string Markers { get; set; }
+    public string VersionConstraint { get; set; }
     public string[] Hashes { get; set; }
     public string Index { get; set; }
+    public string Built { get; set; }
+    public string[] Imports { get; set; }
+    public bool? NeedsCompilation { get; set; }
+    public string Repository { get; set; }
+    public string[] Suggests { get; set; }
+    public string Title { get; set; }
     public long? Epoch { get; set; }
     public string ModularityLabel { get; set; }
     public string Release { get; set; }
     public string SourceRpm { get; set; }
     public string Vendor { get; set; }
+    public string[] Dependencies { get; set; }
+    public string Revision { get; set; }
 }
 
 public partial class AuthorClass
@@ -212,14 +253,13 @@ public partial class Manifest
 public partial class MatchElement
 {
     public string Classifier { get; set; }
-    public Location Location { get; set; }
+    public LocationElement Location { get; set; }
 }
 
-public partial class Location
+public partial class ParameterValue
 {
-    public string LayerId { get; set; }
-    public string Path { get; set; }
-    public string VirtualPath { get; set; }
+    public string Description { get; set; }
+    public string Type { get; set; }
 }
 
 public partial class PomProject
@@ -248,6 +288,7 @@ public partial class PomProperties
     public string GroupId { get; set; }
     public string Name { get; set; }
     public string Path { get; set; }
+    public string Scope { get; set; }
     public string Version { get; set; }
 }
 
@@ -285,8 +326,30 @@ public partial class FileElement
     public string Contents { get; set; }
     public DigestElement[] Digests { get; set; }
     public string Id { get; set; }
-    public LocationElement Location { get; set; }
+    public FileLicense[] Licenses { get; set; }
+    public Location Location { get; set; }
     public Metadata Metadata { get; set; }
+}
+
+public partial class FileLicense
+{
+    public Evidence Evidence { get; set; }
+    public string SpdxExpression { get; set; }
+    public string Type { get; set; }
+    public string Value { get; set; }
+}
+
+public partial class Evidence
+{
+    public long Confidence { get; set; }
+    public long Extent { get; set; }
+    public long Offset { get; set; }
+}
+
+public partial class Location
+{
+    public string LayerId { get; set; }
+    public string Path { get; set; }
 }
 
 public partial class Metadata
@@ -295,6 +358,7 @@ public partial class Metadata
     public string LinkDestination { get; set; }
     public string MimeType { get; set; }
     public long Mode { get; set; }
+    public long Size { get; set; }
     public string Type { get; set; }
     public long UserId { get; set; }
 }
@@ -305,27 +369,13 @@ public partial class Schema
     public string Version { get; set; }
 }
 
-public partial class SyftOutputSecret
-{
-    public LocationElement Location { get; set; }
-    public SecretSecret[] Secrets { get; set; }
-}
-
-public partial class SecretSecret
-{
-    public string Classification { get; set; }
-    public long Length { get; set; }
-    public long LineNumber { get; set; }
-    public long LineOffset { get; set; }
-    public long SeekPosition { get; set; }
-    public string Value { get; set; }
-}
-
 public partial class SourceClass
 {
     public string Id { get; set; }
-    public object Target { get; set; }
+    public object Metadata { get; set; }
+    public string Name { get; set; }
     public string Type { get; set; }
+    public string Version { get; set; }
 }
 
 public partial struct Author
