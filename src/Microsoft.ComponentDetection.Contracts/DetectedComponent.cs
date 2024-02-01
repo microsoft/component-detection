@@ -46,6 +46,9 @@ public class DetectedComponent
     /// <summary> Gets or sets the dependency roots for this component. </summary>
     public HashSet<TypedComponent.TypedComponent> DependencyRoots { get; set; }
 
+    /// <summary> Gets or sets the ancester dependency for this component. </summary>
+    public HashSet<TypedComponent.TypedComponent> AncestralDependencyRoots { get; set; }
+
     /// <summary>Gets or sets the flag to mark the component as a development dependency or not.
     /// This is used at build or development time not a distributed dependency.</summary>
     public bool? DevelopmentDependency { get; set; }
