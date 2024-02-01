@@ -112,6 +112,11 @@ public class ExperimentService : IExperimentService
                         detector.Id,
                         config.Name);
                 }
+
+                if (detector is FileComponentDetector fileDetector)
+                {
+                    experimentResults.AddAdditionalPropertiesToExperiment(fileDetector.AdditionalProperties);
+                }
             }
         }
         catch (Exception e)
@@ -169,6 +174,7 @@ public class ExperimentService : IExperimentService
             var experimentComponents = experiment.ExperimentGroupComponents;
             var controlDetectors = experiment.ControlDetectors;
             var experimentDetectors = experiment.ExperimentalDetectors;
+            var additionalProperties = experiment.AdditionalProperties;
             this.logger.LogInformation(
                 "Experiment {Experiment} finished with {ControlCount} components in the control group and {ExperimentCount} components in the experiment group",
                 config.Name,
@@ -185,7 +191,7 @@ public class ExperimentService : IExperimentService
 
             try
             {
-                var diff = new ExperimentDiff(controlComponents, experimentComponents, controlDetectors, experimentDetectors);
+                var diff = new ExperimentDiff(controlComponents, experimentComponents, controlDetectors, experimentDetectors, additionalProperties);
                 var tasks = this.experimentProcessors.Select(x => x.ProcessExperimentAsync(config, diff));
                 await Task.WhenAll(tasks);
             }
