@@ -57,6 +57,11 @@ public abstract class FileComponentDetector : IComponentDetector
 
     protected Dictionary<string, string> Telemetry { get; set; } = new Dictionary<string, string>();
 
+    /// <summary>
+    /// List of any any additional properties as key-value pairs that we would like to capture for the detector.
+    /// </summary>
+    public List<(string PropertyKey, string PropertyValue)> AdditionalProperties { get; set; } = new List<(string PropertyKey, string PropertyValue)>();
+
     protected IObservable<IComponentStream> ComponentStreams { get; private set; }
 
     /// <inheritdoc />

@@ -158,7 +158,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                 using var r = new PypiRetryTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = result.Result.StatusCode };
 
                 this.logger.LogWarning(
-                    "Received {StatusCode} {ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
+                    "Received status:{StatusCode} with reason:{ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
                     result.Result.StatusCode,
                     result.Result.ReasonPhrase,
                     requestUri,
@@ -190,7 +190,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         {
             using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
 
-            this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
+            this.logger.LogWarning("Received status:{StatusCode} with reason:{ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
 
             return new PythonProject();
         }
@@ -212,7 +212,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                     parsedVersion.Valid && parsedVersion.IsReleasedPackage &&
                     PythonVersionUtilities.VersionValidForSpec(release.Key, spec.DependencySpecifiers))
                 {
-                    versions.Releases.Add(release.Key, release.Value);
+                    versions.Releases[release.Key] = release.Value;
                 }
             }
             catch (ArgumentException ae)

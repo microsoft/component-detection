@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 using System.Collections.Generic;
 using Newtonsoft.Json;
@@ -20,6 +20,8 @@ public class ScannedComponent
     public DependencyScope? DependencyScope { get; set; }
 
     public IEnumerable<TypedComponent.TypedComponent> TopLevelReferrers { get; set; }
+
+    public IEnumerable<TypedComponent.TypedComponent> AncestralReferrers { get; set; }
 
     public IEnumerable<int> ContainerDetailIds { get; set; }
 

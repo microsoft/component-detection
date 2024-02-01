@@ -15,7 +15,7 @@ using Newtonsoft.Json;
 
 public class LinuxScanner : ILinuxScanner
 {
-    private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v0.74.0@sha256:5b186241c12047572d573116e6ff9305c83b2bb178d2e4ca556165e7f918c3dd";
+    private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v0.100.0@sha256:df7b07bfadff45e0135d74f22478f47b16ac6aff4e8dbd93133fcae3bbbb790d";
 
     private static readonly IList<string> CmdParameters = new List<string>
     {
@@ -159,13 +159,13 @@ public class LinuxScanner : ILinuxScanner
         var license = artifact.Metadata?.License?.String;
         if (license != null)
         {
-            return license.ToString();
+            return license;
         }
 
         var licenses = artifact.Licenses;
         if (licenses != null && licenses.Any())
         {
-            return string.Join(", ", licenses.Select(l => l.ToString()));
+            return string.Join(", ", licenses.Select(l => l.Value));
         }
 
         return null;

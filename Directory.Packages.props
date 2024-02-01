@@ -36,13 +36,13 @@
     <PackageVersion Include="Serilog" Version="3.1.1" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="7.0.0" />
     <PackageVersion Include="Serilog.Sinks.Async" Version="1.5.0" />
-    <PackageVersion Include="Serilog.Sinks.Console" Version="4.1.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="5.0.1" />
     <PackageVersion Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageVersion Include="Serilog.Sinks.Map" Version="1.0.2" />
-    <PackageVersion Include="Spectre.Console" Version="0.47.0" />
-    <PackageVersion Include="Spectre.Console.Cli" Version="0.47.0" />
+    <PackageVersion Include="Spectre.Console" Version="0.48.0" />
+    <PackageVersion Include="Spectre.Console.Cli" Version="0.48.0" />
     <PackageVersion Include="Spectre.Console.Cli.Extensions.DependencyInjection" Version="0.2.0" />
-    <PackageVersion Include="Spectre.Console.Testing" Version="0.47.0" />
+    <PackageVersion Include="Spectre.Console.Testing" Version="0.48.0" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
     <PackageVersion Include="System.Memory" Version="4.5.5" />
     <PackageVersion Include="System.Reactive" Version="6.0.0" />
@@ -51,7 +51,7 @@
     <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="7.0.0" />
     <PackageVersion Include="Tomlyn.Signed" Version="0.17.0" />
     <PackageVersion Include="yamldotnet" Version="13.7.1" />
-    <PackageVersion Include="Faker.net" Version="2.0.154" />
+    <PackageVersion Include="Faker.net" Version="2.0.163" />
     <PackageVersion Include="Valleysoft.DockerfileModel" Version="1.1.0" />
   </ItemGroup>
 </Project>

@@ -6,9 +6,6 @@ using System.Runtime.Serialization;
 [DataContract]
 public class PoetryPackage
 {
-    [DataMember(Name = "category")]
-    public string Category { get; set; }
-
     [DataMember(Name = "name")]
     public string Name { get; set; }
 

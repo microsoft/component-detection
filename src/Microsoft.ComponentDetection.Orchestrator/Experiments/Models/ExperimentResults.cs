@@ -23,6 +23,8 @@ public class ExperimentResults
 
     private readonly ConcurrentDictionary<string, TimeSpan> experimentalDetectors = new();
 
+    private readonly ConcurrentBag<(string, string)> additionalProperties = new();
+
     /// <summary>
     /// The set of components in the control group.
     /// </summary>
@@ -46,6 +48,12 @@ public class ExperimentResults
     /// </summary>
     public IImmutableSet<(string DetectorId, TimeSpan DetectorRunTime)> ExperimentalDetectors =>
         this.experimentalDetectors.Select(x => (x.Key, x.Value)).ToImmutableHashSet();
+
+    /// <summary>
+    /// The set of experimental detectors.
+    /// </summary>
+    public IImmutableSet<(string PropertyKey, string PropertyValue)> AdditionalProperties =>
+        this.additionalProperties.ToImmutableHashSet();
 
     /// <summary>
     /// Adds the components to the control group.
@@ -77,6 +85,18 @@ public class ExperimentResults
     public void AddComponentsToExperimentalGroup(IEnumerable<ScannedComponent> components) =>
         AddComponents(this.experimentGroupComponents, components);
 
+    /// <summary>
+    /// Adds a custom metric to the experiment.
+    /// </summary>
+    /// <param name="properties">list of (key, value) tuples to be captured as additionalProperties. </param>
+    public void AddAdditionalPropertiesToExperiment(IEnumerable<(string PropertyKey, string PropertyValue)> properties)
+    {
+        foreach (var (propertyKey, propertyValue) in properties)
+        {
+            AddAdditionalProperty(this.additionalProperties, propertyKey, propertyValue);
+        }
+    }
+
     private static void AddComponents(ConcurrentDictionary<ExperimentComponent, byte> group, IEnumerable<ScannedComponent> components)
     {
         foreach (var experimentComponent in components.Select(x => new ExperimentComponent(x)))
@@ -88,5 +108,10 @@ public class ExperimentResults
     private static void AddRunTime(ConcurrentDictionary<string, TimeSpan> group, string detectorId, TimeSpan runTime)
     {
         _ = group.TryAdd(detectorId, runTime);
+    }
+
+    private static void AddAdditionalProperty(ConcurrentBag<(string PropertyKey, string PropertyValue)> group, string propertyKey, string propertyValue)
+    {
+        group.Add((propertyKey, propertyValue));
     }
 }
