@@ -30,7 +30,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 2;
+    public override int Version { get; } = 3;
 
     public override IEnumerable<string> Categories => new List<string> { "Python" };
 
