@@ -262,7 +262,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         }
         else
         {
-            using var fileStream = new FileStream(cargoLockStream.Location, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var fileStream = new FileStream(cargoLockStream.Location, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             return new ComponentStream()
             {
                 Location = cargoLockStream.Location,
