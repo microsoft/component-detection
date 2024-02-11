@@ -93,6 +93,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMavenCommandService, MavenCommandService>();
         services.AddSingleton<IMavenStyleDependencyGraphParserService, MavenStyleDependencyGraphParserService>();
         services.AddSingleton<IComponentDetector, MvnCliComponentDetector>();
+        services.AddSingleton<IMavenFileParserService, MavenFileParserService>();
+        services.AddSingleton<IComponentDetector, MavenPomComponentDetector>();
 
         // npm
         services.AddSingleton<IComponentDetector, NpmComponentDetector>();
