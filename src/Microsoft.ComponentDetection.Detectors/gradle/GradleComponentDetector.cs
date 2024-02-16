@@ -30,8 +30,8 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
         this.Scanner = walkerFactory;
         this.Logger = logger;
 
-        this.devLockfiles = this.ReadEnvVarStringList(envVarService, DevLockfilesEnvVar);
-        this.devConfigurations = this.ReadEnvVarStringList(envVarService, DevConfigurationsEnvVar);
+        this.devLockfiles = envVarService.GetListEnvironmentVariable(DevLockfilesEnvVar) ?? new List<string>();
+        this.devConfigurations = envVarService.GetListEnvironmentVariable(DevConfigurationsEnvVar) ?? new List<string>();
         this.Logger.LogDebug("Gradle dev-only lockfiles {Lockfiles}", string.Join(", ", this.devLockfiles));
         this.Logger.LogDebug("Gradle dev-only configurations {Configurations}", string.Join(", ", this.devConfigurations));
     }
@@ -44,7 +44,7 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Maven };
 
-    public override int Version { get; } = 2;
+    public override int Version { get; } = 3;
 
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {
@@ -57,24 +57,8 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
         return Task.CompletedTask;
     }
 
-    private List<string> ReadEnvVarStringList(IEnvironmentVariableService envVarService, string envVar)
-        => (envVarService.GetEnvironmentVariable(envVar) ?? string.Empty).Split(",", StringSplitOptions.RemoveEmptyEntries).ToList();
-
     private void ParseLockfile(ISingleFileComponentRecorder singleFileComponentRecorder, IComponentStream file)
     {
-        // Buildscript and Settings lockfiles are always development dependencies
-        var lockfileRelativePath = Path.GetRelativePath(this.CurrentScanRequest.SourceDirectory.FullName, file.Location);
-        var lockfileIsDevDependency = lockfileRelativePath.EndsWith("buildscript-gradle.lockfile") || lockfileRelativePath.EndsWith("settings-gradle.lockfile") || this.devLockfiles.Contains(lockfileRelativePath);
-
-        if (lockfileIsDevDependency)
-        {
-            this.Logger.LogDebug("Gradle lockfile {Location} contains dev dependencies only", lockfileRelativePath);
-        }
-        else
-        {
-            this.Logger.LogDebug("Gradle lockfile {Location} contains at least some production dependencies", lockfileRelativePath);
-        }
-
         string text;
         using (var reader = new StreamReader(file.Stream))
         {
@@ -96,7 +80,7 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
             if (line.Split(":").Length == 3)
             {
                 var detectedMavenComponent = new DetectedComponent(this.CreateMavenComponentFromFileLine(line));
-                var devDependency = lockfileIsDevDependency || this.IsDevDependencyByConfigurations(line);
+                var devDependency = this.IsDevDependencyByLockfile(file) || this.IsDevDependencyByConfigurations(line);
                 singleFileComponentRecorder.RegisterUsage(detectedMavenComponent, isDevelopmentDependency: devDependency);
             }
         }
@@ -128,11 +112,32 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
         }
 
         var configurations = line[(equalsSeparatorIndex + 1)..].Split(",");
-        return configurations.Select(c => this.IsDevDependencyByConfigurationName(c)).All(dev => dev);
+        return configurations.All(this.IsDevDependencyByConfigurationName);
     }
 
     private bool IsDevDependencyByConfigurationName(string configurationName)
     {
         return this.devConfigurations.Contains(configurationName);
+    }
+
+    private bool IsDevDependencyByLockfile(IComponentStream file)
+    {
+        // Buildscript and Settings lockfiles are always development dependencies
+        var lockfileName = Path.GetFileName(file.Location);
+        var lockfileRelativePath = Path.GetRelativePath(this.CurrentScanRequest.SourceDirectory.FullName, file.Location);
+        var dev = lockfileName == "buildscript-gradle.lockfile"
+            || lockfileName == "settings-gradle.lockfile"
+            || this.devLockfiles.Contains(lockfileRelativePath);
+
+        if (dev)
+        {
+            this.Logger.LogDebug("Gradle lockfile {Location} contains dev dependencies only", lockfileRelativePath);
+        }
+        else
+        {
+            this.Logger.LogDebug("Gradle lockfile {Location} contains at least some production dependencies", lockfileRelativePath);
+        }
+
+        return dev;
     }
 }
