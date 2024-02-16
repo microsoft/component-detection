@@ -411,6 +411,38 @@ public class BcdeScanExecutionServiceTests
     }
 
     [TestMethod]
+    public async Task VerifyTranslation_AncesterFromMultipleLocationsAreAgregatedAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+        var npmDetector = new Mock<IComponentDetector>();
+        var settings = new ScanSettings
+        {
+            SourceDirectory = this.sourceDirectory,
+        };
+
+        var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location1");
+        var detectedComponent1 = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
+        var detectedComponent2 = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
+
+        singleFileComponentRecorder.RegisterUsage(detectedComponent1, isExplicitReferencedDependency: true);
+        singleFileComponentRecorder.RegisterUsage(detectedComponent2, parentComponentId: detectedComponent1.Component.Id);
+
+        singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location2");
+        var detectedComponent2NewLocation = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
+        singleFileComponentRecorder.RegisterUsage(detectedComponent2NewLocation, isExplicitReferencedDependency: true);
+
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
+
+        var detectedComponents = results.ComponentsFound;
+
+        var storedComponent1 = detectedComponents.First(dc => dc.Component.Id == detectedComponent1.Component.Id);
+        storedComponent1.AncestralReferrers.Should().BeEmpty("If a component is a root, then no root of itself");
+
+        var storedComponent2 = detectedComponents.First(dc => dc.Component.Id == detectedComponent2.Component.Id);
+        storedComponent2.AncestralReferrers.Should().ContainSingle("There 1 roots, the component is root of other component");
+        storedComponent2.AncestralReferrers.Should().Contain(detectedComponent1.Component);
+    }
+
     public async Task VerifyTranslation_ComponentsAreReturnedWithRootsAsync()
     {
         var componentRecorder = new ComponentRecorder();
@@ -438,6 +470,35 @@ public class BcdeScanExecutionServiceTests
         var storedComponent2 = detectedComponents.First(dc => dc.Component.Id == detectedComponent2.Component.Id);
         storedComponent2.TopLevelReferrers.Should().ContainSingle();
         storedComponent2.TopLevelReferrers.Should().Contain(detectedComponent1.Component);
+    }
+
+    [TestMethod]
+    public async Task VerifyTranslation_ComponentsAreReturnedWithAncesterAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+        var npmDetector = new Mock<IComponentDetector>();
+        var settings = new ScanSettings
+        {
+            SourceDirectory = this.sourceDirectory,
+        };
+
+        var singleFileComponentRecorder = componentRecorder.CreateSingleFileComponentRecorder("location");
+        var detectedComponent1 = new DetectedComponent(new NpmComponent("test", "1.0.0"), detector: npmDetector.Object);
+        var detectedComponent2 = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
+
+        singleFileComponentRecorder.RegisterUsage(detectedComponent1, isExplicitReferencedDependency: true);
+        singleFileComponentRecorder.RegisterUsage(detectedComponent2, parentComponentId: detectedComponent1.Component.Id);
+
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
+
+        var detectedComponents = results.ComponentsFound;
+
+        var storedComponent1 = detectedComponents.First(dc => dc.Component.Id == detectedComponent1.Component.Id);
+        storedComponent1.AncestralReferrers.Should().BeEmpty("If a component is a root, then no root of itself");
+
+        var storedComponent2 = detectedComponents.First(dc => dc.Component.Id == detectedComponent2.Component.Id);
+        storedComponent2.AncestralReferrers.Should().ContainSingle();
+        storedComponent2.AncestralReferrers.Should().Contain(detectedComponent1.Component);
     }
 
     [TestMethod]

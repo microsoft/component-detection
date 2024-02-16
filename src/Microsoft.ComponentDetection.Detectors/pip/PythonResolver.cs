@@ -88,53 +88,63 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
 
             foreach (var dependencyNode in dependencies)
             {
-                // if we have already seen the dependency and the version we have is valid, just add the dependency to the graph
-                if (state.NodeReferences.TryGetValue(dependencyNode.Name, out var node) &&
-                    PythonVersionUtilities.VersionValidForSpec(node.Value.Version, dependencyNode.DependencySpecifiers))
+                try
                 {
-                    state.NodeReferences[currentNode.Name].Children.Add(node);
-                    node.Parents.Add(state.NodeReferences[currentNode.Name]);
-                }
-                else if (node != null)
-                {
-                    this.logger.LogWarning("Candidate version ({NodeValueId}) for {DependencyName} already exists in map and the version is NOT valid.", node.Value.Id, dependencyNode.Name);
-                    this.logger.LogWarning("Specifiers: {DependencySpecifiers} for package {CurrentNodeName} caused this.", string.Join(',', dependencyNode.DependencySpecifiers), currentNode.Name);
-
-                    // The currently selected version is invalid, try to see if there is another valid version available
-                    if (!await this.InvalidateAndReprocessAsync(state, node, dependencyNode))
+                    // if we have already seen the dependency and the version we have is valid, just add the dependency to the graph
+                    if (state.NodeReferences.TryGetValue(dependencyNode.Name, out var node) &&
+                        PythonVersionUtilities.VersionValidForSpec(node.Value.Version, dependencyNode.DependencySpecifiers))
                     {
-                        this.logger.LogWarning(
-                            "Version Resolution for {DependencyName} failed, assuming last valid version is used.",
-                            dependencyNode.Name);
-
-                        // there is no valid version available for the node, dependencies are incompatible,
+                        state.NodeReferences[currentNode.Name].Children.Add(node);
+                        node.Parents.Add(state.NodeReferences[currentNode.Name]);
                     }
-                }
-                else
-                {
-                    // We haven't encountered this package before, so let's fetch it and find a candidate
-                    var project = await this.pypiClient.GetProjectAsync(dependencyNode);
-
-                    var result = project.Releases;
-
-                    if (result is not null && result.Keys.Any())
+                    else if (node != null)
                     {
-                        state.ValidVersionMap[dependencyNode.Name] = result;
-                        var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
-                            ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
+                        this.logger.LogWarning("Candidate version ({NodeValueId}) for {DependencyName} already exists in map and the version is NOT valid.", node.Value.Id, dependencyNode.Name);
+                        this.logger.LogWarning("Specifiers: {DependencySpecifiers} for package {CurrentNodeName} caused this.", string.Join(',', dependencyNode.DependencySpecifiers), currentNode.Name);
 
-                        this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion, license: this.GetLicenseFromProject(project), author: this.GetSupplierFromProject(project));
+                        // The currently selected version is invalid, try to see if there is another valid version available
+                        if (!await this.InvalidateAndReprocessAsync(state, node, dependencyNode))
+                        {
+                            this.logger.LogWarning(
+                                "Version Resolution for {DependencyName} failed, assuming last valid version is used.",
+                                dependencyNode.Name);
 
-                        state.ProcessingQueue.Enqueue((root, dependencyNode));
+                            // there is no valid version available for the node, dependencies are incompatible,
+                        }
                     }
                     else
                     {
-                        this.logger.LogWarning(
-                            "Unable to resolve non-root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
-                            dependencyNode.Name,
-                            JsonConvert.SerializeObject(dependencyNode.DependencySpecifiers));
-                        singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
+                        // We haven't encountered this package before, so let's fetch it and find a candidate
+                        var project = await this.pypiClient.GetProjectAsync(dependencyNode);
+
+                        var result = project.Releases;
+
+                        if (result is not null && result.Keys.Any())
+                        {
+                            state.ValidVersionMap[dependencyNode.Name] = result;
+                            var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
+                                ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
+
+                            this.AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion, license: this.GetLicenseFromProject(project), author: this.GetSupplierFromProject(project));
+
+                            state.ProcessingQueue.Enqueue((root, dependencyNode));
+                        }
+                        else
+                        {
+                            this.logger.LogWarning(
+                                "Unable to resolve non-root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
+                                dependencyNode.Name,
+                                JsonConvert.SerializeObject(dependencyNode.DependencySpecifiers));
+                            singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
+                        }
                     }
+                }
+                catch (ArgumentException ae)
+                {
+                    // If version specifier parsing fails, don't attempt to reprocess because it would fail also.
+                    // Log a package failure warning and continue.
+                    this.logger.LogWarning("Failure resolving Python package {DependencyName} with message: {ExMessage}.", dependencyNode.Name, ae.Message);
+                    singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                 }
             }
         }
