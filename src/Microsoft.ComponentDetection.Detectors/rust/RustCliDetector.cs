@@ -26,12 +26,15 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
 
+    internal const string CustomFeaturesEnvironmentVariable = "CD_RUST_CLI_FEATURES";
+
     private static readonly TomlModelOptions TomlOptions = new TomlModelOptions
     {
         IgnoreMissingProperties = true,
     };
 
     private readonly ICommandLineInvocationService cliService;
+    private readonly IEnvironmentVariableService environmentVariableService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RustCliDetector"/> class.
@@ -39,16 +42,19 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
     /// <param name="componentStreamEnumerableFactory">The component stream enumerable factory.</param>
     /// <param name="walkerFactory">The walker factory.</param>
     /// <param name="cliService">The command line invocation service.</param>
+    /// <param name="environmentVariableService">The environment variable service.</param>
     /// <param name="logger">The logger.</param>
     public RustCliDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService cliService,
+        IEnvironmentVariableService environmentVariableService,
         ILogger<RustCliDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.cliService = cliService;
+        this.environmentVariableService = environmentVariableService;
         this.Logger = logger;
     }
 
@@ -86,12 +92,15 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
             }
             else
             {
-                // Use --all-features to ensure that even optional feature dependencies are detected.
+                // Use --all-features to ensure that even optional feature dependencies are detected if env var isnt set.
+                var specifiedFeatures =
+                    this.environmentVariableService.GetEnvironmentVariable(CustomFeaturesEnvironmentVariable);
+
                 var cliResult = await this.cliService.ExecuteCommandAsync(
                     "cargo",
                     null,
                     "metadata",
-                    "--all-features",
+                    string.IsNullOrEmpty(specifiedFeatures) ? "--all-features" : $"--features={specifiedFeatures}",
                     "--manifest-path",
                     componentStream.Location,
                     "--format-version=1",

@@ -21,6 +21,7 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
 {
     private Mock<ICommandLineInvocationService> mockCliService;
     private Mock<IComponentStreamEnumerableFactory> mockComponentStreamEnumerableFactory;
+    private Mock<IEnvironmentVariableService> mockEnvVarService;
 
     [TestInitialize]
     public void InitCliMock()
@@ -29,6 +30,8 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
         this.DetectorTestUtility.AddServiceMock(this.mockCliService);
         this.mockComponentStreamEnumerableFactory = new Mock<IComponentStreamEnumerableFactory>();
         this.DetectorTestUtility.AddServiceMock(this.mockComponentStreamEnumerableFactory);
+        this.mockEnvVarService = new Mock<IEnvironmentVariableService>();
+        this.DetectorTestUtility.AddServiceMock(this.mockEnvVarService);
     }
 
     [TestMethod]
@@ -1136,5 +1139,28 @@ dependencies = [
         }
 
         return;
+    }
+
+    [TestMethod]
+    public async Task RustCLiDetector_CustomFeaturesPassedIfPresentAsync()
+    {
+        this.mockCliService
+            .Setup(x => x.CanCommandBeLocatedAsync("cargo", It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(true);
+
+        var capturedCargoArgs = Enumerable.Empty<string>();
+        this.mockCliService.Setup(x =>
+                x.ExecuteCommandAsync("cargo", It.IsAny<IEnumerable<string>>(), It.IsAny<string[]>()))
+            .Callback((string _, IEnumerable<string> _, string[] args) => capturedCargoArgs = args);
+
+        this.mockEnvVarService
+            .Setup(x => x.GetEnvironmentVariable(RustCliDetector.CustomFeaturesEnvironmentVariable))
+            .Returns("a,b");
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Cargo.toml", string.Empty)
+            .ExecuteDetectorAsync();
+
+        capturedCargoArgs.Should().Contain("--features=a,b");
     }
 }
