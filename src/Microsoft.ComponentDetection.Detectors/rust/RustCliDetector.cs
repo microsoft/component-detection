@@ -137,7 +137,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                             }
                         }
                     }
-                    else if (!record.WasRustFallbackStrategyUsed)
+                    else
                     {
                         this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages, visitedDependencies, explicitlyReferencedDependency: true, isTomlRoot: true);
                     }
