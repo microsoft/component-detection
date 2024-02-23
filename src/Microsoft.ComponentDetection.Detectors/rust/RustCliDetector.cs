@@ -99,9 +99,9 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
                 if (cliResult.ExitCode != 0)
                 {
-                    this.Logger.LogWarning("`cargo metadata` failed with {Location}. Ensure the Cargo.lock is up to date.", processRequest.ComponentStream.Location);
+                    this.Logger.LogWarning("`cargo metadata` failed while processing {Location}. with error: {Error}", processRequest.ComponentStream.Location, cliResult.StdErr);
                     record.DidRustCliCommandFail = true;
-                    record.WasRustFallbackStrategyUsed = true;
+                    record.WasRustFallbackStrategyUsed = ShouldFallbackFromError(cliResult.StdErr);
                     record.RustCliCommandError = cliResult.StdErr;
                     record.FallbackReason = "`cargo metadata` failed";
                 }
@@ -118,22 +118,28 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                             string.IsNullOrWhiteSpace(x.License) ? null : x.License));
 
                     var root = metadata.Resolve.Root;
+                    HashSet<string> visitedDependencies = new();
 
                     // A cargo.toml can be used to declare a workspace and not a package (A Virtual Manifest).
                     // In this case, the root will be null as it will not be pulling in dependencies itself.
                     // https://doc.rust-lang.org/cargo/reference/workspaces.html#virtual-workspace
                     if (root == null)
                     {
-                        this.Logger.LogWarning("Virtual Manifest: {Location}, falling back to cargo.lock parsing", processRequest.ComponentStream.Location);
-                        record.DidRustCliCommandFail = true;
-                        record.WasRustFallbackStrategyUsed = true;
-                        record.FallbackReason = "Virtual Manifest";
-                    }
+                        this.Logger.LogWarning("Virtual Manifest: {Location}", processRequest.ComponentStream.Location);
 
-                    HashSet<string> visitedDependencies = new();
-                    if (!record.WasRustFallbackStrategyUsed)
+                        foreach (var dep in metadata.Resolve.Nodes)
+                        {
+                            var componentKey = $"{dep.Id}";
+                            if (!visitedDependencies.Contains(componentKey))
+                            {
+                                visitedDependencies.Add(componentKey);
+                                this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, dep.Id, null, null, packages, visitedDependencies, explicitlyReferencedDependency: true, isTomlRoot: true);
+                            }
+                        }
+                    }
+                    else if (!record.WasRustFallbackStrategyUsed)
                     {
-                        this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages, visitedDependencies);
+                        this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, root, null, null, packages, visitedDependencies, explicitlyReferencedDependency: true, isTomlRoot: true);
                     }
                 }
             }
@@ -169,13 +175,17 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
     private static Dictionary<string, Node> BuildGraph(CargoMetadata cargoMetadata) => cargoMetadata.Resolve.Nodes.ToDictionary(x => x.Id);
 
-    private static (string Name, string Version) ParseNameAndVersion(string nameAndVersion)
-    {
-        var parts = nameAndVersion.Split(' ');
-        return (parts[0], parts[1]);
-    }
-
     private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
+
+    private static bool ShouldFallbackFromError(string error)
+    {
+        if (error.Contains("current package believes it's in a workspace", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return true;
+    }
 
     private static bool ParseDependency(string dependency, out string packageName, out string version, out string source)
     {
@@ -205,12 +215,18 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
         Dep depInfo,
         IReadOnlyDictionary<string, (string Authors, string License)> packagesMetadata,
         ISet<string> visitedDependencies,
-        bool explicitlyReferencedDependency = false)
+        bool explicitlyReferencedDependency = false,
+        bool isTomlRoot = false)
     {
         try
         {
             var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
-            var (name, version) = ParseNameAndVersion(id);
+            if (!ParseDependency(id, out var name, out var version, out var source))
+            {
+                // Could not parse the dependency string
+                this.Logger.LogWarning("Failed to parse dependency '{Id}'", id);
+                return;
+            }
 
             var (authors, license) = packagesMetadata.TryGetValue($"{name} {version}", out var package)
                 ? package
@@ -218,16 +234,20 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
             var detectedComponent = new DetectedComponent(new CargoComponent(name, version, authors, license));
 
-            recorder.RegisterUsage(
-                detectedComponent,
-                explicitlyReferencedDependency,
-                isDevelopmentDependency: isDevelopmentDependency,
-                parentComponentId: parent?.Component.Id);
-
             if (!graph.TryGetValue(id, out var node))
             {
                 this.Logger.LogWarning("Could not find {Id} at {Location} in cargo metadata output", id, location);
                 return;
+            }
+
+            var shouldRegister = !isTomlRoot && !source.StartsWith("path+file");
+            if (shouldRegister)
+            {
+                recorder.RegisterUsage(
+                    detectedComponent,
+                    explicitlyReferencedDependency,
+                    isDevelopmentDependency: isDevelopmentDependency,
+                    parentComponentId: parent?.Component.Id);
             }
 
             foreach (var dep in node.Deps)
@@ -236,7 +256,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                 if (!visitedDependencies.Contains(componentKey))
                 {
                     visitedDependencies.Add(componentKey);
-                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, detectedComponent, dep, packagesMetadata, visitedDependencies, parent == null);
+                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, shouldRegister ? detectedComponent : null, dep, packagesMetadata, visitedDependencies, parent == null);
                 }
             }
         }
@@ -280,6 +300,10 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
             this.Logger.LogWarning("Could not find Cargo.lock file for {CargoTomlLocation}, skipping processing", cargoTomlFile.Location);
             record.FallbackCargoLockFound = false;
             return;
+        }
+        else
+        {
+            this.Logger.LogWarning("Falling back to cargo.lock processing using {CargoTomlLocation}", cargoLockFileStream.Location);
         }
 
         record.FallbackCargoLockLocation = cargoLockFileStream.Location;
