@@ -345,7 +345,7 @@ public partial class DepKind
 
 public enum Kind { Build, Dev };
 
-public enum CrateType { Bench, Bin, CustomBuild, Example, Lib, ProcMacro, Test };
+public enum CrateType { Bench, Bin, CustomBuild, Example, Lib, ProcMacro, Test, RLib, DyLib, CdyLib, StaticLib };
 
 public partial class CargoMetadata
 {
@@ -453,8 +453,16 @@ internal class CrateTypeConverter : JsonConverter<CrateType>
                 return CrateType.ProcMacro;
             case "test":
                 return CrateType.Test;
+            case "rlib":
+                return CrateType.RLib;
+            case "dylib":
+                return CrateType.DyLib;
+            case "cdylib":
+                return CrateType.CdyLib;
+            case "staticlib": 
+                return CrateType.StaticLib;
         }
-        throw new Exception("Cannot unmarshal type CrateType");
+        throw new Exception($"Cannot unmarshal type CrateType - {value}");
     }
 
     public override void Write(Utf8JsonWriter writer, CrateType value, JsonSerializerOptions options)
