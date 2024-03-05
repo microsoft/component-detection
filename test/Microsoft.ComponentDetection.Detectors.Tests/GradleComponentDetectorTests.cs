@@ -1,6 +1,8 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -10,12 +12,21 @@ using Microsoft.ComponentDetection.Detectors.Gradle;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
 public class GradleComponentDetectorTests : BaseDetectorTest<GradleComponentDetector>
 {
+    private readonly Mock<IEnvironmentVariableService> envVarService;
+
+    public GradleComponentDetectorTests()
+    {
+        this.envVarService = new Mock<IEnvironmentVariableService>();
+        this.DetectorTestUtility.AddServiceMock(this.envVarService);
+    }
+
     [TestMethod]
     public async Task TestGradleDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
@@ -215,5 +226,159 @@ $#26^#25%4";
             var component = componentRecorder.GetComponent(componentId);
             component.Should().NotBeNull();
         }
+    }
+
+    [TestMethod]
+    public async Task TestGradleDetector_DevDependenciesByLockfileNameAsync()
+    {
+        var regularLockfile =
+            @"org.springframework:spring-beans:5.0.5.RELEASE
+org.springframework:spring-core:5.0.5.RELEASE";
+
+        var devLockfile1 = @"org.hamcrest:hamcrest-core:2.2
+org.springframework:spring-core:5.0.5.RELEASE";
+
+        var devLockfile2 = @"org.jacoco:org.jacoco.agent:0.8.8";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("settings-gradle.lockfile", devLockfile1)
+            .WithFile("buildscript-gradle.lockfile", devLockfile2)
+            .WithFile("gradle.lockfile", regularLockfile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var discoveredComponents = componentRecorder.GetDetectedComponents().Select(c => (MavenComponent)c.Component).OrderBy(c => c.ArtifactId).ToList();
+        var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
+        var gradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith(Path.DirectorySeparatorChar + "gradle.lockfile"))];
+        var settingsGradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("settings-gradle.lockfile"))];
+        var buildscriptGradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("buildscript-gradle.lockfile"))];
+
+        discoveredComponents.Should().HaveCount(4);
+
+        // Dev dependency listed only in settings-gradle.lockfile
+        var component = discoveredComponents[0];
+        component.GroupId.Should().Be("org.hamcrest");
+        component.ArtifactId.Should().Be("hamcrest-core");
+        settingsGradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
+
+        // Dev dependency listed only in buildscript-gradle.lockfile
+        component = discoveredComponents[1];
+        component.GroupId.Should().Be("org.jacoco");
+        component.ArtifactId.Should().Be("org.jacoco.agent");
+        buildscriptGradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
+
+        // This should be purely a prod dependency, just a basic confidence test
+        component = discoveredComponents[2];
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-beans");
+        gradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
+
+        // This is listed as both a prod and a dev dependency in different files
+        component = discoveredComponents[3];
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-core");
+        gradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
+        settingsGradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task TestGradleDetector_DevDependenciesByDevLockfileEnvironmentAsync()
+    {
+        var regularLockfile =
+            @"org.springframework:spring-beans:5.0.5.RELEASE
+org.springframework:spring-core:5.0.5.RELEASE";
+
+        var devLockfile1 = @"org.hamcrest:hamcrest-core:2.2
+org.springframework:spring-core:5.0.5.RELEASE";
+
+        var devLockfile2 = @"org.jacoco:org.jacoco.agent:0.8.8";
+
+        this.envVarService.Setup(x => x.GetListEnvironmentVariable("CD_GRADLE_DEV_LOCKFILES", ",")).Returns(new List<string> { "dev1\\gradle.lockfile", "dev2\\gradle.lockfile" });
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("dev1\\gradle.lockfile", devLockfile1)
+            .WithFile("dev2\\gradle.lockfile", devLockfile2)
+            .WithFile("prod\\gradle.lockfile", regularLockfile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var discoveredComponents = componentRecorder.GetDetectedComponents().Select(c => (MavenComponent)c.Component).OrderBy(c => c.ArtifactId).ToList();
+        var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
+        var gradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("prod\\gradle.lockfile"))];
+        var dev1GradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("dev1\\gradle.lockfile"))];
+        var dev2GradleLockfileGraph = dependencyGraphs[dependencyGraphs.Keys.First(k => k.EndsWith("dev2\\gradle.lockfile"))];
+
+        discoveredComponents.Should().HaveCount(4);
+
+        // Dev dependency listed only in dev1\gradle.lockfile
+        var component = discoveredComponents[0];
+        component.GroupId.Should().Be("org.hamcrest");
+        component.ArtifactId.Should().Be("hamcrest-core");
+        dev1GradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
+
+        // Dev dependency listed only in dev2\gradle.lockfile
+        component = discoveredComponents[1];
+        component.GroupId.Should().Be("org.jacoco");
+        component.ArtifactId.Should().Be("org.jacoco.agent");
+        dev2GradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
+
+        // This should be purely a prod dependency, just a basic confidence test
+        component = discoveredComponents[2];
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-beans");
+        gradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
+
+        // This is listed as both a prod and a dev dependency in different files
+        component = discoveredComponents[3];
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-core");
+        gradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
+
+        dev1GradleLockfileGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task TestGradleDetector_DevDependenciesByDevConfigurationEnvironmentAsync()
+    {
+        var lockfile =
+                    @"org.springframework:spring-beans:5.0.5.RELEASE=assembleRelease
+org.springframework:spring-core:5.0.5.RELEASE=assembleRelease,testDebugUnitTest
+org.hamcrest:hamcrest-core:2.2=testReleaseUnitTest";
+
+        this.envVarService.Setup(x => x.GetListEnvironmentVariable("CD_GRADLE_DEV_CONFIGURATIONS", ",")).Returns(new List<string> { "testDebugUnitTest", "testReleaseUnitTest" });
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("gradle.lockfile", lockfile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var discoveredComponents = componentRecorder.GetDetectedComponents().Select(c => (MavenComponent)c.Component).OrderBy(c => c.ArtifactId).ToList();
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        discoveredComponents.Should().HaveCount(3);
+
+        var component = discoveredComponents[0];
+        component.GroupId.Should().Be("org.hamcrest");
+        component.ArtifactId.Should().Be("hamcrest-core");
+
+        // Purely a dev dependency, only present in a test configuration
+        dependencyGraph.IsDevelopmentDependency(component.Id).Should().BeTrue();
+
+        component = discoveredComponents[1];
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-beans");
+
+        // Purely a prod dependency, only present in a prod configuration
+        dependencyGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
+
+        component = discoveredComponents[2];
+        component.GroupId.Should().Be("org.springframework");
+        component.ArtifactId.Should().Be("spring-core");
+
+        // Present in both dev and prod configurations, prod should win
+        dependencyGraph.IsDevelopmentDependency(component.Id).Should().BeFalse();
     }
 }

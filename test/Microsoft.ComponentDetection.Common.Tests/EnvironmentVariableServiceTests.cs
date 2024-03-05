@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common.Tests;
+namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using FluentAssertions;
@@ -92,5 +92,46 @@ public class EnvironmentVariableServiceTests
         result1.Should().BeFalse();
         result2.Should().BeFalse();
         Environment.SetEnvironmentVariable(envVariableKey1, null);
+    }
+
+    [TestMethod]
+    public void GetListEnvironmentVariable_returnEmptyIfVariableDoesNotExist()
+    {
+        this.testSubject.GetListEnvironmentVariable("NonExistentVar", ",").Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void GetListEnvironmentVariable_emptyListIfEmptyVar()
+    {
+        var key = "foo";
+        Environment.SetEnvironmentVariable(key, string.Empty);
+        var result = this.testSubject.GetListEnvironmentVariable(key, ",");
+        result.Should().NotBeNull();
+        result.Should().BeEmpty();
+        Environment.SetEnvironmentVariable(key, null);
+    }
+
+    [TestMethod]
+    public void GetListEnvironmentVariable_singleItem()
+    {
+        var key = "foo";
+        Environment.SetEnvironmentVariable(key, "bar");
+        var result = this.testSubject.GetListEnvironmentVariable(key, ",");
+        result.Should().ContainSingle();
+        result.Should().Contain("bar");
+        Environment.SetEnvironmentVariable(key, null);
+    }
+
+    [TestMethod]
+    public void GetListEnvironmentVariable_multipleItems()
+    {
+        var key = "foo";
+        Environment.SetEnvironmentVariable(key, "bar,baz,qux");
+        var result = this.testSubject.GetListEnvironmentVariable(key, ",");
+        result.Should().HaveCount(3);
+        result.Should().Contain("bar");
+        result.Should().Contain("baz");
+        result.Should().Contain("qux");
+        Environment.SetEnvironmentVariable(key, null);
     }
 }
