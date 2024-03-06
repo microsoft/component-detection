@@ -253,8 +253,7 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
                 var packageType = GetPackageType(file.FileName);
                 var version = GetVersionFromFileName(file.FileName);
                 var parsedVersion = PythonVersion.Create(version);
-                if (!parsedVersion.Valid || !parsedVersion.IsReleasedPackage ||
-                    !PythonVersionUtilities.VersionValidForSpec(version, spec.DependencySpecifiers))
+                if (!parsedVersion.Valid || !PythonVersionUtilities.VersionValidForSpec(version, spec.DependencySpecifiers))
                 {
                     continue;
                 }
