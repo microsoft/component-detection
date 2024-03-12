@@ -12,7 +12,7 @@ public class PnpmParsingUtilitiesTest
     // This tests a version 3 shrink-wrap file as defined by https://github.com/pnpm/spec/blob/master/lockfile/3.md
     // This is handled by the "V5" code, which parses most of the data, but misses some things, like the shrinkwrapVersion.
     [TestMethod]
-    public void DeserializePnpmYamlFile()
+    public void DeserializePnpmYamlFileV3()
     {
         var yamlFile = @"
 dependencies:
@@ -36,6 +36,8 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
 
+        var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(yamlFile);
+        version.Should().BeNull(); // Versions older than 5 report null as they don't use the same version field.
         var parsedYaml = PnpmParsingUtilities.DeserializePnpmYamlV5File(yamlFile);
 
         parsedYaml.packages.Should().HaveCount(2);
@@ -73,6 +75,46 @@ shrinkwrapVersion: 3";
         detectedComponent3.Component.Should().NotBeNull();
         ((NpmComponent)detectedComponent3.Component).Name.Should().BeEquivalentTo("query-string");
         ((NpmComponent)detectedComponent3.Component).Version.Should().BeEquivalentTo("4.3.4");
+    }
+
+    // This tests a version 3 shrink-wrap file as defined by https://github.com/pnpm/spec/blob/master/lockfile/3.md
+    // This is handled by the "V5" code, which parses most of the data, but misses some things, like the shrinkwrapVersion.
+    [TestMethod]
+    public void DeserializePnpmYamlFileV6()
+    {
+        var yamlFile = @"
+lockfileVersion: '6.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+dependencies:
+  minimist:
+    specifier: 1.2.8
+    version: 1.2.8
+
+packages:
+
+  /minimist@1.2.8:
+    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+    dev: false";
+
+        var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(yamlFile);
+        version.Should().Be("6.0");
+        var parsedYaml = PnpmParsingUtilities.DeserializePnpmYamlV6File(yamlFile);
+
+        parsedYaml.packages.Should().ContainSingle();
+        parsedYaml.packages.Should().ContainKey("/minimist@1.2.8");
+
+        var package = parsedYaml.packages["/minimist@1.2.8"];
+        package.dependencies.Should().BeNull();
+        package.dependencies.Should().ContainKey("@ms/items-view");
+        package.dependencies["@ms/items-view"].Should().BeEquivalentTo("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
+        package.dev.Should().BeEquivalentTo("false");
+
+        parsedYaml.dependencies.Should().ContainSingle();
+        parsedYaml.dependencies.Should().ContainKey("minimist");
     }
 
     [TestMethod]

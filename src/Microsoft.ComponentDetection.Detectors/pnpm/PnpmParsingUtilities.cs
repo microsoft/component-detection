@@ -18,6 +18,16 @@ public static class PnpmParsingUtilities
         return deserializer.Deserialize<PnpmYamlVersion>(new StringReader(fileContent)).lockfileVersion;
     }
 
+    public static bool IsPnpmPackageDevDependency(Package pnpmPackage)
+    {
+        if (pnpmPackage == null)
+        {
+            throw new ArgumentNullException(nameof(pnpmPackage));
+        }
+
+        return string.Equals(bool.TrueString, pnpmPackage.dev, StringComparison.InvariantCultureIgnoreCase);
+    }
+
     public static PnpmYamlV5 DeserializePnpmYamlV5File(string fileContent)
     {
         var deserializer = new DeserializerBuilder()
@@ -115,16 +125,6 @@ public static class PnpmParsingUtilities
         {
             return $"/{dependencyName}@{dependencyVersion}";
         }
-    }
-
-    public static bool IsPnpmPackageDevDependency(Package pnpmPackage)
-    {
-        if (pnpmPackage == null)
-        {
-            throw new ArgumentNullException(nameof(pnpmPackage));
-        }
-
-        return string.Equals(bool.TrueString, pnpmPackage.dev, StringComparison.InvariantCultureIgnoreCase);
     }
 
     private static (string PackageVersion, int VersionIndex) GetPackageVersionV5(string[] pnpmComponentDefSections)
