@@ -105,7 +105,7 @@ public class PnpmComponentDetector : FileComponentDetector
                         continue;
                     }
 
-                    var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5(pnpmPackagePath: this.CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
+                    var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5(pnpmPackagePath: this.CreatePnpmPackagePathFromDependencyV5(dependency.Key, dependency.Value));
 
                     // Older code used the root's dev dependency value. We're leaving this null until we do a second pass to look at each components' top level referrers.
                     singleFileComponentRecorder.RegisterUsage(childDetectedComponent, parentComponentId: parentDetectedComponent.Component.Id, isDevelopmentDependency: null);
@@ -153,7 +153,10 @@ public class PnpmComponentDetector : FileComponentDetector
             foreach (var (name, version) in package.dependencies ?? Enumerable.Empty<KeyValuePair<string, string>>())
             {
                 var pnpmDependencyPath = PnpmDependencyPath(name, version);
+
+                // If this lookup fails, then pnpmDependencyPath is broken somehow.
                 var (referenced, _) = components[pnpmDependencyPath];
+
                 singleFileComponentRecorder.RegisterUsage(referenced, parentComponentId: component.Component.Id, isExplicitReferencedDependency: false);
             }
         }
@@ -178,6 +181,12 @@ public class PnpmComponentDetector : FileComponentDetector
         {
             foreach (var (name, dep) in dependencies ?? Enumerable.Empty<KeyValuePair<string, PnpmYamlV6Dependency>>())
             {
+                // Ignore file and link: as these are local packages.
+                if (dep.version.StartsWith("link:") | dep.version.StartsWith("file:"))
+                {
+                    continue;
+                }
+
                 var pnpmDependencyPath = PnpmDependencyPath(name, dep.version);
                 var (component, package) = components[pnpmDependencyPath];
 
@@ -189,7 +198,17 @@ public class PnpmComponentDetector : FileComponentDetector
             }
         }
 
-        string PnpmDependencyPath(string name, string version) => $"/{name}@{version}";
+        string PnpmDependencyPath(string dependencyName, string dependencyVersion)
+        {
+            if (dependencyVersion.StartsWith("/"))
+            {
+                return dependencyVersion;
+            }
+            else
+            {
+                return $"/{dependencyName}@{dependencyVersion}";
+            }
+        }
     }
 
     private bool IsLocalDependency(KeyValuePair<string, string> dependency)
@@ -199,7 +218,7 @@ public class PnpmComponentDetector : FileComponentDetector
         return dependency.Key.StartsWith("file:") || dependency.Value.StartsWith("file:") || dependency.Value.StartsWith("link:");
     }
 
-    private string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion)
+    private string CreatePnpmPackagePathFromDependencyV5(string dependencyName, string dependencyVersion)
     {
         return dependencyVersion.Contains('/') ? dependencyVersion : $"/{dependencyName}/{dependencyVersion}";
     }
