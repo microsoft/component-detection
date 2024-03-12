@@ -77,8 +77,7 @@ shrinkwrapVersion: 3";
         ((NpmComponent)detectedComponent3.Component).Version.Should().BeEquivalentTo("4.3.4");
     }
 
-    // This tests a version 3 shrink-wrap file as defined by https://github.com/pnpm/spec/blob/master/lockfile/3.md
-    // This is handled by the "V5" code, which parses most of the data, but misses some things, like the shrinkwrapVersion.
+    // This tests a version 3 pnpm-lock.yaml file as defined by https://github.com/pnpm/spec/blob/master/lockfile/6.md.
     [TestMethod]
     public void DeserializePnpmYamlFileV6()
     {
@@ -109,12 +108,10 @@ packages:
 
         var package = parsedYaml.packages["/minimist@1.2.8"];
         package.dependencies.Should().BeNull();
-        package.dependencies.Should().ContainKey("@ms/items-view");
-        package.dependencies["@ms/items-view"].Should().BeEquivalentTo("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
-        package.dev.Should().BeEquivalentTo("false");
 
         parsedYaml.dependencies.Should().ContainSingle();
         parsedYaml.dependencies.Should().ContainKey("minimist");
+        parsedYaml.dependencies["minimist"].version.Should().BeEquivalentTo("1.2.8");
     }
 
     [TestMethod]
