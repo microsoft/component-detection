@@ -53,12 +53,12 @@ public class PnpmComponentDetector : FileComponentDetector
             var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
             var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(fileContent);
             this.RecordLockfileVersion(version);
-            var majorVersion = version.Split(".")[0];
+            var majorVersion = version?.Split(".")[0];
             switch (majorVersion)
             {
                 case null:
                 // The null case falls through to version 5 to preserver the behavior of this scanner from before version specific logic was added.
-                // This allows files explicitly versioned with shrinkwrapVersion (such as one included in some of the tests) to be used.
+                // This allows files versioned with "shrinkwrapVersion" (such as one included in some of the tests) to be used.
                 // Given that "shrinkwrapVersion" is a concept from file format version 4 https://github.com/pnpm/spec/blob/master/lockfile/4.md)
                 // this case might not be robust.
                 case "5":
@@ -127,13 +127,18 @@ public class PnpmComponentDetector : FileComponentDetector
 
     private void RecordDependencyGraphFromFileV6(PnpmYamlV6 yaml, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
-        // There may be multiple instance of the same package (even at the same version) in pnpm differentiated by other aspects of the pnpmDependencyPath.
+        // There may be multiple instance of the same package (even at the same version) in pnpm differentiated by other aspects of the pnpm dependency path.
         // Therefor all DetectedComponents are tracked by the same full string pnpm uses, the pnpm dependency path, which is used as the key in this dictionary.
+        // Some documentation about pnpm dependency paths can be found at https://github.com/pnpm/spec/blob/master/dependency-path.md.
         var components = new Dictionary<string, (DetectedComponent, Package)>();
 
+        // Create a component for every package referenced in the lock file.
+        // This includes all directly and transitively referenced dependencies.
         foreach (var (pnpmDependencyPath, package) in yaml.packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
         {
-            // Ignore file: as these are local packages.
+            // Ignore "file:" as these are local packages.
+            // Such local packages should only be referenced at the top level (via ProcessDependencyList) which also skips them or from other local packages (which this skips).
+            // There should be no cases where a non-local package references a local package, so skipping them here should not result in failed lookups below when adding all the graph references.
             if (pnpmDependencyPath.StartsWith("file:"))
             {
                 continue;
@@ -141,25 +146,29 @@ public class PnpmComponentDetector : FileComponentDetector
 
             var parentDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV6(pnpmDependencyPath: pnpmDependencyPath);
             components.Add(pnpmDependencyPath, (parentDetectedComponent, package));
+
+            // Register the component.
+            // It should get registered again with with additional information (what depended on it) later,
+            // but registering it now ensures nothing is missed due to a limitation in dependency traversal
+            // like skipping local dependencies which might have transitively depended on this.
+            singleFileComponentRecorder.RegisterUsage(parentDetectedComponent, isDevelopmentDependency: PnpmParsingUtilities.IsPnpmPackageDevDependency(package));
         }
 
+        // Now that the `components` dictionary is populated, make a second pass registering all the dependency edges in the graph.
         foreach (var (_, (component, package)) in components)
         {
-            // Each component should get registered with more detailed information later,
-            // but this ensures nothing is missed due to a bug in dependency traversal or the item somehow being otherwise unreferenced.
-            singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: PnpmParsingUtilities.IsPnpmPackageDevDependency(package));
-
-            var graph = singleFileComponentRecorder.DependencyGraph;
             foreach (var (name, version) in package.dependencies ?? Enumerable.Empty<KeyValuePair<string, string>>())
             {
-                var pnpmDependencyPath = PnpmDependencyPath(name, version);
+                var pnpmDependencyPath = PnpmParsingUtilities.ReconstructPnpmDependencyPathV6(name, version);
 
-                // If this lookup fails, then pnpmDependencyPath is broken somehow.
+                // If this lookup fails, then pnpmDependencyPath was either parsed incorrectly or constructed incorrectly.
                 var (referenced, _) = components[pnpmDependencyPath];
 
                 singleFileComponentRecorder.RegisterUsage(referenced, parentComponentId: component.Component.Id, isExplicitReferencedDependency: false);
             }
         }
+
+        // Lastly, add all direct dependencies of the current file/project setting isExplicitReferencedDependency to true:
 
         // "dedicated shrinkwrap" (single package) case:
         ProcessDependencySet(yaml);
@@ -181,13 +190,13 @@ public class PnpmComponentDetector : FileComponentDetector
         {
             foreach (var (name, dep) in dependencies ?? Enumerable.Empty<KeyValuePair<string, PnpmYamlV6Dependency>>())
             {
-                // Ignore file and link: as these are local packages.
+                // Ignore "file:" and "link:" as these are local packages.
                 if (dep.version.StartsWith("link:") | dep.version.StartsWith("file:"))
                 {
                     continue;
                 }
 
-                var pnpmDependencyPath = PnpmDependencyPath(name, dep.version);
+                var pnpmDependencyPath = PnpmParsingUtilities.ReconstructPnpmDependencyPathV6(name, dep.version);
                 var (component, package) = components[pnpmDependencyPath];
 
                 // Determine isDevelopmentDependency using metadata on package from pnpm rather than from which dependency list this package is under.
@@ -195,18 +204,6 @@ public class PnpmComponentDetector : FileComponentDetector
                 var isDevelopmentDependency = PnpmParsingUtilities.IsPnpmPackageDevDependency(package);
 
                 singleFileComponentRecorder.RegisterUsage(component, isExplicitReferencedDependency: true, isDevelopmentDependency: isDevelopmentDependency);
-            }
-        }
-
-        string PnpmDependencyPath(string dependencyName, string dependencyVersion)
-        {
-            if (dependencyVersion.StartsWith("/"))
-            {
-                return dependencyVersion;
-            }
-            else
-            {
-                return $"/{dependencyName}@{dependencyVersion}";
             }
         }
     }

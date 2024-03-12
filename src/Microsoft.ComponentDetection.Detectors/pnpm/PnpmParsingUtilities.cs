@@ -97,6 +97,26 @@ public static class PnpmParsingUtilities
         return new DetectedComponent(new NpmComponent(normalizedPackageName, packageVersion));
     }
 
+    /// <summary>
+    /// Combine the information from a dependency edge in the dependency graph encoded in the ymal file into a full pnpm dependency path.
+    /// </summary>
+    /// <param name="dependencyName">The name of the dependency, as used as as the dictionary key in the yaml file when referring to the dependency.</param>
+    /// <param name="dependencyVersion">The final resolved version of the package for this dependency edge.
+    /// This includes details like which version of specific dependencies were specified as peer dependencies.
+    /// In some edge cases, such as aliased packages, this version may be an absolute dependency path (starts with a slash) leaving the "dependencyName" unused.</param>
+    /// <returns>A pnpm dependency path for the specified version of the named package.</returns>
+    public static string ReconstructPnpmDependencyPathV6(string dependencyName, string dependencyVersion)
+    {
+        if (dependencyVersion.StartsWith("/"))
+        {
+            return dependencyVersion;
+        }
+        else
+        {
+            return $"/{dependencyName}@{dependencyVersion}";
+        }
+    }
+
     public static bool IsPnpmPackageDevDependency(Package pnpmPackage)
     {
         if (pnpmPackage == null)

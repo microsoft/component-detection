@@ -335,10 +335,10 @@ packages:
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Count().Should().Be(4);
 
-        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/query-string/4.3.4").Component.Id;
-        var objectAssignComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/object-assign/4.1.1").Component.Id;
-        var strictUriComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/strict-uri-encode/1.1.0").Component.Id;
-        var testComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/test/1.0.0").Component.Id;
+        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/query-string/4.3.4").Component.Id;
+        var objectAssignComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/object-assign/4.1.1").Component.Id;
+        var strictUriComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/strict-uri-encode/1.1.0").Component.Id;
+        var testComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/test/1.0.0").Component.Id;
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
@@ -383,8 +383,8 @@ packages:
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().HaveCount(2, "Components that comes from a file (file:* or link:*) should be ignored.");
 
-        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/query-string/4.3.4").Component.Id;
-        var nthcheck = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/nth-check/2.0.0").Component.Id;
+        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/query-string/4.3.4").Component.Id;
+        var nthcheck = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/nth-check/2.0.0").Component.Id;
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
