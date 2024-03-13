@@ -16,6 +16,11 @@ public class PipDependencySpecification
         @"Requires-Dist:\s*([^\s;\[<>=!~]+)(?:\[[^\]]+\])?(?:\s*\(([^)]+)\))?([^;]*)",
         RegexOptions.Compiled);
 
+    // Extracts name and version from a Requires-Dist string that is found in a metadata file
+    public static readonly Regex RequiresDistConditionalDependenciesMatch = new Regex(
+        @"(?<=.*;.*\s*)(?:and |or )?(?:\S+)\s*(?:<=|>=|<|>|===|==|!=|~=)\s*(?:\S+)",
+        RegexOptions.Compiled);
+
     /// <summary>
     /// These are packages that we don't want to evaluate in our graph as they are generally python builtins.
     /// </summary>
@@ -74,6 +79,16 @@ public class PipDependencySpecification
                     this.DependencySpecifiers = distMatch.Groups[i].Value.Split(',');
                 }
             }
+
+            var conditionalDependenciesMatches = RequiresDistConditionalDependenciesMatch.Matches(packageString);
+
+            for (var i = 0; i < conditionalDependenciesMatches.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(conditionalDependenciesMatches[i].Value))
+                {
+                    this.ConditionalDependencySpecifiers.Add(conditionalDependenciesMatches[i].Value);
+                }
+            }
         }
         else
         {
@@ -110,6 +125,8 @@ public class PipDependencySpecification
     /// </summary>
     public IList<string> DependencySpecifiers { get; set; } = new List<string>();
 
+    public IList<string> ConditionalDependencySpecifiers { get; set; } = new List<string>();
+
     private string DebuggerDisplay => $"{this.Name} ({string.Join(';', this.DependencySpecifiers)})";
 
     /// <summary>
@@ -119,5 +136,50 @@ public class PipDependencySpecification
     public bool PackageIsUnsafe()
     {
         return PackagesToIgnore.Contains(this.Name);
+    }
+
+    /// <summary>
+    /// Whether or not the package is safe to resolve based on the packagesToIgnore.
+    /// </summary>
+    /// <returns> True if the package is unsafe, otherwise false. </returns>
+    public bool PackageConditionsMet(Dictionary<string, string> pythonEnvironmentVariables)
+    {
+        var conditionalRegex = new Regex(@"(and|or)?\s*(\S+)\s*(<=|>=|<|>|===|==|!=|~=)\s*['""]?([^'""]+)['""]?", RegexOptions.Compiled);
+        var conditionsMet = true;
+        foreach (var conditional in this.ConditionalDependencySpecifiers)
+        {
+            var conditionMet = true;
+            var conditionalMatch = conditionalRegex.Match(conditional);
+            var conditionalJoinOperator = conditionalMatch.Groups[1].Value;
+            var conditionalVar = conditionalMatch.Groups[2].Value;
+            var conditionalOperator = conditionalMatch.Groups[3].Value;
+            var conditionalValue = conditionalMatch.Groups[4].Value;
+            if (!pythonEnvironmentVariables.ContainsKey(conditionalVar))
+            {
+                continue; // If the variable isn't in the environment, we can't evaluate it.
+            }
+
+            var pythonVersion = PythonVersion.Create(conditionalValue);
+            if (pythonVersion.Valid)
+            {
+                var conditionalSpec = $"{conditionalOperator}{conditionalValue}";
+                conditionMet = PythonVersionUtilities.VersionValidForSpec(pythonEnvironmentVariables[conditionalVar], new List<string> { conditionalSpec });
+            }
+            else
+            {
+                conditionMet = pythonEnvironmentVariables[conditionalVar] == conditionalValue;
+            }
+
+            if (conditionalJoinOperator == "or")
+            {
+                conditionsMet = conditionsMet || conditionMet;
+            }
+            else if (conditionalJoinOperator == "and" || string.IsNullOrEmpty(conditionalJoinOperator))
+            {
+                conditionsMet = conditionsMet && conditionMet;
+            }
+        }
+
+        return conditionsMet;
     }
 }

@@ -9,4 +9,6 @@ public interface IPythonCommandService
     Task<bool> PythonExistsAsync(string pythonPath = null);
 
     Task<IList<(string PackageString, GitComponent Component)>> ParseFileAsync(string path, string pythonPath = null);
+
+    Task<string> GetPythonVersionAsync(string pythonPath = null);
 }

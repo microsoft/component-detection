@@ -14,6 +14,7 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
 {
     private readonly IPyPiClient pypiClient;
     private readonly ILogger<PythonResolver> logger;
+    private readonly Dictionary<string, string> pythonEnvironmentVariables = new Dictionary<string, string>();
 
     private readonly int maxLicenseFieldLength = 100;
     private readonly string classifierFieldSeparator = " :: ";
@@ -84,7 +85,7 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
             var (root, currentNode) = state.ProcessingQueue.Dequeue();
 
             // gather all dependencies for the current node
-            var dependencies = (await this.FetchPackageDependenciesAsync(state, currentNode)).Where(x => !x.PackageIsUnsafe());
+            var dependencies = (await this.FetchPackageDependenciesAsync(state, currentNode)).Where(x => !x.PackageIsUnsafe()).Where(x => x.PackageConditionsMet(this.pythonEnvironmentVariables)).ToList();
 
             foreach (var dependencyNode in dependencies)
             {
@@ -229,5 +230,15 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
         }
 
         return null;
+    }
+
+    public void SetPythonEnvironmentVariable(string key, string value)
+    {
+        this.pythonEnvironmentVariables[key] = value;
+    }
+
+    public Dictionary<string, string> GetPythonEnvironmentVariables()
+    {
+        return this.pythonEnvironmentVariables;
     }
 }
