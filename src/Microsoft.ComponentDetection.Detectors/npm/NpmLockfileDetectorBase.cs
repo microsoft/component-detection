@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System;
 using System.Collections.Generic;
@@ -176,6 +176,7 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
             var packageJsonToken = JToken.ReadFrom(reader);
             var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
             enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, skipValidation: skipValidation);
+            enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["optionalDependencies"], dependencyLookup, skipValidation: skipValidation);
             if (!enqueued)
             {
                 // This represents a mismatch between lock file and package.json, break out and do not register anything for these files
