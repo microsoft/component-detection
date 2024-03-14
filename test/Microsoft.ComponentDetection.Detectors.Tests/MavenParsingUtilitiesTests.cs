@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using FluentAssertions;
@@ -79,10 +79,16 @@ public class MavenParsingUtilitiesTests
     }
 
     [TestMethod]
-    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_InvalidScope()
+    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_InvalidScopeIsEvaluatedAsCompile()
     {
-        var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:invalidScope"));
-        ex.Message.Contains("invalid scope", StringComparison.OrdinalIgnoreCase).Should().BeTrue();
+        var componentAndMetaData =
+           GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:invalidScope");
+
+        componentAndMetaData.Should().NotBeNull();
+        componentAndMetaData.DependencyScope.Should().NotBeNull();
+
+        var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
+        actualComponent.Should().BeOfType<MavenComponent>();
+        componentAndMetaData.DependencyScope.Should().Be(DependencyScope.MavenCompile);
     }
 }
