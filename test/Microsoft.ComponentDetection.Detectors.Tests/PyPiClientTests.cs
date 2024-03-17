@@ -49,6 +49,29 @@ public class PyPiClientTests
     }
 
     [TestMethod]
+    public async Task GetProject_SupportsReleaseCandidatesDependenciesAsync()
+    {
+        const string version = "1.0.0rc4";
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { $"=={version}" } };
+
+        var pythonProject = new PythonProject
+        {
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
+            {
+                { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
+                { version, new List<PythonProjectRelease> { new PythonProjectRelease() } },
+            },
+        };
+
+        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
+
+        var result = await this.pypiClient.GetProjectAsync(pythonSpecs);
+        result.Releases.Should().ContainSingle();
+        result.Releases.Keys.First().Should().Be(version);
+    }
+
+    [TestMethod]
     public async Task GetReleases_DuplicateEntries_CallsGetAsync_OnceAsync()
     {
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };

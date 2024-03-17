@@ -96,7 +96,9 @@ public class PythonCommandService : IPythonCommandService
     private IList<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
     {
         var items = new List<(string, GitComponent)>();
-        foreach (var line in File.ReadAllLines(path).Select(x => x.Trim().TrimEnd('\\')).Where(x => !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))
+        foreach (var line in File.ReadAllLines(path)
+                .Select(x => x.Trim().TrimEnd('\\'))
+                .Where(x => !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))
         {
             // We technically shouldn't be ignoring information after the ;
             // It's used to indicate environment markers like specific python versions

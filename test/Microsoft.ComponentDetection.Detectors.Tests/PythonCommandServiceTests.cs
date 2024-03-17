@@ -186,13 +186,14 @@ other=2.1";
             using (var writer = File.CreateText(testPath))
             {
                 await writer.WriteLineAsync("knack==0.4.1");
+                await writer.WriteLineAsync("numpy==1.22.0rc3");
                 await writer.WriteLineAsync("vsts-cli-common==0.1.3    \\      ");
                 await writer.WriteLineAsync("    --hash=sha256:856476331f3e26598017290fd65bebe81c960e806776f324093a46b76fb2d1c0");
                 await writer.FlushAsync();
             }
 
             var result = await service.ParseFileAsync(testPath);
-            var expected = new string[] { "knack==0.4.1", "vsts-cli-common==0.1.3" }.Select<string, (string, GitComponent)>(dep => (dep, null)).ToArray();
+            var expected = new string[] { "knack==0.4.1", "numpy==1.22.0rc3", "vsts-cli-common==0.1.3" }.Select<string, (string, GitComponent)>(dep => (dep, null)).ToArray();
 
             result.Should().HaveCount(expected.Length);
 

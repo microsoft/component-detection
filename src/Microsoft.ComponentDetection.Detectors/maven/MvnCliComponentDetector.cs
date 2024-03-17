@@ -36,7 +36,7 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Maven };
 
-    public override int Version => 2;
+    public override int Version => 3;
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
 
