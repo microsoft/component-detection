@@ -257,7 +257,7 @@ public class RustCliDetector : FileComponentDetector
                 if (!visitedDependencies.Contains(componentKey))
                 {
                     visitedDependencies.Add(componentKey);
-                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, shouldRegister ? detectedComponent : null, dep, packagesMetadata, visitedDependencies, isTomlRoot && explicitlyReferencedDependency);
+                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, shouldRegister ? detectedComponent : null, dep, packagesMetadata, visitedDependencies, explicitlyReferencedDependency: isTomlRoot && explicitlyReferencedDependency);
                 }
             }
         }
