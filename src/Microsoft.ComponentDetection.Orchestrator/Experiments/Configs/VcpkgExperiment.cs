@@ -14,5 +14,5 @@ public class VcpkgExperiment : IExperimentConfiguration
 
     public bool IsInExperimentGroup(IComponentDetector componentDetector) => componentDetector is VcpkgComponentDetector;
 
-    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) => numComponents > 0;
+    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) => true;
 }
