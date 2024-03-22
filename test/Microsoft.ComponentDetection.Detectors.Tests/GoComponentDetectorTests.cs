@@ -61,6 +61,29 @@ require (
     }
 
     [TestMethod]
+    public async Task TestGoModDetector_CommentsOnFile_CommentsAreIgnoredAsync()
+    {
+        var goMod =
+            @"module github.com/Azure/azure-storage-blob-go
+
+require (
+    // comment
+    github.com/kr/pretty v0.1.0 // indirect
+)";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.mod", goMod)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle("there is only one component definition on the file");
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "github.com/kr/pretty v0.1.0 - Go").Should().ContainSingle();
+    }
+
+    [TestMethod]
     public async Task TestGoSumDetectorWithValidFile_ReturnsSuccessfullyAsync()
     {
         var goSum =
