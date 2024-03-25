@@ -344,7 +344,7 @@ public class GoComponentDetector : FileComponentDetector
                 }
 
                 // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
-                // are listed in the require () section
+                // are listed in the replace () section
                 if (line.StartsWith("replace "))
                 {
                     this.ReplaceGoComponents(line[8..], singleFileComponentRecorder);
@@ -353,7 +353,7 @@ public class GoComponentDetector : FileComponentDetector
                 line = await reader.ReadLineAsync();
             }
 
-            // Stopping at the first ) restrict the detection to only the require section.
+            // Stopping at the first ) restrict the detection to only the replace section.
             while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(")"))
             {
                 this.ReplaceGoComponents(line, singleFileComponentRecorder);
