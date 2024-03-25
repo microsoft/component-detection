@@ -169,7 +169,6 @@ public class GoComponentDetector : FileComponentDetector
             if (!this.IsGoCliManuallyDisabled())
             {
                 wasGoCliScanSuccessful = await this.UseGoCliToScanAsync(file.Location, singleFileComponentRecorder, record);
-                wasGoCliScanSuccessful = false;
             }
             else
             {
