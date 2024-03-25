@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 using System;
 using System.Collections.Generic;
@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 public static class MavenParsingUtilities
 {
@@ -18,23 +19,23 @@ public static class MavenParsingUtilities
         { "runtime", DependencyScope.MavenRuntime },
     };
 
-    public static (DetectedComponent Component, bool? IsDevelopmentDependency, DependencyScope? DependencyScope) GenerateDetectedComponentAndMetadataFromMavenString(string key)
+    public static (DetectedComponent Component, bool? IsDevelopmentDependency, DependencyScope? DependencyScope) GenerateDetectedComponentAndMetadataFromMavenString(string key, ILogger logger = null)
     {
-        var (component, isDevDependency, dependencyScope) = GetMavenComponentAndIsDevDependencyAndScope(key);
+        var (component, isDevDependency, dependencyScope) = GetMavenComponentAndIsDevDependencyAndScope(key, logger);
 
         var detectedComponent = new DetectedComponent(component);
 
         return (detectedComponent, isDevDependency, dependencyScope);
     }
 
-    private static (MavenComponent Component, bool? IsDevDependency, DependencyScope? DependencyScope) GetMavenComponentAndIsDevDependencyAndScope(string componentString)
+    private static (MavenComponent Component, bool? IsDevDependency, DependencyScope? DependencyScope) GetMavenComponentAndIsDevDependencyAndScope(string componentString, ILogger logger = null)
     {
-        var (groupId, artifactId, version, isDevelopmentDependency, dependencyScope) = GetMavenComponentStringInfo(componentString);
+        var (groupId, artifactId, version, isDevelopmentDependency, dependencyScope) = GetMavenComponentStringInfo(componentString, logger);
         return (new MavenComponent(groupId, artifactId, version), isDevelopmentDependency, dependencyScope);
     }
 
     private static (string GroupId, string ArtifactId, string Version, bool? IsDevelopmentDependency, DependencyScope DependencyScope)
-        GetMavenComponentStringInfo(string mavenComponentString)
+        GetMavenComponentStringInfo(string mavenComponentString, ILogger logger = null)
     {
         var results = mavenComponentString.Split(':');
         if (results.Length > 6 || results.Length < 4)
@@ -61,10 +62,16 @@ public static class MavenParsingUtilities
                 Regex.Match(results[4], @"^([\w]+)").Value,
                 out dependencyScope)
                 ? dependencyScope
-                : throw new InvalidOperationException($"Invalid scope ('{results[4]}') found for '{mavenComponentString}' found in generated dependency graph.");
+                : HandleUnknownDependencyScope(results[4], mavenComponentString, logger);
             isDevDependency = dependencyScope == DependencyScope.MavenTest;
         }
 
         return (groupId, artifactId, version, isDevDependency, dependencyScope);
+    }
+
+    private static DependencyScope HandleUnknownDependencyScope(string invalidScope, string mavenComponentString, ILogger logger = null)
+    {
+        logger?.LogInformation("Invalid scope ('{InvalidScope}') found for '{MavenComponentString}' in generated dependency graph. Replacing it with 'Compile' scope.", invalidScope, mavenComponentString);
+        return DependencyScope.MavenCompile;
     }
 }

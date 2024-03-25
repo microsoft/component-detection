@@ -260,6 +260,12 @@ public class GoComponentDetector : FileComponentDetector
 
     private void CreateListOfGoComponents(string line, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
+        if (line.Trim().StartsWith("//"))
+        {
+            // this is a comment line, ignore it
+            return;
+        }
+
         if (this.TryToCreateGoComponentFromModLine(line, out var goComponent))
         {
             this.GoComponents.Add(goComponent);
