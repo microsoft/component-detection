@@ -19,7 +19,7 @@ using Tomlyn;
 /// <summary>
 /// A Rust CLI detector that uses the cargo metadata command to detect Rust components.
 /// </summary>
-public class RustCliDetector : FileComponentDetector, IExperimentalDetector
+public class RustCliDetector : FileComponentDetector
 {
     ////  PkgName[ Version][ (Source)]
     private static readonly Regex DependencyFormatRegex = new Regex(
@@ -133,7 +133,7 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
                             if (!visitedDependencies.Contains(componentKey))
                             {
                                 visitedDependencies.Add(componentKey);
-                                this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, dep.Id, null, null, packages, visitedDependencies, explicitlyReferencedDependency: true, isTomlRoot: true);
+                                this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, dep.Id, null, null, packages, visitedDependencies, explicitlyReferencedDependency: false);
                             }
                         }
                     }
@@ -252,11 +252,12 @@ public class RustCliDetector : FileComponentDetector, IExperimentalDetector
 
             foreach (var dep in node.Deps)
             {
-                var componentKey = $"{detectedComponent.Component.Id}{dep.Pkg}";
+                // include isTomlRoot to ensure that the roots present in the toml are marked as such in circular dependency cases
+                var componentKey = $"{detectedComponent.Component.Id}{dep.Pkg} {isTomlRoot}";
                 if (!visitedDependencies.Contains(componentKey))
                 {
                     visitedDependencies.Add(componentKey);
-                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, shouldRegister ? detectedComponent : null, dep, packagesMetadata, visitedDependencies, parent == null);
+                    this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, shouldRegister ? detectedComponent : null, dep, packagesMetadata, visitedDependencies, explicitlyReferencedDependency: isTomlRoot && explicitlyReferencedDependency);
                 }
             }
         }

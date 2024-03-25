@@ -209,7 +209,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
             {
                 var parsedVersion = PythonVersion.Create(release.Key);
                 if (release.Value != null && release.Value.Count > 0 &&
-                    parsedVersion.Valid && parsedVersion.IsReleasedPackage &&
+                    parsedVersion.Valid &&
                     PythonVersionUtilities.VersionValidForSpec(release.Key, spec.DependencySpecifiers))
                 {
                     versions.Releases[release.Key] = release.Value;
