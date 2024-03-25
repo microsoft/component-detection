@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging;
 using MoreLinq;
 using Newtonsoft.Json;
 
-public class GoComponentWithReplaceDetector : FileComponentDetector
+public class GoComponentWithReplaceDetector : FileComponentDetector, IExperimentalDetector
 {
     private static readonly Regex GoSumRegex = new(
         @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
