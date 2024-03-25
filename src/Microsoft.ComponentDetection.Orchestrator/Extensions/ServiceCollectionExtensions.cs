@@ -79,6 +79,7 @@ public static class ServiceCollectionExtensions
 
         // Go
         services.AddSingleton<IComponentDetector, GoComponentDetector>();
+        services.AddSingleton<IComponentDetector, GoComponentWithReplaceDetector>();
 
         // Gradle
         services.AddSingleton<IComponentDetector, GradleComponentDetector>();
