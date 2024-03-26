@@ -42,14 +42,19 @@ public class VcpkgComponent : TypedComponent
     {
         get
         {
+            var componentLocationPrefix = string.Empty;
+            if (!string.IsNullOrWhiteSpace(this.DownloadLocation) && !this.DownloadLocation.Trim().Equals("NONE", System.StringComparison.InvariantCultureIgnoreCase))
+            {
+                componentLocationPrefix = $"{this.DownloadLocation} : ";
+            }
+
+            var componentPortVersionSuffix = " ";
             if (this.PortVersion > 0)
             {
-                return $"{this.Name} {this.Version}#{this.PortVersion} - {this.Type}";
+                componentPortVersionSuffix = $"#{this.PortVersion} ";
             }
-            else
-            {
-                return $"{this.Name} {this.Version} - {this.Type}";
-            }
+
+            return $"{componentLocationPrefix}{this.Name} {this.Version}{componentPortVersionSuffix}- {this.Type}";
         }
     }
 
