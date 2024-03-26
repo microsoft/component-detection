@@ -79,6 +79,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         }
 
         components.Should().ContainSingle();
+        sbomComponent.Id.Should().Be("git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json : nlohmann-json 3.10.4#5 - Vcpkg");
         sbomComponent.Name.Should().Be("nlohmann-json");
         sbomComponent.Version.Should().Be("3.10.4");
         sbomComponent.PortVersion.Should().Be(5);
@@ -134,12 +135,14 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         components.Should().HaveCount(2);
         var sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c?.Component).SPDXID.Equals("SPDXRef-binary")).Component;
         sbomComponent.Should().NotBeNull();
+        sbomComponent.Id.Should().Be("tinyxml2:x64-linux 5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0 - Vcpkg");
         sbomComponent.Name.Should().Be("tinyxml2:x64-linux");
         sbomComponent.Version.Should().Be("5c7679507def92c5c71df44aec08a90a5c749f7f805b3f0e8e70f5e8a5b1b8d0");
         sbomComponent.SPDXID.Should().Be("SPDXRef-binary");
         sbomComponent.DownloadLocation.Should().Be("NONE");
 
         sbomComponent = (VcpkgComponent)components.FirstOrDefault(c => ((VcpkgComponent)c.Component).SPDXID.Equals("SPDXRef-resource-1")).Component;
+        sbomComponent.Id.Should().Be("git+https://github.com/leethomason/tinyxml2 : leethomason/tinyxml2 9.0.0 - Vcpkg");
         sbomComponent.Name.Should().Be("leethomason/tinyxml2");
         sbomComponent.Version.Should().Be("9.0.0");
         sbomComponent.SPDXID.Should().Be("SPDXRef-resource-1");
