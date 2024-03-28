@@ -442,7 +442,15 @@ public class GoComponentDetector : FileComponentDetector
                 continue;
             }
 
-            var goComponent = new GoComponent(dependency.Path, dependency.Version);
+            GoComponent goComponent;
+            if (dependency.Replace != null)
+            {
+                goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
+            }
+            else
+            {
+                goComponent = new GoComponent(dependency.Path, dependency.Version);
+            }
 
             if (dependency.Indirect)
             {
@@ -482,5 +490,7 @@ public class GoComponentDetector : FileComponentDetector
         public string Version { get; set; }
 
         public bool Indirect { get; set; }
+
+        public GoBuildModule Replace { get; set; }
     }
 }
