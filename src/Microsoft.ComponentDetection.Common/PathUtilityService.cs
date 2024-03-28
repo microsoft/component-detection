@@ -75,4 +75,7 @@ public class PathUtilityService : IPathUtilityService
     }
 
     private string ResolvePathFromInfo(FileSystemInfo info) => info.LinkTarget ?? info.FullName;
+
+    public string NormalizePath(string path) =>
+        path?.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
 }
