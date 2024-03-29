@@ -442,15 +442,7 @@ public class GoComponentDetector : FileComponentDetector
                 continue;
             }
 
-            GoComponent goComponent;
-            if (dependency.Replace != null)
-            {
-                goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
-            }
-            else
-            {
-                goComponent = new GoComponent(dependency.Path, dependency.Version);
-            }
+            var goComponent = new GoComponent(dependency.Path, dependency.Version);
 
             if (dependency.Indirect)
             {
