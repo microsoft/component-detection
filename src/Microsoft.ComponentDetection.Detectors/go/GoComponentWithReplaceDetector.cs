@@ -33,7 +33,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         IEnvironmentVariableService envVarService,
-        ILogger<GoComponentDetector> logger)
+        ILogger<GoComponentWithReplaceDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -313,56 +313,50 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         GoGraphTelemetryRecord goGraphTelemetryRecord)
     {
         using var reader = new StreamReader(file.Stream);
+        var inRequireBlock = false;
+        var inReplaceBlock = false;
 
         // There can be multiple require( ) sections in go 1.17+. loop over all of them.
         while (!reader.EndOfStream)
         {
             var line = await reader.ReadLineAsync();
-
-            while (line != null && !line.StartsWith("require ("))
+            if (line.StartsWith("require ("))
             {
-                if (line.StartsWith("go "))
-                {
-                    goGraphTelemetryRecord.GoModVersion = line[3..].Trim();
-                }
-
-                // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
-                // are listed in the require () section
-                if (line.StartsWith("require "))
-                {
-                    this.CreateListOfGoComponents(line[8..], singleFileComponentRecorder);
-                }
-
-                line = await reader.ReadLineAsync();
+                inRequireBlock = true;
+                continue;
+            }
+            else if (line.StartsWith("replace ("))
+            {
+                inReplaceBlock = true;
+                continue;
+            }
+            else if (line.StartsWith(")"))
+            {
+                inRequireBlock = false;
+                inReplaceBlock = false;
+                continue;
             }
 
-            // Stopping at the first ) restrict the detection to only the require section.
-            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(")"))
+            if (line.StartsWith("require "))
+            {
+                this.CreateListOfGoComponents(line[8..], singleFileComponentRecorder);
+            }
+            else if (line.StartsWith("replace "))
+            {
+                this.ReplaceGoComponents(line[8..], singleFileComponentRecorder);
+            }
+
+            if (inRequireBlock)
             {
                 this.CreateListOfGoComponents(line, singleFileComponentRecorder);
             }
-
-            while (line != null && !line.StartsWith("replace ("))
-            {
-                if (line.StartsWith("go "))
-                {
-                    goGraphTelemetryRecord.GoModVersion = line[3..].Trim();
-                }
-
-                // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
-                // are listed in the replace () section
-                if (line.StartsWith("replace "))
-                {
-                    this.ReplaceGoComponents(line[8..], singleFileComponentRecorder);
-                }
-
-                line = await reader.ReadLineAsync();
-            }
-
-            // Stopping at the first ) restrict the detection to only the replace section.
-            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(")"))
+            else if (inReplaceBlock)
             {
                 this.ReplaceGoComponents(line, singleFileComponentRecorder);
+            }
+            else if (line.StartsWith("go "))
+            {
+                goGraphTelemetryRecord.GoModVersion = line[3..].Trim();
             }
         }
 
@@ -516,7 +510,15 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
                 continue;
             }
 
-            var goComponent = new GoComponent(dependency.Path, dependency.Version);
+            GoComponent goComponent;
+            if (dependency.Replace != null)
+            {
+                goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
+            }
+            else
+            {
+                goComponent = new GoComponent(dependency.Path, dependency.Version);
+            }
 
             if (dependency.Indirect)
             {
@@ -556,5 +558,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         public string Version { get; set; }
 
         public bool Indirect { get; set; }
+
+        public GoBuildModule Replace { get; set; }
     }
 }
