@@ -482,7 +482,5 @@ public class GoComponentDetector : FileComponentDetector
         public string Version { get; set; }
 
         public bool Indirect { get; set; }
-
-        public GoBuildModule Replace { get; set; }
     }
 }
