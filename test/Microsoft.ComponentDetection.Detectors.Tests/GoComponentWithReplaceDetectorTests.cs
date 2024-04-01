@@ -348,6 +348,34 @@ replace (
     }
 
     [TestMethod]
+    public async Task TestGoModDetector_SkipsGoSumFilesWithReplaceAsync()
+    {
+        var goMod =
+            @"module contoso.com/greetings
+go 1.18
+
+require github.com/go-sql-driver/mysql v1.7.1 // indirect
+replace github.com/go-sql-driver/mysql => github.com/go-sql-driver/mysql v1.7.3";
+
+        var goSum =
+            @"github.com/go-sql-driver/mysql v1.7.1 h1:lUIinVbN1DY0xBg0eMOzmmtGoHwWBbvnWubQUrtU8EI=
+github.com/go-sql-driver/mysql v1.7.1/go.mod h1:OXbVy3sEdcQ2Doequ6Z5BW6fXNQTmx+9S1MCJN5yJMI=
+github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.mod", goMod)
+            .WithFile("go.mod", goMod, new[] { "go.mod" })
+            .WithFile("go.sum", goSum)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+
+        var component = componentRecorder.GetDetectedComponents().First();
+        component.Component.Id.Should().Be("github.com/go-sql-driver/mysql v1.7.3 - Go");
+    }
+
+    [TestMethod]
     public async Task TestGoDetector_GoCommandNotFoundAsync()
     {
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))

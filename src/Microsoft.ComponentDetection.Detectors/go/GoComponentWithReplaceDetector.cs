@@ -320,28 +320,28 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         while (!reader.EndOfStream)
         {
             var line = await reader.ReadLineAsync();
-            if (line.StartsWith("require ("))
+            if (line != null && line.StartsWith("require ("))
             {
                 inRequireBlock = true;
                 continue;
             }
-            else if (line.StartsWith("replace ("))
+            else if (line != null && line.StartsWith("replace ("))
             {
                 inReplaceBlock = true;
                 continue;
             }
-            else if (line.StartsWith(")"))
+            else if (line != null && line.StartsWith(")"))
             {
                 inRequireBlock = false;
                 inReplaceBlock = false;
                 continue;
             }
 
-            if (line.StartsWith("require "))
+            if (line != null && line.StartsWith("require "))
             {
                 this.CreateListOfGoComponents(line[8..], singleFileComponentRecorder);
             }
-            else if (line.StartsWith("replace "))
+            else if (line != null && line.StartsWith("replace "))
             {
                 this.ReplaceGoComponents(line[8..], singleFileComponentRecorder);
             }
@@ -354,7 +354,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
             {
                 this.ReplaceGoComponents(line, singleFileComponentRecorder);
             }
-            else if (line.StartsWith("go "))
+            else if (line != null && line.StartsWith("go "))
             {
                 goGraphTelemetryRecord.GoModVersion = line[3..].Trim();
             }
