@@ -52,6 +52,6 @@
     <PackageVersion Include="Tomlyn.Signed" Version="0.17.0" />
     <PackageVersion Include="yamldotnet" Version="13.7.1" />
     <PackageVersion Include="Faker.net" Version="2.0.163" />
-    <PackageVersion Include="Valleysoft.DockerfileModel" Version="1.1.0" />
+    <PackageVersion Include="Valleysoft.DockerfileModel" Version="1.1.1" />
   </ItemGroup>
 </Project>
