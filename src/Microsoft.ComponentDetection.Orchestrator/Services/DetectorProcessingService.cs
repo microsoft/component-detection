@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNet.Globbing;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -217,20 +216,9 @@ public class DetectorProcessingService : IDetectorProcessingService
             };
         }
 
-        var minimatchers = new Dictionary<string, Glob>();
-
-        var globOptions = new GlobOptions()
-        {
-            Evaluation = new EvaluationOptions()
-            {
-                CaseInsensitive = ignoreCase,
-            },
-        };
-
-        foreach (var directoryExclusion in directoryExclusionList)
-        {
-            minimatchers.Add(directoryExclusion, Glob.Parse(allowWindowsPaths ? directoryExclusion : /* [] escapes special chars */ directoryExclusion.Replace("\\", "[\\]"), globOptions));
-        }
+        var minimatchers = directoryExclusionList.ToDictionary(
+            directoryExclusion => directoryExclusion,
+            directoryExclusion => new Minimatch(directoryExclusion, ignoreCase, allowWindowsPaths));
 
         return (name, directoryName) =>
         {
