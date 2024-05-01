@@ -185,7 +185,7 @@ public class ExperimentService : IExperimentService
             // process empty diffs as this means the experiment was successful.
             if (!experimentComponents.Any() && !controlComponents.Any())
             {
-                this.logger.LogWarning("Experiment {Experiment} has no components in either group, skipping processing", config.Name);
+                this.logger.LogInformation("Experiment {Experiment} has no components in either group, skipping processing", config.Name);
                 continue;
             }
 
