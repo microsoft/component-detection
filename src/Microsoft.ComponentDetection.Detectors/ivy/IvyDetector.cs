@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Ivy;
+namespace Microsoft.ComponentDetection.Detectors.Ivy;
 
 using System;
 using System.Collections.Generic;
@@ -125,7 +125,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
     {
         try
         {
-            var workingDirectory = Path.Combine(Path.GetTempPath(), "ComponentDetection_Ivy");
+            var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             this.Logger.LogDebug("Preparing temporary Ivy project in {WorkingDirectory}", workingDirectory);
             if (Directory.Exists(workingDirectory))
             {
