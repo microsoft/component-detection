@@ -13,6 +13,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 using Microsoft.Extensions.Logging;
+using MoreLinq.Extensions;
 using Newtonsoft.Json;
 using Tomlyn;
 
@@ -21,8 +22,11 @@ using Tomlyn;
 /// </summary>
 public class RustCliDetector : FileComponentDetector
 {
-    ////  PkgName[ Version][ (Source)]
-    private static readonly Regex DependencyFormatRegex = new Regex(
+    private static readonly Regex DependencyFormatRegexPkgId = new Regex(
+        @"^([^#@]+)?(?:[@#]?([^@]*))(?:@(.+))?$",
+        RegexOptions.Compiled);
+
+    private static readonly Regex DependencyFormatRegexCargoLock = new Regex(
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
 
@@ -33,22 +37,27 @@ public class RustCliDetector : FileComponentDetector
 
     private readonly ICommandLineInvocationService cliService;
 
+    private readonly IEnvironmentVariableService envVarService;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="RustCliDetector"/> class.
     /// </summary>
     /// <param name="componentStreamEnumerableFactory">The component stream enumerable factory.</param>
     /// <param name="walkerFactory">The walker factory.</param>
     /// <param name="cliService">The command line invocation service.</param>
+    /// <param name="envVarService">The environment variable reader service.</param>
     /// <param name="logger">The logger.</param>
     public RustCliDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService cliService,
+        IEnvironmentVariableService envVarService,
         ILogger<RustCliDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.cliService = cliService;
+        this.envVarService = envVarService;
         this.Logger = logger;
     }
 
@@ -77,7 +86,14 @@ public class RustCliDetector : FileComponentDetector
 
         try
         {
-            if (!await this.cliService.CanCommandBeLocatedAsync("cargo", null))
+            if (this.IsRustCliManuallyDisabled())
+            {
+                this.Logger.LogWarning("Rust Cli has been manually disabled, fallback strategy performed.");
+                record.DidRustCliCommandFail = false;
+                record.WasRustFallbackStrategyUsed = true;
+                record.FallbackReason = "Manually Disabled";
+            }
+            else if (!await this.cliService.CanCommandBeLocatedAsync("cargo", null))
             {
                 this.Logger.LogWarning("Could not locate cargo command. Skipping Rust CLI detection");
                 record.DidRustCliCommandFail = true;
@@ -187,9 +203,71 @@ public class RustCliDetector : FileComponentDetector
         return true;
     }
 
-    private static bool ParseDependency(string dependency, out string packageName, out string version, out string source)
+    private static bool ParseDependencyMetadata(string dependency, out string packageName, out string version, out string source)
     {
-        var match = DependencyFormatRegex.Match(dependency);
+        // There are a few different formats for pkgids: https://doc.rust-lang.org/cargo/commands/cargo-pkgid.html#description
+        // 1. name => packageName
+        // 2. name@version packageName@1.0.4
+        // 3. url => https://github.com/rust-lang/cargo
+        // 4. url#version => https://github.com/rust-lang/cargo#0.33.0
+        // 5. url#name => https://github.com/rust-lang/crates.io-index#packageName
+        // 6. url#name@version => https://github.com/rust-lang/cargo#crates-io@0.21.0
+        var match = DependencyFormatRegexPkgId.Match(dependency);
+        packageName = null;
+        version = null;
+        source = null;
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var firstGroup = match.Groups[1];
+        var secondGroup = match.Groups[2];
+        var thirdGroup = match.Groups[3];
+
+        // cases 3-6
+        if (Uri.IsWellFormedUriString(dependency, UriKind.Absolute))
+        {
+            // in this case, first group is guaranteed to be the source.
+            // packageName is also set here for case 3
+            source = firstGroup.Success ? firstGroup.Value : null;
+            packageName = source;
+
+            // if there is a third group, then the second must be packageName, third is version.
+            if (thirdGroup.Success)
+            {
+                packageName = secondGroup.Value;
+                version = thirdGroup.Value;
+            }
+
+            // if there is no third group, but there is a second, the second group could be either the name or the version, check if the value starts with a number (not allowed)
+            else if (secondGroup.Success)
+            {
+                var nameOrVersion = secondGroup.Value;
+                if (char.IsDigit(nameOrVersion[0]))
+                {
+                    version = nameOrVersion;
+                }
+                else
+                {
+                    packageName = nameOrVersion;
+                }
+            }
+        }
+
+        // cases 1 and 2
+        else
+        {
+            packageName = firstGroup.Success ? firstGroup.Value : null;
+            version = secondGroup.Success ? secondGroup.Value : null;
+        }
+
+        return match.Success;
+    }
+
+    private static bool ParseDependencyCargoLock(string dependency, out string packageName, out string version, out string source)
+    {
+        var match = DependencyFormatRegexCargoLock.Match(dependency);
         var packageNameMatch = match.Groups["packageName"];
         var versionMatch = match.Groups["version"];
         var sourceMatch = match.Groups["source"];
@@ -204,6 +282,11 @@ public class RustCliDetector : FileComponentDetector
         }
 
         return match.Success;
+    }
+
+    private bool IsRustCliManuallyDisabled()
+    {
+        return this.envVarService.IsEnvironmentVariableValueTrue("DisableRustCliScan");
     }
 
     private void TraverseAndRecordComponents(
@@ -221,7 +304,8 @@ public class RustCliDetector : FileComponentDetector
         try
         {
             var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
-            if (!ParseDependency(id, out var name, out var version, out var source))
+
+            if (!ParseDependencyMetadata(id, out var name, out var version, out var source))
             {
                 // Could not parse the dependency string
                 this.Logger.LogWarning("Failed to parse dependency '{Id}'", id);
@@ -298,7 +382,7 @@ public class RustCliDetector : FileComponentDetector
         var cargoLockFileStream = this.FindCorrespondingCargoLock(cargoTomlFile, singleFileComponentRecorder);
         if (cargoLockFileStream == null)
         {
-            this.Logger.LogWarning("Could not find Cargo.lock file for {CargoTomlLocation}, skipping processing", cargoTomlFile.Location);
+            this.Logger.LogWarning("Fallback failed, could not find Cargo.lock file for {CargoTomlLocation}, skipping processing", cargoTomlFile.Location);
             record.FallbackCargoLockFound = false;
             return;
         }
@@ -402,7 +486,7 @@ public class RustCliDetector : FileComponentDetector
         try
         {
             // Extract the information from the dependency (name with optional version and source)
-            if (!ParseDependency(dependency, out var childName, out var childVersion, out var childSource))
+            if (!ParseDependencyCargoLock(dependency, out var childName, out var childVersion, out var childSource))
             {
                 // Could not parse the dependency string
                 throw new FormatException($"Failed to parse dependency '{dependency}'");
