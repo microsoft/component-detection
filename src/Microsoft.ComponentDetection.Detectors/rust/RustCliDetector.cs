@@ -71,7 +71,7 @@ public class RustCliDetector : FileComponentDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
 
     /// <inheritdoc />
-    public override int Version => 3;
+    public override int Version => 4;
 
     /// <inheritdoc />
     public override IList<string> SearchPatterns { get; } = new[] { "Cargo.toml" };
