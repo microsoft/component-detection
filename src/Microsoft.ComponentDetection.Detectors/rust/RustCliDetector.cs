@@ -212,6 +212,16 @@ public class RustCliDetector : FileComponentDetector
         // 4. url#version => https://github.com/rust-lang/cargo#0.33.0
         // 5. url#name => https://github.com/rust-lang/crates.io-index#packageName
         // 6. url#name@version => https://github.com/rust-lang/cargo#crates-io@0.21.0
+
+        // First, try parsing using the old format in cases where a version of rust older than 1.77 is being used.
+        if (ParseDependencyCargoLock(dependency, out packageName, out version, out source))
+        {
+            if (!(string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(version)))
+            {
+                return true;
+            }
+        }
+
         var match = DependencyFormatRegexPkgId.Match(dependency);
         packageName = null;
         version = null;
