@@ -1,4 +1,26 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator;
+﻿/*
+ This file (and parts of MinimatchTests.cs) is a port of
+ https://github.com/isaacs/minimatch/commit/cb4be48a55d64b3a40a745d4a8eb4d1b06507277
+
+ Original license:
+   The ISC License
+
+   Copyright (c) 2011-2023 Isaac Z. Schlueter and Contributors
+
+   Permission to use, copy, modify, and/or distribute this software for any
+   purpose with or without fee is hereby granted, provided that the above
+   copyright notice and this permission notice appear in all copies.
+
+   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+   WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+   MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+   ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+   IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+namespace Microsoft.ComponentDetection.Orchestrator;
 
 using System;
 using System.Collections.Generic;
@@ -20,14 +42,14 @@ public class Minimatch
 
     // characters that need to be escaped in RegExp.
     private static readonly HashSet<char> ReSpecials = new("().*{}+?[]^$\\!".ToCharArray());
-    private static readonly Regex SlashSplit = new("/+");
+    private static readonly Regex SlashSplit = new("/+", RegexOptions.Compiled);
 
-    private static readonly Regex HasBraces = new(@"\{.*\}");
-    private static readonly Regex NumericSet = new(@"^\{(-?[0-9]+)\.\.(-?[0-9]+)\}");
+    private static readonly Regex HasBraces = new(@"\{.*\}", RegexOptions.Compiled);
+    private static readonly Regex NumericSet = new(@"^\{(-?[0-9]+)\.\.(-?[0-9]+)\}", RegexOptions.Compiled);
 
     // replace stuff like \* with *
-    private static readonly Regex GlobUnescaper = new(@"\\(.)");
-    private static readonly Regex EscapeCheck = new(@"((?:\\{2})*)(\\?)\|");
+    private static readonly Regex GlobUnescaper = new(@"\\(.)", RegexOptions.Compiled);
+    private static readonly Regex EscapeCheck = new(@"((?:\\{2})*)(\\?)\|", RegexOptions.Compiled);
 
     private readonly bool ignoreCase;
     private readonly bool isWindows;
@@ -194,7 +216,6 @@ public class Minimatch
             // actually no sets, all { were escaped.
             if (prefix == null)
             {
-                // console.error("no sets")
                 return new[] { pattern };
             }
 
@@ -298,7 +319,6 @@ public class Minimatch
         // and need to escape the leading brace
         if (depth != 0)
         {
-            // console.error("didn't close", pattern)
             return BraceExpand("\\" + pattern);
         }
 
@@ -786,8 +806,7 @@ public class Minimatch
             return emptyFileEnd;
         }
 
-        // should be unreachable.
-        throw new InvalidOperationException("wtf?");
+        throw new InvalidOperationException("This shouldn't happen unless there is a logic bug.");
     }
 
     private abstract class ParseItem
