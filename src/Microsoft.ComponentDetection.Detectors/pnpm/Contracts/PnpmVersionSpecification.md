@@ -1,15 +1,22 @@
 # Pnpm Version format specification
 
-This is a summary of some conversations with the Pnpm community about how the version is formatted for pnpm packages:
+[Offical documentation for the lock file formats used by pnpm](https://github.com/pnpm/spec/tree/master/lockfile).
+
+Below is a summary of some conversations with the Pnpm community about how the version is formatted for pnpm packages:
 
 A dependency defined in package.json as:
 ```
 jquery: 1.0.0
 ```
-is going to be represented in the lock files of pnpm as:
+is going to be represented in the version 5 lock files of pnpm as:
 ```
 /jquery/1.0.0
 ```
+and in version 6 lock files of pnpm as:
+```
+/jquery@1.0.0
+```
+
 
 This nomenclature is known for the pnpm community as the package path, and is normally found as the package definition in the section Packages of the lock files (pnpm-lock.yml and shrinkwrap.yml).
 Normally most of the packages has this structure but there others situations like [peer dependencies](https://pnpm.js.org/en/how-peers-are-resolved), where the path format can change to represent the peer dependency combination, for example:
@@ -97,4 +104,3 @@ or
 /foo/1.0.0_bar@1.0.0
 /foo/1.0.0_bar@1.0.1
 ```
-

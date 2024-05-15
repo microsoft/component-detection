@@ -64,6 +64,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, VcpkgExperiment>();
         services.AddSingleton<IExperimentConfiguration, GoDetectorReplaceExperiment>();
+        services.AddSingleton<IExperimentConfiguration, Pnpm6Experiment>();
 
         // Detectors
         // CocoaPods
@@ -118,6 +119,7 @@ public static class ServiceCollectionExtensions
 
         // pnpm
         services.AddSingleton<IComponentDetector, PnpmComponentDetector>();
+        services.AddSingleton<IComponentDetector, Pnpm6ComponentDetector>();
 
         // Poetry
         services.AddSingleton<IComponentDetector, PoetryComponentDetector>();
