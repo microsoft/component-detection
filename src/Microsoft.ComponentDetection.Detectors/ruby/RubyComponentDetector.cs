@@ -50,7 +50,6 @@ public class RubyComponentDetector : FileComponentDetector
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
-        this.NeedsAutomaticRootDependencyCalculation = true;
         this.Logger = logger;
     }
 
@@ -70,6 +69,8 @@ public class RubyComponentDetector : FileComponentDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.RubyGems };
 
     public override int Version { get; } = 3;
+
+    public override bool NeedsAutomaticRootDependencyCalculation => true;
 
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {

@@ -19,7 +19,6 @@ public class PnpmComponentDetector : FileComponentDetector
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
-        this.NeedsAutomaticRootDependencyCalculation = true;
         this.Logger = logger;
     }
 
@@ -32,6 +31,8 @@ public class PnpmComponentDetector : FileComponentDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
     public override int Version { get; } = 5;
+
+    public override bool NeedsAutomaticRootDependencyCalculation => true;
 
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
@@ -81,7 +82,7 @@ public class PnpmComponentDetector : FileComponentDetector
 
     private void RecordDependencyGraphFromFileV5(PnpmYamlV5 yaml, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
-        foreach (var packageKeyValue in yaml.packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
+        foreach (var packageKeyValue in yaml.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
         {
             // Ignore file: as these are local packages.
             if (packageKeyValue.Key.StartsWith("file:"))
@@ -94,9 +95,9 @@ public class PnpmComponentDetector : FileComponentDetector
             singleFileComponentRecorder.RegisterUsage(parentDetectedComponent, isDevelopmentDependency: isDevDependency);
             parentDetectedComponent = singleFileComponentRecorder.GetComponent(parentDetectedComponent.Component.Id);
 
-            if (packageKeyValue.Value.dependencies != null)
+            if (packageKeyValue.Value.Dependencies != null)
             {
-                foreach (var dependency in packageKeyValue.Value.dependencies)
+                foreach (var dependency in packageKeyValue.Value.Dependencies)
                 {
                     // Ignore local packages.
                     if (PnpmParsingUtilities.IsLocalDependency(dependency))

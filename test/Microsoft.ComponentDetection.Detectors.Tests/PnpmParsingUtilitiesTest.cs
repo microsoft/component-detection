@@ -40,19 +40,19 @@ shrinkwrapVersion: 3";
         version.Should().BeNull(); // Versions older than 5 report null as they don't use the same version field.
         var parsedYaml = PnpmParsingUtilities.DeserializePnpmYamlV5File(yamlFile);
 
-        parsedYaml.packages.Should().HaveCount(2);
-        parsedYaml.packages.Should().ContainKey("/query-string/4.3.4");
-        parsedYaml.packages.Should().ContainKey("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
+        parsedYaml.Packages.Should().HaveCount(2);
+        parsedYaml.Packages.Should().ContainKey("/query-string/4.3.4");
+        parsedYaml.Packages.Should().ContainKey("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
 
-        var queryStringPackage = parsedYaml.packages["/query-string/4.3.4"];
-        queryStringPackage.dependencies.Should().ContainSingle();
-        queryStringPackage.dependencies.Should().ContainKey("@ms/items-view");
-        queryStringPackage.dependencies["@ms/items-view"].Should().BeEquivalentTo("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
-        queryStringPackage.dev.Should().BeEquivalentTo("false");
+        var queryStringPackage = parsedYaml.Packages["/query-string/4.3.4"];
+        queryStringPackage.Dependencies.Should().ContainSingle();
+        queryStringPackage.Dependencies.Should().ContainKey("@ms/items-view");
+        queryStringPackage.Dependencies["@ms/items-view"].Should().BeEquivalentTo("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
+        queryStringPackage.Dev.Should().BeEquivalentTo("false");
 
-        var itemViewPackage = parsedYaml.packages["/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2"];
-        itemViewPackage.dependencies.Should().BeNull();
-        itemViewPackage.dev.Should().BeEquivalentTo("true");
+        var itemViewPackage = parsedYaml.Packages["/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2"];
+        itemViewPackage.Dependencies.Should().BeNull();
+        itemViewPackage.Dev.Should().BeEquivalentTo("true");
     }
 
     [TestMethod]
@@ -82,24 +82,24 @@ shrinkwrapVersion: 3";
     {
         var pnpmPackage = new Package
         {
-            dev = "true",
+            Dev = "true",
         };
 
         PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeTrue();
 
-        pnpmPackage.dev = "TRUE";
+        pnpmPackage.Dev = "TRUE";
         PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeTrue();
 
-        pnpmPackage.dev = "false";
+        pnpmPackage.Dev = "false";
         PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
 
-        pnpmPackage.dev = "FALSE";
+        pnpmPackage.Dev = "FALSE";
         PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
 
-        pnpmPackage.dev = string.Empty;
+        pnpmPackage.Dev = string.Empty;
         PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
 
-        pnpmPackage.dev = null;
+        pnpmPackage.Dev = null;
         PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
 
         Action action = () => PnpmParsingUtilities.IsPnpmPackageDevDependency(null);
@@ -128,15 +128,15 @@ packages:
         version.Should().Be("6.0");
         var parsedYaml = PnpmParsingUtilities.DeserializePnpmYamlV6File(yamlFile);
 
-        parsedYaml.packages.Should().ContainSingle();
-        parsedYaml.packages.Should().ContainKey("/minimist@1.2.8");
+        parsedYaml.Packages.Should().ContainSingle();
+        parsedYaml.Packages.Should().ContainKey("/minimist@1.2.8");
 
-        var package = parsedYaml.packages["/minimist@1.2.8"];
-        package.dependencies.Should().BeNull();
+        var package = parsedYaml.Packages["/minimist@1.2.8"];
+        package.Dependencies.Should().BeNull();
 
-        parsedYaml.dependencies.Should().ContainSingle();
-        parsedYaml.dependencies.Should().ContainKey("minimist");
-        parsedYaml.dependencies["minimist"].version.Should().BeEquivalentTo("1.2.8");
+        parsedYaml.Dependencies.Should().ContainSingle();
+        parsedYaml.Dependencies.Should().ContainKey("minimist");
+        parsedYaml.Dependencies["minimist"].Version.Should().BeEquivalentTo("1.2.8");
     }
 
     [TestMethod]

@@ -19,7 +19,6 @@ public class Pnpm6ComponentDetector : FileComponentDetector, IExperimentalDetect
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
-        this.NeedsAutomaticRootDependencyCalculation = true;
         this.Logger = logger;
     }
 
@@ -32,6 +31,8 @@ public class Pnpm6ComponentDetector : FileComponentDetector, IExperimentalDetect
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
     public override int Version { get; } = 1;
+
+    public override bool NeedsAutomaticRootDependencyCalculation => true;
 
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
@@ -83,7 +84,7 @@ public class Pnpm6ComponentDetector : FileComponentDetector, IExperimentalDetect
 
         // Create a component for every package referenced in the lock file.
         // This includes all directly and transitively referenced dependencies.
-        foreach (var (pnpmDependencyPath, package) in yaml.packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
+        foreach (var (pnpmDependencyPath, package) in yaml.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
         {
             // Ignore "file:" as these are local packages.
             // Such local packages should only be referenced at the top level (via ProcessDependencyList) which also skips them or from other local packages (which this skips).
@@ -106,7 +107,7 @@ public class Pnpm6ComponentDetector : FileComponentDetector, IExperimentalDetect
         // Now that the `components` dictionary is populated, make a second pass registering all the dependency edges in the graph.
         foreach (var (_, (component, package)) in components)
         {
-            foreach (var (name, version) in package.dependencies ?? Enumerable.Empty<KeyValuePair<string, string>>())
+            foreach (var (name, version) in package.Dependencies ?? Enumerable.Empty<KeyValuePair<string, string>>())
             {
                 var pnpmDependencyPath = PnpmParsingUtilities.ReconstructPnpmDependencyPathV6(name, version);
 
@@ -123,7 +124,7 @@ public class Pnpm6ComponentDetector : FileComponentDetector, IExperimentalDetect
         this.ProcessDependencySet(singleFileComponentRecorder, components, yaml);
 
         // "shared shrinkwrap" (workspace / mono-repos) case:
-        foreach (var (_, package) in yaml.importers ?? Enumerable.Empty<KeyValuePair<string, PnpmHasDependenciesV6>>())
+        foreach (var (_, package) in yaml.Importers ?? Enumerable.Empty<KeyValuePair<string, PnpmHasDependenciesV6>>())
         {
             this.ProcessDependencySet(singleFileComponentRecorder, components, package);
         }
@@ -131,9 +132,9 @@ public class Pnpm6ComponentDetector : FileComponentDetector, IExperimentalDetect
 
     private void ProcessDependencySet(ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, (DetectedComponent C, Package P)> components, PnpmHasDependenciesV6 item)
     {
-        this.ProcessDependencyList(singleFileComponentRecorder, components, item.dependencies);
-        this.ProcessDependencyList(singleFileComponentRecorder, components, item.devDependencies);
-        this.ProcessDependencyList(singleFileComponentRecorder, components, item.optionalDependencies);
+        this.ProcessDependencyList(singleFileComponentRecorder, components, item.Dependencies);
+        this.ProcessDependencyList(singleFileComponentRecorder, components, item.DevDependencies);
+        this.ProcessDependencyList(singleFileComponentRecorder, components, item.OptionalDependencies);
     }
 
     private void ProcessDependencyList(ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, (DetectedComponent C, Package P)> components, Dictionary<string, PnpmYamlV6Dependency> dependencies)
@@ -141,12 +142,12 @@ public class Pnpm6ComponentDetector : FileComponentDetector, IExperimentalDetect
         foreach (var (name, dep) in dependencies ?? Enumerable.Empty<KeyValuePair<string, PnpmYamlV6Dependency>>())
         {
             // Ignore "file:" and "link:" as these are local packages.
-            if (dep.version.StartsWith("link:") | dep.version.StartsWith("file:"))
+            if (dep.Version.StartsWith("link:") || dep.Version.StartsWith("file:"))
             {
                 continue;
             }
 
-            var pnpmDependencyPath = PnpmParsingUtilities.ReconstructPnpmDependencyPathV6(name, dep.version);
+            var pnpmDependencyPath = PnpmParsingUtilities.ReconstructPnpmDependencyPathV6(name, dep.Version);
             var (component, package) = components[pnpmDependencyPath];
 
             // Determine isDevelopmentDependency using metadata on package from pnpm rather than from which dependency list this package is under.

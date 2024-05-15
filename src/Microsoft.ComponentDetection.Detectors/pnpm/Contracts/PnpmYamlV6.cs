@@ -1,8 +1,8 @@
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System.Collections.Generic;
+using YamlDotNet.Serialization;
 
-#pragma warning disable SA1300 // Used for deserialization and the process is case sensitive
 /// <summary>
 /// Format for a Pnpm lock file version 6 as defined in https://github.com/pnpm/spec/blob/master/lockfile/6.0.md.
 ///
@@ -12,10 +12,12 @@ using System.Collections.Generic;
 /// </summary>
 public class PnpmYamlV6 : PnpmHasDependenciesV6
 {
-    public Dictionary<string, PnpmHasDependenciesV6> importers { get; set; }
+    [YamlMember(Alias = "importers")]
+    public Dictionary<string, PnpmHasDependenciesV6> Importers { get; set; }
 
-    public Dictionary<string, Package> packages { get; set; }
+    [YamlMember(Alias = "packages")]
+    public Dictionary<string, Package> Packages { get; set; }
 
-    public string lockfileVersion { get; set; }
+    [YamlMember(Alias = "lockfileVersion")]
+    public string LockfileVersion { get; set; }
 }
-#pragma warning restore SA1300

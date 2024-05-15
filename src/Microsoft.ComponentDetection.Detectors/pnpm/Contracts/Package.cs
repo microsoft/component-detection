@@ -1,23 +1,27 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Pnpm;
+namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System.Collections.Generic;
+using YamlDotNet.Serialization;
 
-#pragma warning disable SA1300 // Used for deserialization and the process is case sensitive
 public class Package
 {
-    public Dictionary<string, string> dependencies { get; set; }
+    [YamlMember(Alias = "dependencies")]
+    public Dictionary<string, string> Dependencies { get; set; }
 
-    public string dev { get; set; }
+    [YamlMember(Alias = "dev")]
+    public string Dev { get; set; }
 
-    public string name { get; set; }
+    [YamlMember(Alias = "name")]
+    public string Name { get; set; }
 
-    public Dictionary<string, string> resolution { get; set; }
+    [YamlMember(Alias = "resolution")]
+    public Dictionary<string, string> Resolution { get; set; }
 
-    public string version { get; set; }
+    [YamlMember(Alias = "version")]
+    public string Version { get; set; }
 
     public override string ToString()
     {
-        return this.name;
+        return this.Name;
     }
 }
-#pragma warning restore SA1300

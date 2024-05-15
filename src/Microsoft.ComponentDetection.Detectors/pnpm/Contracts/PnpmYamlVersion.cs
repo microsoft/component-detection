@@ -1,8 +1,9 @@
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
-#pragma warning disable SA1300 // Used for deserialization and the process is case sensitive
+using YamlDotNet.Serialization;
+
 public class PnpmYamlVersion
 {
-    public string lockfileVersion { get; set; }
+    [YamlMember(Alias = "lockfileVersion")]
+    public string LockfileVersion { get; set; }
 }
-#pragma warning restore SA1300

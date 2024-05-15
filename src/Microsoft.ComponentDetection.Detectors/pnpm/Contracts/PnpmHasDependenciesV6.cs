@@ -1,14 +1,16 @@
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System.Collections.Generic;
+using YamlDotNet.Serialization;
 
-#pragma warning disable SA1300 // Used for deserialization and the process is case sensitive
 public class PnpmHasDependenciesV6
 {
-    public Dictionary<string, PnpmYamlV6Dependency> dependencies { get; set; }
+    [YamlMember(Alias = "dependencies")]
+    public Dictionary<string, PnpmYamlV6Dependency> Dependencies { get; set; }
 
-    public Dictionary<string, PnpmYamlV6Dependency> devDependencies { get; set; }
+    [YamlMember(Alias = "devDependencies")]
+    public Dictionary<string, PnpmYamlV6Dependency> DevDependencies { get; set; }
 
-    public Dictionary<string, PnpmYamlV6Dependency> optionalDependencies { get; set; }
+    [YamlMember(Alias = "optionalDependencies")]
+    public Dictionary<string, PnpmYamlV6Dependency> OptionalDependencies { get; set; }
 }
-#pragma warning restore SA1300

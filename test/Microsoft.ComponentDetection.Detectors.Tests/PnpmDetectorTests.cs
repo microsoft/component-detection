@@ -119,10 +119,7 @@ shrinkwrapVersion: 3";
             parentComponent => parentComponent.Name == "query-string-🙌" && parentComponent.Version == "4.3.4");
         componentRecorder.GetEffectiveDevDependencyValue(test.Component.Id).GetValueOrDefault(false).Should().BeTrue();
 
-        componentRecorder.ForAllComponents(grouping =>
-        {
-            grouping.AllFileLocations.First().Should().Contain("shrinkwrap1.yaml");
-        });
+        componentRecorder.ForAllComponents(grouping => grouping.AllFileLocations.First().Should().Contain("shrinkwrap1.yaml"));
 
         foreach (var component in detectedComponents)
         {
