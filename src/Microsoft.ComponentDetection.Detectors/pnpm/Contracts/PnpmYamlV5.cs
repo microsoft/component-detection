@@ -1,9 +1,12 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Pnpm;
+namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System.Collections.Generic;
 
 #pragma warning disable SA1300 // Used for deserialization and the process is case sensitive
-public class PnpmYaml
+/// <summary>
+/// Format for a Pnpm lock file version 5 as defined in https://github.com/pnpm/spec/blob/master/lockfile/5.md.
+/// </summary>
+public class PnpmYamlV5
 {
     public Dictionary<string, string> dependencies { get; set; }
 

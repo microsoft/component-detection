@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.Collections.Generic;
 using System.IO;
@@ -335,10 +335,10 @@ packages:
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Count().Should().Be(4);
 
-        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/query-string/4.3.4").Component.Id;
-        var objectAssignComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/object-assign/4.1.1").Component.Id;
-        var strictUriComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/strict-uri-encode/1.1.0").Component.Id;
-        var testComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/test/1.0.0").Component.Id;
+        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/query-string/4.3.4").Component.Id;
+        var objectAssignComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/object-assign/4.1.1").Component.Id;
+        var strictUriComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/strict-uri-encode/1.1.0").Component.Id;
+        var testComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/test/1.0.0").Component.Id;
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
@@ -383,8 +383,8 @@ packages:
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().HaveCount(2, "Components that comes from a file (file:* or link:*) should be ignored.");
 
-        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/query-string/4.3.4").Component.Id;
-        var nthcheck = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/nth-check/2.0.0").Component.Id;
+        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/query-string/4.3.4").Component.Id;
+        var nthcheck = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/nth-check/2.0.0").Component.Id;
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
@@ -394,5 +394,33 @@ packages:
 
         var nthCheckDependencies = dependencyGraph.GetDependenciesForComponent(nthcheck);
         nthCheckDependencies.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V5_BadLockVersion_EmptyAsync()
+    {
+        var yamlFile = @"
+lockfileVersion: '6.0'
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+dependencies:
+  renamed:
+    specifier: npm:minimist@*
+    version: /minimist@1.2.8
+packages:
+  /minimist@1.2.8:
+    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+    dev: false
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
     }
 }
