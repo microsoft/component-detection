@@ -13,6 +13,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 using Microsoft.Extensions.Logging;
+using MoreLinq.Extensions;
 using Newtonsoft.Json;
 using Tomlyn;
 
@@ -21,8 +22,7 @@ using Tomlyn;
 /// </summary>
 public class RustCliDetector : FileComponentDetector
 {
-    ////  PkgName[ Version][ (Source)]
-    private static readonly Regex DependencyFormatRegex = new Regex(
+    private static readonly Regex DependencyFormatRegexCargoLock = new Regex(
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
 
@@ -33,22 +33,27 @@ public class RustCliDetector : FileComponentDetector
 
     private readonly ICommandLineInvocationService cliService;
 
+    private readonly IEnvironmentVariableService envVarService;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="RustCliDetector"/> class.
     /// </summary>
     /// <param name="componentStreamEnumerableFactory">The component stream enumerable factory.</param>
     /// <param name="walkerFactory">The walker factory.</param>
     /// <param name="cliService">The command line invocation service.</param>
+    /// <param name="envVarService">The environment variable reader service.</param>
     /// <param name="logger">The logger.</param>
     public RustCliDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService cliService,
+        IEnvironmentVariableService envVarService,
         ILogger<RustCliDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.cliService = cliService;
+        this.envVarService = envVarService;
         this.Logger = logger;
     }
 
@@ -62,7 +67,7 @@ public class RustCliDetector : FileComponentDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
 
     /// <inheritdoc />
-    public override int Version => 3;
+    public override int Version => 4;
 
     /// <inheritdoc />
     public override IList<string> SearchPatterns { get; } = new[] { "Cargo.toml" };
@@ -77,7 +82,14 @@ public class RustCliDetector : FileComponentDetector
 
         try
         {
-            if (!await this.cliService.CanCommandBeLocatedAsync("cargo", null))
+            if (this.IsRustCliManuallyDisabled())
+            {
+                this.Logger.LogWarning("Rust Cli has been manually disabled, fallback strategy performed.");
+                record.DidRustCliCommandFail = false;
+                record.WasRustFallbackStrategyUsed = true;
+                record.FallbackReason = "Manually Disabled";
+            }
+            else if (!await this.cliService.CanCommandBeLocatedAsync("cargo", null))
             {
                 this.Logger.LogWarning("Could not locate cargo command. Skipping Rust CLI detection");
                 record.DidRustCliCommandFail = true;
@@ -112,10 +124,13 @@ public class RustCliDetector : FileComponentDetector
                     var graph = BuildGraph(metadata);
 
                     var packages = metadata.Packages.ToDictionary(
-                        x => $"{x.Name} {x.Version}",
-                        x => (
+                        x => $"{x.Id}",
+                        x => new CargoComponent(
+                            x.Name,
+                            x.Version,
                             (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || !x.Authors.Any()) ? null : string.Join(", ", x.Authors),
-                            string.IsNullOrWhiteSpace(x.License) ? null : x.License));
+                            string.IsNullOrWhiteSpace(x.License) ? null : x.License,
+                            x.Source));
 
                     var root = metadata.Resolve.Root;
                     HashSet<string> visitedDependencies = new();
@@ -187,9 +202,9 @@ public class RustCliDetector : FileComponentDetector
         return true;
     }
 
-    private static bool ParseDependency(string dependency, out string packageName, out string version, out string source)
+    private static bool ParseDependencyCargoLock(string dependency, out string packageName, out string version, out string source)
     {
-        var match = DependencyFormatRegex.Match(dependency);
+        var match = DependencyFormatRegexCargoLock.Match(dependency);
         var packageNameMatch = match.Groups["packageName"];
         var versionMatch = match.Groups["version"];
         var sourceMatch = match.Groups["source"];
@@ -206,6 +221,11 @@ public class RustCliDetector : FileComponentDetector
         return match.Success;
     }
 
+    private bool IsRustCliManuallyDisabled()
+    {
+        return this.envVarService.IsEnvironmentVariableValueTrue("DisableRustCliScan");
+    }
+
     private void TraverseAndRecordComponents(
         ISingleFileComponentRecorder recorder,
         string location,
@@ -213,7 +233,7 @@ public class RustCliDetector : FileComponentDetector
         string id,
         DetectedComponent parent,
         Dep depInfo,
-        IReadOnlyDictionary<string, (string Authors, string License)> packagesMetadata,
+        IReadOnlyDictionary<string, CargoComponent> packagesMetadata,
         ISet<string> visitedDependencies,
         bool explicitlyReferencedDependency = false,
         bool isTomlRoot = false)
@@ -221,18 +241,15 @@ public class RustCliDetector : FileComponentDetector
         try
         {
             var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
-            if (!ParseDependency(id, out var name, out var version, out var source))
+
+            if (!packagesMetadata.TryGetValue($"{id}", out var cargoComponent))
             {
                 // Could not parse the dependency string
-                this.Logger.LogWarning("Failed to parse dependency '{Id}'", id);
+                this.Logger.LogWarning("Did not find dependency '{Id}' in Manifest.packages, skipping", id);
                 return;
             }
 
-            var (authors, license) = packagesMetadata.TryGetValue($"{name} {version}", out var package)
-                ? package
-                : (null, null);
-
-            var detectedComponent = new DetectedComponent(new CargoComponent(name, version, authors, license));
+            var detectedComponent = new DetectedComponent(cargoComponent);
 
             if (!graph.TryGetValue(id, out var node))
             {
@@ -240,7 +257,7 @@ public class RustCliDetector : FileComponentDetector
                 return;
             }
 
-            var shouldRegister = !isTomlRoot && !source.StartsWith("path+file");
+            var shouldRegister = !isTomlRoot && cargoComponent.Source != null;
             if (shouldRegister)
             {
                 recorder.RegisterUsage(
@@ -298,7 +315,7 @@ public class RustCliDetector : FileComponentDetector
         var cargoLockFileStream = this.FindCorrespondingCargoLock(cargoTomlFile, singleFileComponentRecorder);
         if (cargoLockFileStream == null)
         {
-            this.Logger.LogWarning("Could not find Cargo.lock file for {CargoTomlLocation}, skipping processing", cargoTomlFile.Location);
+            this.Logger.LogWarning("Fallback failed, could not find Cargo.lock file for {CargoTomlLocation}, skipping processing", cargoTomlFile.Location);
             record.FallbackCargoLockFound = false;
             return;
         }
@@ -402,7 +419,7 @@ public class RustCliDetector : FileComponentDetector
         try
         {
             // Extract the information from the dependency (name with optional version and source)
-            if (!ParseDependency(dependency, out var childName, out var childVersion, out var childSource))
+            if (!ParseDependencyCargoLock(dependency, out var childName, out var childVersion, out var childSource))
             {
                 // Could not parse the dependency string
                 throw new FormatException($"Failed to parse dependency '{dependency}'");

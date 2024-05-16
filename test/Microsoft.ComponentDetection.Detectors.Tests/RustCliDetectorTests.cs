@@ -504,15 +504,20 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
 }";
 
     private Mock<ICommandLineInvocationService> mockCliService;
+
+    private Mock<IEnvironmentVariableService> mockEnvVarService;
+
     private Mock<IComponentStreamEnumerableFactory> mockComponentStreamEnumerableFactory;
 
     [TestInitialize]
-    public void InitCliMock()
+    public void InitMocks()
     {
         this.mockCliService = new Mock<ICommandLineInvocationService>();
         this.DetectorTestUtility.AddServiceMock(this.mockCliService);
         this.mockComponentStreamEnumerableFactory = new Mock<IComponentStreamEnumerableFactory>();
         this.DetectorTestUtility.AddServiceMock(this.mockComponentStreamEnumerableFactory);
+        this.mockEnvVarService = new Mock<IEnvironmentVariableService>();
+        this.DetectorTestUtility.AddServiceMock(this.mockEnvVarService);
     }
 
     [TestMethod]
@@ -546,6 +551,80 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task RustCliDetector_RespectsFallBackVariableAsync()
+    {
+        var testCargoLockString = @"
+[[package]]
+name = ""my_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+  ""same_package 1.0.0""
+]
+
+[[package]]
+name = ""other_dependency""
+version = ""0.4.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+ ""other_dependency_dependency"",
+]
+
+[[package]]
+name = ""other_dependency_dependency""
+version = ""0.1.12-alpha.6""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+
+[[package]]
+name = ""my_dev_dependency""
+version = ""1.0.0""
+source = ""registry+https://github.com/rust-lang/crates.io-index""
+dependencies = [
+ ""other_dependency_dependency 0.1.12-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)"",
+ ""dev_dependency_dependency 0.2.23 (registry+https://github.com/rust-lang/crates.io-index)"",
+]";
+        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("cargo", It.IsAny<IEnumerable<string>>())).ReturnsAsync(true);
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string[]>()))
+            .Throws(new InvalidOperationException());
+        this.mockEnvVarService
+                    .Setup(x => x.IsEnvironmentVariableValueTrue("DisableRustCliScan"))
+                    .Returns(true);
+        using var stream = new MemoryStream();
+        using var writer = new StreamWriter(stream);
+        await writer.WriteAsync(testCargoLockString);
+        await writer.FlushAsync();
+        stream.Position = 0;
+        this.mockComponentStreamEnumerableFactory.Setup(x => x.GetComponentStreams(It.IsAny<DirectoryInfo>(), new List<string> { "Cargo.lock" }, It.IsAny<ExcludeDirectoryPredicate>(), false))
+            .Returns(new[] { new ComponentStream() { Location = "Cargo.toml", Stream = stream } });
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Cargo.toml", string.Empty)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(4);
+
+        componentRecorder
+            .GetDetectedComponents()
+            .Select(x => x.Component.Id)
+            .Should()
+            .BeEquivalentTo("other_dependency_dependency 0.1.12-alpha.6 - Cargo", "my_dev_dependency 1.0.0 - Cargo", "my_dependency 1.0.0 - Cargo", "other_dependency 0.4.0 - Cargo");
+
+        var components = componentRecorder.GetDetectedComponents();
+
+        foreach (var component in components)
+        {
+            if (component.Component is CargoComponent cargoComponent)
+            {
+                cargoComponent.Author.Should().Be(null);
+                cargoComponent.License.Should().Be(null);
+            }
+        }
+
+        return;
     }
 
     [TestMethod]
@@ -593,19 +672,19 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
 {
     ""packages"": [],
     ""workspace_members"": [
-        ""rust-test 0.1.0 (path+file:///home/justin/rust-test)""
+        ""path+file:///home/justin/rust-test#rust-test@0.1.0""
     ],
     ""resolve"": {
         ""nodes"": [
             {
-                ""id"": ""rust-test 0.1.0 (path+file:///home/justin/rust-test)"",
+                ""id"": ""path+file:///home/justin/rust-test#rust-test@0.1.0"",
                 ""dependencies"": [
-                    ""libc 0.2.147 (registry+https://github.com/rust-lang/crates.io-index)""
+                    ""registry+https://github.com/rust-lang/crates.io-index#libc@0.2.147""
                 ],
                 ""deps"": [
                     {
                         ""name"": ""libc"",
-                        ""pkg"": ""libc 0.2.147 (registry+https://github.com/rust-lang/crates.io-index)"",
+                        ""pkg"": ""registry+https://github.com/rust-lang/crates.io-index#libc@0.2.147"",
                         ""dep_kinds"": [
                             {
                                 ""kind"": null,
@@ -617,7 +696,7 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
                 ""features"": []
             }
         ],
-        ""root"": ""rust-test 0.1.0 (path+file:///home/justin/rust-test)""
+        ""root"": ""path+file:///home/justin/rust-test#rust-test@0.1.0""
     },
     ""target_directory"": ""/home/justin/rust-test/target"",
     ""version"": 1,
@@ -643,14 +722,14 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
 {
     ""packages"": [],
     ""workspace_members"": [
-        ""rust-test 0.1.0 (path+file:///home/justin/rust-test)""
+        ""path+file:///home/justin/rust-test#rust-test@0.1.0""
     ],
     ""resolve"": {
         ""nodes"": [
             {
-                ""id"": ""rust-test 0.1.0 (path+file:///home/justin/rust-test)"",
+                ""id"": ""path+file:///home/justin/rust-test#rust-test@0.1.0"",
                 ""dependencies"": [
-                    ""libc 0.2.147 (registry+https://github.com/rust-lang/crates.io-index)""
+                    ""registry+https://github.com/rust-lang/crates.io-index#libc@0.2.147""
                 ],
                 ""deps"": [
                     {
@@ -667,7 +746,7 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
                 ""features"": []
             }
         ],
-        ""root"": ""rust-test 0.1.0 (path+file:///home/justin/rust-test)""
+        ""root"": ""path+file:///home/justin/rust-test#rust-test@0.1.0""
     },
     ""target_directory"": ""/home/justin/rust-test/target"",
     ""version"": 1,
@@ -757,14 +836,13 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
     {
         var cargoMetadata = @"
 {
-    ""packages"": [],
     ""workspace_members"": [
-        ""rust-test 0.1.0 (path+file:///home/justin/rust-test)""
+        ""path+file:///home/justin/rust-test#rust-test@0.1.0""
     ],
     ""resolve"": {
         ""nodes"": [
             {
-                ""id"": ""libc 0.2.147 (registry+https://github.com/rust-lang/crates.io-index)"",
+                ""id"": ""registry+https://github.com/rust-lang/crates.io-index#libc@0.2.147"",
                 ""dependencies"": [],
                 ""deps"": [],
                 ""features"": [
@@ -773,14 +851,14 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
                 ]
             },
             {
-                ""id"": ""rust-test 0.1.0 (path+file:///home/justin/rust-test)"",
+                ""id"": ""path+file:///home/justin/rust-test#rust-test@0.1.0"",
                 ""dependencies"": [
-                    ""libc 0.2.147 (registry+https://github.com/rust-lang/crates.io-index)""
+                    ""registry+https://github.com/rust-lang/crates.io-index#libc@0.2.147""
                 ],
                 ""deps"": [
                     {
                         ""name"": ""libc"",
-                        ""pkg"": ""libc 0.2.147 (registry+https://github.com/rust-lang/crates.io-index)"",
+                        ""pkg"": ""registry+https://github.com/rust-lang/crates.io-index#libc@0.2.147"",
                         ""dep_kinds"": [
                             {
                                 ""kind"": null,
@@ -792,13 +870,13 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
                 ""features"": []
             }
         ],
-        ""root"": ""rust-test 0.1.0 (path+file:///home/justin/rust-test)""
+        ""root"": ""path+file:///home/justin/rust-test#rust-test@0.1.0""
     },
     ""packages"": [
     {
       ""name"": ""libc"",
       ""version"": ""0.2.147"",
-      ""id"": ""libc 0.2.147 (registry+https://github.com/rust-lang/crates.io-index)"",
+      ""id"": ""registry+https://github.com/rust-lang/crates.io-index#libc@0.2.147"",
       ""license"": """",
       ""license_file"": null,
       ""description"": """",
@@ -826,7 +904,7 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
     {
       ""name"": ""rust-test"",
       ""version"": ""0.1.0"",
-      ""id"": ""rust-test (registry+https://github.com/rust-lang/crates.io-index)"",
+      ""id"": ""path+file:///home/justin/rust-test#rust-test@0.1.0"",
       ""license"": """",
       ""license_file"": null,
       ""description"": ""A non-cryptographic hash function using AES-NI for high performance"",
