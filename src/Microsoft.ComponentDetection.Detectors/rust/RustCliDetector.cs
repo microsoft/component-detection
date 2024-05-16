@@ -22,10 +22,6 @@ using Tomlyn;
 /// </summary>
 public class RustCliDetector : FileComponentDetector
 {
-    private static readonly Regex DependencyFormatRegexPkgId = new Regex(
-        @"^([^#@]+)?(?:[@#]?([^@]*))(?:@(.+))?$",
-        RegexOptions.Compiled);
-
     private static readonly Regex DependencyFormatRegexCargoLock = new Regex(
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
@@ -128,10 +124,13 @@ public class RustCliDetector : FileComponentDetector
                     var graph = BuildGraph(metadata);
 
                     var packages = metadata.Packages.ToDictionary(
-                        x => $"{x.Name} {x.Version}",
-                        x => (
+                        x => $"{x.Id}",
+                        x => new CargoComponent(
+                            x.Name,
+                            x.Version,
                             (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || !x.Authors.Any()) ? null : string.Join(", ", x.Authors),
-                            string.IsNullOrWhiteSpace(x.License) ? null : x.License));
+                            string.IsNullOrWhiteSpace(x.License) ? null : x.License,
+                            x.Source));
 
                     var root = metadata.Resolve.Root;
                     HashSet<string> visitedDependencies = new();
@@ -203,78 +202,6 @@ public class RustCliDetector : FileComponentDetector
         return true;
     }
 
-    private static bool ParseDependencyMetadata(string dependency, out string packageName, out string version, out string source)
-    {
-        // There are a few different formats for pkgids: https://doc.rust-lang.org/cargo/commands/cargo-pkgid.html#description
-        // 1. name => packageName
-        // 2. name@version packageName@1.0.4
-        // 3. url => https://github.com/rust-lang/cargo
-        // 4. url#version => https://github.com/rust-lang/cargo#0.33.0
-        // 5. url#name => https://github.com/rust-lang/crates.io-index#packageName
-        // 6. url#name@version => https://github.com/rust-lang/cargo#crates-io@0.21.0
-
-        // First, try parsing using the old format in cases where a version of rust older than 1.77 is being used.
-        if (ParseDependencyCargoLock(dependency, out packageName, out version, out source))
-        {
-            if (!(string.IsNullOrEmpty(packageName) || string.IsNullOrEmpty(version)))
-            {
-                return true;
-            }
-        }
-
-        var match = DependencyFormatRegexPkgId.Match(dependency);
-        packageName = null;
-        version = null;
-        source = null;
-        if (!match.Success)
-        {
-            return false;
-        }
-
-        var firstGroup = match.Groups[1];
-        var secondGroup = match.Groups[2];
-        var thirdGroup = match.Groups[3];
-
-        // cases 3-6
-        if (Uri.IsWellFormedUriString(dependency, UriKind.Absolute))
-        {
-            // in this case, first group is guaranteed to be the source.
-            // packageName is also set here for case 3
-            source = firstGroup.Success ? firstGroup.Value : null;
-            packageName = source;
-
-            // if there is a third group, then the second must be packageName, third is version.
-            if (thirdGroup.Success)
-            {
-                packageName = secondGroup.Value;
-                version = thirdGroup.Value;
-            }
-
-            // if there is no third group, but there is a second, the second group could be either the name or the version, check if the value starts with a number (not allowed)
-            else if (secondGroup.Success)
-            {
-                var nameOrVersion = secondGroup.Value;
-                if (char.IsDigit(nameOrVersion[0]))
-                {
-                    version = nameOrVersion;
-                }
-                else
-                {
-                    packageName = nameOrVersion;
-                }
-            }
-        }
-
-        // cases 1 and 2
-        else
-        {
-            packageName = firstGroup.Success ? firstGroup.Value : null;
-            version = secondGroup.Success ? secondGroup.Value : null;
-        }
-
-        return match.Success;
-    }
-
     private static bool ParseDependencyCargoLock(string dependency, out string packageName, out string version, out string source)
     {
         var match = DependencyFormatRegexCargoLock.Match(dependency);
@@ -306,7 +233,7 @@ public class RustCliDetector : FileComponentDetector
         string id,
         DetectedComponent parent,
         Dep depInfo,
-        IReadOnlyDictionary<string, (string Authors, string License)> packagesMetadata,
+        IReadOnlyDictionary<string, CargoComponent> packagesMetadata,
         ISet<string> visitedDependencies,
         bool explicitlyReferencedDependency = false,
         bool isTomlRoot = false)
@@ -315,18 +242,14 @@ public class RustCliDetector : FileComponentDetector
         {
             var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
 
-            if (!ParseDependencyMetadata(id, out var name, out var version, out var source))
+            if (!packagesMetadata.TryGetValue($"{id}", out var cargoComponent))
             {
                 // Could not parse the dependency string
-                this.Logger.LogWarning("Failed to parse dependency '{Id}'", id);
+                this.Logger.LogWarning("Did not find dependency '{Id}' in Manifest.packages, skipping", id);
                 return;
             }
 
-            var (authors, license) = packagesMetadata.TryGetValue($"{name} {version}", out var package)
-                ? package
-                : (null, null);
-
-            var detectedComponent = new DetectedComponent(new CargoComponent(name, version, authors, license));
+            var detectedComponent = new DetectedComponent(cargoComponent);
 
             if (!graph.TryGetValue(id, out var node))
             {
@@ -334,7 +257,7 @@ public class RustCliDetector : FileComponentDetector
                 return;
             }
 
-            var shouldRegister = !isTomlRoot && !source.StartsWith("path+file");
+            var shouldRegister = !isTomlRoot && cargoComponent.Source != null;
             if (shouldRegister)
             {
                 recorder.RegisterUsage(

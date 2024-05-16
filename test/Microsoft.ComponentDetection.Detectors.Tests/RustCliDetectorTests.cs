@@ -193,180 +193,6 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
     ""metadata"": null
 }";
 
-    private readonly string mockMetadataV1pkgId = @"
-{
-    ""packages"": [
-        {
-            ""name"": ""registry-package-1"",
-            ""version"": ""1.0.1"",
-            ""id"": ""registry+https://test.com/registry-package-1#registry-package-1@1.0.1"",
-            ""license"": null,
-            ""license_file"": null,
-            ""description"": ""test registry package 1"",
-            ""source"": ""registry+https://test.com/registry-package-1"",
-            ""dependencies"": [
-                {
-                    ""name"": ""inner-dependency-1"",
-                    ""source"": ""registry+registry+https://test.com/inner-dependency-1"",
-                    ""req"": ""^0.3.0"",
-                    ""kind"": ""dev"",
-                    ""rename"": null,
-                    ""optional"": false,
-                    ""uses_default_features"": true,
-                    ""features"": [],
-                    ""target"": null,
-                    ""registry"": null
-                }
-            ]
-        },
-        {
-            ""name"": ""rust-test"",
-            ""version"": ""0.1.0"",
-            ""id"": ""path+file:///home/justin/rust-test#rust-test@0.1.0"",
-            ""license"": null,
-            ""license_file"": null,
-            ""description"": null,
-            ""source"": null,
-            ""dependencies"": [
-                {
-                    ""name"": ""registry-package-1"",
-                    ""source"": ""registry+https://test.com/registry-package-1#registry-package-1@1.0.1"",
-                    ""req"": ""^1.0.1"",
-                    ""kind"": null,
-                    ""rename"": null,
-                    ""optional"": false,
-                    ""uses_default_features"": true,
-                    ""features"": [],
-                    ""target"": null,
-                    ""registry"": null
-                },
-                {
-                    ""name"": ""rust-test-inner"",
-                    ""source"": ""(path+file:///C:/test/rust-test-inner)"",
-                    ""req"": ""*"",
-                    ""kind"": null,
-                    ""rename"": null,
-                    ""optional"": false,
-                    ""uses_default_features"": true,
-                    ""features"": [],
-                    ""target"": null,
-                    ""registry"": null,
-                    ""path"": ""C:\\test\\rust-test-inner""
-                },
-                {
-                    ""name"": ""dev-dependency-1"",
-                    ""source"": ""registry+https://test.com/dev-dependency-1"",
-                    ""req"": ""^0.4.0"",
-                    ""kind"": ""dev"",
-                    ""rename"": null,
-                    ""optional"": false,
-                    ""uses_default_features"": true,
-                    ""features"": [],
-                    ""target"": null,
-                    ""registry"": null
-                }
-            ]
-        },
-        {
-            ""name"": ""rust-test-inner"",
-            ""version"": ""0.1.0"",
-            ""id"": ""path+file:///C:/test/rust-test-inner#rust-test-inner@0.1.0"",
-            ""license"": null,
-            ""license_file"": null,
-            ""description"": null,
-            ""source"": null,
-            ""dependencies"": []
-        },
-        {
-            ""name"": ""dev-dependency-1"",
-            ""version"": ""0.4.0"",
-            ""id"": ""registry+https://test.com/dev-dependency-1#dev-dependency-1@0.4.0"",
-            ""license"": null,
-            ""license_file"": null,
-            ""description"": ""test dev dependency"",
-            ""source"": ""registry+https://github.com/rust-lang/crates.io-index"",
-            ""dependencies"": []
-        }
-    ],
-    ""workspace_members"": [
-        ""path+file:///C:/test#rust-test@0.1.0""
-    ],
-    ""workspace_default_members"": [
-        ""path+file:///C:/test#rust-test@0.1.0""
-    ],
-    ""resolve"": {
-        ""nodes"": [
-            {
-                ""id"": ""registry+https://test.com/registry-package-1#registry-package-1@1.0.1"",
-                ""dependencies"": [],
-                ""deps"": [],
-                ""features"": [
-                    ""default"",
-                    ""std""
-                ]
-            },
-            {
-                ""id"": ""path+file:///C:/test#rust-test@0.1.0"",
-                ""dependencies"": [
-                    ""registry+https://test.com/registry-package-1#registry-package-1@1.0.1"",
-                    ""path+file:///C:/test/rust-test-inner#rust-test-inner@0.1.0"",
-                    ""registry+https://test.com/dev-dependency-1#dev-dependency-1@0.4.0""
-                ],
-                ""deps"": [
-                    {
-                        ""name"": ""registry-package-1"",
-                        ""pkg"": ""registry+https://test.com/registry-package-1#registry-package-1@1.0.1"",
-                        ""dep_kinds"": [
-                            {
-                                ""kind"": null,
-                                ""target"": null
-                            }
-                        ]
-                    },
-                    {
-                        ""name"": ""cargo"",
-                        ""pkg"": ""path+file:///C:/test/rust-test-inner#rust-test-inner@0.1.0"",
-                        ""dep_kinds"": [
-                            {
-                                ""kind"": null,
-                                ""target"": null
-                            }
-                        ]
-                    },
-                    {
-                        ""name"": ""dev-dependency-1"",
-                        ""pkg"": ""registry+https://test.com/dev-dependency-1#dev-dependency-1@0.4.0"",
-                        ""dep_kinds"": [
-                            {
-                                ""kind"": ""dev"",
-                                ""target"": null
-                            }
-                        ]
-                    }
-                ],
-                ""features"": []
-            },
-            {
-                ""id"": ""path+file:///C:/test/rust-test-inner#rust-test-inner@0.1.0"",
-                ""dependencies"": [],
-                ""deps"": [],
-                ""features"": []
-            },
-            {
-                ""id"": ""registry+https://test.com/dev-dependency-1#dev-dependency-1@0.4.0"",
-                ""dependencies"": [],
-                ""deps"": [],
-                ""features"": []
-            }
-        ],
-        ""root"": ""path+file:///C:/test#rust-test@0.1.0""
-    },
-    ""target_directory"": ""C:\\test"",
-    ""version"": 1,
-    ""workspace_root"": ""C:\\test"",
-    ""metadata"": null
-}";
-
     private readonly string mockMetadataWithLicenses = @"
 {
     ""packages"": [
@@ -840,28 +666,6 @@ dependencies = [
     }
 
     [TestMethod]
-    public async Task RustCliDetector_RegistersCorrectRootDepsPkgIdAsync()
-    {
-        var cargoMetadata = this.mockMetadataV1pkgId;
-        this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("cargo", It.IsAny<IEnumerable<string>>())).ReturnsAsync(true);
-        this.mockCliService.Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string[]>()))
-            .ReturnsAsync(new CommandLineExecutionResult { StdOut = cargoMetadata });
-
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("Cargo.toml", string.Empty)
-            .ExecuteDetectorAsync();
-
-        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
-
-        componentRecorder
-            .GetDetectedComponents()
-            .Select(x => x.Component.Id)
-            .Should()
-            .BeEquivalentTo("registry-package-1 1.0.1 - Cargo", "dev-dependency-1 0.4.0 - Cargo");
-    }
-
-    [TestMethod]
     public async Task RustCliDetector_NotInGraphAsync()
     {
         var cargoMetadata = @"
@@ -1032,7 +836,6 @@ dependencies = [
     {
         var cargoMetadata = @"
 {
-    ""packages"": [],
     ""workspace_members"": [
         ""path+file:///home/justin/rust-test#rust-test@0.1.0""
     ],
@@ -1101,7 +904,7 @@ dependencies = [
     {
       ""name"": ""rust-test"",
       ""version"": ""0.1.0"",
-      ""id"": ""registry+https://github.com/rust-lang/crates.io-index#rust-test"",
+      ""id"": ""path+file:///home/justin/rust-test#rust-test@0.1.0"",
       ""license"": """",
       ""license_file"": null,
       ""description"": ""A non-cryptographic hash function using AES-NI for high performance"",
