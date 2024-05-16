@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -18,7 +19,6 @@ public class PnpmComponentDetector : FileComponentDetector
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
-        this.NeedsAutomaticRootDependencyCalculation = true;
         this.Logger = logger;
     }
 
@@ -31,6 +31,8 @@ public class PnpmComponentDetector : FileComponentDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
     public override int Version { get; } = 5;
+
+    public override bool NeedsAutomaticRootDependencyCalculation => true;
 
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
@@ -49,9 +51,28 @@ public class PnpmComponentDetector : FileComponentDetector
 
         try
         {
-            var pnpmYaml = await PnpmParsingUtilities.DeserializePnpmYamlFileAsync(file);
-            this.RecordLockfileVersion(pnpmYaml.lockfileVersion);
-            this.RecordDependencyGraphFromFile(pnpmYaml, singleFileComponentRecorder);
+            var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
+            var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(fileContent);
+            this.RecordLockfileVersion(version);
+            var majorVersion = version?.Split(".")[0];
+            switch (majorVersion)
+            {
+                case null:
+                // The null case falls through to version 5 to preserver the behavior of this scanner from before version specific logic was added.
+                // This allows files versioned with "shrinkwrapVersion" (such as one included in some of the tests) to be used.
+                // Given that "shrinkwrapVersion" is a concept from file format version 4 https://github.com/pnpm/spec/blob/master/lockfile/4.md)
+                // this case might not be robust.
+                case "5":
+                    var pnpmYamlV5 = PnpmParsingUtilities.DeserializePnpmYamlV5File(fileContent);
+                    this.RecordDependencyGraphFromFileV5(pnpmYamlV5, singleFileComponentRecorder);
+                    break;
+                case "6":
+                    // Handled in the experimental detector. No-op here.
+                    break;
+                default:
+                    this.Logger.LogWarning("Unsupported lockfileVersion in pnpm yaml file {File}", file.Location);
+                    break;
+            }
         }
         catch (Exception e)
         {
@@ -59,9 +80,9 @@ public class PnpmComponentDetector : FileComponentDetector
         }
     }
 
-    private void RecordDependencyGraphFromFile(PnpmYaml yaml, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private void RecordDependencyGraphFromFileV5(PnpmYamlV5 yaml, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
-        foreach (var packageKeyValue in yaml.packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
+        foreach (var packageKeyValue in yaml.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
         {
             // Ignore file: as these are local packages.
             if (packageKeyValue.Key.StartsWith("file:"))
@@ -69,22 +90,23 @@ public class PnpmComponentDetector : FileComponentDetector
                 continue;
             }
 
-            var parentDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: packageKeyValue.Key);
+            var parentDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5(pnpmPackagePath: packageKeyValue.Key);
             var isDevDependency = packageKeyValue.Value != null && PnpmParsingUtilities.IsPnpmPackageDevDependency(packageKeyValue.Value);
             singleFileComponentRecorder.RegisterUsage(parentDetectedComponent, isDevelopmentDependency: isDevDependency);
             parentDetectedComponent = singleFileComponentRecorder.GetComponent(parentDetectedComponent.Component.Id);
 
-            if (packageKeyValue.Value.dependencies != null)
+            if (packageKeyValue.Value.Dependencies != null)
             {
-                foreach (var dependency in packageKeyValue.Value.dependencies)
+                foreach (var dependency in packageKeyValue.Value.Dependencies)
                 {
                     // Ignore local packages.
-                    if (this.IsLocalDependency(dependency))
+                    if (PnpmParsingUtilities.IsLocalDependency(dependency))
                     {
                         continue;
                     }
 
-                    var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: this.CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
+                    var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5(
+                        pnpmPackagePath: PnpmParsingUtilities.CreatePnpmPackagePathFromDependencyV5(dependency.Key, dependency.Value));
 
                     // Older code used the root's dev dependency value. We're leaving this null until we do a second pass to look at each components' top level referrers.
                     singleFileComponentRecorder.RegisterUsage(childDetectedComponent, parentComponentId: parentDetectedComponent.Component.Id, isDevelopmentDependency: null);
@@ -102,17 +124,5 @@ public class PnpmComponentDetector : FileComponentDetector
                 singleFileComponentRecorder.RegisterUsage(component.Value, isDevelopmentDependency: graph.IsDevelopmentDependency(explicitReference));
             }
         }
-    }
-
-    private bool IsLocalDependency(KeyValuePair<string, string> dependency)
-    {
-        // Local dependencies are dependencies that live in the file system
-        // this requires an extra parsing that is not supported yet
-        return dependency.Key.StartsWith("file:") || dependency.Value.StartsWith("file:") || dependency.Value.StartsWith("link:");
-    }
-
-    private string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion)
-    {
-        return dependencyVersion.Contains('/') ? dependencyVersion : $"/{dependencyName}/{dependencyVersion}";
     }
 }
