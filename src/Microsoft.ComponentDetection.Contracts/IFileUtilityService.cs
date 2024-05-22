@@ -1,6 +1,7 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
+namespace Microsoft.ComponentDetection.Contracts;
 
 using System.IO;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Wraps some common file operations for easier testability. This interface is *only used by the command line driven app*.
@@ -20,6 +21,13 @@ public interface IFileUtilityService
     /// <param name="file">File to read.</param>
     /// <returns>Returns a string of the file contents.</returns>
     string ReadAllText(FileInfo file);
+
+    /// <summary>
+    /// Returns the contents of the file.
+    /// </summary>
+    /// <param name="file">File to read.</param>
+    /// <returns>Returns a string of the file contents.</returns>
+    Task<string> ReadAllTextAsync(FileInfo file);
 
     /// <summary>
     /// Returns true if the file exists.

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
+namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
 /// Wraps some common folder operations, shared across command line app and service.
@@ -34,4 +34,11 @@ public interface IPathUtilityService
     /// <param name="fileName">File name without directory.</param>
     /// <returns>Returns true if file name matches a pattern, otherwise false.</returns>
     bool MatchesPattern(string searchPattern, string fileName);
+
+    /// <summary>
+    /// Normalizes the path to the system based separator.
+    /// </summary>
+    /// <param name="path">the path.</param>
+    /// <returns>normalized path.</returns>
+    string NormalizePath(string path);
 }

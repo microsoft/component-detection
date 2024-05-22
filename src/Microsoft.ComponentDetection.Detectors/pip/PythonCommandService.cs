@@ -12,13 +12,19 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 public class PythonCommandService : IPythonCommandService
 {
     private readonly ICommandLineInvocationService commandLineInvocationService;
+    private readonly IPathUtilityService pathUtilityService;
 
     public PythonCommandService()
     {
     }
 
-    public PythonCommandService(ICommandLineInvocationService commandLineInvocationService) =>
+    public PythonCommandService(
+        ICommandLineInvocationService commandLineInvocationService,
+        IPathUtilityService pathUtilityService)
+    {
         this.commandLineInvocationService = commandLineInvocationService;
+        this.pathUtilityService = pathUtilityService;
+    }
 
     public async Task<bool> PythonExistsAsync(string pythonPath = null)
     {
@@ -57,9 +63,16 @@ public class PythonCommandService : IPythonCommandService
             throw new PythonNotFoundException();
         }
 
+        var formattedFilePath = this.pathUtilityService.NormalizePath(filePath);
+        var workingDir = this.pathUtilityService.GetParentDirectory(formattedFilePath);
+
         // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
         // We need to have python interpret this file because install_requires can be composed at runtime
-        var command = await this.commandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
+        var command = await this.commandLineInvocationService.ExecuteCommandAsync(
+            pythonExecutable,
+            null,
+            new DirectoryInfo(workingDir),
+            $"-c \"import distutils.core; setup=distutils.core.run_setup('{formattedFilePath}'); print(setup.install_requires)\"");
 
         if (command.ExitCode != 0)
         {
