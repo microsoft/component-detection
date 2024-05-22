@@ -309,11 +309,11 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         ComponentRecorderTestUtilities.CheckChild<PipComponent>(
             componentRecorder,
             "async-lru 2.0.4 - pip",
-            ["jupyterlab 4.2.0 - pip"]);
+            new[] { "jupyterlab 4.2.0 - pip" });
 
         ComponentRecorderTestUtilities.CheckChild<PipComponent>(
             componentRecorder,
             "tinycss2 1.3.0 - pip",
-            ["jupyterlab 4.2.0 - pip"]);
+            new[] { "jupyterlab 4.2.0 - pip" });
     }
 }
