@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Common;
 
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 
 /// <inheritdoc />
@@ -16,6 +17,12 @@ public class FileUtilityService : IFileUtilityService
     public string ReadAllText(FileInfo file)
     {
         return File.ReadAllText(file.FullName);
+    }
+
+    /// <inheritdoc />
+    public async Task<string> ReadAllTextAsync(FileInfo file)
+    {
+        return await File.ReadAllTextAsync(file.FullName);
     }
 
     /// <inheritdoc />

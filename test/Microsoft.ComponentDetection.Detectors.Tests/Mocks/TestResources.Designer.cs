@@ -10,8 +10,8 @@
 
 namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
     using System;
-
-
+    
+    
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
     /// </summary>
@@ -23,15 +23,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class TestResources {
-
+        
         private static global::System.Resources.ResourceManager resourceMan;
-
+        
         private static global::System.Globalization.CultureInfo resourceCulture;
-
+        
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal TestResources() {
         }
-
+        
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
@@ -45,7 +45,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return resourceMan;
             }
         }
-
+        
         /// <summary>
         ///   Overrides the current thread's CurrentUICulture property for all
         ///   resource lookups using this strongly typed resource class.
@@ -59,7 +59,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 resourceCulture = value;
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to integrationTestCompileClasspath - Compile classpath for source set &apos;integration test&apos;.
         ///+--- commons-io:commons-io:2.5
@@ -77,7 +77,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("GradlewDependencyOutput", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT
         ///+- org.apache.maven:maven-model:jar:3.6.1-SNAPSHOT:compile
@@ -94,7 +94,91 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("MvnCliDependencyOutput", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: &quot;1&quot;,
+        ///  &quot;pip_version&quot;: &quot;24.0&quot;,
+        ///  &quot;install&quot;: [
+        ///    {
+        ///      &quot;download_info&quot;: {
+        ///        &quot;url&quot;: &quot;https://files.pythonhosted.org/packages/72/c3/532326adbb2b76f709e3e582aeefd0a85bd7454599ff450d90dd9540f5ed/jupyterlab-4.2.0-py3-none-any.whl&quot;,
+        ///        &quot;archive_info&quot;: {
+        ///          &quot;hash&quot;: &quot;sha256=0dfe9278e25a145362289c555d9beb505697d269c10e99909766af7c440ad3cc&quot;,
+        ///          &quot;hashes&quot;: {
+        ///            &quot;sha256&quot;: &quot;0dfe9278e25a145362289c555d9beb505697d269c10e99909766af7c440ad3cc&quot;
+        ///          }
+        ///         [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string pip_report_jupyterlab {
+            get {
+                return ResourceManager.GetString("pip_report_jupyterlab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: &quot;1&quot;,
+        ///  &quot;pip_version&quot;: &quot;24.0&quot;,
+        ///  &quot;install&quot;: [
+        ///    {
+        ///      &quot;download_info&quot;: {
+        ///        &quot;url&quot;: &quot;https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl&quot;,
+        ///        &quot;archive_info&quot;: {
+        ///          &quot;hash&quot;: &quot;sha256=8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;,
+        ///          &quot;hashes&quot;: {
+        ///            &quot;sha256&quot;: &quot;8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;
+        ///          }
+        ///        }        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string pip_report_multi_pkg {
+            get {
+                return ResourceManager.GetString("pip_report_multi_pkg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: &quot;1&quot;,
+        ///  &quot;pip_version&quot;: &quot;24.0&quot;,
+        ///  &quot;install&quot;: [
+        ///    {
+        ///      &quot;download_info&quot;: {
+        ///        &quot;url&quot;: &quot;https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl&quot;,
+        ///        &quot;archive_info&quot;: {
+        ///          &quot;hash&quot;: &quot;sha256=8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;,
+        ///          &quot;hashes&quot;: {
+        ///            &quot;sha256&quot;: &quot;8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;
+        ///          }
+        ///        }        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string pip_report_single_pkg {
+            get {
+                return ResourceManager.GetString("pip_report_single_pkg", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: &quot;2&quot;,
+        ///  &quot;pip_version&quot;: &quot;24.0&quot;,
+        ///  &quot;install&quot;: [
+        ///    {
+        ///      &quot;download_info&quot;: {
+        ///        &quot;url&quot;: &quot;https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl&quot;,
+        ///        &quot;archive_info&quot;: {
+        ///          &quot;hash&quot;: &quot;sha256=8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;,
+        ///          &quot;hashes&quot;: {
+        ///            &quot;sha256&quot;: &quot;8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;
+        ///          }
+        ///        }        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string pip_report_single_pkg_bad_version {
+            get {
+                return ResourceManager.GetString("pip_report_single_pkg_bad_version", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to {
         ///	&quot;version&quot;: 3,
@@ -124,7 +208,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("project_assets_2_2", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to {
         ///	&quot;version&quot;: 3,
@@ -146,15 +230,14 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
         ///			&quot;lib/netstandard1.1/DotNet.Glob.dll&quot;: {}
         ///		  },
         ///		  &quot;runtime&quot;: {
-        ///			&quot;lib/netstandard1.1/DotNet.Glob.dll&quot;: {}
-        /// [rest of string was truncated]&quot;;.
+        ///			&quot;lib/netstandard1.1/DotNet.Glob.dll&quot;: {}        /// [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string project_assets_2_2_additional {
             get {
                 return ResourceManager.GetString("project_assets_2_2_additional", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to {
         ///    &quot;version&quot;: 3,

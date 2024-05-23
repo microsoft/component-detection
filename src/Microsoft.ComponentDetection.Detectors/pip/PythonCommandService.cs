@@ -8,17 +8,27 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
 
 public class PythonCommandService : IPythonCommandService
 {
     private readonly ICommandLineInvocationService commandLineInvocationService;
+    private readonly IPathUtilityService pathUtilityService;
+    private readonly ILogger<PythonCommandService> logger;
 
     public PythonCommandService()
     {
     }
 
-    public PythonCommandService(ICommandLineInvocationService commandLineInvocationService) =>
+    public PythonCommandService(
+        ICommandLineInvocationService commandLineInvocationService,
+        IPathUtilityService pathUtilityService,
+        ILogger<PythonCommandService> logger)
+    {
         this.commandLineInvocationService = commandLineInvocationService;
+        this.pathUtilityService = pathUtilityService;
+        this.logger = logger;
+    }
 
     public async Task<bool> PythonExistsAsync(string pythonPath = null)
     {
@@ -57,12 +67,20 @@ public class PythonCommandService : IPythonCommandService
             throw new PythonNotFoundException();
         }
 
+        var formattedFilePath = this.pathUtilityService.NormalizePath(filePath);
+        var workingDir = this.pathUtilityService.GetParentDirectory(formattedFilePath);
+
         // This calls out to python and prints out an array like: [ packageA, packageB, packageC ]
         // We need to have python interpret this file because install_requires can be composed at runtime
-        var command = await this.commandLineInvocationService.ExecuteCommandAsync(pythonExecutable, null, $"-c \"import distutils.core; setup=distutils.core.run_setup('{filePath.Replace('\\', '/')}'); print(setup.install_requires)\"");
+        var command = await this.commandLineInvocationService.ExecuteCommandAsync(
+            pythonExecutable,
+            null,
+            new DirectoryInfo(workingDir),
+            $"-c \"import distutils.core; setup=distutils.core.run_setup('{formattedFilePath}'); print(setup.install_requires)\"");
 
         if (command.ExitCode != 0)
         {
+            this.logger.LogDebug("Python: Failed distutils setup with error: {StdErr}", command.StdErr);
             return new List<string>();
         }
 

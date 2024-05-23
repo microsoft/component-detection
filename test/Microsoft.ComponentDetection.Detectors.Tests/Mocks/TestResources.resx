@@ -124,6 +124,18 @@
   <data name="MvnCliDependencyOutput" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>MvnCliDependencyOutput.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="pip_report_jupyterlab" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>pip_report_jupyterlab.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="pip_report_multi_pkg" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>pip_report_multi_pkg.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="pip_report_single_pkg" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>pip_report_single_pkg.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="pip_report_single_pkg_bad_version" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>pip_report_single_pkg_bad_version.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="project_assets_2_2" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\project_assets_2_2.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
   </data>

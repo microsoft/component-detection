@@ -14,7 +14,6 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
 
 [TestClass]
 public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
@@ -231,12 +230,12 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
                 x => x.Id == rootId);
         }
 
-        this.CheckChild(componentRecorder, "red 0.2 - pip", new[] { "a 1.0 - pip", "c 1.0 - pip", });
-        this.CheckChild(componentRecorder, "green 1.3 - pip", new[] { "b 2.1 - pip", });
-        this.CheckChild(componentRecorder, "blue 0.4 - pip", new[] { "c 1.0 - pip", });
-        this.CheckChild(componentRecorder, "cat 1.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
-        this.CheckChild(componentRecorder, "lion 3.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
-        this.CheckChild(componentRecorder, "dog 2.1 - pip", new[] { "c 1.0 - pip", });
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "red 0.2 - pip", new[] { "a 1.0 - pip", "c 1.0 - pip", });
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "green 1.3 - pip", new[] { "b 2.1 - pip", });
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "blue 0.4 - pip", new[] { "c 1.0 - pip", });
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "cat 1.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "lion 3.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "dog 2.1 - pip", new[] { "c 1.0 - pip", });
 
         var graphsByLocations = componentRecorder.GetDependencyGraphsByLocation();
         graphsByLocations.Should().HaveCount(2);
@@ -254,7 +253,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         var graph1 = graphsByLocations[file1];
         graph1ComponentsWithDeps.Keys.Take(2).All(graph1.IsComponentExplicitlyReferenced).Should().BeTrue();
         graph1ComponentsWithDeps.Keys.Skip(2).Should().OnlyContain(a => !graph1.IsComponentExplicitlyReferenced(a));
-        this.CheckGraphStructure(graph1, graph1ComponentsWithDeps);
+        ComponentRecorderTestUtilities.CheckGraphStructure(graph1, graph1ComponentsWithDeps);
 
         var graph2ComponentsWithDeps = new Dictionary<string, string[]>
         {
@@ -271,41 +270,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         var graph2 = graphsByLocations[file2];
         graph2ComponentsWithDeps.Keys.Take(3).All(graph2.IsComponentExplicitlyReferenced).Should().BeTrue();
         graph2ComponentsWithDeps.Keys.Skip(3).Should().OnlyContain(a => !graph2.IsComponentExplicitlyReferenced(a));
-        this.CheckGraphStructure(graph2, graph2ComponentsWithDeps);
-    }
-
-    private void CheckGraphStructure(IDependencyGraph graph, Dictionary<string, string[]> graphComponentsWithDeps)
-    {
-        var graphComponents = graph.GetComponents().ToArray();
-        graphComponents.Should().HaveCount(
-            graphComponentsWithDeps.Keys.Count,
-            $"Expected {graphComponentsWithDeps.Keys.Count} component to be recorded but got {graphComponents.Length} instead!");
-
-        foreach (var componentId in graphComponentsWithDeps.Keys)
-        {
-            graphComponents.Should().Contain(
-                componentId, $"Component `{componentId}` not recorded!");
-
-            var recordedDeps = graph.GetDependenciesForComponent(componentId).ToArray();
-            var expectedDeps = graphComponentsWithDeps[componentId];
-
-            recordedDeps.Should().HaveCount(
-                expectedDeps.Length,
-                $"Count missmatch of expected dependencies ({JsonConvert.SerializeObject(expectedDeps)}) and recorded dependencies ({JsonConvert.SerializeObject(recordedDeps)}) for `{componentId}`!");
-
-            foreach (var expectedDep in expectedDeps)
-            {
-                recordedDeps.Should().Contain(
-                    expectedDep, $"Expected `{expectedDep}` in the list of dependencies for `{componentId}` but only recorded: {JsonConvert.SerializeObject(recordedDeps)}");
-            }
-        }
-    }
-
-    private void CheckChild(IComponentRecorder recorder, string childId, string[] parentIds)
-    {
-        recorder.AssertAllExplicitlyReferencedComponents<PipComponent>(
-            childId,
-            parentIds.Select(parentId => new Func<PipComponent, bool>(x => x.Id == parentId)).ToArray());
+        ComponentRecorderTestUtilities.CheckGraphStructure(graph2, graph2ComponentsWithDeps);
     }
 
     private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)

@@ -65,6 +65,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, VcpkgExperiment>();
         services.AddSingleton<IExperimentConfiguration, GoDetectorReplaceExperiment>();
         services.AddSingleton<IExperimentConfiguration, Pnpm6Experiment>();
+        services.AddSingleton<IExperimentConfiguration, PipReportExperiment>();
 
         // Detectors
         // CocoaPods
@@ -116,6 +117,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISimplePythonResolver, SimplePythonResolver>();
         services.AddSingleton<IComponentDetector, PipComponentDetector>();
         services.AddSingleton<IComponentDetector, SimplePipComponentDetector>();
+        services.AddSingleton<IPipCommandService, PipCommandService>();
+        services.AddSingleton<IComponentDetector, PipReportComponentDetector>();
 
         // pnpm
         services.AddSingleton<IComponentDetector, PnpmComponentDetector>();
