@@ -50,12 +50,14 @@ git+git://github.com/path/to/package-two@41b95ec#egg=package-two
 other=2.1";
 
     private readonly Mock<ICommandLineInvocationService> commandLineInvokationService;
+    private readonly Mock<ILogger<PythonCommandService>> logger;
     private readonly Mock<ILogger<PathUtilityService>> pathLogger;
     private readonly IPathUtilityService pathUtilityService;
 
     public PythonCommandServiceTests()
     {
         this.commandLineInvokationService = new Mock<ICommandLineInvocationService>();
+        this.logger = new Mock<ILogger<PythonCommandService>>();
         this.pathLogger = new Mock<ILogger<PathUtilityService>>();
         this.pathUtilityService = new PathUtilityService(this.pathLogger.Object);
     }
@@ -65,7 +67,7 @@ other=2.1";
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         (await service.PythonExistsAsync()).Should().BeTrue();
     }
@@ -75,7 +77,7 @@ other=2.1";
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         (await service.PythonExistsAsync()).Should().BeFalse();
     }
@@ -85,7 +87,7 @@ other=2.1";
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         (await service.PythonExistsAsync("test")).Should().BeTrue();
     }
@@ -95,7 +97,7 @@ other=2.1";
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("test", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         (await service.PythonExistsAsync("test")).Should().BeFalse();
     }
@@ -110,7 +112,7 @@ other=2.1";
         this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "[]", StdErr = string.Empty });
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         var result = await service.ParseFileAsync(fakePath);
 
@@ -127,7 +129,7 @@ other=2.1";
         this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "None", StdErr = string.Empty });
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         var result = await service.ParseFileAsync(fakePath);
 
@@ -144,7 +146,7 @@ other=2.1";
         this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "['None']", StdErr = string.Empty });
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         var result = await service.ParseFileAsync(fakePath);
 
@@ -162,7 +164,7 @@ other=2.1";
         this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync("python", It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.Is<string>(c => c.Contains(fakePathAsPassedToPython))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "['knack==0.4.1', 'setuptools>=1.0,!=1.1', 'vsts-cli-common==0.1.3', 'vsts-cli-admin==0.1.3', 'vsts-cli-build==0.1.3', 'vsts-cli-code==0.1.3', 'vsts-cli-team==0.1.3', 'vsts-cli-package==0.1.3', 'vsts-cli-work==0.1.3']", StdErr = string.Empty });
 
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         var result = await service.ParseFileAsync(fakePath);
         var expected = new string[] { "knack==0.4.1", "setuptools>=1.0,!=1.1", "vsts-cli-common==0.1.3", "vsts-cli-admin==0.1.3", "vsts-cli-build==0.1.3", "vsts-cli-code==0.1.3", "vsts-cli-team==0.1.3", "vsts-cli-package==0.1.3", "vsts-cli-work==0.1.3" }.Select<string, (string, GitComponent)>(dep => (dep, null)).ToArray();
@@ -181,7 +183,7 @@ other=2.1";
         var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         try
         {
@@ -219,7 +221,7 @@ other=2.1";
         var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         try
         {
@@ -401,7 +403,7 @@ other=2.1";
         var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
 
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
-        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService);
+        var service = new PythonCommandService(this.commandLineInvokationService.Object, this.pathUtilityService, this.logger.Object);
 
         using (var writer = File.CreateText(testPath))
         {
