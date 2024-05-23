@@ -134,16 +134,14 @@ public class PipCommandService : IPipCommandService
 
         if (command.ExitCode != 0)
         {
-            this.logger.LogWarning("PipReport: Failed to generate pip installation report for file {Path} with exit code {ExitCode}", path, command.ExitCode);
-            this.logger.LogDebug("PipReport: Pip installation report error: {StdErr}", command.StdErr);
-
             using var failureRecord = new PipReportFailureTelemetryRecord
             {
                 ExitCode = command.ExitCode,
                 StdErr = command.StdErr,
             };
 
-            return (new PipInstallationReport(), null);
+            this.logger.LogDebug("PipReport: Pip installation report error: {StdErr}", command.StdErr);
+            throw new InvalidOperationException($"PipReport: Failed to generate pip installation report for file {path} with exit code {command.ExitCode}");
         }
 
         var reportOutput = await this.fileUtilityService.ReadAllTextAsync(reportFile);

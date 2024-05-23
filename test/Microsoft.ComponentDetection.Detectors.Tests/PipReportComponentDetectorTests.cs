@@ -169,7 +169,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         await action.Should().ThrowAsync<InvalidCastException>();
 
         this.mockLogger.Verify(x => x.Log(
-            LogLevel.Error,
+            LogLevel.Warning,
             It.IsAny<EventId>(),
             It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Failure while parsing pip")),
             It.IsAny<Exception>(),

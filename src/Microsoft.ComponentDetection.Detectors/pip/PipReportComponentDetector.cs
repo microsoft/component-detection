@@ -121,7 +121,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         }
         catch (Exception e)
         {
-            this.Logger.LogError(e, "PipReport: Failure while parsing pip installation report for {File}", file.Location);
+            this.Logger.LogWarning(e, "PipReport: Failure while parsing pip installation report for {File}", file.Location);
 
             using var parseFailedRecord = new FailedParsingFileRecord
             {
