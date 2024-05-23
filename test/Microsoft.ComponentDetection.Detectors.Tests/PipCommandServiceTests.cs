@@ -454,15 +454,8 @@ public class PipCommandServiceTests
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 1, StdErr = "TestFail", StdOut = string.Empty })
             .Verifiable();
 
-        var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
-
-        // the file shouldn't exist since we're not writing to it in the test
-        reportFile.Should().BeNull();
-
-        // validate report parameters
-        report.Should().NotBeNull();
-        report.Version.Should().BeNull();
-        report.InstallItems.Should().BeNull();
+        var action = async () => await service.GenerateInstallationReportAsync(testPath);
+        await action.Should().ThrowAsync<InvalidOperationException>();
 
         this.commandLineInvokationService.Verify();
     }
