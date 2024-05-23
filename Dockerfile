@@ -10,7 +10,7 @@ RUN dotnet publish -c Release -o out \
     -p:PublishSingleFile=true \
     ./src/Microsoft.ComponentDetection
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-cbl-mariner2.0@sha256:7b8cfde0c621633fa2dfae8265f4c3a71341a2228a99ef80954ef1746f6ec4ab AS runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-cbl-mariner2.0@sha256:150acf1b3bcda669d82f069c92eb846937661c79314d1b53154a8787934b5911 AS runtime
 WORKDIR /app
 COPY --from=build /app/out ./
 
