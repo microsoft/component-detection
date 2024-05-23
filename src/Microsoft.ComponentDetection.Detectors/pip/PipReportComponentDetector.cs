@@ -168,7 +168,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
             // requires_dist will contain information about the dependencies of the package.
             // However, we don't have PipReportGraphNodes for all dependencies, so we will use
-            // an intermediate layer to store the relathionship and update the graph later.
+            // an intermediate layer to store the relationships and update the graph later.
             if (package.Metadata?.RequiresDist is null)
             {
                 continue;

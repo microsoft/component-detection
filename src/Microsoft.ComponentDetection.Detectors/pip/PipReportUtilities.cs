@@ -10,7 +10,7 @@ internal class PipReportUtilities
     private const string ClassifierFieldLicensePrefix = "License";
 
     /// <summary>
-    /// Normalize the package name format to the stanbard Python Packaging format.
+    /// Normalize the package name format to the standard Python Packaging format.
     /// See https://packaging.python.org/en/latest/specifications/name-normalization/#name-normalization.
     /// </summary>
     /// <returns>
