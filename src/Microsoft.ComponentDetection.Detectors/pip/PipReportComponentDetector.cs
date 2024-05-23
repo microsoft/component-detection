@@ -18,7 +18,12 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
     /// </summary>
-    private const int MaxReportVersion = 1;
+    private static readonly Version MaxReportVersion = new(1, 0, 0);
+
+    /// <summary>
+    /// The minimum version of the pip utility that this detector can handle.
+    /// </summary>
+    private static readonly Version MinimumPipVersion = new(22, 2, 0);
 
     private readonly IPipCommandService pipCommandService;
 
@@ -49,7 +54,17 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PipExePath", out var pipExePath);
         if (!await this.pipCommandService.PipExistsAsync(pipExePath))
         {
-            this.Logger.LogInformation($"No pip found on system. Pip installation report detection will not run.");
+            this.Logger.LogInformation($"PipReport: No pip found on system. Pip installation report detection will not run.");
+
+            return Enumerable.Empty<ProcessRequest>().ToObservable();
+        }
+
+        var pipVersion = await this.pipCommandService.GetPipVersionAsync(pipExePath);
+        if (pipVersion is null || pipVersion < MinimumPipVersion)
+        {
+            this.Logger.LogInformation(
+                "PipReport: No valid pip version found on system. {MinimumPipVersion} or greater is required. Pip installation report detection will not run.",
+                MinimumPipVersion);
 
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
@@ -74,7 +89,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
             // The report version is used to determine how to parse the report. If it is greater
             // than the maximum supported version, there may be new fields and the parsing will fail.
-            if (report.Version > MaxReportVersion)
+            if (!int.TryParse(report.Version, out var reportVersion) || reportVersion > MaxReportVersion.Major)
             {
                 this.Logger.LogWarning(
                     "PipReport: The pip installation report version {ReportVersion} is not supported. The maximum supported version is {MaxVersion}.",
@@ -84,7 +99,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 using var versionRecord = new PipReportVersionTelemetryRecord
                 {
                     Version = report.Version,
-                    MaxVersion = MaxReportVersion,
+                    MaxVersion = MaxReportVersion.ToString(),
                 };
 
                 return;
@@ -115,6 +130,8 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 ExceptionMessage = e.Message,
                 StackTrace = e.StackTrace,
             };
+
+            throw;
         }
         finally
         {

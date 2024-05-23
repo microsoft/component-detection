@@ -4,7 +4,7 @@ public class PipReportVersionTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "PipReportVersion";
 
-    public int Version { get; set; }
+    public string Version { get; set; }
 
-    public int MaxVersion { get; set; }
+    public string MaxVersion { get; set; }
 }

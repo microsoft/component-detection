@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-public class PipInstallationReportItem
+public sealed record PipInstallationReportItem
 {
     /// <summary>
     /// The metadata of the distribution.

@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -37,6 +38,33 @@ public class PipCommandService : IPipCommandService
     public async Task<bool> PipExistsAsync(string pipPath = null)
     {
         return !string.IsNullOrEmpty(await this.ResolvePipAsync(pipPath));
+    }
+
+    public async Task<Version> GetPipVersionAsync(string pipPath = null)
+    {
+        var pipExecutable = await this.ResolvePipAsync(pipPath);
+        var command = await this.commandLineInvocationService.ExecuteCommandAsync(
+            pipExecutable,
+            null,
+            "--version");
+
+        if (command.ExitCode != 0)
+        {
+            this.logger.LogDebug("Failed to execute pip version with StdErr {StdErr}.", command.StdErr);
+            return null;
+        }
+
+        try
+        {
+            // stdout will be in the format of "pip 20.0.2 from c:\python\lib\site-packages\pip (python 3.8)"
+            var versionString = command.StdOut.Split(' ')[1];
+            return Version.Parse(versionString);
+        }
+        catch (Exception)
+        {
+            this.logger.LogDebug("Failed to parse pip version with StdErr {StdErr}.", command.StdErr);
+            return null;
+        }
     }
 
     private async Task<string> ResolvePipAsync(string pipPath = null)
@@ -84,6 +112,7 @@ public class PipCommandService : IPipCommandService
         {
             // Failure case, but this shouldn't be hit since detection is only running
             // on setup.py and requirements.txt files.
+            this.logger.LogDebug("PipReport: Unsupported file type for pip installation report: {Path}", path);
             return (new PipInstallationReport(), null);
         }
 

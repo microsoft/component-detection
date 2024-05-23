@@ -96,6 +96,136 @@ public class PipCommandServiceTests
     }
 
     [TestMethod]
+    public async Task PipCommandService_BadVersion_ReturnsNullAsync()
+    {
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(true);
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = string.Empty });
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        var semVer = await service.GetPipVersionAsync();
+        semVer.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task PipCommandService_BadVersionString_ReturnsNullAsync()
+    {
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(true);
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "this is not a valid output" });
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        var semVer = await service.GetPipVersionAsync();
+        semVer.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task PipCommandService_ReturnsVersionAsync()
+    {
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(true);
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "pip 20.0.2 from c:\\python\\lib\\site-packages\\pip (python 3.8)" });
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        var semVer = await service.GetPipVersionAsync();
+        semVer.Major.Should().Be(20);
+        semVer.Minor.Should().Be(0);
+        semVer.Build.Should().Be(2);
+    }
+
+    [TestMethod]
+    public async Task PipCommandService_ReturnsVersion_SimpleAsync()
+    {
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(true);
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "pip 24.0 from c:\\python\\lib\\site-packages\\pip (python 3.8)" });
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        var semVer = await service.GetPipVersionAsync();
+        semVer.Major.Should().Be(24);
+        semVer.Minor.Should().Be(0);
+    }
+
+    [TestMethod]
+    public async Task PipCommandService_ReturnsVersionForAPathAsync()
+    {
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "testPath",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(true);
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "testPath",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "pip 20.0.2 from c:\\python\\lib\\site-packages\\pip (python 3.8)" });
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        var semVer = await service.GetPipVersionAsync("testPath");
+        semVer.Major.Should().Be(20);
+        semVer.Minor.Should().Be(0);
+        semVer.Build.Should().Be(2);
+    }
+
+    [TestMethod]
     public async Task PipCommandService_GeneratesReport_RequirementsTxt_CorrectlyAsync()
     {
         var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
@@ -128,7 +258,7 @@ public class PipCommandServiceTests
 
         // validate report parameters
         report.Should().NotBeNull();
-        report.Version.Should().Be(1);
+        report.Version.Should().Be("1");
         report.InstallItems.Should().NotBeNull();
         report.InstallItems.Should().ContainSingle();
 
@@ -178,7 +308,7 @@ public class PipCommandServiceTests
 
         // validate report parameters
         report.Should().NotBeNull();
-        report.Version.Should().Be(1);
+        report.Version.Should().Be("1");
         report.InstallItems.Should().NotBeNull();
         report.InstallItems.Should().ContainSingle();
 
@@ -228,7 +358,7 @@ public class PipCommandServiceTests
 
         // validate report parameters
         report.Should().NotBeNull();
-        report.Version.Should().Be(1);
+        report.Version.Should().Be("1");
         report.InstallItems.Should().NotBeNull();
         report.InstallItems.Should().HaveCount(2);
 
@@ -275,7 +405,7 @@ public class PipCommandServiceTests
 
         // validate report parameters
         report.Should().NotBeNull();
-        report.Version.Should().Be(0);
+        report.Version.Should().BeNull();
         report.InstallItems.Should().BeNull();
     }
 
@@ -298,7 +428,7 @@ public class PipCommandServiceTests
 
         // validate report parameters
         report.Should().NotBeNull();
-        report.Version.Should().Be(0);
+        report.Version.Should().BeNull();
         report.InstallItems.Should().BeNull();
     }
 
@@ -331,7 +461,7 @@ public class PipCommandServiceTests
 
         // validate report parameters
         report.Should().NotBeNull();
-        report.Version.Should().Be(0);
+        report.Version.Should().BeNull();
         report.InstallItems.Should().BeNull();
 
         this.commandLineInvokationService.Verify();

@@ -7,7 +7,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 /// Internal state used by PipReportDetector to hold intermediate structure info until the final
 /// combination of dependencies and relationships is determined and can be returned.
 /// </summary>
-public class PipReportGraphNode
+public sealed record PipReportGraphNode
 {
     public PipReportGraphNode(PipComponent value, bool requested)
     {

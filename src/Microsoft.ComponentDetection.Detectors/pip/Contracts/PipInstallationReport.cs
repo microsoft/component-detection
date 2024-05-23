@@ -1,18 +1,18 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
+using System.Collections.Generic;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// See https://pip.pypa.io/en/stable/reference/installation-report/#specification.
 /// </summary>
-public class PipInstallationReport
+public sealed record PipInstallationReport
 {
     /// <summary>
     /// Version of the installation report specification. Currently 1, but will be incremented if the format changes.
     /// </summary>
     [JsonProperty("version")]
-    public int Version { get; set; }
+    public string Version { get; set; }
 
     /// <summary>
     /// Version of pip used to produce the report.
@@ -30,5 +30,5 @@ public class PipInstallationReport
     /// Environment metadata for the report. See https://peps.python.org/pep-0508/#environment-markers.
     /// </summary>
     [JsonProperty("environment")]
-    public JObject Environment { get; set; }
+    public IDictionary<string, string> Environment { get; set; }
 }

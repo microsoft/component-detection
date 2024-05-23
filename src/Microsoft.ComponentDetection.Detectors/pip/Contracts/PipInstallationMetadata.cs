@@ -6,10 +6,10 @@ using Newtonsoft.Json;
 /// Metadata for a pip component being installed. See https://packaging.python.org/en/latest/specifications/core-metadata/.
 /// Some fields are not collected here because they are not needed for dependency graph construction.
 /// </summary>
-public class PipInstallationMetadata
+public sealed record PipInstallationMetadata
 {
     /// <summary>
-    /// Version of the file format; legal values are “1.0”, “1.1”, “1.2”, “2.1”, “2.2”, and “2.3”
+    /// Version of the file format; legal values are "1.0", "1.1", "1.2", "2.1", "2.2", and "2.3"
     /// as of May 2024.
     /// </summary>
     [JsonProperty("metadata_version")]

@@ -36,6 +36,8 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.DetectorTestUtility.AddServiceMock(this.mockLogger);
 
         this.pipCommandService.Setup(x => x.PipExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
+        this.pipCommandService.Setup(x => x.GetPipVersionAsync(It.IsAny<string>()))
+            .ReturnsAsync(new Version(23, 0, 0));
 
         this.singlePackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg);
         this.singlePackageReportBadVersion = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg_bad_version);
@@ -66,6 +68,46 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     }
 
     [TestMethod]
+    public async Task TestPipReportDetector_PipBadVersion_Null_Async()
+    {
+        this.pipCommandService.Setup(x => x.GetPipVersionAsync(It.IsAny<string>()))
+            .ReturnsAsync((Version)null);
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("setup.py", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: No valid pip version")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_PipBadVersion_Low_Async()
+    {
+        this.pipCommandService.Setup(x => x.GetPipVersionAsync(It.IsAny<string>()))
+            .ReturnsAsync(new Version(22, 1, 0));
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("setup.py", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: No valid pip version")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    [TestMethod]
     public async Task TestPipReportDetector_PipInstalledNoFilesAsync()
     {
         var (result, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
@@ -89,6 +131,47 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
             LogLevel.Warning,
             It.IsAny<EventId>(),
             It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: The pip installation report version")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_BadReportParseVersionAsync()
+    {
+        this.singlePackageReportBadVersion.Version = "2.5";
+
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((this.singlePackageReportBadVersion, null));
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("setup.py", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: The pip installation report version")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_CatchesExceptionAsync()
+    {
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(new InvalidCastException());
+
+        var action = async () => await this.DetectorTestUtility
+            .WithFile("setup.py", string.Empty)
+            .ExecuteDetectorAsync();
+        await action.Should().ThrowAsync<InvalidCastException>();
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Error,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Failure while parsing pip")),
             It.IsAny<Exception>(),
             (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
     }
