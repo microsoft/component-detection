@@ -59,7 +59,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
             }
             else
             {
-                this.Logger.LogDebug("Using PnpmDetector of type '{Type}'.", detector.GetType());
+                this.Logger.LogDebug("Using PnpmDetector of type '{Type}'.", detector.GetType().Name);
                 detector.RecordDependencyGraphFromFile(fileContent, singleFileComponentRecorder);
             }
         }
