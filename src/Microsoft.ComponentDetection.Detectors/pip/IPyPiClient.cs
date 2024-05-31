@@ -30,7 +30,7 @@ public interface IPyPiClient
 public sealed class PyPiClient : IPyPiClient, IDisposable
 {
     // Values used for cache creation
-    private const long CACHEINTERVALSECONDS = 60;
+    private const long CACHEINTERVALSECONDS = 180;
 
     private const long DEFAULTCACHEENTRIES = 4096;
 

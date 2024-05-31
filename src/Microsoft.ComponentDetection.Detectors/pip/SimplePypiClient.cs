@@ -18,7 +18,7 @@ using Polly;
 public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
 {
     // Values used for cache creation
-    private const long CACHEINTERVALSECONDS = 60;
+    private const long CACHEINTERVALSECONDS = 180;
     private const long DEFAULTCACHEENTRIES = 4096;
 
     // max number of retries allowed, to cap the total delay period
