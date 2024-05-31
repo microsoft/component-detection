@@ -34,7 +34,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
-    public override int Version { get; } = 1;
+    public override int Version { get; } = 6;
 
     public override bool NeedsAutomaticRootDependencyCalculation => true;
 
@@ -69,7 +69,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
         }
     }
 
-    public IPnpmDetector GetPnpmComponentDetector(string fileContent)
+    private IPnpmDetector GetPnpmComponentDetector(string fileContent)
     {
         var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(fileContent);
         this.RecordLockfileVersion(version);
