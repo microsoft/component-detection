@@ -1,82 +1,17 @@
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.Internal;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.Extensions.Logging;
 
-public class Pnpm6ComponentDetector : FileComponentDetector, IExperimentalDetector
+public class Pnpm6Detector : IPnpmDetector
 {
-    public Pnpm6ComponentDetector(
-        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger<Pnpm6ComponentDetector> logger)
+    public const string MajorVersion = "6";
+
+    public void RecordDependencyGraphFromFile(string yamlFileContent, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
-        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
-        this.Scanner = walkerFactory;
-        this.Logger = logger;
-    }
+        var yaml = PnpmParsingUtilities.DeserializePnpmYamlV6File(yamlFileContent);
 
-    public override string Id { get; } = "Pnpm6";
-
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
-
-    public override IList<string> SearchPatterns { get; } = new List<string> { "shrinkwrap.yaml", "pnpm-lock.yaml" };
-
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
-
-    public override int Version { get; } = 1;
-
-    public override bool NeedsAutomaticRootDependencyCalculation => true;
-
-    /// <inheritdoc />
-    protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
-
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
-    {
-        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-        var file = processRequest.ComponentStream;
-
-        var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
-        if (!string.IsNullOrEmpty(skippedFolder))
-        {
-            this.Logger.LogDebug("Skipping found file, it was detected as being within a {SkippedFolder} folder.", skippedFolder);
-        }
-
-        try
-        {
-            var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
-            var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(fileContent);
-            this.RecordLockfileVersion(version);
-            var majorVersion = version?.Split(".")[0];
-            switch (majorVersion)
-            {
-                case null:
-                case "5":
-                    // Handled in the non-experimental detector. No-op here.
-                    break;
-                case "6":
-                    var pnpmYamlV6 = PnpmParsingUtilities.DeserializePnpmYamlV6File(fileContent);
-                    this.RecordDependencyGraphFromFileV6(pnpmYamlV6, singleFileComponentRecorder);
-                    break;
-                default:
-                    // Handled in the non-experimental detector. No-op here.
-                    break;
-            }
-        }
-        catch (Exception e)
-        {
-            this.Logger.LogError(e, "Failed to read pnpm yaml file {File}", file.Location);
-        }
-    }
-
-    private void RecordDependencyGraphFromFileV6(PnpmYamlV6 yaml, ISingleFileComponentRecorder singleFileComponentRecorder)
-    {
         // There may be multiple instance of the same package (even at the same version) in pnpm differentiated by other aspects of the pnpm dependency path.
         // Therefor all DetectedComponents are tracked by the same full string pnpm uses, the pnpm dependency path, which is used as the key in this dictionary.
         // Some documentation about pnpm dependency paths can be found at https://github.com/pnpm/spec/blob/master/dependency-path.md.
