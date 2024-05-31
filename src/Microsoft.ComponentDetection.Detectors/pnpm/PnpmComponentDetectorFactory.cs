@@ -52,14 +52,13 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
         try
         {
             var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
-            var detector = this.GetPnpmComponentDetector(fileContent);
+            var detector = this.GetPnpmComponentDetector(fileContent, file.Location);
             if (detector == null)
             {
                 this.Logger.LogWarning("Unsupported lockfileVersion in pnpm yaml file {File}", file.Location);
             }
             else
             {
-                this.Logger.LogDebug("Using PnpmDetector of type '{Type}'.", detector.GetType().Name);
                 detector.RecordDependencyGraphFromFile(fileContent, singleFileComponentRecorder);
             }
         }
@@ -69,13 +68,12 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
         }
     }
 
-    private IPnpmDetector GetPnpmComponentDetector(string fileContent)
+    private IPnpmDetector GetPnpmComponentDetector(string fileContent, string fileLocation)
     {
         var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(fileContent);
         this.RecordLockfileVersion(version);
         var majorVersion = version?.Split(".")[0];
-        this.Logger.LogDebug("Found yaml file major version '{Version}'.", majorVersion);
-        return majorVersion switch
+        IPnpmDetector detector = majorVersion switch
         {
             // The null case falls through to version 5 to preserve the behavior of this scanner from before version specific logic was added.
             // This allows files versioned with "shrinkwrapVersion" (such as one included in some of the tests) to be used.
@@ -86,5 +84,16 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
             Pnpm6Detector.MajorVersion => new Pnpm6Detector(),
             _ => null,
         };
+
+        if (detector != null)
+        {
+            this.Logger.LogDebug(
+                "Found Pnmp yaml file '{Location}' with major version '{Version}' so using PnpmDetector of type '{Type}'.",
+                fileLocation,
+                majorVersion ?? "null",
+                detector.GetType().Name);
+        }
+
+        return detector;
     }
 }
