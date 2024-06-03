@@ -62,8 +62,10 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
             if (detector == null)
             {
                 this.Logger.LogWarning("Unsupported lockfileVersion in pnpm yaml file {File}", file.Location);
-                using var unsupportedVersionRecord = new PnpmLockfileVersionTelemetryRecord
+                using var unsupportedVersionRecord = new InvalidParseVersionTelemetryRecord
                 {
+                    DetectorId = this.Id,
+                    FilePath = file.Location,
                     Version = detectedVersion,
                     MaxVersion = MaxLockfileVersion.ToString(),
                 };

@@ -96,8 +96,10 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     report.Version,
                     MaxReportVersion);
 
-                using var versionRecord = new PipReportVersionTelemetryRecord
+                using var versionRecord = new InvalidParseVersionTelemetryRecord
                 {
+                    DetectorId = this.Id,
+                    FilePath = file.Location,
                     Version = report.Version,
                     MaxVersion = MaxReportVersion.ToString(),
                 };
