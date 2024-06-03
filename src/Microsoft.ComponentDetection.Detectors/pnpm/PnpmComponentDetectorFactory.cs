@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -16,6 +17,11 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public class PnpmComponentDetectorFactory : FileComponentDetector
 {
+    /// <summary>
+    /// The maximum version of the report specification that this detector can handle.
+    /// </summary>
+    private static readonly Version MaxLockfileVersion = new(6, 0);
+
     public PnpmComponentDetectorFactory(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -52,28 +58,47 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
         try
         {
             var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
-            var detector = this.GetPnpmComponentDetector(fileContent, file.Location);
+            var detector = this.GetPnpmComponentDetector(fileContent, out var detectedVersion);
             if (detector == null)
             {
                 this.Logger.LogWarning("Unsupported lockfileVersion in pnpm yaml file {File}", file.Location);
+                using var unsupportedVersionRecord = new PnpmLockfileVersionTelemetryRecord
+                {
+                    Version = detectedVersion,
+                    MaxVersion = MaxLockfileVersion.ToString(),
+                };
             }
             else
             {
+                this.Logger.LogDebug(
+                        "Found Pnmp yaml file '{Location}' with version '{Version}' so using PnpmDetector of type '{Type}'.",
+                        file.Location,
+                        detectedVersion ?? "null",
+                        detector.GetType().Name);
+
                 detector.RecordDependencyGraphFromFile(fileContent, singleFileComponentRecorder);
             }
         }
         catch (Exception e)
         {
             this.Logger.LogError(e, "Failed to read pnpm yaml file {File}", file.Location);
+
+            using var failedParsingRecord = new FailedParsingFileRecord
+            {
+                DetectorId = this.Id,
+                FilePath = file.Location,
+                ExceptionMessage = e.Message,
+                StackTrace = e.StackTrace,
+            };
         }
     }
 
-    private IPnpmDetector GetPnpmComponentDetector(string fileContent, string fileLocation)
+    private IPnpmDetector GetPnpmComponentDetector(string fileContent, out string detectedVersion)
     {
-        var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(fileContent);
-        this.RecordLockfileVersion(version);
-        var majorVersion = version?.Split(".")[0];
-        IPnpmDetector detector = majorVersion switch
+        detectedVersion = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(fileContent);
+        this.RecordLockfileVersion(detectedVersion);
+        var majorVersion = detectedVersion?.Split(".")[0];
+        return majorVersion switch
         {
             // The null case falls through to version 5 to preserve the behavior of this scanner from before version specific logic was added.
             // This allows files versioned with "shrinkwrapVersion" (such as one included in some of the tests) to be used.
@@ -84,16 +109,5 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
             Pnpm6Detector.MajorVersion => new Pnpm6Detector(),
             _ => null,
         };
-
-        if (detector != null)
-        {
-            this.Logger.LogDebug(
-                "Found Pnmp yaml file '{Location}' with major version '{Version}' so using PnpmDetector of type '{Type}'.",
-                fileLocation,
-                majorVersion ?? "null",
-                detector.GetType().Name);
-        }
-
-        return detector;
     }
 }
