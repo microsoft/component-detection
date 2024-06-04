@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.base.schema.json",
   "name": "Component Detection",
-  "image": "mcr.microsoft.com/vscode/devcontainers/dotnet:6.0",
+  "image": "mcr.microsoft.com/vscode/devcontainers/dotnet:8.0",
   "runArgs": ["--init"],
   "extensions": [
     "eamodio.gitlens",
