@@ -36,7 +36,8 @@ public interface IPathUtilityService
     bool MatchesPattern(string searchPattern, string fileName);
 
     /// <summary>
-    /// Normalizes the path to the system based separator.
+    /// Normalize the path directory seperator to / on Unix systems and on Windows.
+    /// This is the behavior we want as Windows accepts / as a separator.
     /// </summary>
     /// <param name="path">the path.</param>
     /// <returns>normalized path.</returns>
