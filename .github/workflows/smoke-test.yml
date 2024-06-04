@@ -41,9 +41,6 @@ jobs:
       - name: Checkout Component Detection
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4.0.0
-
       - name: Install Apache Ivy
         run: curl https://downloads.apache.org/ant/ivy/2.5.2/apache-ivy-2.5.2-bin.tar.gz | tar xOz apache-ivy-2.5.2/ivy-2.5.2.jar > /usr/share/ant/lib/ivy.jar
 
@@ -53,10 +50,21 @@ jobs:
           repository: ${{ matrix.language.repo }}
           path: smoke-test-repo
 
+      - name: Setup .NET (Smoke Test)
+        if: ${{ matrix.language.name == 'NuGet'}}
+        uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4.0.0
+        with:
+          dotnet-version: '6.0.x'
+
       - name: Restore Smoke Test NuGet Packages
         if: ${{ matrix.language.name == 'NuGet'}}
         working-directory: smoke-test-repo/src
         run: dotnet restore
+
+      - name: Setup .NET (CD)
+        uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4.0.0
+        with:
+          dotnet-version: '8.0.x'
 
       - name: Run Smoke Test
         working-directory: src/Microsoft.ComponentDetection
