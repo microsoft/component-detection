@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -81,7 +80,7 @@ public class PipCommandService : IPipCommandService
 
     private async Task<bool> CanCommandBeLocatedAsync(string pipPath)
     {
-        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, new List<string> { "pip3" }, "--version");
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, ["pip3"], "--version");
     }
 
     public async Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(string path, string pipExePath = null)

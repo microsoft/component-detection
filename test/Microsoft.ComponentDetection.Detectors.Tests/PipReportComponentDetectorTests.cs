@@ -316,13 +316,13 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
         var setupGraphComponentsWithDeps = new Dictionary<string, string[]>
         {
-            { "six 1.16.0 - pip", Array.Empty<string>() },
-            { "python-dateutil 2.9.0.post0 - pip", new[] { "six 1.16.0 - pip" } },
+            { "six 1.16.0 - pip", [] },
+            { "python-dateutil 2.9.0.post0 - pip", ["six 1.16.0 - pip"] },
         };
 
         var reqGraphComponentsWithDeps = new Dictionary<string, string[]>
         {
-            { "six 1.16.0 - pip", Array.Empty<string>() },
+            { "six 1.16.0 - pip", [] },
         };
 
         var setupGraph = graphsByLocations[file1];
@@ -392,11 +392,11 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         ComponentRecorderTestUtilities.CheckChild<PipComponent>(
             componentRecorder,
             "async-lru 2.0.4 - pip",
-            new[] { "jupyterlab 4.2.0 - pip" });
+            ["jupyterlab 4.2.0 - pip"]);
 
         ComponentRecorderTestUtilities.CheckChild<PipComponent>(
             componentRecorder,
             "tinycss2 1.3.0 - pip",
-            new[] { "jupyterlab 4.2.0 - pip" });
+            ["jupyterlab 4.2.0 - pip"]);
     }
 }

@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.TestsUtilities;
@@ -76,7 +75,7 @@ public class DockerServiceTests
     [SkipTestOnWindows]
     public async Task DockerService_CanCreateAndRunImageAsync()
     {
-        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, new List<string>());
+        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, []);
         stdout.Should().StartWith("\nHello from Docker!");
         stderr.Should().BeEmpty();
     }

@@ -12,7 +12,7 @@ public class GraphNode<T>
 
     public T Value { get; set; }
 
-    public List<GraphNode<T>> Children { get; } = new List<GraphNode<T>>();
+    public List<GraphNode<T>> Children { get; } = [];
 
-    public List<GraphNode<T>> Parents { get; } = new List<GraphNode<T>>();
+    public List<GraphNode<T>> Parents { get; } = [];
 }

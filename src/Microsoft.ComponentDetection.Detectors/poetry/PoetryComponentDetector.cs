@@ -26,13 +26,13 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override string Id => "Poetry";
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "poetry.lock" };
+    public override IList<string> SearchPatterns { get; } = ["poetry.lock"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Pip };
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Pip];
 
     public override int Version { get; } = 3;
 
-    public override IEnumerable<string> Categories => new List<string> { "Python" };
+    public override IEnumerable<string> Categories => ["Python"];
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
     {

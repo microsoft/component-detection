@@ -9,14 +9,15 @@ using Version = SemanticVersioning.Version;
 
 public class DependencySpecification
 {
-    private readonly IDictionary<string, ISet<ISet<Range>>> dependencies;
+    private static readonly char[] CargoVerSeperator = [','];
+    private readonly Dictionary<string, ISet<ISet<Range>>> dependencies;
 
-    public DependencySpecification() => this.dependencies = new Dictionary<string, ISet<ISet<Range>>>();
+    public DependencySpecification() => this.dependencies = [];
 
     public void Add(string name, string cargoVersionSpecifier)
     {
-        ISet<Range> ranges = new HashSet<Range>();
-        var specifiers = cargoVersionSpecifier.Split(new char[] { ',' });
+        var ranges = new HashSet<Range>();
+        var specifiers = cargoVersionSpecifier.Split(CargoVerSeperator);
         foreach (var specifier in specifiers)
         {
             ranges.Add(new Range(specifier.Trim()));
