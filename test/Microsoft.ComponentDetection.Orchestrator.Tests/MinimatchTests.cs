@@ -17,8 +17,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "abc", // pattern
-            new[] { "abc" }, // matches
-            new[] { "ab", "abd", "abcd" }); // does not match
+            ["abc"], // matches
+            ["ab", "abd", "abcd"]); // does not match
     }
 
     [TestMethod]
@@ -26,8 +26,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "xxx.*", // pattern
-            new[] { "xxx.yyy", "xxx.xxx" }, // matches
-            new[] { "abcxxx.yyy", "xxx.y/z" }); // does not match
+            ["xxx.yyy", "xxx.xxx"], // matches
+            ["abcxxx.yyy", "xxx.y/z"]); // does not match
     }
 
     [TestMethod]
@@ -35,8 +35,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "xxx/*/yyy", // pattern
-            new[] { "xxx/abc/yyy" }, // matches
-            new[] { "xxx/yyy", "xxx/abc/def/yyy", "xxx/.abc/yyy", "xxx/./yyy", "xxx/../yyy" }); // does not match
+            ["xxx/abc/yyy"], // matches
+            ["xxx/yyy", "xxx/abc/def/yyy", "xxx/.abc/yyy", "xxx/./yyy", "xxx/../yyy"]); // does not match
     }
 
     [TestMethod]
@@ -44,8 +44,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "xxx/**/yyy", // pattern
-            new[] { "xxx/yyy", "xxx/abc/yyy", "xxx/abc/def/yyy" }, // matches
-            new[] { "xxx/.abc/yyy", "xxx/./yyy", "xxx/../yyy" }); // does not match
+            ["xxx/yyy", "xxx/abc/yyy", "xxx/abc/def/yyy"], // matches
+            ["xxx/.abc/yyy", "xxx/./yyy", "xxx/../yyy"]); // does not match
     }
 
     [TestMethod]
@@ -53,8 +53,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "xxx/**", // pattern
-            new[] { "xxx/yyy", "xxx/abc/yyy", "xxx/abc/def/yyy" }, // matches
-            new[] { "yyy/xxx", "xxx/.abc/yyy", "xxx/./yyy", "xxx/../yyy" }); // does not match
+            ["xxx/yyy", "xxx/abc/yyy", "xxx/abc/def/yyy"], // matches
+            ["yyy/xxx", "xxx/.abc/yyy", "xxx/./yyy", "xxx/../yyy"]); // does not match
     }
 
     [TestMethod]
@@ -62,8 +62,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "xxx/**yyy", // pattern
-            new[] { "xxx/yyy", "xxx/ayyy" }, // matches
-            new[] { "xxx/abc/yyy", "xxx/abc/def/yyy", "xxx/.abc/yyy" }); // does not match
+            ["xxx/yyy", "xxx/ayyy"], // matches
+            ["xxx/abc/yyy", "xxx/abc/def/yyy", "xxx/.abc/yyy"]); // does not match
     }
 
     [TestMethod]
@@ -71,8 +71,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "x?y", // pattern
-            new[] { "xAy" }, // matches
-            new[] { "xy", "xABy", "x/y" }); // does not match
+            ["xAy"], // matches
+            ["xy", "xABy", "x/y"]); // does not match
     }
 
     [TestMethod]
@@ -80,8 +80,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "{foo,bar}", // pattern
-            new[] { "foo", "bar" }, // matches
-            new[] { "baz" }); // does not match
+            ["foo", "bar"], // matches
+            ["baz"]); // does not match
     }
 
     [TestMethod]
@@ -89,8 +89,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "{x,y/*}/z", // pattern
-            new[] { "x/z", "y/a/z" }, // matches
-            new[] { "y/z" }); // does not match
+            ["x/z", "y/a/z"], // matches
+            ["y/z"]); // does not match
     }
 
     [TestMethod]
@@ -98,8 +98,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "foo{1..3}", // pattern
-            new[] { "foo1", "foo2", "foo3" }, // matches
-            new[] { "foo", "foo0" }); // does not match
+            ["foo1", "foo2", "foo3"], // matches
+            ["foo", "foo0"]); // does not match
     }
 
     [TestMethod]
@@ -107,8 +107,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a{b,c{d,e},{f,g}h}x{y,z}", // pattern
-            new[] { "abxy", "abxz", "acdxy", "acdxz", "acexy", "acexz", "afhxy", "afhxz", "aghxy", "aghxz" }, // matches
-            Array.Empty<string>()); // does not match
+            ["abxy", "abxz", "acdxy", "acdxz", "acexy", "acexz", "afhxy", "afhxz", "aghxy", "aghxz"], // matches
+            []); // does not match
     }
 
     [TestMethod]
@@ -116,8 +116,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a,b}{c,d", // pattern
-            new[] { "a,b}{c,d" }, // matches
-            new[] { "ac", "ad", "bc", "bd" }); // does not match
+            ["a,b}{c,d"], // matches
+            ["ac", "ad", "bc", "bd"]); // does not match
     }
 
     [TestMethod]
@@ -125,8 +125,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "!abc", // pattern
-            new[] { "a", "xyz" }, // matches
-            new[] { "abc" }); // does not match
+            ["a", "xyz"], // matches
+            ["abc"]); // does not match
     }
 
     [TestMethod]
@@ -135,8 +135,8 @@ public class MinimatchTests
         // new[] { "asd.jss.xyz", "asd.sjs.zxy", "asd..xyz" }, // matches
         AssertMinimatchBoth(
             "*.!(js).!(xy)", // pattern
-            new[] { "asd.sjs.zxy" }, // matches
-            new[] { "asd.jss.xy", "asd.js.xyz", "asd.js.xy", "asd..xy" }); // does not match
+            ["asd.sjs.zxy"], // matches
+            ["asd.jss.xy", "asd.js.xyz", "asd.js.xy", "asd..xy"]); // does not match
     }
 
     [TestMethod]
@@ -144,8 +144,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "#abc", // pattern
-            Array.Empty<string>(), // matches
-            new[] { "abc", "#abc" }); // does not match
+            [], // matches
+            ["abc", "#abc"]); // does not match
     }
 
     [TestMethod]
@@ -153,8 +153,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a(xy)", // pattern
-            new[] { "a(xy)" }, // matches
-            new[] { "axy" }); // does not match
+            ["a(xy)"], // matches
+            ["axy"]); // does not match
     }
 
     [TestMethod]
@@ -162,8 +162,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a+(xy)", // pattern
-            new[] { "axy", "axyxy" }, // matches
-            new[] { "a" }); // does not match
+            ["axy", "axyxy"], // matches
+            ["a"]); // does not match
     }
 
     [TestMethod]
@@ -171,8 +171,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a*(xy)", // pattern
-            new[] { "a", "axy", "axyxy" }, // matches
-            new[] { "xy" }); // does not match
+            ["a", "axy", "axyxy"], // matches
+            ["xy"]); // does not match
     }
 
     [TestMethod]
@@ -180,8 +180,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a?(xy)", // pattern
-            new[] { "a", "axy" }, // matches
-            new[] { "axyxy" }); // does not match
+            ["a", "axy"], // matches
+            ["axyxy"]); // does not match
     }
 
     [TestMethod]
@@ -189,8 +189,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a@(xy)", // pattern
-            new[] { "axy" }, // matches
-            new[] { "a", "axyxy" }); // does not match
+            ["axy"], // matches
+            ["a", "axyxy"]); // does not match
     }
 
     [TestMethod]
@@ -198,8 +198,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a!(xy)", // pattern
-            new[] { "ax" }, // matches
-            new[] { "axy", "axyz" }); // does not match
+            ["ax"], // matches
+            ["axy", "axyz"]); // does not match
     }
 
     [TestMethod]
@@ -207,8 +207,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "@(!a)", // pattern
-            new[] { "!a" }, // matches
-            new[] { "a", "bc" }); // does not match
+            ["!a"], // matches
+            ["a", "bc"]); // does not match
     }
 
     [TestMethod]
@@ -216,8 +216,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a@(b|c)", // pattern
-            new[] { "ab", "ac" }, // matches
-            new[] { "abc" }); // does not match
+            ["ab", "ac"], // matches
+            ["abc"]); // does not match
     }
 
     [TestMethod]
@@ -225,8 +225,8 @@ public class MinimatchTests
     {
         AssertMinimatch(
             @"a@(d\|\\!e)", // pattern
-            new[] { @"ad|\!e", @"ad|\!e" }, // matches
-            new[] { @"ad|\\!e", @"ad", @"ad|\f" }, // does not match
+            [@"ad|\!e", @"ad|\!e"], // matches
+            [@"ad|\\!e", @"ad", @"ad|\f"], // does not match
             isWindows: false);
     }
 
@@ -235,8 +235,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a@(b|c", // pattern
-            new[] { "a@(b|c" }, // matches
-            new[] { "ab", "ac" }); // does not match
+            ["a@(b|c"], // matches
+            ["ab", "ac"]); // does not match
     }
 
     [TestMethod]
@@ -244,8 +244,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             @"[|c-dE-F]", // pattern
-            new[] { "|", "c", "d", "E", "F" }, // matches
-            new[] { "|c-dE-F", "cd", "C", "D", "e", "f" }); // does not match
+            ["|", "c", "d", "E", "F"], // matches
+            ["|c-dE-F", "cd", "C", "D", "e", "f"]); // does not match
     }
 
     [TestMethod]
@@ -253,8 +253,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "AbC", // pattern
-            new[] { "AbC" }, // matches
-            new[] { "ABC", "abc" }); // does not match
+            ["AbC"], // matches
+            ["ABC", "abc"]); // does not match
     }
 
     [TestMethod]
@@ -262,8 +262,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             string.Empty, // pattern
-            new[] { string.Empty }, // matches
-            new[] { "A" }); // does not match
+            [string.Empty], // matches
+            ["A"]); // does not match
     }
 
     [TestMethod]
@@ -271,8 +271,8 @@ public class MinimatchTests
     {
         AssertMinimatch(
             @"\[b-a]*", // pattern
-            new[] { "[b-a]x" }, // matches
-            new[] { "a[]b", "a]b", "a[]]b", "a[[]b" }, // does not match
+            ["[b-a]x"], // matches
+            ["a[]b", "a]b", "a[]]b", "a[[]b"], // does not match
             isWindows: false);
     }
 
@@ -281,8 +281,8 @@ public class MinimatchTests
     {
         AssertMinimatch(
             @"[b-a\]*", // pattern
-            new[] { "[b-a]x" }, // matches
-            new[] { "a[]b", "a]b", "a[]]b", "a[[]b" }, // does not match
+            ["[b-a]x"], // matches
+            ["a[]b", "a]b", "a[]]b", "a[[]b"], // does not match
             isWindows: false);
     }
 
@@ -291,8 +291,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a[]*", // pattern
-            new[] { "a[]b", "a[]]b" }, // matches
-            new[] { "[b-a]x", "a]b", "a[[]b" }); // does not match
+            ["a[]b", "a[]]b"], // matches
+            ["[b-a]x", "a]b", "a[[]b"]); // does not match
     }
 
     [TestMethod]
@@ -300,8 +300,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a[]]*", // pattern
-            new[] { "a]b" }, // matches
-            new[] { "a[]b", "[b-a]x", "a[]]b", "a[[]b" }); // does not match
+            ["a]b"], // matches
+            ["a[]b", "[b-a]x", "a[]]b", "a[[]b"]); // does not match
     }
 
     [TestMethod]
@@ -309,8 +309,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a[[]*", // pattern
-            new[] { "a[]b", "a[]]b", "a[[]b" }, // matches
-            new[] { "[b-a]x", "a]b" }); // does not match
+            ["a[]b", "a[]]b", "a[[]b"], // matches
+            ["[b-a]x", "a]b"]); // does not match
     }
 
     [TestMethod]
@@ -318,8 +318,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "a[[]]*", // pattern
-            new[] { "a[]b", "a[]]b" }, // matches
-            new[] { "[b-a]x", "a]b", "a[[]b" }); // does not match
+            ["a[]b", "a[]]b"], // matches
+            ["[b-a]x", "a]b", "a[[]b"]); // does not match
     }
 
     [TestMethod]
@@ -327,8 +327,8 @@ public class MinimatchTests
     {
         AssertMinimatch(
             @"\(\)\.\*\{\}\+\?\[\]\^\$\\\!\@\#", // pattern
-            new[] { @"().*{}+?[]^$\!@#" }, // matches
-            Array.Empty<string>(), // does not match
+            [@"().*{}+?[]^$\!@#"], // matches
+            [], // does not match
             isWindows: false);
     }
 
@@ -337,8 +337,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "#abc", // pattern
-            Array.Empty<string>(), // matches
-            new[] { "#abc", "abc" }); // does not match
+            [], // matches
+            ["#abc", "abc"]); // does not match
     }
 
     [TestMethod]
@@ -346,8 +346,8 @@ public class MinimatchTests
     {
         AssertMinimatchBoth(
             "AbC", // pattern
-            new[] { "AbC", "ABC", "abc" }, // matches
-            new[] { "Ab" }, // does not match
+            ["AbC", "ABC", "abc"], // matches
+            ["Ab"], // does not match
             ignoreCase: true);
     }
 

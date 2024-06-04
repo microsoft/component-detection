@@ -1,4 +1,4 @@
-﻿/*
+/*
  This file (and parts of MinimatchTests.cs) is a port of
  https://github.com/isaacs/minimatch/commit/cb4be48a55d64b3a40a745d4a8eb4d1b06507277
 
@@ -67,10 +67,7 @@ public class Minimatch
     /// <exception cref="ArgumentNullException">Raised if the pattern is null.</exception>
     public Minimatch(string pattern, bool ignoreCase, bool allowWindowsPaths)
     {
-        if (pattern == null)
-        {
-            throw new ArgumentNullException(nameof(pattern));
-        }
+        ArgumentNullException.ThrowIfNull(pattern);
 
         var trimmedPattern = pattern.Trim();
         this.ignoreCase = ignoreCase;
@@ -171,7 +168,7 @@ public class Minimatch
         if (!HasBraces.IsMatch(pattern))
         {
             // shortcut. no need to expand.
-            return new[] { pattern };
+            return [pattern];
         }
 
         var escaping = false;
@@ -216,7 +213,7 @@ public class Minimatch
             // actually no sets, all { were escaped.
             if (prefix == null)
             {
-                return new[] { pattern };
+                return [pattern];
             }
 
             return BraceExpand(pattern[i..]).Select(t => prefix + t);
@@ -383,7 +380,7 @@ public class Minimatch
         var patternStart = pattern[0] == '.' ? string.Empty // anything not (start or / followed by . or .. followed by / or end)
             : "(?!\\.)";
 
-        var clearStateChar = () =>
+        void ClearStateChar()
         {
             if (stateChar != null)
             {
@@ -406,7 +403,7 @@ public class Minimatch
 
                 stateChar = null;
             }
-        };
+        }
 
         for (var i = 0; i < pattern.Length; i++)
         {
@@ -428,7 +425,7 @@ public class Minimatch
                     return null;
 
                 case '\\':
-                    clearStateChar();
+                    ClearStateChar();
                     escaping = true;
                     continue;
 
@@ -455,7 +452,7 @@ public class Minimatch
                     // if we already have a stateChar, then it means
                     // that there was something like ** or +? in there.
                     // Handle the stateChar, then proceed with this one.
-                    clearStateChar();
+                    ClearStateChar();
                     stateChar = c;
                     continue;
                 case '(':
@@ -480,7 +477,7 @@ public class Minimatch
                     continue;
 
                 case ')':
-                    if (inClass || !patternListStack.Any())
+                    if (inClass || patternListStack.Count == 0)
                     {
                         re += "\\)";
                         continue;
@@ -511,7 +508,7 @@ public class Minimatch
                     continue;
 
                 case '|':
-                    if (inClass || !patternListStack.Any() || escaping)
+                    if (inClass || patternListStack.Count == 0 || escaping)
                     {
                         re += "\\|";
                         escaping = false;
@@ -524,7 +521,7 @@ public class Minimatch
                 // these are mostly the same in regexp and glob
                 case '[':
                     // swallow any state-tracking char before the [
-                    clearStateChar();
+                    ClearStateChar();
 
                     if (inClass)
                     {
@@ -558,7 +555,7 @@ public class Minimatch
 
                 default:
                     // swallow any state char that wasn't consumed
-                    clearStateChar();
+                    ClearStateChar();
 
                     if (escaping)
                     {
@@ -595,7 +592,7 @@ public class Minimatch
         // and escape any | chars that were passed through as-is for the regexp.
         // Go through and escape them, taking care not to double-escape any
         // | chars that were already escaped.
-        while (patternListStack.Any())
+        while (patternListStack.Count != 0)
         {
             var pl = patternListStack.Pop();
             var tail = re[(pl.ReStart + 3)..];
@@ -630,7 +627,7 @@ public class Minimatch
         }
 
         // handle trailing things that only matter at the very end.
-        clearStateChar();
+        ClearStateChar();
         if (escaping)
         {
             // trailing \\
@@ -749,7 +746,7 @@ public class Minimatch
                     }
 
                     // can't swallow "." or ".." ever.
-                    if (swallowee.StartsWith(".") || swallowee == "..")
+                    if (swallowee.StartsWith('.') || swallowee == "..")
                     {
                         break;
                     }
