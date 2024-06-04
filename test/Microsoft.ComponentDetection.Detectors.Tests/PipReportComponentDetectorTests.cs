@@ -163,10 +163,11 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new InvalidCastException());
 
-        var action = async () => await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty)
             .ExecuteDetectorAsync();
-        await action.Should().ThrowAsync<InvalidCastException>();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         this.mockLogger.Verify(x => x.Log(
             LogLevel.Warning,
