@@ -64,7 +64,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, VcpkgExperiment>();
         services.AddSingleton<IExperimentConfiguration, GoDetectorReplaceExperiment>();
-        services.AddSingleton<IExperimentConfiguration, Pnpm6Experiment>();
         services.AddSingleton<IExperimentConfiguration, PipReportExperiment>();
 
         // Detectors
@@ -121,8 +120,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, PipReportComponentDetector>();
 
         // pnpm
-        services.AddSingleton<IComponentDetector, PnpmComponentDetector>();
-        services.AddSingleton<IComponentDetector, Pnpm6ComponentDetector>();
+        services.AddSingleton<IComponentDetector, PnpmComponentDetectorFactory>();
 
         // Poetry
         services.AddSingleton<IComponentDetector, PoetryComponentDetector>();
