@@ -132,8 +132,6 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 ExceptionMessage = e.Message,
                 StackTrace = e.StackTrace,
             };
-
-            throw;
         }
         finally
         {
