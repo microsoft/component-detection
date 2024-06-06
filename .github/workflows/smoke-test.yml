@@ -26,7 +26,7 @@ jobs:
             { name: "Go", repo: "kubernetes/kubernetes" },
             { name: "Maven", repo: "apache/kafka" },
             { name: "NPM", repo: "axios/axios" },
-            { name: "NuGet", repo: "dotnet/maui" },
+            { name: "NuGet", repo: "dotnet/aspire" },
             { name: "Pip", repo: "django/django" },
             { name: "Pnpm", repo: "pnpm/pnpm" },
             { name: "Poetry", repo: "Textualize/rich" },
@@ -58,9 +58,7 @@ jobs:
       - name: Restore Smoke Test NuGet Packages
         if: ${{ matrix.language.name == 'NuGet'}}
         working-directory: smoke-test-repo
-        run: |
-          dotnet workload restore Microsoft.Maui.sln
-          dotnet restore Microsoft.Maui.sln
+        run: dotnet restore Aspire.sln
 
       - name: Setup .NET (CD)
         uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4.0.0
