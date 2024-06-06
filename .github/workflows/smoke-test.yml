@@ -50,16 +50,15 @@ jobs:
           repository: ${{ matrix.language.repo }}
           path: smoke-test-repo
 
-      - name: Setup .NET (Smoke Test)
-        if: ${{ matrix.language.name == 'NuGet'}}
+      - name: Setup .NET
         uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4.0.0
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '8.0.x'
 
       - name: Restore Smoke Test NuGet Packages
         if: ${{ matrix.language.name == 'NuGet'}}
         working-directory: smoke-test-repo
-        run: dotnet restore --config NuGet.config Microsoft.Maui.sln
+        run: dotnet restore --configfile NuGet.config Microsoft.Maui.sln
 
       - name: Setup .NET (CD)
         uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4.0.0
