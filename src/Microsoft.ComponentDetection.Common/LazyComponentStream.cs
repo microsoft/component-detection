@@ -56,6 +56,6 @@ public class LazyComponentStream : IComponentStream
             this.logger.LogWarning(e, "Unhandled exception caught when trying to open {FileName}", this.fileInfo.FullName);
         }
 
-        return Array.Empty<byte>();
+        return [];
     }
 }

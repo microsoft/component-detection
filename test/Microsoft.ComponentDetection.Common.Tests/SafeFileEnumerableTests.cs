@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common.Tests;
+namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -47,7 +47,7 @@ public class SafeFileEnumerableTests
         File.Create(file0).Close();
         File.Create(subFile0).Close();
 
-        IEnumerable<string> searchPatterns = new List<string> { name };
+        IEnumerable<string> searchPatterns = [name];
 
         this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(It.IsAny<string>())).Returns<string>((s) => s);
         this.pathUtilityServiceMock.Setup(x => x.MatchesPattern(name, name)).Returns(true);
@@ -75,7 +75,7 @@ public class SafeFileEnumerableTests
         File.Create(file0).Close();
         File.Create(Path.Combine(this.temporaryDirectory, "SubDir", name)).Close();
 
-        IEnumerable<string> searchPatterns = new List<string> { name };
+        IEnumerable<string> searchPatterns = [name];
 
         this.pathUtilityServiceMock.Setup(x => x.MatchesPattern(name, name)).Returns(true);
 
@@ -101,7 +101,7 @@ public class SafeFileEnumerableTests
         File.Create(Path.Combine(this.temporaryDirectory, name)).Close();
         File.Create(Path.Combine(this.temporaryDirectory, "SubDir", name)).Close();
 
-        IEnumerable<string> searchPatterns = new List<string> { name };
+        IEnumerable<string> searchPatterns = [name];
 
         this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(subDir.FullName)).Returns(subDir.FullName);
         var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, true);
@@ -132,7 +132,7 @@ public class SafeFileEnumerableTests
         this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(subDir.FullName)).Returns(subDir.FullName);
         this.pathUtilityServiceMock.Setup(x => x.ResolvePhysicalPath(symlink)).Returns(subDir.FullName);
 
-        IEnumerable<string> searchPatterns = new List<string> { name };
+        IEnumerable<string> searchPatterns = [name];
 
         var enumerable = new SafeFileEnumerable(new DirectoryInfo(this.temporaryDirectory), searchPatterns, this.loggerMock.Object, this.pathUtilityServiceMock.Object, (directoryName, span) => false, true);
 

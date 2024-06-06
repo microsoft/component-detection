@@ -13,7 +13,7 @@ public class PipGraphNode
 
     public PipComponent Value { get; set; }
 
-    public List<PipGraphNode> Children { get; } = new List<PipGraphNode>();
+    public List<PipGraphNode> Children { get; } = [];
 
-    public List<PipGraphNode> Parents { get; } = new List<PipGraphNode>();
+    public List<PipGraphNode> Parents { get; } = [];
 }

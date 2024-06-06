@@ -118,12 +118,12 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
             {
                 var pythonProject = this.ConvertSimplePypiProjectToSortedDictionary(simplePythonProject, rootPackage);
 
-                if (pythonProject.Keys.Any())
+                if (pythonProject.Keys.Count != 0)
                 {
                     state.ValidVersionMap[rootPackage.Name] = pythonProject;
 
                     // Grab the latest version as our candidate version
-                    var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Any()
+                    var candidateVersion = state.ValidVersionMap[rootPackage.Name].Keys.Count != 0
                         ? state.ValidVersionMap[rootPackage.Name].Keys.Last()
                         : null;
 
@@ -147,7 +147,7 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
         });
 
         // Now queue packages for processing
-        return await this.ProcessQueueAsync(singleFileComponentRecorder, state) ?? new List<PipGraphNode>();
+        return await this.ProcessQueueAsync(singleFileComponentRecorder, state) ?? [];
     }
 
     private async Task<IList<PipGraphNode>> ProcessQueueAsync(ISingleFileComponentRecorder singleFileComponentRecorder, PythonResolverState state)
@@ -199,10 +199,10 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
                         }
 
                         var result = this.ConvertSimplePypiProjectToSortedDictionary(newProject, dependencyNode);
-                        if (result.Keys.Any())
+                        if (result.Keys.Count != 0)
                         {
                             state.ValidVersionMap[dependencyNode.Name] = result;
-                            var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Any()
+                            var candidateVersion = state.ValidVersionMap[dependencyNode.Name].Keys.Count != 0
                                 ? state.ValidVersionMap[dependencyNode.Name].Keys.Last() : null;
 
                             AddGraphNode(state, state.NodeReferences[currentNode.Name], dependencyNode.Name, candidateVersion);
@@ -261,7 +261,7 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
                 var pythonProjectRelease = new PythonProjectRelease { PythonVersion = version, PackageType = packageType, Size = file.Size, Url = file.Url };
                 if (!sortedProjectVersions.ContainsKey(version))
                 {
-                    sortedProjectVersions.Add(version, new List<PythonProjectRelease>());
+                    sortedProjectVersions.Add(version, []);
                 }
 
                 sortedProjectVersions[version].Add(pythonProjectRelease);
@@ -295,14 +295,14 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
                              state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
         if (packageToFetch == null)
         {
-            return new List<PipDependencySpecification>();
+            return [];
         }
 
         var packageFileStream = await this.simplePypiClient.FetchPackageFileStreamAsync(packageToFetch.Url);
 
         if (packageFileStream.Length == 0)
         {
-            return new List<PipDependencySpecification>();
+            return [];
         }
 
         return await this.FetchDependenciesFromPackageStreamAsync(spec.Name, candidateVersion, packageFileStream);

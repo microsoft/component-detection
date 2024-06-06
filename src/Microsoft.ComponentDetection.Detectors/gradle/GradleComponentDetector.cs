@@ -30,19 +30,19 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
         this.Scanner = walkerFactory;
         this.Logger = logger;
 
-        this.devLockfiles = envVarService.GetListEnvironmentVariable(DevLockfilesEnvVar) ?? new List<string>();
-        this.devConfigurations = envVarService.GetListEnvironmentVariable(DevConfigurationsEnvVar) ?? new List<string>();
+        this.devLockfiles = envVarService.GetListEnvironmentVariable(DevLockfilesEnvVar) ?? [];
+        this.devConfigurations = envVarService.GetListEnvironmentVariable(DevConfigurationsEnvVar) ?? [];
         this.Logger.LogDebug("Gradle dev-only lockfiles {Lockfiles}", string.Join(", ", this.devLockfiles));
         this.Logger.LogDebug("Gradle dev-only configurations {Configurations}", string.Join(", ", this.devConfigurations));
     }
 
     public override string Id { get; } = "Gradle";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "*.lockfile" };
+    public override IList<string> SearchPatterns { get; } = ["*.lockfile"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Maven };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Maven];
 
     public override int Version { get; } = 3;
 

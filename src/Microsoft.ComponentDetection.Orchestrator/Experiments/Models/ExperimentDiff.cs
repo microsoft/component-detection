@@ -27,7 +27,7 @@ public class ExperimentDiff
     {
         var oldComponentDictionary = controlGroupComponents.DistinctBy(x => x.Id).ToDictionary(x => x.Id);
         var newComponentDictionary = experimentGroupComponents.DistinctBy(x => x.Id).ToDictionary(x => x.Id);
-        additionalProperties ??= Array.Empty<(string PropertyKey, string PropertyValue)>();
+        additionalProperties ??= [];
         this.AdditionalProperties = additionalProperties?.Select(kv => new KeyValuePair<string, string>(kv.PropertyKey, kv.PropertyValue)).ToImmutableList();
 
         this.AddedIds = newComponentDictionary.Keys.Except(oldComponentDictionary.Keys).ToImmutableList();
@@ -74,7 +74,7 @@ public class ExperimentDiff
                 controlDetectorList.Add(new ExperimentDetector(detectorId, detectorRunTime));
             }
 
-            this.ControlDetectors = controlDetectorList.ToImmutableList();
+            this.ControlDetectors = [.. controlDetectorList];
         }
 
         if (experimentalDetectors != null)
@@ -84,7 +84,7 @@ public class ExperimentDiff
                 experimentDetectorList.Add(new ExperimentDetector(detectorId, detectorRunTime));
             }
 
-            this.ExperimentalDetectors = experimentDetectorList.ToImmutableList();
+            this.ExperimentalDetectors = [.. experimentDetectorList];
         }
 
         this.DevelopmentDependencyChanges = developmentDependencyChanges.AsReadOnly();

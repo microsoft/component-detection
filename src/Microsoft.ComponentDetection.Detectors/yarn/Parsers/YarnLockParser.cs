@@ -18,7 +18,7 @@ public class YarnLockParser : IYarnLockParser
 
     private const string OptionalDependencies = "optionalDependencies";
 
-    private static readonly List<YarnLockVersion> SupportedVersions = new List<YarnLockVersion> { YarnLockVersion.V1, YarnLockVersion.Berry };
+    private static readonly List<YarnLockVersion> SupportedVersions = [YarnLockVersion.V1, YarnLockVersion.Berry];
 
     private readonly ILogger<YarnLockParser> logger;
 
@@ -36,13 +36,10 @@ public class YarnLockParser : IYarnLockParser
 
     public YarnLockFile Parse(ISingleFileComponentRecorder singleFileComponentRecorder, IYarnBlockFile fileLines, ILogger logger)
     {
-        if (fileLines == null)
-        {
-            throw new ArgumentNullException(nameof(fileLines));
-        }
+        ArgumentNullException.ThrowIfNull(fileLines);
 
         var file = new YarnLockFile { LockVersion = fileLines.YarnLockVersion, LockfileVersion = fileLines.LockfileVersion };
-        IList<YarnEntry> entries = new List<YarnEntry>();
+        IList<YarnEntry> entries = [];
 
         foreach (var block in fileLines)
         {

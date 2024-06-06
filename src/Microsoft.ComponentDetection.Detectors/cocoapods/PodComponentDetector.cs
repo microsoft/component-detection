@@ -28,11 +28,11 @@ public class PodComponentDetector : FileComponentDetector
 
     public override string Id { get; } = "CocoaPods";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "Podfile.lock" };
+    public override IList<string> SearchPatterns { get; } = ["Podfile.lock"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pod, ComponentType.Git };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pod, ComponentType.Git];
 
     public override int Version { get; } = 2;
 
@@ -224,7 +224,7 @@ public class PodComponentDetector : FileComponentDetector
         foreach (var pod in podDependencies)
         {
             // Add all the dependencies to the map, without duplicates
-            dependenciesMap.TryAdd(pod.Key, new HashSet<string>());
+            dependenciesMap.TryAdd(pod.Key, []);
 
             foreach (var dependency in pod.Value)
             {
@@ -305,6 +305,8 @@ public class PodComponentDetector : FileComponentDetector
 
     private class Pod : IYamlConvertible
     {
+        private static readonly char[] PodSeperator = ['(', ')'];
+
         public string Name { get; set; }
 
         public string Version { get; set; }
@@ -324,7 +326,7 @@ public class PodComponentDetector : FileComponentDetector
             }
 
             var podInfo = parser.Consume<Scalar>();
-            var components = podInfo.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+            var components = podInfo.Value.Split(PodSeperator, StringSplitOptions.RemoveEmptyEntries);
             this.Name = components[0].Trim();
             this.Version = components[1].Trim();
 
@@ -348,6 +350,8 @@ public class PodComponentDetector : FileComponentDetector
 
     private class PodDependency : IYamlConvertible
     {
+        private static readonly char[] PodSeperator = ['(', ')'];
+
         public string PodName { get; set; }
 
         public string PodVersion { get; set; }
@@ -359,7 +363,7 @@ public class PodComponentDetector : FileComponentDetector
         public void Read(IParser parser, Type expectedType, ObjectDeserializer nestedObjectDeserializer)
         {
             var scalar = parser.Consume<Scalar>();
-            var components = scalar.Value.Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+            var components = scalar.Value.Split(PodSeperator, StringSplitOptions.RemoveEmptyEntries);
             this.PodName = components[0].Trim();
             this.PodVersion = components.Length > 1 ? components[1].Trim() : null;
         }

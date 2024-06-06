@@ -15,7 +15,7 @@ public sealed class TypeRegistrar : ITypeRegistrar, IDisposable
     public TypeRegistrar(IServiceCollection services)
     {
         this.Services = services;
-        this.BuiltProviders = new List<IDisposable>();
+        this.BuiltProviders = [];
     }
 
     private IServiceCollection Services { get; }

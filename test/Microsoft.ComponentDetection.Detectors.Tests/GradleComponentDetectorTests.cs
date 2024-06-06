@@ -34,7 +34,7 @@ public class GradleComponentDetectorTests : BaseDetectorTest<GradleComponentDete
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -121,7 +121,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(7);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(7);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
         dependencyGraphs.Keys.Should().HaveCount(2);
@@ -166,7 +166,7 @@ org.springframework:spring-jcl:5.0.5.RELEASE";
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
 
         componentRecorder.ForOneComponent(componentRecorder.GetDetectedComponents().First().Component.Id, x =>
         {
@@ -204,7 +204,7 @@ $#26^#25%4";
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(5);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(5);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
         dependencyGraphs.Keys.Should().ContainSingle();
@@ -294,7 +294,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
 
         var devLockfile2 = @"org.jacoco:org.jacoco.agent:0.8.8";
 
-        this.envVarService.Setup(x => x.GetListEnvironmentVariable("CD_GRADLE_DEV_LOCKFILES", ",")).Returns(new List<string> { "dev1\\gradle.lockfile", "dev2\\gradle.lockfile" });
+        this.envVarService.Setup(x => x.GetListEnvironmentVariable("CD_GRADLE_DEV_LOCKFILES", ",")).Returns(["dev1\\gradle.lockfile", "dev2\\gradle.lockfile"]);
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("dev1\\gradle.lockfile", devLockfile1)
@@ -347,7 +347,7 @@ org.springframework:spring-core:5.0.5.RELEASE";
 org.springframework:spring-core:5.0.5.RELEASE=assembleRelease,testDebugUnitTest
 org.hamcrest:hamcrest-core:2.2=testReleaseUnitTest";
 
-        this.envVarService.Setup(x => x.GetListEnvironmentVariable("CD_GRADLE_DEV_CONFIGURATIONS", ",")).Returns(new List<string> { "testDebugUnitTest", "testReleaseUnitTest" });
+        this.envVarService.Setup(x => x.GetListEnvironmentVariable("CD_GRADLE_DEV_CONFIGURATIONS", ",")).Returns(["testDebugUnitTest", "testReleaseUnitTest"]);
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("gradle.lockfile", lockfile)

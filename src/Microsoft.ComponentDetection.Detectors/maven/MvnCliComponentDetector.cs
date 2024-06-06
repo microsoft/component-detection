@@ -32,13 +32,13 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     public override string Id => "MvnCli";
 
-    public override IList<string> SearchPatterns => new List<string> { "pom.xml" };
+    public override IList<string> SearchPatterns => ["pom.xml"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Maven };
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Maven];
 
     public override int Version => 3;
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
@@ -59,7 +59,7 @@ public class MvnCliComponentDetector : FileComponentDetector
 
         await processPomFile.Completion;
 
-        return this.ComponentStreamEnumerableFactory.GetComponentStreams(this.CurrentScanRequest.SourceDirectory, new[] { this.mavenCommandService.BcdeMvnDependencyFileName }, this.CurrentScanRequest.DirectoryExclusionPredicate)
+        return this.ComponentStreamEnumerableFactory.GetComponentStreams(this.CurrentScanRequest.SourceDirectory, [this.mavenCommandService.BcdeMvnDependencyFileName], this.CurrentScanRequest.DirectoryExclusionPredicate)
             .Select(componentStream =>
             {
                 // The file stream is going to be disposed after the iteration is finished
@@ -126,8 +126,8 @@ public class MvnCliComponentDetector : FileComponentDetector
                             directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
                             {
                                 Name = currentDir,
-                                Files = new List<IComponentStream>(),
-                                Directories = new List<DirectoryItemFacade>(),
+                                Files = [],
+                                Directories = [],
                             };
                         }
 

@@ -1,6 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
-using System;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;

@@ -1,10 +1,8 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
-using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -17,7 +15,7 @@ public class ExperimentDiffTests
     public void ExperimentDiff_DiffsAddedIds()
     {
         var testComponents = ExperimentTestUtils.CreateRandomExperimentComponents();
-        var diff = new ExperimentDiff(Enumerable.Empty<ExperimentComponent>(), testComponents);
+        var diff = new ExperimentDiff([], testComponents);
 
         diff.AddedIds.Should().BeEquivalentTo(testComponents.Select(x => x.Id));
         diff.RemovedIds.Should().BeEmpty();
@@ -31,7 +29,7 @@ public class ExperimentDiffTests
     public void ExperimentDiff_DiffsRemovedIds()
     {
         var testComponents = ExperimentTestUtils.CreateRandomExperimentComponents();
-        var diff = new ExperimentDiff(testComponents, Enumerable.Empty<ExperimentComponent>());
+        var diff = new ExperimentDiff(testComponents, []);
 
         diff.RemovedIds.Should().BeEquivalentTo(testComponents.Select(x => x.Id));
         diff.AddedIds.Should().BeEmpty();
@@ -54,8 +52,8 @@ public class ExperimentDiffTests
         componentB.IsDevelopmentDependency = true;
 
         var diff = new ExperimentDiff(
-            new[] { new ExperimentComponent(componentA) },
-            new[] { new ExperimentComponent(componentB) });
+            [new ExperimentComponent(componentA)],
+            [new ExperimentComponent(componentB)]);
 
         diff.DevelopmentDependencyChanges.Should().ContainSingle();
 
@@ -79,12 +77,12 @@ public class ExperimentDiffTests
         var componentB = new ScannedComponent()
         {
             Component = componentA.Component,
-            TopLevelReferrers = new HashSet<TypedComponent> { rootComponent },
+            TopLevelReferrers = [rootComponent],
         };
 
         var diff = new ExperimentDiff(
-            new[] { new ExperimentComponent(componentA), },
-            new[] { new ExperimentComponent(componentB), });
+            [new ExperimentComponent(componentA),],
+            [new ExperimentComponent(componentB),]);
 
         diff.AddedRootIds.Should().ContainSingle();
         diff.RemovedRootIds.Should().BeEmpty();
@@ -106,12 +104,12 @@ public class ExperimentDiffTests
         var componentB = new ScannedComponent()
         {
             Component = componentA.Component,
-            TopLevelReferrers = new HashSet<TypedComponent> { rootComponent },
+            TopLevelReferrers = [rootComponent],
         };
 
         var diff = new ExperimentDiff(
-            new[] { new ExperimentComponent(componentB), },
-            new[] { new ExperimentComponent(componentA), });
+            [new ExperimentComponent(componentB),],
+            [new ExperimentComponent(componentA),]);
 
         diff.RemovedRootIds.Should().ContainSingle();
         diff.AddedRootIds.Should().BeEmpty();

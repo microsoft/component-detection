@@ -27,20 +27,15 @@ public static class NuGetNuspecUtilities
             var nuspecEntry =
                 archive.Entries.FirstOrDefault(x =>
                     x.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase)
-                    && !x.FullName.Contains('/'));
-
-            if (nuspecEntry == null)
-            {
-                throw new FileNotFoundException("No nuspec file was found");
-            }
+                    && !x.FullName.Contains('/')) ?? throw new FileNotFoundException("No nuspec file was found");
 
             using var nuspecStream = nuspecEntry.Open();
 
             return await GetNuspecBytesFromNuspecStreamAsync(nuspecStream, nuspecEntry.Length);
         }
-        catch (InvalidDataException ex)
+        catch (InvalidDataException)
         {
-            throw ex;
+            throw;
         }
         finally
         {

@@ -17,12 +17,12 @@ public class LinuxScanner : ILinuxScanner
 {
     private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v0.100.0@sha256:df7b07bfadff45e0135d74f22478f47b16ac6aff4e8dbd93133fcae3bbbb790d";
 
-    private static readonly IList<string> CmdParameters = new List<string>
-    {
+    private static readonly IList<string> CmdParameters =
+    [
         "--quiet", "--scope", "all-layers", "--output", "json",
-    };
+    ];
 
-    private static readonly IEnumerable<string> AllowedArtifactTypes = new[] { "apk", "deb", "rpm" };
+    private static readonly IEnumerable<string> AllowedArtifactTypes = ["apk", "deb", "rpm"];
 
     private static readonly SemaphoreSlim DockerSemaphore = new SemaphoreSlim(2);
 
@@ -163,7 +163,7 @@ public class LinuxScanner : ILinuxScanner
         }
 
         var licenses = artifact.Licenses;
-        if (licenses != null && licenses.Any())
+        if (licenses != null && licenses.Length != 0)
         {
             return string.Join(", ", licenses.Select(l => l.Value));
         }

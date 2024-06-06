@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNet.Globbing;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -217,20 +216,9 @@ public class DetectorProcessingService : IDetectorProcessingService
             };
         }
 
-        var minimatchers = new Dictionary<string, Glob>();
-
-        var globOptions = new GlobOptions()
-        {
-            Evaluation = new EvaluationOptions()
-            {
-                CaseInsensitive = ignoreCase,
-            },
-        };
-
-        foreach (var directoryExclusion in directoryExclusionList)
-        {
-            minimatchers.Add(directoryExclusion, Glob.Parse(allowWindowsPaths ? directoryExclusion : /* [] escapes special chars */ directoryExclusion.Replace("\\", "[\\]"), globOptions));
-        }
+        var minimatchers = directoryExclusionList.ToDictionary(
+            directoryExclusion => directoryExclusion,
+            directoryExclusion => new Minimatch(directoryExclusion, ignoreCase, allowWindowsPaths));
 
         return (name, directoryName) =>
         {
@@ -253,7 +241,7 @@ public class DetectorProcessingService : IDetectorProcessingService
     {
         individualDetectorScanResult ??= new IndividualDetectorScanResult();
 
-        individualDetectorScanResult.ContainerDetails ??= Enumerable.Empty<ContainerDetails>();
+        individualDetectorScanResult.ContainerDetails ??= [];
 
         // Additional telemetry details can safely be null
         return individualDetectorScanResult;
@@ -336,13 +324,13 @@ public class DetectorProcessingService : IDetectorProcessingService
 
         AnsiConsole.Write(table);
 
-        var tsf = new TabularStringFormat(new Column[]
-        {
+        var tsf = new TabularStringFormat(
+        [
             new Column { Header = "Component Detector Id", Width = 30 },
             new Column { Header = "Detection Time", Width = 30, Format = "{0:g2} seconds" },
             new Column { Header = "# Components Found", Width = 30, },
             new Column { Header = "# Explicitly Referenced", Width = 40 },
-        });
+        ]);
 
         var rows = providerElapsedTime.OrderBy(a => a.Key).Select(x =>
         {
@@ -356,13 +344,13 @@ public class DetectorProcessingService : IDetectorProcessingService
             };
         }).ToList();
 
-        rows.Add(new object[]
-        {
+        rows.Add(
+        [
             "Total",
             totalElapsedTime,
             providerElapsedTime.Sum(x => x.Value.ComponentsFoundCount),
             providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount),
-        });
+        ]);
 
         foreach (var line in tsf.GenerateString(rows).Split(new[] { NewLine }, StringSplitOptions.None))
         {

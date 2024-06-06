@@ -22,7 +22,9 @@ public class GoComponentDetector : FileComponentDetector
         @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
         RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
-    private readonly HashSet<string> projectRoots = new();
+    private static readonly string[] AdjModSearchPatterns = ["go.mod"];
+
+    private readonly HashSet<string> projectRoots = [];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;
@@ -43,11 +45,11 @@ public class GoComponentDetector : FileComponentDetector
 
     public override string Id => "Go";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "go.mod", "go.sum" };
+    public override IList<string> SearchPatterns { get; } = ["go.mod", "go.sum"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Go];
 
     public override int Version => 7;
 
@@ -87,7 +89,7 @@ public class GoComponentDetector : FileComponentDetector
     private IEnumerable<ComponentStream> FindAdjacentGoModComponentStreams(ProcessRequest processRequest) =>
         this.ComponentStreamEnumerableFactory.GetComponentStreams(
                 new FileInfo(processRequest.ComponentStream.Location).Directory,
-                new[] { "go.mod" },
+                AdjModSearchPatterns,
                 (_, _) => false,
                 false)
             .Select(x =>
@@ -221,7 +223,7 @@ public class GoComponentDetector : FileComponentDetector
         var projectRootDirectory = Directory.GetParent(location);
         record.ProjectRoot = projectRootDirectory.FullName;
 
-        var isGoAvailable = await this.commandLineInvocationService.CanCommandBeLocatedAsync("go", null, workingDirectory: projectRootDirectory, new[] { "version" });
+        var isGoAvailable = await this.commandLineInvocationService.CanCommandBeLocatedAsync("go", null, workingDirectory: projectRootDirectory, ["version"]);
         record.IsGoAvailable = isGoAvailable;
 
         if (!isGoAvailable)
@@ -233,7 +235,7 @@ public class GoComponentDetector : FileComponentDetector
         this.Logger.LogInformation("Go CLI was found in system and will be used to generate dependency graph. " +
                                    "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
                                    "But, it will introduce noise into the detected components.");
-        var goDependenciesProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-mod=readonly", "-m", "-json", "all" });
+        var goDependenciesProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, ["list", "-mod=readonly", "-m", "-json", "all"]);
         if (goDependenciesProcess.ExitCode != 0)
         {
             this.Logger.LogError("Go CLI command \"go list -m -json all\" failed with error: {GoDependenciesProcessStdErr}", goDependenciesProcess.StdErr);
@@ -305,7 +307,7 @@ public class GoComponentDetector : FileComponentDetector
             }
 
             // Stopping at the first ) restrict the detection to only the require section.
-            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(")"))
+            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(')'))
             {
                 this.TryRegisterDependencyFromModLine(line, singleFileComponentRecorder);
             }

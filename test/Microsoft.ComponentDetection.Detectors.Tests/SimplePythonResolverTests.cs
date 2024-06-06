@@ -49,8 +49,8 @@ public class SimplePythonResolverTests
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c")))).ReturnsAsync(cReleases);
 
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString(new List<string>() { b })));
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { c })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString([b])));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString([c])));
         this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.First().Url)).ReturnsAsync(new MemoryStream());
 
         var dependencies = new List<PipDependencySpecification> { specA };
@@ -95,8 +95,8 @@ public class SimplePythonResolverTests
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c")))).ReturnsAsync(cReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("dne")))).ReturnsAsync(this.CreateSimplePypiProject(new List<(string, string)>()));
 
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString(new List<string>() { b })));
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { c })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString([b])));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString([c])));
         this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.First().Url)).ReturnsAsync(new MemoryStream());
 
         var dependencies = new List<PipDependencySpecification> { specA, specDne };
@@ -137,8 +137,8 @@ public class SimplePythonResolverTests
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c")))).ReturnsAsync(cReleases);
 
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString(new List<string>() { b })));
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { c })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString([b])));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString([c])));
 
         var dependencies = new List<PipDependencySpecification> { specA };
 
@@ -179,8 +179,8 @@ public class SimplePythonResolverTests
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c") && x.DependencySpecifiers.First().Equals("<=1.1")))).ReturnsAsync(cReleases);
 
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString(new List<string>() { b, c })));
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { cAlt })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString([b, c])));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString([cAlt])));
         this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.First().Url)).ReturnsAsync(new MemoryStream());
         this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.Last().Url)).ReturnsAsync(new MemoryStream());
 
@@ -228,8 +228,8 @@ public class SimplePythonResolverTests
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c") && x.DependencySpecifiers.First().Equals("<=1.1")))).ReturnsAsync(cReleases);
 
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString(new List<string>() { b, c })));
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { cAlt })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString([b, c])));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString([cAlt])));
 
         var dependencies = new List<PipDependencySpecification> { specA };
 
@@ -275,8 +275,8 @@ public class SimplePythonResolverTests
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c")))).ReturnsAsync(cReleases);
 
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.15.0", this.CreateMetadataString(new List<string>() { b })));
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.19", this.CreateMetadataString(new List<string>() { c })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.15.0", this.CreateMetadataString([b])));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.19", this.CreateMetadataString([c])));
         this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.First().Url)).ReturnsAsync(new MemoryStream());
 
         var dependencies = new List<PipDependencySpecification> { specA };
@@ -318,8 +318,8 @@ public class SimplePythonResolverTests
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c")))).ReturnsAsync(cReleases);
 
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.20", this.CreateMetadataString(new List<string>() { b })));
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0.0", this.CreateMetadataString(new List<string>() { c })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.20", this.CreateMetadataString([b])));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0.0", this.CreateMetadataString([c])));
         this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.First().Url)).ReturnsAsync(new MemoryStream());
 
         var dependencies = new List<PipDependencySpecification> { specA };
@@ -360,8 +360,8 @@ public class SimplePythonResolverTests
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c")))).ReturnsAsync(cReleases);
 
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString(new List<string>() { b })));
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { c, c2 })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString([b])));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString([c, c2])));
         this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.First().Url)).ReturnsAsync(new MemoryStream());
 
         var dependencies = new List<PipDependencySpecification> { specA };
@@ -437,7 +437,7 @@ public class SimplePythonResolverTests
                 .ReturnsAsync(releases);
 
             this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(releases.Files.First().Url))
-                .ReturnsAsync(this.CreatePypiZip(componentName, versions[i], this.CreateMetadataString(new List<string>())));
+                .ReturnsAsync(this.CreatePypiZip(componentName, versions[i], this.CreateMetadataString([])));
         }
 
         var resolver = new SimplePythonResolver(this.simplePyPiClient.Object, this.loggerMock.Object);
@@ -477,8 +477,8 @@ public class SimplePythonResolverTests
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
         this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c")))).ReturnsAsync(cReleases);
 
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "10.0.0", this.CreateMetadataString(new List<string>() { b })));
-        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { c })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "10.0.0", this.CreateMetadataString([b])));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString([c])));
         this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.First().Url)).ReturnsAsync(new MemoryStream());
         this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.Last().Url)).ReturnsAsync(new MemoryStream());
 
@@ -530,7 +530,7 @@ public class SimplePythonResolverTests
 
     private SimplePypiProject CreateSimplePypiProject(IList<(string Version, string PackageTypes)> versionAndTypes)
     {
-        var toReturn = new SimplePypiProject() { Files = new List<SimplePypiProjectRelease>() };
+        var toReturn = new SimplePypiProject() { Files = [] };
 
         foreach ((var version, var packagetype) in versionAndTypes)
         {

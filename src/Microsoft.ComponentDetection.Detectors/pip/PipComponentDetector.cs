@@ -31,11 +31,11 @@ public class PipComponentDetector : FileComponentDetector
 
     public override string Id => "Pip";
 
-    public override IList<string> SearchPatterns => new List<string> { "setup.py", "requirements.txt" };
+    public override IList<string> SearchPatterns => ["setup.py", "requirements.txt"];
 
-    public override IEnumerable<string> Categories => new List<string> { "Python" };
+    public override IEnumerable<string> Categories => ["Python"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pip];
 
     public override int Version { get; } = 8;
 

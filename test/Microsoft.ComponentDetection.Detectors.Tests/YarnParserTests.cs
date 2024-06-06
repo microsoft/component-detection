@@ -92,21 +92,15 @@ public class YarnParserTests
                 "a@^1.0.0",
                 "1.0.0",
                 "https://a",
-                new List<YarnBlock>
-                {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
-                },
+                [this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } })],
                 yarnLockFileVersion),
             this.CreateBlock(
                 "b@2.4.6",
                 "2.4.6",
                 "https://b",
-                new List<YarnBlock>
-                {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
-                },
+                [this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } })],
                 yarnLockFileVersion),
-            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", Enumerable.Empty<YarnBlock>(), yarnLockFileVersion),
+            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", [], yarnLockFileVersion),
         };
 
         var blockFile = new Mock<IYarnBlockFile>();
@@ -139,21 +133,15 @@ public class YarnParserTests
                 "a@^1.0.0",
                 "1.0.0",
                 "https://a",
-                new List<YarnBlock>
-                {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
-                },
+                [this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } })],
                 yarnLockFileVersion),
             this.CreateBlock(
                 "b@2.4.6",
                 "2.4.6",
                 "https://b",
-                new List<YarnBlock>
-                {
-                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
-                },
+                [this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } })],
                 yarnLockFileVersion),
-            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", Enumerable.Empty<YarnBlock>(), yarnLockFileVersion),
+            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", [], yarnLockFileVersion),
         };
 
         var blockFile = new Mock<IYarnBlockFile>();
@@ -186,12 +174,11 @@ public class YarnParserTests
                 "internal-package@npm:0.0.0, internal-package@workspace:packages/internal-package",
                 "0.0.0-use.local",
                 "internal-package@workspace:packages/internal-package",
-                new List<YarnBlock>
-                {
+                [
                     this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
-                },
+                ],
                 yarnLockFileVersion),
-            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", Enumerable.Empty<YarnBlock>(), yarnLockFileVersion),
+            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", [], yarnLockFileVersion),
         };
 
         var blockFile = new Mock<IYarnBlockFile>();
@@ -220,14 +207,16 @@ public class YarnParserTests
 
         var blocks = new List<YarnBlock>
         {
-            this.CreateBlock("a", "1.0.0", "https://a", new List<YarnBlock>
-            {
-                this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
-            }),
-            this.CreateBlock("b", "2.4.6", "https://b", new List<YarnBlock>
-            {
-                this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
-            }),
+            this.CreateBlock(
+                "a",
+                "1.0.0",
+                "https://a",
+                [this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } })]),
+            this.CreateBlock(
+                "b",
+                "2.4.6",
+                "https://b",
+                [this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } })]),
         };
 
         var blockFile = new Mock<IYarnBlockFile>();

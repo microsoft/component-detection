@@ -23,12 +23,12 @@ public class PathUtilityService : IPathUtilityService
 
     public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
     {
-        if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern.AsSpan()[1..], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.StartsWith('*') && fse.FileName.EndsWith(searchPattern.AsSpan()[1..], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern.AsSpan()[..^1], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.EndsWith('*') && fse.FileName.StartsWith(searchPattern.AsSpan()[..^1], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -49,12 +49,12 @@ public class PathUtilityService : IPathUtilityService
 
     public bool MatchesPattern(string searchPattern, string fileName)
     {
-        if (searchPattern.StartsWith("*") && fileName.EndsWith(searchPattern[1..], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.StartsWith('*') && fileName.EndsWith(searchPattern[1..], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        if (searchPattern.EndsWith("*") && fileName.StartsWith(searchPattern[..^1], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.EndsWith('*') && fileName.StartsWith(searchPattern[..^1], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }

@@ -58,7 +58,7 @@ public class PipResolverTests
             Info = new PythonProjectInfo
             {
                 AuthorEmail = "Microsoft <sample@microsoft.com>",
-                Classifiers = new List<string> { "License :: OSI Approved :: MIT License" },
+                Classifiers = ["License :: OSI Approved :: MIT License"],
             },
         };
 
@@ -68,7 +68,7 @@ public class PipResolverTests
             Info = new PythonProjectInfo
             {
                 Maintainer = "Microsoft",
-                Classifiers = new List<string> { "License :: OSI Approved :: MIT License", "License :: OSI Approved :: BSD License" },
+                Classifiers = ["License :: OSI Approved :: MIT License", "License :: OSI Approved :: BSD License"],
             },
         };
 
@@ -76,9 +76,9 @@ public class PipResolverTests
         this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
         this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
 
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync([b]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync([c]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync([]);
 
         var dependencies = new List<PipDependencySpecification> { a };
 
@@ -135,7 +135,7 @@ public class PipResolverTests
 
         var dneProject = new PythonProject
         {
-            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>(),
+            Releases = [],
         };
 
         this.pyPiClient.Setup(x => x.GetProjectAsync(a)).ReturnsAsync(aProject);
@@ -143,9 +143,9 @@ public class PipResolverTests
         this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
         this.pyPiClient.Setup(x => x.GetProjectAsync(doesNotExist)).ReturnsAsync(dneProject);
 
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync([b]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync([c]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync([]);
 
         var dependencies = new List<PipDependencySpecification> { a, doesNotExist };
 
@@ -202,7 +202,7 @@ public class PipResolverTests
 
         var dneProject = new PythonProject
         {
-            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>(),
+            Releases = [],
         };
 
         this.pyPiClient.Setup(x => x.GetProjectAsync(a)).ReturnsAsync(aProject);
@@ -210,9 +210,9 @@ public class PipResolverTests
         this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
         this.pyPiClient.Setup(x => x.GetProjectAsync(doesNotExist)).ReturnsAsync(dneProject);
 
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync([b]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync([c]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync([]);
 
         var dependencies = new List<PipDependencySpecification> { a, doesNotExist };
 
@@ -266,15 +266,15 @@ public class PipResolverTests
 
         var dneProject = new PythonProject
         {
-            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>(),
+            Releases = [],
         };
 
         this.pyPiClient.Setup(x => x.GetProjectAsync(a)).ReturnsAsync(aProject);
         this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
         this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(dneProject);
 
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync([b]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync([c]);
 
         var dependencies = new List<PipDependencySpecification> { a };
 
@@ -329,10 +329,10 @@ public class PipResolverTests
         this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
         this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
 
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b, c });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { cAlt });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.1", cReleases["1.1"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync([b, c]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync([cAlt]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.1", cReleases["1.1"].First())).ReturnsAsync([]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync([]);
 
         var dependencies = new List<PipDependencySpecification> { a };
 
@@ -387,7 +387,7 @@ public class PipResolverTests
             Info = new PythonProjectInfo
             {
                 AuthorEmail = "Microsoft <sample@microsoft.com>",
-                Classifiers = new List<string> { "License :: OSI Approved :: MIT License" },
+                Classifiers = ["License :: OSI Approved :: MIT License"],
             },
         };
 
@@ -397,7 +397,7 @@ public class PipResolverTests
             Info = new PythonProjectInfo
             {
                 Maintainer = "Microsoft",
-                Classifiers = new List<string> { "License :: OSI Approved :: MIT License", "License :: OSI Approved :: BSD License" },
+                Classifiers = ["License :: OSI Approved :: MIT License", "License :: OSI Approved :: BSD License"],
             },
         };
 
@@ -405,9 +405,9 @@ public class PipResolverTests
         this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
         this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
 
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c, c2 });
-        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync([b]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync([c, c2]);
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync([]);
 
         var dependencies = new List<PipDependencySpecification> { a };
 
@@ -470,10 +470,7 @@ public class PipResolverTests
 
         foreach (var version in versions)
         {
-            toReturn.Add(version, new List<PythonProjectRelease>
-            {
-                this.CreatePythonProjectRelease(),
-            });
+            toReturn.Add(version, [this.CreatePythonProjectRelease()]);
         }
 
         return toReturn;

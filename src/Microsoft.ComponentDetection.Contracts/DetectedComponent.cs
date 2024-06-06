@@ -18,16 +18,16 @@ public class DetectedComponent
     public DetectedComponent(TypedComponent.TypedComponent component, IComponentDetector detector = null, int? containerDetailsId = null, int? containerLayerId = null)
     {
         this.Component = component;
-        this.FilePaths = new HashSet<string>();
+        this.FilePaths = [];
         this.DetectedBy = detector;
-        this.ContainerDetailIds = new HashSet<int>();
+        this.ContainerDetailIds = [];
         this.ContainerLayerIds = new Dictionary<int, IEnumerable<int>>();
         if (containerDetailsId.HasValue)
         {
             this.ContainerDetailIds.Add(containerDetailsId.Value);
             if (containerLayerId.HasValue)
             {
-                this.ContainerLayerIds.Add(containerDetailsId.Value, new List<int>() { containerLayerId.Value });
+                this.ContainerLayerIds.Add(containerDetailsId.Value, [containerLayerId.Value]);
             }
         }
     }

@@ -45,7 +45,7 @@ public class YarnBlockFile : IYarnBlockFile
 
     private static readonly Regex YarnV2Regex = new Regex("(.*):\\s\"?(.*)", RegexOptions.Compiled);
 
-    private readonly IList<string> fileLines = new List<string>();
+    private readonly IList<string> fileLines = [];
 
     private int fileLineIndex;
 
@@ -73,10 +73,7 @@ public class YarnBlockFile : IYarnBlockFile
 
     public static async Task<YarnBlockFile> CreateBlockFileAsync(Stream stream)
     {
-        if (stream == null)
-        {
-            throw new ArgumentNullException(nameof(stream));
-        }
+        ArgumentNullException.ThrowIfNull(stream);
 
         var fileLines = new List<string>();
         using (var reader = new StreamReader(stream))
@@ -111,7 +108,7 @@ public class YarnBlockFile : IYarnBlockFile
 
         do
         {
-            if (this.fileLines[this.fileLineIndex].StartsWith("#"))
+            if (this.fileLines[this.fileLineIndex].StartsWith('#'))
             {
                 if (this.fileLines[this.fileLineIndex].Contains("yarn lockfile"))
                 {
@@ -174,7 +171,7 @@ public class YarnBlockFile : IYarnBlockFile
                 break;
             }
 
-            if (this.fileLines[this.fileLineIndex].EndsWith(":"))
+            if (this.fileLines[this.fileLineIndex].EndsWith(':'))
             {
                 block.Children.Add(this.ParseBlock(level + 1));
                 this.fileLineIndex--;
@@ -223,7 +220,7 @@ public class YarnBlockFile : IYarnBlockFile
                 line = this.fileLines[this.fileLineIndex];
             }
         }
-        while (string.IsNullOrWhiteSpace(line) || line.StartsWith(" ") || line.StartsWith("\t") || line.StartsWith("#"));
+        while (string.IsNullOrWhiteSpace(line) || line.StartsWith(' ') || line.StartsWith('\t') || line.StartsWith('#'));
 
         return true;
     }

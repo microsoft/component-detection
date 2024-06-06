@@ -14,7 +14,7 @@ public class PatternMatchingUtilityTests
         var pattern = "test*";
         var input = "test123";
 
-        var matcher = PatternMatchingUtility.GetFilePatternMatcher(new[] { pattern });
+        var matcher = PatternMatchingUtility.GetFilePatternMatcher([pattern]);
 
         matcher(input).Should().BeTrue();
         matcher("123test").Should().BeFalse();
@@ -26,7 +26,7 @@ public class PatternMatchingUtilityTests
         var pattern = "*test";
         var input = "123test";
 
-        var matcher = PatternMatchingUtility.GetFilePatternMatcher(new[] { pattern });
+        var matcher = PatternMatchingUtility.GetFilePatternMatcher([pattern]);
 
         matcher(input).Should().BeTrue();
         matcher("test123").Should().BeFalse();
@@ -38,7 +38,7 @@ public class PatternMatchingUtilityTests
         var pattern = "test";
         var input = "test";
 
-        var matcher = PatternMatchingUtility.GetFilePatternMatcher(new[] { pattern });
+        var matcher = PatternMatchingUtility.GetFilePatternMatcher([pattern]);
 
         matcher(input).Should().BeTrue();
         matcher("123test").Should().BeFalse();

@@ -25,7 +25,7 @@ public class EnvironmentVariableService : IEnvironmentVariableService
     }
 
     public List<string> GetListEnvironmentVariable(string name, string delimiter)
-    => (this.GetEnvironmentVariable(name) ?? string.Empty).Split(delimiter, StringSplitOptions.RemoveEmptyEntries).ToList();
+        => [.. (this.GetEnvironmentVariable(name) ?? string.Empty).Split(delimiter, StringSplitOptions.RemoveEmptyEntries)];
 
     public bool IsEnvironmentVariableValueTrue(string name)
     {

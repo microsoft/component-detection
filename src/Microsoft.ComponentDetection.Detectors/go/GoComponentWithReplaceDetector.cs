@@ -23,7 +23,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
         RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
-    private readonly HashSet<string> projectRoots = new();
+    private readonly HashSet<string> projectRoots = [];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;
@@ -42,15 +42,15 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         this.Logger = logger;
     }
 
-    private IList<GoComponent> GoComponents { get; set; } = new List<GoComponent>();
+    private IList<GoComponent> GoComponents { get; set; } = [];
 
     public override string Id => "GoWithReplace";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "go.mod", "go.sum" };
+    public override IList<string> SearchPatterns { get; } = ["go.mod", "go.sum"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Go];
 
     public override int Version => 1;
 
@@ -90,7 +90,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
     private IEnumerable<ComponentStream> FindAdjacentGoModComponentStreams(ProcessRequest processRequest) =>
         this.ComponentStreamEnumerableFactory.GetComponentStreams(
                 new FileInfo(processRequest.ComponentStream.Location).Directory,
-                new[] { "go.mod" },
+                ["go.mod"],
                 (_, _) => false,
                 false)
             .Select(x =>
@@ -224,7 +224,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         var projectRootDirectory = Directory.GetParent(location);
         record.ProjectRoot = projectRootDirectory.FullName;
 
-        var isGoAvailable = await this.commandLineInvocationService.CanCommandBeLocatedAsync("go", null, workingDirectory: projectRootDirectory, new[] { "version" });
+        var isGoAvailable = await this.commandLineInvocationService.CanCommandBeLocatedAsync("go", null, workingDirectory: projectRootDirectory, ["version"]);
         record.IsGoAvailable = isGoAvailable;
 
         if (!isGoAvailable)
@@ -236,7 +236,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         this.Logger.LogInformation("Go CLI was found in system and will be used to generate dependency graph. " +
                                    "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
                                    "But, it will introduce noise into the detected components.");
-        var goDependenciesProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-mod=readonly", "-m", "-json", "all" });
+        var goDependenciesProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, ["list", "-mod=readonly", "-m", "-json", "all"]);
         if (goDependenciesProcess.ExitCode != 0)
         {
             this.Logger.LogError("Go CLI command \"go list -m -json all\" failed with error: {GoDependenciesProcessStdErr}", goDependenciesProcess.StdErr);
@@ -282,15 +282,11 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
     {
         if (this.TryToCreateReplacementGoComponentFromModLine(line, out var goComponent))
         {
-            var goComponentsWithReplacementVersion = this.GoComponents.Where(component => component.Name == goComponent.Name);
-            if (goComponentsWithReplacementVersion.Any())
+            foreach (var component in this.GoComponents?.Where(component => component.Name == goComponent.Name))
             {
-                foreach (var component in goComponentsWithReplacementVersion)
+                if (component.Name == goComponent.Name)
                 {
-                    if (component.Name == goComponent.Name)
-                    {
-                        component.Version = goComponent.Version;
-                    }
+                    component.Version = goComponent.Version;
                 }
             }
         }
@@ -330,7 +326,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
                 inReplaceBlock = true;
                 continue;
             }
-            else if (line != null && line.StartsWith(")"))
+            else if (line != null && line.StartsWith(')'))
             {
                 inRequireBlock = false;
                 inReplaceBlock = false;

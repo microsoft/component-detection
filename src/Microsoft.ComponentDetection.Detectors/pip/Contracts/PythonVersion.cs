@@ -111,10 +111,7 @@ public class PythonVersion : IComparable<PythonVersion>
 
     public static PythonVersion Create(string version)
     {
-        if (version == null)
-        {
-            throw new ArgumentNullException(nameof(version));
-        }
+        ArgumentNullException.ThrowIfNull(version);
 
         if (Cache.TryGetValue(version, out var cachedVersion))
         {

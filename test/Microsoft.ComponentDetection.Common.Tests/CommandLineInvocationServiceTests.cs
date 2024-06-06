@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common.Tests;
+namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.IO;
@@ -31,14 +31,14 @@ public class CommandLineInvocationServiceTests
     [SkipTestIfNotWindows]
     public async Task FallbackWorksIfBadCommandsAreFirstAsync()
     {
-        var result = await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe", "cmd.exe" }, "/C");
+        var result = await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", ["fakecommandexecutable.exe", "cmd.exe"], "/C");
         result.Should().BeTrue();
     }
 
     [SkipTestIfNotWindows]
     public async Task ReturnsFalseIfNoValidCommandIsFoundAsync()
     {
-        var result = await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", new[] { "fakecommandexecutable.exe" }, "/C");
+        var result = await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", ["fakecommandexecutable.exe"], "/C");
         result.Should().BeFalse();
     }
 

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -15,6 +15,8 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class DefaultExperimentProcessorTests
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions { WriteIndented = true };
+
     private readonly Mock<IFileWritingService> fileWritingServiceMock;
     private readonly DefaultExperimentProcessor processor;
 
@@ -35,7 +37,7 @@ public class DefaultExperimentProcessorTests
             ExperimentTestUtils.CreateRandomExperimentComponents(),
             ExperimentTestUtils.CreateRandomExperimentComponents());
 
-        var serializedDiff = JsonSerializer.Serialize(diff, new JsonSerializerOptions { WriteIndented = true });
+        var serializedDiff = JsonSerializer.Serialize(diff, SerializerOptions);
 
         await this.processor.ProcessExperimentAsync(config.Object, diff);
 

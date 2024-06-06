@@ -63,26 +63,26 @@ public class LinuxComponent : TypedComponent
 
     private bool IsUbuntu()
     {
-        return this.Distribution.ToUpperInvariant() == "UBUNTU";
+        return this.Distribution.Equals("UBUNTU", System.StringComparison.InvariantCultureIgnoreCase);
     }
 
     private bool IsDebian()
     {
-        return this.Distribution.ToUpperInvariant() == "DEBIAN";
+        return this.Distribution.Equals("DEBIAN", System.StringComparison.InvariantCultureIgnoreCase);
     }
 
     private bool IsCentOS()
     {
-        return this.Distribution.ToUpperInvariant() == "CENTOS";
+        return this.Distribution.Equals("CENTOS", System.StringComparison.InvariantCultureIgnoreCase);
     }
 
     private bool IsFedora()
     {
-        return this.Distribution.ToUpperInvariant() == "FEDORA";
+        return this.Distribution.Equals("FEDORA", System.StringComparison.InvariantCultureIgnoreCase);
     }
 
     private bool IsRHEL()
     {
-        return this.Distribution.ToUpperInvariant() == "RED HAT ENTERPRISE LINUX";
+        return this.Distribution.Equals("RED HAT ENTERPRISE LINUX", System.StringComparison.InvariantCultureIgnoreCase);
     }
 }
