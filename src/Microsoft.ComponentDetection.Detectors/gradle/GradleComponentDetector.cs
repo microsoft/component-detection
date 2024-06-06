@@ -66,6 +66,7 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
         }
 
         var lines = new List<string>(text.Split("\n"));
+        var devDepLockFile = this.IsDevDependencyByLockfile(file);
 
         while (lines.Count > 0)
         {
@@ -80,7 +81,7 @@ public class GradleComponentDetector : FileComponentDetector, IComponentDetector
             if (line.Split(":").Length == 3)
             {
                 var detectedMavenComponent = new DetectedComponent(this.CreateMavenComponentFromFileLine(line));
-                var devDependency = this.IsDevDependencyByLockfile(file) || this.IsDevDependencyByConfigurations(line);
+                var devDependency = devDepLockFile || this.IsDevDependencyByConfigurations(line);
                 singleFileComponentRecorder.RegisterUsage(detectedMavenComponent, isDevelopmentDependency: devDependency);
             }
         }

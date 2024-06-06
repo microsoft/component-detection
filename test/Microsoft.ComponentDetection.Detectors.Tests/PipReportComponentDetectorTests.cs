@@ -26,6 +26,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     private readonly PipInstallationReport singlePackageReportBadVersion;
     private readonly PipInstallationReport multiPackageReport;
     private readonly PipInstallationReport jupyterPackageReport;
+    private readonly PipInstallationReport simpleExtrasReport;
 
     public PipReportComponentDetectorTests()
     {
@@ -43,6 +44,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.singlePackageReportBadVersion = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg_bad_version);
         this.multiPackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_multi_pkg);
         this.jupyterPackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_jupyterlab);
+        this.simpleExtrasReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_simple_extras);
     }
 
     [TestMethod]
@@ -163,10 +165,11 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new InvalidCastException());
 
-        var action = async () => await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty)
             .ExecuteDetectorAsync();
-        await action.Should().ThrowAsync<InvalidCastException>();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         this.mockLogger.Verify(x => x.Log(
             LogLevel.Warning,
@@ -204,6 +207,31 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         sixComponent.Version.Should().Be("1.16.0");
         sixComponent.Author.Should().Be("Benjamin Peterson");
         sixComponent.License.Should().Be("MIT");
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_SimpleExtrasAsync()
+    {
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((this.simpleExtrasReport, null));
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Generating pip installation report")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var pipComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Id.Contains("pip")).ToList();
+        var requestsComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("requests")).Component as PipComponent;
+        requestsComponent.Version.Should().Be("2.32.3");
     }
 
     [TestMethod]
