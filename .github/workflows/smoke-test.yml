@@ -55,15 +55,16 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        if: ${{ matrix.language.name == 'Pip'}}
+        with:
+          python-version: '3.10' 
+
       - name: Restore Smoke Test NuGet Packages
         if: ${{ matrix.language.name == 'NuGet'}}
         working-directory: smoke-test-repo
         run: dotnet restore Aspire.sln
-
-      - name: Setup .NET (CD)
-        uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4.0.0
-        with:
-          dotnet-version: '8.0.x'
 
       - name: Run Smoke Test
         working-directory: src/Microsoft.ComponentDetection
