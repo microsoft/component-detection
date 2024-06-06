@@ -42,7 +42,8 @@ public abstract class PythonResolverBase
             return false;
         }
 
-        var candidateVersion = state.ValidVersionMap[pipComponent.Name].Keys.Any() ? state.ValidVersionMap[pipComponent.Name].Keys.Last() : null;
+        var candidateVersion = state.ValidVersionMap[pipComponent.Name].Keys.Count != 0
+            ? state.ValidVersionMap[pipComponent.Name].Keys.Last() : null;
 
         node.Value = new PipComponent(pipComponent.Name, candidateVersion, author: pipComponent.Author, license: pipComponent.License);
 

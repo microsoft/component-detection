@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common;
+namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Collections.Concurrent;
@@ -19,8 +19,8 @@ public class CommandLineInvocationService : ICommandLineInvocationService
     /// <inheritdoc/>
     public async Task<bool> CanCommandBeLocatedAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
     {
-        additionalCandidateCommands ??= Enumerable.Empty<string>();
-        parameters ??= Array.Empty<string>();
+        additionalCandidateCommands ??= [];
+        parameters ??= [];
         var allCommands = new[] { command }.Concat(additionalCandidateCommands);
         if (!this.commandLocatableCache.TryGetValue(command, out var validCommand))
         {
@@ -71,15 +71,16 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
         var pathToRun = this.commandLocatableCache[command];
         var joinedParameters = string.Join(" ", parameters);
+        var commandForLogging = joinedParameters.RemoveSensitiveInformation();
         try
         {
             var result = await RunProcessAsync(pathToRun, joinedParameters, workingDirectory);
-            record.Track(result, pathToRun, joinedParameters);
+            record.Track(result, pathToRun, commandForLogging);
             return result;
         }
         catch (Exception ex)
         {
-            record.Track(ex, pathToRun, joinedParameters);
+            record.Track(ex, pathToRun, commandForLogging);
             throw;
         }
     }

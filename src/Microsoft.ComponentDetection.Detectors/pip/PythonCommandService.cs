@@ -12,6 +12,8 @@ using Microsoft.Extensions.Logging;
 
 public class PythonCommandService : IPythonCommandService
 {
+    private static readonly string[] SetupPySeperators = ["',"];
+
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IPathUtilityService pathUtilityService;
     private readonly ILogger<PythonCommandService> logger;
@@ -81,7 +83,7 @@ public class PythonCommandService : IPythonCommandService
         if (command.ExitCode != 0)
         {
             this.logger.LogDebug("Python: Failed distutils setup with error: {StdErr}", command.StdErr);
-            return new List<string>();
+            return [];
         }
 
         var result = command.StdOut;
@@ -91,18 +93,18 @@ public class PythonCommandService : IPythonCommandService
         // For Python2 if there are no packages (Result: "None") skip any parsing
         if (result.Equals("None", StringComparison.OrdinalIgnoreCase) && !command.StdOut.StartsWith('['))
         {
-            return new List<string>();
+            return [];
         }
 
-        return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
+        return result.Split(SetupPySeperators, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
     }
 
-    private IList<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
+    private List<(string PackageString, GitComponent Component)> ParseRequirementsTextFile(string path)
     {
         var items = new List<(string, GitComponent)>();
         foreach (var line in File.ReadAllLines(path)
                 .Select(x => x.Trim().TrimEnd('\\'))
-                .Where(x => !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))
+                .Where(x => !x.StartsWith('#') && !x.StartsWith('-') && !string.IsNullOrWhiteSpace(x)))
         {
             // We technically shouldn't be ignoring information after the ;
             // It's used to indicate environment markers like specific python versions
@@ -170,6 +172,6 @@ public class PythonCommandService : IPythonCommandService
 
     private async Task<bool> CanCommandBeLocatedAsync(string pythonPath)
     {
-        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, new List<string> { "python3", "python2" }, "--version");
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, ["python3", "python2"], "--version");
     }
 }

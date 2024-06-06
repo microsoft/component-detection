@@ -45,7 +45,7 @@ public class ComponentStreamEnumerable : IEnumerable<IComponentStream>
         return this.GetEnumerator();
     }
 
-    private Stream SafeOpenFile(FileInfo file)
+    private FileStream SafeOpenFile(FileInfo file)
     {
         try
         {

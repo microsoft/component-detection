@@ -38,7 +38,7 @@ public static class ExtensionMethods
                 var formatter = invocation.Arguments[4];
 
                 var invokeMethod = formatter.GetType().GetMethod("Invoke");
-                var logMessage = (string)invokeMethod?.Invoke(formatter, new[] { state, exception });
+                var logMessage = (string)invokeMethod?.Invoke(formatter, [state, exception]);
 
                 logOutput.Add(logMessage);
             }));

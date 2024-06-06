@@ -140,7 +140,7 @@ public static class DockerReferenceUtility
             remoteName = remainder;
         }
 
-        if (remoteName.ToLower() != remoteName)
+        if (!remoteName.ToLower().Equals(remoteName))
         {
             throw new ReferenceNameContainsUppercaseException(name);
         }

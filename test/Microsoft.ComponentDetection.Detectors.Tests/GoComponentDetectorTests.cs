@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -178,7 +179,7 @@ require (
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(4);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(4);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
         dependencyGraphs.Keys.Should().HaveCount(2);
@@ -203,7 +204,7 @@ $#26^#25%4";
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -222,7 +223,7 @@ github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("go.mod", goMod)
-            .WithFile("go.mod", goMod, new[] { "go.mod" })
+            .WithFile("go.mod", goMod, ["go.mod"])
             .WithFile("go.sum", goSum)
             .ExecuteDetectorAsync();
 
@@ -369,6 +370,7 @@ replace (
     }
 
     [TestMethod]
+    [SuppressMessage("Performance", "CA1861:Avoid constant arrays as arguments", Justification = "Test file.")]
     public async Task TestGoDetector_GoGraphHappyPathAsync()
     {
         var buildDependencies = @"{
@@ -437,6 +439,7 @@ replace (
     }
 
     [TestMethod]
+    [SuppressMessage("Performance", "CA1861:Avoid constant arrays as arguments", Justification = "Test file.")]
     public async Task TestGoDetector_GoGraphCyclicDependenciesAsync()
     {
         var buildDependencies = @"{

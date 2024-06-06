@@ -41,11 +41,11 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override string Id => "PipReport";
 
-    public override IList<string> SearchPatterns => new List<string> { "setup.py", "requirements.txt" };
+    public override IList<string> SearchPatterns => ["setup.py", "requirements.txt"];
 
-    public override IEnumerable<string> Categories => new List<string> { "Python" };
+    public override IEnumerable<string> Categories => ["Python"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pip];
 
     public override int Version { get; } = 1;
 
@@ -96,8 +96,10 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     report.Version,
                     MaxReportVersion);
 
-                using var versionRecord = new PipReportVersionTelemetryRecord
+                using var versionRecord = new InvalidParseVersionTelemetryRecord
                 {
+                    DetectorId = this.Id,
+                    FilePath = file.Location,
                     Version = report.Version,
                     MaxVersion = MaxReportVersion.ToString(),
                 };
@@ -130,8 +132,6 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 ExceptionMessage = e.Message,
                 StackTrace = e.StackTrace,
             };
-
-            throw;
         }
         finally
         {
@@ -192,7 +192,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 }
                 else
                 {
-                    dependenciesByPkg.Add(normalizedPkgName, new List<PipDependencySpecification> { dependencySpec });
+                    dependenciesByPkg.Add(normalizedPkgName, [dependencySpec]);
                 }
             }
         }
@@ -244,7 +244,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         // parentComponentId is guaranteed to exist in the graph or an exception will be thrown.
         foreach (var node in graph.Values)
         {
-            if (!node.Parents.Any())
+            if (node.Parents.Count == 0)
             {
                 continue;
             }

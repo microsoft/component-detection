@@ -144,6 +144,27 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
         ///  &quot;install&quot;: [
         ///    {
         ///      &quot;download_info&quot;: {
+        ///        &quot;url&quot;: &quot;https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl&quot;,
+        ///        &quot;archive_info&quot;: {
+        ///          &quot;hash&quot;: &quot;sha256=70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6&quot;,
+        ///          &quot;hashes&quot;: {
+        ///            &quot;sha256&quot;: &quot;70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6&quot;
+        ///          }
+        ///        } [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string pip_report_simple_extras {
+            get {
+                return ResourceManager.GetString("pip_report_simple_extras", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: &quot;1&quot;,
+        ///  &quot;pip_version&quot;: &quot;24.0&quot;,
+        ///  &quot;install&quot;: [
+        ///    {
+        ///      &quot;download_info&quot;: {
         ///        &quot;url&quot;: &quot;https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl&quot;,
         ///        &quot;archive_info&quot;: {
         ///          &quot;hash&quot;: &quot;sha256=8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;,

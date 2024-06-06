@@ -1,9 +1,9 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
@@ -81,7 +81,7 @@ public class PipCommandService : IPipCommandService
 
     private async Task<bool> CanCommandBeLocatedAsync(string pipPath)
     {
-        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, new List<string> { "pip3" }, "--version");
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, ["pip3"], "--version");
     }
 
     public async Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(string path, string pipExePath = null)
@@ -118,14 +118,14 @@ public class PipCommandService : IPipCommandService
 
         // When PIP_INDEX_URL is set, we need to pass it as a parameter to pip install command.
         // This should be done before running detection by the build system, otherwise the detection
-        // will default to the public PyPI index if not configured in pip defaults.
+        // will default to the public PyPI index if not configured in pip defaults. Note this index URL may have credentials, we need to remove it when logging.
         pipReportCommand += $" --dry-run --ignore-installed --quiet --report {reportName}";
         if (this.environmentService.DoesEnvironmentVariableExist("PIP_INDEX_URL"))
         {
             pipReportCommand += $" --index-url {this.environmentService.GetEnvironmentVariable("PIP_INDEX_URL")}";
         }
 
-        this.logger.LogDebug("PipReport: Generating pip installation report for {Path} with command: {Command}", formattedPath, pipReportCommand);
+        this.logger.LogDebug("PipReport: Generating pip installation report for {Path} with command: {Command}", formattedPath, pipReportCommand.RemoveSensitiveInformation());
         command = await this.commandLineInvocationService.ExecuteCommandAsync(
             pipExecutable,
             null,

@@ -41,5 +41,5 @@ public sealed record PipInstallationReportItem
     /// Extras requested by the user.
     /// </summary>
     [JsonProperty("requested_extras")]
-    public JObject RequestedExtras { get; set; }
+    public JArray RequestedExtras { get; set; }
 }

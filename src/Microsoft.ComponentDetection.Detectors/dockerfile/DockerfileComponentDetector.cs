@@ -34,11 +34,11 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override string Id { get; } = "DockerReference";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "dockerfile", "dockerfile.*", "*.dockerfile" };
+    public override IList<string> SearchPatterns { get; } = ["dockerfile", "dockerfile.*", "*.dockerfile"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.DockerReference };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.DockerReference];
 
     public override int Version => 1;
 

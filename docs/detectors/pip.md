@@ -50,7 +50,7 @@ If no internet connection or a component cannot be found in PyPi, said component
 ## Environment Variables
 
 The environment variable `PyPiMaxCacheEntries` is used to control the size of the in-memory LRU cache that caches responses from PyPi.
-The default value is 128.
+The default value is 4096.
 
 The enviroment variable `PIP_INDEX_URL` is used to determine what package feed should be used for `pip install --report` detection.
 The default value will use the PyPi index unless pip defaults have been configured globally.
