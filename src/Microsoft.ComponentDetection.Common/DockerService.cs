@@ -110,6 +110,23 @@ public class DockerService : IDockerService
         }
     }
 
+    internal void SanitizeEnvironmentVariables(ImageInspectResponse inspectResponse)
+    {
+        var envVariables = inspectResponse?.Config?.Env;
+        if (envVariables == null || !envVariables.Any())
+        {
+            return;
+        }
+
+        var sanitizedVarList = new List<string>();
+        foreach (var variable in inspectResponse.Config.Env)
+        {
+            sanitizedVarList.Add(variable.RemoveSensitiveInformation());
+        }
+
+        inspectResponse.Config.Env = sanitizedVarList;
+    }
+
     public async Task<ContainerDetails> InspectImageAsync(string image, CancellationToken cancellationToken = default)
     {
         using var record = new DockerServiceInspectImageTelemetryRecord
@@ -119,6 +136,9 @@ public class DockerService : IDockerService
         try
         {
             var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
+
+            this.SanitizeEnvironmentVariables(imageInspectResponse);
+
             record.ImageInspectResponse = JsonSerializer.Serialize(imageInspectResponse);
 
             var baseImageRef = string.Empty;
