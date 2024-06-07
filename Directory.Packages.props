@@ -24,8 +24,8 @@
     <PackageVersion Include="MinVer" Version="5.0.0" />
     <PackageVersion Include="Moq" Version="4.18.4" />
     <PackageVersion Include="morelinq" Version="4.2.0" />
-    <PackageVersion Include="MSTest.TestAdapter" Version="3.4.0" />
-    <PackageVersion Include="MSTest.TestFramework" Version="3.4.0" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="3.4.3" />
+    <PackageVersion Include="MSTest.TestFramework" Version="3.4.3" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="3.0.16" />
     <PackageVersion Include="NuGet.ProjectModel" Version="6.10.0" />
