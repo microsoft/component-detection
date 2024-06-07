@@ -5,7 +5,8 @@ using System.Text.RegularExpressions;
 
 public static class StringUtilities
 {
-    private static readonly Regex SensitiveInfoRegex = new Regex(@"(?<=https://)(.+)(?=@)", RegexOptions.Compiled, TimeSpan.FromSeconds(5));
+    private static readonly Regex SensitiveInfoRegex = new Regex(@"(?<=https://)(.+)(?=@)", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
+    public const string SensitivePlaceholder = "******";
 
     /// <summary>
     /// Utility method to remove sensitive information from a string, currently focused on removing on the credentials placed within URL which can be part of CLI commands.
@@ -21,7 +22,7 @@ public static class StringUtilities
 
         try
         {
-            return SensitiveInfoRegex.Replace(inputString, "******");
+            return SensitiveInfoRegex.Replace(inputString, SensitivePlaceholder);
         }
         catch (Exception)
         {
