@@ -71,7 +71,7 @@ public class DockerService : IDockerService
         };
         try
         {
-            var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
+            var imageInspectResponse = await this.InspectImageAndSanitizeVarsAsync(image, cancellationToken);
             record.ImageInspectResponse = JsonSerializer.Serialize(imageInspectResponse);
             return true;
         }
@@ -80,6 +80,13 @@ public class DockerService : IDockerService
             record.ExceptionMessage = e.Message;
             return false;
         }
+    }
+
+    private async Task<ImageInspectResponse> InspectImageAndSanitizeVarsAsync(string image, CancellationToken cancellationToken = default)
+    {
+        var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
+        this.SanitizeEnvironmentVariables(imageInspectResponse);
+        return imageInspectResponse;
     }
 
     public async Task<bool> TryPullImageAsync(string image, CancellationToken cancellationToken = default)
@@ -135,10 +142,7 @@ public class DockerService : IDockerService
         };
         try
         {
-            var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
-
-            this.SanitizeEnvironmentVariables(imageInspectResponse);
-
+            var imageInspectResponse = await this.InspectImageAndSanitizeVarsAsync(image, cancellationToken);
             record.ImageInspectResponse = JsonSerializer.Serialize(imageInspectResponse);
 
             var baseImageRef = string.Empty;
