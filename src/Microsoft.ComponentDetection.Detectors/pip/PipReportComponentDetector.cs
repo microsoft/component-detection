@@ -15,6 +15,8 @@ using Microsoft.Extensions.Logging;
 
 public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
 {
+    private const string DisablePipReportScanEnvVar = "DisablePipReportScan";
+
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
     /// </summary>
@@ -26,16 +28,19 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
     private static readonly Version MinimumPipVersion = new(22, 2, 0);
 
     private readonly IPipCommandService pipCommandService;
+    private readonly IEnvironmentVariableService envVarService;
 
     public PipReportComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         IPipCommandService pipCommandService,
+        IEnvironmentVariableService envVarService,
         ILogger<PipReportComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.pipCommandService = pipCommandService;
+        this.envVarService = envVarService;
         this.Logger = logger;
     }
 
@@ -47,7 +52,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 1;
+    public override int Version { get; } = 2;
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
@@ -81,6 +86,19 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         FileInfo reportFile = null;
         try
         {
+            if (this.IsPipReportManuallyDisabled())
+            {
+                this.Logger.LogWarning("PipReport: The pip report has been manually disabled, fallback strategy performed.");
+                using var skipReportRecord = new PipReportSkipTelemetryRecord
+                {
+                    SkipReason = $"Found {DisablePipReportScanEnvVar} equal to true. Skipping pip report.",
+                    DetectorId = this.Id,
+                    DetectorVersion = this.Version,
+                };
+
+                return;
+            }
+
             var stopwatch = Stopwatch.StartNew();
             this.Logger.LogInformation("PipReport: Generating pip installation report for {File}", file.Location);
 
@@ -259,4 +277,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             }
         }
     }
+
+    private bool IsPipReportManuallyDisabled()
+        => this.envVarService.IsEnvironmentVariableValueTrue(DisablePipReportScanEnvVar);
 }
