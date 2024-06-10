@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportComponentDetector>
 {
     private readonly Mock<IPipCommandService> pipCommandService;
+    private readonly Mock<IEnvironmentVariableService> mockEnvVarService;
     private readonly Mock<ILogger<PipReportComponentDetector>> mockLogger;
 
     private readonly PipInstallationReport singlePackageReport;
@@ -35,6 +36,9 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
         this.mockLogger = new Mock<ILogger<PipReportComponentDetector>>();
         this.DetectorTestUtility.AddServiceMock(this.mockLogger);
+
+        this.mockEnvVarService = new Mock<IEnvironmentVariableService>();
+        this.DetectorTestUtility.AddServiceMock(this.mockEnvVarService);
 
         this.pipCommandService.Setup(x => x.PipExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
         this.pipCommandService.Setup(x => x.GetPipVersionAsync(It.IsAny<string>()))
@@ -232,6 +236,31 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         var pipComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Id.Contains("pip")).ToList();
         var requestsComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("requests")).Component as PipComponent;
         requestsComponent.Version.Should().Be("2.32.3");
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_SkipAsync()
+    {
+        this.mockEnvVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisablePipReportScan")).Returns(true);
+
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((this.simpleExtrasReport, null));
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found DisablePipReportScan environment variable equal to true")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
     }
 
     [TestMethod]
