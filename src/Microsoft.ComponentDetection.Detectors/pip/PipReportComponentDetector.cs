@@ -88,10 +88,10 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         {
             if (this.IsPipReportManuallyDisabled())
             {
-                this.Logger.LogWarning("PipReport: The pip report has been manually disabled, fallback strategy performed.");
+                this.Logger.LogWarning("PipReport: Found {DisablePipReportScanEnvVar} environment variable equal to true. Skipping pip report.", DisablePipReportScanEnvVar);
                 using var skipReportRecord = new PipReportSkipTelemetryRecord
                 {
-                    SkipReason = $"Found {DisablePipReportScanEnvVar} equal to true. Skipping pip report.",
+                    SkipReason = $"PipReport: Found {DisablePipReportScanEnvVar} environment variable equal to true. Skipping pip report.",
                     DetectorId = this.Id,
                     DetectorVersion = this.Version,
                 };

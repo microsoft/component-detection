@@ -255,7 +255,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.mockLogger.Verify(x => x.Log(
             LogLevel.Warning,
             It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: The pip report has been manually disabled")),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found DisablePipReportScan environment variable equal to true")),
             It.IsAny<Exception>(),
             (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
 
