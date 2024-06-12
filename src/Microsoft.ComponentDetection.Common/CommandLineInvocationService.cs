@@ -184,7 +184,20 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         t1.Start();
         t2.Start();
 
-        cancellationToken.Register(process.Kill);
+        cancellationToken.Register(() =>
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch (InvalidOperationException)
+            {
+                // swallow invalid operations, which indicate that there is no process associated with
+                // the process object, and therefore nothing to kill
+                // https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.kill?view=net-8.0#system-diagnostics-process-kill
+                return;
+            }
+        });
 
         return tcs.Task;
     }
