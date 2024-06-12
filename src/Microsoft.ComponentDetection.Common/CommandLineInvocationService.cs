@@ -175,7 +175,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
         process.Exited += (sender, args) =>
         {
-            Task.WaitAll([t1, t2]);
+            Task.WaitAll(t1, t2);
             tcs.TrySetResult(new CommandLineExecutionResult { ExitCode = process.ExitCode, StdErr = errorText, StdOut = stdOutText });
             process.Dispose();
         };
