@@ -23,6 +23,8 @@ using static System.Environment;
 
 public class DetectorProcessingService : IDetectorProcessingService
 {
+    private const int ExperimentalTimeoutMinutes = 4;
+
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
     private readonly IExperimentService experimentService;
@@ -58,15 +60,6 @@ public class DetectorProcessingService : IDetectorProcessingService
         await this.experimentService.InitializeAsync();
         this.experimentService.RemoveUnwantedExperimentsbyDetectors(detectorRestrictions.DisabledDetectors);
 
-        var cancellationToken = CancellationToken.None;
-        if (settings.Timeout != null && settings.Timeout > 0)
-        {
-            this.logger.LogDebug("Setting detector timeout to {Timeout}.", settings.Timeout);
-            var cts = new CancellationTokenSource();
-            cancellationToken = cts.Token;
-            cts.CancelAfter(TimeSpan.FromSeconds((double)settings.Timeout));
-        }
-
         IEnumerable<Task<(IndividualDetectorScanResult, ComponentRecorder, IComponentDetector)>> scanTasks = detectors
             .Select(async detector =>
             {
@@ -75,6 +68,21 @@ public class DetectorProcessingService : IDetectorProcessingService
 
                 var componentRecorder = new ComponentRecorder(this.logger, !detector.NeedsAutomaticRootDependencyCalculation);
                 var isExperimentalDetector = detector is IExperimentalDetector && !(detectorRestrictions.ExplicitlyEnabledDetectorIds?.Contains(detector.Id)).GetValueOrDefault();
+
+                var cancellationToken = CancellationToken.None;
+                if (settings.Timeout != null && settings.Timeout > 0)
+                {
+                    var cts = new CancellationTokenSource();
+                    cancellationToken = cts.Token;
+
+                    // max timeout is equal to settings timeout for non-experimental, and min of settings timeout or 4 minutes for experimenatal
+                    var timeoutSeconds = isExperimentalDetector
+                        ? Math.Min(settings.Timeout.Value, ExperimentalTimeoutMinutes * 60)
+                        : settings.Timeout.Value;
+
+                    this.logger.LogDebug("Setting {DetectorName} detector timeout to {Timeout} seconds.", detector.Id, timeoutSeconds);
+                    cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+                }
 
                 IEnumerable<DetectedComponent> detectedComponents;
                 ProcessingResultCode resultCode;
@@ -287,7 +295,7 @@ public class DetectorProcessingService : IDetectorProcessingService
 
         try
         {
-            return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(4), CancellationToken.None);
+            return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(ExperimentalTimeoutMinutes), CancellationToken.None);
         }
         catch (TimeoutException)
         {
