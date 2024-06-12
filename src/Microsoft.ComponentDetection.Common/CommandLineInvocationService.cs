@@ -128,59 +128,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
     private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
     {
-        var tcs = new TaskCompletionSource<CommandLineExecutionResult>();
-
-        if (fileName.EndsWith(".cmd") || fileName.EndsWith(".bat"))
-        {
-            // If a script attempts to find its location using "%dp0", that can return the wrong path (current
-            // working directory) unless the script is run via "cmd /C".  An example is "ant.bat".
-            parameters = $"/C {fileName} {parameters}";
-            fileName = "cmd.exe";
-        }
-
-        var process = new Process
-        {
-            StartInfo =
-            {
-                FileName = fileName,
-                Arguments = parameters,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-            },
-            EnableRaisingEvents = true,
-        };
-
-        if (workingDirectory != null)
-        {
-            process.StartInfo.WorkingDirectory = workingDirectory.FullName;
-        }
-
-        var errorText = string.Empty;
-        var stdOutText = string.Empty;
-
-        var t1 = new Task(() =>
-        {
-            errorText = process.StandardError.ReadToEnd();
-        });
-        var t2 = new Task(() =>
-        {
-            stdOutText = process.StandardOutput.ReadToEnd();
-        });
-
-        process.Exited += (sender, args) =>
-        {
-            Task.WaitAll(t1, t2);
-            tcs.SetResult(new CommandLineExecutionResult { ExitCode = process.ExitCode, StdErr = errorText, StdOut = stdOutText });
-            process.Dispose();
-        };
-
-        process.Start();
-        t1.Start();
-        t2.Start();
-
-        return tcs.Task;
+        return RunProcessAsync(fileName, parameters, workingDirectory, CancellationToken.None);
     }
 
     private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null, CancellationToken cancellationToken = default)
