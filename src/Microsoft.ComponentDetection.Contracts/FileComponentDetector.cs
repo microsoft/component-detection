@@ -13,6 +13,8 @@ using Microsoft.Extensions.Logging;
 /// <summary>Specialized base class for file based component detection.</summary>
 public abstract class FileComponentDetector : IComponentDetector
 {
+    private const int DefaultMaxThreads = 10;
+
     /// <summary>
     /// Gets or sets the factory for handing back component streams to File detectors.
     /// </summary>
@@ -79,7 +81,11 @@ public abstract class FileComponentDetector : IComponentDetector
         var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
         this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
+<<<<<<< HEAD
         return this.ProcessAsync(filteredObservable, request.DetectorArgs);
+=======
+        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, cancellationToken);
+>>>>>>> 99639f1 (add parallelism for detection)
     }
 
     /// <summary>
@@ -105,9 +111,15 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <param name="lockfileVersion">The lockfile version.</param>
     protected void RecordLockfileVersion(string lockfileVersion) => this.Telemetry["LockfileVersion"] = lockfileVersion;
 
-    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int? maxThreads)
     {
-        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs));
+        var processor = new ActionBlock<ProcessRequest>(
+            async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs),
+            new ExecutionDataflowBlockOptions
+            {
+                // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
+                MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, maxThreads ?? DefaultMaxThreads),
+            });
 
         var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
 
