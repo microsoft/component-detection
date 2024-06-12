@@ -23,7 +23,7 @@ using static System.Environment;
 
 public class DetectorProcessingService : IDetectorProcessingService
 {
-    private const int DefaultMaxDetectionThreads = 10;
+    private const int DefaultMaxDetectionThreads = 3;
 
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
