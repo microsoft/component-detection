@@ -15,7 +15,6 @@ using Microsoft.ComponentDetection.Contracts;
 /// <inheritdoc/>
 public class CommandLineInvocationService : ICommandLineInvocationService
 {
-    private const int WriteStdOutErrTimeoutSeconds = 10;
     private readonly IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
 
     /// <inheritdoc/>
@@ -176,7 +175,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
         process.Exited += (sender, args) =>
         {
-            Task.WaitAll([t1, t2], TimeSpan.FromSeconds(WriteStdOutErrTimeoutSeconds));
+            Task.WaitAll([t1, t2]);
             tcs.TrySetResult(new CommandLineExecutionResult { ExitCode = process.ExitCode, StdErr = errorText, StdOut = stdOutText });
             process.Dispose();
         };
