@@ -81,11 +81,7 @@ public abstract class FileComponentDetector : IComponentDetector
         var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
         this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
-<<<<<<< HEAD
-        return this.ProcessAsync(filteredObservable, request.DetectorArgs);
-=======
-        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, cancellationToken);
->>>>>>> 99639f1 (add parallelism for detection)
+        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads);
     }
 
     /// <summary>
