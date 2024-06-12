@@ -23,6 +23,8 @@ using static System.Environment;
 
 public class DetectorProcessingService : IDetectorProcessingService
 {
+    private const int DefaultMaxDetectionThreads = 10;
+
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
     private readonly IExperimentService experimentService;
@@ -75,7 +77,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
-                        () => detector.ExecuteDetectorAsync(new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder, settings.MaxDetectionThreads)),
+                        () => detector.ExecuteDetectorAsync(new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder, settings.MaxDetectionThreads ?? DefaultMaxDetectionThreads)),
                         isExperimentalDetector,
                         record);
 

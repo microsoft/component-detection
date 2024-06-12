@@ -19,7 +19,7 @@ public class ScanRequest
     /// <param name="imagesToScan">Container images to scan.</param>
     /// <param name="componentRecorder">Detector component recorder.</param>
     /// <param name="maxThreads">Max number of threads to use for detection.</param>
-    public ScanRequest(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate directoryExclusionPredicate, ILogger logger, IDictionary<string, string> detectorArgs, IEnumerable<string> imagesToScan, IComponentRecorder componentRecorder, int? maxThreads = 10)
+    public ScanRequest(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate directoryExclusionPredicate, ILogger logger, IDictionary<string, string> detectorArgs, IEnumerable<string> imagesToScan, IComponentRecorder componentRecorder, int maxThreads = 10)
     {
         this.SourceDirectory = sourceDirectory;
         this.DirectoryExclusionPredicate = directoryExclusionPredicate;
@@ -57,5 +57,5 @@ public class ScanRequest
     /// <summary>
     /// Gets the maximum number of threads to use in parallel for executing the detection.
     /// </summary>
-    public int? MaxThreads { get; private set; }
+    public int MaxThreads { get; private set; }
 }
