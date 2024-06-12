@@ -173,6 +173,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         {
             stdOutText = process.StandardOutput.ReadToEnd();
         });
+
         process.Exited += (sender, args) =>
         {
             Task.WaitAll([t1, t2], TimeSpan.FromSeconds(WriteStdOutErrTimeoutSeconds));
@@ -184,7 +185,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         t1.Start();
         t2.Start();
 
-        var processKillRegistration = cancellationToken.Register(process.Kill);
+        cancellationToken.Register(process.Kill);
 
         return tcs.Task;
     }
