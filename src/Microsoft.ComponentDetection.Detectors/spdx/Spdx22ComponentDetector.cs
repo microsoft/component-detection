@@ -1,10 +1,11 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Spdx;
+namespace Microsoft.ComponentDetection.Detectors.Spdx;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -42,7 +43,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
 
     public override IList<string> SearchPatterns => new List<string> { "*.spdx.json" };
 
-    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         this.Logger.LogDebug("Discovered SPDX2.2 manifest file at: {ManifestLocation}", processRequest.ComponentStream.Location);
         var file = processRequest.ComponentStream;

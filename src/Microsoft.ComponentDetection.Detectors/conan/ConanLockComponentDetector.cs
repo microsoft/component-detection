@@ -1,9 +1,10 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Conan;
+namespace Microsoft.ComponentDetection.Detectors.Conan;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -33,14 +34,14 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
 
     public override IEnumerable<string> Categories => new List<string> { "Conan" };
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var conanLockFile = processRequest.ComponentStream;
 
         try
         {
-            var conanLock = await JsonSerializer.DeserializeAsync<ConanLock>(conanLockFile.Stream);
+            var conanLock = await JsonSerializer.DeserializeAsync<ConanLock>(conanLockFile.Stream, cancellationToken: cancellationToken);
             this.RecordLockfileVersion(conanLock.Version);
 
             if (!conanLock.HasNodes())

@@ -58,6 +58,15 @@ public class DetectorProcessingService : IDetectorProcessingService
         await this.experimentService.InitializeAsync();
         this.experimentService.RemoveUnwantedExperimentsbyDetectors(detectorRestrictions.DisabledDetectors);
 
+        var cancellationToken = CancellationToken.None;
+        if (settings.Timeout != null && settings.Timeout > 0)
+        {
+            this.logger.LogDebug("Setting detector timeout to {Timeout}.", settings.Timeout);
+            var cts = new CancellationTokenSource();
+            cancellationToken = cts.Token;
+            cts.CancelAfter(TimeSpan.FromSeconds((double)settings.Timeout));
+        }
+
         IEnumerable<Task<(IndividualDetectorScanResult, ComponentRecorder, IComponentDetector)>> scanTasks = detectors
             .Select(async detector =>
             {
@@ -75,7 +84,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
-                        () => detector.ExecuteDetectorAsync(new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder)),
+                        () => detector.ExecuteDetectorAsync(new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder), cancellationToken),
                         isExperimentalDetector,
                         record);
 

@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using global::NuGet.Packaging;
@@ -48,7 +49,7 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
     public override int Version => 1;
 
     /// <inheritdoc />
-    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         try
         {

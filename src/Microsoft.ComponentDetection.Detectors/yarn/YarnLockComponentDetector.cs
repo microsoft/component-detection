@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using DotNet.Globbing;
 using Microsoft.ComponentDetection.Contracts;
@@ -43,7 +44,7 @@ public class YarnLockComponentDetector : FileComponentDetector
     /// <remarks>"Package" is a more common substring, enclose it with \ to verify it is a folder.</remarks>
     protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store", "\\package\\" };
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;

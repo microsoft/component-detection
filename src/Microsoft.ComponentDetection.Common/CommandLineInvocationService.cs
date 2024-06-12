@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
@@ -14,6 +15,7 @@ using Microsoft.ComponentDetection.Contracts;
 /// <inheritdoc/>
 public class CommandLineInvocationService : ICommandLineInvocationService
 {
+    private const int WriteStdOutErrTimeoutSeconds = 10;
     private readonly IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
 
     /// <inheritdoc/>
@@ -52,7 +54,12 @@ public class CommandLineInvocationService : ICommandLineInvocationService
     }
 
     /// <inheritdoc/>
-    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
+    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(
+        string command,
+        IEnumerable<string> additionalCandidateCommands = null,
+        DirectoryInfo workingDirectory = null,
+        CancellationToken cancellationToken = default,
+        params string[] parameters)
     {
         var isCommandLocatable = await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands);
         if (!isCommandLocatable)
@@ -74,7 +81,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         var commandForLogging = joinedParameters.RemoveSensitiveInformation();
         try
         {
-            var result = await RunProcessAsync(pathToRun, joinedParameters, workingDirectory);
+            var result = await RunProcessAsync(pathToRun, joinedParameters, workingDirectory, cancellationToken);
             record.Track(result, pathToRun, commandForLogging);
             return result;
         }
@@ -98,9 +105,25 @@ public class CommandLineInvocationService : ICommandLineInvocationService
     }
 
     /// <inheritdoc/>
+    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, CancellationToken cancellationToken = default, params string[] parameters)
+    {
+        return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, cancellationToken, parameters);
+    }
+
+    /// <inheritdoc/>
+    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(
+        string command,
+        IEnumerable<string> additionalCandidateCommands = null,
+        DirectoryInfo workingDirectory = null,
+        params string[] parameters)
+    {
+        return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory, CancellationToken.None, parameters);
+    }
+
+    /// <inheritdoc/>
     public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
     {
-        return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, parameters);
+        return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, CancellationToken.None, parameters);
     }
 
     private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
@@ -156,6 +179,64 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         process.Start();
         t1.Start();
         t2.Start();
+
+        return tcs.Task;
+    }
+
+    private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null, CancellationToken cancellationToken = default)
+    {
+        var tcs = new TaskCompletionSource<CommandLineExecutionResult>();
+
+        if (fileName.EndsWith(".cmd") || fileName.EndsWith(".bat"))
+        {
+            // If a script attempts to find its location using "%dp0", that can return the wrong path (current
+            // working directory) unless the script is run via "cmd /C".  An example is "ant.bat".
+            parameters = $"/C {fileName} {parameters}";
+            fileName = "cmd.exe";
+        }
+
+        var process = new Process
+        {
+            StartInfo =
+            {
+                FileName = fileName,
+                Arguments = parameters,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+            },
+            EnableRaisingEvents = true,
+        };
+
+        if (workingDirectory != null)
+        {
+            process.StartInfo.WorkingDirectory = workingDirectory.FullName;
+        }
+
+        var errorText = string.Empty;
+        var stdOutText = string.Empty;
+
+        var t1 = new Task(() =>
+        {
+            errorText = process.StandardError.ReadToEnd();
+        });
+        var t2 = new Task(() =>
+        {
+            stdOutText = process.StandardOutput.ReadToEnd();
+        });
+        process.Exited += (sender, args) =>
+        {
+            Task.WaitAll([t1, t2], TimeSpan.FromSeconds(WriteStdOutErrTimeoutSeconds));
+            tcs.TrySetResult(new CommandLineExecutionResult { ExitCode = process.ExitCode, StdErr = errorText, StdOut = stdOutText });
+            process.Dispose();
+        };
+
+        process.Start();
+        t1.Start();
+        t2.Start();
+
+        var processKillRegistration = cancellationToken.Register(process.Kill);
 
         return tcs.Task;
     }

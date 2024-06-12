@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
@@ -92,7 +93,7 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
                 }
             }));
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         IEnumerable<string> packageJsonPattern = new List<string> { "package.json" };
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;

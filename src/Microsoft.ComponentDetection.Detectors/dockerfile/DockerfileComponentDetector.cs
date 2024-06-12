@@ -1,10 +1,11 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
+namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
@@ -42,7 +43,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override int Version => 1;
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
