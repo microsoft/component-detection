@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
@@ -243,6 +244,7 @@ public class PipCommandServiceTests
             "pip",
             It.IsAny<IEnumerable<string>>(),
             It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
             It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty })
             .Verifiable();
@@ -293,6 +295,7 @@ public class PipCommandServiceTests
             "pip",
             It.IsAny<IEnumerable<string>>(),
             It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
             It.Is<string>(s => s.Contains("-e .", StringComparison.OrdinalIgnoreCase))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty })
             .Verifiable();
@@ -343,6 +346,7 @@ public class PipCommandServiceTests
             "pip",
             It.IsAny<IEnumerable<string>>(),
             It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
             It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty })
             .Verifiable();
@@ -450,11 +454,12 @@ public class PipCommandServiceTests
             "pip",
             It.IsAny<IEnumerable<string>>(),
             It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
             It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 1, StdErr = "TestFail", StdOut = string.Empty })
             .Verifiable();
 
-        var action = async () => await service.GenerateInstallationReportAsync(testPath);
+        var action = async () => await service.GenerateInstallationReportAsync(testPath, cancellationToken: CancellationToken.None);
         await action.Should().ThrowAsync<InvalidOperationException>();
 
         this.commandLineInvokationService.Verify();

@@ -288,7 +288,7 @@ public class DetectorProcessingServiceTests
         ScanRequest capturedRequest = null;
         this.firstFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(this.ExpectedResultForDetector(this.firstFileComponentDetectorMock.Object.Id))
-            .Callback<ScanRequest>(request => capturedRequest = request);
+            .Callback<ScanRequest, CancellationToken>((request, token) => capturedRequest = request);
 
         await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
@@ -404,7 +404,7 @@ public class DetectorProcessingServiceTests
         ScanRequest capturedRequest = null;
         this.firstFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(this.ExpectedResultForDetector(this.firstFileComponentDetectorMock.Object.Id))
-            .Callback<ScanRequest>(request => capturedRequest = request);
+            .Callback<ScanRequest, CancellationToken>((request, token) => capturedRequest = request);
 
         await this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions());
 
@@ -562,12 +562,10 @@ public class DetectorProcessingServiceTests
         var expectedResult = this.ExpectedResultForDetector(id);
 
         mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null), It.IsAny<CancellationToken>())).Returns(
-            (ScanRequest request) =>
-            {
-                return mockFileDetector.Object.ExecuteDetectorAsync(request);
-            }).Verifiable();
+            (ScanRequest request, CancellationToken cancellationToken) => mockFileDetector.Object.ExecuteDetectorAsync(request, cancellationToken)).Verifiable();
+
         mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null), It.IsAny<CancellationToken>())).ReturnsAsync(
-            (ScanRequest request) =>
+            (ScanRequest request, CancellationToken cancellationToken) =>
             {
                 this.FillComponentRecorder(request.ComponentRecorder, id);
                 return expectedResult;
@@ -611,7 +609,7 @@ public class DetectorProcessingServiceTests
         this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
 
         mockCommandDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && !request.DetectorArgs.Any()), It.IsAny<CancellationToken>())).ReturnsAsync(
-            (ScanRequest request) =>
+            (ScanRequest request, CancellationToken cancellationToken) =>
             {
                 this.FillComponentRecorder(request.ComponentRecorder, id);
                 return this.ExpectedResultForDetector(id);
