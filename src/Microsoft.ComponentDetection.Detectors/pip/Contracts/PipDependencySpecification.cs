@@ -159,7 +159,7 @@ public class PipDependencySpecification
                 continue; // If the variable isn't in the environment, we can't evaluate it.
             }
 
-            if (conditionalVar == "python_version")
+            if (string.Equals(conditionalVar, "python_version", System.StringComparison.OrdinalIgnoreCase))
             {
                 var pythonVersion = PythonVersion.Create(conditionalValue);
                 if (pythonVersion.Valid)
@@ -172,12 +172,14 @@ public class PipDependencySpecification
                     conditionMet = pythonEnvironmentVariables[conditionalVar] == conditionalValue;
                 }
             }
-            else if (conditionalVar == "sys_platform")
+            else if (string.Equals(conditionalVar, "sys_platform", System.StringComparison.OrdinalIgnoreCase))
             {
-                conditionMet = string.Equals(pythonEnvironmentVariables[conditionalVar], conditionalValue, System.StringComparison.OrdinalIgnoreCase);
+                // if the platform is not windows or linux (empty string in env var), allow the package to be added. Otherwise, ensure it matches the python condition
+                conditionMet = string.IsNullOrEmpty(pythonEnvironmentVariables[conditionalVar]) || string.Equals(pythonEnvironmentVariables[conditionalVar], conditionalValue, System.StringComparison.OrdinalIgnoreCase);
             }
             else
             {
+                // we don't know how to handle cases besides python_version or sys_platform, so allow the package
                 continue;
             }
 
