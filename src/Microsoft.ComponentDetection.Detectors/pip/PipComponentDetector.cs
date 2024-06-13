@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -52,6 +53,13 @@ public class PipComponentDetector : FileComponentDetector
         {
             var pythonVersion = await this.pythonCommandService.GetPythonVersionAsync(pythonExePath);
             this.pythonResolver.SetPythonEnvironmentVariable("python_version", pythonVersion);
+
+            var pythonPlatformString = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? "win32"
+                : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                    ? "linux"
+                    : string.Empty;
+            this.pythonResolver.SetPythonEnvironmentVariable("sys_platform", pythonPlatformString);
         }
 
         return processRequests;

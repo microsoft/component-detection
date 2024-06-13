@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.Collections.Generic;
 using FluentAssertions;
@@ -101,6 +101,7 @@ public class PipDependencySpecifierTests
             ("Requires-Dist: TestPackage ; python_version == \"3.8\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string>(), ConditionalDependencySpecifiers = new List<string> { "python_version == \"3.8\"" } }),
             ("Requires-Dist: TestPackage (>=3.0.1) ; python_version < \"3.5\" or sys_platform == \"win32\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=3.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version < \"3.5\"", "or sys_platform == \"win32\"" } }),
             ("Requires-Dist: TestPackage (>=2.0.1) ; python_version == \"3.8\" and sys_platform == \"win32\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=2.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version == \"3.8\"", "and sys_platform == \"win32\"" } }),
+            ("Requires-Dist: TestPackage (>=2.0.1) ; python_version == \"3.8\" and sys_platform == \"linux\"", false, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=2.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version == \"3.8\"", "and sys_platform == \"linux\"" } }),
             ("Requires-Dist: TestPackage (>=4.0.1) ; python_version < \"3.6\" and sys_platform == \"win32\"", false, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=4.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version < \"3.6\"", "and sys_platform == \"win32\"" } }),
             ("Requires-Dist: TestPackage (>=5.0.1) ; python_version > \"3.7\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=5.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version > \"3.7\"" } }),
             ("Requires-Dist: TestPackage (>=5.0.1) ; python_version >= \"3.7\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=5.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version >= \"3.7\"" } }),
@@ -115,6 +116,25 @@ public class PipDependencySpecifierTests
         {
             { "python_version", "3.8" },
             { "sys_platform", "win32" },
+        };
+
+        VerifyPipConditionalDependencyParsing(specs, pythonEnvironmentVariables, true);
+    }
+
+    [TestMethod]
+    public void TestPipDependencyRequireDistConditionalDependenciesMet_Linux()
+    {
+        var specs = new List<(string, bool, PipDependencySpecification)>
+        {
+            ("Requires-Dist: TestPackage (>=2.0.1) ; python_version == \"3.8\" and sys_platform == \"linux\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=2.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version == \"3.8\"", "and sys_platform == \"linux\"" } }),
+            ("Requires-Dist: TestPackage (>=4.0.1) ; python_version == \"3.6\" and sys_platform == \"win32\"", false, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=4.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version == \"3.6\"", "and sys_platform == \"win32\"" } }),
+            ("Requires-Dist: TestPackage (>=5.0.1) ; sys_platform == \"linux\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=5.0.1" }, ConditionalDependencySpecifiers = new List<string> { "sys_platform == \"linux\"" } }),
+            ("Requires-Dist: TestPackage (>=5.0.1) ; sys_platform == \"win32\"", false, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=5.0.1" }, ConditionalDependencySpecifiers = new List<string> { "sys_platform == \"win32\"" } }),
+        };
+        var pythonEnvironmentVariables = new Dictionary<string, string>
+        {
+            { "python_version", "3.8" },
+            { "sys_platform", "linux" },
         };
 
         VerifyPipConditionalDependencyParsing(specs, pythonEnvironmentVariables, true);

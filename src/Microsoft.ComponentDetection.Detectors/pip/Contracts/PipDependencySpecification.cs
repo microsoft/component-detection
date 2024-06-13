@@ -159,15 +159,26 @@ public class PipDependencySpecification
                 continue; // If the variable isn't in the environment, we can't evaluate it.
             }
 
-            var pythonVersion = PythonVersion.Create(conditionalValue);
-            if (pythonVersion.Valid)
+            if (conditionalVar == "python_version")
             {
-                var conditionalSpec = $"{conditionalOperator}{conditionalValue}";
-                conditionMet = PythonVersionUtilities.VersionValidForSpec(pythonEnvironmentVariables[conditionalVar], new List<string> { conditionalSpec });
+                var pythonVersion = PythonVersion.Create(conditionalValue);
+                if (pythonVersion.Valid)
+                {
+                    var conditionalSpec = $"{conditionalOperator}{conditionalValue}";
+                    conditionMet = PythonVersionUtilities.VersionValidForSpec(pythonEnvironmentVariables[conditionalVar], new List<string> { conditionalSpec });
+                }
+                else
+                {
+                    conditionMet = pythonEnvironmentVariables[conditionalVar] == conditionalValue;
+                }
+            }
+            else if (conditionalVar == "sys_platform")
+            {
+                conditionMet = string.Equals(pythonEnvironmentVariables[conditionalVar], conditionalValue, System.StringComparison.OrdinalIgnoreCase);
             }
             else
             {
-                conditionMet = pythonEnvironmentVariables[conditionalVar] == conditionalValue;
+                continue;
             }
 
             if (conditionalJoinOperator == "or")
