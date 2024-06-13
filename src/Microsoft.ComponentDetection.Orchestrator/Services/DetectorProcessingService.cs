@@ -23,7 +23,8 @@ using static System.Environment;
 
 public class DetectorProcessingService : IDetectorProcessingService
 {
-    private const int ExperimentalTimeoutMinutes = 4;
+    private const int ExperimentalTimeoutSeconds = 240; // 4 minutes
+    private const int ProcessTimeoutBufferSeconds = 5;
 
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
@@ -74,14 +75,10 @@ public class DetectorProcessingService : IDetectorProcessingService
                 {
                     var cts = new CancellationTokenSource();
                     cancellationToken = cts.Token;
+                    var timeout = GetProcessTimeout(settings.Timeout.Value, isExperimentalDetector);
 
-                    // max timeout is equal to settings timeout for non-experimental, and min of settings timeout or 4 minutes for experimenatal
-                    var timeoutSeconds = isExperimentalDetector
-                        ? Math.Min(settings.Timeout.Value, ExperimentalTimeoutMinutes * 60)
-                        : settings.Timeout.Value;
-
-                    this.logger.LogDebug("Setting {DetectorName} detector timeout to {Timeout} seconds.", detector.Id, timeoutSeconds);
-                    cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+                    this.logger.LogDebug("Setting {DetectorName} process detector timeout to {Timeout} seconds.", detector.Id, timeout.TotalSeconds);
+                    cts.CancelAfter(timeout);
                 }
 
                 IEnumerable<DetectedComponent> detectedComponents;
@@ -266,6 +263,23 @@ public class DetectorProcessingService : IDetectorProcessingService
         };
     }
 
+    /// <summary>
+    /// Gets the timeout for the individual running process. This is calculated based on
+    /// whether we want the experimental timeout or not. Regardless, we will take a buffer of 5 seconds off of
+    /// the timeout value so that the process has time to exit before the invoking process is cancelled.
+    /// </summary>
+    /// <param name="settingsTimeoutSeconds">Number of seconds before the detection process times out.</param>
+    /// <param name="isExperimental">Whether we should get the experimental timeout or not.</param>
+    /// <returns>Number of seconds before a process cancellation should be invoked.</returns>
+    private static TimeSpan GetProcessTimeout(int settingsTimeoutSeconds, bool isExperimental)
+    {
+        var timeoutSeconds = isExperimental
+            ? Math.Min(settingsTimeoutSeconds, ExperimentalTimeoutSeconds)
+            : settingsTimeoutSeconds;
+
+        return TimeSpan.FromSeconds(timeoutSeconds - ProcessTimeoutBufferSeconds);
+    }
+
     private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
     {
         individualDetectorScanResult ??= new IndividualDetectorScanResult();
@@ -295,7 +309,7 @@ public class DetectorProcessingService : IDetectorProcessingService
 
         try
         {
-            return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(ExperimentalTimeoutMinutes), CancellationToken.None);
+            return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromSeconds(ExperimentalTimeoutSeconds), CancellationToken.None);
         }
         catch (TimeoutException)
         {

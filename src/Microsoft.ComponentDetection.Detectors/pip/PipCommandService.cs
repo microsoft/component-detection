@@ -144,7 +144,7 @@ public class PipCommandService : IPipCommandService
                 StdErr = $"{errorMessage} {command.StdErr}",
             };
 
-            this.logger.LogDebug("{Error}", errorMessage);
+            this.logger.LogWarning("{Error}", errorMessage);
             throw new InvalidOperationException(errorMessage);
         }
         else if (command.ExitCode != 0)

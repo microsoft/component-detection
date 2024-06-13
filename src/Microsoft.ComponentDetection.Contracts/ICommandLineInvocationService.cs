@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -54,6 +55,7 @@ public interface ICommandLineInvocationService
     /// <param name="additionalCandidateCommands">Other commands that could satisfy the need for the first command. Assumption is that they all share similar calling patterns.</param>
     /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
     /// <returns>Awaitable task with the result of executing the command, including exit code.</returns>
+    [Obsolete($"This implementation of {nameof(ExecuteCommandAsync)} is deprecated. Please use a version with CancellationTokens.")]
     Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters);
 
     /// <summary>
@@ -64,6 +66,7 @@ public interface ICommandLineInvocationService
     /// <param name="workingDirectory">The directory under which to run the command.</param>
     /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
     /// <returns>Awaitable task with the result of executing the command, including exit code.</returns>
+    [Obsolete($"This implementation of {nameof(ExecuteCommandAsync)} is deprecated. Please use a version with CancellationTokens.")]
     Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters);
 
     /// <summary>
