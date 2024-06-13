@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Pip;
+namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System.Collections.Generic;
 using System.Threading.Tasks;

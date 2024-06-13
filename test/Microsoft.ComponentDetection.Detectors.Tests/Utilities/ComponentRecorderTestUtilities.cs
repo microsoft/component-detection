@@ -1,10 +1,12 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Newtonsoft.Json;
 
 public static class ComponentRecorderTestUtilities
 {
@@ -132,6 +134,41 @@ public static class ComponentRecorderTestUtilities
                 .Select(componentId => (x.Location, x.Graph, ComponentId: componentId)))
             .GroupBy(x => x.ComponentId)
             .ToList();
+    }
+
+    public static void CheckGraphStructure(IDependencyGraph graph, Dictionary<string, string[]> graphComponentsWithDeps)
+    {
+        var graphComponents = graph.GetComponents().ToArray();
+        graphComponents.Should().HaveCount(
+            graphComponentsWithDeps.Keys.Count,
+            $"Expected {graphComponentsWithDeps.Keys.Count} component to be recorded but got {graphComponents.Length} instead!");
+
+        foreach (var componentId in graphComponentsWithDeps.Keys)
+        {
+            graphComponents.Should().Contain(
+                componentId, $"Component `{componentId}` not recorded!");
+
+            var recordedDeps = graph.GetDependenciesForComponent(componentId).ToArray();
+            var expectedDeps = graphComponentsWithDeps[componentId];
+
+            recordedDeps.Should().HaveCount(
+                expectedDeps.Length,
+                $"Count missmatch of expected dependencies ({JsonConvert.SerializeObject(expectedDeps)}) and recorded dependencies ({JsonConvert.SerializeObject(recordedDeps)}) for `{componentId}`!");
+
+            foreach (var expectedDep in expectedDeps)
+            {
+                recordedDeps.Should().Contain(
+                    expectedDep, $"Expected `{expectedDep}` in the list of dependencies for `{componentId}` but only recorded: {JsonConvert.SerializeObject(recordedDeps)}");
+            }
+        }
+    }
+
+    public static void CheckChild<T>(IComponentRecorder recorder, string childId, string[] parentIds)
+        where T : TypedComponent
+    {
+        recorder.AssertAllExplicitlyReferencedComponents(
+            childId,
+            parentIds.Select(parentId => new Func<T, bool>(x => x.Id == parentId)).ToArray());
     }
 
     public class ComponentOrientedGrouping

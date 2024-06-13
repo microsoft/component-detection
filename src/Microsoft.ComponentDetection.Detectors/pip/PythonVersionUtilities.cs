@@ -95,9 +95,10 @@ public static class PythonVersionUtilities
         }
 
         var op = spec[..i];
+        var specVerSection = spec[i..].Trim();
 
         var targetVer = PythonVersion.Create(version);
-        var specVer = PythonVersion.Create(spec[i..]);
+        var specVer = PythonVersion.Create(specVerSection);
 
         if (!targetVer.Valid)
         {
@@ -106,7 +107,7 @@ public static class PythonVersionUtilities
 
         if (!specVer.Valid)
         {
-            throw new ArgumentException($"The version specification {spec[i..]} is not a valid python version");
+            throw new ArgumentException($"The version specification {specVerSection} is not a valid python version");
         }
 
         return op switch

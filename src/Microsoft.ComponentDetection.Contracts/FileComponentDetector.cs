@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
+namespace Microsoft.ComponentDetection.Contracts;
 
 using System;
 using System.Collections.Generic;
@@ -53,7 +53,7 @@ public abstract class FileComponentDetector : IComponentDetector
     /// </summary>
     protected ScanRequest CurrentScanRequest { get; set; }
 
-    public bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
+    public virtual bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
 
     protected Dictionary<string, string> Telemetry { get; set; } = new Dictionary<string, string>();
 

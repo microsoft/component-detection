@@ -8,7 +8,7 @@
   <ItemGroup>
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
-    <PackageVersion Include="coverlet.msbuild" Version="6.0.0" />
+    <PackageVersion Include="coverlet.msbuild" Version="6.0.2" />
     <PackageVersion Include="Docker.DotNet" Version="3.125.15" />
     <PackageVersion Include="FluentAssertions" Version="6.12.0" />
     <PackageVersion Include="FluentAssertions.Analyzers" Version="0.26.0" />
@@ -17,23 +17,23 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="7.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="7.0.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.8.14" />
     <PackageVersion Include="DotNet.Glob" Version="2.1.1" />
-    <PackageVersion Include="MinVer" Version="4.3.0" />
+    <PackageVersion Include="MinVer" Version="5.0.0" />
     <PackageVersion Include="Moq" Version="4.18.4" />
-    <PackageVersion Include="morelinq" Version="4.1.0" />
-    <PackageVersion Include="MSTest.TestAdapter" Version="3.1.1" />
-    <PackageVersion Include="MSTest.TestFramework" Version="3.1.1" />
+    <PackageVersion Include="morelinq" Version="4.2.0" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="3.4.3" />
+    <PackageVersion Include="MSTest.TestFramework" Version="3.4.3" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageVersion Include="Newtonsoft.Json.Schema" Version="3.0.15" />
-    <PackageVersion Include="NuGet.ProjectModel" Version="6.8.0" />
-    <PackageVersion Include="NuGet.Versioning" Version="6.8.0" />
+    <PackageVersion Include="Newtonsoft.Json.Schema" Version="3.0.16" />
+    <PackageVersion Include="NuGet.ProjectModel" Version="6.10.0" />
+    <PackageVersion Include="NuGet.Versioning" Version="6.10.0" />
     <PackageVersion Include="packageurl-dotnet" Version="1.0.0" />
-    <PackageVersion Include="Polly" Version="8.2.1" />
+    <PackageVersion Include="Polly" Version="8.4.0" />
     <PackageVersion Include="SemanticVersioning" Version="2.0.2" />
-    <PackageVersion Include="Serilog" Version="3.1.1" />
+    <PackageVersion Include="Serilog" Version="4.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="7.0.0" />
     <PackageVersion Include="Serilog.Sinks.Async" Version="1.5.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="5.0.1" />
@@ -45,13 +45,13 @@
     <PackageVersion Include="Spectre.Console.Testing" Version="0.48.0" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
     <PackageVersion Include="System.Memory" Version="4.5.5" />
-    <PackageVersion Include="System.Reactive" Version="6.0.0" />
+    <PackageVersion Include="System.Reactive" Version="6.0.1" />
     <PackageVersion Include="System.Runtime.Loader" Version="4.3.0" />
     <PackageVersion Include="System.Text.Json" Version="6.0.9" />
     <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="7.0.0" />
     <PackageVersion Include="Tomlyn.Signed" Version="0.17.0" />
-    <PackageVersion Include="yamldotnet" Version="13.7.1" />
+    <PackageVersion Include="yamldotnet" Version="15.1.6" />
     <PackageVersion Include="Faker.net" Version="2.0.163" />
-    <PackageVersion Include="Valleysoft.DockerfileModel" Version="1.1.0" />
+    <PackageVersion Include="Valleysoft.DockerfileModel" Version="1.1.1" />
   </ItemGroup>
 </Project>

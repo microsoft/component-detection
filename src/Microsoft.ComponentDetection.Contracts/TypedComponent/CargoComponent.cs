@@ -10,12 +10,13 @@ public class CargoComponent : TypedComponent
         // reserved for deserialization
     }
 
-    public CargoComponent(string name, string version, string author = null, string license = null)
+    public CargoComponent(string name, string version, string author = null, string license = null, string source = null)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Cargo));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Cargo));
         this.Author = author;
         this.License = license;
+        this.Source = source;
     }
 
     public string Name { get; set; }
@@ -28,6 +29,9 @@ public class CargoComponent : TypedComponent
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? License { get; set; }
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string? Source { get; set; }
 #nullable disable
 
     public override ComponentType Type => ComponentType.Cargo;

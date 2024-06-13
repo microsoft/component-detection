@@ -357,6 +357,85 @@ public class PipResolverTests
         this.pyPiClient.Verify(x => x.FetchPackageDependenciesAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<PythonProjectRelease>()), Times.Exactly(4));
     }
 
+    [TestMethod]
+    public async Task TestInvalidVersionSpecThrowsAsync()
+    {
+        var a = new PipDependencySpecification("a==1.0");
+        var b = new PipDependencySpecification("b==1.0");
+        var c = new PipDependencySpecification("c==1.0");
+        var c2 = new PipDependencySpecification("Requires-Dist: c (>dev)", true);
+
+        var versions = new List<string> { "1.0" };
+
+        var aReleases = this.CreateReleasesDictionary(versions);
+        var bReleases = this.CreateReleasesDictionary(versions);
+        var cReleases = this.CreateReleasesDictionary(versions);
+
+        var aProject = new PythonProject
+        {
+            Releases = aReleases,
+            Info = new PythonProjectInfo
+            {
+                Author = "Microsoft",
+                License = "MIT",
+            },
+        };
+
+        var bProject = new PythonProject
+        {
+            Releases = bReleases,
+            Info = new PythonProjectInfo
+            {
+                AuthorEmail = "Microsoft <sample@microsoft.com>",
+                Classifiers = new List<string> { "License :: OSI Approved :: MIT License" },
+            },
+        };
+
+        var cProject = new PythonProject
+        {
+            Releases = cReleases,
+            Info = new PythonProjectInfo
+            {
+                Maintainer = "Microsoft",
+                Classifiers = new List<string> { "License :: OSI Approved :: MIT License", "License :: OSI Approved :: BSD License" },
+            },
+        };
+
+        this.pyPiClient.Setup(x => x.GetProjectAsync(a)).ReturnsAsync(aProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(b)).ReturnsAsync(bProject);
+        this.pyPiClient.Setup(x => x.GetProjectAsync(c)).ReturnsAsync(cProject);
+
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("a", "1.0", aReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { b });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("b", "1.0", bReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { c, c2 });
+        this.pyPiClient.Setup(x => x.FetchPackageDependenciesAsync("c", "1.0", cReleases["1.0"].First())).ReturnsAsync(new List<PipDependencySpecification> { });
+
+        var dependencies = new List<PipDependencySpecification> { a };
+
+        var resolver = new PythonResolver(this.pyPiClient.Object, this.loggerMock.Object);
+
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
+
+        resolveResult.Should().NotBeNull();
+
+        var expectedA = new PipGraphNode(new PipComponent("a", "1.0", "Microsoft", "MIT"));
+        var expectedB = new PipGraphNode(new PipComponent("b", "1.0", "Microsoft <sample@microsoft.com>", "MIT License"));
+        var expectedC = new PipGraphNode(new PipComponent("c", "1.0", "Microsoft", "MIT License, BSD License"));
+
+        expectedA.Children.Add(expectedB);
+        expectedB.Parents.Add(expectedA);
+        expectedB.Children.Add(expectedC);
+        expectedC.Parents.Add(expectedB);
+
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
+
+        this.loggerMock.Verify(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => string.Equals("Failure resolving Python package c with message: The version specification dev is not a valid python version.", o.ToString(), StringComparison.Ordinal)),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
     private bool CompareGraphs(PipGraphNode a, PipGraphNode b)
     {
         var componentA = a.Value;

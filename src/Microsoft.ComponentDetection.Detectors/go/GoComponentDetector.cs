@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Go;
+namespace Microsoft.ComponentDetection.Detectors.Go;
 
 using System;
 using System.Collections.Generic;
@@ -257,6 +257,12 @@ public class GoComponentDetector : FileComponentDetector
 
     private void TryRegisterDependencyFromModLine(string line, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
+        if (line.Trim().StartsWith("//"))
+        {
+            // this is a comment line, ignore it
+            return;
+        }
+
         if (this.TryToCreateGoComponentFromModLine(line, out var goComponent))
         {
             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));

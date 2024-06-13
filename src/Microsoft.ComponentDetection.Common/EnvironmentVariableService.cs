@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Common;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
@@ -22,6 +23,9 @@ public class EnvironmentVariableService : IEnvironmentVariableService
 
         return caseInsensitiveName != null ? Environment.GetEnvironmentVariable(caseInsensitiveName) : null;
     }
+
+    public List<string> GetListEnvironmentVariable(string name, string delimiter)
+    => (this.GetEnvironmentVariable(name) ?? string.Empty).Split(delimiter, StringSplitOptions.RemoveEmptyEntries).ToList();
 
     public bool IsEnvironmentVariableValueTrue(string name)
     {

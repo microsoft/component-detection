@@ -62,6 +62,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
+        services.AddSingleton<IExperimentConfiguration, VcpkgExperiment>();
+        services.AddSingleton<IExperimentConfiguration, GoDetectorReplaceExperiment>();
+        services.AddSingleton<IExperimentConfiguration, PipReportExperiment>();
 
         // Detectors
         // CocoaPods
@@ -78,6 +81,7 @@ public static class ServiceCollectionExtensions
 
         // Go
         services.AddSingleton<IComponentDetector, GoComponentDetector>();
+        services.AddSingleton<IComponentDetector, GoComponentWithReplaceDetector>();
 
         // Gradle
         services.AddSingleton<IComponentDetector, GradleComponentDetector>();
@@ -112,9 +116,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISimplePythonResolver, SimplePythonResolver>();
         services.AddSingleton<IComponentDetector, PipComponentDetector>();
         services.AddSingleton<IComponentDetector, SimplePipComponentDetector>();
+        services.AddSingleton<IPipCommandService, PipCommandService>();
+        services.AddSingleton<IComponentDetector, PipReportComponentDetector>();
 
         // pnpm
-        services.AddSingleton<IComponentDetector, PnpmComponentDetector>();
+        services.AddSingleton<IComponentDetector, PnpmComponentDetectorFactory>();
 
         // Poetry
         services.AddSingleton<IComponentDetector, PoetryComponentDetector>();

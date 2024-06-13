@@ -86,6 +86,7 @@ public class PythonVersionTests
         IList<(IList<string>, IList<string>, IList<string>)> testCases = new List<(IList<string>, IList<string>, IList<string>)>
         {
             (new List<string> { "==1.0" }, new List<string> { "1.0" }, new List<string> { "1.0.1", "2.0", "0.1" }),
+            (new List<string> { "== 1.0 " }, new List<string> { "1.0" }, new List<string> { "1.0.1", "2.0", "0.1" }),
             (new List<string> { "==1.4.*" }, new List<string> { "1.4", "1.4.1", "1.4.2", "1.4.3" }, new List<string> { "1.0.1", "2.0", "0.1", "1.5", "1.5.0" }),
             (new List<string> { ">=1.0" }, new List<string> { "1.0", "1.1", "1.5" }, new List<string> { "0.9" }),
             (new List<string> { ">=1.0", "<=1.4" }, new List<string> { "1.0", "1.1", "1.4" }, new List<string> { "0.9", "1.5" }),

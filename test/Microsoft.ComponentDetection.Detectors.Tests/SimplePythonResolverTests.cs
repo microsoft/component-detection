@@ -340,7 +340,59 @@ public class SimplePythonResolverTests
     }
 
     [TestMethod]
-    public async Task TestPipResolverVersionExtractionWithUnconventionalVersionsAsync()
+    public async Task TestPipResolverBadVersionSpecAsync()
+    {
+        var a = "a==1.0";
+        var b = "b==1.0";
+        var c = "c==1.0";
+        var c2 = "c (>dev)";
+
+        var specA = new PipDependencySpecification(a);
+        var specB = new PipDependencySpecification(b);
+        var specC = new PipDependencySpecification(c);
+        var specC2 = new PipDependencySpecification($"Requires-Dist: {c2}", true);
+
+        var aReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.0", "bdist_wheel") });
+        var bReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.0", "bdist_wheel") });
+        var cReleases = this.CreateSimplePypiProject(new List<(string, string)> { ("1.0", "bdist_wheel") });
+
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("a")))).ReturnsAsync(aReleases);
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("b")))).ReturnsAsync(bReleases);
+        this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals("c")))).ReturnsAsync(cReleases);
+
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(aReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("a", "1.0", this.CreateMetadataString(new List<string>() { b })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(bReleases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip("b", "1.0", this.CreateMetadataString(new List<string>() { c, c2 })));
+        this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(cReleases.Files.First().Url)).ReturnsAsync(new MemoryStream());
+
+        var dependencies = new List<PipDependencySpecification> { specA };
+
+        var resolver = new SimplePythonResolver(this.simplePyPiClient.Object, this.loggerMock.Object);
+
+        var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
+
+        resolveResult.Should().NotBeNull();
+
+        var expectedA = new PipGraphNode(new PipComponent("a", "1.0"));
+        var expectedB = new PipGraphNode(new PipComponent("b", "1.0"));
+        var expectedC = new PipGraphNode(new PipComponent("c", "1.0"));
+
+        expectedA.Children.Add(expectedB);
+        expectedB.Parents.Add(expectedA);
+        expectedB.Children.Add(expectedC);
+        expectedC.Parents.Add(expectedB);
+
+        this.CompareGraphs(resolveResult.First(), expectedA).Should().BeTrue();
+
+        this.loggerMock.Verify(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => string.Equals("Failure resolving Python package c with message: The version specification dev is not a valid python version.", o.ToString(), StringComparison.Ordinal)),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    [TestMethod]
+    public async Task TestPipResolverVersionExtractAllValidVersionsAsync()
     {
         var versions = new List<string>()
         {
@@ -369,25 +421,23 @@ public class SimplePythonResolverTests
 
         var dependencies = new List<PipDependencySpecification>();
 
-        var previous = string.Empty;
+        var componentNamePrefix = "component";
+
         for (var i = 0; i < versions.Count; i++)
         {
-            var index = i;
-            var specString = $"{index}=={versions[i]}";
+            var componentName = $"{componentNamePrefix}{i}";
+            var specString = $"{componentName}=={versions[i]}";
             var spec = new PipDependencySpecification(specString);
-            dependencies.Add(spec);
-            var releases = this.CreateSimplePypiProject(new List<(string, string)> { (versions[index], "bdist_wheel") });
-            this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals(index.ToString())))).ReturnsAsync(releases);
-            if (index > 0)
-            {
-                this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(releases.Files.First().Url)).ReturnsAsync(this.CreatePypiZip(index.ToString(), versions[index], this.CreateMetadataString(new List<string>() { previous })));
-            }
-            else if (index == versions.Count - 1)
-            {
-                this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(releases.Files.First().Url)).ReturnsAsync(new MemoryStream());
-            }
 
-            previous = specString;
+            dependencies.Add(spec);
+
+            var releases = this.CreateSimplePypiProject(new List<(string, string)> { (versions[i], "bdist_wheel") });
+
+            this.simplePyPiClient.Setup(x => x.GetSimplePypiProjectAsync(It.Is<PipDependencySpecification>(x => x.Name.Equals(componentName))))
+                .ReturnsAsync(releases);
+
+            this.simplePyPiClient.Setup(x => x.FetchPackageFileStreamAsync(releases.Files.First().Url))
+                .ReturnsAsync(this.CreatePypiZip(componentName, versions[i], this.CreateMetadataString(new List<string>())));
         }
 
         var resolver = new SimplePythonResolver(this.simplePyPiClient.Object, this.loggerMock.Object);
@@ -395,6 +445,17 @@ public class SimplePythonResolverTests
         var resolveResult = await resolver.ResolveRootsAsync(this.recorderMock.Object, dependencies);
 
         resolveResult.Should().NotBeNull();
+
+        resolveResult.Should().HaveCount(versions.Count);
+
+        for (var i = 0; i < versions.Count; i++)
+        {
+            var expected = new PipGraphNode(new PipComponent($"{componentNamePrefix}{i}", versions[i]));
+
+            resolveResult.Single(result => result.Value.Id == expected.Value.Id)
+                .Should()
+                .NotBeNull($"component {expected.Value.Id} should be detected.");
+        }
     }
 
     [TestMethod]

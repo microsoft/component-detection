@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 using System;
 using System.IO;

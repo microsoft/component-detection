@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common;
+namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.IO;
@@ -75,4 +75,17 @@ public class PathUtilityService : IPathUtilityService
     }
 
     private string ResolvePathFromInfo(FileSystemInfo info) => info.LinkTarget ?? info.FullName;
+
+    public string NormalizePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return path;
+        }
+
+        // Normalize the path directory seperator to / on Unix systems and on Windows.
+        // This is the behavior we want as Windows accepts / as a separator.
+        // AltDirectorySeparatorChar is / on Unix and on Windows.
+        return path.Replace('\\', Path.AltDirectorySeparatorChar);
+    }
 }
