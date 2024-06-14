@@ -15,9 +15,10 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
+using MoreLinq;
 using Newtonsoft.Json;
 
-public class GoComponentDetector : FileComponentDetector
+public class GoComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private static readonly Regex GoSumRegex = new(
         @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
@@ -50,7 +51,7 @@ public class GoComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
-    public override int Version => 7;
+    public override int Version => 1;
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
@@ -256,7 +257,7 @@ public class GoComponentDetector : FileComponentDetector
         return true;
     }
 
-    private void TryRegisterDependencyFromModLine(string line, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private void AddGoComponent(IList<GoComponent> goComponents, string line, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         if (line.Trim().StartsWith("//"))
         {
@@ -266,7 +267,7 @@ public class GoComponentDetector : FileComponentDetector
 
         if (this.TryToCreateGoComponentFromModLine(line, out var goComponent))
         {
-            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
+            goComponents.Add(goComponent);
         }
         else
         {
@@ -276,41 +277,90 @@ public class GoComponentDetector : FileComponentDetector
         }
     }
 
+    private void ReplaceGoComponents(IList<GoComponent> goComponents, string line, ISingleFileComponentRecorder singleFileComponentRecorder)
+    {
+        if (this.TryToCreateReplacementGoComponentFromModLine(line, out var goComponent))
+        {
+            var goComponentsWithReplacementVersion = goComponents.Where(component => component.Name == goComponent.Name);
+            if (goComponentsWithReplacementVersion.Any())
+            {
+                foreach (var component in goComponentsWithReplacementVersion)
+                {
+                    if (component.Name == goComponent.Name)
+                    {
+                        component.Version = goComponent.Version;
+                    }
+                }
+            }
+        }
+        else
+        {
+            var lineTrim = line.Trim();
+            this.Logger.LogWarning("Line could not be parsed for component [{LineTrim}]", lineTrim);
+            singleFileComponentRecorder.RegisterPackageParseFailure(lineTrim);
+        }
+    }
+
+    private void TryRegisterDependencyFromModLine(IList<GoComponent> goComponents, ISingleFileComponentRecorder singleFileComponentRecorder)
+    {
+        goComponents.ForEach(goComponent => singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent)));
+    }
+
     private async Task ParseGoModFileAsync(
         ISingleFileComponentRecorder singleFileComponentRecorder,
         IComponentStream file,
         GoGraphTelemetryRecord goGraphTelemetryRecord)
     {
         using var reader = new StreamReader(file.Stream);
+        var goComponents = new List<GoComponent>();
+        var inRequireBlock = false;
+        var inReplaceBlock = false;
 
         // There can be multiple require( ) sections in go 1.17+. loop over all of them.
         while (!reader.EndOfStream)
         {
             var line = await reader.ReadLineAsync();
-
-            while (line != null && !line.StartsWith("require ("))
+            if (line != null && line.StartsWith("require ("))
             {
-                if (line.StartsWith("go "))
-                {
-                    goGraphTelemetryRecord.GoModVersion = line[3..].Trim();
-                }
-
-                // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
-                // are listed in the require () section
-                if (line.StartsWith("require "))
-                {
-                    this.TryRegisterDependencyFromModLine(line[8..], singleFileComponentRecorder);
-                }
-
-                line = await reader.ReadLineAsync();
+                inRequireBlock = true;
+                continue;
+            }
+            else if (line != null && line.StartsWith("replace ("))
+            {
+                inReplaceBlock = true;
+                continue;
+            }
+            else if (line != null && line.StartsWith(")"))
+            {
+                inRequireBlock = false;
+                inReplaceBlock = false;
+                continue;
             }
 
-            // Stopping at the first ) restrict the detection to only the require section.
-            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(")"))
+            if (line != null && line.StartsWith("require "))
             {
-                this.TryRegisterDependencyFromModLine(line, singleFileComponentRecorder);
+                this.AddGoComponent(goComponents, line[8..], singleFileComponentRecorder);
+            }
+            else if (line != null && line.StartsWith("replace "))
+            {
+                this.ReplaceGoComponents(goComponents, line[8..], singleFileComponentRecorder);
+            }
+
+            if (inRequireBlock)
+            {
+                this.AddGoComponent(goComponents, line, singleFileComponentRecorder);
+            }
+            else if (inReplaceBlock)
+            {
+                this.ReplaceGoComponents(goComponents, line, singleFileComponentRecorder);
+            }
+            else if (line != null && line.StartsWith("go "))
+            {
+                goGraphTelemetryRecord.GoModVersion = line[3..].Trim();
             }
         }
+
+        this.TryRegisterDependencyFromModLine(goComponents, singleFileComponentRecorder);
     }
 
     private bool TryToCreateGoComponentFromModLine(string line, out GoComponent goComponent)
@@ -325,6 +375,23 @@ public class GoComponentDetector : FileComponentDetector
 
         var name = lineComponents[0];
         var version = lineComponents[1];
+        goComponent = new GoComponent(name, version);
+
+        return true;
+    }
+
+    private bool TryToCreateReplacementGoComponentFromModLine(string line, out GoComponent goComponent)
+    {
+        var lineComponents = Regex.Split(line.Trim(), @"\s+");
+
+        if (lineComponents.Length < 2)
+        {
+            goComponent = null;
+            return false;
+        }
+
+        var name = lineComponents[2];
+        var version = lineComponents[3];
         goComponent = new GoComponent(name, version);
 
         return true;
@@ -443,7 +510,15 @@ public class GoComponentDetector : FileComponentDetector
                 continue;
             }
 
-            var goComponent = new GoComponent(dependency.Path, dependency.Version);
+            GoComponent goComponent;
+            if (dependency.Replace != null)
+            {
+                goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
+            }
+            else
+            {
+                goComponent = new GoComponent(dependency.Path, dependency.Version);
+            }
 
             if (dependency.Indirect)
             {
@@ -483,5 +558,7 @@ public class GoComponentDetector : FileComponentDetector
         public string Version { get; set; }
 
         public bool Indirect { get; set; }
+
+        public GoBuildModule Replace { get; set; }
     }
 }

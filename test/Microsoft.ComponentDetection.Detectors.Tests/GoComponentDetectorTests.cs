@@ -316,6 +316,66 @@ replace (
     }
 
     [TestMethod]
+    public async Task TestGoModDetector_DetectReplaceSectionAsync()
+    {
+        var goMod =
+            @"module github.com/Azure/azure-storage-blob-go
+
+require (
+    github.com/Azure/azure-pipeline-go v0.2.1
+    github.com/docker/distribution v2.7.1+incompatible
+    github.com/Masterminds/sprig/v3 v3.1.0
+
+)
+replace (
+	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible
+	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
+)
+";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.mod", goMod)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(3);
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "github.com/Azure/azure-pipeline-go v0.2.1 - Go").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "github.com/Masterminds/sprig/v3 v3.1.0 - Go").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "github.com/docker/distribution v0.0.0-20191216044856-a8371794149d - Go").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestGoModDetector_SkipsGoSumFilesWithReplaceAsync()
+    {
+        var goMod =
+            @"module contoso.com/greetings
+go 1.18
+
+require github.com/go-sql-driver/mysql v1.7.1 // indirect
+replace github.com/go-sql-driver/mysql => github.com/go-sql-driver/mysql v1.7.3";
+
+        var goSum =
+            @"github.com/go-sql-driver/mysql v1.7.1 h1:lUIinVbN1DY0xBg0eMOzmmtGoHwWBbvnWubQUrtU8EI=
+github.com/go-sql-driver/mysql v1.7.1/go.mod h1:OXbVy3sEdcQ2Doequ6Z5BW6fXNQTmx+9S1MCJN5yJMI=
+github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.mod", goMod)
+            .WithFile("go.mod", goMod, new[] { "go.mod" })
+            .WithFile("go.sum", goSum)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+
+        var component = componentRecorder.GetDetectedComponents().First();
+        component.Component.Id.Should().Be("github.com/go-sql-driver/mysql v1.7.3 - Go");
+    }
+
+    [TestMethod]
     public async Task TestGoDetector_GoCommandNotFoundAsync()
     {
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
@@ -366,6 +426,82 @@ replace (
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
         await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfullyAsync();
+    }
+
+    [TestMethod]
+    public async Task TestGoDetector_GoGraphReplaceAsync()
+    {
+        var buildDependencies = @"{
+    ""Path"": ""some-package"",
+    ""Version"": ""v1.2.3"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11"",
+    ""Replace"": {
+                    ""Path"": ""some-package"",
+                    ""Version"": ""v1.2.4"",
+                    ""Time"": ""2021-12-06T23:04:27Z"",
+                    ""Indirect"": true,
+                    ""GoMod"": ""C:\\test\\go.mod"",
+                    ""GoVersion"": ""1.11"",
+                }
+}" + "\n" + @"{
+    ""Path"": ""test"",
+    ""Version"": ""v2.0.0"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}" + "\n" + @"{
+    ""Path"": ""other"",
+    ""Version"": ""v1.2.0"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}" + "\n" + @"{
+    ""Path"": ""a"",
+    ""Version"": ""v1.5.0"",
+    ""Time"": ""2020-05-19T17:02:07Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}";
+        var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 a@v1.5.0";
+
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+            .ReturnsAsync(true);
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
+            .ReturnsAsync(new CommandLineExecutionResult
+            {
+                ExitCode = 0,
+                StdOut = buildDependencies,
+            });
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+            .ReturnsAsync(new CommandLineExecutionResult
+            {
+                ExitCode = 0,
+                StdOut = goGraph,
+            });
+
+        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.mod", string.Empty)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(4);
+        detectedComponents.Should().NotContain(component => component.Component.Id == "other v1.0.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "other v1.2.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "some-package v1.2.4 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "test v2.0.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "a v1.5.0 - Go");
     }
 
     [TestMethod]
