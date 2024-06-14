@@ -23,6 +23,9 @@ using static System.Environment;
 
 public class DetectorProcessingService : IDetectorProcessingService
 {
+    private const int ExperimentalTimeoutSeconds = 240; // 4 minutes
+    private const int ProcessTimeoutBufferSeconds = 5;
+
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
     private readonly IExperimentService experimentService;
@@ -67,6 +70,17 @@ public class DetectorProcessingService : IDetectorProcessingService
                 var componentRecorder = new ComponentRecorder(this.logger, !detector.NeedsAutomaticRootDependencyCalculation);
                 var isExperimentalDetector = detector is IExperimentalDetector && !(detectorRestrictions.ExplicitlyEnabledDetectorIds?.Contains(detector.Id)).GetValueOrDefault();
 
+                var cancellationToken = CancellationToken.None;
+                if (settings.Timeout != null && settings.Timeout > 0)
+                {
+                    var cts = new CancellationTokenSource();
+                    cancellationToken = cts.Token;
+                    var timeout = GetProcessTimeout(settings.Timeout.Value, isExperimentalDetector);
+
+                    this.logger.LogDebug("Setting {DetectorName} process detector timeout to {Timeout} seconds.", detector.Id, timeout.TotalSeconds);
+                    cts.CancelAfter(timeout);
+                }
+
                 IEnumerable<DetectedComponent> detectedComponents;
                 ProcessingResultCode resultCode;
                 IEnumerable<ContainerDetails> containerDetails;
@@ -75,7 +89,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
-                        () => detector.ExecuteDetectorAsync(new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder)),
+                        () => detector.ExecuteDetectorAsync(new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder), cancellationToken),
                         isExperimentalDetector,
                         record);
 
@@ -249,6 +263,23 @@ public class DetectorProcessingService : IDetectorProcessingService
         };
     }
 
+    /// <summary>
+    /// Gets the timeout for the individual running process. This is calculated based on
+    /// whether we want the experimental timeout or not. Regardless, we will take a buffer of 5 seconds off of
+    /// the timeout value so that the process has time to exit before the invoking process is cancelled.
+    /// </summary>
+    /// <param name="settingsTimeoutSeconds">Number of seconds before the detection process times out.</param>
+    /// <param name="isExperimental">Whether we should get the experimental timeout or not.</param>
+    /// <returns>Number of seconds before a process cancellation should be invoked.</returns>
+    private static TimeSpan GetProcessTimeout(int settingsTimeoutSeconds, bool isExperimental)
+    {
+        var timeoutSeconds = isExperimental
+            ? Math.Min(settingsTimeoutSeconds, ExperimentalTimeoutSeconds)
+            : settingsTimeoutSeconds;
+
+        return TimeSpan.FromSeconds(timeoutSeconds - ProcessTimeoutBufferSeconds);
+    }
+
     private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
     {
         individualDetectorScanResult ??= new IndividualDetectorScanResult();
@@ -278,7 +309,7 @@ public class DetectorProcessingService : IDetectorProcessingService
 
         try
         {
-            return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(4), CancellationToken.None);
+            return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromSeconds(ExperimentalTimeoutSeconds), CancellationToken.None);
         }
         catch (TimeoutException)
         {

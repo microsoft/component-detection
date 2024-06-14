@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
@@ -243,6 +244,7 @@ public class PipCommandServiceTests
             "pip",
             It.IsAny<IEnumerable<string>>(),
             It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
             It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty })
             .Verifiable();
@@ -293,6 +295,7 @@ public class PipCommandServiceTests
             "pip",
             It.IsAny<IEnumerable<string>>(),
             It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
             It.Is<string>(s => s.Contains("-e .", StringComparison.OrdinalIgnoreCase))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty })
             .Verifiable();
@@ -343,6 +346,7 @@ public class PipCommandServiceTests
             "pip",
             It.IsAny<IEnumerable<string>>(),
             It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
             It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty })
             .Verifiable();
@@ -450,13 +454,46 @@ public class PipCommandServiceTests
             "pip",
             It.IsAny<IEnumerable<string>>(),
             It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
             It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 1, StdErr = "TestFail", StdOut = string.Empty })
             .Verifiable();
 
-        var action = async () => await service.GenerateInstallationReportAsync(testPath);
+        var action = async () => await service.GenerateInstallationReportAsync(testPath, cancellationToken: CancellationToken.None);
         await action.Should().ThrowAsync<InvalidOperationException>();
 
         this.commandLineInvokationService.Verify();
+    }
+
+    [TestMethod]
+    public async Task PipCommandService_CancelledAsync()
+    {
+        var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
+
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("pip", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
+            It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = -1, StdErr = string.Empty, StdOut = string.Empty })
+            .Verifiable();
+
+        this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
+            .ReturnsAsync(TestResources.pip_report_single_pkg);
+
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var action = async () => await service.GenerateInstallationReportAsync(testPath, cancellationToken: cts.Token);
+        await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("PipReport: Cancelled*");
     }
 }

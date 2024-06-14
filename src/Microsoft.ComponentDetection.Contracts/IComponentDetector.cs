@@ -1,6 +1,7 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
+namespace Microsoft.ComponentDetection.Contracts;
 
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
@@ -39,7 +40,7 @@ public interface IComponentDetector
     ///  Run the detector and return the result set of components found.
     /// </summary>
     /// <returns> Awaitable task with result of components found. </returns>
-    Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request);
+    Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

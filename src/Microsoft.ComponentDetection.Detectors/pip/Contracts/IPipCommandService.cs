@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 public interface IPipCommandService
@@ -25,6 +26,7 @@ public interface IPipCommandService
     /// </summary>
     /// <param name="path">Path of the Python requirements file.</param>
     /// <param name="pipExePath">Optional override of the pip.exe absolute path.</param>
+    /// <param name="cancellationToken">Token used for canceling the installation report generation.</param>
     /// <returns>See https://pip.pypa.io/en/stable/reference/installation-report/#specification.</returns>
-    Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(string path, string pipExePath = null);
+    Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(string path, string pipExePath = null, CancellationToken cancellationToken = default);
 }
