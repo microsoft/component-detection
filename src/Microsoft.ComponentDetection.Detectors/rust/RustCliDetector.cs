@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -73,7 +74,7 @@ public class RustCliDetector : FileComponentDetector
     public override IList<string> SearchPatterns { get; } = new[] { "Cargo.toml" };
 
     /// <inheritdoc />
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var componentStream = processRequest.ComponentStream;
         this.Logger.LogInformation("Discovered Cargo.toml: {Location}", componentStream.Location);

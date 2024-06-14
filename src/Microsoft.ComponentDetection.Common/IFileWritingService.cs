@@ -1,7 +1,8 @@
-﻿namespace Microsoft.ComponentDetection.Common;
+namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 /// <summary>
@@ -35,8 +36,9 @@ public interface IFileWritingService : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="relativeFilePath">The relative path to the file.</param>
     /// <param name="text">The text to write.</param>
+    /// <param name="cancellationToken">Token to cancel the file write operation.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task WriteFileAsync(string relativeFilePath, string text);
+    Task WriteFileAsync(string relativeFilePath, string text, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Writes the object to the file as JSON.

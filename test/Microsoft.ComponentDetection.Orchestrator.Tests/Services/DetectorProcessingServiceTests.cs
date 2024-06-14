@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
@@ -89,8 +90,8 @@ public class DetectorProcessingServiceTests
 
         var results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
-        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
 
         this.ValidateExpectedComponents(results, this.detectorsToUse);
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results).FirstOrDefault(x => x.Component?.Type == ComponentType.Npm).Component
@@ -107,7 +108,7 @@ public class DetectorProcessingServiceTests
         var mockComponentDetector = new Mock<IComponentDetector>();
         mockComponentDetector.Setup(d => d.Id).Returns("test");
 
-        mockComponentDetector.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>()))
+        mockComponentDetector.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
             {
                 return new IndividualDetectorScanResult
@@ -134,8 +135,8 @@ public class DetectorProcessingServiceTests
 
         var results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
-        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
 
         foreach (var discoveredComponent in this.GetDiscoveredComponentsFromDetectorProcessingResult(results))
         {
@@ -202,9 +203,9 @@ public class DetectorProcessingServiceTests
             .Should().BeTrue("Experimental component should not be in component list");
         results.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.experimentalFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.experimentalFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
     }
 
     [TestMethod]
@@ -230,9 +231,9 @@ public class DetectorProcessingServiceTests
             .Should().NotBeNull();
         results.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.experimentalFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.experimentalFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
     }
 
     [TestMethod]
@@ -244,7 +245,7 @@ public class DetectorProcessingServiceTests
             this.experimentalFileComponentDetectorMock.Object,
         };
 
-        this.experimentalFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)))
+        this.experimentalFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()))
             .Throws(new InvalidOperationException("Simulated experimental failure"));
 
         DetectorProcessingResult results = null;
@@ -264,8 +265,8 @@ public class DetectorProcessingServiceTests
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount(records.Sum(x => x.DetectedComponentCount ?? 0));
         results.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
     }
 
     [TestMethod]
@@ -285,9 +286,9 @@ public class DetectorProcessingServiceTests
         var d2 = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "shouldNotExclude", "stuff"));
 
         ScanRequest capturedRequest = null;
-        this.firstFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>()))
+        this.firstFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(this.ExpectedResultForDetector(this.firstFileComponentDetectorMock.Object.Id))
-            .Callback<ScanRequest>(request => capturedRequest = request);
+            .Callback<ScanRequest, CancellationToken>((request, token) => capturedRequest = request);
 
         await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
@@ -401,9 +402,9 @@ public class DetectorProcessingServiceTests
         Environment.CurrentDirectory = sourceDirectory.FullName;
 
         ScanRequest capturedRequest = null;
-        this.firstFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>()))
+        this.firstFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(this.ExpectedResultForDetector(this.firstFileComponentDetectorMock.Object.Id))
-            .Callback<ScanRequest>(request => capturedRequest = request);
+            .Callback<ScanRequest, CancellationToken>((request, token) => capturedRequest = request);
 
         await this.serviceUnderTest.ProcessDetectorsAsync(args, this.detectorsToUse, new DetectorRestrictions());
 
@@ -455,8 +456,8 @@ public class DetectorProcessingServiceTests
         var secondDetectorRecord = records.FirstOrDefault(x => x.DetectorId == this.secondFileComponentDetectorMock.Object.Id);
         secondDetectorRecord.Should().NotBeNull();
 
-        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
     }
 
     [TestMethod]
@@ -485,10 +486,10 @@ public class DetectorProcessingServiceTests
 
         this.ValidateExpectedComponents(results, this.detectorsToUse);
 
-        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.firstCommandComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
-        this.secondCommandComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory)));
+        this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.secondFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.firstCommandComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
+        this.secondCommandComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
     }
 
     [TestMethod]
@@ -560,13 +561,11 @@ public class DetectorProcessingServiceTests
 
         var expectedResult = this.ExpectedResultForDetector(id);
 
-        mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null))).Returns(
-            (ScanRequest request) =>
-            {
-                return mockFileDetector.Object.ExecuteDetectorAsync(request);
-            }).Verifiable();
-        mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null))).ReturnsAsync(
-            (ScanRequest request) =>
+        mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null), It.IsAny<CancellationToken>())).Returns(
+            (ScanRequest request, CancellationToken cancellationToken) => mockFileDetector.Object.ExecuteDetectorAsync(request, cancellationToken)).Verifiable();
+
+        mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null), It.IsAny<CancellationToken>())).ReturnsAsync(
+            (ScanRequest request, CancellationToken cancellationToken) =>
             {
                 this.FillComponentRecorder(request.ComponentRecorder, id);
                 return expectedResult;
@@ -609,8 +608,8 @@ public class DetectorProcessingServiceTests
 
         this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
 
-        mockCommandDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && !request.DetectorArgs.Any()))).ReturnsAsync(
-            (ScanRequest request) =>
+        mockCommandDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && !request.DetectorArgs.Any()), It.IsAny<CancellationToken>())).ReturnsAsync(
+            (ScanRequest request, CancellationToken cancellationToken) =>
             {
                 this.FillComponentRecorder(request.ComponentRecorder, id);
                 return this.ExpectedResultForDetector(id);

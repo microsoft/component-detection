@@ -1,6 +1,7 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
@@ -42,7 +43,8 @@ public class DefaultExperimentProcessorTests
         this.fileWritingServiceMock.Verify(
             f => f.WriteFileAsync(
                 It.Is<string>(s => s.StartsWith($"Experiment_{config.Object.Name}_")),
-                serializedDiff),
+                serializedDiff,
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

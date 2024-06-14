@@ -1,9 +1,10 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
@@ -39,7 +40,7 @@ public class NpmComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 2;
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;

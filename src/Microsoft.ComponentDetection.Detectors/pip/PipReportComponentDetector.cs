@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
@@ -77,7 +78,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         return processRequests;
     }
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PipExePath", out var pipExePath);
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -103,7 +104,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             this.Logger.LogInformation("PipReport: Generating pip installation report for {File}", file.Location);
 
             // Call pip executable to generate the installation report of a given project file.
-            (var report, reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath);
+            (var report, reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath, cancellationToken);
 
             // The report version is used to determine how to parse the report. If it is greater
             // than the maximum supported version, there may be new fields and the parsing will fail.

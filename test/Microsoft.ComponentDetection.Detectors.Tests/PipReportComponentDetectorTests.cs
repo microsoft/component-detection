@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -124,7 +125,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     [TestMethod]
     public async Task TestPipReportDetector_BadReportVersionAsync()
     {
-        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.singlePackageReportBadVersion, null));
 
         var (result, componentRecorder) = await this.DetectorTestUtility
@@ -146,7 +147,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     {
         this.singlePackageReportBadVersion.Version = "2.5";
 
-        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.singlePackageReportBadVersion, null));
 
         var (result, componentRecorder) = await this.DetectorTestUtility
@@ -166,7 +167,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     [TestMethod]
     public async Task TestPipReportDetector_CatchesExceptionAsync()
     {
-        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidCastException());
 
         var (result, componentRecorder) = await this.DetectorTestUtility
@@ -186,7 +187,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     [TestMethod]
     public async Task TestPipReportDetector_SingleComponentAsync()
     {
-        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.singlePackageReport, null));
 
         var (result, componentRecorder) = await this.DetectorTestUtility
@@ -216,7 +217,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     [TestMethod]
     public async Task TestPipReportDetector_SimpleExtrasAsync()
     {
-        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.simpleExtrasReport, null));
 
         var (result, componentRecorder) = await this.DetectorTestUtility
@@ -243,7 +244,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     {
         this.mockEnvVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisablePipReportScan")).Returns(true);
 
-        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.simpleExtrasReport, null));
 
         var (result, componentRecorder) = await this.DetectorTestUtility
@@ -266,7 +267,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     [TestMethod]
     public async Task TestPipReportDetector_MultiComponentAsync()
     {
-        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>()))
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.multiPackageReport, null));
 
         var (result, componentRecorder) = await this.DetectorTestUtility
@@ -296,11 +297,13 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     {
         this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(
             It.Is<string>(s => s.Contains("setup.py", StringComparison.OrdinalIgnoreCase)),
-            It.IsAny<string>()))
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.multiPackageReport, null));
         this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(
             It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase)),
-            It.IsAny<string>()))
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.singlePackageReport, null));
 
         var (result, componentRecorder) = await this.DetectorTestUtility
@@ -334,11 +337,13 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
         this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(
             It.Is<string>(s => s.Contains("setup.py", StringComparison.OrdinalIgnoreCase)),
-            It.IsAny<string>()))
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.multiPackageReport, null));
         this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(
             It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase)),
-            It.IsAny<string>()))
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.singlePackageReport, null));
 
         var (result, componentRecorder) = await this.DetectorTestUtility
@@ -398,7 +403,8 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
         this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(
             It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase)),
-            It.IsAny<string>()))
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync((this.jupyterPackageReport, null));
 
         var (result, componentRecorder) = await this.DetectorTestUtility
