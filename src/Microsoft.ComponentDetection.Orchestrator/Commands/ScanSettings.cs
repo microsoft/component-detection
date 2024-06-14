@@ -76,12 +76,21 @@ public class ScanSettings : BaseSettings
     [Description("Do not display the detection summary on the standard output nor in the logs.")]
     public bool NoSummary { get; set; }
 
+    [CommandOption("--MaxDetectionThreads")]
+    [Description("Max number of parallel threads used for a single detection process, ex: PipReport, Npm, Nuget.")]
+    public int? MaxDetectionThreads { get; set; }
+
     /// <inheritdoc />
     public override ValidationResult Validate()
     {
         if (this.SourceDirectory is null)
         {
             return ValidationResult.Error($"{nameof(this.SourceDirectory)} is required");
+        }
+
+        if (this.MaxDetectionThreads is <= 0)
+        {
+            return ValidationResult.Error($"{nameof(this.MaxDetectionThreads)} must be a positive integer");
         }
 
         return !this.SourceDirectory.Exists ? ValidationResult.Error($"The {nameof(this.SourceDirectory)} {this.SourceDirectory} does not exist") : base.Validate();

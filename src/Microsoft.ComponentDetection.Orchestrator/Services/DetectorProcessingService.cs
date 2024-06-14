@@ -23,6 +23,7 @@ using static System.Environment;
 
 public class DetectorProcessingService : IDetectorProcessingService
 {
+    private const int DefaultMaxDetectionThreads = 3;
     private const int ExperimentalTimeoutSeconds = 240; // 4 minutes
     private const int ProcessTimeoutBufferSeconds = 5;
 
@@ -89,7 +90,9 @@ public class DetectorProcessingService : IDetectorProcessingService
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
-                        () => detector.ExecuteDetectorAsync(new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder), cancellationToken),
+                        () => detector.ExecuteDetectorAsync(
+                            new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder, settings.MaxDetectionThreads ?? DefaultMaxDetectionThreads),
+                            cancellationToken),
                         isExperimentalDetector,
                         record);
 

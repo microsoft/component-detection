@@ -18,13 +18,15 @@ public class ScanRequest
     /// <param name="detectorArgs">A dictionary of custom detector arguments supplied externally.</param>
     /// <param name="imagesToScan">Container images to scan.</param>
     /// <param name="componentRecorder">Detector component recorder.</param>
-    public ScanRequest(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate directoryExclusionPredicate, ILogger logger, IDictionary<string, string> detectorArgs, IEnumerable<string> imagesToScan, IComponentRecorder componentRecorder)
+    /// <param name="maxThreads">Max number of threads to use for detection.</param>
+    public ScanRequest(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate directoryExclusionPredicate, ILogger logger, IDictionary<string, string> detectorArgs, IEnumerable<string> imagesToScan, IComponentRecorder componentRecorder, int maxThreads = 3)
     {
         this.SourceDirectory = sourceDirectory;
         this.DirectoryExclusionPredicate = directoryExclusionPredicate;
         this.DetectorArgs = detectorArgs;
         this.ImagesToScan = imagesToScan;
         this.ComponentRecorder = componentRecorder;
+        this.MaxThreads = maxThreads;
     }
 
     /// <summary>
@@ -51,4 +53,9 @@ public class ScanRequest
     /// Gets the detector component recorder.
     /// </summary>
     public IComponentRecorder ComponentRecorder { get; private set; }
+
+    /// <summary>
+    /// Gets the maximum number of threads to use in parallel for executing the detection.
+    /// </summary>
+    public int MaxThreads { get; private set; }
 }

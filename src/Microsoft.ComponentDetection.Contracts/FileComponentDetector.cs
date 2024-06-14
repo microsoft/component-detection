@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Contracts;
+﻿namespace Microsoft.ComponentDetection.Contracts;
 
 using System;
 using System.Collections.Generic;
@@ -80,7 +80,7 @@ public abstract class FileComponentDetector : IComponentDetector
         var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
         this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
-        return this.ProcessAsync(filteredObservable, request.DetectorArgs, cancellationToken);
+        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, cancellationToken);
     }
 
     /// <summary>
@@ -106,9 +106,15 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <param name="lockfileVersion">The lockfile version.</param>
     protected void RecordLockfileVersion(string lockfileVersion) => this.Telemetry["LockfileVersion"] = lockfileVersion;
 
-    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
+    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, CancellationToken cancellationToken = default)
     {
-        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken));
+        var processor = new ActionBlock<ProcessRequest>(
+            async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken),
+            new ExecutionDataflowBlockOptions
+            {
+                // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
+                MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, maxThreads),
+            });
 
         var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
 
