@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -49,6 +50,18 @@ public class PipComponentDetector : FileComponentDetector
 
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
+        else
+        {
+            var pythonVersion = await this.pythonCommandService.GetPythonVersionAsync(pythonExePath);
+            this.pythonResolver.SetPythonEnvironmentVariable("python_version", pythonVersion);
+
+            var pythonPlatformString = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? "win32"
+                : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                    ? "linux"
+                    : string.Empty;
+            this.pythonResolver.SetPythonEnvironmentVariable("sys_platform", pythonPlatformString);
+        }
 
         return processRequests;
     }
@@ -67,6 +80,7 @@ public class PipComponentDetector : FileComponentDetector
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => new PipDependencySpecification(x))
                 .Where(x => !x.PackageIsUnsafe())
+                .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
                 .ToList();
 
             var roots = await this.pythonResolver.ResolveRootsAsync(singleFileComponentRecorder, listedPackage);
