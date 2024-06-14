@@ -51,7 +51,7 @@ public class GoComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
-    public override int Version => 1;
+    public override int Version => 7;
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
