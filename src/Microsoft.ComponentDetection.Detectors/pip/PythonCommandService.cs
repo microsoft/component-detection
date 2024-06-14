@@ -172,4 +172,13 @@ public class PythonCommandService : IPythonCommandService
     {
         return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, new List<string> { "python3", "python2" }, "--version");
     }
+
+    public async Task<string> GetPythonVersionAsync(string pythonPath)
+    {
+        var pythonCommand = await this.ResolvePythonAsync(pythonPath);
+        var versionResult = await this.commandLineInvocationService.ExecuteCommandAsync(pythonCommand, new List<string> { "python3", "python2" }, "--version");
+        var version = new Regex("Python ([\\d.]+)");
+        var match = version.Match(versionResult.StdOut);
+        return match.Success ? match.Groups[1].Value : null;
+    }
 }
