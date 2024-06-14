@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -85,7 +86,7 @@ public class PipCommandService : IPipCommandService
         return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, new List<string> { "pip3" }, "--version");
     }
 
-    public async Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(string path, string pipExePath = null)
+    public async Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(string path, string pipExePath = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
         {
@@ -131,9 +132,22 @@ public class PipCommandService : IPipCommandService
             pipExecutable,
             null,
             workingDir,
+            cancellationToken,
             pipReportCommand);
 
-        if (command.ExitCode != 0)
+        if (command.ExitCode == -1 && cancellationToken.IsCancellationRequested)
+        {
+            var errorMessage = $"PipReport: Cancelled for file '{formattedPath}' with command '{pipReportCommand.RemoveSensitiveInformation()}'.";
+            using var failureRecord = new PipReportFailureTelemetryRecord
+            {
+                ExitCode = command.ExitCode,
+                StdErr = $"{errorMessage} {command.StdErr}",
+            };
+
+            this.logger.LogWarning("{Error}", errorMessage);
+            throw new InvalidOperationException(errorMessage);
+        }
+        else if (command.ExitCode != 0)
         {
             using var failureRecord = new PipReportFailureTelemetryRecord
             {

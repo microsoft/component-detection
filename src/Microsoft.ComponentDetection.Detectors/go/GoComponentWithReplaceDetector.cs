@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -41,8 +42,6 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         this.envVarService = envVarService;
         this.Logger = logger;
     }
-
-    private IList<GoComponent> GoComponents { get; set; } = new List<GoComponent>();
 
     public override string Id => "GoWithReplace";
 
@@ -148,7 +147,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         return true;
     }
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -258,7 +257,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         return true;
     }
 
-    private void CreateListOfGoComponents(string line, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private void AddGoComponent(IList<GoComponent> goComponents, string line, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         if (line.Trim().StartsWith("//"))
         {
@@ -268,7 +267,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
 
         if (this.TryToCreateGoComponentFromModLine(line, out var goComponent))
         {
-            this.GoComponents.Add(goComponent);
+            goComponents.Add(goComponent);
         }
         else
         {
@@ -278,11 +277,11 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         }
     }
 
-    private void ReplaceGoComponents(string line, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private void ReplaceGoComponents(IList<GoComponent> goComponents, string line, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         if (this.TryToCreateReplacementGoComponentFromModLine(line, out var goComponent))
         {
-            var goComponentsWithReplacementVersion = this.GoComponents.Where(component => component.Name == goComponent.Name);
+            var goComponentsWithReplacementVersion = goComponents.Where(component => component.Name == goComponent.Name);
             if (goComponentsWithReplacementVersion.Any())
             {
                 foreach (var component in goComponentsWithReplacementVersion)
@@ -302,9 +301,9 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         }
     }
 
-    private void TryRegisterDependencyFromModLine(ISingleFileComponentRecorder singleFileComponentRecorder)
+    private void TryRegisterDependencyFromModLine(IList<GoComponent> goComponents, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
-        this.GoComponents.ForEach(goComponent => singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent)));
+        goComponents.ForEach(goComponent => singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent)));
     }
 
     private async Task ParseGoModFileAsync(
@@ -313,6 +312,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         GoGraphTelemetryRecord goGraphTelemetryRecord)
     {
         using var reader = new StreamReader(file.Stream);
+        var goComponents = new List<GoComponent>();
         var inRequireBlock = false;
         var inReplaceBlock = false;
 
@@ -339,20 +339,20 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
 
             if (line != null && line.StartsWith("require "))
             {
-                this.CreateListOfGoComponents(line[8..], singleFileComponentRecorder);
+                this.AddGoComponent(goComponents, line[8..], singleFileComponentRecorder);
             }
             else if (line != null && line.StartsWith("replace "))
             {
-                this.ReplaceGoComponents(line[8..], singleFileComponentRecorder);
+                this.ReplaceGoComponents(goComponents, line[8..], singleFileComponentRecorder);
             }
 
             if (inRequireBlock)
             {
-                this.CreateListOfGoComponents(line, singleFileComponentRecorder);
+                this.AddGoComponent(goComponents, line, singleFileComponentRecorder);
             }
             else if (inReplaceBlock)
             {
-                this.ReplaceGoComponents(line, singleFileComponentRecorder);
+                this.ReplaceGoComponents(goComponents, line, singleFileComponentRecorder);
             }
             else if (line != null && line.StartsWith("go "))
             {
@@ -360,7 +360,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
             }
         }
 
-        this.TryRegisterDependencyFromModLine(singleFileComponentRecorder);
+        this.TryRegisterDependencyFromModLine(goComponents, singleFileComponentRecorder);
     }
 
     private bool TryToCreateGoComponentFromModLine(string line, out GoComponent goComponent)

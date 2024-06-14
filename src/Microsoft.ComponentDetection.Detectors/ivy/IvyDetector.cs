@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -79,7 +80,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         return Enumerable.Empty<ProcessRequest>().ToObservable();
     }
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var ivyXmlFile = processRequest.ComponentStream;

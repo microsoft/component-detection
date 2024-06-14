@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Exceptions;
 using Newtonsoft.Json;
@@ -67,11 +68,11 @@ public sealed class FileWritingService : IFileWritingService
     }
 
     /// <inheritdoc />
-    public async Task WriteFileAsync(string relativeFilePath, string text)
+    public async Task WriteFileAsync(string relativeFilePath, string text, CancellationToken cancellationToken = default)
     {
         relativeFilePath = this.ResolveFilePath(relativeFilePath);
 
-        await File.WriteAllTextAsync(relativeFilePath, text);
+        await File.WriteAllTextAsync(relativeFilePath, text, cancellationToken);
     }
 
     /// <inheritdoc />

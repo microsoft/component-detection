@@ -1,7 +1,9 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
+namespace Microsoft.ComponentDetection.Contracts;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 /// <summary>
@@ -41,9 +43,10 @@ public interface ICommandLineInvocationService
     /// <param name="command">The command name to execute. Environment variables like PATH on windows will also be considered if the command is not an absolute path. </param>
     /// <param name="additionalCandidateCommands">Other commands that could satisfy the need for the first command. Assumption is that they all share similar calling patterns.</param>
     /// <param name="workingDirectory">The directory under which to run the command.</param>
+    /// <param name="cancellationToken">Token used for cancelling the command.</param>
     /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
     /// <returns>Awaitable task with the result of executing the command, including exit code.</returns>
-    Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters);
+    Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, CancellationToken cancellationToken = default, params string[] parameters);
 
     /// <summary>
     /// Executes a command line command. If the command has not been located yet, CanCommandBeLocated will be invoked without the submitted parameters.
@@ -52,7 +55,29 @@ public interface ICommandLineInvocationService
     /// <param name="additionalCandidateCommands">Other commands that could satisfy the need for the first command. Assumption is that they all share similar calling patterns.</param>
     /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
     /// <returns>Awaitable task with the result of executing the command, including exit code.</returns>
+    [Obsolete($"This implementation of {nameof(ExecuteCommandAsync)} is deprecated. Please use a version with CancellationTokens.")]
     Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters);
+
+    /// <summary>
+    /// Executes a command line command. If the command has not been located yet, CanCommandBeLocated will be invoked without the submitted parameters.
+    /// </summary>
+    /// <param name="command">The command name to execute. Environment variables like PATH on windows will also be considered if the command is not an absolute path. </param>
+    /// <param name="additionalCandidateCommands">Other commands that could satisfy the need for the first command. Assumption is that they all share similar calling patterns.</param>
+    /// <param name="workingDirectory">The directory under which to run the command.</param>
+    /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
+    /// <returns>Awaitable task with the result of executing the command, including exit code.</returns>
+    [Obsolete($"This implementation of {nameof(ExecuteCommandAsync)} is deprecated. Please use a version with CancellationTokens.")]
+    Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters);
+
+    /// <summary>
+    /// Executes a command line command. If the command has not been located yet, CanCommandBeLocated will be invoked without the submitted parameters.
+    /// </summary>
+    /// <param name="command">The command name to execute. Environment variables like PATH on windows will also be considered if the command is not an absolute path. </param>
+    /// <param name="additionalCandidateCommands">Other commands that could satisfy the need for the first command. Assumption is that they all share similar calling patterns.</param>
+    /// <param name="cancellationToken">Token used for cancelling the command.</param>
+    /// <param name="parameters">The parameters that should be passed to the command. The parameters will be space-joined.</param>
+    /// <returns>Awaitable task with the result of executing the command, including exit code.</returns>
+    Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, CancellationToken cancellationToken = default, params string[] parameters);
 }
 
 /// <summary>

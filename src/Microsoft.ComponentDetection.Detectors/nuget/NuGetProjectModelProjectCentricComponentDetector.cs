@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using global::NuGet.Packaging.Core;
 using global::NuGet.ProjectModel;
@@ -208,7 +209,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     public override int Version { get; } = 1;
 
-    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         try
         {

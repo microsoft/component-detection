@@ -1,9 +1,10 @@
-namespace Microsoft.ComponentDetection.Contracts;
+﻿namespace Microsoft.ComponentDetection.Contracts;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -65,21 +66,21 @@ public abstract class FileComponentDetector : IComponentDetector
     protected IObservable<IComponentStream> ComponentStreams { get; private set; }
 
     /// <inheritdoc />
-    public async virtual Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
+    public async virtual Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
         this.ComponentRecorder = request.ComponentRecorder;
         this.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
-        return await this.ScanDirectoryAsync(request);
+        return await this.ScanDirectoryAsync(request, cancellationToken);
     }
 
-    private Task<IndividualDetectorScanResult> ScanDirectoryAsync(ScanRequest request)
+    private Task<IndividualDetectorScanResult> ScanDirectoryAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest = request;
 
         var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
         this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
-        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads);
+        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, cancellationToken);
     }
 
     /// <summary>
@@ -105,10 +106,10 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <param name="lockfileVersion">The lockfile version.</param>
     protected void RecordLockfileVersion(string lockfileVersion) => this.Telemetry["LockfileVersion"] = lockfileVersion;
 
-    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads)
+    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, CancellationToken cancellationToken = default)
     {
         var processor = new ActionBlock<ProcessRequest>(
-            async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs),
+            async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken),
             new ExecutionDataflowBlockOptions
             {
                 // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
@@ -137,7 +138,7 @@ public abstract class FileComponentDetector : IComponentDetector
         return Task.FromResult(processRequests);
     }
 
-    protected abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
+    protected abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default);
 
     protected virtual Task OnDetectionFinishedAsync()
     {

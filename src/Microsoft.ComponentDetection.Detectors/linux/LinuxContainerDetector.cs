@@ -39,7 +39,7 @@ public class LinuxContainerDetector : IComponentDetector
 
     public bool NeedsAutomaticRootDependencyCalculation => false;
 
-    public async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
+    public async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
 #pragma warning disable CA1308
         var imagesToProcess = request.ImagesToScan?.Where(image => !string.IsNullOrWhiteSpace(image))
