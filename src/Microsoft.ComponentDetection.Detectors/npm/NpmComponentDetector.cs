@@ -117,7 +117,6 @@ public class NpmComponentDetector : FileComponentDetector
         string authorName;
         string authorEmail;
         var authorMatch = SingleAuthor.Match(authorString);
-
         /*
          * for parsing author in Json Format
          * for e.g.
