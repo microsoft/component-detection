@@ -282,6 +282,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         GoGraphTelemetryRecord goGraphTelemetryRecord)
     {
         using var reader = new StreamReader(file.Stream);
+        var startString = "require ";
 
         // There can be multiple require( ) sections in go 1.17+. loop over all of them.
         while (!reader.EndOfStream)
@@ -297,9 +298,9 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
 
                 // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
                 // are listed in the require () section
-                if (line.StartsWith("require "))
+                if (line.StartsWith(startString))
                 {
-                    this.TryRegisterDependencyFromModLine(line[8..], singleFileComponentRecorder);
+                    this.TryRegisterDependencyFromModLine(line[startString.Length..], singleFileComponentRecorder);
                 }
 
                 line = await reader.ReadLineAsync();
