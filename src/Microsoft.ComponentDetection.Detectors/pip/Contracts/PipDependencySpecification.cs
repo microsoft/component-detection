@@ -154,7 +154,7 @@ public class PipDependencySpecification
             var conditionalVar = conditionalMatch.Groups[2].Value;
             var conditionalOperator = conditionalMatch.Groups[3].Value;
             var conditionalValue = conditionalMatch.Groups[4].Value;
-            if (!pythonEnvironmentVariables.ContainsKey(conditionalVar))
+            if (!pythonEnvironmentVariables.ContainsKey(conditionalVar) || string.IsNullOrEmpty(pythonEnvironmentVariables[conditionalVar]))
             {
                 continue; // If the variable isn't in the environment, we can't evaluate it.
             }
@@ -175,7 +175,7 @@ public class PipDependencySpecification
             else if (string.Equals(conditionalVar, "sys_platform", System.StringComparison.OrdinalIgnoreCase))
             {
                 // if the platform is not windows or linux (empty string in env var), allow the package to be added. Otherwise, ensure it matches the python condition
-                conditionMet = string.IsNullOrEmpty(pythonEnvironmentVariables[conditionalVar]) || string.Equals(pythonEnvironmentVariables[conditionalVar], conditionalValue, System.StringComparison.OrdinalIgnoreCase);
+                conditionMet = string.Equals(pythonEnvironmentVariables[conditionalVar], conditionalValue, System.StringComparison.OrdinalIgnoreCase);
             }
             else
             {
