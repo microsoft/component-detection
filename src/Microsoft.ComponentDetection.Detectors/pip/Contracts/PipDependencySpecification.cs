@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -207,5 +208,5 @@ public class PipDependencySpecification
     public bool IsValidParentPackage(Dictionary<string, string> pythonEnvironmentVariables) =>
         !this.PackageIsUnsafe()
         && this.PackageConditionsMet(pythonEnvironmentVariables)
-        && !this.ConditionalDependencySpecifiers.Contains("extra ==");
+        && !this.ConditionalDependencySpecifiers.Any(s => s.Contains("extra ==", StringComparison.OrdinalIgnoreCase));
 }

@@ -99,7 +99,11 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
         var package = new ZipArchive(await response.Content.ReadAsStreamAsync());
 
-        var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
+        var entryName = $"{name.Replace('-', '_')}-{version}.dist-info/METADATA";
+
+        // first try case insensitive dicitonary lookup O(1), then attempt case-insensitive match O(entries)
+        var entry = package.GetEntry(entryName)
+            ?? package.Entries.FirstOrDefault(x => string.Equals(x.FullName, entryName, StringComparison.OrdinalIgnoreCase));
 
         // If there is no metadata file, the package doesn't have any declared dependencies
         if (entry == null)
