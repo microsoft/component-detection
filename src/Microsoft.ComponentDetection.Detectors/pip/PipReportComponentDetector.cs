@@ -184,7 +184,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             // Clean up the report output JSON file so it isn't left on the machine.
             if (reportFile is not null && reportFile.Exists)
             {
-                // reportFile.Delete();
+                reportFile.Delete();
             }
         }
     }
