@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -30,18 +31,24 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     private readonly IPipCommandService pipCommandService;
     private readonly IEnvironmentVariableService envVarService;
+    private readonly IPythonCommandService pythonCommandService;
+    private readonly IPythonResolver pythonResolver;
 
     public PipReportComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         IPipCommandService pipCommandService,
         IEnvironmentVariableService envVarService,
+        IPythonCommandService pythonCommandService,
+        IPythonResolver pythonResolver,
         ILogger<PipReportComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.pipCommandService = pipCommandService;
         this.envVarService = envVarService;
+        this.pythonCommandService = pythonCommandService;
+        this.pythonResolver = pythonResolver;
         this.Logger = logger;
     }
 
@@ -73,6 +80,26 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 MinimumPipVersion);
 
             return Enumerable.Empty<ProcessRequest>().ToObservable();
+        }
+
+        this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
+        if (!await this.pythonCommandService.PythonExistsAsync(pythonExePath))
+        {
+            this.Logger.LogInformation($"No python found on system. Python detection will not run.");
+
+            return Enumerable.Empty<ProcessRequest>().ToObservable();
+        }
+        else
+        {
+            var pythonVersion = await this.pythonCommandService.GetPythonVersionAsync(pythonExePath);
+            this.pythonResolver.SetPythonEnvironmentVariable("python_version", pythonVersion);
+
+            var pythonPlatformString = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? "win32"
+                : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                    ? "linux"
+                    : string.Empty;
+            this.pythonResolver.SetPythonEnvironmentVariable("sys_platform", pythonPlatformString);
         }
 
         return processRequests;
@@ -157,7 +184,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             // Clean up the report output JSON file so it isn't left on the machine.
             if (reportFile is not null && reportFile.Exists)
             {
-                reportFile.Delete();
+                // reportFile.Delete();
             }
         }
     }
@@ -200,7 +227,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 // futures; python_version <= \"2.7\"
                 // sphinx (!=1.8.0,!=3.1.0,!=3.1.1,>=1.6.5) ; extra == 'docs'
                 var dependencySpec = new PipDependencySpecification($"Requires-Dist: {dependency}", requiresDist: true);
-                if (dependencySpec.PackageIsUnsafe())
+                if (!dependencySpec.IsValidParentPackage(this.pythonResolver.GetPythonEnvironmentVariables()))
                 {
                     continue;
                 }

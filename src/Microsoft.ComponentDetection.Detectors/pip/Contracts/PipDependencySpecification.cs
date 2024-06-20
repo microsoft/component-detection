@@ -195,4 +195,17 @@ public class PipDependencySpecification
 
         return conditionsMet;
     }
+
+    /// <summary>
+    /// Common method that can be used to determine whether this package is a valid parent
+    /// package of another package. Note that this logic is not perfect, it does not
+    /// respect all of the environment identifiers, nor does it correctly handle extras (it ignores
+    /// them).
+    /// </summary>
+    /// <param name="pythonEnvironmentVariables">List of environment variables used to evaluate the environmant conditions, such as OS this is executing on.</param>
+    /// <returns>Whether or not this package is valid as a parent package.</returns>
+    public bool IsValidParentPackage(Dictionary<string, string> pythonEnvironmentVariables) =>
+        !this.PackageIsUnsafe()
+        && this.PackageConditionsMet(pythonEnvironmentVariables)
+        && !this.ConditionalDependencySpecifiers.Contains("extra ==");
 }
