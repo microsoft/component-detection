@@ -15,6 +15,8 @@ using Newtonsoft.Json.Linq;
 
 public class NpmComponentDetector : FileComponentDetector
 {
+    private static readonly Regex SingleAuthor = new Regex(@"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)", RegexOptions.Compiled);
+
     public NpmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -114,9 +116,7 @@ public class NpmComponentDetector : FileComponentDetector
 
         string authorName;
         string authorEmail;
-        var authorSingleStringPattern = @"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)";
-        var authorMatch = new Regex(authorSingleStringPattern).Match(authorString);
-
+        var authorMatch = SingleAuthor.Match(authorString);
         /*
          * for parsing author in Json Format
          * for e.g.
