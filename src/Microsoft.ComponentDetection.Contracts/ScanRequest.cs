@@ -55,7 +55,7 @@ public class ScanRequest
     public IComponentRecorder ComponentRecorder { get; private set; }
 
     /// <summary>
-    /// Gets the maximum number of threads to use in parallel for executing the detection, assuming parallelism is 
+    /// Gets the maximum number of threads to use in parallel for executing the detection, assuming parallelism is
     /// enabled for the detector.
     /// </summary>
     public int MaxThreads { get; private set; }
