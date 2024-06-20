@@ -62,6 +62,8 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override int Version { get; } = 2;
 
+    protected override bool EnableParallelism { get; set; } = true;
+
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PipExePath", out var pipExePath);

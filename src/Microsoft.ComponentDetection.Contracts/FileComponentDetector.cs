@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
+namespace Microsoft.ComponentDetection.Contracts;
 
 using System;
 using System.Collections.Generic;
@@ -65,6 +65,8 @@ public abstract class FileComponentDetector : IComponentDetector
 
     protected IObservable<IComponentStream> ComponentStreams { get; private set; }
 
+    protected virtual bool EnableParallelism { get; set; }
+
     /// <inheritdoc />
     public async virtual Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
@@ -113,7 +115,7 @@ public abstract class FileComponentDetector : IComponentDetector
             new ExecutionDataflowBlockOptions
             {
                 // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
-                MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, maxThreads),
+                MaxDegreeOfParallelism = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1,
             });
 
         var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
