@@ -151,6 +151,8 @@ public class PipDependencySpecifierTests
             ("Requires-Dist: TestPackage (>=5.0.1) ; sys_platform == \"win32\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=5.0.1" }, ConditionalDependencySpecifiers = new List<string> { "sys_platform == \"win32\"" } }),
             ("Requires-Dist: TestPackage (>=5.0.1) ; sys_platform == \"asdf\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=5.0.1" }, ConditionalDependencySpecifiers = new List<string> { "sys_platform == \"asdf\"" } }),
         };
+
+        // test null and empty cases should allow packages through
         var pythonEnvironmentVariables = new Dictionary<string, string>
         {
             { "python_version", null },
