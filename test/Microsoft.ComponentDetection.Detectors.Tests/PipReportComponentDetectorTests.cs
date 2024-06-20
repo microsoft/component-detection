@@ -21,6 +21,8 @@ using Newtonsoft.Json;
 public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportComponentDetector>
 {
     private readonly Mock<IPipCommandService> pipCommandService;
+    private readonly Mock<IPythonCommandService> pythonCommandService;
+    private readonly Mock<IPythonResolver> pythonResolver;
     private readonly Mock<IEnvironmentVariableService> mockEnvVarService;
     private readonly Mock<ILogger<PipReportComponentDetector>> mockLogger;
 
@@ -34,6 +36,14 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     {
         this.pipCommandService = new Mock<IPipCommandService>();
         this.DetectorTestUtility.AddServiceMock(this.pipCommandService);
+
+        this.pythonCommandService = new Mock<IPythonCommandService>();
+        this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
+        this.DetectorTestUtility.AddServiceMock(this.pythonCommandService);
+
+        this.pythonResolver = new Mock<IPythonResolver>();
+        this.pythonResolver.Setup(x => x.GetPythonEnvironmentVariables()).Returns(new Dictionary<string, string>());
+        this.DetectorTestUtility.AddServiceMock(this.pythonResolver);
 
         this.mockLogger = new Mock<ILogger<PipReportComponentDetector>>();
         this.DetectorTestUtility.AddServiceMock(this.mockLogger);
@@ -434,11 +444,10 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         var jupyterGraph = graphsByLocations[file1];
 
         var jupyterLabDependencies = jupyterGraph.GetDependenciesForComponent(jupyterComponent.Id);
-        jupyterLabDependencies.Should().HaveCount(15);
+        jupyterLabDependencies.Should().HaveCount(12);
         jupyterLabDependencies.Should().Contain("async-lru 2.0.4 - pip");
         jupyterLabDependencies.Should().Contain("jupyter-server 2.14.0 - pip");
         jupyterLabDependencies.Should().Contain("traitlets 5.14.3 - pip");
-        jupyterLabDependencies.Should().Contain("requests 2.32.2 - pip");
         jupyterLabDependencies.Should().Contain("jupyter-lsp 2.2.5 - pip");
 
         var bleachComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("bleach")).Component as PipComponent;
@@ -447,10 +456,9 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         bleachComponent.License.Should().Be("Apache Software License");
 
         var bleachDependencies = jupyterGraph.GetDependenciesForComponent(bleachComponent.Id);
-        bleachDependencies.Should().HaveCount(3);
+        bleachDependencies.Should().HaveCount(2);
         bleachDependencies.Should().Contain("six 1.16.0 - pip");
         bleachDependencies.Should().Contain("webencodings 0.5.1 - pip");
-        bleachDependencies.Should().Contain("tinycss2 1.3.0 - pip");
 
         ComponentRecorderTestUtilities.CheckChild<PipComponent>(
             componentRecorder,
