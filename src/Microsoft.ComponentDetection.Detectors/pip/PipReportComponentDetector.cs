@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -60,7 +59,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 2;
+    public override int Version { get; } = 3;
 
     protected override bool EnableParallelism { get; set; } = true;
 
@@ -96,11 +95,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             var pythonVersion = await this.pythonCommandService.GetPythonVersionAsync(pythonExePath);
             this.pythonResolver.SetPythonEnvironmentVariable("python_version", pythonVersion);
 
-            var pythonPlatformString = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? "win32"
-                : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                    ? "linux"
-                    : string.Empty;
+            var pythonPlatformString = await this.pythonCommandService.GetOsTypeAsync(pythonExePath);
             this.pythonResolver.SetPythonEnvironmentVariable("sys_platform", pythonPlatformString);
         }
 
@@ -198,11 +193,16 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         // graph ourselves using the requires_dist field.
         var dependenciesByPkg = new Dictionary<string, List<PipDependencySpecification>>(StringComparer.OrdinalIgnoreCase);
         var nodeReferences = new Dictionary<string, PipReportGraphNode>(StringComparer.OrdinalIgnoreCase);
+        var pythonEnvVars = this.pythonResolver.GetPythonEnvironmentVariables();
 
         foreach (var package in report.InstallItems)
         {
             // Normalize the package name to ensure consistency between the package name and the graph nodes.
             var normalizedPkgName = PipReportUtilities.NormalizePackageNameFormat(package.Metadata.Name);
+            if (PipDependencySpecification.PackagesToIgnore.Contains(normalizedPkgName))
+            {
+                continue;
+            }
 
             var node = new PipReportGraphNode(
                 new PipComponent(
@@ -229,7 +229,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 // futures; python_version <= \"2.7\"
                 // sphinx (!=1.8.0,!=3.1.0,!=3.1.1,>=1.6.5) ; extra == 'docs'
                 var dependencySpec = new PipDependencySpecification($"Requires-Dist: {dependency}", requiresDist: true);
-                if (!dependencySpec.IsValidParentPackage(this.pythonResolver.GetPythonEnvironmentVariables()))
+                if (!dependencySpec.IsValidParentPackage(pythonEnvVars))
                 {
                     continue;
                 }

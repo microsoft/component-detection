@@ -181,4 +181,11 @@ public class PythonCommandService : IPythonCommandService
         var match = version.Match(versionResult.StdOut);
         return match.Success ? match.Groups[1].Value : null;
     }
+
+    public async Task<string> GetOsTypeAsync(string pythonPath)
+    {
+        var pythonCommand = await this.ResolvePythonAsync(pythonPath);
+        var versionResult = await this.commandLineInvocationService.ExecuteCommandAsync(pythonCommand, new List<string> { "python3", "python2" }, "-c", "\"import sys; print(sys.platform);\"");
+        return versionResult.ExitCode == 0 && string.IsNullOrEmpty(versionResult.StdErr) ? versionResult.StdOut.Trim() : null;
+    }
 }

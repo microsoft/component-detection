@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -39,7 +38,7 @@ public class PipComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 9;
+    public override int Version { get; } = 10;
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
@@ -55,11 +54,7 @@ public class PipComponentDetector : FileComponentDetector
             var pythonVersion = await this.pythonCommandService.GetPythonVersionAsync(pythonExePath);
             this.pythonResolver.SetPythonEnvironmentVariable("python_version", pythonVersion);
 
-            var pythonPlatformString = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                ? "win32"
-                : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                    ? "linux"
-                    : string.Empty;
+            var pythonPlatformString = await this.pythonCommandService.GetOsTypeAsync(pythonExePath);
             this.pythonResolver.SetPythonEnvironmentVariable("sys_platform", pythonPlatformString);
         }
 

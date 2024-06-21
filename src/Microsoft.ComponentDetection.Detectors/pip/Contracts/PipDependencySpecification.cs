@@ -25,7 +25,7 @@ public class PipDependencySpecification
     /// <summary>
     /// These are packages that we don't want to evaluate in our graph as they are generally python builtins.
     /// </summary>
-    private static readonly HashSet<string> PackagesToIgnore = new HashSet<string>
+    public static readonly HashSet<string> PackagesToIgnore = new HashSet<string>
     {
         "-markerlib",
         "pip",
