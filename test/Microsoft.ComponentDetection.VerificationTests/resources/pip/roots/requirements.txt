@@ -10,7 +10,7 @@ azure-core==1.30.0
     #   msrest
 azure-devops==7.1.0b4
     # via -r requirements.in
-azure-identity==1.16.0b1
+azure-identity==1.16.1
     # via -r requirements.in
 certifi==2024.2.2
     # via
