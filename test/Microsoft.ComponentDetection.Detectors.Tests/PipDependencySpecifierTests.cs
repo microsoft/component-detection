@@ -139,4 +139,26 @@ public class PipDependencySpecifierTests
 
         VerifyPipConditionalDependencyParsing(specs, pythonEnvironmentVariables, true);
     }
+
+    [TestMethod]
+    public void TestPipDependencyRequireDistConditionalDependenciesMet_Empty()
+    {
+        var specs = new List<(string, bool, PipDependencySpecification)>
+        {
+            ("Requires-Dist: TestPackage (>=2.0.1) ; python_version == \"3.8\" and sys_platform == \"linux\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=2.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version == \"3.8\"", "and sys_platform == \"linux\"" } }),
+            ("Requires-Dist: TestPackage (>=4.0.1) ; python_version == \"3.6\" and sys_platform == \"win32\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=4.0.1" }, ConditionalDependencySpecifiers = new List<string> { "python_version == \"3.6\"", "and sys_platform == \"win32\"" } }),
+            ("Requires-Dist: TestPackage (>=5.0.1) ; sys_platform == \"linux\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=5.0.1" }, ConditionalDependencySpecifiers = new List<string> { "sys_platform == \"linux\"" } }),
+            ("Requires-Dist: TestPackage (>=5.0.1) ; sys_platform == \"win32\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=5.0.1" }, ConditionalDependencySpecifiers = new List<string> { "sys_platform == \"win32\"" } }),
+            ("Requires-Dist: TestPackage (>=5.0.1) ; sys_platform == \"asdf\"", true, new PipDependencySpecification { Name = "TestPackage", DependencySpecifiers = new List<string> { ">=5.0.1" }, ConditionalDependencySpecifiers = new List<string> { "sys_platform == \"asdf\"" } }),
+        };
+
+        // test null and empty cases should allow packages through
+        var pythonEnvironmentVariables = new Dictionary<string, string>
+        {
+            { "python_version", null },
+            { "sys_platform", string.Empty },
+        };
+
+        VerifyPipConditionalDependencyParsing(specs, pythonEnvironmentVariables, true);
+    }
 }

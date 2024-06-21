@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -24,7 +25,7 @@ public class PipDependencySpecification
     /// <summary>
     /// These are packages that we don't want to evaluate in our graph as they are generally python builtins.
     /// </summary>
-    private static readonly HashSet<string> PackagesToIgnore = new HashSet<string>
+    public static readonly HashSet<string> PackagesToIgnore = new HashSet<string>
     {
         "-markerlib",
         "pip",
@@ -154,7 +155,7 @@ public class PipDependencySpecification
             var conditionalVar = conditionalMatch.Groups[2].Value;
             var conditionalOperator = conditionalMatch.Groups[3].Value;
             var conditionalValue = conditionalMatch.Groups[4].Value;
-            if (!pythonEnvironmentVariables.ContainsKey(conditionalVar))
+            if (!pythonEnvironmentVariables.ContainsKey(conditionalVar) || string.IsNullOrEmpty(pythonEnvironmentVariables[conditionalVar]))
             {
                 continue; // If the variable isn't in the environment, we can't evaluate it.
             }
@@ -175,7 +176,7 @@ public class PipDependencySpecification
             else if (string.Equals(conditionalVar, "sys_platform", System.StringComparison.OrdinalIgnoreCase))
             {
                 // if the platform is not windows or linux (empty string in env var), allow the package to be added. Otherwise, ensure it matches the python condition
-                conditionMet = string.IsNullOrEmpty(pythonEnvironmentVariables[conditionalVar]) || string.Equals(pythonEnvironmentVariables[conditionalVar], conditionalValue, System.StringComparison.OrdinalIgnoreCase);
+                conditionMet = string.Equals(pythonEnvironmentVariables[conditionalVar], conditionalValue, System.StringComparison.OrdinalIgnoreCase);
             }
             else
             {
@@ -195,4 +196,17 @@ public class PipDependencySpecification
 
         return conditionsMet;
     }
+
+    /// <summary>
+    /// Common method that can be used to determine whether this package is a valid parent
+    /// package of another package. Note that this logic is not perfect, it does not
+    /// respect all of the environment identifiers, nor does it correctly handle extras (it ignores
+    /// them).
+    /// </summary>
+    /// <param name="pythonEnvironmentVariables">List of environment variables used to evaluate the environmant conditions, such as OS this is executing on.</param>
+    /// <returns>Whether or not this package is valid as a parent package.</returns>
+    public bool IsValidParentPackage(Dictionary<string, string> pythonEnvironmentVariables) =>
+        !this.PackageIsUnsafe()
+        && this.PackageConditionsMet(pythonEnvironmentVariables)
+        && !this.ConditionalDependencySpecifiers.Any(s => s.Contains("extra ==", StringComparison.OrdinalIgnoreCase));
 }

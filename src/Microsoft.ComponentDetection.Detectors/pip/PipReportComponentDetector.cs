@@ -30,18 +30,24 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     private readonly IPipCommandService pipCommandService;
     private readonly IEnvironmentVariableService envVarService;
+    private readonly IPythonCommandService pythonCommandService;
+    private readonly IPythonResolver pythonResolver;
 
     public PipReportComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         IPipCommandService pipCommandService,
         IEnvironmentVariableService envVarService,
+        IPythonCommandService pythonCommandService,
+        IPythonResolver pythonResolver,
         ILogger<PipReportComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.pipCommandService = pipCommandService;
         this.envVarService = envVarService;
+        this.pythonCommandService = pythonCommandService;
+        this.pythonResolver = pythonResolver;
         this.Logger = logger;
     }
 
@@ -53,7 +59,9 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 2;
+    public override int Version { get; } = 3;
+
+    protected override bool EnableParallelism { get; set; } = true;
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
@@ -73,6 +81,22 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 MinimumPipVersion);
 
             return Enumerable.Empty<ProcessRequest>().ToObservable();
+        }
+
+        this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
+        if (!await this.pythonCommandService.PythonExistsAsync(pythonExePath))
+        {
+            this.Logger.LogInformation($"No python found on system. Python detection will not run.");
+
+            return Enumerable.Empty<ProcessRequest>().ToObservable();
+        }
+        else
+        {
+            var pythonVersion = await this.pythonCommandService.GetPythonVersionAsync(pythonExePath);
+            this.pythonResolver.SetPythonEnvironmentVariable("python_version", pythonVersion);
+
+            var pythonPlatformString = await this.pythonCommandService.GetOsTypeAsync(pythonExePath);
+            this.pythonResolver.SetPythonEnvironmentVariable("sys_platform", pythonPlatformString);
         }
 
         return processRequests;
@@ -169,11 +193,16 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         // graph ourselves using the requires_dist field.
         var dependenciesByPkg = new Dictionary<string, List<PipDependencySpecification>>(StringComparer.OrdinalIgnoreCase);
         var nodeReferences = new Dictionary<string, PipReportGraphNode>(StringComparer.OrdinalIgnoreCase);
+        var pythonEnvVars = this.pythonResolver.GetPythonEnvironmentVariables();
 
         foreach (var package in report.InstallItems)
         {
             // Normalize the package name to ensure consistency between the package name and the graph nodes.
             var normalizedPkgName = PipReportUtilities.NormalizePackageNameFormat(package.Metadata.Name);
+            if (PipDependencySpecification.PackagesToIgnore.Contains(normalizedPkgName))
+            {
+                continue;
+            }
 
             var node = new PipReportGraphNode(
                 new PipComponent(
@@ -200,7 +229,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 // futures; python_version <= \"2.7\"
                 // sphinx (!=1.8.0,!=3.1.0,!=3.1.1,>=1.6.5) ; extra == 'docs'
                 var dependencySpec = new PipDependencySpecification($"Requires-Dist: {dependency}", requiresDist: true);
-                if (dependencySpec.PackageIsUnsafe())
+                if (!dependencySpec.IsValidParentPackage(pythonEnvVars))
                 {
                     continue;
                 }

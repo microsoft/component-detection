@@ -85,7 +85,7 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
             var (root, currentNode) = state.ProcessingQueue.Dequeue();
 
             // gather all dependencies for the current node
-            var dependencies = (await this.FetchPackageDependenciesAsync(state, currentNode)).Where(x => !x.PackageIsUnsafe()).Where(x => x.PackageConditionsMet(this.pythonEnvironmentVariables)).ToList();
+            var dependencies = (await this.FetchPackageDependenciesAsync(state, currentNode)).Where(x => x.IsValidParentPackage(this.pythonEnvironmentVariables)).ToList();
 
             foreach (var dependencyNode in dependencies)
             {
