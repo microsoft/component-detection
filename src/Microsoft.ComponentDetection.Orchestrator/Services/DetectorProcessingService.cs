@@ -269,7 +269,9 @@ public class DetectorProcessingService : IDetectorProcessingService
     /// <summary>
     /// Gets the timeout for the individual running process. This is calculated based on
     /// whether we want the experimental timeout or not. Regardless, we will take a buffer of 5 seconds off of
-    /// the timeout value so that the process has time to exit before the invoking process is cancelled.
+    /// the timeout value so that the process has time to exit before the invoking process is cancelled. If the timeout is
+    /// set to less than 5 seconds, we set the process timeout to 1 second prior, since the CLI rejects any timeouts
+    /// less than 1.
     /// </summary>
     /// <param name="settingsTimeoutSeconds">Number of seconds before the detection process times out.</param>
     /// <param name="isExperimental">Whether we should get the experimental timeout or not.</param>
@@ -280,7 +282,9 @@ public class DetectorProcessingService : IDetectorProcessingService
             ? Math.Min(settingsTimeoutSeconds, ExperimentalTimeoutSeconds)
             : settingsTimeoutSeconds;
 
-        return TimeSpan.FromSeconds(timeoutSeconds - ProcessTimeoutBufferSeconds);
+        return timeoutSeconds > ProcessTimeoutBufferSeconds
+            ? TimeSpan.FromSeconds(timeoutSeconds - ProcessTimeoutBufferSeconds)
+            : TimeSpan.FromSeconds(timeoutSeconds - 1);
     }
 
     private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
