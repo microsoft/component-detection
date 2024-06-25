@@ -56,9 +56,6 @@ extends:
             packageType: 'sdk'
             version: '6.0.x'
 
-        - task: NuGetAuthenticate@1
-          displayName: NuGet Authenticate
-
         - task: DotNetCoreCLI@2
           displayName: .NET Restore
           inputs:
