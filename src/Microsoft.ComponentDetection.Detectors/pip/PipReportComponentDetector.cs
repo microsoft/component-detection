@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private const string DisablePipReportScanEnvVar = "DisablePipReportScan";
+    private const string PipReportBlockDefaultPublicFeedEnvVar = "PipReportBlockDefaultPublicFeed";
 
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -117,6 +118,21 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 using var skipReportRecord = new PipReportSkipTelemetryRecord
                 {
                     SkipReason = $"PipReport: Found {DisablePipReportScanEnvVar} environment variable equal to true. Skipping pip report.",
+                    DetectorId = this.Id,
+                    DetectorVersion = this.Version,
+                };
+
+                return;
+            }
+
+            if (!this.envVarService.DoesEnvironmentVariableExist("PIP_INDEX_URL") && this.ShouldBlockExternalFeed())
+            {
+                var noPipIndexSet = $"PipReport: Could not find a private feed under the 'PIP_INDEX_URL' environment variable. Please set 'PIP_INDEX_URL' to the feed used to install packages in '{file.Location}'. " +
+                    $"If you would like to fallback to the default pip index url, set the '{PipReportBlockDefaultPublicFeedEnvVar}' environment variable to false.";
+                this.Logger.LogWarning("{Message}", noPipIndexSet);
+                using var skipReportRecord = new PipReportSkipTelemetryRecord
+                {
+                    SkipReason = noPipIndexSet,
                     DetectorId = this.Id,
                     DetectorVersion = this.Version,
                 };
@@ -310,4 +326,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     private bool IsPipReportManuallyDisabled()
         => this.envVarService.IsEnvironmentVariableValueTrue(DisablePipReportScanEnvVar);
+
+    private bool ShouldBlockExternalFeed()
+        => this.envVarService.IsEnvironmentVariableValueTrue(PipReportBlockDefaultPublicFeedEnvVar);
 }

@@ -49,6 +49,8 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.DetectorTestUtility.AddServiceMock(this.mockLogger);
 
         this.mockEnvVarService = new Mock<IEnvironmentVariableService>();
+        this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("PIP_INDEX_URL")).Returns(true);
+        this.mockEnvVarService.Setup(x => x.GetEnvironmentVariable("PIP_INDEX_URL")).Returns("internalfeed");
         this.DetectorTestUtility.AddServiceMock(this.mockEnvVarService);
 
         this.pipCommandService.Setup(x => x.PipExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
@@ -272,6 +274,60 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_NoInternalFeedSkipAsync()
+    {
+        this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("PIP_INDEX_URL")).Returns(false);
+        this.mockEnvVarService.Setup(x => x.IsEnvironmentVariableValueTrue("PipReportBlockDefaultPublicFeed")).Returns(true);
+
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((this.simpleExtrasReport, null));
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Could not find a private feed under the 'PIP_INDEX_URL' environment variable.")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_NoInternalFeedDontSkipAsync()
+    {
+        this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("PIP_INDEX_URL")).Returns(false);
+        this.mockEnvVarService.Setup(x => x.IsEnvironmentVariableValueTrue("PipReportBlockDefaultPublicFeed")).Returns(false);
+
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((this.simpleExtrasReport, null));
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Generating pip installation report")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var pipComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Id.Contains("pip")).ToList();
+        var requestsComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("requests")).Component as PipComponent;
+        requestsComponent.Version.Should().Be("2.32.3");
     }
 
     [TestMethod]
