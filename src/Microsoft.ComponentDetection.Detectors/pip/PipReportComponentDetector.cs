@@ -16,7 +16,6 @@ using Microsoft.Extensions.Logging;
 
 public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
 {
-    private const string DisablePipReportScanEnvVar = "DisablePipReportScan";
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
 
     /// <summary>
@@ -120,19 +119,6 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         FileInfo reportFile = null;
         try
         {
-            if (this.IsPipReportManuallyDisabled())
-            {
-                this.Logger.LogWarning("PipReport: Found {DisablePipReportScanEnvVar} environment variable equal to true. Skipping pip report.", DisablePipReportScanEnvVar);
-                using var skipReportRecord = new PipReportSkipTelemetryRecord
-                {
-                    SkipReason = $"PipReport: Found {DisablePipReportScanEnvVar} environment variable equal to true. Skipping pip report.",
-                    DetectorId = this.Id,
-                    DetectorVersion = this.Version,
-                };
-
-                return;
-            }
-
             var pipOverride = this.GetPipReportOverrideBehavior();
             if (pipOverride == PipReportOverrideBehavior.SourceCodeScan)
             {
@@ -359,6 +345,11 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         string pythonPath = null)
     {
         var initialPackages = await this.pythonCommandService.ParseFileAsync(filePath, pythonPath);
+        if (initialPackages == null)
+        {
+            return;
+        }
+
         var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
             .Select(tuple => tuple.PackageString)
             .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -379,9 +370,6 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             .ToList()
             .ForEach(gitComponent => recorder.RegisterUsage(gitComponent, isExplicitReferencedDependency: true));
     }
-
-    private bool IsPipReportManuallyDisabled()
-        => this.envVarService.IsEnvironmentVariableValueTrue(DisablePipReportScanEnvVar);
 
     private PipReportOverrideBehavior GetPipReportOverrideBehavior()
     {

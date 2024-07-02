@@ -54,3 +54,7 @@ The default value is 4096.
 
 The enviroment variable `PIP_INDEX_URL` is used to determine what package feed should be used for `pip install --report` detection.
 The default value will use the PyPi index unless pip defaults have been configured globally.
+
+The environment variable `PipReportOverrideBehavior` is used to override pip report with one of the following detection strategies.
+- `Skip`: Will not run pip detection
+- `SourceCodeScan`: Scan `setup.py` and `requirements.txt` files, and record components explicitly from the package files without hitting a remote feed. Does not compile a dependency graph.

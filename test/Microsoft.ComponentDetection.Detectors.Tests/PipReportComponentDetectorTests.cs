@@ -251,31 +251,6 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     }
 
     [TestMethod]
-    public async Task TestPipReportDetector_SkipAsync()
-    {
-        this.mockEnvVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisablePipReportScan")).Returns(true);
-
-        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((this.simpleExtrasReport, null));
-
-        var (result, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("requirements.txt", string.Empty)
-            .ExecuteDetectorAsync();
-
-        result.ResultCode.Should().Be(ProcessingResultCode.Success);
-
-        this.mockLogger.Verify(x => x.Log(
-            LogLevel.Warning,
-            It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found DisablePipReportScan environment variable equal to true")),
-            It.IsAny<Exception>(),
-            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
-
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().BeEmpty();
-    }
-
-    [TestMethod]
     public async Task TestPipReportDetector_MultiComponentAsync()
     {
         this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
