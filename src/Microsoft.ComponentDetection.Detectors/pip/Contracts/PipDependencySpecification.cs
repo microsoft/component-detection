@@ -199,7 +199,7 @@ public class PipDependencySpecification
 
     /// <summary>
     /// Iterates through the package versions that are explicitly stated, and returns
-    /// the highest that adheres to the version requirements.
+    /// the highest version that adheres to the version requirements.
     /// </summary>
     /// <example>
     /// DependencySpecifiers: (&gt;=1.2.3, !=1.2.4, &lt;2.0.0)

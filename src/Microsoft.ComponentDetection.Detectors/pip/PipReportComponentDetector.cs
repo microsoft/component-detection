@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging;
 public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private const string DisablePipReportScanEnvVar = "DisablePipReportScan";
-    private const string SkipRemoteDependencyGraphResolution = "SkipPipReportRemoteDependencyGraphResolution";
+    private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
 
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -50,6 +50,13 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         this.pythonCommandService = pythonCommandService;
         this.pythonResolver = pythonResolver;
         this.Logger = logger;
+    }
+
+    private enum PipReportOverrideBehavior
+    {
+        None, // do not override pip report
+        Skip, // skip pip report altogether
+        SourceCodeScan, // scan source code files, and record components explicitly from the package files without hitting a remote feed
     }
 
     public override string Id => "PipReport";
@@ -126,15 +133,32 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 return;
             }
 
-            if (this.ShouldSkipRemoteDependencyGraphResolution())
+            var pipOverride = this.GetPipReportOverrideBehavior();
+            if (pipOverride == PipReportOverrideBehavior.SourceCodeScan)
             {
                 this.Logger.LogInformation(
-                    "PipReport: Found {SkipRemoteDependencyGraphResolution} environment variable equal to true. Manually compiling" +
+                    "PipReport: Found {PipReportOverrideBehaviorEnvVar} environment variable set to {Override}. Manually compiling" +
                     " dependency list for '{File}' without reaching out to a remote feed.",
-                    SkipRemoteDependencyGraphResolution,
+                    PipReportOverrideBehaviorEnvVar,
+                    PipReportOverrideBehavior.SourceCodeScan.ToString(),
                     file.Location);
 
                 await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
+                return;
+            }
+            else if (pipOverride == PipReportOverrideBehavior.Skip)
+            {
+                var skipReason = $"PipReport: Found {PipReportOverrideBehaviorEnvVar} environment variable set " +
+                    $"to {PipReportOverrideBehavior.Skip}. Skipping pip detection for '{file.Location}'.";
+
+                this.Logger.LogInformation("{Message}", skipReason);
+                using var skipReportRecord = new PipReportSkipTelemetryRecord
+                {
+                    SkipReason = skipReason,
+                    DetectorId = this.Id,
+                    DetectorVersion = this.Version,
+                };
+
                 return;
             }
 
@@ -191,7 +215,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             };
 
             // if pipreport fails, try to at least list the dependencies that are found in the source files
-            if (!this.ShouldSkipRemoteDependencyGraphResolution())
+            if (this.GetPipReportOverrideBehavior() != PipReportOverrideBehavior.SourceCodeScan)
             {
                 this.Logger.LogInformation("PipReport: Trying to Manually compile dependency list for '{File}' without reaching out to a remote feed.", file.Location);
                 await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
@@ -359,6 +383,22 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
     private bool IsPipReportManuallyDisabled()
         => this.envVarService.IsEnvironmentVariableValueTrue(DisablePipReportScanEnvVar);
 
-    private bool ShouldSkipRemoteDependencyGraphResolution()
-        => this.envVarService.IsEnvironmentVariableValueTrue(SkipRemoteDependencyGraphResolution);
+    private PipReportOverrideBehavior GetPipReportOverrideBehavior()
+    {
+        if (!this.envVarService.DoesEnvironmentVariableExist(PipReportOverrideBehaviorEnvVar))
+        {
+            return PipReportOverrideBehavior.None;
+        }
+
+        if (string.Equals(this.envVarService.GetEnvironmentVariable(PipReportOverrideBehaviorEnvVar), PipReportOverrideBehavior.SourceCodeScan.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            return PipReportOverrideBehavior.SourceCodeScan;
+        }
+        else if (string.Equals(this.envVarService.GetEnvironmentVariable(PipReportOverrideBehaviorEnvVar), PipReportOverrideBehavior.Skip.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            return PipReportOverrideBehavior.Skip;
+        }
+
+        return PipReportOverrideBehavior.None;
+    }
 }
