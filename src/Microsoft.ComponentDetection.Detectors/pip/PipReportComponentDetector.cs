@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private const string DisablePipReportScanEnvVar = "DisablePipReportScan";
+    private const string SkipRemoteDependencyGraphResolution = "SkipPipReportRemoteDependencyGraphResolution";
 
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -105,6 +106,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PipExePath", out var pipExePath);
+        this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
@@ -120,6 +122,38 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     DetectorId = this.Id,
                     DetectorVersion = this.Version,
                 };
+
+                return;
+            }
+
+            if (this.ShouldSkipRemoteDependencyGraphResolution())
+            {
+                this.Logger.LogWarning(
+                    "PipReport: Found {SkipRemoteDependencyGraphResolution} environment variable equal to true. Manually compiling" +
+                    " dependency list for '{File}' without reaching out to a remote feed.",
+                    SkipRemoteDependencyGraphResolution,
+                    file.Location);
+
+                var initialPackages = await this.pythonCommandService.ParseFileAsync(file.Location, pythonExePath);
+                var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
+                    .Select(tuple => tuple.PackageString)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => new PipDependencySpecification(x))
+                    .Where(x => !x.PackageIsUnsafe())
+                    .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
+                    .ToList();
+
+                listedPackage.Select(x => (x.Name, Version: x.GetHighestExplicitPackageVersion()))
+                    .Where(x => !string.IsNullOrEmpty(x.Version))
+                    .Select(x => new PipComponent(x.Name, x.Version))
+                    .Select(x => new DetectedComponent(x))
+                    .ToList()
+                    .ForEach(pipComponent => singleFileComponentRecorder.RegisterUsage(pipComponent, isExplicitReferencedDependency: true));
+
+                initialPackages.Where(tuple => tuple.Component != null)
+                    .Select(tuple => new DetectedComponent(tuple.Component))
+                    .ToList()
+                    .ForEach(gitComponent => singleFileComponentRecorder.RegisterUsage(gitComponent, isExplicitReferencedDependency: true));
 
                 return;
             }
@@ -310,4 +344,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     private bool IsPipReportManuallyDisabled()
         => this.envVarService.IsEnvironmentVariableValueTrue(DisablePipReportScanEnvVar);
+
+    private bool ShouldSkipRemoteDependencyGraphResolution()
+        => this.envVarService.IsEnvironmentVariableValueTrue(SkipRemoteDependencyGraphResolution);
 }

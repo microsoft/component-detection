@@ -160,7 +160,7 @@ public class PipDependencySpecification
                 continue; // If the variable isn't in the environment, we can't evaluate it.
             }
 
-            if (string.Equals(conditionalVar, "python_version", System.StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(conditionalVar, "python_version", StringComparison.OrdinalIgnoreCase))
             {
                 var pythonVersion = PythonVersion.Create(conditionalValue);
                 if (pythonVersion.Valid)
@@ -173,10 +173,10 @@ public class PipDependencySpecification
                     conditionMet = pythonEnvironmentVariables[conditionalVar] == conditionalValue;
                 }
             }
-            else if (string.Equals(conditionalVar, "sys_platform", System.StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(conditionalVar, "sys_platform", StringComparison.OrdinalIgnoreCase))
             {
                 // if the platform is not windows or linux (empty string in env var), allow the package to be added. Otherwise, ensure it matches the python condition
-                conditionMet = string.Equals(pythonEnvironmentVariables[conditionalVar], conditionalValue, System.StringComparison.OrdinalIgnoreCase);
+                conditionMet = string.Equals(pythonEnvironmentVariables[conditionalVar], conditionalValue, StringComparison.OrdinalIgnoreCase);
             }
             else
             {
@@ -195,6 +195,33 @@ public class PipDependencySpecification
         }
 
         return conditionsMet;
+    }
+
+    /// <summary>
+    /// Iterates through the package versions that are explicitly stated, and returns
+    /// the highest that adheres to the version requirements.
+    /// </summary>
+    /// <example>
+    /// DependencySpecifiers: (&gt;=1.2.3, !=1.2.4, &lt;2.0.0)
+    /// Result: 1.2.3
+    /// Explaination: Even through 2.0.0 and 1.2.4 are higher, they do not adhere to the dep specifier requirements.
+    /// </example>
+    /// <returns>Highest explicitly stated version.</returns>
+    public string GetHighestExplicitPackageVersion()
+    {
+        var versions = this.DependencySpecifiers
+            .Select(x => PythonVersionUtilities.ParseSpec(x).Version.Trim())
+            .Where(x => !string.IsNullOrEmpty(x))
+            .ToList();
+
+        var topVersion = versions
+            .Where(x => PythonVersionUtilities.VersionValidForSpec(x, this.DependencySpecifiers))
+            .Select(x => (Version: x, PythonVersion: PythonVersion.Create(x)))
+            .Where(x => x.PythonVersion.Valid)
+            .OrderByDescending(x => x.PythonVersion)
+            .FirstOrDefault();
+
+        return topVersion.Version;
     }
 
     /// <summary>
