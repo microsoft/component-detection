@@ -50,7 +50,7 @@ public class GoComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
-    public override int Version => 7;
+    public override int Version => 8;
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
@@ -282,6 +282,7 @@ public class GoComponentDetector : FileComponentDetector
         GoGraphTelemetryRecord goGraphTelemetryRecord)
     {
         using var reader = new StreamReader(file.Stream);
+        var startString = "require ";
 
         // There can be multiple require( ) sections in go 1.17+. loop over all of them.
         while (!reader.EndOfStream)
@@ -297,9 +298,9 @@ public class GoComponentDetector : FileComponentDetector
 
                 // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
                 // are listed in the require () section
-                if (line.StartsWith("require "))
+                if (line.StartsWith(startString))
                 {
-                    this.TryRegisterDependencyFromModLine(line[8..], singleFileComponentRecorder);
+                    this.TryRegisterDependencyFromModLine(line[startString.Length..], singleFileComponentRecorder);
                 }
 
                 line = await reader.ReadLineAsync();
@@ -443,7 +444,15 @@ public class GoComponentDetector : FileComponentDetector
                 continue;
             }
 
-            var goComponent = new GoComponent(dependency.Path, dependency.Version);
+            GoComponent goComponent;
+            if (dependency.Replace != null)
+            {
+                goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
+            }
+            else
+            {
+                goComponent = new GoComponent(dependency.Path, dependency.Version);
+            }
 
             if (dependency.Indirect)
             {
@@ -483,5 +492,7 @@ public class GoComponentDetector : FileComponentDetector
         public string Version { get; set; }
 
         public bool Indirect { get; set; }
+
+        public GoBuildModule Replace { get; set; }
     }
 }
