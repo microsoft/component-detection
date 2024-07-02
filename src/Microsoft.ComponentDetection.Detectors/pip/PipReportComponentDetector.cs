@@ -128,33 +128,13 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
             if (this.ShouldSkipRemoteDependencyGraphResolution())
             {
-                this.Logger.LogWarning(
+                this.Logger.LogInformation(
                     "PipReport: Found {SkipRemoteDependencyGraphResolution} environment variable equal to true. Manually compiling" +
                     " dependency list for '{File}' without reaching out to a remote feed.",
                     SkipRemoteDependencyGraphResolution,
                     file.Location);
 
-                var initialPackages = await this.pythonCommandService.ParseFileAsync(file.Location, pythonExePath);
-                var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
-                    .Select(tuple => tuple.PackageString)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Select(x => new PipDependencySpecification(x))
-                    .Where(x => !x.PackageIsUnsafe())
-                    .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
-                    .ToList();
-
-                listedPackage.Select(x => (x.Name, Version: x.GetHighestExplicitPackageVersion()))
-                    .Where(x => !string.IsNullOrEmpty(x.Version))
-                    .Select(x => new PipComponent(x.Name, x.Version))
-                    .Select(x => new DetectedComponent(x))
-                    .ToList()
-                    .ForEach(pipComponent => singleFileComponentRecorder.RegisterUsage(pipComponent, isExplicitReferencedDependency: true));
-
-                initialPackages.Where(tuple => tuple.Component != null)
-                    .Select(tuple => new DetectedComponent(tuple.Component))
-                    .ToList()
-                    .ForEach(gitComponent => singleFileComponentRecorder.RegisterUsage(gitComponent, isExplicitReferencedDependency: true));
-
+                await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
                 return;
             }
 
@@ -209,6 +189,13 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 ExceptionMessage = e.Message,
                 StackTrace = e.StackTrace,
             };
+
+            // if pipreport fails, try to at least list the dependencies that are found in the source files
+            if (!this.ShouldSkipRemoteDependencyGraphResolution())
+            {
+                this.Logger.LogInformation("PipReport: Trying to Manually compile dependency list for '{File}' without reaching out to a remote feed.", file.Location);
+                await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
+            }
         }
         finally
         {
@@ -340,6 +327,33 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     parentComponentId: parent.Value.Id);
             }
         }
+    }
+
+    private async Task RegisterExplicitComponentsInFileAsync(
+        ISingleFileComponentRecorder recorder,
+        string filePath,
+        string pythonPath = null)
+    {
+        var initialPackages = await this.pythonCommandService.ParseFileAsync(filePath, pythonPath);
+        var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
+            .Select(tuple => tuple.PackageString)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => new PipDependencySpecification(x))
+            .Where(x => !x.PackageIsUnsafe())
+            .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
+            .ToList();
+
+        listedPackage.Select(x => (x.Name, Version: x.GetHighestExplicitPackageVersion()))
+            .Where(x => !string.IsNullOrEmpty(x.Version))
+            .Select(x => new PipComponent(x.Name, x.Version))
+            .Select(x => new DetectedComponent(x))
+            .ToList()
+            .ForEach(pipComponent => recorder.RegisterUsage(pipComponent, isExplicitReferencedDependency: true));
+
+        initialPackages.Where(tuple => tuple.Component != null)
+            .Select(tuple => new DetectedComponent(tuple.Component))
+            .ToList()
+            .ForEach(gitComponent => recorder.RegisterUsage(gitComponent, isExplicitReferencedDependency: true));
     }
 
     private bool IsPipReportManuallyDisabled()
