@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private const string DisablePipReportScanEnvVar = "DisablePipReportScan";
+    private const string SkipRemoteDependencyGraphResolution = "SkipPipReportRemoteDependencyGraphResolution";
 
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -105,6 +106,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PipExePath", out var pipExePath);
+        this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
@@ -121,6 +123,18 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     DetectorVersion = this.Version,
                 };
 
+                return;
+            }
+
+            if (this.ShouldSkipRemoteDependencyGraphResolution())
+            {
+                this.Logger.LogInformation(
+                    "PipReport: Found {SkipRemoteDependencyGraphResolution} environment variable equal to true. Manually compiling" +
+                    " dependency list for '{File}' without reaching out to a remote feed.",
+                    SkipRemoteDependencyGraphResolution,
+                    file.Location);
+
+                await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
                 return;
             }
 
@@ -175,6 +189,13 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 ExceptionMessage = e.Message,
                 StackTrace = e.StackTrace,
             };
+
+            // if pipreport fails, try to at least list the dependencies that are found in the source files
+            if (!this.ShouldSkipRemoteDependencyGraphResolution())
+            {
+                this.Logger.LogInformation("PipReport: Trying to Manually compile dependency list for '{File}' without reaching out to a remote feed.", file.Location);
+                await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
+            }
         }
         finally
         {
@@ -308,6 +329,36 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         }
     }
 
+    private async Task RegisterExplicitComponentsInFileAsync(
+        ISingleFileComponentRecorder recorder,
+        string filePath,
+        string pythonPath = null)
+    {
+        var initialPackages = await this.pythonCommandService.ParseFileAsync(filePath, pythonPath);
+        var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
+            .Select(tuple => tuple.PackageString)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => new PipDependencySpecification(x))
+            .Where(x => !x.PackageIsUnsafe())
+            .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
+            .ToList();
+
+        listedPackage.Select(x => (x.Name, Version: x.GetHighestExplicitPackageVersion()))
+            .Where(x => !string.IsNullOrEmpty(x.Version))
+            .Select(x => new PipComponent(x.Name, x.Version))
+            .Select(x => new DetectedComponent(x))
+            .ToList()
+            .ForEach(pipComponent => recorder.RegisterUsage(pipComponent, isExplicitReferencedDependency: true));
+
+        initialPackages.Where(tuple => tuple.Component != null)
+            .Select(tuple => new DetectedComponent(tuple.Component))
+            .ToList()
+            .ForEach(gitComponent => recorder.RegisterUsage(gitComponent, isExplicitReferencedDependency: true));
+    }
+
     private bool IsPipReportManuallyDisabled()
         => this.envVarService.IsEnvironmentVariableValueTrue(DisablePipReportScanEnvVar);
+
+    private bool ShouldSkipRemoteDependencyGraphResolution()
+        => this.envVarService.IsEnvironmentVariableValueTrue(SkipRemoteDependencyGraphResolution);
 }

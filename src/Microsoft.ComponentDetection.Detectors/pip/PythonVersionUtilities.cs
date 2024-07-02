@@ -85,6 +85,37 @@ public static class PythonVersionUtilities
 
     private static bool VersionValidForSpec(string version, string spec)
     {
+        (var op, var specVersion) = ParseSpec(spec);
+
+        var targetVer = PythonVersion.Create(version);
+        var specVer = PythonVersion.Create(specVersion);
+
+        if (!targetVer.Valid)
+        {
+            throw new ArgumentException($"{version} is not a valid python version");
+        }
+
+        if (!specVer.Valid)
+        {
+            throw new ArgumentException($"The version specification {specVersion} is not a valid python version");
+        }
+
+        return op switch
+        {
+            "==" => targetVer.CompareTo(specVer) == 0,
+            "===" => targetVer.CompareTo(specVer) == 0,
+            "<" => specVer > targetVer,
+            ">" => targetVer > specVer,
+            "<=" => specVer >= targetVer,
+            ">=" => targetVer >= specVer,
+            "!=" => targetVer.CompareTo(specVer) != 0,
+            "~=" => CheckEquality(version, specVersion, true),
+            _ => false,
+        };
+    }
+
+    public static (string Operator, string Version) ParseSpec(string spec)
+    {
         var opChars = new char[] { '=', '<', '>', '~', '!' };
         var specArray = spec.ToCharArray();
 
@@ -97,30 +128,6 @@ public static class PythonVersionUtilities
         var op = spec[..i];
         var specVerSection = spec[i..].Trim();
 
-        var targetVer = PythonVersion.Create(version);
-        var specVer = PythonVersion.Create(specVerSection);
-
-        if (!targetVer.Valid)
-        {
-            throw new ArgumentException($"{version} is not a valid python version");
-        }
-
-        if (!specVer.Valid)
-        {
-            throw new ArgumentException($"The version specification {specVerSection} is not a valid python version");
-        }
-
-        return op switch
-        {
-            "==" => targetVer.CompareTo(specVer) == 0,
-            "===" => targetVer.CompareTo(specVer) == 0,
-            "<" => specVer > targetVer,
-            ">" => targetVer > specVer,
-            "<=" => specVer >= targetVer,
-            ">=" => targetVer >= specVer,
-            "!=" => targetVer.CompareTo(specVer) != 0,
-            "~=" => CheckEquality(version, spec[i..], true),
-            _ => false,
-        };
+        return (op, specVerSection);
     }
 }
