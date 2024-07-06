@@ -12,7 +12,7 @@ azure-devops==7.1.0b4
     # via -r requirements.in
 azure-identity==1.16.0b1
     # via -r requirements.in
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   msrest
     #   requests
