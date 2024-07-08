@@ -58,3 +58,5 @@ The default value will use the PyPi index unless pip defaults have been configur
 The environment variable `PipReportOverrideBehavior` is used to override pip report with one of the following detection strategies.
 - `Skip`: Will not run pip detection
 - `SourceCodeScan`: Scan `setup.py` and `requirements.txt` files, and record components explicitly from the package files without hitting a remote feed. Does not compile a dependency graph.
+
+The environment variable `PipReportSkipFallbackOnFailure` is used to skip the default fallback behavior if pip report fails. Default behavior scans `setup.py` and `requirements.txt` files, and record components explicitly from the package files without hitting a remote feed. Does not compile a dependency graph.

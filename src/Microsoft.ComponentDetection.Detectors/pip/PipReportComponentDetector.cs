@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
+    private const string PipReportSkipFallbackOnFailureEnvVar = "PipReportSkipFallbackOnFailure";
 
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -199,6 +200,13 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 ExceptionMessage = e.Message,
                 StackTrace = e.StackTrace,
             };
+
+            // if pipreport fails, try to at least list the dependencies that are found in the source files
+            if (this.GetPipReportOverrideBehavior() != PipReportOverrideBehavior.SourceCodeScan && !this.PipReportSkipFallbackOnFailure())
+            {
+                this.Logger.LogInformation("PipReport: Trying to Manually compile dependency list for '{File}' without reaching out to a remote feed.", file.Location);
+                await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
+            }
         }
         finally
         {
@@ -381,5 +389,10 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         }
 
         return PipReportOverrideBehavior.None;
+    }
+
+    private bool PipReportSkipFallbackOnFailure()
+    {
+        return this.envVarService.IsEnvironmentVariableValueTrue(PipReportSkipFallbackOnFailureEnvVar);
     }
 }
