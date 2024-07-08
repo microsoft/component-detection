@@ -199,13 +199,6 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 ExceptionMessage = e.Message,
                 StackTrace = e.StackTrace,
             };
-
-            // if pipreport fails, try to at least list the dependencies that are found in the source files
-            if (this.GetPipReportOverrideBehavior() != PipReportOverrideBehavior.SourceCodeScan)
-            {
-                this.Logger.LogInformation("PipReport: Trying to Manually compile dependency list for '{File}' without reaching out to a remote feed.", file.Location);
-                await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
-            }
         }
         finally
         {
