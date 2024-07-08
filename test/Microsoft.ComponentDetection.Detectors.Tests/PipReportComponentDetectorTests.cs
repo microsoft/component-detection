@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -250,31 +251,6 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     }
 
     [TestMethod]
-    public async Task TestPipReportDetector_SkipAsync()
-    {
-        this.mockEnvVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisablePipReportScan")).Returns(true);
-
-        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((this.simpleExtrasReport, null));
-
-        var (result, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("requirements.txt", string.Empty)
-            .ExecuteDetectorAsync();
-
-        result.ResultCode.Should().Be(ProcessingResultCode.Success);
-
-        this.mockLogger.Verify(x => x.Log(
-            LogLevel.Warning,
-            It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found DisablePipReportScan environment variable equal to true")),
-            It.IsAny<Exception>(),
-            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
-
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().BeEmpty();
-    }
-
-    [TestMethod]
     public async Task TestPipReportDetector_MultiComponentAsync()
     {
         this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -469,5 +445,89 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
             componentRecorder,
             "tinycss2 1.3.0 - pip",
             new[] { "jupyterlab 4.2.0 - pip" });
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_OverrideSourceCodeScanAsync()
+    {
+        this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
+        this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("PipReportOverrideBehavior")).Returns(true);
+        this.mockEnvVarService.Setup(x => x.GetEnvironmentVariable("PipReportOverrideBehavior")).Returns("sourcecodescan");
+
+        var baseSetupPyDependencies = this.ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1,<3.0.0", "c!=1.1" });
+        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0" });
+        baseRequirementsTextDependencies.Add((null, new GitComponent(new Uri("https://github.com/example/example"), "deadbee")));
+
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies);
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("setup.py", string.Empty)
+            .WithFile("requirements.txt", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(7);
+
+        var pipComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Id.Contains("pip")).ToList();
+        ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == "a").Component).Version.Should().Be("1.0");
+        ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == "b").Component).Version.Should().Be("2.0");
+        ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == "d").Component).Version.Should().Be("1.0");
+        ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == "e").Component).Version.Should().Be("2.0");
+        ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == "f").Component).Version.Should().Be("1.1");
+        ((PipComponent)pipComponents.Single(x => ((PipComponent)x.Component).Name == "h").Component).Version.Should().Be("3.0");
+
+        var gitComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Type == ComponentType.Git);
+        gitComponents.Should().ContainSingle();
+        var gitComponent = (GitComponent)gitComponents.Single().Component;
+
+        gitComponent.RepositoryUrl.Should().Be("https://github.com/example/example");
+        gitComponent.CommitHash.Should().Be("deadbee");
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found PipReportOverrideBehavior environment variable set to SourceCodeScan.")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_OverrideSkipAsync()
+    {
+        this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
+        this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("PipReportOverrideBehavior")).Returns(true);
+        this.mockEnvVarService.Setup(x => x.GetEnvironmentVariable("PipReportOverrideBehavior")).Returns("skip");
+
+        var baseSetupPyDependencies = this.ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1,<3.0.0", "c!=1.1" });
+        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0" });
+        baseRequirementsTextDependencies.Add((null, new GitComponent(new Uri("https://github.com/example/example"), "deadbee")));
+
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
+        this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies);
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("setup.py", string.Empty)
+            .WithFile("requirements.txt", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found PipReportOverrideBehavior environment variable set to Skip.")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)
+    {
+        return components.Select<string, (string, GitComponent)>(dep => (dep, null)).ToList();
     }
 }
