@@ -2,7 +2,7 @@
 
 ## Requirements
 
-vcpkg detection triggers off of `vcpkg.spdx.json` files found under the scan directory. You must use a version of vcpkg in your build that generates SBOM files.
+vcpkg detection triggers off of `vcpkg.spdx.json` files found under the scan directory. You must use a version of vcpkg in your build that generates SBOM files (newer than 2022-05-05).
 
 ## Detection strategy
 
