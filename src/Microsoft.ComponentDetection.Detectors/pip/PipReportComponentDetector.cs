@@ -14,7 +14,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
+public class PipReportComponentDetector : FileComponentDetector
 {
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
     private const string PipReportSkipFallbackOnFailureEnvVar = "PipReportSkipFallbackOnFailure";

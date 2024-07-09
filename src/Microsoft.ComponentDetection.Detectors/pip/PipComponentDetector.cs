@@ -11,7 +11,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class PipComponentDetector : FileComponentDetector
+public class PipComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     private readonly IPythonCommandService pythonCommandService;
     private readonly IPythonResolver pythonResolver;
