@@ -14,7 +14,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
+public class PipReportComponentDetector : FileComponentDetector
 {
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
     private const string PipReportSkipFallbackOnFailureEnvVar = "PipReportSkipFallbackOnFailure";
@@ -67,7 +67,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 3;
+    public override int Version { get; } = 4;
 
     protected override bool EnableParallelism { get; set; } = true;
 
