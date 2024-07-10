@@ -15,12 +15,12 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class GoComponentDetectorTests : BaseDetectorTest<GoComponentDetector>
+public class GoComponentWithReplaceDetectorTests : BaseDetectorTest<GoComponentWithReplaceDetector>
 {
     private readonly Mock<ICommandLineInvocationService> commandLineMock;
     private readonly Mock<IEnvironmentVariableService> envVarService;
 
-    public GoComponentDetectorTests()
+    public GoComponentWithReplaceDetectorTests()
     {
         this.commandLineMock = new Mock<ICommandLineInvocationService>();
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
@@ -366,6 +366,82 @@ replace (
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
         await this.TestGoSumDetectorWithValidFile_ReturnsSuccessfullyAsync();
+    }
+
+    [TestMethod]
+    public async Task TestGoDetector_GoGraphReplaceAsync()
+    {
+        var buildDependencies = @"{
+    ""Path"": ""some-package"",
+    ""Version"": ""v1.2.3"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11"",
+    ""Replace"": {
+                    ""Path"": ""some-package"",
+                    ""Version"": ""v1.2.4"",
+                    ""Time"": ""2021-12-06T23:04:27Z"",
+                    ""Indirect"": true,
+                    ""GoMod"": ""C:\\test\\go.mod"",
+                    ""GoVersion"": ""1.11"",
+                }
+}" + "\n" + @"{
+    ""Path"": ""test"",
+    ""Version"": ""v2.0.0"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}" + "\n" + @"{
+    ""Path"": ""other"",
+    ""Version"": ""v1.2.0"",
+    ""Time"": ""2021-12-06T23:04:27Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}" + "\n" + @"{
+    ""Path"": ""a"",
+    ""Version"": ""v1.5.0"",
+    ""Time"": ""2020-05-19T17:02:07Z"",
+    ""Indirect"": true,
+    ""GoMod"": ""C:\\test\\go.mod"",
+    ""GoVersion"": ""1.11""
+}";
+        var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 a@v1.5.0";
+
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+            .ReturnsAsync(true);
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
+            .ReturnsAsync(new CommandLineExecutionResult
+            {
+                ExitCode = 0,
+                StdOut = buildDependencies,
+            });
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+            .ReturnsAsync(new CommandLineExecutionResult
+            {
+                ExitCode = 0,
+                StdOut = goGraph,
+            });
+
+        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.mod", string.Empty)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(4);
+        detectedComponents.Should().NotContain(component => component.Component.Id == "other v1.0.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "other v1.2.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "some-package v1.2.4 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "test v2.0.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "a v1.5.0 - Go");
     }
 
     [TestMethod]
