@@ -38,7 +38,7 @@ public class PipComponentDetector : FileComponentDetector, IDefaultOffComponentD
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 10;
+    public override int Version { get; } = 11;
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {
