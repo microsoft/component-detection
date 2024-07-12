@@ -23,7 +23,7 @@ using static System.Environment;
 
 public class DetectorProcessingService : IDetectorProcessingService
 {
-    private const int DefaultMaxDetectionThreads = 3;
+    private const int DefaultMaxDetectionThreads = 5;
     private const int ExperimentalTimeoutSeconds = 240; // 4 minutes
     private const int ProcessTimeoutBufferSeconds = 5;
 

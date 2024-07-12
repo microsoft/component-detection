@@ -60,3 +60,7 @@ The environment variable `PipReportOverrideBehavior` is used to override pip rep
 - `SourceCodeScan`: Scan `setup.py` and `requirements.txt` files, and record components explicitly from the package files without hitting a remote feed. Does not compile a dependency graph.
 
 The environment variable `PipReportSkipFallbackOnFailure` is used to skip the default fallback behavior if pip report fails. Default behavior scans `setup.py` and `requirements.txt` files, and record components explicitly from the package files without hitting a remote feed. Does not compile a dependency graph.
+
+The environment variable `PipReportFileLevelTimeoutSeconds` is used to control the timeout limit for generating the PipReport for individual files. This defaults to the overall timeout.
+
+The environment variable `PipReportDisableFastDeps` is used to disable the fast deps feature in PipReport.

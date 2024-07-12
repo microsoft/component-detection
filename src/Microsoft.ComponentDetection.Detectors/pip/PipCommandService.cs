@@ -13,6 +13,8 @@ using Newtonsoft.Json;
 
 public class PipCommandService : IPipCommandService
 {
+    private const string PipReportDisableFastDepsEnvVar = "PipReportDisableFastDeps";
+
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IPathUtilityService pathUtilityService;
     private readonly IFileUtilityService fileUtilityService;
@@ -125,6 +127,11 @@ public class PipCommandService : IPipCommandService
         if (this.environmentService.DoesEnvironmentVariableExist("PIP_INDEX_URL"))
         {
             pipReportCommand += $" --index-url {this.environmentService.GetEnvironmentVariable("PIP_INDEX_URL")}";
+        }
+
+        if (!this.environmentService.DoesEnvironmentVariableExist(PipReportDisableFastDepsEnvVar) || !this.environmentService.IsEnvironmentVariableValueTrue(PipReportDisableFastDepsEnvVar))
+        {
+            pipReportCommand += $" --use-feature=fast-deps";
         }
 
         this.logger.LogDebug("PipReport: Generating pip installation report for {Path} with command: {Command}", formattedPath, pipReportCommand.RemoveSensitiveInformation());

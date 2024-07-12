@@ -14,10 +14,11 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class PipReportComponentDetector : FileComponentDetector
+public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
     private const string PipReportSkipFallbackOnFailureEnvVar = "PipReportSkipFallbackOnFailure";
+    private const string PipReportFileLevelTimeoutSecondsEnvVar = "PipReportFileLevelTimeoutSeconds";
 
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -67,7 +68,7 @@ public class PipReportComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 4;
+    public override int Version { get; } = 5;
 
     protected override bool EnableParallelism { get; set; } = true;
 
@@ -152,8 +153,17 @@ public class PipReportComponentDetector : FileComponentDetector
             var stopwatch = Stopwatch.StartNew();
             this.Logger.LogInformation("PipReport: Generating pip installation report for {File}", file.Location);
 
+            // create linked cancellation token that will cancel if the file level timeout is reached, or if the parent token is cancelled.
+            // default to only using parent token if the env var is not set or is invalid
+            var childCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            if (this.envVarService.DoesEnvironmentVariableExist(PipReportFileLevelTimeoutSecondsEnvVar)
+                && int.TryParse(this.envVarService.GetEnvironmentVariable(PipReportFileLevelTimeoutSecondsEnvVar), out var timeoutSeconds))
+            {
+                childCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+            }
+
             // Call pip executable to generate the installation report of a given project file.
-            (var report, reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath, cancellationToken);
+            (var report, reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath, childCts.Token);
 
             // The report version is used to determine how to parse the report. If it is greater
             // than the maximum supported version, there may be new fields and the parsing will fail.
