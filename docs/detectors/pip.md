@@ -19,6 +19,9 @@ Serialization specifications:
 - https://peps.python.org/pep-0508/
 - https://peps.python.org/pep-0301/
 
+The detector can also pick up installation reports that have already been generated in the same directory as the `setup.py` or `requirements.txt` files, 
+as long as the report adheres to the following naming scheme: `component-detection-pip-report.json` or `*.component-detection-pip-report.json`
+
 ### Legacy Detection (PipDetector, SimplePipDetector)
 
 Pip detection is performed by running the following code snippet on every *setup.py*:

@@ -13,12 +13,16 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
 {
+    // environment variables
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
     private const string PipReportSkipFallbackOnFailureEnvVar = "PipReportSkipFallbackOnFailure";
     private const string PipReportFileLevelTimeoutSecondsEnvVar = "PipReportFileLevelTimeoutSeconds";
+
+    private static readonly IList<string> PipReportPreGeneratedFilePatterns = new List<string> { "*.component-detection-pip-report.json", "component-detection-pip-report.json" };
 
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -34,6 +38,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
     private readonly IEnvironmentVariableService envVarService;
     private readonly IPythonCommandService pythonCommandService;
     private readonly IPythonResolver pythonResolver;
+    private readonly IFileUtilityService fileUtilityService;
 
     public PipReportComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -42,6 +47,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         IEnvironmentVariableService envVarService,
         IPythonCommandService pythonCommandService,
         IPythonResolver pythonResolver,
+        IFileUtilityService fileUtilityService,
         ILogger<PipReportComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
@@ -50,6 +56,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         this.envVarService = envVarService;
         this.pythonCommandService = pythonCommandService;
         this.pythonResolver = pythonResolver;
+        this.fileUtilityService = fileUtilityService;
         this.Logger = logger;
     }
 
@@ -118,7 +125,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        FileInfo reportFile = null;
+        List<FileInfo> reportFiles = new();
         try
         {
             var pipOverride = this.GetPipReportOverrideBehavior();
@@ -151,53 +158,98 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             }
 
             var stopwatch = Stopwatch.StartNew();
-            this.Logger.LogInformation("PipReport: Generating pip installation report for {File}", file.Location);
 
-            // create linked cancellation token that will cancel if the file level timeout is reached, or if the parent token is cancelled.
-            // default to only using parent token if the env var is not set or is invalid
-            var childCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            if (this.envVarService.DoesEnvironmentVariableExist(PipReportFileLevelTimeoutSecondsEnvVar)
-                && int.TryParse(this.envVarService.GetEnvironmentVariable(PipReportFileLevelTimeoutSecondsEnvVar), out var timeoutSeconds))
+            // Search for a pre-generated pip report file in the same directory as the file being scanned.
+            var fileParentDirectory = Path.GetDirectoryName(file.Location);
+            if (fileParentDirectory is null)
             {
-                childCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
-            }
-
-            // Call pip executable to generate the installation report of a given project file.
-            (var report, reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath, childCts.Token);
-
-            // The report version is used to determine how to parse the report. If it is greater
-            // than the maximum supported version, there may be new fields and the parsing will fail.
-            if (!int.TryParse(report.Version, out var reportVersion) || reportVersion > MaxReportVersion.Major)
-            {
-                this.Logger.LogWarning(
-                    "PipReport: The pip installation report version {ReportVersion} is not supported. The maximum supported version is {MaxVersion}.",
-                    report.Version,
-                    MaxReportVersion);
-
-                using var versionRecord = new InvalidParseVersionTelemetryRecord
-                {
-                    DetectorId = this.Id,
-                    FilePath = file.Location,
-                    Version = report.Version,
-                    MaxVersion = MaxReportVersion.ToString(),
-                };
-
+                this.Logger.LogWarning("PipReport: Unable to determine parent directory for {File}.", file.Location);
                 return;
             }
 
-            stopwatch.Stop();
-            this.Logger.LogInformation(
-                "PipReport: Generating pip installation report for {File} completed in {TotalSeconds} seconds with {PkgCount} detected packages.",
-                file.Location,
-                stopwatch.ElapsedMilliseconds / 1000.0,
-                report.InstallItems?.Length ?? 0);
+            var fileParentDirectoryInfo = new DirectoryInfo(fileParentDirectory);
+            var preGeneratedReportFiles = fileParentDirectoryInfo.Exists
+                ? PipReportPreGeneratedFilePatterns
+                    .SelectMany(pattern => fileParentDirectoryInfo.GetFiles(pattern))
+                    .Where(file => File.Exists(file.FullName))
+                    .ToList()
+                : null;
 
-            // Now that all installed packages are known, we can build a graph of the dependencies.
-            if (report.InstallItems is not null)
+            List<PipInstallationReport> reports = new();
+            if (preGeneratedReportFiles is not null && preGeneratedReportFiles.Any())
             {
-                var graph = this.BuildGraphFromInstallationReport(report);
-                this.RecordComponents(singleFileComponentRecorder, graph);
+                this.Logger.LogInformation("PipReport: Found pre-generated pip report(s) for {File}.", file.Location);
+
+                foreach (var existingReport in preGeneratedReportFiles)
+                {
+                    this.Logger.LogInformation("PipReport: Using pre-generated pip report {File}.", existingReport.FullName);
+                    var reportOutput = await this.fileUtilityService.ReadAllTextAsync(existingReport);
+                    var report = JsonConvert.DeserializeObject<PipInstallationReport>(reportOutput);
+                    reports.Add(report);
+                }
             }
+            else
+            {
+                this.Logger.LogInformation("PipReport: Generating pip installation report for {File}", file.Location);
+
+                // create linked cancellation token that will cancel if the file level timeout is reached, or if the parent token is cancelled.
+                // default to only using parent token if the env var is not set or is invalid
+                var childCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                if (this.envVarService.DoesEnvironmentVariableExist(PipReportFileLevelTimeoutSecondsEnvVar)
+                    && int.TryParse(this.envVarService.GetEnvironmentVariable(PipReportFileLevelTimeoutSecondsEnvVar), out var timeoutSeconds))
+                {
+                    childCts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+                }
+
+                // Call pip executable to generate the installation report of a given project file.
+                (var report, var reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath, childCts.Token);
+                reports.Add(report);
+                reportFiles.Add(reportFile);
+            }
+
+            if (!reports.Any())
+            {
+                this.Logger.LogWarning("PipReport: Failed to generate or find pip installation report for {File}.", file.Location);
+                return;
+            }
+
+            foreach (var report in reports)
+            {
+                // The report version is used to determine how to parse the report. If it is greater
+                // than the maximum supported version, there may be new fields and the parsing will fail.
+                if (!int.TryParse(report.Version, out var reportVersion) || reportVersion > MaxReportVersion.Major)
+                {
+                    this.Logger.LogWarning(
+                        "PipReport: The pip installation report version {ReportVersion} is not supported. The maximum supported version is {MaxVersion}.",
+                        report.Version,
+                        MaxReportVersion);
+
+                    using var versionRecord = new InvalidParseVersionTelemetryRecord
+                    {
+                        DetectorId = this.Id,
+                        FilePath = file.Location,
+                        Version = report.Version,
+                        MaxVersion = MaxReportVersion.ToString(),
+                    };
+
+                    return;
+                }
+
+                this.Logger.LogInformation(
+                    "PipReport: Pip installation report for {File} completed in {TotalSeconds} seconds with {PkgCount} detected packages.",
+                    file.Location,
+                    stopwatch.ElapsedMilliseconds / 1000.0,
+                    report.InstallItems?.Length ?? 0);
+
+                // Now that all installed packages are known, we can build a graph of the dependencies.
+                if (report.InstallItems is not null)
+                {
+                    var graph = this.BuildGraphFromInstallationReport(report);
+                    this.RecordComponents(singleFileComponentRecorder, graph);
+                }
+            }
+
+            stopwatch.Stop();
         }
         catch (Exception e)
         {
@@ -221,9 +273,12 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
         finally
         {
             // Clean up the report output JSON file so it isn't left on the machine.
-            if (reportFile is not null && reportFile.Exists)
+            foreach (var reportFile in reportFiles)
             {
-                reportFile.Delete();
+                if (reportFile is not null && reportFile.Exists)
+                {
+                    reportFile.Delete();
+                }
             }
         }
     }
