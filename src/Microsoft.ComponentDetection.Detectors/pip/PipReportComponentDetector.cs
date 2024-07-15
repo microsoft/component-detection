@@ -167,13 +167,18 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 return;
             }
 
-            var fileParentDirectoryInfo = new DirectoryInfo(fileParentDirectory);
-            var preGeneratedReportFiles = fileParentDirectoryInfo.Exists
-                ? PipReportPreGeneratedFilePatterns
+            var fileParentDirectoryInfo = Directory.Exists(fileParentDirectory)
+                ? new DirectoryInfo(fileParentDirectory)
+                : null;
+
+            List<FileInfo> preGeneratedReportFiles = null;
+            if (fileParentDirectoryInfo is not null)
+            {
+                preGeneratedReportFiles = PipReportPreGeneratedFilePatterns
                     .SelectMany(pattern => fileParentDirectoryInfo.GetFiles(pattern))
                     .Where(file => File.Exists(file.FullName))
-                    .ToList()
-                : null;
+                    .ToList();
+            }
 
             List<PipInstallationReport> reports = new();
             if (preGeneratedReportFiles is not null && preGeneratedReportFiles.Any())
