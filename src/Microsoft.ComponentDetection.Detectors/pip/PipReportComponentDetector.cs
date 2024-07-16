@@ -187,7 +187,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
                 foreach (var existingReport in preGeneratedReportFiles)
                 {
-                    this.Logger.LogInformation("PipReport: Using pre-generated pip report {File}.", existingReport.FullName);
+                    this.Logger.LogInformation("PipReport: Using pre-generated pip report '{ReportFile}' for package file '{File}'.", existingReport.FullName, file.Location);
                     var reportOutput = await this.fileUtilityService.ReadAllTextAsync(existingReport);
                     var report = JsonConvert.DeserializeObject<PipInstallationReport>(reportOutput);
                     reports.Add(report);
