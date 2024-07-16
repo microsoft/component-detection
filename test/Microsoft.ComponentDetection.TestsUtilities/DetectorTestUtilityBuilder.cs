@@ -57,6 +57,13 @@ public class DetectorTestUtilityBuilder<T>
         return this;
     }
 
+    public DetectorTestUtilityBuilder<T> AddService<TService>(TService service)
+        where TService : class
+    {
+        this.serviceCollection.AddSingleton(_ => service);
+        return this;
+    }
+
     public DetectorTestUtilityBuilder<T> WithFile(string fileName, Stream fileContents, IEnumerable<string> searchPatterns = null, string fileLocation = null)
     {
         if (string.IsNullOrEmpty(fileLocation))

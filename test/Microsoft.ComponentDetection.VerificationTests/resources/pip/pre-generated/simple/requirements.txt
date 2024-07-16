@@ -1,0 +1,5 @@
+azure.cli
+azureml-core
+requests
+packaging==20.9
+setuptools>=65.5.1

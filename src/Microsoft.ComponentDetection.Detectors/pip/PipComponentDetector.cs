@@ -11,7 +11,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class PipComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class PipComponentDetector : FileComponentDetector
 {
     private readonly IPythonCommandService pythonCommandService;
     private readonly IPythonResolver pythonResolver;
@@ -38,7 +38,7 @@ public class PipComponentDetector : FileComponentDetector, IDefaultOffComponentD
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 11;
+    public override int Version { get; } = 12;
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
     {

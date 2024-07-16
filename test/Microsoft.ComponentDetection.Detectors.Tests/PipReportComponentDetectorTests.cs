@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
@@ -26,6 +27,8 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     private readonly Mock<IPythonResolver> pythonResolver;
     private readonly Mock<IEnvironmentVariableService> mockEnvVarService;
     private readonly Mock<ILogger<PipReportComponentDetector>> mockLogger;
+
+    private readonly IFileUtilityService fileUtilityService;
 
     private readonly PipInstallationReport singlePackageReport;
     private readonly PipInstallationReport singlePackageReportBadVersion;
@@ -51,6 +54,9 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
         this.mockEnvVarService = new Mock<IEnvironmentVariableService>();
         this.DetectorTestUtility.AddServiceMock(this.mockEnvVarService);
+
+        this.fileUtilityService = new FileUtilityService();
+        this.DetectorTestUtility.AddService(this.fileUtilityService);
 
         this.pipCommandService.Setup(x => x.PipExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
         this.pipCommandService.Setup(x => x.GetPipVersionAsync(It.IsAny<string>()))
@@ -524,6 +530,35 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
             It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found PipReportOverrideBehavior environment variable set to Skip.")),
             It.IsAny<Exception>(),
             (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_SimplePregeneratedFile_Async()
+    {
+        var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "requirements.txt");
+        var pregeneratedFile = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "test.component-detection-pip-report.json");
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty, fileLocation: file1)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found pre-generated pip report")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var pipComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Id.Contains("pip")).ToList();
+
+        var requestsComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("requests")).Component as PipComponent;
+        requestsComponent.Version.Should().Be("2.32.3");
+
+        var idnaComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("idna")).Component as PipComponent;
+        idnaComponent.Version.Should().Be("3.7");
     }
 
     private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)
