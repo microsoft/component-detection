@@ -62,7 +62,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
-        services.AddSingleton<IExperimentConfiguration, VcpkgExperiment>();
         services.AddSingleton<IExperimentConfiguration, GoDetectorReplaceExperiment>();
         services.AddSingleton<IExperimentConfiguration, PipReportExperiment>();
 

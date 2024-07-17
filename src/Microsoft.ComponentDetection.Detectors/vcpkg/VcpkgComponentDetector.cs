@@ -13,7 +13,7 @@ using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
+public class VcpkgComponentDetector : FileComponentDetector
 {
     private readonly HashSet<string> projectRoots = new HashSet<string>();
 
