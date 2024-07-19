@@ -535,6 +535,10 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     [TestMethod]
     public async Task TestPipReportDetector_SimplePregeneratedFile_Async()
     {
+        this.pythonCommandService
+            .Setup(x => x.ParseFileAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<(string PackageString, GitComponent Component)> { ("requests", null) });
+
         var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "requirements.txt");
         var pregeneratedFile = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "test.component-detection-pip-report.json");
 

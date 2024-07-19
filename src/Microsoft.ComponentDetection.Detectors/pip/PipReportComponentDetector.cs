@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -190,10 +191,22 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     this.Logger.LogInformation("PipReport: Using pre-generated pip report '{ReportFile}' for package file '{File}'.", existingReport.FullName, file.Location);
                     var reportOutput = await this.fileUtilityService.ReadAllTextAsync(existingReport);
                     var report = JsonConvert.DeserializeObject<PipInstallationReport>(reportOutput);
-                    reports.Add(report);
+
+                    if (await this.IsValidPreGeneratedReportAsync(report, pythonExePath, file.Location))
+                    {
+                        reports.Add(report);
+                    }
+                    else
+                    {
+                        this.Logger.LogInformation(
+                            "PipReport: Pre-generated pip report '{ReportFile}' is invalid. Did not contain all requested components in package file '{File}'.",
+                            existingReport.FullName,
+                            file.Location);
+                    }
                 }
             }
-            else
+
+            if (!reports.Any())
             {
                 this.Logger.LogInformation("PipReport: Generating pip installation report for {File}", file.Location);
 
@@ -440,6 +453,27 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             .Select(tuple => new DetectedComponent(tuple.Component))
             .ToList()
             .ForEach(gitComponent => recorder.RegisterUsage(gitComponent, isExplicitReferencedDependency: true));
+    }
+
+    /// <summary>
+    /// Confirms that the detected report at least contains all of the packages directly requested
+    /// in the pip file. This prevents invalid reports from being used to create the dependency graph.
+    /// </summary>
+    private async Task<bool> IsValidPreGeneratedReportAsync(PipInstallationReport report, string pythonExePath, string filePath)
+    {
+        var initialPackages = await this.pythonCommandService.ParseFileAsync(filePath, pythonExePath);
+        var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
+            .Select(tuple => tuple.PackageString)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => new PipDependencySpecification(x))
+            .Where(x => !x.PackageIsUnsafe())
+            .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
+            .Select(x => x.Name)
+            .ToImmutableSortedSet();
+
+        var reportRequestedPackages = report.InstallItems.Where(package => package.Requested).Select(package => package.Metadata.Name).ToImmutableSortedSet();
+
+        return listedPackage.IsSubsetOf(reportRequestedPackages);
     }
 
     private PipReportOverrideBehavior GetPipReportOverrideBehavior()
