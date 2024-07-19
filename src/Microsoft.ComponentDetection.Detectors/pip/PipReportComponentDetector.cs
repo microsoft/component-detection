@@ -159,6 +159,10 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             }
 
             var stopwatch = Stopwatch.StartNew();
+            var pipReportTypeRecord = new PipReportTypeTelemetryRecord
+            {
+                FilePath = file.Location,
+            };
 
             // Search for a pre-generated pip report file in the same directory as the file being scanned.
             var fileParentDirectory = Path.GetDirectoryName(file.Location);
@@ -206,9 +210,12 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                 }
             }
 
-            if (!reports.Any())
+            var foundPreGeneratedReport = reports.Any();
+            pipReportTypeRecord.PreGenerated = foundPreGeneratedReport;
+            if (!foundPreGeneratedReport)
             {
                 this.Logger.LogInformation("PipReport: Generating pip installation report for {File}", file.Location);
+                pipReportTypeRecord.PreGenerated = false;
 
                 // create linked cancellation token that will cancel if the file level timeout is reached, or if the parent token is cancelled.
                 // default to only using parent token if the env var is not set or is invalid
@@ -253,12 +260,6 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     return;
                 }
 
-                this.Logger.LogInformation(
-                    "PipReport: Pip installation report for {File} completed in {TotalSeconds} seconds with {PkgCount} detected packages.",
-                    file.Location,
-                    stopwatch.ElapsedMilliseconds / 1000.0,
-                    report.InstallItems?.Length ?? 0);
-
                 // Now that all installed packages are known, we can build a graph of the dependencies.
                 if (report.InstallItems is not null)
                 {
@@ -266,6 +267,14 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     this.RecordComponents(singleFileComponentRecorder, graph);
                 }
             }
+
+            var packageCount = singleFileComponentRecorder.GetDetectedComponents()?.Keys?.ToImmutableHashSet().Count ?? 0;
+            pipReportTypeRecord.PackageCount = packageCount;
+            this.Logger.LogInformation(
+                "PipReport: Pip installation report for {File} completed in {TotalSeconds} seconds with {PkgCount} detected packages.",
+                file.Location,
+                stopwatch.ElapsedMilliseconds / 1000.0,
+                packageCount);
 
             stopwatch.Stop();
         }
