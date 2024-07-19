@@ -159,7 +159,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             }
 
             var stopwatch = Stopwatch.StartNew();
-            var pipReportTypeRecord = new PipReportTypeTelemetryRecord
+            using var pipReportTypeRecord = new PipReportTypeTelemetryRecord
             {
                 FilePath = file.Location,
             };
