@@ -48,16 +48,3 @@ jobs:
 
       - name: Publish NuGet packages to GitHub Packages
         run: dotnet nuget push "./out/*.nupkg" --skip-duplicate --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}
-
-      - name: Publish NuGet packages to Azure Artifacts
-        run: |
-          # https://github.com/NuGet/Home/issues/7792
-          dotnet nuget add source "https://pkgs.dev.azure.com/1esSharedAssets/1esPkgs/_packaging/ComponentDetection/nuget/v3/index.json" \
-            --name ado \
-            --username unused \
-            --password ${{ secrets.AZART_TOKEN }} \
-            --store-password-in-clear-text
-          dotnet nuget push "./out/*.nupkg" \
-            --skip-duplicate \
-            --source ado \
-            --api-key unused
