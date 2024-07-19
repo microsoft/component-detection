@@ -70,12 +70,9 @@ public class PipComponentDetector : FileComponentDetector
         try
         {
             var initialPackages = await this.pythonCommandService.ParseFileAsync(file.Location, pythonExePath);
-            var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
-                .Select(tuple => tuple.PackageString)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => new PipDependencySpecification(x))
-                .Where(x => !x.PackageIsUnsafe())
-                .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
+            var listedPackage = SharedPipUtilities.ParsedPackagesToPipDependencies(
+                    initialPackages,
+                    this.pythonResolver.GetPythonEnvironmentVariables())
                 .ToList();
 
             var roots = await this.pythonResolver.ResolveRootsAsync(singleFileComponentRecorder, listedPackage);

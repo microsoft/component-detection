@@ -46,6 +46,9 @@
         <None Update="Mocks\pip_report_single_pkg_bad_version.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Mocks\Invalid\invalid.component-detection-pip-report.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
         <None Update="Mocks\test.component-detection-pip-report.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>

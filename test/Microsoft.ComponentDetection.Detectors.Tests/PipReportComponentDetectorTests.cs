@@ -535,6 +535,10 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     [TestMethod]
     public async Task TestPipReportDetector_SimplePregeneratedFile_Async()
     {
+        this.pythonCommandService
+            .Setup(x => x.ParseFileAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<(string PackageString, GitComponent Component)> { ("requests", null) });
+
         var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "requirements.txt");
         var pregeneratedFile = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "test.component-detection-pip-report.json");
 
@@ -550,6 +554,59 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
             It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found pre-generated pip report")),
             It.IsAny<Exception>(),
             (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var pipComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Id.Contains("pip")).ToList();
+
+        var requestsComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("requests")).Component as PipComponent;
+        requestsComponent.Version.Should().Be("2.32.3");
+
+        var idnaComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("idna")).Component as PipComponent;
+        idnaComponent.Version.Should().Be("3.7");
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_InvalidPregeneratedFile_Async()
+    {
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((this.simpleExtrasReport, null));
+
+        this.pythonCommandService
+            .Setup(x => x.ParseFileAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(new List<(string PackageString, GitComponent Component)> { ("requests", null) });
+
+        var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "Invalid", "requirements.txt");
+
+        // this pre-generated file does not contains the 'requests' package, and so the report
+        // validator should fail and the detector should continue as if no pre-generated file was found
+        var pregeneratedFile = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "Invalid", "invalid.component-detection-pip-report.json");
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty, fileLocation: file1)
+            .ExecuteDetectorAsync();
+
+        // found invalid pre-generated file
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("is invalid")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        // fell back to generating the report itself
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Information,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Generating pip installation report")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        this.pipCommandService.Verify(
+            x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        // verify results
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var pipComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Id.Contains("pip")).ToList();

@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -158,6 +159,10 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             }
 
             var stopwatch = Stopwatch.StartNew();
+            using var pipReportTypeRecord = new PipReportTypeTelemetryRecord
+            {
+                FilePath = file.Location,
+            };
 
             // Search for a pre-generated pip report file in the same directory as the file being scanned.
             var fileParentDirectory = Path.GetDirectoryName(file.Location);
@@ -190,12 +195,27 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     this.Logger.LogInformation("PipReport: Using pre-generated pip report '{ReportFile}' for package file '{File}'.", existingReport.FullName, file.Location);
                     var reportOutput = await this.fileUtilityService.ReadAllTextAsync(existingReport);
                     var report = JsonConvert.DeserializeObject<PipInstallationReport>(reportOutput);
-                    reports.Add(report);
+
+                    if (await this.IsValidPreGeneratedReportAsync(report, pythonExePath, file.Location))
+                    {
+                        reports.Add(report);
+                    }
+                    else
+                    {
+                        this.Logger.LogInformation(
+                            "PipReport: Pre-generated pip report '{ReportFile}' is invalid. Did not contain all requested components in package file '{File}'.",
+                            existingReport.FullName,
+                            file.Location);
+                    }
                 }
             }
-            else
+
+            var foundPreGeneratedReport = reports.Any();
+            pipReportTypeRecord.PreGenerated = foundPreGeneratedReport;
+            if (!foundPreGeneratedReport)
             {
                 this.Logger.LogInformation("PipReport: Generating pip installation report for {File}", file.Location);
+                pipReportTypeRecord.PreGenerated = false;
 
                 // create linked cancellation token that will cancel if the file level timeout is reached, or if the parent token is cancelled.
                 // default to only using parent token if the env var is not set or is invalid
@@ -240,12 +260,6 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     return;
                 }
 
-                this.Logger.LogInformation(
-                    "PipReport: Pip installation report for {File} completed in {TotalSeconds} seconds with {PkgCount} detected packages.",
-                    file.Location,
-                    stopwatch.ElapsedMilliseconds / 1000.0,
-                    report.InstallItems?.Length ?? 0);
-
                 // Now that all installed packages are known, we can build a graph of the dependencies.
                 if (report.InstallItems is not null)
                 {
@@ -253,6 +267,14 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
                     this.RecordComponents(singleFileComponentRecorder, graph);
                 }
             }
+
+            var packageCount = singleFileComponentRecorder.GetDetectedComponents()?.Keys?.ToImmutableHashSet().Count ?? 0;
+            pipReportTypeRecord.PackageCount = packageCount;
+            this.Logger.LogInformation(
+                "PipReport: Pip installation report for {File} completed in {TotalSeconds} seconds with {PkgCount} detected packages.",
+                file.Location,
+                stopwatch.ElapsedMilliseconds / 1000.0,
+                packageCount);
 
             stopwatch.Stop();
         }
@@ -421,12 +443,9 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             return;
         }
 
-        var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
-            .Select(tuple => tuple.PackageString)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => new PipDependencySpecification(x))
-            .Where(x => !x.PackageIsUnsafe())
-            .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
+        var listedPackage = SharedPipUtilities.ParsedPackagesToPipDependencies(
+                initialPackages,
+                this.pythonResolver.GetPythonEnvironmentVariables())
             .ToList();
 
         listedPackage.Select(x => (x.Name, Version: x.GetHighestExplicitPackageVersion()))
@@ -440,6 +459,35 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             .Select(tuple => new DetectedComponent(tuple.Component))
             .ToList()
             .ForEach(gitComponent => recorder.RegisterUsage(gitComponent, isExplicitReferencedDependency: true));
+    }
+
+    /// <summary>
+    /// Confirms that the detected report at least contains all of the packages directly requested
+    /// in the pip file. This prevents invalid reports from being used to create the dependency graph.
+    /// </summary>
+    private async Task<bool> IsValidPreGeneratedReportAsync(PipInstallationReport report, string pythonExePath, string filePath)
+    {
+        try
+        {
+            var initialPackages = await this.pythonCommandService.ParseFileAsync(filePath, pythonExePath);
+            var listedPackage = SharedPipUtilities.ParsedPackagesToPipDependencies(
+                    initialPackages,
+                    this.pythonResolver.GetPythonEnvironmentVariables())
+                .Select(x => x.Name)
+                .ToImmutableSortedSet();
+
+            var reportRequestedPackages = report.InstallItems
+                .Where(package => package.Requested)
+                .Select(package => package.Metadata.Name)
+                .ToImmutableSortedSet();
+
+            return listedPackage.IsSubsetOf(reportRequestedPackages);
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogWarning(e, "PipReport: Failed to validate pre-generated report for {File}", filePath);
+            return false;
+        }
     }
 
     private PipReportOverrideBehavior GetPipReportOverrideBehavior()
