@@ -443,12 +443,9 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
             return;
         }
 
-        var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
-            .Select(tuple => tuple.PackageString)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => new PipDependencySpecification(x))
-            .Where(x => !x.PackageIsUnsafe())
-            .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
+        var listedPackage = SharedPipUtilities.ParsedPackagesToPipDependencies(
+                initialPackages,
+                this.pythonResolver.GetPythonEnvironmentVariables())
             .ToList();
 
         listedPackage.Select(x => (x.Name, Version: x.GetHighestExplicitPackageVersion()))
@@ -470,19 +467,27 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
     /// </summary>
     private async Task<bool> IsValidPreGeneratedReportAsync(PipInstallationReport report, string pythonExePath, string filePath)
     {
-        var initialPackages = await this.pythonCommandService.ParseFileAsync(filePath, pythonExePath);
-        var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
-            .Select(tuple => tuple.PackageString)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => new PipDependencySpecification(x))
-            .Where(x => !x.PackageIsUnsafe())
-            .Where(x => x.PackageConditionsMet(this.pythonResolver.GetPythonEnvironmentVariables()))
-            .Select(x => x.Name)
-            .ToImmutableSortedSet();
+        try
+        {
+            var initialPackages = await this.pythonCommandService.ParseFileAsync(filePath, pythonExePath);
+            var listedPackage = SharedPipUtilities.ParsedPackagesToPipDependencies(
+                    initialPackages,
+                    this.pythonResolver.GetPythonEnvironmentVariables())
+                .Select(x => x.Name)
+                .ToImmutableSortedSet();
 
-        var reportRequestedPackages = report.InstallItems.Where(package => package.Requested).Select(package => package.Metadata.Name).ToImmutableSortedSet();
+            var reportRequestedPackages = report.InstallItems
+                .Where(package => package.Requested)
+                .Select(package => package.Metadata.Name)
+                .ToImmutableSortedSet();
 
-        return listedPackage.IsSubsetOf(reportRequestedPackages);
+            return listedPackage.IsSubsetOf(reportRequestedPackages);
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogWarning(e, "PipReport: Failed to validate pre-generated report for {File}", filePath);
+            return false;
+        }
     }
 
     private PipReportOverrideBehavior GetPipReportOverrideBehavior()
