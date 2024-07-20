@@ -53,5 +53,8 @@
     <PackageVersion Include="yamldotnet" Version="15.1.6" />
     <PackageVersion Include="Faker.net" Version="2.0.163" />
     <PackageVersion Include="Valleysoft.DockerfileModel" Version="1.1.1" />
+
+    <!-- Fix security alerts -->
+    <PackageVersion Include="System.Formats.Asn1" Version="6.0.1" />
   </ItemGroup>
 </Project>
