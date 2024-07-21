@@ -17,7 +17,7 @@
         <PackageReference Include="Valleysoft.DockerfileModel " />
 
         <!-- Fix alerts -->
-        <PackageVersion Include="System.Formats.Asn1" />
+        <PackageReference Include="System.Formats.Asn1" />
     </ItemGroup>
 
     <ItemGroup Label="Package References">
