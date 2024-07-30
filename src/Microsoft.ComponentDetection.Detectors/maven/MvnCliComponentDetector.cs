@@ -49,7 +49,7 @@ public class MvnCliComponentDetector : FileComponentDetector
         this.Logger.LogDebug("{DetectorId} detector: {Message}", this.Id, message);
     }
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         if (!await this.mavenCommandService.MavenCLIExistsAsync())
         {
@@ -57,7 +57,7 @@ public class MvnCliComponentDetector : FileComponentDetector
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
 
-        var processPomFile = new ActionBlock<ProcessRequest>(this.mavenCommandService.GenerateDependenciesFileAsync);
+        var processPomFile = new ActionBlock<ProcessRequest>(x => this.mavenCommandService.GenerateDependenciesFileAsync(x, cancellationToken));
 
         await this.RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest =>
         {
