@@ -73,7 +73,7 @@ public class MavenCommandService : IMavenCommandService
                 processRequest.SingleFileComponentRecorder.RegisterPackageParseFailure(pomFile.Location);
             }
 
-            if (cliFileTimeout.IsCancellationRequested)
+            if (timeoutSeconds != -1 && cliFileTimeout.IsCancellationRequested)
             {
                 this.logger.LogWarning("{DetectorPrefix}: There was a timeout in {PomFileLocation} file. Increase it using {TimeoutVar} environment variable.", DetectorLogPrefix, pomFile.Location, MvnCLIFileLevelTimeoutSecondsEnvVar);
             }
