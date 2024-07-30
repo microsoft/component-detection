@@ -39,6 +39,8 @@ public class MavenCommandService : IMavenCommandService
     public async Task GenerateDependenciesFileAsync(ProcessRequest processRequest)
     {
         var pomFile = processRequest.ComponentStream;
+        this.logger.LogDebug("MvnCli detector: Running \"dependency:tree\" on {PomFileLocation}", pomFile.Location);
+
         var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={this.BcdeMvnDependencyFileName}", "-DoutputType=text", $"-f{pomFile.Location}" };
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, AdditionalValidCommands, cliParameters);
         if (result.ExitCode != 0)
@@ -46,6 +48,10 @@ public class MavenCommandService : IMavenCommandService
             this.logger.LogDebug("Mvn execution failed for pom file: {PomFileLocation}", pomFile.Location);
             this.logger.LogError("Mvn output: {MvnStdErr}", string.IsNullOrEmpty(result.StdErr) ? result.StdOut : result.StdErr);
             processRequest.SingleFileComponentRecorder.RegisterPackageParseFailure(pomFile.Location);
+        }
+        else
+        {
+            this.logger.LogDebug("MvnCli detector: Execution of \"dependency:tree\" on {PomFileLocation} completed successfully", pomFile.Location);
         }
     }
 
