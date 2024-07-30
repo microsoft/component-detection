@@ -118,7 +118,7 @@ public abstract class FileComponentDetector : IComponentDetector
                 MaxDegreeOfParallelism = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1,
             });
 
-        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
+        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
 
         await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
 
@@ -135,7 +135,7 @@ public abstract class FileComponentDetector : IComponentDetector
         };
     }
 
-    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(processRequests);
     }

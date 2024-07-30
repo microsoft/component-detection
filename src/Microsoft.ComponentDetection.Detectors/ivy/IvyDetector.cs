@@ -69,7 +69,10 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
     {
         if (await this.IsAntLocallyAvailableAsync())
         {
