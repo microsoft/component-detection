@@ -40,7 +40,10 @@ public class SimplePipComponentDetector : FileComponentDetector, IDefaultOffComp
 
     public override int Version { get; } = 3;
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         if (!await this.pythonCommandService.PythonExistsAsync(pythonExePath))

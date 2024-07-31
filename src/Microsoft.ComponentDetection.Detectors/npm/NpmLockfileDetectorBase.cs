@@ -76,7 +76,10 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         TypedComponent parentComponent = null,
         bool skipValidation = false);
 
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) =>
+    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default) =>
         Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
             .Where(pr =>
             {

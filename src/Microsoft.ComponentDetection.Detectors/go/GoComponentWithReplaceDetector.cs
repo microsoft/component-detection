@@ -53,7 +53,9 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
     public override int Version => 1;
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
-        IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
     {
         // Filter out any go.sum process requests if the adjacent go.mod file is present and has a go version >= 1.17
         var goModProcessRequests = processRequests.Where(processRequest =>
