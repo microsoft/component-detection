@@ -16,7 +16,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-public class PipReportComponentDetector : FileComponentDetector, IExperimentalDetector
+public class PipReportComponentDetector : FileComponentDetector
 {
     // environment variables
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
@@ -76,7 +76,7 @@ public class PipReportComponentDetector : FileComponentDetector, IExperimentalDe
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 5;
+    public override int Version { get; } = 6;
 
     protected override bool EnableParallelism { get; set; } = true;
 
