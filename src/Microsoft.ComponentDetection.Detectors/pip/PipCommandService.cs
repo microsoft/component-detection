@@ -71,13 +71,19 @@ public class PipCommandService : IPipCommandService
         }
     }
 
-    private async Task<string> ResolvePipAsync(string pipPath = null)
+    private async Task<string> ResolvePipAsync(string pipPath = null, string pythonPath = null)
     {
         var pipCommand = string.IsNullOrEmpty(pipPath) ? "pip" : pipPath;
+        var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : $"{pythonPath}";
+        var pythonPipCommand = $"{pythonCommand} -m pip";
 
         if (await this.CanCommandBeLocatedAsync(pipCommand))
         {
             return pipCommand;
+        }
+        else if (await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPipCommand, null, parameters: "--version"))
+        {
+            return pythonPipCommand;
         }
 
         return null;
