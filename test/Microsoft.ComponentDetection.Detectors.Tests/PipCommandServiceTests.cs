@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -100,14 +101,16 @@ public class PipCommandServiceTests
     public async Task PipCommandService_BadVersion_ReturnsNullAsync()
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
-            "pip",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(true);
         this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
-            "pip",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = string.Empty });
 
         var service = new PipCommandService(
@@ -125,14 +128,16 @@ public class PipCommandServiceTests
     public async Task PipCommandService_BadVersionString_ReturnsNullAsync()
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
-            "pip",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(true);
         this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
-            "pip",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "this is not a valid output" });
 
         var service = new PipCommandService(
@@ -150,14 +155,16 @@ public class PipCommandServiceTests
     public async Task PipCommandService_ReturnsVersionAsync()
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
-            "pip",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(true);
         this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
-            "pip",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "pip 20.0.2 from c:\\python\\lib\\site-packages\\pip (python 3.8)" });
 
         var service = new PipCommandService(
@@ -177,14 +184,16 @@ public class PipCommandServiceTests
     public async Task PipCommandService_ReturnsVersion_SimpleAsync()
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
-            "pip",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(true);
         this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
-            "pip",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "pip 24.0 from c:\\python\\lib\\site-packages\\pip (python 3.8)" });
 
         var service = new PipCommandService(
@@ -203,14 +212,16 @@ public class PipCommandServiceTests
     public async Task PipCommandService_ReturnsVersionForAPathAsync()
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
-            "testPath",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(true);
         this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
-            "testPath",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
-            "--version"))
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "pip 20.0.2 from c:\\python\\lib\\site-packages\\pip (python 3.8)" });
 
         var service = new PipCommandService(
