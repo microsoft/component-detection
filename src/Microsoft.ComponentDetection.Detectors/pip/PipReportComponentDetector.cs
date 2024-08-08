@@ -83,14 +83,15 @@ public class PipReportComponentDetector : FileComponentDetector
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PipExePath", out var pipExePath);
-        if (!await this.pipCommandService.PipExistsAsync(pipExePath))
+        this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
+        if (!await this.pipCommandService.PipExistsAsync(pipExePath, pythonExePath))
         {
             this.Logger.LogInformation($"PipReport: No pip found on system. Pip installation report detection will not run.");
 
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
 
-        var pipVersion = await this.pipCommandService.GetPipVersionAsync(pipExePath);
+        var pipVersion = await this.pipCommandService.GetPipVersionAsync(pipExePath, pythonExePath);
         if (pipVersion is null || pipVersion < MinimumPipVersion)
         {
             this.Logger.LogInformation(
@@ -100,7 +101,6 @@ public class PipReportComponentDetector : FileComponentDetector
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
 
-        this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         if (!await this.pythonCommandService.PythonExistsAsync(pythonExePath))
         {
             this.Logger.LogInformation($"No python found on system. Python detection will not run.");
@@ -227,7 +227,7 @@ public class PipReportComponentDetector : FileComponentDetector
                 }
 
                 // Call pip executable to generate the installation report of a given project file.
-                (var report, var reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath, childCts.Token);
+                (var report, var reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath, pythonExePath, childCts.Token);
                 reports.Add(report);
                 reportFiles.Add(reportFile);
             }
