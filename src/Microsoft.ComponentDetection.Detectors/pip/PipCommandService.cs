@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Pip;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -39,18 +40,20 @@ public class PipCommandService : IPipCommandService
         this.logger = logger;
     }
 
-    public async Task<bool> PipExistsAsync(string pipPath = null)
+    public async Task<bool> PipExistsAsync(string pipPath = null, string pythonPath = null)
     {
-        return !string.IsNullOrEmpty(await this.ResolvePipAsync(pipPath));
+        var (pipExecutable, pythonExecutable) = await this.ResolvePipAsync(pipPath, pythonPath);
+        return !string.IsNullOrEmpty(pipExecutable) || !string.IsNullOrEmpty(pythonExecutable);
     }
 
-    public async Task<Version> GetPipVersionAsync(string pipPath = null)
+    public async Task<Version> GetPipVersionAsync(string pipPath = null, string pythonPath = null)
     {
-        var pipExecutable = await this.ResolvePipAsync(pipPath);
-        var command = await this.commandLineInvocationService.ExecuteCommandAsync(
+        var (pipExecutable, pythonExecutable) = await this.ResolvePipAsync(pipPath, pythonPath);
+        var command = await this.ExecuteCommandAsync(
             pipExecutable,
+            pythonExecutable,
             null,
-            "--version");
+            parameters: "--version");
 
         if (command.ExitCode != 0)
         {
@@ -71,22 +74,23 @@ public class PipCommandService : IPipCommandService
         }
     }
 
-    private async Task<string> ResolvePipAsync(string pipPath = null, string pythonPath = null)
+    private async Task<(string PipExectuable, string PythonExecutable)> ResolvePipAsync(string pipPath = null, string pythonPath = null)
     {
         var pipCommand = string.IsNullOrEmpty(pipPath) ? "pip" : pipPath;
         var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : $"{pythonPath}";
         var pythonPipCommand = $"{pythonCommand} -m pip";
 
-        if (await this.CanCommandBeLocatedAsync(pipCommand))
+        if (await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonCommand, null, ["-m", "pip", "--version"]))
         {
-            return pipCommand;
+            this.logger.LogDebug("Python Command succeeded: {PythonCmd}", pythonPipCommand);
+            return (null, pythonCommand);
         }
-        else if (await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPipCommand, null, parameters: "--version"))
+        else if (await this.CanCommandBeLocatedAsync(pipCommand))
         {
-            return pythonPipCommand;
+            return (pipCommand, null);
         }
 
-        return null;
+        return (null, null);
     }
 
     private async Task<bool> CanCommandBeLocatedAsync(string pipPath)
@@ -94,14 +98,34 @@ public class PipCommandService : IPipCommandService
         return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, new List<string> { "pip3" }, "--version");
     }
 
-    public async Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(string path, string pipExePath = null, CancellationToken cancellationToken = default)
+    private async Task<CommandLineExecutionResult> ExecuteCommandAsync(
+        string pipExecutable = null,
+        string pythonExecutable = null,
+        IEnumerable<string> additionalCandidateCommands = null,
+        DirectoryInfo workingDirectory = null,
+        CancellationToken cancellationToken = default,
+        params string[] parameters)
+    {
+        if (!string.IsNullOrEmpty(pipExecutable))
+        {
+            return await this.commandLineInvocationService.ExecuteCommandAsync(pipExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parameters);
+        }
+        else
+        {
+            var pythonPipParams = new[] { "-m", "pip" };
+            var parametersFull = pythonPipParams.Concat(parameters).ToArray();
+            return await this.commandLineInvocationService.ExecuteCommandAsync(pythonExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parametersFull);
+        }
+    }
+
+    public async Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(string path, string pipExePath = null, string pythonExePath = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
         {
             return (new PipInstallationReport(), null);
         }
 
-        var pipExecutable = await this.ResolvePipAsync(pipExePath);
+        var (pipExecutable, pythonExecutable) = await this.ResolvePipAsync(pipExePath, pythonExePath);
         var formattedPath = this.pathUtilityService.NormalizePath(path);
         var workingDir = new DirectoryInfo(this.pathUtilityService.GetParentDirectory(formattedPath));
 
@@ -141,8 +165,9 @@ public class PipCommandService : IPipCommandService
         }
 
         this.logger.LogDebug("PipReport: Generating pip installation report for {Path} with command: {Command}", formattedPath, pipReportCommand.RemoveSensitiveInformation());
-        command = await this.commandLineInvocationService.ExecuteCommandAsync(
+        command = await this.ExecuteCommandAsync(
             pipExecutable,
+            pythonExecutable,
             null,
             workingDir,
             cancellationToken,
