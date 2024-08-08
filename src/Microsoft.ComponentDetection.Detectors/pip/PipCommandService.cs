@@ -83,7 +83,7 @@ public class PipCommandService : IPipCommandService
         {
             return (pipCommand, null);
         }
-        else if (await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonCommand, null, ["-m", "pip", "--version"]))
+        else if (await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonCommand, null, "-m", "pip", "--version"))
         {
             return (null, pythonCommand);
         }
@@ -106,17 +106,20 @@ public class PipCommandService : IPipCommandService
     {
         if (!string.IsNullOrEmpty(pipExecutable))
         {
-            return await this.commandLineInvocationService.ExecuteCommandAsync(pipExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parameters);
+            return await this.commandLineInvocationService.ExecuteCommandAsync(
+                pipExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parameters);
         }
         else
         {
             var pythonPipParams = new[] { "-m", "pip" };
             var parametersFull = pythonPipParams.Concat(parameters).ToArray();
-            return await this.commandLineInvocationService.ExecuteCommandAsync(pythonExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parametersFull);
+            return await this.commandLineInvocationService.ExecuteCommandAsync(
+                pythonExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parametersFull);
         }
     }
 
-    public async Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(string path, string pipExePath = null, string pythonExePath = null, CancellationToken cancellationToken = default)
+    public async Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(
+        string path, string pipExePath = null, string pythonExePath = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
         {
