@@ -68,6 +68,22 @@ public class PipCommandServiceTests
     }
 
     [TestMethod]
+    public async Task PipCommandService_ReturnsTrueWhenPythonExistsAsync()
+    {
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("pip", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "-m", "pip", "--version")).ReturnsAsync(true);
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        (await service.PipExistsAsync()).Should().BeTrue();
+    }
+
+    [TestMethod]
     public async Task PipCommandService_ReturnsTrueWhenPipExistsForAPathAsync()
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("testPath", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
@@ -122,6 +138,42 @@ public class PipCommandServiceTests
 
         var semVer = await service.GetPipVersionAsync();
         semVer.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task PipCommandService_BadPip_ReturnsPythonAsync()
+    {
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            It.Is<string>(x => x == "pip" || x == "python"),
+            It.IsAny<IEnumerable<string>>(),
+            It.Is<string[]>(x => x.Last() == "--version")))
+            .ReturnsAsync(false);
+
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "python",
+            It.IsAny<IEnumerable<string>>(),
+            It.Is<string[]>(x => x.Last() == "--version")))
+            .ReturnsAsync(true);
+
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "python",
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            new string[] { "-m", "pip", "--version" }))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "pip 24.1.2 from C:\\Python312\\site-packages\\pip (python 3.12)" });
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        var semVer = await service.GetPipVersionAsync();
+        semVer.Major.Should().Be(24);
+        semVer.Minor.Should().Be(1);
+        semVer.Build.Should().Be(2);
     }
 
     [TestMethod]
@@ -265,6 +317,49 @@ public class PipCommandServiceTests
 
         var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
 
+        ValidateRequirementsTxtReportFile(report, reportFile);
+
+        this.commandLineInvokationService.Verify();
+    }
+
+    [TestMethod]
+    public async Task PythonPipCommandService_GeneratesReport_RequirementsTxt_CorrectlyAsync()
+    {
+        var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), ".txt"));
+
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("pip", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(false);
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("python", It.IsAny<IEnumerable<string>>(), "-m", "pip", "--version")).ReturnsAsync(true);
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "python",
+            It.IsAny<IEnumerable<string>>(),
+            It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
+            It.Is<string[]>(s =>
+                s.Any(e => e.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))
+                && s.Any(e => e.Equals("-m", StringComparison.OrdinalIgnoreCase)))))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty })
+            .Verifiable();
+
+        this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
+            .ReturnsAsync(TestResources.pip_report_single_pkg);
+
+        var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
+
+        ValidateRequirementsTxtReportFile(report, reportFile);
+
+        this.commandLineInvokationService.Verify();
+    }
+
+    private static void ValidateRequirementsTxtReportFile(PipInstallationReport report, FileInfo reportFile)
+    {
         // the file shouldn't exist since we're not writing to it in the test
         reportFile.Should().NotBeNull();
         reportFile.Exists.Should().Be(false);
@@ -284,8 +379,6 @@ public class PipCommandServiceTests
         report.InstallItems[0].Metadata.AuthorEmail.Should().Be("benjamin@python.org");
         report.InstallItems[0].Metadata.Maintainer.Should().BeNullOrEmpty();
         report.InstallItems[0].Metadata.MaintainerEmail.Should().BeNullOrEmpty();
-
-        this.commandLineInvokationService.Verify();
     }
 
     [TestMethod]
