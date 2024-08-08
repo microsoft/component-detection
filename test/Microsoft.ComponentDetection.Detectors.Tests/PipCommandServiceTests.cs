@@ -144,7 +144,7 @@ public class PipCommandServiceTests
     public async Task PipCommandService_BadPip_ReturnsPythonAsync()
     {
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
-            "pip",
+            It.Is<string>(x => x == "pip" || x == "python"),
             It.IsAny<IEnumerable<string>>(),
             It.Is<string[]>(x => x.Last() == "--version")))
             .ReturnsAsync(false);
