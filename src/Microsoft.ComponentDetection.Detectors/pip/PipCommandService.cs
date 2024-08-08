@@ -77,17 +77,15 @@ public class PipCommandService : IPipCommandService
     private async Task<(string PipExectuable, string PythonExecutable)> ResolvePipAsync(string pipPath = null, string pythonPath = null)
     {
         var pipCommand = string.IsNullOrEmpty(pipPath) ? "pip" : pipPath;
-        var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : $"{pythonPath}";
-        var pythonPipCommand = $"{pythonCommand} -m pip";
+        var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : pythonPath;
 
-        if (await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonCommand, null, ["-m", "pip", "--version"]))
-        {
-            this.logger.LogDebug("Python Command succeeded: {PythonCmd}", pythonPipCommand);
-            return (null, pythonCommand);
-        }
-        else if (await this.CanCommandBeLocatedAsync(pipCommand))
+        if (await this.CanCommandBeLocatedAsync(pipCommand))
         {
             return (pipCommand, null);
+        }
+        else if (await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonCommand, null, ["-m", "pip", "--version"]))
+        {
+            return (null, pythonCommand);
         }
 
         return (null, null);
