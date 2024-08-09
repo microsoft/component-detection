@@ -63,7 +63,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, GoDetectorReplaceExperiment>();
-        services.AddSingleton<IExperimentConfiguration, PipReportExperiment>();
 
         // Detectors
         // CocoaPods
