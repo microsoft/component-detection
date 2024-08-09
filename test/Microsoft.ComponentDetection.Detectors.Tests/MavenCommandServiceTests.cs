@@ -260,7 +260,7 @@ public class MavenCommandServiceTests
 
     protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
     {
-        result.Should<T>().BeEquivalentTo(expected);
+        result.Should().BeEquivalentTo(expected);
         return true;
     }
 }
