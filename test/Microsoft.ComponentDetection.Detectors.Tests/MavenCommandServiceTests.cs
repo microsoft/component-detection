@@ -185,12 +185,13 @@ public class MavenCommandServiceTests
 
         this.environmentVarServiceMock
             .Setup(x => x.GetEnvironmentVariable(MavenCommandService.MvnCLIFileLevelTimeoutSecondsEnvVar))
-            .Returns("0");
+            .Returns("0")
+            .Callback(() => cts.Cancel());
 
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
                 MavenCommandService.PrimaryCommand,
                 MavenCommandService.AdditionalValidCommands,
-                It.IsAny<CancellationToken>(), // due to the test timing, we can't guarantee the cancellation token will be cancelled by the time the mock is called
+                It.Is<CancellationToken>(x => x.IsCancellationRequested),
                 It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
             .ReturnsAsync(new CommandLineExecutionResult
             {
