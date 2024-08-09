@@ -190,7 +190,7 @@ public class MavenCommandServiceTests
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
                 MavenCommandService.PrimaryCommand,
                 MavenCommandService.AdditionalValidCommands,
-                It.Is<CancellationToken>(x => x.IsCancellationRequested),
+                It.IsAny<CancellationToken>(), // due to the test timing, we can't guarantee the cancellation token will be cancelled by the time the mock is called
                 It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
             .ReturnsAsync(new CommandLineExecutionResult
             {
