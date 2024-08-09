@@ -3,8 +3,7 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
 
   <ItemGroup Label="Package References">
-    <PackageReference Include="MSTest.TestAdapter"/>
-    <PackageReference Include="MSTest.TestFramework"/>
+    <PackageReference Include="MSTest"/>
     <PackageReference Include="Moq"/>
     <PackageReference Include="FluentAssertions"/>
     <PackageReference Include="Faker.net"/>
