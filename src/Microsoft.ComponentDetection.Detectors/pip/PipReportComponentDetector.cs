@@ -22,6 +22,7 @@ public class PipReportComponentDetector : FileComponentDetector
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
     private const string PipReportSkipFallbackOnFailureEnvVar = "PipReportSkipFallbackOnFailure";
     private const string PipReportFileLevelTimeoutSecondsEnvVar = "PipReportFileLevelTimeoutSeconds";
+    private const string PipReportPersistReportsEnvVar = "PipReportPersistReports";
 
     private static readonly IList<string> PipReportPreGeneratedFilePatterns = new List<string> { "*.component-detection-pip-report.json", "component-detection-pip-report.json" };
 
@@ -300,11 +301,14 @@ public class PipReportComponentDetector : FileComponentDetector
         finally
         {
             // Clean up the report output JSON file so it isn't left on the machine.
-            foreach (var reportFile in reportFiles)
+            if (!this.envVarService.IsEnvironmentVariableValueTrue(PipReportPersistReportsEnvVar))
             {
-                if (reportFile is not null && reportFile.Exists)
+                foreach (var reportFile in reportFiles)
                 {
-                    reportFile.Delete();
+                    if (reportFile is not null && reportFile.Exists)
+                    {
+                        reportFile.Delete();
+                    }
                 }
             }
         }
