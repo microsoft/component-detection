@@ -301,7 +301,7 @@ public class PipReportComponentDetector : FileComponentDetector
         finally
         {
             // Clean up the report output JSON file so it isn't left on the machine.
-            if (!this.envVarService.IsEnvironmentVariableValueTrue(PipReportPersistReportsEnvVar) && reportFiles.Any())
+            if (!this.envVarService.IsEnvironmentVariableValueTrue(PipReportPersistReportsEnvVar))
             {
                 foreach (var reportFile in reportFiles)
                 {
