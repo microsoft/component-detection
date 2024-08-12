@@ -131,7 +131,7 @@ public class PipCommandService : IPipCommandService
         var workingDir = new DirectoryInfo(this.pathUtilityService.GetParentDirectory(formattedPath));
 
         CommandLineExecutionResult command;
-        var reportName = Path.GetRandomFileName();
+        var reportName = Path.GetFileNameWithoutExtension(Path.GetRandomFileName()) + ".component-detection-pip-report.json";
         var reportFile = new FileInfo(Path.Combine(workingDir.FullName, reportName));
 
         string pipReportCommand;
