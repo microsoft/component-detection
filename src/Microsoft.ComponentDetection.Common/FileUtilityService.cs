@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Common;
 
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 
@@ -35,5 +36,27 @@ public class FileUtilityService : IFileUtilityService
     public Stream MakeFileStream(string fileName)
     {
         return new FileStream(fileName, FileMode.Open, FileAccess.Read);
+    }
+
+    /// <inheritdoc />
+    public (string DuplicateFilePath, bool CreatedDuplicate) DuplicateFileWithoutLines(string fileName, string removalIndicator)
+    {
+        // Read all lines from the file and filter out the lines that start with the removal indicator.
+        var originalLines = File.ReadLines(fileName).ToList();
+        var linesToKeep = originalLines
+            .Where(line => !line.Trim().StartsWith(removalIndicator, System.StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // If the file did not have any lines to remove, return null.
+        if (originalLines.Count == linesToKeep.Count)
+        {
+            return (null, false);
+        }
+
+        // Otherwise, write the lines to a new file and return the new file path.
+        var duplicateFileName = $"temp.{Path.GetFileName(fileName)}";
+        var duplicateFilePath = Path.Combine(Path.GetDirectoryName(fileName), duplicateFileName);
+        File.WriteAllLines(duplicateFilePath, linesToKeep);
+        return (duplicateFilePath, true);
     }
 }
