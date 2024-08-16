@@ -141,11 +141,11 @@ public class PipCommandService : IPipCommandService
         {
             if (path.EndsWith(".py"))
             {
-                pipReportCommand = $"install -e .";
+                pipReportCommand = "install -e .";
             }
             else if (path.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
             {
-                pipReportCommand = $"install -r requirements.txt";
+                pipReportCommand = "install -r requirements.txt";
                 if (this.environmentService.IsEnvironmentVariableValueTrue(PipReportIgnoreFileLevelIndexUrlEnvVar))
                 {
                     // check for --index-url in requirements.txt and remove it from the file, since we want to use PIP_INDEX_URL from the environment.
@@ -175,9 +175,9 @@ public class PipCommandService : IPipCommandService
                 pipReportCommand += $" --index-url {this.environmentService.GetEnvironmentVariable("PIP_INDEX_URL")}";
             }
 
-            if (!this.environmentService.DoesEnvironmentVariableExist(PipReportDisableFastDepsEnvVar) || !this.environmentService.IsEnvironmentVariableValueTrue(PipReportDisableFastDepsEnvVar))
+            if (!this.environmentService.IsEnvironmentVariableValueTrue(PipReportDisableFastDepsEnvVar))
             {
-                pipReportCommand += $" --use-feature=fast-deps";
+                pipReportCommand += " --use-feature=fast-deps";
             }
 
             this.logger.LogDebug("PipReport: Generating pip installation report for {Path} with command: {Command}", formattedPath, pipReportCommand.RemoveSensitiveInformation());
