@@ -497,6 +497,7 @@ public class PipCommandServiceTests
     {
         var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), "requirements.txt"));
 
+        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("PipReportIgnoreFileLevelIndexUrl")).Returns(true);
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("pip", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
         this.fileUtilityService.Setup(x => x.DuplicateFileWithoutLines(It.IsAny<string>(), "--index-url"))
@@ -531,6 +532,7 @@ public class PipCommandServiceTests
     {
         var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), "requirements.txt"));
 
+        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("PipReportIgnoreFileLevelIndexUrl")).Returns(true);
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("pip", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
         this.fileUtilityService.Setup(x => x.DuplicateFileWithoutLines(It.IsAny<string>(), "--index-url"))
@@ -557,6 +559,38 @@ public class PipCommandServiceTests
 
         var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
         this.fileUtilityService.Verify();
+        this.commandLineInvokationService.Verify();
+    }
+
+    [TestMethod]
+    public async Task PipCommandService_GeneratesReport_UseFileIndex_Async()
+    {
+        var testPath = Path.Join(Directory.GetCurrentDirectory(), string.Join(Guid.NewGuid().ToString(), "requirements.txt"));
+
+        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("PipReportIgnoreFileLevelIndexUrl")).Returns(false);
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("pip", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
+
+        this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
+            .ReturnsAsync(TestResources.pip_report_multi_pkg);
+
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
+            It.Is<string>(s => !s.Contains("temp.requirements.txt", StringComparison.OrdinalIgnoreCase))))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty })
+            .Verifiable();
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
+        this.fileUtilityService.Verify(x => x.DuplicateFileWithoutLines(It.IsAny<string>(), "--index-url"), Times.Never);
         this.commandLineInvokationService.Verify();
     }
 

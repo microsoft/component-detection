@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 public class PipCommandService : IPipCommandService
 {
     private const string PipReportDisableFastDepsEnvVar = "PipReportDisableFastDeps";
+    private const string PipReportIgnoreFileLevelIndexUrlEnvVar = "PipReportIgnoreFileLevelIndexUrl";
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IPathUtilityService pathUtilityService;
@@ -142,19 +143,19 @@ public class PipCommandService : IPipCommandService
             {
                 pipReportCommand = $"install -e .";
             }
-            else if (path.EndsWith(".txt"))
+            else if (path.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
             {
-                // check for --index-url in requirements.txt and remove it from the file, since we want to use PIP_INDEX_URL from the environment.
-                var (duplicateFilePath, createdDuplicate) = this.fileUtilityService.DuplicateFileWithoutLines(formattedPath, "--index-url");
-                if (createdDuplicate)
+                pipReportCommand = $"install -r requirements.txt";
+                if (this.environmentService.IsEnvironmentVariableValueTrue(PipReportIgnoreFileLevelIndexUrlEnvVar))
                 {
-                    var duplicateFileName = Path.GetFileName(duplicateFilePath);
-                    duplicateFile = new FileInfo(duplicateFilePath);
-                    pipReportCommand = $"install -r {duplicateFileName}";
-                }
-                else
-                {
-                    pipReportCommand = $"install -r requirements.txt";
+                    // check for --index-url in requirements.txt and remove it from the file, since we want to use PIP_INDEX_URL from the environment.
+                    var (duplicateFilePath, createdDuplicate) = this.fileUtilityService.DuplicateFileWithoutLines(formattedPath, "--index-url");
+                    if (createdDuplicate)
+                    {
+                        var duplicateFileName = Path.GetFileName(duplicateFilePath);
+                        duplicateFile = new FileInfo(duplicateFilePath);
+                        pipReportCommand = $"install -r {duplicateFileName}";
+                    }
                 }
             }
             else
