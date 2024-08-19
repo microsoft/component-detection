@@ -77,7 +77,7 @@ public class PipReportComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
 
-    public override int Version { get; } = 7;
+    public override int Version { get; } = 8;
 
     protected override bool EnableParallelism { get; set; } = true;
 
@@ -329,6 +329,16 @@ public class PipReportComponentDetector : FileComponentDetector
             var normalizedPkgName = PipReportUtilities.NormalizePackageNameFormat(package.Metadata.Name);
             if (PipDependencySpecification.PackagesToIgnore.Contains(normalizedPkgName))
             {
+                continue;
+            }
+
+            if (!PipReportUtilities.IsCanonicalVersion(package.Metadata.Version))
+            {
+                this.Logger.LogWarning(
+                    "PipReport: Skipping package '{Package}' with non-canonical version '{Version}'. " +
+                    "See https://www.python.org/dev/peps/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions",
+                    normalizedPkgName,
+                    package.Metadata.Version);
                 continue;
             }
 
