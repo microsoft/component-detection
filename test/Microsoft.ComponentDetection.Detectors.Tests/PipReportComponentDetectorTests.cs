@@ -32,6 +32,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
     private readonly PipInstallationReport singlePackageReport;
     private readonly PipInstallationReport singlePackageReportBadVersion;
+    private readonly PipInstallationReport singlePackageReportInvalidPkgVersion;
     private readonly PipInstallationReport multiPackageReport;
     private readonly PipInstallationReport jupyterPackageReport;
     private readonly PipInstallationReport simpleExtrasReport;
@@ -64,6 +65,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
         this.singlePackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg);
         this.singlePackageReportBadVersion = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg_bad_version);
+        this.singlePackageReportInvalidPkgVersion = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg_invalid_pkg_version);
         this.multiPackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_multi_pkg);
         this.jupyterPackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_jupyterlab);
         this.simpleExtrasReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_simple_extras);
@@ -254,6 +256,29 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         var pipComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Id.Contains("pip")).ToList();
         var requestsComponent = pipComponents.Single(x => ((PipComponent)x.Component).Name.Equals("requests")).Component as PipComponent;
         requestsComponent.Version.Should().Be("2.32.3");
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_BadPackageVersionAsync()
+    {
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((this.singlePackageReportInvalidPkgVersion, null));
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockLogger.Verify(x => x.Log(
+            LogLevel.Warning,
+            It.IsAny<EventId>(),
+            It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("with non-canonical version")),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
     }
 
     [TestMethod]

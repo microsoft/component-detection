@@ -332,6 +332,16 @@ public class PipReportComponentDetector : FileComponentDetector
                 continue;
             }
 
+            if (!PipReportUtilities.IsCanonicalVersion(package.Metadata.Version))
+            {
+                this.Logger.LogWarning(
+                    "PipReport: Skipping package '{Package}' with non-canonical version '{Version}'. " +
+                    "See https://www.python.org/dev/peps/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions",
+                    normalizedPkgName,
+                    package.Metadata.Version);
+                continue;
+            }
+
             var node = new PipReportGraphNode(
                 new PipComponent(
                     normalizedPkgName,

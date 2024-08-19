@@ -68,4 +68,12 @@ internal class PipReportUtilities
 
         return null;
     }
+
+    public static bool IsCanonicalVersion(string version)
+    {
+        // python regular expression for version schema: https://www.python.org/dev/peps/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions
+        var canonicalVersionPattern = @"^([1-9]\d*!)?(0|[1-9]\d*)(\.(0|[1-9]\d*))*((a|b|rc)(0|[1-9]\d*))?(\.post(0|[1-9]\d*))?(\.dev(0|[1-9]\d*))?(\+(?:(?<local>[a-z0-9]+(?:[.][a-z0-9]+)*))?)?$";
+
+        return Regex.IsMatch(version, canonicalVersionPattern);
+    }
 }
