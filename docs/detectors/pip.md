@@ -67,3 +67,7 @@ The environment variable `PipReportSkipFallbackOnFailure` is used to skip the de
 The environment variable `PipReportFileLevelTimeoutSeconds` is used to control the timeout limit for generating the PipReport for individual files. This defaults to the overall timeout.
 
 The environment variable `PipReportDisableFastDeps` is used to disable the fast deps feature in PipReport.
+
+The enviroment variable `PipReportIgnoreFileLevelIndexUrl` is used to ignore the `--index-url` argument that can be provided in the requirements.txt file: https://pip.pypa.io/en/stable/cli/pip_install/#install-index-url
+
+The enviroment variable `PipReportPersistReports` allows the PipReport detector to persist the reports that it generates, rather than cleaning them up after constructing the dependency graph.

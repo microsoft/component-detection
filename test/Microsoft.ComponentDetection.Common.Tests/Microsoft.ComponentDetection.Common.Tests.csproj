@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup Label="Project References">
         <ProjectReference Include="..\Microsoft.ComponentDetection.TestsUtilities\Microsoft.ComponentDetection.TestsUtilities.csproj" />
@@ -11,6 +11,12 @@
       <PackageReference Include="Microsoft.Extensions.Logging" />
       <PackageReference Include="Microsoft.NET.Test.Sdk" />
       <PackageReference Include="System.Threading.Tasks.Dataflow" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Resources\test-file-duplicate.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>
