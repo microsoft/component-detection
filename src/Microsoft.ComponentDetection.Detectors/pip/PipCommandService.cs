@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 public class PipCommandService : IPipCommandService
 {
     private const string PipReportDisableFastDepsEnvVar = "PipReportDisableFastDeps";
+    private const string PipReportIgnoreFileLevelIndexUrlEnvVar = "PipReportIgnoreFileLevelIndexUrl";
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IPathUtilityService pathUtilityService;
@@ -134,71 +135,93 @@ public class PipCommandService : IPipCommandService
         var reportName = Path.GetFileNameWithoutExtension(Path.GetRandomFileName()) + ".component-detection-pip-report.json";
         var reportFile = new FileInfo(Path.Combine(workingDir.FullName, reportName));
 
+        FileInfo duplicateFile = null;
         string pipReportCommand;
-        if (path.EndsWith(".py"))
+        try
         {
-            pipReportCommand = $"install -e .";
-        }
-        else if (path.EndsWith(".txt"))
-        {
-            pipReportCommand = "install -r requirements.txt";
-        }
-        else
-        {
-            // Failure case, but this shouldn't be hit since detection is only running
-            // on setup.py and requirements.txt files.
-            this.logger.LogDebug("PipReport: Unsupported file type for pip installation report: {Path}", path);
-            return (new PipInstallationReport(), null);
-        }
-
-        // When PIP_INDEX_URL is set, we need to pass it as a parameter to pip install command.
-        // This should be done before running detection by the build system, otherwise the detection
-        // will default to the public PyPI index if not configured in pip defaults. Note this index URL may have credentials, we need to remove it when logging.
-        pipReportCommand += $" --dry-run --ignore-installed --quiet --report {reportName}";
-        if (this.environmentService.DoesEnvironmentVariableExist("PIP_INDEX_URL"))
-        {
-            pipReportCommand += $" --index-url {this.environmentService.GetEnvironmentVariable("PIP_INDEX_URL")}";
-        }
-
-        if (!this.environmentService.DoesEnvironmentVariableExist(PipReportDisableFastDepsEnvVar) || !this.environmentService.IsEnvironmentVariableValueTrue(PipReportDisableFastDepsEnvVar))
-        {
-            pipReportCommand += $" --use-feature=fast-deps";
-        }
-
-        this.logger.LogDebug("PipReport: Generating pip installation report for {Path} with command: {Command}", formattedPath, pipReportCommand.RemoveSensitiveInformation());
-        command = await this.ExecuteCommandAsync(
-            pipExecutable,
-            pythonExecutable,
-            null,
-            workingDir,
-            cancellationToken,
-            pipReportCommand);
-
-        if (command.ExitCode == -1 && cancellationToken.IsCancellationRequested)
-        {
-            var errorMessage = $"PipReport: Cancelled for file '{formattedPath}' with command '{pipReportCommand.RemoveSensitiveInformation()}'.";
-            using var failureRecord = new PipReportFailureTelemetryRecord
+            if (path.EndsWith(".py"))
             {
-                ExitCode = command.ExitCode,
-                StdErr = $"{errorMessage} {command.StdErr}",
-            };
-
-            this.logger.LogWarning("{Error}", errorMessage);
-            throw new InvalidOperationException(errorMessage);
-        }
-        else if (command.ExitCode != 0)
-        {
-            using var failureRecord = new PipReportFailureTelemetryRecord
+                pipReportCommand = "install -e .";
+            }
+            else if (path.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
             {
-                ExitCode = command.ExitCode,
-                StdErr = command.StdErr,
-            };
+                pipReportCommand = "install -r requirements.txt";
+                if (this.environmentService.IsEnvironmentVariableValueTrue(PipReportIgnoreFileLevelIndexUrlEnvVar))
+                {
+                    // check for --index-url in requirements.txt and remove it from the file, since we want to use PIP_INDEX_URL from the environment.
+                    var (duplicateFilePath, createdDuplicate) = this.fileUtilityService.DuplicateFileWithoutLines(formattedPath, "--index-url");
+                    if (createdDuplicate)
+                    {
+                        var duplicateFileName = Path.GetFileName(duplicateFilePath);
+                        duplicateFile = new FileInfo(duplicateFilePath);
+                        pipReportCommand = $"install -r {duplicateFileName}";
+                    }
+                }
+            }
+            else
+            {
+                // Failure case, but this shouldn't be hit since detection is only running
+                // on setup.py and requirements.txt files.
+                this.logger.LogDebug("PipReport: Unsupported file type for pip installation report: {Path}", path);
+                return (new PipInstallationReport(), null);
+            }
 
-            this.logger.LogDebug("PipReport: Pip installation report error: {StdErr}", command.StdErr);
-            throw new InvalidOperationException($"PipReport: Failed to generate pip installation report for file {path} with exit code {command.ExitCode}");
+            // When PIP_INDEX_URL is set, we need to pass it as a parameter to pip install command.
+            // This should be done before running detection by the build system, otherwise the detection
+            // will default to the public PyPI index if not configured in pip defaults. Note this index URL may have credentials, we need to remove it when logging.
+            pipReportCommand += $" --dry-run --ignore-installed --quiet --no-input --report {reportName}";
+            if (this.environmentService.DoesEnvironmentVariableExist("PIP_INDEX_URL"))
+            {
+                pipReportCommand += $" --index-url {this.environmentService.GetEnvironmentVariable("PIP_INDEX_URL")}";
+            }
+
+            if (!this.environmentService.IsEnvironmentVariableValueTrue(PipReportDisableFastDepsEnvVar))
+            {
+                pipReportCommand += " --use-feature=fast-deps";
+            }
+
+            this.logger.LogDebug("PipReport: Generating pip installation report for {Path} with command: {Command}", formattedPath, pipReportCommand.RemoveSensitiveInformation());
+            command = await this.ExecuteCommandAsync(
+                pipExecutable,
+                pythonExecutable,
+                null,
+                workingDir,
+                cancellationToken,
+                pipReportCommand);
+
+            if (command.ExitCode == -1 && cancellationToken.IsCancellationRequested)
+            {
+                var errorMessage = $"PipReport: Cancelled for file '{formattedPath}' with command '{pipReportCommand.RemoveSensitiveInformation()}'.";
+                using var failureRecord = new PipReportFailureTelemetryRecord
+                {
+                    ExitCode = command.ExitCode,
+                    StdErr = $"{errorMessage} {command.StdErr}",
+                };
+
+                this.logger.LogWarning("{Error}", errorMessage);
+                throw new InvalidOperationException(errorMessage);
+            }
+            else if (command.ExitCode != 0)
+            {
+                using var failureRecord = new PipReportFailureTelemetryRecord
+                {
+                    ExitCode = command.ExitCode,
+                    StdErr = command.StdErr,
+                };
+
+                this.logger.LogDebug("PipReport: Pip installation report error: {StdErr}", command.StdErr);
+                throw new InvalidOperationException($"PipReport: Failed to generate pip installation report for file {path} with exit code {command.ExitCode}");
+            }
+
+            var reportOutput = await this.fileUtilityService.ReadAllTextAsync(reportFile);
+            return (JsonConvert.DeserializeObject<PipInstallationReport>(reportOutput), reportFile);
         }
-
-        var reportOutput = await this.fileUtilityService.ReadAllTextAsync(reportFile);
-        return (JsonConvert.DeserializeObject<PipInstallationReport>(reportOutput), reportFile);
+        finally
+        {
+            if (duplicateFile != null && duplicateFile.Exists)
+            {
+                duplicateFile.Delete();
+            }
+        }
     }
 }

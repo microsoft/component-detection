@@ -110,12 +110,15 @@ public abstract class FileComponentDetector : IComponentDetector
 
     private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, CancellationToken cancellationToken = default)
     {
+        var threadsToUse = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1;
+        this.Telemetry["ThreadsUsed"] = $"{threadsToUse}";
+
         var processor = new ActionBlock<ProcessRequest>(
             async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken),
             new ExecutionDataflowBlockOptions
             {
                 // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
-                MaxDegreeOfParallelism = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1,
+                MaxDegreeOfParallelism = threadsToUse,
             });
 
         var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
