@@ -129,7 +129,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
         ///          &quot;hashes&quot;: {
         ///            &quot;sha256&quot;: &quot;8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;
         ///          }
-        ///        }        /// [rest of string was truncated]&quot;;.
+        ///        }
+        /// [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string pip_report_multi_pkg {
             get {
@@ -171,7 +172,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
         ///          &quot;hashes&quot;: {
         ///            &quot;sha256&quot;: &quot;8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;
         ///          }
-        ///        }        /// [rest of string was truncated]&quot;;.
+        ///        }
+        /// [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string pip_report_single_pkg {
             get {
@@ -192,7 +194,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
         ///          &quot;hashes&quot;: {
         ///            &quot;sha256&quot;: &quot;8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;
         ///          }
-        ///        }        /// [rest of string was truncated]&quot;;.
+        ///        }
+        /// [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string pip_report_single_pkg_bad_version {
             get {
@@ -213,7 +216,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
         ///          &quot;hashes&quot;: {
         ///            &quot;sha256&quot;: &quot;8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254&quot;
         ///          }
-        ///        }        /// [rest of string was truncated]&quot;;.
+        ///        }
+        /// [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string pip_report_single_pkg_invalid_pkg_version
         {
@@ -274,7 +278,8 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
         ///			&quot;lib/netstandard1.1/DotNet.Glob.dll&quot;: {}
         ///		  },
         ///		  &quot;runtime&quot;: {
-        ///			&quot;lib/netstandard1.1/DotNet.Glob.dll&quot;: {}        /// [rest of string was truncated]&quot;;.
+        ///			&quot;lib/netstandard1.1/DotNet.Glob.dll&quot;: {}
+        /// [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string project_assets_2_2_additional {
             get {
