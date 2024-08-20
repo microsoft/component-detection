@@ -224,11 +224,11 @@ public class PipDependencySpecification
         try
         {
             var topVersion = versions
-            .Where(x => PythonVersionUtilities.VersionValidForSpec(x, this.DependencySpecifiers))
-            .Select(x => (Version: x, PythonVersion: PythonVersion.Create(x)))
-            .Where(x => x.PythonVersion.Valid)
-            .OrderByDescending(x => x.PythonVersion)
-            .FirstOrDefault((null, null));
+                .Where(x => PythonVersionUtilities.VersionValidForSpec(x, this.DependencySpecifiers))
+                .Select(x => (Version: x, PythonVersion: PythonVersion.Create(x)))
+                .Where(x => x.PythonVersion.Valid)
+                .OrderByDescending(x => x.PythonVersion)
+                .FirstOrDefault((null, null));
 
             return topVersion.Version;
         }
