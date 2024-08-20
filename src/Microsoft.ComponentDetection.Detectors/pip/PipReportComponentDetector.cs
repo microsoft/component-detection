@@ -294,8 +294,15 @@ public class PipReportComponentDetector : FileComponentDetector
             // if pipreport fails, try to at least list the dependencies that are found in the source files
             if (this.GetPipReportOverrideBehavior() != PipReportOverrideBehavior.SourceCodeScan && !this.PipReportSkipFallbackOnFailure())
             {
-                this.Logger.LogInformation("PipReport: Trying to Manually compile dependency list for '{File}' without reaching out to a remote feed.", file.Location);
-                await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
+                try
+                {
+                    this.Logger.LogInformation("PipReport: Trying to Manually compile dependency list for '{File}' without reaching out to a remote feed.", file.Location);
+                    await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
+                }
+                catch (Exception ex)
+                {
+                    this.Logger.LogWarning(ex, "PipReport: Failed to manually compile dependency list for '{File}'.", file.Location);
+                }
             }
         }
         finally
