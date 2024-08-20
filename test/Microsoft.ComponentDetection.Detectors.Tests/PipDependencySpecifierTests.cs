@@ -161,4 +161,43 @@ public class PipDependencySpecifierTests
 
         VerifyPipConditionalDependencyParsing(specs, pythonEnvironmentVariables, true);
     }
+
+    [TestMethod]
+    public void TestPipDependencyGetHighestExplicitPackageVersion_Valid()
+    {
+        var spec = new PipDependencySpecification
+        {
+            Name = "TestPackage",
+            DependencySpecifiers = new List<string> { ">=1.0", "<=3.0", "!=2.0", "!=4.0" },
+        };
+
+        var highestVersion = spec.GetHighestExplicitPackageVersion();
+        highestVersion.Should().Be("3.0");
+    }
+
+    [TestMethod]
+    public void TestPipDependencyGetHighestExplicitPackageVersion_SingleInvalidSpec()
+    {
+        var spec = new PipDependencySpecification
+        {
+            Name = "TestPackage",
+            DependencySpecifiers = new List<string> { ">=1.0", "info", "!=2.0", "!=4.0" },
+        };
+
+        var highestVersion = spec.GetHighestExplicitPackageVersion();
+        highestVersion.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TestPipDependencyGetHighestExplicitPackageVersion_AllInvalidSpec()
+    {
+        var spec = new PipDependencySpecification
+        {
+            Name = "TestPackage",
+            DependencySpecifiers = new List<string> { "info" },
+        };
+
+        var highestVersion = spec.GetHighestExplicitPackageVersion();
+        highestVersion.Should().BeNull();
+    }
 }

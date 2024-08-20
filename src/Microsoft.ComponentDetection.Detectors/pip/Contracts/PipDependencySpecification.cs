@@ -142,7 +142,7 @@ public class PipDependencySpecification
     /// <summary>
     /// Whether or not the package is safe to resolve based on the packagesToIgnore.
     /// </summary>
-    /// <returns> True if the package is unsafe, otherwise false. </returns>
+    /// <returns> True if the package meets all conditions.</returns>
     public bool PackageConditionsMet(Dictionary<string, string> pythonEnvironmentVariables)
     {
         var conditionalRegex = new Regex(@"(and|or)?\s*(\S+)\s*(<=|>=|<|>|===|==|!=|~=)\s*['""]?([^'""]+)['""]?", RegexOptions.Compiled);
@@ -166,7 +166,14 @@ public class PipDependencySpecification
                 if (pythonVersion.Valid)
                 {
                     var conditionalSpec = $"{conditionalOperator}{conditionalValue}";
-                    conditionMet = PythonVersionUtilities.VersionValidForSpec(pythonEnvironmentVariables[conditionalVar], new List<string> { conditionalSpec });
+                    try
+                    {
+                        conditionMet = PythonVersionUtilities.VersionValidForSpec(pythonEnvironmentVariables[conditionalVar], new List<string> { conditionalSpec });
+                    }
+                    catch (ArgumentException)
+                    {
+                        conditionMet = false;
+                    }
                 }
                 else
                 {
@@ -214,14 +221,21 @@ public class PipDependencySpecification
             .Where(x => !string.IsNullOrEmpty(x))
             .ToList();
 
-        var topVersion = versions
+        try
+        {
+            var topVersion = versions
             .Where(x => PythonVersionUtilities.VersionValidForSpec(x, this.DependencySpecifiers))
             .Select(x => (Version: x, PythonVersion: PythonVersion.Create(x)))
             .Where(x => x.PythonVersion.Valid)
             .OrderByDescending(x => x.PythonVersion)
-            .FirstOrDefault();
+            .FirstOrDefault((null, null));
 
-        return topVersion.Version;
+            return topVersion.Version;
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
     }
 
     /// <summary>
