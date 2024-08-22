@@ -68,7 +68,7 @@ public class SimplePipComponentDetector : FileComponentDetector, IDefaultOffComp
             var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
                 .Select(tuple => tuple.PackageString)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => new PipDependencySpecification(x))
+                .Select(x => new PipDependencySpecification(x, false))
                 .Where(x => !x.PackageIsUnsafe())
                 .ToList();
 
