@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using FluentAssertions;
@@ -31,6 +31,7 @@ public class GoComponentTests
 
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersion_NullVersion()
     {
         var goComponent = new GoComponent(TestName, null);
@@ -38,6 +39,7 @@ public class GoComponentTests
 
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersion_NullName()
     {
         var goComponent = new GoComponent(null, TestVersion);
@@ -55,6 +57,7 @@ public class GoComponentTests
 
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersionHash_NullVersion()
     {
         var goComponent = new GoComponent(TestName, null, TestHash);
@@ -62,6 +65,7 @@ public class GoComponentTests
 
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersionHash_NullName()
     {
         var goComponent = new GoComponent(null, TestVersion, TestHash);
@@ -69,6 +73,7 @@ public class GoComponentTests
 
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersionHash_NullHash()
     {
         var goComponent = new GoComponent(TestName, TestVersion, null);

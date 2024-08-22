@@ -185,7 +185,8 @@ public class MavenCommandServiceTests
 
         this.environmentVarServiceMock
             .Setup(x => x.GetEnvironmentVariable(MavenCommandService.MvnCLIFileLevelTimeoutSecondsEnvVar))
-            .Returns("0");
+            .Returns("0")
+            .Callback(() => cts.Cancel());
 
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
                 MavenCommandService.PrimaryCommand,
@@ -260,7 +261,7 @@ public class MavenCommandServiceTests
 
     protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
     {
-        result.Should<T>().BeEquivalentTo(expected);
+        result.Should().BeEquivalentTo(expected);
         return true;
     }
 }
