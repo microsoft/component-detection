@@ -5,11 +5,9 @@
     </ItemGroup>
 
     <ItemGroup Label="Package References">
-      <PackageReference Include="coverlet.collector" PrivateAssets="all" />
       <PackageReference Include="Docker.DotNet" />
       <PackageReference Include="FluentAssertions.Analyzers" PrivateAssets="all" />
       <PackageReference Include="Microsoft.Extensions.Logging" />
-      <PackageReference Include="Microsoft.NET.Test.Sdk" />
       <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
 
