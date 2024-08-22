@@ -296,12 +296,15 @@ public class PipReportComponentDetector : FileComponentDetector
             {
                 try
                 {
-                    this.Logger.LogInformation("PipReport: Trying to Manually compile dependency list for '{File}' without reaching out to a remote feed.", file.Location);
+                    this.Logger.LogInformation(
+                        "PipReport: Trying to manually compile package list for '{File}' without reaching out to a remote feed. " +
+                        "This will NOT create a dependency graph, so should be avoided unless absolutely necessary.",
+                        file.Location);
                     await this.RegisterExplicitComponentsInFileAsync(singleFileComponentRecorder, file.Location, pythonExePath);
                 }
                 catch (Exception ex)
                 {
-                    this.Logger.LogWarning(ex, "PipReport: Failed to manually compile dependency list for '{File}'.", file.Location);
+                    this.Logger.LogWarning(ex, "PipReport: Failed to manually compile package list for '{File}'.", file.Location);
                 }
             }
         }
@@ -373,7 +376,7 @@ public class PipReportComponentDetector : FileComponentDetector
                 // cffi (>=1.12)
                 // futures; python_version <= \"2.7\"
                 // sphinx (!=1.8.0,!=3.1.0,!=3.1.1,>=1.6.5) ; extra == 'docs'
-                var dependencySpec = new PipDependencySpecification($"Requires-Dist: {dependency}", requiresDist: true);
+                var dependencySpec = new PipDependencySpecification(this.Logger, $"Requires-Dist: {dependency}", requiresDist: true);
                 if (!dependencySpec.IsValidParentPackage(pythonEnvVars))
                 {
                     continue;
@@ -466,7 +469,8 @@ public class PipReportComponentDetector : FileComponentDetector
 
         var listedPackage = SharedPipUtilities.ParsedPackagesToPipDependencies(
                 initialPackages,
-                this.pythonResolver.GetPythonEnvironmentVariables())
+                this.pythonResolver.GetPythonEnvironmentVariables(),
+                this.Logger)
             .ToList();
 
         listedPackage.Select(x => (x.Name, Version: x.GetHighestExplicitPackageVersion()))
@@ -493,7 +497,8 @@ public class PipReportComponentDetector : FileComponentDetector
             var initialPackages = await this.pythonCommandService.ParseFileAsync(filePath, pythonExePath);
             var listedPackage = SharedPipUtilities.ParsedPackagesToPipDependencies(
                     initialPackages,
-                    this.pythonResolver.GetPythonEnvironmentVariables())
+                    this.pythonResolver.GetPythonEnvironmentVariables(),
+                    this.Logger)
                 .Select(x => x.Name)
                 .ToImmutableSortedSet();
 

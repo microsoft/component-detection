@@ -522,12 +522,14 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         gitComponent.RepositoryUrl.Should().Be("https://github.com/example/example");
         gitComponent.CommitHash.Should().Be("deadbee");
 
-        this.mockLogger.Verify(x => x.Log(
-            LogLevel.Information,
-            It.IsAny<EventId>(),
-            It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found PipReportOverrideBehavior environment variable set to SourceCodeScan.")),
-            It.IsAny<Exception>(),
-            (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
+        this.mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("PipReport: Found PipReportOverrideBehavior environment variable set to SourceCodeScan.")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+            Times.Exactly(2));
     }
 
     [TestMethod]
@@ -536,7 +538,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
 
         var baseSetupPyDependencies = this.ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1,<3.0.0", "c!=1.1", "y==invalidversion" });
-        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0", "z==invalidversion" });
+        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0", "z==anotherinvalidversion" });
         baseRequirementsTextDependencies.Add((null, new GitComponent(new Uri("https://github.com/example/example"), "deadbee")));
 
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
@@ -570,6 +572,15 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         pipComponents.Should().NotContain(x => ((PipComponent)x.Component).Name == "g");
         pipComponents.Should().NotContain(x => ((PipComponent)x.Component).Name == "y");
         pipComponents.Should().NotContain(x => ((PipComponent)x.Component).Name == "z");
+
+        this.mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString().StartsWith("Could not create pip dependency: invalidversion is not a valid python version")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()),
+            Times.Once);
 
         var gitComponents = detectedComponents.Where(detectedComponent => detectedComponent.Component.Type == ComponentType.Git);
         gitComponents.Should().ContainSingle();

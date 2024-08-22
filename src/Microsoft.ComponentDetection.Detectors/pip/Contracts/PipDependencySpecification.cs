@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Represents a package and a list of dependency specifications that the package must be.
@@ -59,6 +60,37 @@ public class PipDependencySpecification
     /// <param name="packageString">The <see cref="string"/> to parse.</param>
     /// <param name="requiresDist">The package format.</param>
     public PipDependencySpecification(string packageString, bool requiresDist = false)
+        => this.Initialize(packageString, requiresDist);
+
+    /// <summary>
+    /// Constructs a dependency specification from a string in one of two formats (Requires-Dist: a (==1.3)) OR a==1.3.
+    /// </summary>
+    /// <param name="packageString">The <see cref="string"/> to parse.</param>
+    /// <param name="requiresDist">The package format.</param>
+    /// <param name="logger">The logger used for events realting to the pip dependency specification.</param>
+    public PipDependencySpecification(ILogger logger, string packageString, bool requiresDist = false)
+    {
+        this.Logger = logger;
+        this.Initialize(packageString, requiresDist);
+    }
+
+    /// <summary>
+    /// Gets or sets the package <see cref="Name"/> (ex: pyyaml).
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the set of dependency specifications that constrain the overall dependency request (ex: ==1.0, >=2.0).
+    /// </summary>
+    public IList<string> DependencySpecifiers { get; set; } = new List<string>();
+
+    public IList<string> ConditionalDependencySpecifiers { get; set; } = new List<string>();
+
+    private string DebuggerDisplay => $"{this.Name} ({string.Join(';', this.DependencySpecifiers)})";
+
+    private ILogger Logger { get; set; }
+
+    private void Initialize(string packageString, bool requiresDist)
     {
         if (requiresDist)
         {
@@ -117,20 +149,6 @@ public class PipDependencySpecification
     }
 
     /// <summary>
-    /// Gets or sets the package <see cref="Name"/> (ex: pyyaml).
-    /// </summary>
-    public string Name { get; set; }
-
-    /// <summary>
-    /// Gets or sets the set of dependency specifications that constrain the overall dependency request (ex: ==1.0, >=2.0).
-    /// </summary>
-    public IList<string> DependencySpecifiers { get; set; } = new List<string>();
-
-    public IList<string> ConditionalDependencySpecifiers { get; set; } = new List<string>();
-
-    private string DebuggerDisplay => $"{this.Name} ({string.Join(';', this.DependencySpecifiers)})";
-
-    /// <summary>
     /// Whether or not the package is safe to resolve based on the packagesToIgnore.
     /// </summary>
     /// <returns> True if the package is unsafe, otherwise false. </returns>
@@ -170,9 +188,13 @@ public class PipDependencySpecification
                     {
                         conditionMet = PythonVersionUtilities.VersionValidForSpec(pythonEnvironmentVariables[conditionalVar], new List<string> { conditionalSpec });
                     }
-                    catch (ArgumentException)
+                    catch (ArgumentException ae)
                     {
                         conditionMet = false;
+                        if (this.Logger != null)
+                        {
+                            this.Logger.LogDebug("Could not create pip dependency: {ErrorMessage}", ae.Message);
+                        }
                     }
                 }
                 else
@@ -232,8 +254,13 @@ public class PipDependencySpecification
 
             return topVersion.Version;
         }
-        catch (ArgumentException)
+        catch (ArgumentException ae)
         {
+            if (this.Logger != null)
+            {
+                this.Logger.LogDebug("Could not create pip dependency: {ErrorMessage}", ae.Message);
+            }
+
             return null;
         }
     }

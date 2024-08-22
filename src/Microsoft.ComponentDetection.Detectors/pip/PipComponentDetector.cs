@@ -75,7 +75,8 @@ public class PipComponentDetector : FileComponentDetector, IDefaultOffComponentD
             var initialPackages = await this.pythonCommandService.ParseFileAsync(file.Location, pythonExePath);
             var listedPackage = SharedPipUtilities.ParsedPackagesToPipDependencies(
                     initialPackages,
-                    this.pythonResolver.GetPythonEnvironmentVariables())
+                    this.pythonResolver.GetPythonEnvironmentVariables(),
+                    this.Logger)
                 .ToList();
 
             var roots = await this.pythonResolver.ResolveRootsAsync(singleFileComponentRecorder, listedPackage);
