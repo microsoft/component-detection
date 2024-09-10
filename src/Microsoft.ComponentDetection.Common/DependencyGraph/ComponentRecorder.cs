@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 public class ComponentRecorder : IComponentRecorder
 {
-    private readonly ConcurrentBag<SingleFileComponentRecorder> singleFileRecorders = new ConcurrentBag<SingleFileComponentRecorder>();
+    private readonly ConcurrentBag<SingleFileComponentRecorder> singleFileRecorders = [];
 
     private readonly bool enableManualTrackingOfExplicitReferences;
 
@@ -38,7 +38,7 @@ public class ComponentRecorder : IComponentRecorder
         IEnumerable<DetectedComponent> detectedComponents;
         if (this.singleFileRecorders == null)
         {
-            return Enumerable.Empty<DetectedComponent>();
+            return [];
         }
 
         detectedComponents = this.singleFileRecorders
@@ -68,7 +68,7 @@ public class ComponentRecorder : IComponentRecorder
     {
         if (this.singleFileRecorders == null)
         {
-            return Enumerable.Empty<string>();
+            return [];
         }
 
         return this.singleFileRecorders
@@ -162,10 +162,7 @@ public class ComponentRecorder : IComponentRecorder
             bool? isDevelopmentDependency = null,
             DependencyScope? dependencyScope = null)
         {
-            if (detectedComponent == null)
-            {
-                throw new ArgumentNullException(paramName: nameof(detectedComponent));
-            }
+            ArgumentNullException.ThrowIfNull(detectedComponent);
 
             if (detectedComponent.Component == null)
             {
@@ -173,7 +170,7 @@ public class ComponentRecorder : IComponentRecorder
             }
 
 #if DEBUG
-            if (detectedComponent.DependencyRoots?.Any() ?? false)
+            if (detectedComponent.DependencyRoots is null || detectedComponent.DependencyRoots.Count == 0)
             {
                 this.logger.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");
             }
@@ -195,10 +192,7 @@ public class ComponentRecorder : IComponentRecorder
 
         public void RegisterPackageParseFailure(string skippedComponent)
         {
-            if (skippedComponent == null)
-            {
-                throw new ArgumentNullException(paramName: nameof(skippedComponent));
-            }
+            ArgumentNullException.ThrowIfNull(skippedComponent);
 
             _ = this.skippedComponentsInternal[skippedComponent] = default;
         }
