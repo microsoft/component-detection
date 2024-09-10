@@ -134,7 +134,7 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         });
     }
 
-    protected Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
+    protected async Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
     {
         try
         {
@@ -146,15 +146,15 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         catch (Exception ex)
         {
             this.Logger.LogInformation(ex, "Could not read {ComponentStreamFile} file.", componentStream.Location);
-            return Task.CompletedTask;
+            return;
         }
 
         using var file = new StreamReader(componentStream.Stream);
         using var reader = new JsonTextReader(file);
 
-        var o = JToken.ReadFrom(reader);
+        var o = await JToken.ReadFromAsync(reader);
         jtokenProcessor(o);
-        return Task.CompletedTask;
+        return;
     }
 
     private void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
