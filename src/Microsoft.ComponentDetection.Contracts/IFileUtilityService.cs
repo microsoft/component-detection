@@ -47,7 +47,7 @@ public interface IFileUtilityService
     /// Duplicates a file, removing any lines that starts with the given string.
     /// </summary>
     /// <param name="fileName">Path to the file.</param>
-    /// <param name="removalIndicator">The string that indicates a line should be removed.</param>
+    /// <param name="removalIndicators">The strings that indicates a line should be removed.</param>
     /// <returns>Returns the path of the new file, and whether or not one was created.</returns>
-    (string DuplicateFilePath, bool CreatedDuplicate) DuplicateFileWithoutLines(string fileName, string removalIndicator);
+    (string DuplicateFilePath, bool CreatedDuplicate) DuplicateFileWithoutLines(string fileName, params string[] removalIndicators);
 }

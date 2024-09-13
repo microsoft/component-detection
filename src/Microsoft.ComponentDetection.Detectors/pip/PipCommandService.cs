@@ -149,7 +149,7 @@ public class PipCommandService : IPipCommandService
                 if (this.environmentService.IsEnvironmentVariableValueTrue(PipReportIgnoreFileLevelIndexUrlEnvVar))
                 {
                     // check for --index-url in requirements.txt and remove it from the file, since we want to use PIP_INDEX_URL from the environment.
-                    var (duplicateFilePath, createdDuplicate) = this.fileUtilityService.DuplicateFileWithoutLines(formattedPath, "--index-url");
+                    var (duplicateFilePath, createdDuplicate) = this.fileUtilityService.DuplicateFileWithoutLines(formattedPath, "--index-url", "-i");
                     if (createdDuplicate)
                     {
                         var duplicateFileName = Path.GetFileName(duplicateFilePath);
@@ -169,7 +169,7 @@ public class PipCommandService : IPipCommandService
             // When PIP_INDEX_URL is set, we need to pass it as a parameter to pip install command.
             // This should be done before running detection by the build system, otherwise the detection
             // will default to the public PyPI index if not configured in pip defaults. Note this index URL may have credentials, we need to remove it when logging.
-            pipReportCommand += $" --dry-run --ignore-installed --quiet --no-input --report {reportName}";
+            pipReportCommand += $" --dry-run --ignore-installed --quiet --no-cache-dir --no-input --report {reportName}";
             if (this.environmentService.DoesEnvironmentVariableExist("PIP_INDEX_URL"))
             {
                 pipReportCommand += $" --index-url {this.environmentService.GetEnvironmentVariable("PIP_INDEX_URL")}";

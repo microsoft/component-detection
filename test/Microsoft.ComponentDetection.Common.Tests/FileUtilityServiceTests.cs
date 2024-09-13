@@ -23,16 +23,21 @@ public class FileUtilityServiceTests
 
         // Arrange
         var fileName = $"{directory}/Resources/test-file-duplicate.txt";
-        var removalIndicator = "//REMOVE";
         var expectedDuplicateFilePath = Path.Combine(directory, "Resources", "temp.test-file-duplicate.txt");
 
         // Act
-        var (duplicateFilePath, createdDuplicate) = this.fileUtilityService.DuplicateFileWithoutLines(fileName, removalIndicator);
+        var (duplicateFilePath, createdDuplicate) = this.fileUtilityService.DuplicateFileWithoutLines(fileName, "//REMOVE", "//ME");
 
         // Assert
         createdDuplicate.Should().BeTrue();
         duplicateFilePath.Should().Be(expectedDuplicateFilePath);
         File.Exists(expectedDuplicateFilePath).Should().BeTrue();
+
+        var contents = File.ReadAllText(expectedDuplicateFilePath);
+        contents.Should().NotContain("//REMOVE");
+        contents.Should().NotContain("//ME");
+        contents.Should().Contain("hello");
+        contents.Should().Contain("world");
     }
 
     [TestMethod]
