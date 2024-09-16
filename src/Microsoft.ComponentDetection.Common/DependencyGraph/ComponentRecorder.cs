@@ -172,12 +172,12 @@ public class ComponentRecorder : IComponentRecorder
 #if DEBUG
             if (detectedComponent.DependencyRoots is null || detectedComponent.DependencyRoots.Count == 0)
             {
-                this.logger.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");
+                this.logger?.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");
             }
 
             if (detectedComponent.DevelopmentDependency.HasValue)
             {
-                this.logger.LogWarning("Detector should not populate DetectedComponent.DevelopmentDependency!");
+                this.logger?.LogWarning("Detector should not populate DetectedComponent.DevelopmentDependency!");
             }
 #endif
 

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 using System;
 using System.Collections.Generic;

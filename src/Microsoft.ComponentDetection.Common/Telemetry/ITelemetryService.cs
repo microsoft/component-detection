@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common.Telemetry;
+namespace Microsoft.ComponentDetection.Common.Telemetry;
 
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 

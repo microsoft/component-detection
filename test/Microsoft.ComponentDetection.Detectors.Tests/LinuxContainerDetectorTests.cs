@@ -25,14 +25,14 @@ public class LinuxContainerDetectorTests
     private const string NodeLatestDigest = "2a22e4a1a550";
     private const string BashPackageId = "Ubuntu 20.04 bash 5.0-6ubuntu1 - Linux";
 
-    private static readonly IEnumerable<LayerMappedLinuxComponents> LinuxComponents = new List<LayerMappedLinuxComponents>
-    {
+    private static readonly IEnumerable<LayerMappedLinuxComponents> LinuxComponents =
+    [
         new LayerMappedLinuxComponents
         {
             DockerLayer = new DockerLayer(),
-            LinuxComponents = new List<LinuxComponent> { new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1") },
+            LinuxComponents = [new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1")],
         },
-    };
+    ];
 
     private readonly Mock<IDockerService> mockDockerService;
     private readonly Mock<ILogger> mockLogger;
@@ -47,7 +47,7 @@ public class LinuxContainerDetectorTests
         this.mockDockerService.Setup(service => service.TryPullImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         this.mockDockerService.Setup(service => service.InspectImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = Enumerable.Empty<DockerLayer>() });
+            .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = [] });
 
         this.mockLogger = new Mock<ILogger>();
         this.mockLinuxContainerDetectorLogger = new Mock<ILogger<LinuxContainerDetector>>();
@@ -62,7 +62,7 @@ public class LinuxContainerDetectorTests
     {
         var componentRecorder = new ComponentRecorder();
 
-        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage }, componentRecorder);
+        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, [NodeLatestImage], componentRecorder);
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
@@ -87,7 +87,7 @@ public class LinuxContainerDetectorTests
     {
         var componentRecorder = new ComponentRecorder();
 
-        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage }, componentRecorder);
+        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, [NodeLatestImage], componentRecorder);
 
         this.mockDockerService.Setup(service => service.CanRunLinuxContainersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -144,7 +144,7 @@ public class LinuxContainerDetectorTests
     {
         var componentRecorder = new ComponentRecorder();
 
-        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { "UPPERCASE" }, componentRecorder);
+        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, ["UPPERCASE"], componentRecorder);
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
@@ -167,7 +167,7 @@ public class LinuxContainerDetectorTests
     {
         var componentRecorder = new ComponentRecorder();
 
-        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, new List<string> { NodeLatestImage, NodeLatestDigest }, componentRecorder);
+        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, null, [NodeLatestImage, NodeLatestDigest], componentRecorder);
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
@@ -190,7 +190,7 @@ public class LinuxContainerDetectorTests
     public async Task TestLinuxContainerDetector_TimeoutParameterSpecifiedAsync()
     {
         var detectorArgs = new Dictionary<string, string> { { "Linux.ScanningTimeoutSec", "2" } };
-        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, detectorArgs, new List<string> { NodeLatestImage }, new ComponentRecorder());
+        var scanRequest = new ScanRequest(new DirectoryInfo(Path.GetTempPath()), (_, __) => false, this.mockLogger.Object, detectorArgs, [NodeLatestImage], new ComponentRecorder());
 
         var linuxContainerDetector = new LinuxContainerDetector(
             this.mockSyftLinuxScanner.Object,
@@ -212,7 +212,7 @@ public class LinuxContainerDetectorTests
         this.mockDockerService.Setup(service => service.InspectImageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
 
             // Specify BaseImageRef = scratch to verify that cope
-            .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = Enumerable.Empty<DockerLayer>(), BaseImageRef = "scratch" });
+            .ReturnsAsync(new ContainerDetails { Id = 1, ImageId = NodeLatestDigest, Layers = [], BaseImageRef = "scratch" });
         await this.TestLinuxContainerDetectorAsync();
     }
 }

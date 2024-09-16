@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.Tests;
+namespace Microsoft.ComponentDetection.Contracts.Tests;
 
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;

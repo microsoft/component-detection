@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.IO;
@@ -18,9 +18,8 @@ public class NuGetNuspecUtilitiesTests
     {
         using var stream = new MemoryStream();
 
-        async Task ShouldThrow() => await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
-
-        await Assert.ThrowsExceptionAsync<ArgumentException>(ShouldThrow);
+        var action = async () => await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
+        await action.Should().ThrowAsync<ArgumentException>();
 
         // The position should always be reset to 0
         stream.Position.Should().Be(0);
@@ -38,9 +37,8 @@ public class NuGetNuspecUtilitiesTests
 
         stream.Seek(0, SeekOrigin.Begin);
 
-        async Task ShouldThrow() => await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
-
-        await Assert.ThrowsExceptionAsync<ArgumentException>(ShouldThrow);
+        var action = async () => await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
+        await action.Should().ThrowAsync<ArgumentException>();
 
         // The position should always be reset to 0
         stream.Position.Should().Be(0);
@@ -58,10 +56,10 @@ public class NuGetNuspecUtilitiesTests
 
         stream.Seek(0, SeekOrigin.Begin);
 
-        async Task ShouldThrow() => await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
+        var action = async () => await NuGetNuspecUtilities.GetNuspecBytesAsync(stream);
 
         // No Nuspec File is in the archive
-        await Assert.ThrowsExceptionAsync<FileNotFoundException>(ShouldThrow);
+        await action.Should().ThrowAsync<FileNotFoundException>();
 
         // The position should always be reset to 0
         stream.Position.Should().Be(0);
@@ -70,7 +68,7 @@ public class NuGetNuspecUtilitiesTests
     [TestMethod]
     public async Task GetNuspecBytes_ReadsNuspecBytesAsync()
     {
-        byte[] randomBytes = { 0xDE, 0xAD, 0xC0, 0xDE };
+        byte[] randomBytes = [0xDE, 0xAD, 0xC0, 0xDE];
 
         using var stream = new MemoryStream();
 

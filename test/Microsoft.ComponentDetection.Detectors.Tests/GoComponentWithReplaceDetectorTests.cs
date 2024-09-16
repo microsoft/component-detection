@@ -178,7 +178,7 @@ require (
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(4);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(4);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
         dependencyGraphs.Keys.Should().HaveCount(2);
@@ -203,7 +203,7 @@ $#26^#25%4";
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -222,7 +222,7 @@ github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("go.mod", goMod)
-            .WithFile("go.mod", goMod, new[] { "go.mod" })
+            .WithFile("go.mod", goMod, ["go.mod"])
             .WithFile("go.sum", goSum)
             .ExecuteDetectorAsync();
 
@@ -413,14 +413,16 @@ replace (
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
+        string[] cmdParams = ["list", "-mod=readonly", "-m", "-json", "all"];
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
                 StdOut = buildDependencies,
             });
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+        cmdParams = ["mod", "graph"];
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
@@ -481,14 +483,16 @@ replace (
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
+        string[] cmdParams = ["list", "-mod=readonly", "-m", "-json", "all"];
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
                 StdOut = buildDependencies,
             });
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+        cmdParams = ["mod", "graph"];
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
@@ -543,14 +547,16 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
+        string[] cmdParams = ["list", "-mod=readonly", "-m", "-json", "all"];
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
                 StdOut = buildDependencies,
             });
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+        cmdParams = ["mod", "graph"];
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
