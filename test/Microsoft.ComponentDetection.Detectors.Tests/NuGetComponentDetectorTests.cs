@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -23,7 +23,7 @@ using Moq;
 public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetector>
 {
     private static readonly IEnumerable<string> DetectorSearchPattern =
-        new List<string> { "*.nupkg", "*.nuspec", "nuget.config", "paket.lock" };
+        ["*.nupkg", "*.nuspec", "nuget.config", "paket.lock"];
 
     private readonly Mock<ILogger<NuGetComponentDetector>> mockLogger;
 
@@ -39,7 +39,7 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
         var (scanResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -55,7 +55,7 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success, "Result code does Not match.");
-        componentRecorder.GetDetectedComponents().Count().Should().Be(1, "Component count does not match");
+        componentRecorder.GetDetectedComponents().Should().ContainSingle("Component count does not match");
         var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
         detectedComponent.Type.Should().Be(ComponentType.NuGet);
         var nuGetComponent = (NuGetComponent)detectedComponent;
@@ -77,7 +77,7 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success, "Result code does Not match.");
-        componentRecorder.GetDetectedComponents().Count().Should().Be(1, "Component count does not match");
+        componentRecorder.GetDetectedComponents().Should().ContainSingle("Component count does not match");
         var detectedComponent = componentRecorder.GetDetectedComponents().First().Component;
         detectedComponent.Type.Should().Be(ComponentType.NuGet);
         var nuGetComponent = (NuGetComponent)detectedComponent;
@@ -96,7 +96,7 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
     }
 
     [TestMethod]
@@ -111,7 +111,7 @@ public class NuGetComponentDetectorTests : BaseDetectorTest<NuGetComponentDetect
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
     }
 
     [TestMethod]
@@ -157,7 +157,7 @@ NUGET
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         // While there are 26 lines in the sample, several dependencies are identical, so there are only 11 matches.
-        componentRecorder.GetDetectedComponents().Count().Should().Be(11);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(11);
 
         // Verify that we stop executing after parsing the paket.lock file.
         this.mockLogger.Verify(
@@ -192,7 +192,7 @@ NUGET
             (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
     }
 
     [TestMethod]
@@ -232,7 +232,7 @@ NUGET
                     Match.Create<IEnumerable<string>>(stuff => DetectorSearchPattern.Intersect(stuff).Count() == DetectorSearchPattern.Count()),
                     It.IsAny<ExcludeDirectoryPredicate>(),
                     It.IsAny<bool>()))
-            .Returns(Enumerable.Empty<IComponentStream>());
+            .Returns([]);
 
         // This is matching the additional directory that is ONLY sourced in the nuget.config. If this works, we would see the component in our results.
         componentStreamEnumerableFactoryMock.Setup(
@@ -268,13 +268,13 @@ NUGET
 
         directoryWalkerMock.VerifyAll();
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
     }
 
     [TestMethod]
     public async Task TestNugetDetector_LowConfidencePackagesAsync()
     {
-        var nupkg = await NugetTestUtilities.ZipNupkgComponentAsync("Newtonsoft.Json.nupkg", NugetTestUtilities.GetValidNuspec("Newtonsoft.Json", "9.0.1", new[] { "JamesNK" }));
+        var nupkg = await NugetTestUtilities.ZipNupkgComponentAsync("Newtonsoft.Json.nupkg", NugetTestUtilities.GetValidNuspec("Newtonsoft.Json", "9.0.1", ["JamesNK"]));
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Newtonsoft.Json.nupkg", nupkg)

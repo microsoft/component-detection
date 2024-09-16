@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common.Tests;
+namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Linq;
@@ -17,18 +17,18 @@ public class TabularStringFormatTests
     [TestInitialize]
     public void TestInitialize()
     {
-        this.columns = new Column[]
-        {
+        this.columns =
+        [
             new Column { Header = "ColumnA", Width = 50, Format = null },
             new Column { Header = "ColumnB", Width = 60, Format = "prefix{0}suffix" },
             new Column { Header = "ColumnC", Width = 30, Format = null },
-        };
+        ];
 
-        this.rows = new[]
-        {
-            // One row
-            new[] { "a", "b", "c" },
-        };
+        // One row
+        this.rows =
+        [
+            ["a", "b", "c"],
+        ];
 
         this.tsf = new TabularStringFormat(this.columns);
     }
@@ -82,7 +82,7 @@ public class TabularStringFormatTests
     public void GenerateString_ThrowsInvalidOperationException()
     {
         // add an extra row
-        this.rows = this.rows.Concat(new[] { new[] { "a", "b", "c", "d" } }).ToArray();
+        this.rows = this.rows.Concat([["a", "b", "c", "d"]]).ToArray();
 
         var action = () => this.tsf.GenerateString(this.rows);
 

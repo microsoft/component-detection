@@ -21,8 +21,8 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 {
     private readonly string packageLockJsonFileName = "package-lock.json";
     private readonly string packageJsonFileName = "package.json";
-    private readonly List<string> packageJsonSearchPattern = new() { "package.json" };
-    private readonly List<string> packageLockJsonSearchPatterns = new() { "package-lock.json", "npm-shrinkwrap.json", "lerna.json" };
+    private readonly List<string> packageJsonSearchPattern = ["package.json"];
+    private readonly List<string> packageLockJsonSearchPatterns = ["package-lock.json", "npm-shrinkwrap.json", "lerna.json"];
     private readonly Mock<IPathUtilityService> mockPathUtilityService;
 
     public NpmLockfile3DetectorTests()
@@ -280,8 +280,8 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
-        dependencyGraph.GetDependenciesForComponent(componentAId).Should().HaveCount(1);
+        dependencyGraph.GetDependenciesForComponent(componentAId).Should().ContainSingle();
         dependencyGraph.GetDependenciesForComponent(componentAId).Should().Contain(componentBId);
-        dependencyGraph.GetDependenciesForComponent(componentBId).Should().HaveCount(0);
+        dependencyGraph.GetDependenciesForComponent(componentBId).Should().BeEmpty();
     }
 }

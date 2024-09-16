@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -30,7 +30,7 @@ COCOAPODS: 1.4.0.beta.1";
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -688,7 +688,7 @@ COCOAPODS: 1.8.4";
         detectedComponents.Should().ContainSingle();
 
         var firstComponent = detectedComponents.First();
-        componentRecorder.ForOneComponent(firstComponent.Component.Id, grouping => Assert.AreEqual(2, Enumerable.Count<string>(grouping.AllFileLocations)));
+        componentRecorder.ForOneComponent(firstComponent.Component.Id, grouping => grouping.AllFileLocations.Should().HaveCount(2));
     }
 
     private void AssertPodComponentNameAndVersion(IEnumerable<DetectedComponent> detectedComponents, string name, string version)

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.IO;
 using System.Linq;
@@ -80,6 +80,6 @@ public class MavenStyleDependencyGraphParserTests
         guavaDependencies.Should().HaveCount(5);
         guavaDependencies.Should().Contain(animalSnifferAnnotations.Component.Id);
 
-        dependencyGraph.GetDependenciesForComponent(animalSnifferAnnotations.Component.Id).Should().HaveCount(0);
+        dependencyGraph.GetDependenciesForComponent(animalSnifferAnnotations.Component.Id).Should().BeEmpty();
     }
 }

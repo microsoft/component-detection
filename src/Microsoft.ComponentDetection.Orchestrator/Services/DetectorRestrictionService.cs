@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
+namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 public class DetectorRestrictionService : IDetectorRestrictionService
 {
-    private readonly IList<string> oldDetectorIds = new List<string> { "MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList" };
+    private readonly IList<string> oldDetectorIds = ["MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList"];
     private readonly string newDetectorId = "NpmWithRoots";
 
     private readonly ILogger<DetectorRestrictionService> logger;
@@ -30,10 +30,9 @@ public class DetectorRestrictionService : IDetectorRestrictionService
             // If we have retired detectors in the arg specified list and don't have the new detector, add the new detector
             if (allowedIds.Any(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)) && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
             {
-                allowedIds = allowedIds.Concat(new string[]
-                {
+                allowedIds = allowedIds.Concat([
                     this.newDetectorId,
-                });
+                ]);
             }
 
             detectors = detectors.Where(d => allowedIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase)).ToList();
