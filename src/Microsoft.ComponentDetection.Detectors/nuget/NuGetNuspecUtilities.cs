@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.NuGet;
+﻿namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
 using System.IO;
@@ -27,15 +27,20 @@ public static class NuGetNuspecUtilities
             var nuspecEntry =
                 archive.Entries.FirstOrDefault(x =>
                     x.Name.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase)
-                    && !x.FullName.Contains('/')) ?? throw new FileNotFoundException("No nuspec file was found");
+                    && !x.FullName.Contains('/'));
+
+            if (nuspecEntry == null)
+            {
+                throw new FileNotFoundException("No nuspec file was found");
+            }
 
             using var nuspecStream = nuspecEntry.Open();
 
             return await GetNuspecBytesFromNuspecStreamAsync(nuspecStream, nuspecEntry.Length);
         }
-        catch (InvalidDataException)
+        catch (InvalidDataException ex)
         {
-            throw;
+            throw ex;
         }
         finally
         {

@@ -2,10 +2,6 @@
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
 
-  <PropertyGroup>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
-  
   <ItemGroup Label="Package References">
     <PackageReference Include="MSTest.TestFramework"/>
     <PackageReference Include="MSTest.Analyzers "/>

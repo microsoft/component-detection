@@ -22,8 +22,8 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 {
     private readonly string packageLockJsonFileName = "package-lock.json";
     private readonly string packageJsonFileName = "package.json";
-    private readonly List<string> packageJsonSearchPattern = ["package.json"];
-    private readonly List<string> packageLockJsonSearchPatterns = ["package-lock.json", "npm-shrinkwrap.json", "lerna.json"];
+    private readonly List<string> packageJsonSearchPattern = new() { "package.json" };
+    private readonly List<string> packageLockJsonSearchPatterns = new() { "package-lock.json", "npm-shrinkwrap.json", "lerna.json" };
     private readonly Mock<IPathUtilityService> mockPathUtilityService;
 
     public NpmDetectorWithRootsTests()
@@ -102,7 +102,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -115,7 +115,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -267,7 +267,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -320,7 +320,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -383,7 +383,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
     }
 
     [TestMethod]
@@ -603,10 +603,10 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
-        dependencyGraph.GetDependenciesForComponent(componentAId).Should().ContainSingle();
+        dependencyGraph.GetDependenciesForComponent(componentAId).Should().HaveCount(1);
         dependencyGraph.GetDependenciesForComponent(componentAId).Should().Contain(componentBId);
-        dependencyGraph.GetDependenciesForComponent(componentBId).Should().ContainSingle();
+        dependencyGraph.GetDependenciesForComponent(componentBId).Should().HaveCount(1);
         dependencyGraph.GetDependenciesForComponent(componentBId).Should().Contain(componentCId);
-        dependencyGraph.GetDependenciesForComponent(componentCId).Should().BeEmpty();
+        dependencyGraph.GetDependenciesForComponent(componentCId).Should().HaveCount(0);
     }
 }

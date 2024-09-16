@@ -33,17 +33,17 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
     }
 
     /// <inheritdoc />
-    public override IList<string> SearchPatterns => ["packages.config"];
+    public override IList<string> SearchPatterns => new[] { "packages.config" };
 
     /// <inheritdoc />
     public override string Id => "NuGetPackagesConfig";
 
     /// <inheritdoc />
     public override IEnumerable<string> Categories =>
-        [Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)];
+        new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
 
     /// <inheritdoc />
-    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.NuGet];
+    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.NuGet };
 
     /// <inheritdoc />
     public override int Version => 1;

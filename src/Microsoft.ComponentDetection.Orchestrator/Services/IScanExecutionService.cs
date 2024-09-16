@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Services;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;

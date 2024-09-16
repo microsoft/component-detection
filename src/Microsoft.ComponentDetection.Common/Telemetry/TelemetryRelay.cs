@@ -1,7 +1,8 @@
-namespace Microsoft.ComponentDetection.Common.Telemetry;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -15,7 +16,7 @@ public sealed class TelemetryRelay
 
     // For things not populating the telemetry services collection, let's not throw.
     private TelemetryRelay() =>
-        this.telemetryServices = [];
+        this.telemetryServices = Enumerable.Empty<ITelemetryService>();
 
     /// <summary>
     /// Gets a value indicating whether or not the telemetry relay has been shutdown.
@@ -75,7 +76,7 @@ public sealed class TelemetryRelay
 
     public void SetTelemetryMode(TelemetryMode mode)
     {
-        foreach (var telemetryService in this.telemetryServices ?? [])
+        foreach (var telemetryService in this.telemetryServices ?? Enumerable.Empty<ITelemetryService>())
         {
             telemetryService.SetMode(mode);
         }

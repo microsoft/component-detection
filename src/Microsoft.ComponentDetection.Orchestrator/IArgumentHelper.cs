@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Orchestrator;
+﻿namespace Microsoft.ComponentDetection.Orchestrator;
 
 using CommandLine;
 

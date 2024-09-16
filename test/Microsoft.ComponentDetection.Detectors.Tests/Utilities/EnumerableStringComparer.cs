@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;

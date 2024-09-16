@@ -31,9 +31,9 @@ public class LinuxContainerDetector : IComponentDetector
 
     public string Id => "Linux";
 
-    public IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Linux)];
+    public IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Linux) };
 
-    public IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Linux];
+    public IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Linux };
 
     public int Version => 4;
 
@@ -47,7 +47,7 @@ public class LinuxContainerDetector : IComponentDetector
             .ToList();
 #pragma warning restore CA1308
 
-        if (imagesToProcess == null || imagesToProcess.Count == 0)
+        if (imagesToProcess == null || !imagesToProcess.Any())
         {
             this.logger.LogInformation("No instructions received to scan docker images.");
             return EmptySuccessfulScan();
@@ -110,7 +110,7 @@ public class LinuxContainerDetector : IComponentDetector
         return new ImageScanningResult
         {
             ContainerDetails = null,
-            Components = [],
+            Components = Enumerable.Empty<DetectedComponent>(),
         };
     }
 
@@ -135,7 +135,13 @@ public class LinuxContainerDetector : IComponentDetector
                             null);
                     }
 
-                    var imageDetails = await this.dockerService.InspectImageAsync(image, cancellationToken) ?? throw new MissingContainerDetailException(image);
+                    var imageDetails = await this.dockerService.InspectImageAsync(image, cancellationToken);
+
+                    // Unable to fetch image details
+                    if (imageDetails == null)
+                    {
+                        throw new MissingContainerDetailException(image);
+                    }
 
                     processedImages.TryAdd(imageDetails.ImageId, imageDetails);
                 }

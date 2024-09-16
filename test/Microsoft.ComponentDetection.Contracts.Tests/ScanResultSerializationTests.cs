@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Contracts.Tests;
+﻿namespace Microsoft.ComponentDetection.Contracts.Tests;
 
 using System.Linq;
 using FluentAssertions;
@@ -21,37 +21,37 @@ public class ScanResultSerializationTests
         this.scanResultUnderTest = new ScanResult
         {
             ResultCode = ProcessingResultCode.PartialSuccess,
-            ComponentsFound =
-            [
+            ComponentsFound = new[]
+            {
                 new ScannedComponent
                 {
                     Component = new NpmComponent("SampleNpmComponent", "1.2.3"),
                     DetectorId = "NpmDetectorId",
                     IsDevelopmentDependency = true,
                     DependencyScope = DependencyScope.MavenCompile,
-                    LocationsFoundAt =
-                    [
+                    LocationsFoundAt = new[]
+                    {
                         "some/location",
-                    ],
-                    TopLevelReferrers =
-                    [
+                    },
+                    TopLevelReferrers = new[]
+                    {
                         new NpmComponent("RootNpmComponent", "4.5.6"),
-                    ],
+                    },
                 },
-            ],
-            DetectorsInScan =
-            [
+            },
+            DetectorsInScan = new[]
+            {
                 new Detector
                 {
                     DetectorId = "NpmDetectorId",
                     IsExperimental = true,
-                    SupportedComponentTypes =
-                    [
+                    SupportedComponentTypes = new[]
+                    {
                         ComponentType.Npm,
-                    ],
+                    },
                     Version = 2,
                 },
-            ],
+            },
             SourceDirectory = "D:\\test\\directory",
         };
     }

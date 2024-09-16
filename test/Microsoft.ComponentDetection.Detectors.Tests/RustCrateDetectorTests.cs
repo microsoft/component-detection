@@ -238,7 +238,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(6);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 
@@ -315,7 +315,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         graph1.GetComponents().Should().BeEquivalentTo(graph2.GetComponents()); // The graphs should have detected the same components
 
         // Two Cargo.lock files
-        componentRecorder.ForAllComponents(x => x.AllFileLocations.Should().HaveCount(2));
+        componentRecorder.ForAllComponents(x => Enumerable.Count<string>(x.AllFileLocations).Should().Be(2));
     }
 
     [TestMethod]
@@ -338,7 +338,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         graph1.GetComponents().Should().BeEquivalentTo(graph2.GetComponents()); // The graphs should have detected the same components
 
         // Two Cargo.lock files
-        componentRecorder.ForAllComponents(x => x.AllFileLocations.Should().HaveCount(2));
+        componentRecorder.ForAllComponents(x => x.AllFileLocations.Count().Should().Be(2));
     }
 
     [TestMethod]
@@ -349,7 +349,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(6);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
 
         IDictionary<string, string> packageVersions = new Dictionary<string, string>()
         {
@@ -405,7 +405,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(7);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(7);
 
         var packageVersions = new List<string>()
         {
@@ -530,7 +530,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(7);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(7);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 
@@ -629,7 +629,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(7);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(7);
 
         var packageVersions = new List<string>()
         {
@@ -696,7 +696,7 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(6);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
     }
 
     [TestMethod]
@@ -720,12 +720,12 @@ source = ""registry+https://github.com/rust-lang/crates.io-index""
         var componentGraphs = componentRecorder.GetDependencyGraphsByLocation();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(6);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
 
         componentGraphs.Should().ContainSingle(); // Only 1 Cargo.lock is specified
 
         // A root Cargo.lock
-        componentRecorder.ForAllComponents(x => x.AllFileLocations.Should().ContainSingle());
+        componentRecorder.ForAllComponents(x => x.AllFileLocations.Count().Should().Be(1));
     }
 
     [TestMethod]
@@ -759,7 +759,7 @@ dependencies = [
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 
@@ -797,7 +797,7 @@ source = ""git+https://github.com/microsoft/component-detection/?branch=main#abc
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
         dependencyGraphs.Should().ContainSingle();
@@ -835,7 +835,7 @@ source = ""registry+sparse+https://other.registry/index/""
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         // If registries have identity, this should be 2
-        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
 
         var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation();
         dependencyGraphs.Should().ContainSingle();
@@ -875,7 +875,7 @@ dependencies = []
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 

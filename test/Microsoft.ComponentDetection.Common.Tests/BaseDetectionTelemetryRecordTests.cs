@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Common.Tests;
+﻿namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -41,17 +41,22 @@ public class BaseDetectionTelemetryRecordTests
 
             recordName.Should().NotBeNullOrEmpty($"RecordName not set for {type.FullName}!");
 
-            dic.Should().NotContainKey(recordName, "Duplicate RecordName:`{RecordName}` found for {TypeName}!", recordName, type.FullName);
-
-            dic.Add(recordName, type);
+            if (dic.TryGetValue(recordName, out var value))
+            {
+                Assert.Fail($"Duplicate RecordName:`{recordName}` found for {type.FullName} and {value.FullName}!");
+            }
+            else
+            {
+                dic.Add(recordName, type);
+            }
         }
     }
 
     [TestMethod]
     public void SerializableProperties()
     {
-        var serializableTypes = new HashSet<Type>(
-        [
+        var serializableTypes = new HashSet<Type>(new[]
+        {
             typeof(string),
             typeof(string[]),
             typeof(bool),
@@ -59,7 +64,7 @@ public class BaseDetectionTelemetryRecordTests
             typeof(int?),
             typeof(TimeSpan?),
             typeof(HttpStatusCode),
-        ]);
+        });
 
         foreach (var type in this.recordTypes)
         {
@@ -68,7 +73,7 @@ public class BaseDetectionTelemetryRecordTests
                 if (!serializableTypes.Contains(property.PropertyType) &&
                     Attribute.GetCustomAttribute(property.PropertyType, typeof(DataContractAttribute)) == null)
                 {
-                    Attribute.GetCustomAttribute(property.PropertyType, typeof(DataContractAttribute)).Should().NotBeNull(
+                    Assert.Fail(
                         $"Type {property.PropertyType} on {type.Name}.{property.Name} is not allowed! " +
                         "Add it to the list if it serializes properly to JSON!");
                 }

@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Npm.Contracts;
 
 using System.Collections.Generic;

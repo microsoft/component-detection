@@ -12,5 +12,5 @@ public class PythonResolverState
 
     public IDictionary<string, PipGraphNode> NodeReferences { get; } = new Dictionary<string, PipGraphNode>(StringComparer.OrdinalIgnoreCase);
 
-    public IList<PipGraphNode> Roots { get; } = [];
+    public IList<PipGraphNode> Roots { get; } = new List<PipGraphNode>();
 }

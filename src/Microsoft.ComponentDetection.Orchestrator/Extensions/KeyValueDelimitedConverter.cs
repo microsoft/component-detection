@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
 
 using System;
 using System.Collections.Generic;

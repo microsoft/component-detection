@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Common;
+﻿namespace Microsoft.ComponentDetection.Common;
 
 public interface IConsoleWritingService
 {

@@ -192,7 +192,7 @@ shrinkwrapVersion: 3";
             parentComponent => parentComponent.Name == "some-other-root",
             parentComponent => parentComponent.Name == "query-string");
 
-        componentRecorder.ForOneComponent(strictUriEncodeComponent.Component.Id, grouping => grouping.AllFileLocations.Should().HaveCount(2));
+        componentRecorder.ForOneComponent(strictUriEncodeComponent.Component.Id, grouping => Assert.AreEqual(2, grouping.AllFileLocations.Count()));
     }
 
     [TestMethod]
@@ -300,7 +300,7 @@ shrinkwrapVersion: 3";
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
     }
 
     [TestMethod]
@@ -330,7 +330,7 @@ packages:
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().HaveCount(4);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(4);
 
         var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/query-string/4.3.4").Component.Id;
         var objectAssignComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/object-assign/4.1.1").Component.Id;

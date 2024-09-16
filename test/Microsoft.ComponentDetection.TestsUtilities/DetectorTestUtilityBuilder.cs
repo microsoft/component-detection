@@ -18,7 +18,7 @@ public class DetectorTestUtilityBuilder<T>
     where T : FileComponentDetector
 {
     private readonly List<(string Name, Stream Contents, string Location, IEnumerable<string> SearchPatterns)>
-        filesToAdd = [];
+        filesToAdd = new();
 
     private readonly Mock<IComponentStreamEnumerableFactory> mockComponentStreamEnumerableFactory;
     private readonly Mock<IObservableDirectoryWalkerFactory> mockObservableDirectoryWalkerFactory;
@@ -134,7 +134,7 @@ public class DetectorTestUtilityBuilder<T>
 
     private void InitializeFileMocks()
     {
-        if (this.filesToAdd.Count == 0)
+        if (!this.filesToAdd.Any())
         {
             this.mockObservableDirectoryWalkerFactory.Setup(x =>
                     x.GetFilteredComponentStreamObservable(
@@ -144,7 +144,7 @@ public class DetectorTestUtilityBuilder<T>
                 .Returns(Enumerable.Empty<ProcessRequest>().ToObservable());
         }
 
-        if (this.filesToAdd.Count == 0)
+        if (!this.filesToAdd.Any())
         {
             this.mockComponentStreamEnumerableFactory.Setup(x =>
                     x.GetComponentStreams(

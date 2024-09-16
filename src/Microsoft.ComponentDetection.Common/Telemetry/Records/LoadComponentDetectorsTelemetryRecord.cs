@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 public class LoadComponentDetectorsTelemetryRecord : BaseDetectionTelemetryRecord
 {

@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Tests;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.Linq;
 using FluentAssertions;
@@ -173,14 +173,14 @@ public class NpmUtilitiesTests
         NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder1, typedComponent, typedComponent);
         NpmComponentUtilities.TraverseAndRecordComponents(currentDependency, singleFileComponentRecorder2, typedComponent, typedComponent);
 
-        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
         componentRecorder.GetComponent(typedComponent.Id).Should().NotBeNull();
 
         var graph1 = componentRecorder.GetDependencyGraphsByLocation()["/this/is/a/test/path/"];
         var graph2 = componentRecorder.GetDependencyGraphsByLocation()["/this/is/a/different/path/"];
 
-        graph1.GetExplicitReferencedDependencyIds(typedComponent.Id).Should().Contain(typedComponent.Id);
-        graph2.GetExplicitReferencedDependencyIds(typedComponent.Id).Should().Contain(typedComponent.Id);
+        graph1.GetExplicitReferencedDependencyIds(typedComponent.Id).Contains(typedComponent.Id).Should().BeTrue();
+        graph2.GetExplicitReferencedDependencyIds(typedComponent.Id).Contains(typedComponent.Id).Should().BeTrue();
         componentRecorder.GetEffectiveDevDependencyValue(typedComponent.Id).GetValueOrDefault(true).Should().BeFalse();
 
         var json1 = @"{
@@ -200,14 +200,14 @@ public class NpmUtilitiesTests
 
         NpmComponentUtilities.TraverseAndRecordComponents(currentDependency1, singleFileComponentRecorder2, typedComponent1, typedComponent1);
 
-        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
 
-        graph2.GetExplicitReferencedDependencyIds(typedComponent1.Id).Should().Contain(typedComponent1.Id);
+        graph2.GetExplicitReferencedDependencyIds(typedComponent1.Id).Contains(typedComponent1.Id).Should().BeTrue();
         componentRecorder.GetEffectiveDevDependencyValue(typedComponent1.Id).GetValueOrDefault(false).Should().BeTrue();
 
         NpmComponentUtilities.TraverseAndRecordComponents(currentDependency1, singleFileComponentRecorder2, typedComponent, typedComponent1, parentComponentId: typedComponent1.Id);
 
-        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
         var explicitlyReferencedDependencyIds = graph2.GetExplicitReferencedDependencyIds(typedComponent.Id);
         explicitlyReferencedDependencyIds.Should().Contain(typedComponent.Id);
         explicitlyReferencedDependencyIds.Should().Contain(typedComponent1.Id);
@@ -231,7 +231,7 @@ public class NpmUtilitiesTests
         addedComponent1.Should().BeEquivalentTo(expectedDetectedComponent, options => options.Excluding(obj => obj.DependencyRoots));
         addedComponent2.Should().BeEquivalentTo(expectedDetectedDevComponent, options => options.Excluding(obj => obj.DependencyRoots));
 
-        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
+        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
 
         var nonDevComponent = componentRecorder.GetComponent(expectedDetectedComponent.Component.Id);
         nonDevComponent.Should().BeEquivalentTo(expectedDetectedComponent.Component);

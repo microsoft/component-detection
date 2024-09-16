@@ -32,17 +32,17 @@ public class YarnLockComponentDetector : FileComponentDetector
 
     public override string Id { get; } = "Yarn";
 
-    public override IList<string> SearchPatterns { get; } = ["yarn.lock"];
+    public override IList<string> SearchPatterns { get; } = new List<string> { "yarn.lock" };
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
     public override int Version => 8;
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Npm)];
+    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
 
     /// <inheritdoc />
     /// <remarks>"Package" is a more common substring, enclose it with \ to verify it is a folder.</remarks>
-    protected override IList<string> SkippedFolders => ["node_modules", "pnpm-store", "\\package\\"];
+    protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store", "\\package\\" };
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -194,15 +194,15 @@ public class YarnLockComponentDetector : FileComponentDetector
     /// <returns>False if no package.json file was found at location, otherwise it returns true. </returns>
     private bool TryReadPeerPackageJsonRequestsAsYarnEntries(ISingleFileComponentRecorder singleFileComponentRecorder, string location, Dictionary<string, YarnEntry> yarnEntries, out List<YarnEntry> yarnRoots)
     {
-        yarnRoots = [];
+        yarnRoots = new List<YarnEntry>();
 
-        var pkgJsons = this.ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(location).Directory, ["package.json"], (name, directoryName) => false, recursivelyScanDirectories: false);
+        var pkgJsons = this.ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(location).Directory, new List<string> { "package.json" }, (name, directoryName) => false, recursivelyScanDirectories: false);
 
         IDictionary<string, IDictionary<string, bool>> combinedDependencies = new Dictionary<string, IDictionary<string, bool>>();
 
         var pkgJsonCount = 0;
 
-        IList<string> yarnWorkspaces = [];
+        IList<string> yarnWorkspaces = new List<string>();
         foreach (var pkgJson in pkgJsons)
         {
             combinedDependencies = NpmComponentUtilities.TryGetAllPackageJsonDependencies(pkgJson.Stream, out yarnWorkspaces);

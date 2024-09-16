@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts;
+﻿namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 
 using System;
 using System.Collections.Generic;

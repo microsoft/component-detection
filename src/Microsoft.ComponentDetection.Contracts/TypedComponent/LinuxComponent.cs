@@ -1,6 +1,5 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-using System;
 using PackageUrl;
 
 public class LinuxComponent : TypedComponent
@@ -64,26 +63,26 @@ public class LinuxComponent : TypedComponent
 
     private bool IsUbuntu()
     {
-        return this.Distribution.Equals("UBUNTU", StringComparison.OrdinalIgnoreCase);
+        return this.Distribution.ToUpperInvariant() == "UBUNTU";
     }
 
     private bool IsDebian()
     {
-        return this.Distribution.Equals("DEBIAN", StringComparison.OrdinalIgnoreCase);
+        return this.Distribution.ToUpperInvariant() == "DEBIAN";
     }
 
     private bool IsCentOS()
     {
-        return this.Distribution.Equals("CENTOS", StringComparison.OrdinalIgnoreCase);
+        return this.Distribution.ToUpperInvariant() == "CENTOS";
     }
 
     private bool IsFedora()
     {
-        return this.Distribution.Equals("FEDORA", StringComparison.OrdinalIgnoreCase);
+        return this.Distribution.ToUpperInvariant() == "FEDORA";
     }
 
     private bool IsRHEL()
     {
-        return this.Distribution.Equals("RED HAT ENTERPRISE LINUX", StringComparison.OrdinalIgnoreCase);
+        return this.Distribution.ToUpperInvariant() == "RED HAT ENTERPRISE LINUX";
     }
 }

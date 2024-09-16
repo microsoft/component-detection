@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
@@ -50,11 +51,11 @@ public class BcdeScanExecutionServiceTests
         this.sampleContainerDetails = new ContainerDetails { Id = 1 };
         this.graphTranslationService = new DefaultGraphTranslationService(new Mock<ILogger<DefaultGraphTranslationService>>().Object);
 
-        this.detectedComponents =
-        [
+        this.detectedComponents = new[]
+        {
             new DetectedComponent(new NpmComponent("some-npm-component", "1.2.3")),
             new DetectedComponent(new NuGetComponent("SomeNugetComponent", "1.2.3.4")),
-        ];
+        };
 
         this.serviceUnderTest = new ScanExecutionService(
             this.detectorsMock.Object,
@@ -96,14 +97,14 @@ public class BcdeScanExecutionServiceTests
         this.componentDetector3Mock.SetupGet(x => x.Version).Returns(10);
 
         this.detectedComponents[0].DevelopmentDependency = true;
-        this.detectedComponents[0].ContainerDetailIds =
-        [
+        this.detectedComponents[0].ContainerDetailIds = new HashSet<int>
+        {
             this.sampleContainerDetails.Id,
-        ];
+        };
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0], isDevelopmentDependency: true);
 
         var parentPipComponent = new PipComponent("sample-root", "1.0");
-        this.detectedComponents[1].DependencyRoots = new HashSet<TypedComponent>([parentPipComponent]);
+        this.detectedComponents[1].DependencyRoots = new HashSet<TypedComponent>(new[] { parentPipComponent });
         this.detectedComponents[1].DevelopmentDependency = null;
         singleFileComponentRecorder.RegisterUsage(new DetectedComponent(parentPipComponent, detector: new Mock<IComponentDetector>().Object), isExplicitReferencedDependency: true);
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1], parentComponentId: parentPipComponent.Id);
@@ -119,7 +120,7 @@ public class BcdeScanExecutionServiceTests
                 restrictions.AllowedDetectorCategories.Should().BeNull();
                 restrictions.AllowedDetectorIds.Should().BeNull();
             },
-            [componentRecorder]);
+            new List<ComponentRecorder> { componentRecorder });
 
         result.Result.Should().Be(ProcessingResultCode.Success);
         this.ValidateDetectedComponents(result.DetectedComponents);
@@ -146,8 +147,8 @@ public class BcdeScanExecutionServiceTests
     {
         var settings = new ScanSettings
         {
-            DetectorCategories = ["Category1", "Category2"],
-            DetectorsFilter = ["Detector1", "Detector2"],
+            DetectorCategories = new[] { "Category1", "Category2" },
+            DetectorsFilter = new[] { "Detector1", "Detector2" },
             SourceDirectory = this.sourceDirectory,
         };
 
@@ -163,7 +164,7 @@ public class BcdeScanExecutionServiceTests
                 restrictions.AllowedDetectorCategories.Should().Contain(settings.DetectorCategories);
                 restrictions.AllowedDetectorIds.Should().Contain(settings.DetectorsFilter);
             },
-            [componentRecorder]);
+            new List<ComponentRecorder> { componentRecorder });
 
         result.Result.Should().Be(ProcessingResultCode.Success);
         this.ValidateDetectedComponents(result.DetectedComponents);
@@ -187,7 +188,7 @@ public class BcdeScanExecutionServiceTests
             restrictions =>
             {
             },
-            [componentRecorder]);
+            new List<ComponentRecorder> { componentRecorder });
 
         result.Result.Should().Be(ProcessingResultCode.Success);
         this.ValidateDetectedComponents(result.DetectedComponents);
@@ -209,7 +210,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[0]);
         singleFileComponentRecorder.RegisterUsage(this.detectedComponents[1]);
 
-        var result = await this.DetectComponentsHappyPathAsync(settings, restrictions => { }, [componentRecorder]);
+        var result = await this.DetectComponentsHappyPathAsync(settings, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
         result.Result.Should().Be(ProcessingResultCode.Success);
         this.ValidateDetectedComponents(result.DetectedComponents);
@@ -233,21 +234,21 @@ public class BcdeScanExecutionServiceTests
 
         var mockDependencyGraphA = new Mock<IDependencyGraph>();
 
-        mockDependencyGraphA.Setup(x => x.GetComponents()).Returns(
-        [
+        mockDependencyGraphA.Setup(x => x.GetComponents()).Returns(new[]
+        {
             this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id,
-        ]);
+        });
         mockDependencyGraphA.Setup(x => x.GetDependenciesForComponent(this.detectedComponents[0].Component.Id))
-            .Returns(
-            [
+            .Returns(new[]
+            {
                 this.detectedComponents[1].Component.Id,
-            ]);
+            });
 
         mockDependencyGraphA.Setup(x => x.IsComponentExplicitlyReferenced(this.detectedComponents[0].Component.Id)).Returns(true);
         mockDependencyGraphA.Setup(x => x.IsDevelopmentDependency(this.detectedComponents[0].Component.Id)).Returns(true);
         mockDependencyGraphA.Setup(x => x.IsDevelopmentDependency(this.detectedComponents[1].Component.Id)).Returns(false);
 
-        var result = await this.DetectComponentsHappyPathAsync(settings, restrictions => { }, [componentRecorder]);
+        var result = await this.DetectComponentsHappyPathAsync(settings, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
         result.SourceDirectory.Should().NotBeNull();
         result.SourceDirectory.Should().Be(this.sourceDirectory.ToString());
@@ -261,7 +262,7 @@ public class BcdeScanExecutionServiceTests
 
         var actualGraph = matchingGraph.Value.Graph;
         actualGraph.Keys.Should().HaveCount(2);
-        actualGraph[this.detectedComponents[0].Component.Id].Should().ContainSingle();
+        actualGraph[this.detectedComponents[0].Component.Id].Count.Should().Be(1);
         actualGraph[this.detectedComponents[0].Component.Id].Should().Contain(this.detectedComponents[1].Component.Id);
         actualGraph[this.detectedComponents[1].Component.Id].Should().BeNull();
 
@@ -286,15 +287,15 @@ public class BcdeScanExecutionServiceTests
 
         var mockDependencyGraphA = new Mock<IDependencyGraph>();
 
-        mockDependencyGraphA.Setup(x => x.GetComponents()).Returns(
-        [
+        mockDependencyGraphA.Setup(x => x.GetComponents()).Returns(new[]
+        {
             this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id,
-        ]);
+        });
         mockDependencyGraphA.Setup(x => x.GetDependenciesForComponent(this.detectedComponents[0].Component.Id))
-            .Returns(
-            [
+            .Returns(new[]
+            {
                 this.detectedComponents[1].Component.Id,
-            ]);
+            });
 
         mockDependencyGraphA.Setup(x => x.IsComponentExplicitlyReferenced(this.detectedComponents[0].Component.Id)).Returns(true);
 
@@ -304,15 +305,15 @@ public class BcdeScanExecutionServiceTests
 
         var mockDependencyGraphB = new Mock<IDependencyGraph>();
 
-        mockDependencyGraphB.Setup(x => x.GetComponents()).Returns(
-        [
+        mockDependencyGraphB.Setup(x => x.GetComponents()).Returns(new[]
+        {
             this.detectedComponents[0].Component.Id, this.detectedComponents[1].Component.Id,
-        ]);
+        });
         mockDependencyGraphB.Setup(x => x.GetDependenciesForComponent(this.detectedComponents[1].Component.Id))
-            .Returns(
-            [
+            .Returns(new[]
+            {
                 this.detectedComponents[0].Component.Id,
-            ]);
+            });
 
         mockDependencyGraphB.Setup(x => x.IsComponentExplicitlyReferenced(this.detectedComponents[1].Component.Id)).Returns(true);
 
@@ -320,7 +321,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorderB.RegisterUsage(this.detectedComponents[1], isExplicitReferencedDependency: true);
         singleFileComponentRecorderB.RegisterUsage(this.detectedComponents[0], parentComponentId: this.detectedComponents[1].Component.Id);
 
-        var result = await this.DetectComponentsHappyPathAsync(settings, restrictions => { }, [componentRecorder]);
+        var result = await this.DetectComponentsHappyPathAsync(settings, restrictions => { }, new List<ComponentRecorder> { componentRecorder });
 
         result.SourceDirectory.Should().NotBeNull();
         result.SourceDirectory.Should().Be(this.sourceDirectory.ToString());
@@ -336,9 +337,9 @@ public class BcdeScanExecutionServiceTests
 
         var actualGraph = matchingGraph.Value.Graph;
         actualGraph.Keys.Should().HaveCount(2);
-        actualGraph[this.detectedComponents[0].Component.Id].Should().ContainSingle();
+        actualGraph[this.detectedComponents[0].Component.Id].Count.Should().Be(1);
         actualGraph[this.detectedComponents[0].Component.Id].Should().Contain(this.detectedComponents[1].Component.Id);
-        actualGraph[this.detectedComponents[1].Component.Id].Should().ContainSingle();
+        actualGraph[this.detectedComponents[1].Component.Id].Count.Should().Be(1);
         actualGraph[this.detectedComponents[1].Component.Id].Should().Contain(this.detectedComponents[0].Component.Id);
     }
 
@@ -361,7 +362,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(detectedComponent2, isDevelopmentDependency: false);
         singleFileComponentRecorder.RegisterUsage(detectedComponent3);
 
-        var results = await this.SetupRecorderBasedScanningAsync(settings, [componentRecorder]);
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var detectedComponents = results.ComponentsFound;
 
@@ -396,7 +397,7 @@ public class BcdeScanExecutionServiceTests
         var detectedComponent2NewLocation = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2NewLocation, isExplicitReferencedDependency: true);
 
-        var results = await this.SetupRecorderBasedScanningAsync(settings, [componentRecorder]);
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var detectedComponents = results.ComponentsFound;
 
@@ -431,7 +432,7 @@ public class BcdeScanExecutionServiceTests
         var detectedComponent2NewLocation = new DetectedComponent(new NpmComponent("test", "2.0.0"), detector: npmDetector.Object);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2NewLocation, isExplicitReferencedDependency: true);
 
-        var results = await this.SetupRecorderBasedScanningAsync(settings, [componentRecorder]);
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var detectedComponents = results.ComponentsFound;
 
@@ -459,7 +460,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(detectedComponent1, isExplicitReferencedDependency: true);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2, parentComponentId: detectedComponent1.Component.Id);
 
-        var results = await this.SetupRecorderBasedScanningAsync(settings, [componentRecorder]);
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var detectedComponents = results.ComponentsFound;
 
@@ -489,7 +490,7 @@ public class BcdeScanExecutionServiceTests
         singleFileComponentRecorder.RegisterUsage(detectedComponent1, isExplicitReferencedDependency: true);
         singleFileComponentRecorder.RegisterUsage(detectedComponent2, parentComponentId: detectedComponent1.Component.Id);
 
-        var results = await this.SetupRecorderBasedScanningAsync(settings, [componentRecorder]);
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var detectedComponents = results.ComponentsFound;
 
@@ -542,7 +543,7 @@ public class BcdeScanExecutionServiceTests
             firstRecorder.RegisterUsage(component, isDevelopmentDependency: isDevDep);
         }
 
-        var results = await this.SetupRecorderBasedScanningAsync(settings, [componentRecorder]);
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var components = results.ComponentsFound;
 
@@ -573,7 +574,7 @@ public class BcdeScanExecutionServiceTests
         firstRecorder.RegisterUsage(firstComponent);
         secondRecorder.RegisterUsage(secondComponent);
 
-        var results = await this.SetupRecorderBasedScanningAsync(settings, [componentRecorder]);
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var actualComponent = results.ComponentsFound.Single();
 
@@ -617,7 +618,7 @@ public class BcdeScanExecutionServiceTests
         secondRecorder.RegisterUsage(root2, isExplicitReferencedDependency: true);
         secondRecorder.RegisterUsage(secondComponent, parentComponentId: root2.Component.Id);
 
-        var results = await this.SetupRecorderBasedScanningAsync(settings, [componentRecorder]);
+        var results = await this.SetupRecorderBasedScanningAsync(settings, new List<ComponentRecorder> { componentRecorder });
 
         var actualComponent = results.ComponentsFound.First(c => c.Component.Id == firstComponent.Component.Id);
         actualComponent.TopLevelReferrers.Should().HaveCount(2);
@@ -644,12 +645,12 @@ public class BcdeScanExecutionServiceTests
 
         singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: true);
 
-        var results = await this.SetupRecorderBasedScanningAsync(args, [componentRecorder]);
+        var results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
         results.ComponentsFound.Single(component => component.Component.Id == detectedComponent.Component.Id).IsDevelopmentDependency.Should().BeTrue();
 
         singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: false);
 
-        results = await this.SetupRecorderBasedScanningAsync(args, [componentRecorder]);
+        results = await this.SetupRecorderBasedScanningAsync(args, new List<ComponentRecorder> { componentRecorder });
         results.ComponentsFound.Single(component => component.Component.Id == detectedComponent.Component.Id).IsDevelopmentDependency.Should().BeFalse();
     }
 
@@ -662,12 +663,12 @@ public class BcdeScanExecutionServiceTests
         this.componentDetector2Mock.SetupGet(x => x.Id).Returns("Detector2");
         this.componentDetector3Mock.SetupGet(x => x.Id).Returns("Detector3");
 
-        IEnumerable<IComponentDetector> registeredDetectors =
-        [
+        IEnumerable<IComponentDetector> registeredDetectors = new[]
+        {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
 
             this.versionedComponentDetector1Mock.Object,
-        ];
+        };
         var restrictedDetectors = new[]
         {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
@@ -686,7 +687,7 @@ public class BcdeScanExecutionServiceTests
                 restrictions.AllowedDetectorCategories.Should().BeNull();
                 restrictions.AllowedDetectorIds.Should().BeNull();
             },
-            [componentRecorder]);
+            new List<ComponentRecorder> { componentRecorder });
 
         result.DetectorsNotInRun.Should().ContainSingle();
         result.DetectorsNotInRun.Single(x => x.DetectorId == "Detector1");
@@ -701,10 +702,10 @@ public class BcdeScanExecutionServiceTests
         this.componentDetector2Mock.SetupGet(x => x.Id).Returns("Detector2");
         this.componentDetector3Mock.SetupGet(x => x.Id).Returns("Detector3");
 
-        IEnumerable<IComponentDetector> registeredDetectors =
-        [
+        IEnumerable<IComponentDetector> registeredDetectors = new[]
+        {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
-        ];
+        };
         var restrictedDetectors = new[]
         {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
@@ -723,7 +724,7 @@ public class BcdeScanExecutionServiceTests
                 restrictions.AllowedDetectorCategories.Should().BeNull();
                 restrictions.AllowedDetectorIds.Should().BeNull();
             },
-            [componentRecorder]);
+            new List<ComponentRecorder> { componentRecorder });
 
         result.DetectorsNotInRun.Should().BeEmpty();
     }
@@ -783,12 +784,12 @@ public class BcdeScanExecutionServiceTests
         Action<DetectorRestrictions> restrictionAsserter = null,
         IEnumerable<ComponentRecorder> componentRecorders = null)
     {
-        IEnumerable<IComponentDetector> registeredDetectors =
-        [
+        IEnumerable<IComponentDetector> registeredDetectors = new[]
+        {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
 
             this.versionedComponentDetector1Mock.Object,
-        ];
+        };
         var restrictedDetectors = new[]
         {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
@@ -841,12 +842,12 @@ public class BcdeScanExecutionServiceTests
         ScanSettings settings,
         IEnumerable<ComponentRecorder> componentRecorders)
     {
-        IEnumerable<IComponentDetector> registeredDetectors =
-        [
+        IEnumerable<IComponentDetector> registeredDetectors = new[]
+        {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,
 
             this.versionedComponentDetector1Mock.Object,
-        ];
+        };
         var restrictedDetectors = new[]
         {
             this.componentDetector2Mock.Object, this.componentDetector3Mock.Object,

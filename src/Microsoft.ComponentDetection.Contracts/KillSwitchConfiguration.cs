@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Contracts;
+﻿namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
 /// Represents the configuration for the kill switch.

@@ -23,10 +23,10 @@ public static class GraphTranslationUtility
                 {
                     model[graphByLocation.Key] = graphWithMetadata = new DependencyGraphWithMetadata
                     {
-                        ExplicitlyReferencedComponentIds = [],
-                        Graph = [],
-                        DevelopmentDependencies = [],
-                        Dependencies = [],
+                        ExplicitlyReferencedComponentIds = new HashSet<string>(),
+                        Graph = new DependencyGraph(),
+                        DevelopmentDependencies = new HashSet<string>(),
+                        Dependencies = new HashSet<string>(),
                     };
                 }
 
@@ -37,13 +37,13 @@ public static class GraphTranslationUtility
                     // We set dependencies to null basically to make the serialized output look more consistent (instead of empty arrays). If another location gets merged that has dependencies, it needs to create and set the key to non-null.
                     if (!graphWithMetadata.Graph.TryGetValue(componentId, out var dependencies))
                     {
-                        dependencies = componentDependencies != null && componentDependencies.Any() ? [] : null;
+                        dependencies = componentDependencies != null && componentDependencies.Any() ? new HashSet<string>() : null;
                         graphWithMetadata.Graph[componentId] = dependencies;
                     }
                     else if (dependencies == null && componentDependencies != null && componentDependencies.Any())
                     {
                         // The explicit case where new data is found in a later graph for a given component at a location, and it is adding dependencies.
-                        graphWithMetadata.Graph[componentId] = dependencies = [];
+                        graphWithMetadata.Graph[componentId] = dependencies = new HashSet<string>();
                     }
 
                     foreach (var dependentComponentId in componentDependencies)

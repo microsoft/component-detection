@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 public class ComponentRecorder : IComponentRecorder
 {
-    private readonly ConcurrentBag<SingleFileComponentRecorder> singleFileRecorders = [];
+    private readonly ConcurrentBag<SingleFileComponentRecorder> singleFileRecorders = new ConcurrentBag<SingleFileComponentRecorder>();
 
     private readonly bool enableManualTrackingOfExplicitReferences;
 
@@ -38,7 +38,7 @@ public class ComponentRecorder : IComponentRecorder
         IEnumerable<DetectedComponent> detectedComponents;
         if (this.singleFileRecorders == null)
         {
-            return [];
+            return Enumerable.Empty<DetectedComponent>();
         }
 
         detectedComponents = this.singleFileRecorders
@@ -68,7 +68,7 @@ public class ComponentRecorder : IComponentRecorder
     {
         if (this.singleFileRecorders == null)
         {
-            return [];
+            return Enumerable.Empty<string>();
         }
 
         return this.singleFileRecorders
@@ -162,7 +162,10 @@ public class ComponentRecorder : IComponentRecorder
             bool? isDevelopmentDependency = null,
             DependencyScope? dependencyScope = null)
         {
-            ArgumentNullException.ThrowIfNull(detectedComponent);
+            if (detectedComponent == null)
+            {
+                throw new ArgumentNullException(paramName: nameof(detectedComponent));
+            }
 
             if (detectedComponent.Component == null)
             {
@@ -170,14 +173,14 @@ public class ComponentRecorder : IComponentRecorder
             }
 
 #if DEBUG
-            if (detectedComponent.DependencyRoots?.Count == 0)
+            if (detectedComponent.DependencyRoots?.Any() ?? false)
             {
-                this.logger?.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");
+                this.logger.LogWarning("Detector should not populate DetectedComponent.DependencyRoots!");
             }
 
             if (detectedComponent.DevelopmentDependency.HasValue)
             {
-                this.logger?.LogWarning("Detector should not populate DetectedComponent.DevelopmentDependency!");
+                this.logger.LogWarning("Detector should not populate DetectedComponent.DevelopmentDependency!");
             }
 #endif
 
@@ -192,7 +195,10 @@ public class ComponentRecorder : IComponentRecorder
 
         public void RegisterPackageParseFailure(string skippedComponent)
         {
-            ArgumentNullException.ThrowIfNull(skippedComponent);
+            if (skippedComponent == null)
+            {
+                throw new ArgumentNullException(paramName: nameof(skippedComponent));
+            }
 
             _ = this.skippedComponentsInternal[skippedComponent] = default;
         }

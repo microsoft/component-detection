@@ -8,9 +8,9 @@ using Microsoft.Extensions.Logging;
 
 public class MavenStyleDependencyGraphParser
 {
-    private static readonly char[] TrimCharacters = ['|', ' '];
+    private static readonly char[] TrimCharacters = new char[] { '|', ' ' };
 
-    private static readonly string[] ComponentSplitters = ["+-", "\\-"];
+    private static readonly string[] ComponentSplitters = new[] { "+-", "\\-" };
 
     private readonly Stack<GraphNodeAtLevel<string>> stack = new Stack<GraphNodeAtLevel<string>>();
 

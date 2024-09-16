@@ -110,7 +110,7 @@ public class MavenCommandServiceTests
             },
         };
 
-        await cts.CancelAsync();
+        cts.Cancel();
 
         var bcdeMvnFileName = "bcde.mvndeps";
         var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };

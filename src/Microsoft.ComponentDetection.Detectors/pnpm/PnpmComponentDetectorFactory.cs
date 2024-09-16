@@ -35,11 +35,11 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
 
     public override string Id { get; } = "Pnpm";
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Npm)];
+    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
 
-    public override IList<string> SearchPatterns { get; } = ["shrinkwrap.yaml", "pnpm-lock.yaml"];
+    public override IList<string> SearchPatterns { get; } = new List<string> { "shrinkwrap.yaml", "pnpm-lock.yaml" };
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
 
     public override int Version { get; } = 6;
 
@@ -58,7 +58,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
 
         try
         {
-            var fileContent = await new StreamReader(file.Stream).ReadToEndAsync(cancellationToken);
+            var fileContent = await new StreamReader(file.Stream).ReadToEndAsync();
             var detector = this.GetPnpmComponentDetector(fileContent, out var detectedVersion);
             if (detector == null)
             {

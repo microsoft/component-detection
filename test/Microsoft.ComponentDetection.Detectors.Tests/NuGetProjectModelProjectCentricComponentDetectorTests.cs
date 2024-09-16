@@ -52,7 +52,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
                 x.Component.Id,
                 y => y.Id == x.Component.Id));
 
-        componentRecorder.ForAllComponents(grouping => grouping.AllFileLocations.Should().Contain(location => location.Contains("Loader.csproj")));
+        componentRecorder.ForAllComponents(grouping => Assert.IsTrue(grouping.AllFileLocations.Any(location => location.Contains("Loader.csproj"))));
     }
 
     [TestMethod]
@@ -78,7 +78,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
             nugetVersioning.Component.Id,
             x => x.Name.Contains("NuGet.ProjectModel")).Should().BeTrue();
 
-        componentRecorder.ForAllComponents(grouping => grouping.AllFileLocations.Should().Contain(location => location.Contains("Detectors.csproj")));
+        componentRecorder.ForAllComponents(grouping => Assert.IsTrue(grouping.AllFileLocations.Any(location => location.Contains("Detectors.csproj"))));
     }
 
     [TestMethod]
@@ -93,7 +93,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         var omittedComponentsWithCount = JsonConvert.DeserializeObject<Dictionary<string, int>>(ommittedComponentInformationJson);
 
         (omittedComponentsWithCount.Keys.Count > 5).Should().BeTrue("Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
-        omittedComponentsWithCount.Should().Contain("Microsoft.NETCore.App", 4, "There should be four cases of the NETCore.App library being omitted in the test data.");
+        omittedComponentsWithCount["Microsoft.NETCore.App"].Should().Be(4, "There should be four cases of the NETCore.App library being omitted in the test data.");
     }
 
     [TestMethod]
@@ -121,7 +121,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
 
         expectedDependencyIdsForCompositionTypedParts.Should().HaveSameCount(dependencies);
 
-        detectedComponents.Should().HaveSameCount(graph.GetComponents());
+        detectedComponents.Should().HaveCount(graph.GetComponents().Count());
 
         // Top level dependencies look like this:
         // (we expect all non-proj and non-framework to show up as explicit refs, so those will be absent from the check)
@@ -195,7 +195,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
             systemTextJson.Component.Id,
             x => x.Name.Contains("Microsoft.Extensions.DependencyModel")).Should().BeTrue();
 
-        componentRecorder.ForAllComponents(grouping => grouping.AllFileLocations.Should().Contain(location => location.Contains("ExtCore.WebApplication.csproj")));
+        componentRecorder.ForAllComponents(grouping => Assert.IsTrue(grouping.AllFileLocations.Any(location => location.Contains("ExtCore.WebApplication.csproj"))));
     }
 
     [TestMethod]
@@ -211,7 +211,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
 
         // With 3.X, we don't expect there to be a lot of these, but there are still netstandard libraries present which can bring things into the graph
         omittedComponentsWithCount.Keys.Should().HaveCount(4, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
-        omittedComponentsWithCount.Should().Contain("System.Reflection", 1, "There should be one case of the System.Reflection library being omitted in the test data.");
+        omittedComponentsWithCount["System.Reflection"].Should().Be(1, "There should be one case of the System.Reflection library being omitted in the test data.");
     }
 
     [TestMethod]
@@ -239,7 +239,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
             dependencies.Should().Contain(expectedId);
         }
 
-        detectedComponents.Should().HaveSameCount(graph.GetComponents());
+        detectedComponents.Should().HaveCount(graph.GetComponents().Count());
 
         // Top level dependencies look like this:
         // (we expect all non-proj and non-framework to show up as explicit refs, so those will be absent from the check)

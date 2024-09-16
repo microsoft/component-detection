@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Tests;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.IO;
 using System.Text;

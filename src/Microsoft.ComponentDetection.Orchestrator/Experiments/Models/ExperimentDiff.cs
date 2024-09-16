@@ -27,7 +27,7 @@ public class ExperimentDiff
     {
         var oldComponentDictionary = controlGroupComponents.DistinctBy(x => x.Id).ToDictionary(x => x.Id);
         var newComponentDictionary = experimentGroupComponents.DistinctBy(x => x.Id).ToDictionary(x => x.Id);
-        additionalProperties ??= [];
+        additionalProperties ??= Array.Empty<(string PropertyKey, string PropertyValue)>();
         this.AdditionalProperties = additionalProperties?.Select(kv => new KeyValuePair<string, string>(kv.PropertyKey, kv.PropertyValue)).ToImmutableList();
 
         this.AddedIds = newComponentDictionary.Keys.Except(oldComponentDictionary.Keys).ToImmutableList();

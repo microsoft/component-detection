@@ -73,7 +73,10 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         var components = detectedComponents.ToList();
         var sbomComponent = (VcpkgComponent)components.FirstOrDefault()?.Component;
 
-        sbomComponent.Should().NotBeNull();
+        if (sbomComponent is null)
+        {
+            throw new AssertFailedException($"{nameof(sbomComponent)} is null");
+        }
 
         components.Should().ContainSingle();
         sbomComponent.Id.Should().Be("git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json : nlohmann-json 3.10.4#5 - Vcpkg");

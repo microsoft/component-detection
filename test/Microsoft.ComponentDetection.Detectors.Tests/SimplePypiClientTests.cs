@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -45,7 +46,7 @@ public class SimplePyPiClientTests
     [TestMethod]
     public async Task GetSimplePypiProject_DuplicateEntries_CallsGetAsync_OnceAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"], Name = "boto3" };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" }, Name = "boto3" };
         var pythonProject = this.SampleValidApiJsonResponse("boto3", "0.0.1");
         var mockHandler = this.MockHttpMessageHandler(pythonProject, HttpStatusCode.OK);
 
@@ -66,10 +67,10 @@ public class SimplePyPiClientTests
     [TestMethod]
     public async Task GetSimplePypiProject_DifferentEntries_CallsGetAsync_TwiceAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new SimplePypiProject()
         {
-            Files = [new SimplePypiProjectRelease()],
+            Files = new List<SimplePypiProjectRelease> { new SimplePypiProjectRelease() },
         };
 
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject), HttpStatusCode.OK);
@@ -95,15 +96,15 @@ public class SimplePyPiClientTests
     [TestMethod]
     public async Task GetSimplePypiProject_ReturnsValidSimplePypiProjectAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"], Name = "boto3" };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" }, Name = "boto3" };
         var sampleApiResponse = this.SampleValidApiJsonResponse("boto3", "0.0.1");
         var expectedResult = new SimplePypiProject()
         {
-            Files =
-            [
+            Files = new List<SimplePypiProjectRelease>
+            {
                 new SimplePypiProjectRelease() { FileName = "boto3-0.0.1-py2.py3-none-any.whl", Url = new Uri("https://files.pythonhosted.org/packages/3f/95/a24847c245befa8c50a9516cbdca309880bd21b5879e7c895e953217e947/boto3-0.0.1-py2.py3-none-any.whl"), Size = 45469 },
                 new SimplePypiProjectRelease() { FileName = "boto3-0.0.1.tar.gz", Url = new Uri("https://files.pythonhosted.org/packages/df/18/4e36b93f6afb79b5f67b38f7d235773a21831b193602848c590f8a008608/boto3-0.0.1.tar.gz"), Size = 33415 },
-            ],
+            },
         };
 
         var mockHandler = this.MockHttpMessageHandler(sampleApiResponse, HttpStatusCode.OK);
@@ -116,7 +117,7 @@ public class SimplePyPiClientTests
     [TestMethod]
     public async Task GetSimplePypiProject_InvalidSpec_NotThrowAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"], Name = "randomName" };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" }, Name = "randomName" };
 
         var mockHandler = this.MockHttpMessageHandler("404 Not Found", HttpStatusCode.NotFound);
         var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
@@ -129,7 +130,7 @@ public class SimplePyPiClientTests
     [TestMethod]
     public async Task GetSimplePypiProject_UnexpectedContentTypeReturnedByApi_NotThrowAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
 
         var content = "<!DOCTYPE html><body>\r\n\t<h1>Links for boto3</h1>\r\n\t<a\r\n\t\thref=\"some link\">boto3-0.0.1-py2.py3-none-any.whl</a><br /></html>";
         var mockHandler = this.MockHttpMessageHandler(content, HttpStatusCode.OK);
@@ -143,7 +144,7 @@ public class SimplePyPiClientTests
     [TestMethod]
     public async Task GetSimplePypiProject_ShouldRetryAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
 
         var mockHandler = this.MockHttpMessageHandler(string.Empty, HttpStatusCode.InternalServerError);
         var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
@@ -163,7 +164,7 @@ public class SimplePyPiClientTests
     [TestMethod]
     public async Task GetSimplePypiProject_ShouldNotRetryAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var mockHandler = this.MockHttpMessageHandler("some content", HttpStatusCode.MultipleChoices);
         var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
@@ -181,7 +182,7 @@ public class SimplePyPiClientTests
     [TestMethod]
     public async Task GetSimplePypiProject_AddsCorrectHeadersAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = this.SampleValidApiJsonResponse("boto3", "0.0.1");
 
         var mockHandler = this.MockHttpMessageHandler(pythonProject, HttpStatusCode.OK);
@@ -205,7 +206,7 @@ public class SimplePyPiClientTests
     [TestMethod]
     public async Task GetSimplePypiProject_MaxEntriesVariable_CreatesNewCacheAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = this.SampleValidApiJsonResponse("boto3", "0.0.1");
         var mockHandler = this.MockHttpMessageHandler(pythonProject, HttpStatusCode.OK);
 

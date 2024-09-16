@@ -20,7 +20,7 @@ using Newtonsoft.Json.Linq;
 /// </summary>
 public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
-    private readonly IEnumerable<string> supportedSPDXVersions = ["SPDX-2.2"];
+    private readonly IEnumerable<string> supportedSPDXVersions = new List<string> { "SPDX-2.2" };
 
     public Spdx22ComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -33,15 +33,15 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
     }
 
     public override IEnumerable<string> Categories =>
-        [Enum.GetName(typeof(DetectorClass), DetectorClass.Spdx)];
+        new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Spdx) };
 
     public override string Id => "SPDX22SBOM";
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Spdx];
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Spdx };
 
     public override int Version => 1;
 
-    public override IList<string> SearchPatterns => ["*.spdx.json"];
+    public override IList<string> SearchPatterns => new List<string> { "*.spdx.json" };
 
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -106,7 +106,7 @@ public class Spdx22ComponentDetector : FileComponentDetector, IDefaultOffCompone
             this.Logger.LogWarning("SPDX file at {ManifestLocation} has more than one element in documentDescribes, first will be selected as root element.", processRequest.ComponentStream.Location);
         }
 
-        if (rootElements != null && rootElements.Length == 0)
+        if (rootElements != null && !rootElements.Any())
         {
             this.Logger.LogWarning("SPDX file at {ManifestLocation} does not have root elements in documentDescribes section, considering SPDXRef-Document as a root element.", processRequest.ComponentStream.Location);
         }

@@ -36,7 +36,7 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
             .ExecuteDetectorAsync();
 
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
         detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
     }
 
@@ -167,21 +167,21 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         // There is only one graph
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
-        dependencyGraph.GetDependenciesForComponent(explicitReferencedComponentId).Should().ContainSingle();
+        dependencyGraph.GetDependenciesForComponent(explicitReferencedComponentId).Should().HaveCount(1);
         dependencyGraph.GetDependenciesForComponent(explicitReferencedComponentId).Should().Contain(intermediateParentComponentId);
         dependencyGraph.IsComponentExplicitlyReferenced(explicitReferencedComponentId).Should().BeTrue();
 
-        dependencyGraph.GetDependenciesForComponent(intermediateParentComponentId).Should().ContainSingle();
+        dependencyGraph.GetDependenciesForComponent(intermediateParentComponentId).Should().HaveCount(1);
         dependencyGraph.GetDependenciesForComponent(intermediateParentComponentId).Should().Contain(leafComponentId);
         dependencyGraph.IsComponentExplicitlyReferenced(intermediateParentComponentId).Should().BeFalse();
 
-        dependencyGraph.GetDependenciesForComponent(leafComponentId).Should().BeEmpty();
+        dependencyGraph.GetDependenciesForComponent(leafComponentId).Should().HaveCount(0);
         dependencyGraph.IsComponentExplicitlyReferenced(leafComponentId).Should().BeFalse();
     }
 
     protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
     {
-        result.Should().BeEquivalentTo(expected);
+        result.Should<T>().BeEquivalentTo(expected);
         return true;
     }
 
@@ -194,6 +194,6 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
         this.DetectorTestUtility.WithFile("pom.xml", content)
-            .WithFile("pom.xml", content, searchPatterns: [bcdeMvnFileName]);
+            .WithFile("pom.xml", content, searchPatterns: new[] { bcdeMvnFileName });
     }
 }

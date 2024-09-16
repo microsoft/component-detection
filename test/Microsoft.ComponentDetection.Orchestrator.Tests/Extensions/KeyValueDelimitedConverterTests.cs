@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Extensions;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Extensions;
 
 using System;
 using System.Collections.Generic;

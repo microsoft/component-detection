@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Yarn;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
 
 using System.Collections.Generic;
 using System.IO;

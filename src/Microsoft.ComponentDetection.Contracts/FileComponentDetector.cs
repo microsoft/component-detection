@@ -46,7 +46,7 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <summary>
     /// Gets the folder names that will be skipped by the Component Detector.
     /// </summary>
-    protected virtual IList<string> SkippedFolders => [];
+    protected virtual IList<string> SkippedFolders => new List<string> { };
 
     /// <summary>
     /// Gets or sets the active scan request -- only populated after a ScanDirectoryAsync is invoked. If ScanDirectoryAsync is overridden,
@@ -56,12 +56,12 @@ public abstract class FileComponentDetector : IComponentDetector
 
     public virtual bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
 
-    protected Dictionary<string, string> Telemetry { get; set; } = [];
+    protected Dictionary<string, string> Telemetry { get; set; } = new Dictionary<string, string>();
 
     /// <summary>
     /// List of any any additional properties as key-value pairs that we would like to capture for the detector.
     /// </summary>
-    public List<(string PropertyKey, string PropertyValue)> AdditionalProperties { get; set; } = [];
+    public List<(string PropertyKey, string PropertyValue)> AdditionalProperties { get; set; } = new List<(string PropertyKey, string PropertyValue)>();
 
     protected IObservable<IComponentStream> ComponentStreams { get; private set; }
 

@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Tests;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +16,7 @@ using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityE
 [TestCategory("Governance/ComponentDetection")]
 public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
 {
-    private readonly List<string> packageJsonSearchPattern = ["package.json"];
+    private readonly List<string> packageJsonSearchPattern = new List<string> { "package.json" };
 
     [TestMethod]
     public async Task TestNpmDetector_NameAndVersionDetectedAsync()

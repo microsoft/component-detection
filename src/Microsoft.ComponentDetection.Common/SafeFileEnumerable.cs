@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Common;
+﻿namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Collections;
@@ -42,11 +42,11 @@ public class SafeFileEnumerable : IEnumerable<MatchedFile>
     }
 
     public SafeFileEnumerable(DirectoryInfo directory, Func<FileInfo, bool> fileMatchingPredicate, ILogger logger, IPathUtilityService pathUtilityService, ExcludeDirectoryPredicate directoryExclusionPredicate, bool recursivelyScanDirectories = true, HashSet<string> previouslyEnumeratedDirectories = null)
-        : this(directory, ["*"], logger, pathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories, previouslyEnumeratedDirectories) => this.fileMatchingPredicate = fileMatchingPredicate;
+        : this(directory, new List<string> { "*" }, logger, pathUtilityService, directoryExclusionPredicate, recursivelyScanDirectories, previouslyEnumeratedDirectories) => this.fileMatchingPredicate = fileMatchingPredicate;
 
     public IEnumerator<MatchedFile> GetEnumerator()
     {
-        var previouslyEnumeratedDirectories = this.enumeratedDirectories ?? [];
+        var previouslyEnumeratedDirectories = this.enumeratedDirectories ?? new HashSet<string>();
 
         var fse = new FileSystemEnumerable<MatchedFile>(
             this.directory.FullName,

@@ -16,8 +16,6 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class DefaultExperimentProcessorTests
 {
-    private static readonly JsonSerializerOptions TestJsonOptions = new JsonSerializerOptions { WriteIndented = true };
-
     private readonly Mock<IFileWritingService> fileWritingServiceMock;
     private readonly DefaultExperimentProcessor processor;
 
@@ -38,7 +36,7 @@ public class DefaultExperimentProcessorTests
             ExperimentTestUtils.CreateRandomExperimentComponents(),
             ExperimentTestUtils.CreateRandomExperimentComponents());
 
-        var serializedDiff = JsonSerializer.Serialize(diff, TestJsonOptions);
+        var serializedDiff = JsonSerializer.Serialize(diff, new JsonSerializerOptions { WriteIndented = true });
 
         await this.processor.ProcessExperimentAsync(config.Object, diff);
 

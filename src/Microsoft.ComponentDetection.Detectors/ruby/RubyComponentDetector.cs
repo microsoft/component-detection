@@ -63,11 +63,11 @@ public class RubyComponentDetector : FileComponentDetector
 
     public override string Id { get; } = "Ruby";
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems)];
+    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems) };
 
-    public override IList<string> SearchPatterns { get; } = ["Gemfile.lock"];
+    public override IList<string> SearchPatterns { get; } = new List<string> { "Gemfile.lock" };
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.RubyGems];
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.RubyGems };
 
     public override int Version { get; } = 3;
 
@@ -136,7 +136,7 @@ public class RubyComponentDetector : FileComponentDetector
                         // Nothing in the lockfile tells us where bundler came from
                         var addComponent = new DetectedComponent(new RubyGemsComponent(name, line, "unknown"));
                         components.TryAdd<string, DetectedComponent>(string.Format("{0}:{1}", name, file.Location), addComponent);
-                        dependencies.TryAdd(string.Format("{0}:{1}", name, file.Location), []);
+                        dependencies.TryAdd(string.Format("{0}:{1}", name, file.Location), new List<Dependency>());
                         break;
                     default:
                         // We ignore other sections
@@ -249,7 +249,7 @@ public class RubyComponentDetector : FileComponentDetector
                         else
                         {
                             components.TryAdd<string, DetectedComponent>(lookupKey, addComponent);
-                            dependencies.Add(lookupKey, []);
+                            dependencies.Add(lookupKey, new List<Dependency>());
                         }
                     }
                 }
@@ -259,7 +259,7 @@ public class RubyComponentDetector : FileComponentDetector
 
     private bool IsVersionRelative(string version)
     {
-        return version.StartsWith('~') || version.StartsWith('=');
+        return version.StartsWith("~") || version.StartsWith("=");
     }
 
     private class Dependency

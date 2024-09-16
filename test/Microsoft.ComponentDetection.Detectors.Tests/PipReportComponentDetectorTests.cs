@@ -47,7 +47,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.DetectorTestUtility.AddServiceMock(this.pythonCommandService);
 
         this.pythonResolver = new Mock<IPythonResolver>();
-        this.pythonResolver.Setup(x => x.GetPythonEnvironmentVariables()).Returns([]);
+        this.pythonResolver.Setup(x => x.GetPythonEnvironmentVariables()).Returns(new Dictionary<string, string>());
         this.DetectorTestUtility.AddServiceMock(this.pythonResolver);
 
         this.mockLogger = new Mock<ILogger<PipReportComponentDetector>>();
@@ -475,12 +475,12 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         ComponentRecorderTestUtilities.CheckChild<PipComponent>(
             componentRecorder,
             "async-lru 2.0.4 - pip",
-            ["jupyterlab 4.2.0 - pip"]);
+            new[] { "jupyterlab 4.2.0 - pip" });
 
         ComponentRecorderTestUtilities.CheckChild<PipComponent>(
             componentRecorder,
             "tinycss2 1.3.0 - pip",
-            ["jupyterlab 4.2.0 - pip"]);
+            new[] { "jupyterlab 4.2.0 - pip" });
     }
 
     [TestMethod]
@@ -490,8 +490,8 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("PipReportOverrideBehavior")).Returns(true);
         this.mockEnvVarService.Setup(x => x.GetEnvironmentVariable("PipReportOverrideBehavior")).Returns("sourcecodescan");
 
-        var baseSetupPyDependencies = this.ToGitTuple(["a==1.0", "b>=2.0,!=2.1,<3.0.0", "c!=1.1"]);
-        var baseRequirementsTextDependencies = this.ToGitTuple(["d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0"]);
+        var baseSetupPyDependencies = this.ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1,<3.0.0", "c!=1.1" });
+        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0" });
         baseRequirementsTextDependencies.Add((null, new GitComponent(new Uri("https://github.com/example/example"), "deadbee")));
 
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
@@ -537,8 +537,8 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     {
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
 
-        var baseSetupPyDependencies = this.ToGitTuple(["a==1.0", "b>=2.0,!=2.1,<3.0.0", "c!=1.1", "y==invalidversion"]);
-        var baseRequirementsTextDependencies = this.ToGitTuple(["d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0", "z==anotherinvalidversion"]);
+        var baseSetupPyDependencies = this.ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1,<3.0.0", "c!=1.1", "y==invalidversion" });
+        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0", "z==anotherinvalidversion" });
         baseRequirementsTextDependencies.Add((null, new GitComponent(new Uri("https://github.com/example/example"), "deadbee")));
 
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
@@ -597,8 +597,8 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("PipReportOverrideBehavior")).Returns(true);
         this.mockEnvVarService.Setup(x => x.GetEnvironmentVariable("PipReportOverrideBehavior")).Returns("skip");
 
-        var baseSetupPyDependencies = this.ToGitTuple(["a==1.0", "b>=2.0,!=2.1,<3.0.0", "c!=1.1"]);
-        var baseRequirementsTextDependencies = this.ToGitTuple(["d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0"]);
+        var baseSetupPyDependencies = this.ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1,<3.0.0", "c!=1.1" });
+        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "g<3.0", "h>=1.0,<=3.0,!=2.0,!=4.0" });
         baseRequirementsTextDependencies.Add((null, new GitComponent(new Uri("https://github.com/example/example"), "deadbee")));
 
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
@@ -627,7 +627,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
     {
         this.pythonCommandService
             .Setup(x => x.ParseFileAsync(It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync([("requests", null)]);
+            .ReturnsAsync(new List<(string PackageString, GitComponent Component)> { ("requests", null) });
 
         var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "requirements.txt");
         var pregeneratedFile = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "test.component-detection-pip-report.json");
@@ -663,7 +663,7 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
 
         this.pythonCommandService
             .Setup(x => x.ParseFileAsync(It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync([("requests", null)]);
+            .ReturnsAsync(new List<(string PackageString, GitComponent Component)> { ("requests", null) });
 
         var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "Invalid", "requirements.txt");
 

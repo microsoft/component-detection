@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Yarn;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
 
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;

@@ -62,16 +62,16 @@ public class RustCliDetector : FileComponentDetector
     public override string Id => "RustCli";
 
     /// <inheritdoc />
-    public override IEnumerable<string> Categories { get; } = ["Rust"];
+    public override IEnumerable<string> Categories { get; } = new[] { "Rust" };
 
     /// <inheritdoc />
-    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Cargo];
+    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
 
     /// <inheritdoc />
     public override int Version => 4;
 
     /// <inheritdoc />
-    public override IList<string> SearchPatterns { get; } = ["Cargo.toml"];
+    public override IList<string> SearchPatterns { get; } = new[] { "Cargo.toml" };
 
     /// <inheritdoc />
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
@@ -129,12 +129,12 @@ public class RustCliDetector : FileComponentDetector
                         x => new CargoComponent(
                             x.Name,
                             x.Version,
-                            (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || x.Authors.Length == 0) ? null : string.Join(", ", x.Authors),
+                            (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || !x.Authors.Any()) ? null : string.Join(", ", x.Authors),
                             string.IsNullOrWhiteSpace(x.License) ? null : x.License,
                             x.Source));
 
                     var root = metadata.Resolve.Root;
-                    HashSet<string> visitedDependencies = [];
+                    HashSet<string> visitedDependencies = new();
 
                     // A cargo.toml can be used to declare a workspace and not a package (A Virtual Manifest).
                     // In this case, the root will be null as it will not be pulling in dependencies itself.
@@ -146,8 +146,9 @@ public class RustCliDetector : FileComponentDetector
                         foreach (var dep in metadata.Resolve.Nodes)
                         {
                             var componentKey = $"{dep.Id}";
-                            if (visitedDependencies.Add(componentKey))
+                            if (!visitedDependencies.Contains(componentKey))
                             {
+                                visitedDependencies.Add(componentKey);
                                 this.TraverseAndRecordComponents(processRequest.SingleFileComponentRecorder, componentStream.Location, graph, dep.Id, null, null, packages, visitedDependencies, explicitlyReferencedDependency: false);
                             }
                         }
@@ -271,8 +272,9 @@ public class RustCliDetector : FileComponentDetector
             {
                 // include isTomlRoot to ensure that the roots present in the toml are marked as such in circular dependency cases
                 var componentKey = $"{detectedComponent.Component.Id}{dep.Pkg} {isTomlRoot}";
-                if (visitedDependencies.Add(componentKey))
+                if (!visitedDependencies.Contains(componentKey))
                 {
+                    visitedDependencies.Add(componentKey);
                     this.TraverseAndRecordComponents(recorder, location, graph, dep.Pkg, shouldRegister ? detectedComponent : null, dep, packagesMetadata, visitedDependencies, explicitlyReferencedDependency: isTomlRoot && explicitlyReferencedDependency);
                 }
             }
@@ -287,7 +289,7 @@ public class RustCliDetector : FileComponentDetector
     private IComponentStream FindCorrespondingCargoLock(IComponentStream cargoToml, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
         var cargoLockLocation = Path.Combine(Path.GetDirectoryName(cargoToml.Location), "Cargo.lock");
-        var cargoLockStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(cargoToml.Location).Directory, ["Cargo.lock"], (name, directoryName) => false, recursivelyScanDirectories: false).FirstOrDefault();
+        var cargoLockStream = this.ComponentStreamEnumerableFactory.GetComponentStreams(new FileInfo(cargoToml.Location).Directory, new List<string> { "Cargo.lock" }, (name, directoryName) => false, recursivelyScanDirectories: false).FirstOrDefault();
         if (cargoLockStream == null)
         {
             return null;
@@ -343,7 +345,7 @@ public class RustCliDetector : FileComponentDetector
                     if (!packagesByName.TryGetValue(cargoPackage.Name, out var packageList))
                     {
                         // First package with this name
-                        packageList = [];
+                        packageList = new List<(CargoPackage, CargoComponent)>();
                         packagesByName.Add(cargoPackage.Name, packageList);
                     }
                     else if (packageList.Any(p => p.Package.Equals(cargoPackage)))

@@ -9,14 +9,14 @@ public sealed class SkipTestOnWindowsAttribute : TestMethodAttribute
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return
-            [
+            return new[]
+            {
                 new TestResult
                 {
                     Outcome = UnitTestOutcome.Inconclusive,
                     TestFailureException = new AssertInconclusiveException("Skipped on Windows."),
                 },
-            ];
+            };
         }
 
         return base.Execute(testMethod);

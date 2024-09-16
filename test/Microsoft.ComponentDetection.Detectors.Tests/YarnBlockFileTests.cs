@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Tests;
+﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.IO;
@@ -17,8 +17,9 @@ public class YarnBlockFileTests
     [TestMethod]
     public async Task BlockFileParserWithNullStream_FailsAsync()
     {
-        var action = async () => await YarnBlockFile.CreateBlockFileAsync(null);
-        await action.Should().ThrowAsync<ArgumentException>();
+        static async Task Action() => await YarnBlockFile.CreateBlockFileAsync(null);
+
+        await Assert.ThrowsExceptionAsync<ArgumentNullException>(Action);
     }
 
     [TestMethod]
@@ -28,8 +29,9 @@ public class YarnBlockFileTests
 
         stream.Close();
 
-        var action = async () => await YarnBlockFile.CreateBlockFileAsync(stream);
-        await action.Should().ThrowAsync<ArgumentException>();
+        async Task Action() => await YarnBlockFile.CreateBlockFileAsync(stream);
+
+        await Assert.ThrowsExceptionAsync<ArgumentException>(Action);
     }
 
     [TestMethod]

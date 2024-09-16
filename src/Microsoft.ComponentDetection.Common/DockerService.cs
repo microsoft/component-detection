@@ -171,7 +171,7 @@ public class DockerService : IDockerService
                 CreatedAt = imageInspectResponse.Created,
                 BaseImageDigest = baseImageDigest,
                 BaseImageRef = baseImageRef,
-                Layers = layers ?? [],
+                Layers = layers ?? Enumerable.Empty<DockerLayer>(),
             };
         }
         catch (Exception e)
@@ -212,19 +212,19 @@ public class DockerService : IDockerService
             NetworkDisabled = true,
             HostConfig = new HostConfig
             {
-                CapDrop =
-                [
+                CapDrop = new List<string>
+                {
                     "all",
-                ],
-                SecurityOpt =
-                [
+                },
+                SecurityOpt = new List<string>
+                {
                     "no-new-privileges",
-                ],
-                Binds =
-                [
+                },
+                Binds = new List<string>
+                {
                     $"{Path.GetTempPath()}:/tmp",
                     "/var/run/docker.sock:/var/run/docker.sock",
-                ],
+                },
             },
         };
         return await Client.Containers.CreateContainerAsync(parameters, cancellationToken);

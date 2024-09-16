@@ -30,7 +30,7 @@ public class PyPiClientTests
     [TestMethod]
     public async Task GetReleases_InvalidSpecVersion_NotThrowAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0", "==1.0.0notvalid"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0", "==1.0.0notvalid" } };
 
         var pythonProject = new PythonProject
         {
@@ -52,7 +52,7 @@ public class PyPiClientTests
     public async Task GetProject_SupportsReleaseCandidatesDependenciesAsync()
     {
         const string version = "1.0.0rc4";
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = [$"=={version}"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { $"=={version}" } };
 
         var pythonProject = new PythonProject
         {
@@ -74,7 +74,7 @@ public class PyPiClientTests
     [TestMethod]
     public async Task GetReleases_DuplicateEntries_CallsGetAsync_OnceAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
         {
             Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
@@ -102,7 +102,7 @@ public class PyPiClientTests
     [TestMethod]
     public async Task GetReleases_DifferentEntries_CallsGetAsync_OnceAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
         {
             Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
@@ -172,7 +172,7 @@ public class PyPiClientTests
     [TestMethod]
     public async Task GetReleases_MaxEntriesVariable_CreatesNewCacheAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
         {
             Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
@@ -212,7 +212,7 @@ public class PyPiClientTests
     [TestMethod]
     public async Task GetReleases_AddsUserAgentHeadersAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
         var pythonProject = new PythonProject
         {
             Releases = new SortedDictionary<string, IList<PythonProjectRelease>>

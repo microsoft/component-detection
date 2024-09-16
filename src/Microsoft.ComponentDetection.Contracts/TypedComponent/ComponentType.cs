@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+﻿namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System.Runtime.Serialization;
 

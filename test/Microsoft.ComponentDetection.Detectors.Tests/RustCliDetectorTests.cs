@@ -598,7 +598,7 @@ dependencies = [
         await writer.FlushAsync();
         stream.Position = 0;
         this.mockComponentStreamEnumerableFactory.Setup(x => x.GetComponentStreams(It.IsAny<DirectoryInfo>(), new List<string> { "Cargo.lock" }, It.IsAny<ExcludeDirectoryPredicate>(), false))
-            .Returns([new ComponentStream() { Location = "Cargo.toml", Stream = stream }]);
+            .Returns(new[] { new ComponentStream() { Location = "Cargo.toml", Stream = stream } });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.toml", string.Empty)
@@ -712,7 +712,7 @@ dependencies = [
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Should().HaveCount(0);
     }
 
     [TestMethod]
@@ -762,7 +762,7 @@ dependencies = [
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Should().HaveCount(0);
     }
 
     [TestMethod]
@@ -945,7 +945,7 @@ dependencies = [
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+        componentRecorder.GetDetectedComponents().Should().HaveCount(1);
 
         componentRecorder
             .GetDetectedComponents()
@@ -1006,7 +1006,7 @@ dependencies = [
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Should().HaveCount(0);
     }
 
     [TestMethod]
@@ -1052,7 +1052,7 @@ dependencies = [
         await writer.FlushAsync();
         stream.Position = 0;
         this.mockComponentStreamEnumerableFactory.Setup(x => x.GetComponentStreams(It.IsAny<DirectoryInfo>(), new List<string> { "Cargo.lock" }, It.IsAny<ExcludeDirectoryPredicate>(), false))
-            .Returns([new ComponentStream() { Location = "Cargo.toml", Stream = stream }]);
+            .Returns(new[] { new ComponentStream() { Location = "Cargo.toml", Stream = stream } });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.toml", string.Empty)
@@ -1124,7 +1124,7 @@ dependencies = [
         await writer.FlushAsync();
         stream.Position = 0;
         this.mockComponentStreamEnumerableFactory.Setup(x => x.GetComponentStreams(It.IsAny<DirectoryInfo>(), new List<string> { "Cargo.lock" }, It.IsAny<ExcludeDirectoryPredicate>(), false))
-            .Returns([new ComponentStream() { Location = "Cargo.toml", Stream = stream }]);
+            .Returns(new[] { new ComponentStream() { Location = "Cargo.toml", Stream = stream } });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.toml", string.Empty)
@@ -1195,14 +1195,14 @@ dependencies = [
         await writer.FlushAsync();
         stream.Position = 0;
         this.mockComponentStreamEnumerableFactory.Setup(x => x.GetComponentStreams(It.IsAny<DirectoryInfo>(), new List<string> { "Cargo.lock" }, It.IsAny<ExcludeDirectoryPredicate>(), false))
-            .Returns([new ComponentStream() { Location = "Cargo.toml", Stream = stream }]);
+            .Returns(new[] { new ComponentStream() { Location = "Cargo.toml", Stream = stream } });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("Cargo.toml", string.Empty)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Should().HaveCount(0);
 
         return;
     }

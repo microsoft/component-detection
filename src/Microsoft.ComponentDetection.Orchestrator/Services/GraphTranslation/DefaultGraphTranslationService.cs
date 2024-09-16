@@ -76,7 +76,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                 foreach (var component in detectedComponents)
                 {
                     // clone custom locations and make them relative to root.
-                    var declaredRawFilePaths = component.FilePaths ?? [];
+                    var declaredRawFilePaths = component.FilePaths ?? new HashSet<string>();
                     var componentCustomLocations = JsonConvert.DeserializeObject<HashSet<string>>(JsonConvert.SerializeObject(declaredRawFilePaths));
                     component.FilePaths?.Clear();
 
@@ -242,7 +242,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             try
             {
                 var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
-                if (!relativePath.StartsWith('/'))
+                if (!relativePath.StartsWith("/"))
                 {
                     relativePath = "/" + relativePath;
                 }

@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Common;
+﻿namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Collections.Generic;
@@ -13,24 +13,24 @@ public static class PatternMatchingUtility
     public static FilePatternMatcher GetFilePatternMatcher(IEnumerable<string> patterns)
     {
         var ordinalComparison = Expression.Constant(StringComparison.Ordinal, typeof(StringComparison));
-        var asSpan = typeof(MemoryExtensions).GetMethod("AsSpan", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(string)], []);
-        var equals = typeof(MemoryExtensions).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison)], []);
-        var startsWith = typeof(MemoryExtensions).GetMethod("StartsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison)], []);
-        var endsWith = typeof(MemoryExtensions).GetMethod("EndsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, [typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison)], []);
+        var asSpan = typeof(MemoryExtensions).GetMethod("AsSpan", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(string) }, Array.Empty<ParameterModifier>());
+        var equals = typeof(MemoryExtensions).GetMethod("Equals", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison) }, Array.Empty<ParameterModifier>());
+        var startsWith = typeof(MemoryExtensions).GetMethod("StartsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison) }, Array.Empty<ParameterModifier>());
+        var endsWith = typeof(MemoryExtensions).GetMethod("EndsWith", BindingFlags.Public | BindingFlags.Static, null, CallingConventions.Standard, new[] { typeof(ReadOnlySpan<char>), typeof(ReadOnlySpan<char>), typeof(StringComparison) }, Array.Empty<ParameterModifier>());
 
         var predicates = new List<Expression>();
         var left = Expression.Parameter(typeof(ReadOnlySpan<char>), "fileName");
 
         foreach (var pattern in patterns)
         {
-            if (pattern.StartsWith('*'))
+            if (pattern.StartsWith("*"))
             {
                 var match = Expression.Constant(pattern[1..], typeof(string));
                 var right = Expression.Call(null, asSpan, match);
                 var combine = Expression.Call(null, endsWith, left, right, ordinalComparison);
                 predicates.Add(combine);
             }
-            else if (pattern.EndsWith('*'))
+            else if (pattern.EndsWith("*"))
             {
                 var match = Expression.Constant(pattern[..^1], typeof(string));
                 var right = Expression.Call(null, asSpan, match);

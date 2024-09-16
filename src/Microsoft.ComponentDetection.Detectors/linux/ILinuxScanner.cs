@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Linux;
+﻿namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 using System.Collections.Generic;
 using System.Threading;

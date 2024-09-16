@@ -62,7 +62,7 @@ app.Configure(
 
         config.AddCommand<ScanCommand>("scan")
             .WithDescription("Initiates a scan");
-        config.SetExceptionHandler((e, _) =>
+        config.SetExceptionHandler((e) =>
             {
                 logger.LogError(e, "An error occurred while executing the command");
             });

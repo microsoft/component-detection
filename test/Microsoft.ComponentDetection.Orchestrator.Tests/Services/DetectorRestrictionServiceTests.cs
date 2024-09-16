@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 using System;
 using System.Linq;
@@ -34,15 +34,14 @@ public class DetectorRestrictionServiceTests
         this.retiredNpmDetector = this.GenerateDetector("MSLicenseDevNpm");
         this.newNpmDetector = this.GenerateDetector("NpmWithRoots");
 
-        this.detectors =
-        [
-            this.firstDetectorMock.Object,
-            this.secondDetectorMock.Object,
+        this.detectors = new[]
+        {
+            this.firstDetectorMock.Object, this.secondDetectorMock.Object,
             this.thirdDetectorMock.Object,
             this.retiredNpmDetector.Object,
 
             this.newNpmDetector.Object,
-        ];
+        };
 
         this.serviceUnderTest = new DetectorRestrictionService(this.logger.Object);
     }
@@ -62,7 +61,7 @@ public class DetectorRestrictionServiceTests
         var r = new DetectorRestrictions();
         var detectorMock = this.GenerateDetector("defaultOffDetector");
         var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
-        this.detectors = this.detectors.Union([defaultOffDetectorMock.Object]).ToArray();
+        this.detectors = this.detectors.Union(new[] { defaultOffDetectorMock.Object as IComponentDetector }).ToArray();
         var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         restrictedDetectors
             .Should().NotContain(defaultOffDetectorMock.Object);
@@ -74,8 +73,8 @@ public class DetectorRestrictionServiceTests
         var r = new DetectorRestrictions();
         var detectorMock = this.GenerateDetector("defaultOffDetector");
         var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
-        this.detectors = this.detectors.Union([defaultOffDetectorMock.Object]).ToArray();
-        r.ExplicitlyEnabledDetectorIds = ["defaultOffDetector"];
+        this.detectors = this.detectors.Union(new[] { defaultOffDetectorMock.Object as IComponentDetector }).ToArray();
+        r.ExplicitlyEnabledDetectorIds = new[] { "defaultOffDetector" };
         var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         restrictedDetectors
             .Should().Contain(defaultOffDetectorMock.Object);
@@ -86,14 +85,14 @@ public class DetectorRestrictionServiceTests
     {
         var r = new DetectorRestrictions
         {
-            AllowedDetectorIds = ["FirstDetector", "SecondDetector"],
+            AllowedDetectorIds = new[] { "FirstDetector", "SecondDetector" },
         };
         var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         restrictedDetectors
             .Should().Contain(this.firstDetectorMock.Object).And.Contain(this.secondDetectorMock.Object)
             .And.NotContain(this.thirdDetectorMock.Object);
 
-        r.AllowedDetectorIds = ["NotARealDetector"];
+        r.AllowedDetectorIds = new[] { "NotARealDetector" };
         Action shouldThrow = () => this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         shouldThrow.Should().Throw<InvalidDetectorFilterException>();
     }
@@ -103,18 +102,18 @@ public class DetectorRestrictionServiceTests
     {
         var r = new DetectorRestrictions
         {
-            AllowedDetectorIds = ["MSLicenseDevNpm"],
+            AllowedDetectorIds = new[] { "MSLicenseDevNpm" },
         };
         var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         restrictedDetectors
             .Should().Contain(this.newNpmDetector.Object);
 
-        r.AllowedDetectorIds = ["mslicensenpm"];
+        r.AllowedDetectorIds = new[] { "mslicensenpm" };
         restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         restrictedDetectors
             .Should().Contain(this.newNpmDetector.Object);
 
-        r.AllowedDetectorIds = ["mslicensenpm", "NpmWithRoots"];
+        r.AllowedDetectorIds = new[] { "mslicensenpm", "NpmWithRoots" };
         restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         restrictedDetectors
             .Should().OnlyContain(item => item == this.newNpmDetector.Object);
@@ -125,21 +124,21 @@ public class DetectorRestrictionServiceTests
     {
         var r = new DetectorRestrictions
         {
-            AllowedDetectorCategories = ["FirstDetectorCategory", "ThirdDetectorCategory"],
+            AllowedDetectorCategories = new[] { "FirstDetectorCategory", "ThirdDetectorCategory" },
         };
         var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         restrictedDetectors
             .Should().Contain(this.firstDetectorMock.Object).And.Contain(this.thirdDetectorMock.Object)
             .And.NotContain(this.secondDetectorMock.Object);
 
-        r.AllowedDetectorCategories = ["AllCategory"];
+        r.AllowedDetectorCategories = new[] { "AllCategory" };
         restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         restrictedDetectors
             .Should().Contain(this.firstDetectorMock.Object)
             .And.Contain(this.thirdDetectorMock.Object)
             .And.Contain(this.secondDetectorMock.Object);
 
-        r.AllowedDetectorCategories = ["NoCategory"];
+        r.AllowedDetectorCategories = new[] { "NoCategory" };
         Action shouldThrow = () => this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
         shouldThrow.Should().Throw<InvalidDetectorCategoriesException>();
     }
@@ -149,14 +148,14 @@ public class DetectorRestrictionServiceTests
     {
         var detectors = new[]
         {
-            this.GenerateDetector("1", ["Cat1"]).Object,
-            this.GenerateDetector("2", ["Cat2"]).Object,
-            this.GenerateDetector("3", [nameof(DetectorClass.All)]).Object,
+            this.GenerateDetector("1", new[] { "Cat1" }).Object,
+            this.GenerateDetector("2", new[] { "Cat2" }).Object,
+            this.GenerateDetector("3", new[] { nameof(DetectorClass.All) }).Object,
         };
 
         var r = new DetectorRestrictions
         {
-            AllowedDetectorCategories = ["ACategoryWhichDoesntMatch"],
+            AllowedDetectorCategories = new[] { "ACategoryWhichDoesntMatch" },
         };
         var restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, detectors);
         restrictedDetectors
@@ -164,7 +163,7 @@ public class DetectorRestrictionServiceTests
             .And.NotContain(detectors[0])
             .And.NotContain(detectors[1]);
 
-        r.AllowedDetectorCategories = ["Cat1"];
+        r.AllowedDetectorCategories = new[] { "Cat1" };
         restrictedDetectors = this.serviceUnderTest.ApplyRestrictions(r, detectors);
         restrictedDetectors
             .Should().Contain(detectors[0])
@@ -183,7 +182,7 @@ public class DetectorRestrictionServiceTests
     {
         var mockDetector = new Mock<IComponentDetector>();
         mockDetector.SetupGet(x => x.Id).Returns($"{detectorName}");
-        categories ??= [$"{detectorName}Category", "AllCategory"];
+        categories ??= new[] { $"{detectorName}Category", "AllCategory" };
 
         mockDetector.SetupGet(x => x.Categories).Returns(categories);
         return mockDetector;

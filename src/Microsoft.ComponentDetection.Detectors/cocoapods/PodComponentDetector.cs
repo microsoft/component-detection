@@ -29,11 +29,11 @@ public class PodComponentDetector : FileComponentDetector
 
     public override string Id { get; } = "CocoaPods";
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods)];
+    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods) };
 
-    public override IList<string> SearchPatterns { get; } = ["Podfile.lock"];
+    public override IList<string> SearchPatterns { get; } = new List<string> { "Podfile.lock" };
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pod, ComponentType.Git];
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pod, ComponentType.Git };
 
     public override int Version { get; } = 2;
 
@@ -225,7 +225,7 @@ public class PodComponentDetector : FileComponentDetector
         foreach (var pod in podDependencies)
         {
             // Add all the dependencies to the map, without duplicates
-            dependenciesMap.TryAdd(pod.Key, []);
+            dependenciesMap.TryAdd(pod.Key, new HashSet<string>());
 
             foreach (var dependency in pod.Value)
             {

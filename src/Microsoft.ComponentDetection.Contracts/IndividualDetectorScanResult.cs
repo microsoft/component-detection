@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Contracts;
 
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 /// <summary>
@@ -16,7 +17,7 @@ public class IndividualDetectorScanResult
     /// <summary>
     /// Gets or sets the list of containers found during the scan.
     /// </summary>
-    public IEnumerable<ContainerDetails> ContainerDetails { get; set; } = [];
+    public IEnumerable<ContainerDetails> ContainerDetails { get; set; } = Enumerable.Empty<ContainerDetails>();
 
     /// <summary>
     /// Gets or sets any additional telemetry details for the scan.

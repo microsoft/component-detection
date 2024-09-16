@@ -111,7 +111,10 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
         var components = detectedComponents.ToList();
         var sbomComponent = (SpdxComponent)components.FirstOrDefault()?.Component;
 
-        sbomComponent.Should().NotBeNull();
+        if (sbomComponent is null)
+        {
+            throw new AssertFailedException($"{nameof(sbomComponent)} is null");
+        }
 
 #pragma warning disable CA5350 // Suppress Do Not Use Weak Cryptographic Algorithms because we use SHA1 intentionally in SPDX format
         var checksum = BitConverter.ToString(SHA1.HashData(Encoding.UTF8.GetBytes(spdxFile))).Replace("-", string.Empty).ToLower();

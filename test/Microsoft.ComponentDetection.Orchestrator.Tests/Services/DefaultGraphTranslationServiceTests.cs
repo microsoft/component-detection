@@ -57,7 +57,7 @@ public class DefaultGraphTranslationServiceTests
                     this.sampleContainerDetails.Id, this.sampleContainerDetails
                 },
             },
-            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+            ComponentRecorders = new[] { (this.componentDetectorMock.Object, this.componentRecorder) },
         };
 
         var expectedNpmComponent = new NpmComponent("npm-component", "1.2.3");
@@ -88,8 +88,8 @@ public class DefaultGraphTranslationServiceTests
         var resultNpmComponent = result.ComponentsFound.Single(c => c.Component.Type == ComponentType.Npm);
         var resultNugetComponent = result.ComponentsFound.Single(c => c.Component.Type == ComponentType.NuGet);
 
-        resultNpmComponent.LocationsFoundAt.Should().BeEquivalentTo([npmCustomPath, detectedFilePath, relatedFilePath]);
-        resultNugetComponent.LocationsFoundAt.Should().BeEquivalentTo([nugetCustomPath, detectedFilePath, relatedFilePath]);
+        resultNpmComponent.LocationsFoundAt.Should().BeEquivalentTo(new[] { npmCustomPath, detectedFilePath, relatedFilePath });
+        resultNugetComponent.LocationsFoundAt.Should().BeEquivalentTo(new[] { nugetCustomPath, detectedFilePath, relatedFilePath });
 
         var actualNpmComponent = resultNpmComponent.Component as NpmComponent;
         var actualNugetComponent = resultNugetComponent.Component as NuGetComponent;

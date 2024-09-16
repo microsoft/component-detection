@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Yarn.Contracts;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Contracts;
 
 using System.Collections.Generic;
 using YamlDotNet.Serialization;

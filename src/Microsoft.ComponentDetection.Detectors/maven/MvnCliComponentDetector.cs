@@ -36,13 +36,13 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     public override string Id => "MvnCli";
 
-    public override IList<string> SearchPatterns => [MavenManifest];
+    public override IList<string> SearchPatterns => new List<string> { MavenManifest };
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Maven];
+    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Maven };
 
     public override int Version => 4;
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
+    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
 
     private void LogDebugWithId(string message)
     {
@@ -70,7 +70,7 @@ public class MvnCliComponentDetector : FileComponentDetector
 
         this.LogDebugWithId($"Nested {MavenManifest} files processed successfully, retrieving generated dependency graphs.");
 
-        return this.ComponentStreamEnumerableFactory.GetComponentStreams(this.CurrentScanRequest.SourceDirectory, [this.mavenCommandService.BcdeMvnDependencyFileName], this.CurrentScanRequest.DirectoryExclusionPredicate)
+        return this.ComponentStreamEnumerableFactory.GetComponentStreams(this.CurrentScanRequest.SourceDirectory, new[] { this.mavenCommandService.BcdeMvnDependencyFileName }, this.CurrentScanRequest.DirectoryExclusionPredicate)
             .Select(componentStream =>
             {
                 // The file stream is going to be disposed after the iteration is finished
@@ -137,7 +137,7 @@ public class MvnCliComponentDetector : FileComponentDetector
                         var current = directoryItemFacades.GetOrAdd(currentDir, _ => new DirectoryItemFacadeOptimized
                         {
                             Name = currentDir,
-                            FileNames = [],
+                            FileNames = new HashSet<string>(),
                         });
 
                         // If we didn't come from a directory, it's because we're just getting started. Our current directory should include the file that led to it showing up in the graph.

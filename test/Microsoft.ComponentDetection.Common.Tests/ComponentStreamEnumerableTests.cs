@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Common.Tests;
+﻿namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.IO;
@@ -27,7 +27,8 @@ public class ComponentStreamEnumerableTests
         var tempFileOne = Path.GetTempFileName();
         var tempFileTwo = Path.GetTempFileName();
         var enumerable = new ComponentStreamEnumerable(
-            [
+            new[]
+            {
                 new MatchedFile
                 {
                     File = new FileInfo(tempFileOne),
@@ -38,7 +39,7 @@ public class ComponentStreamEnumerableTests
                     File = new FileInfo(tempFileTwo),
                     Pattern = "Some Pattern",
                 },
-            ],
+            },
             this.loggerMock.Object);
 
         enumerable.Should().HaveCount(2);
@@ -67,7 +68,8 @@ public class ComponentStreamEnumerableTests
             It.IsAny<IOException>(),
             It.IsAny<Func<It.IsAnyType, Exception, string>>()));
         var enumerable = new ComponentStreamEnumerable(
-            [
+            new[]
+            {
                 new MatchedFile
                 {
                     File = new FileInfo(tempFileOne),
@@ -78,7 +80,7 @@ public class ComponentStreamEnumerableTests
                     File = new FileInfo(tempFileTwo),
                     Pattern = "Some Pattern",
                 },
-            ],
+            },
             this.loggerMock.Object).ToList();
 
         enumerable.Should().ContainSingle();

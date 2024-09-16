@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Common.Telemetry.Attributes;
+﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Attributes;
 
 using System;
 

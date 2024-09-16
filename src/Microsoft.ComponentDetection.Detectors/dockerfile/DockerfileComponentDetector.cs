@@ -35,11 +35,11 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override string Id { get; } = "DockerReference";
 
-    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference)];
+    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference) };
 
-    public override IList<string> SearchPatterns { get; } = ["dockerfile", "dockerfile.*", "*.dockerfile"];
+    public override IList<string> SearchPatterns { get; } = new List<string> { "dockerfile", "dockerfile.*", "*.dockerfile" };
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.DockerReference];
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.DockerReference };
 
     public override int Version => 1;
 
@@ -55,7 +55,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             string contents;
             using (var reader = new StreamReader(file.Stream))
             {
-                contents = await reader.ReadToEndAsync(cancellationToken);
+                contents = await reader.ReadToEndAsync();
             }
 
             var stageNameMap = new Dictionary<string, string>();
@@ -69,7 +69,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     private Task ParseDockerFileAsync(string fileContents, string fileLocation, ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, string> stageNameMap)
     {
-        var dockerfileModel = Dockerfile.Parse(fileContents);
+        var dockerfileModel = Valleysoft.DockerfileModel.Dockerfile.Parse(fileContents);
         var instructions = dockerfileModel.Items;
         foreach (var instruction in instructions)
         {

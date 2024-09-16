@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
@@ -76,8 +77,8 @@ public class ExperimentService : IExperimentService
             var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(
                 new DetectorProcessingResult()
                 {
-                    ComponentRecorders = [(detector, componentRecorder)],
-                    ContainersDetailsMap = [],
+                    ComponentRecorders = new[] { (detector, componentRecorder) },
+                    ContainersDetailsMap = new Dictionary<int, ContainerDetails>(),
                     ResultCode = ProcessingResultCode.Success,
                 },
                 settings,

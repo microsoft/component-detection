@@ -26,8 +26,6 @@
 // short-identifier                := /[a-f0-9]{6,64}/
 namespace Microsoft.ComponentDetection.Common;
 
-using System;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.ComponentDetection.Contracts;
 
 public static class DockerReferenceUtility
@@ -122,7 +120,6 @@ public static class DockerReferenceUtility
         return (domain, remainder);
     }
 
-    [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "Explicitly checks for character case.")]
     public static DockerReference ParseFamiliarName(string name)
     {
         if (DockerRegex.AnchoredIdentifierRegexp.IsMatch(name))
@@ -143,7 +140,7 @@ public static class DockerReferenceUtility
             remoteName = remainder;
         }
 
-        if (!string.Equals(remoteName.ToLowerInvariant(), remoteName, StringComparison.InvariantCulture))
+        if (remoteName.ToLower() != remoteName)
         {
             throw new ReferenceNameContainsUppercaseException(name);
         }

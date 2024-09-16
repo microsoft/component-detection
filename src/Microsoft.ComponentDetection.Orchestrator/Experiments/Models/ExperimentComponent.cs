@@ -17,7 +17,7 @@ public record ExperimentComponent
     {
         this.Id = detectedComponent.Component.Id;
         this.DevelopmentDependency = detectedComponent.IsDevelopmentDependency ?? false;
-        this.RootIds = detectedComponent.TopLevelReferrers?.Select(x => x.Id).ToHashSet() ?? [];
+        this.RootIds = detectedComponent.TopLevelReferrers?.Select(x => x.Id).ToHashSet() ?? new HashSet<string>();
     }
 
     /// <summary>

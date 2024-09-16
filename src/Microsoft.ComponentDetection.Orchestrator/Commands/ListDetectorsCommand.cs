@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Orchestrator.Commands;
+﻿namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts;

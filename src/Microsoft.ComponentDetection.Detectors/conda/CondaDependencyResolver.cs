@@ -28,7 +28,7 @@ public static class CondaDependencyResolver
     public static void UpdateDirectlyReferencedPackages(ISingleFileComponentRecorder singleFileComponentRecorder)
         => singleFileComponentRecorder.GetDetectedComponents().Keys.ForEach(componentId =>
             {
-                if (singleFileComponentRecorder.DependencyGraph.GetAncestors(componentId).Count == 0)
+                if (!singleFileComponentRecorder.DependencyGraph.GetAncestors(componentId).Any())
                 {
                     singleFileComponentRecorder.RegisterUsage(
                         singleFileComponentRecorder.GetComponent(componentId),
@@ -100,7 +100,7 @@ public static class CondaDependencyResolver
     /// <returns>A list of packages without dependencies.</returns>
     private static List<CondaPackage> GetPackages(CondaLock condaLock)
         => condaLock?.Package == null
-                ? []
+                ? new List<CondaPackage>()
                 : condaLock.Package;
 
     /// <summary>

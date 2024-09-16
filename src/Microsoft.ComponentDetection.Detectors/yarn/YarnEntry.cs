@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Yarn;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
 
 using System.Collections.Generic;
 
@@ -24,17 +24,17 @@ public class YarnEntry
     /// <summary>
     /// Gets the satisfied version strings of this entry.
     /// </summary>
-    public IList<string> Satisfied { get; } = [];
+    public IList<string> Satisfied { get; } = new List<string>();
 
     /// <summary>
     /// Gets the name@version dependencies that this package requires.
     /// </summary>
-    public IList<YarnDependency> Dependencies { get; } = [];
+    public IList<YarnDependency> Dependencies { get; } = new List<YarnDependency>();
 
     /// <summary>
     /// Gets the name@version dependencies that this package requires.
     /// </summary>
-    public IList<YarnDependency> OptionalDependencies { get; } = [];
+    public IList<YarnDependency> OptionalDependencies { get; } = new List<YarnDependency>();
 
     /// <summary>
     /// Gets or sets a value indicating whether or not the component is a dev dependency.

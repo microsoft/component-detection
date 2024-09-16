@@ -34,7 +34,7 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
 
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
 
-        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
         detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
     }
 
@@ -110,16 +110,16 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
         // There is only one graph
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
-        dependencyGraph.GetDependenciesForComponent(d1Id).Should().BeEmpty();
+        dependencyGraph.GetDependenciesForComponent(d1Id).Should().HaveCount(0);
         dependencyGraph.IsComponentExplicitlyReferenced(d1Id).Should().BeTrue();
         dependencyGraph.IsDevelopmentDependency(d1Id).Should().BeTrue();
 
-        dependencyGraph.GetDependenciesForComponent(d2Id).Should().ContainSingle();
+        dependencyGraph.GetDependenciesForComponent(d2Id).Should().HaveCount(1);
         dependencyGraph.GetDependenciesForComponent(d2Id).Should().Contain(d3Id);
         dependencyGraph.IsComponentExplicitlyReferenced(d2Id).Should().BeTrue();
         dependencyGraph.IsDevelopmentDependency(d2Id).Should().BeFalse();
 
-        dependencyGraph.GetDependenciesForComponent(d3Id).Should().BeEmpty();
+        dependencyGraph.GetDependenciesForComponent(d3Id).Should().HaveCount(0);
         dependencyGraph.IsComponentExplicitlyReferenced(d3Id).Should().BeFalse();
         dependencyGraph.IsDevelopmentDependency(d3Id).Should().BeFalse();
     }

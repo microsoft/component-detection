@@ -1,11 +1,13 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests;
 
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Parsing;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -46,8 +48,8 @@ public class LoggingEnricherTests
             DateTimeOffset.Now,
             LogEventLevel.Debug,
             null,
-            new MessageTemplate("test", []),
-            []);
+            new MessageTemplate("test", Array.Empty<MessageTemplateToken>()),
+            new List<LogEventProperty>());
 
         this.enricher.Enrich(logEvent, this.propertyFactoryMock.Object);
 

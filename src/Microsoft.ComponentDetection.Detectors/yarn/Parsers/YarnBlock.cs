@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
+﻿namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 
 using System.Collections.Generic;
 
@@ -17,5 +17,5 @@ public class YarnBlock
     /// <summary>
     /// Gets child blocks, as dentoed by "{child}:".
     /// </summary>
-    public IList<YarnBlock> Children { get; } = [];
+    public IList<YarnBlock> Children { get; } = new List<YarnBlock>();
 }

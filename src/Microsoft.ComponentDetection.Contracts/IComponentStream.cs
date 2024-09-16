@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Contracts;
+﻿namespace Microsoft.ComponentDetection.Contracts;
 
 using System.IO;
 

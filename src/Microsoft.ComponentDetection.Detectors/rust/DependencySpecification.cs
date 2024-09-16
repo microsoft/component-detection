@@ -16,7 +16,7 @@ public class DependencySpecification
     public void Add(string name, string cargoVersionSpecifier)
     {
         ISet<Range> ranges = new HashSet<Range>();
-        var specifiers = cargoVersionSpecifier.Split([',']);
+        var specifiers = cargoVersionSpecifier.Split(new char[] { ',' });
         foreach (var specifier in specifiers)
         {
             ranges.Add(new Range(specifier.Trim()));

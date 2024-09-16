@@ -31,7 +31,7 @@ public class TypedComponentSerializationTests
     {
         var testComponentName = "SomeNuGetComponent";
         var testVersion = "1.2.3";
-        string[] testAuthors = ["John Doe", "Jane Doe"];
+        string[] testAuthors = { "John Doe", "Jane Doe" };
         TypedComponent tc = new NuGetComponent(testComponentName, testVersion, testAuthors);
         var result = JsonConvert.SerializeObject(tc);
         var deserializedTC = JsonConvert.DeserializeObject<TypedComponent>(result);
