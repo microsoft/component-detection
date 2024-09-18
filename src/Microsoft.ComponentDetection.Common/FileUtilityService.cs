@@ -47,7 +47,7 @@ public class FileUtilityService : IFileUtilityService
         var linesToKeep = new List<string>();
         foreach (var line in File.ReadLines(fileName))
         {
-            if (line == null || removalIndicators.Any(removalIndicator => line.Trim().StartsWith(removalIndicator, System.StringComparison.OrdinalIgnoreCase)))
+            if (string.IsNullOrEmpty(line) || removalIndicators.Any(removalIndicator => line.Trim().StartsWith(removalIndicator, System.StringComparison.OrdinalIgnoreCase)))
             {
                 removedAnyLines = true;
             }
