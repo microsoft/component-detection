@@ -500,7 +500,7 @@ public class PipCommandServiceTests
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("PipReportIgnoreFileLevelIndexUrl")).Returns(true);
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("pip", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-        this.fileUtilityService.Setup(x => x.DuplicateFileWithoutLines(It.IsAny<string>(), "--index-url"))
+        this.fileUtilityService.Setup(x => x.DuplicateFileWithoutLines(It.IsAny<string>(), "--index-url", "-i"))
             .Returns(("C:/asdf/temp.requirements.txt", true))
             .Verifiable();
         this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
@@ -535,7 +535,7 @@ public class PipCommandServiceTests
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("PipReportIgnoreFileLevelIndexUrl")).Returns(true);
         this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync("pip", It.IsAny<IEnumerable<string>>(), "--version")).ReturnsAsync(true);
 
-        this.fileUtilityService.Setup(x => x.DuplicateFileWithoutLines(It.IsAny<string>(), "--index-url"))
+        this.fileUtilityService.Setup(x => x.DuplicateFileWithoutLines(It.IsAny<string>(), "--index-url", "-i"))
             .Returns((null, false))
             .Verifiable();
         this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
@@ -590,7 +590,7 @@ public class PipCommandServiceTests
             this.logger.Object);
 
         var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
-        this.fileUtilityService.Verify(x => x.DuplicateFileWithoutLines(It.IsAny<string>(), "--index-url"), Times.Never);
+        this.fileUtilityService.Verify(x => x.DuplicateFileWithoutLines(It.IsAny<string>(), "--index-url", "-i"), Times.Never);
         this.commandLineInvokationService.Verify();
     }
 
