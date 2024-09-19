@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Microsoft.Build.Locator;
@@ -183,6 +184,12 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         var projectsPerPackage = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var projectPath in projectResolvedDependencies.Keys)
         {
+            if (Path.GetExtension(projectPath).Equals(".sln", StringComparison.OrdinalIgnoreCase))
+            {
+                // don't report solution files
+                continue;
+            }
+
             var projectDependencies = projectResolvedDependencies[projectPath];
             foreach (var (packageName, packageVersion) in projectDependencies)
             {
@@ -198,8 +205,9 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         }
 
         // report it all
-        foreach (var (packageNameAndVersion, projectPaths) in projectsPerPackage)
+        foreach (var packageNameAndVersion in projectsPerPackage.Keys.OrderBy(p => p))
         {
+            var projectPaths = projectsPerPackage[packageNameAndVersion];
             var parts = packageNameAndVersion.Split('/', 2);
             var packageName = parts[0];
             var packageVersion = parts[1];

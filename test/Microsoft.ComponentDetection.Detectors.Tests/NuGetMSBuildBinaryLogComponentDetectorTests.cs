@@ -196,6 +196,14 @@ EndGlobal
             .OrderBy(c => c.Name)
             .Select(c => $"{c.Name}/{c.Version}");
         project2Components.Should().Equal("Package.B/4.5.6");
+
+        var solutionComponents = detectedComponents
+            .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/solution.sln")))
+            .Select(d => d.Component)
+            .Cast<NuGetComponent>()
+            .OrderBy(c => c.Name)
+            .Select(c => $"{c.Name}/{c.Version}");
+        solutionComponents.Should().BeEmpty();
     }
 
     private async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetectorAndGetBinLogAsync(
