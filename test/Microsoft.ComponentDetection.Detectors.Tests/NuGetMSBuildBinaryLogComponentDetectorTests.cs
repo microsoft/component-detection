@@ -3,6 +3,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.TestsUtilities;
@@ -109,12 +110,100 @@ public class NuGetMSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<NuGe
         packages.Should().Equal("Some.Package/1.2.3");
     }
 
-    private async Task<(Contracts.IndividualDetectorScanResult ScanResult, Contracts.IComponentRecorder ComponentRecorder)> ExecuteDetectorAndGetBinLogAsync(
+    [TestMethod]
+    public async Task PackagesReportedFromSeparateProjectsDoNotOverlap()
+    {
+        // In this test, a top-level solution file references two projects which have no relationship between them.
+        // The result should be that each project only reports its own dependencies.
+        var slnContents = @"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 17
+VisualStudioVersion = 17.0.31808.319
+MinimumVisualStudioVersion = 15.0.26124.0
+Project(""{9A19103F-16F7-4668-BE54-9A1E7A4F7556}"") = ""project1"", ""project1\project1.csproj"", ""{782E0C0A-10D3-444D-9640-263D03D2B20C}""
+EndProject
+Project(""{9A19103F-16F7-4668-BE54-9A1E7A4F7556}"") = ""project2"", ""project2\project2.csproj"", ""{CBA73BF8-C922-4DD7-A41D-88CD22914356}""
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{782E0C0A-10D3-444D-9640-263D03D2B20C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{782E0C0A-10D3-444D-9640-263D03D2B20C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{782E0C0A-10D3-444D-9640-263D03D2B20C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{782E0C0A-10D3-444D-9640-263D03D2B20C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBA73BF8-C922-4DD7-A41D-88CD22914356}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBA73BF8-C922-4DD7-A41D-88CD22914356}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBA73BF8-C922-4DD7-A41D-88CD22914356}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBA73BF8-C922-4DD7-A41D-88CD22914356}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
+";
+        using var binLogStream = await MSBuildTestUtilities.GetBinLogStreamFromFileContentsAsync(
+            defaultFilePath: "solution.sln",
+            defaultFileContents: slnContents,
+            additionalFiles: new[]
+                {
+                    ("project1/project1.csproj", $@"
+                        <Project Sdk=""Microsoft.NET.Sdk"">
+                          <PropertyGroup>
+                            <TargetFramework>{MSBuildTestUtilities.TestTargetFramework}</TargetFramework>
+                          </PropertyGroup>
+                          <ItemGroup>
+                            <PackageReference Include=""Package.A"" Version=""1.2.3"" />
+                          </ItemGroup>
+                        </Project>
+                        "),
+                    ("project2/project2.csproj", $@"
+                        <Project Sdk=""Microsoft.NET.Sdk"">
+                          <PropertyGroup>
+                            <TargetFramework>{MSBuildTestUtilities.TestTargetFramework}</TargetFramework>
+                          </PropertyGroup>
+                          <ItemGroup>
+                            <PackageReference Include=""Package.B"" Version=""4.5.6"" />
+                          </ItemGroup>
+                        </Project>
+                        "),
+                },
+            mockedPackages: new[]
+                {
+                    ("Package.A", "1.2.3", MSBuildTestUtilities.TestTargetFramework, "<dependencies />"),
+                    ("Package.B", "4.5.6", MSBuildTestUtilities.TestTargetFramework, "<dependencies />"),
+                });
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("msbuild.binlog", binLogStream)
+            .ExecuteDetectorAsync();
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        var project1Components = detectedComponents
+            .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/project1.csproj")))
+            .Select(d => d.Component)
+            .Cast<NuGetComponent>()
+            .OrderBy(c => c.Name)
+            .Select(c => $"{c.Name}/{c.Version}");
+        project1Components.Should().Equal("Package.A/1.2.3");
+
+        var project2Components = detectedComponents
+            .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/project2.csproj")))
+            .Select(d => d.Component)
+            .Cast<NuGetComponent>()
+            .OrderBy(c => c.Name)
+            .Select(c => $"{c.Name}/{c.Version}");
+        project2Components.Should().Equal("Package.B/4.5.6");
+    }
+
+    private async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetectorAndGetBinLogAsync(
         string projectContents,
         (string FileName, string Content)[] additionalFiles = null,
         (string Name, string Version, string TargetFramework, string DependenciesXml)[] mockedPackages = null)
     {
-        using var binLogStream = await MSBuildTestUtilities.GetBinLogStreamFromFileContentsAsync(projectContents, additionalFiles, mockedPackages);
+        using var binLogStream = await MSBuildTestUtilities.GetBinLogStreamFromFileContentsAsync("project.csproj", projectContents, additionalFiles, mockedPackages);
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("msbuild.binlog", binLogStream)
             .ExecuteDetectorAsync();

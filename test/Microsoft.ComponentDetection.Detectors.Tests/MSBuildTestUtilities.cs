@@ -56,14 +56,15 @@ public static class MSBuildTestUtilities
     });
 
     public static async Task<Stream> GetBinLogStreamFromFileContentsAsync(
-        string projectContents,
+        string defaultFilePath,
+        string defaultFileContents,
         (string FileName, string Contents)[] additionalFiles = null,
         (string Name, string Version, string TargetFramework, string AdditionalMetadataXml)[] mockedPackages = null)
     {
         // write all files
         using var tempDir = new TemporaryProjectDirectory();
-        var fullProjectPath = Path.Combine(tempDir.DirectoryPath, "project.csproj");
-        await File.WriteAllTextAsync(fullProjectPath, projectContents);
+        var fullDefaultFilePath = Path.Combine(tempDir.DirectoryPath, defaultFilePath);
+        await File.WriteAllTextAsync(fullDefaultFilePath, defaultFileContents);
         if (additionalFiles is not null)
         {
             foreach (var (fileName, contents) in additionalFiles)
@@ -78,7 +79,7 @@ public static class MSBuildTestUtilities
         await MockNuGetPackagesInDirectoryAsync(tempDir, mockedPackages);
 
         // generate the binlog
-        var (exitCode, stdOut, stdErr) = await RunProcessAsync("dotnet", $"build \"{fullProjectPath}\" /t:GenerateBuildDependencyFile /bl:msbuild.binlog", workingDirectory: tempDir.DirectoryPath);
+        var (exitCode, stdOut, stdErr) = await RunProcessAsync("dotnet", $"build \"{fullDefaultFilePath}\" /t:GenerateBuildDependencyFile /bl:msbuild.binlog", workingDirectory: tempDir.DirectoryPath);
         exitCode.Should().Be(0, $"STDOUT:\n{stdOut}\n\nSTDERR:\n{stdErr}");
 
         // copy it to memory so the temporary directory can be cleaned up
