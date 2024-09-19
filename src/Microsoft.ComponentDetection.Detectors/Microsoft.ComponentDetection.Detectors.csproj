@@ -9,7 +9,10 @@
         <PackageReference Include="Polly" />
         <PackageReference Include="SemanticVersioning" />
         <PackageReference Include="yamldotnet" />
+        <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="Runtime" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Build.Locator" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+        <PackageReference Include="MSBuild.StructuredLogger" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />

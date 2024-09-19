@@ -3,6 +3,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.TestsUtilities;
@@ -60,7 +61,7 @@ public static class NugetTestUtilities
         return GetTemplatedNuspec(componentName, version, authors);
     }
 
-    public static async Task<Stream> ZipNupkgComponentAsync(string filename, string content)
+    public static async Task<Stream> ZipNupkgComponentAsync(string filename, string content, (string Path, byte[] Contents)[] additionalFiles = null)
     {
         var stream = new MemoryStream();
 
@@ -68,10 +69,21 @@ public static class NugetTestUtilities
         {
             var entry = archive.CreateEntry($"{filename}.nuspec");
 
-            using var entryStream = entry.Open();
+            using (var entryStream = entry.Open())
+            {
+                var templateBytes = Encoding.UTF8.GetBytes(content);
+                await entryStream.WriteAsync(templateBytes);
+            }
 
-            var templateBytes = Encoding.UTF8.GetBytes(content);
-            await entryStream.WriteAsync(templateBytes);
+            if (additionalFiles is not null)
+            {
+                foreach (var file in additionalFiles)
+                {
+                    var additionalEntry = archive.CreateEntry(file.Path);
+                    using var additionalEntryStream = additionalEntry.Open();
+                    await additionalEntryStream.WriteAsync(file.Contents, CancellationToken.None);
+                }
+            }
         }
 
         stream.Seek(0, SeekOrigin.Begin);
