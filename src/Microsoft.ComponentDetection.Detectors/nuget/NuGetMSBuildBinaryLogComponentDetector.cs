@@ -30,6 +30,7 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         ["_PackageDependenciesDesignTime"] = ("Name", "Version"),
     };
 
+    private static readonly object MSBuildRegistrationGate = new();
     private static bool isMSBuildRegistered;
 
     public NuGetMSBuildBinaryLogComponentDetector(
@@ -131,12 +132,15 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
     {
         try
         {
-            if (!isMSBuildRegistered)
+            lock (MSBuildRegistrationGate)
             {
-                // this must happen once per process, and never again
-                var defaultInstance = MSBuildLocator.QueryVisualStudioInstances().First();
-                MSBuildLocator.RegisterInstance(defaultInstance);
-                isMSBuildRegistered = true;
+                if (!isMSBuildRegistered)
+                {
+                    // this must happen once per process, and never again
+                    var defaultInstance = MSBuildLocator.QueryVisualStudioInstances().First();
+                    MSBuildLocator.RegisterInstance(defaultInstance);
+                    isMSBuildRegistered = true;
+                }
             }
 
             var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(processRequest.ComponentStream.Location);
