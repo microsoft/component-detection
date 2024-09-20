@@ -39,7 +39,6 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
     };
 
     private static readonly object MSBuildRegistrationGate = new();
-    private static bool isMSBuildRegistered;
 
     public NuGetMSBuildBinaryLogComponentDetector(
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -166,12 +165,11 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
     {
         lock (MSBuildRegistrationGate)
         {
-            if (!isMSBuildRegistered)
+            if (!MSBuildLocator.IsRegistered)
             {
                 // this must happen once per process, and never again
                 var defaultInstance = MSBuildLocator.QueryVisualStudioInstances().First();
                 MSBuildLocator.RegisterInstance(defaultInstance);
-                isMSBuildRegistered = true;
             }
         }
     }
