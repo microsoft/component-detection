@@ -24,11 +24,18 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
     // the items listed below represent collection names that NuGet will resolve a package into, along with the metadata value names to get the package name and version
     private static readonly Dictionary<string, (string NameMetadata, string VersionMetadata)> ResolvedPackageItemNames = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase)
     {
+        // regular restore operations
         ["NativeCopyLocalItems"] = ("NuGetPackageId", "NuGetPackageVersion"),
         ["ResourceCopyLocalItems"] = ("NuGetPackageId", "NuGetPackageVersion"),
         ["RuntimeCopyLocalItems"] = ("NuGetPackageId", "NuGetPackageVersion"),
         ["ResolvedAnalyzers"] = ("NuGetPackageId", "NuGetPackageVersion"),
         ["_PackageDependenciesDesignTime"] = ("Name", "Version"),
+
+        // implicitly added by the SDK during a publish operation
+        ["ResolvedAppHostPack"] = ("NuGetPackageId", "NuGetPackageVersion"),
+        ["ResolvedSingleFileHostPack"] = ("NuGetPackageId", "NuGetPackageVersion"),
+        ["ResolvedComHostPack"] = ("NuGetPackageId", "NuGetPackageVersion"),
+        ["ResolvedIjwHostPack"] = ("NuGetPackageId", "NuGetPackageVersion"),
     };
 
     private static readonly object MSBuildRegistrationGate = new();
@@ -46,7 +53,7 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
 
     public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "*.binlog" };
+    public override IList<string> SearchPatterns { get; } = new List<string> { "*.binlog", "*.buildlog" };
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.NuGet };
 
@@ -133,19 +140,16 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
     {
         try
         {
-            lock (MSBuildRegistrationGate)
-            {
-                if (!isMSBuildRegistered)
-                {
-                    // this must happen once per process, and never again
-                    var defaultInstance = MSBuildLocator.QueryVisualStudioInstances().First();
-                    MSBuildLocator.RegisterInstance(defaultInstance);
-                    isMSBuildRegistered = true;
-                }
-            }
+            EnsureMSBuildIsRegistered();
 
             var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(processRequest.ComponentStream.Location);
-            var buildRoot = BinaryLog.ReadBuild(processRequest.ComponentStream.Stream);
+            var extension = Path.GetExtension(processRequest.ComponentStream.Location);
+            var buildRoot = extension.ToLower() switch
+            {
+                ".binlog" => BinaryLog.ReadBuild(processRequest.ComponentStream.Stream),
+                ".buildlog" => BuildLogReader.Read(processRequest.ComponentStream.Stream),
+                _ => throw new NotSupportedException($"Unexpected log file extension: {extension}"),
+            };
             this.RecordLockfileVersion(buildRoot.FileFormatVersion);
             this.ProcessBinLog(buildRoot, singleFileComponentRecorder);
         }
@@ -156,6 +160,20 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         }
 
         return Task.CompletedTask;
+    }
+
+    internal static void EnsureMSBuildIsRegistered()
+    {
+        lock (MSBuildRegistrationGate)
+        {
+            if (!isMSBuildRegistered)
+            {
+                // this must happen once per process, and never again
+                var defaultInstance = MSBuildLocator.QueryVisualStudioInstances().First();
+                MSBuildLocator.RegisterInstance(defaultInstance);
+                isMSBuildRegistered = true;
+            }
+        }
     }
 
     protected override Task OnDetectionFinishedAsync()

@@ -36,4 +36,8 @@
         </EmbeddedResource>
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.Detectors.Tests" />
+    </ItemGroup>
+
 </Project>

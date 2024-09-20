@@ -1,19 +1,27 @@
 ﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Build.Logging.StructuredLogger;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using MSBuildTask = Microsoft.Build.Logging.StructuredLogger.Task;
+using Task = System.Threading.Tasks.Task;
+
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
 public class NuGetMSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<NuGetMSBuildBinaryLogComponentDetector>
 {
+    static NuGetMSBuildBinaryLogComponentDetectorTests() => NuGetMSBuildBinaryLogComponentDetector.EnsureMSBuildIsRegistered();
+
     [TestMethod]
     public async Task DependenciesAreReportedForEachProjectFile()
     {
@@ -206,12 +214,224 @@ EndGlobal
         solutionComponents.Should().BeEmpty();
     }
 
+    [TestMethod]
+    public async Task PackagesImplicitlyAddedBySdkDuringPublishAreAdded()
+    {
+        // When a project is published, the SDK will add references to some AppHost specific packages.  Doing an actual
+        // publish operation here would be too slow, so a mock in-memory binary log is used that has the same shape
+        // (although trimmed down) of a real publish log.
+        var binlog = new Build()
+        {
+            Succeeded = true,
+            Children =
+            {
+                new Project()
+                {
+                    ProjectFile = "project.csproj",
+                    Children =
+                    {
+                        new Target()
+                        {
+                            Name = "ResolveFrameworkReferences",
+                            Children =
+                            {
+                                // ResolvedAppHostPack
+                                new MSBuildTask()
+                                {
+                                    Name = "GetPackageDirectory",
+                                    Children =
+                                    {
+                                        new Folder()
+                                        {
+                                            Name = "OutputItems",
+                                            Children =
+                                            {
+                                                new AddItem()
+                                                {
+                                                    Name = "ResolvedAppHostPack",
+                                                    Children =
+                                                    {
+                                                        new Item()
+                                                        {
+                                                            Name = "AppHost",
+                                                            Children =
+                                                            {
+                                                                new Metadata()
+                                                                {
+                                                                    Name = "NuGetPackageId",
+                                                                    Value = "Microsoft.NETCore.App.Host.win-x64",
+                                                                },
+                                                                new Metadata()
+                                                                {
+                                                                    Name = "NuGetPackageVersion",
+                                                                    Value = "6.0.33",
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+
+                                // ResolvedSingleFileHostPack
+                                new MSBuildTask()
+                                {
+                                    Name = "GetPackageDirectory",
+                                    Children =
+                                    {
+                                        new Folder()
+                                        {
+                                            Name = "OutputItems",
+                                            Children =
+                                            {
+                                                new AddItem()
+                                                {
+                                                    Name = "ResolvedSingleFileHostPack",
+                                                    Children =
+                                                    {
+                                                        new Item()
+                                                        {
+                                                            Name = "SingleFileHost",
+                                                            Children =
+                                                            {
+                                                                new Metadata()
+                                                                {
+                                                                    Name = "NuGetPackageId",
+                                                                    Value = "Microsoft.NETCore.App.Host.win-x64",
+                                                                },
+                                                                new Metadata()
+                                                                {
+                                                                    Name = "NuGetPackageVersion",
+                                                                    Value = "6.0.33",
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+
+                                // ResolvedComHostPack
+                                new MSBuildTask()
+                                {
+                                    Name = "GetPackageDirectory",
+                                    Children =
+                                    {
+                                        new Folder()
+                                        {
+                                            Name = "OutputItems",
+                                            Children =
+                                            {
+                                                new AddItem()
+                                                {
+                                                    Name = "ResolvedComHostPack",
+                                                    Children =
+                                                    {
+                                                        new Item()
+                                                        {
+                                                            Name = "ComHost",
+                                                            Children =
+                                                            {
+                                                                new Metadata()
+                                                                {
+                                                                    Name = "NuGetPackageId",
+                                                                    Value = "Microsoft.NETCore.App.Host.win-x64",
+                                                                },
+                                                                new Metadata()
+                                                                {
+                                                                    Name = "NuGetPackageVersion",
+                                                                    Value = "6.0.33",
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+
+                                // ResolvedIjwHostPack
+                                new MSBuildTask()
+                                {
+                                    Name = "GetPackageDirectory",
+                                    Children =
+                                    {
+                                        new Folder()
+                                        {
+                                            Name = "OutputItems",
+                                            Children =
+                                            {
+                                                new AddItem()
+                                                {
+                                                    Name = "ResolvedIjwHostPack",
+                                                    Children =
+                                                    {
+                                                        new Item()
+                                                        {
+                                                            Name = "IjwHost",
+                                                            Children =
+                                                            {
+                                                                new Metadata()
+                                                                {
+                                                                    Name = "NuGetPackageId",
+                                                                    Value = "Microsoft.NETCore.App.Host.win-x64",
+                                                                },
+                                                                new Metadata()
+                                                                {
+                                                                    Name = "NuGetPackageVersion",
+                                                                    Value = "6.0.33",
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        };
+
+        // in-memory logs need to be `.buildlog`
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():d}.buildlog");
+        try
+        {
+            Serialization.Write(binlog, tempFile);
+            using var binLogStream = File.OpenRead(tempFile);
+
+            var (scanResult, componentRecorder) = await this.DetectorTestUtility
+                .WithFile(tempFile, binLogStream)
+                .ExecuteDetectorAsync();
+            var detectedComponents = componentRecorder.GetDetectedComponents();
+
+            var components = detectedComponents
+                .Select(d => d.Component)
+                .Cast<NuGetComponent>()
+                .OrderBy(c => c.Name)
+                .Select(c => $"{c.Name}/{c.Version}");
+            components.Should().Equal("Microsoft.NETCore.App.Host.win-x64/6.0.33");
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
     private async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetectorAndGetBinLogAsync(
         string projectContents,
         (string FileName, string Content)[] additionalFiles = null,
         (string Name, string Version, string TargetFramework, string DependenciesXml)[] mockedPackages = null)
     {
-        using var binLogStream = await MSBuildTestUtilities.GetBinLogStreamFromFileContentsAsync("project.csproj", projectContents, additionalFiles, mockedPackages);
+        using var binLogStream = await MSBuildTestUtilities.GetBinLogStreamFromFileContentsAsync("project.csproj", projectContents, additionalFiles: additionalFiles, mockedPackages: mockedPackages);
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("msbuild.binlog", binLogStream)
             .ExecuteDetectorAsync();

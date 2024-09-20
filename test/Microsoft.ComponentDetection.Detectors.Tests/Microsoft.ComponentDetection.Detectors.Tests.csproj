@@ -7,7 +7,10 @@
 
     <ItemGroup Label="Package References">
         <PackageReference Include="FluentAssertions.Analyzers" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="Runtime" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.Build.Locator" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="MSBuild.StructuredLogger" />
         <PackageReference Include="NuGet.Versioning" />
         <PackageReference Include="SemanticVersioning" />
         <PackageReference Include="System.Reactive" />
