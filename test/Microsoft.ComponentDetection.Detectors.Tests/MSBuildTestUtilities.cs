@@ -58,6 +58,7 @@ public static class MSBuildTestUtilities
     public static async Task<Stream> GetBinLogStreamFromFileContentsAsync(
         string defaultFilePath,
         string defaultFileContents,
+        string targetName = null,
         (string FileName, string Contents)[] additionalFiles = null,
         (string Name, string Version, string TargetFramework, string AdditionalMetadataXml)[] mockedPackages = null)
     {
@@ -79,7 +80,8 @@ public static class MSBuildTestUtilities
         await MockNuGetPackagesInDirectoryAsync(tempDir, mockedPackages);
 
         // generate the binlog
-        var (exitCode, stdOut, stdErr) = await RunProcessAsync("dotnet", $"build \"{fullDefaultFilePath}\" /t:GenerateBuildDependencyFile /bl:msbuild.binlog", workingDirectory: tempDir.DirectoryPath);
+        targetName ??= "GenerateBuildDependencyFile";
+        var (exitCode, stdOut, stdErr) = await RunProcessAsync("dotnet", $"build \"{fullDefaultFilePath}\" /t:{targetName} /bl:msbuild.binlog", workingDirectory: tempDir.DirectoryPath);
         exitCode.Should().Be(0, $"STDOUT:\n{stdOut}\n\nSTDERR:\n{stdErr}");
 
         // copy it to memory so the temporary directory can be cleaned up

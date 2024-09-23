@@ -215,6 +215,49 @@ EndGlobal
     }
 
     [TestMethod]
+    public async Task PackagesAreReportedWhenConditionedOnTargetFramework()
+    {
+        // This test simulates a project with multiple TFMs where the same package is imported in each, but with a
+        // different version.  To avoid building the entire project, we can fake what MSBuild does by resolving
+        // packages with each TFM.  I manually verified that a "real" invocation of MSBuild with the "Build" target
+        // produces the same shape of the binlog as this test generates.
+
+        // The end result is that _all_ packages are reported, regardless of the TFM invokation they came from, and in
+        // this case that is good, because we really only care about what packages were used in the build and what
+        // project file they came from.
+        var (scanResult, componentRecorder) = await this.ExecuteDetectorAndGetBinLogAsync(
+            projectContents: $@"
+                <Project Sdk=""Microsoft.NET.Sdk"">
+                  <PropertyGroup>
+                    <TargetFrameworks>netstandard2.0;{MSBuildTestUtilities.TestTargetFramework}</TargetFrameworks>
+                  </PropertyGroup>
+                  <ItemGroup>
+                    <PackageReference Include=""Some.Package"" Version=""1.2.3"" Condition=""'$(TargetFramework)' == 'netstandard2.0'"" />
+                    <PackageReference Include=""Some.Package"" Version=""4.5.6"" Condition=""'$(TargetFramework)' == '{MSBuildTestUtilities.TestTargetFramework}'"" />
+                  </ItemGroup>
+                  <Target Name=""TEST_GenerateBuildDependencyFileForTargetFrameworks"">
+                    <MSBuild Projects=""$(MSBuildThisFile)"" Properties=""TargetFramework=netstandard2.0"" Targets=""GenerateBuildDependencyFile"" />
+                    <MSBuild Projects=""$(MSBuildThisFile)"" Properties=""TargetFramework={MSBuildTestUtilities.TestTargetFramework}"" Targets=""GenerateBuildDependencyFile"" />
+                  </Target>
+                </Project>
+                ",
+            targetName: "TEST_GenerateBuildDependencyFileForTargetFrameworks",
+            mockedPackages: new[]
+                {
+                    ("NETStandard.Library", "2.0.3", "netstandard2.0", "<dependencies />"),
+                    ("Some.Package", "1.2.3", "netstandard2.0", null),
+                    ("Some.Package", "4.5.6", MSBuildTestUtilities.TestTargetFramework, null),
+                });
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        var packages = detectedComponents
+            .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/project.csproj")))
+            .Select(d => d.Component).Cast<NuGetComponent>().OrderBy(c => c.Name).ThenBy(c => c.Version).Select(c => $"{c.Name}/{c.Version}");
+        packages.Should().Equal("NETStandard.Library/2.0.3", "Some.Package/1.2.3", "Some.Package/4.5.6");
+    }
+
+    [TestMethod]
     public async Task PackagesImplicitlyAddedBySdkDuringPublishAreAdded()
     {
         // When a project is published, the SDK will add references to some AppHost specific packages.  Doing an actual
@@ -428,10 +471,11 @@ EndGlobal
 
     private async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetectorAndGetBinLogAsync(
         string projectContents,
+        string targetName = null,
         (string FileName, string Content)[] additionalFiles = null,
         (string Name, string Version, string TargetFramework, string DependenciesXml)[] mockedPackages = null)
     {
-        using var binLogStream = await MSBuildTestUtilities.GetBinLogStreamFromFileContentsAsync("project.csproj", projectContents, additionalFiles: additionalFiles, mockedPackages: mockedPackages);
+        using var binLogStream = await MSBuildTestUtilities.GetBinLogStreamFromFileContentsAsync("project.csproj", projectContents, targetName: targetName, additionalFiles: additionalFiles, mockedPackages: mockedPackages);
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("msbuild.binlog", binLogStream)
             .ExecuteDetectorAsync();
