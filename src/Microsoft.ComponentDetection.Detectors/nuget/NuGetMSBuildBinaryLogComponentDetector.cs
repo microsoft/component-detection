@@ -64,7 +64,7 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 1;
 
-    private static void ProcessResolvedPackageReference(Dictionary<string, HashSet<string>> topLevelDependencies, Dictionary<string, Dictionary<string, HashSet<string>>> projectResolvedDependencies, NamedNode node)
+    private static void ProcessResolvedPackageReference(Dictionary<string, HashSet<string>> topLevelDependencies, Dictionary<string, Dictionary<string, Dictionary<int, HashSet<string>>>> projectResolvedDependencies, NamedNode node)
     {
         var doRemoveOperation = node is RemoveItem;
         var doAddOperation = node is AddItem;
@@ -116,10 +116,16 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
                                 projectResolvedDependencies[project.ProjectFile] = projectDependencies;
                             }
 
-                            if (!projectDependencies.TryGetValue(packageName, out var packageVersions))
+                            if (!projectDependencies.TryGetValue(packageName, out var packageVersionsPerEvaluation))
+                            {
+                                packageVersionsPerEvaluation = new();
+                                projectDependencies[packageName] = packageVersionsPerEvaluation;
+                            }
+
+                            if (!packageVersionsPerEvaluation.TryGetValue(project.EvaluationId, out var packageVersions))
                             {
                                 packageVersions = new(StringComparer.OrdinalIgnoreCase);
-                                projectDependencies[packageName] = packageVersions;
+                                packageVersionsPerEvaluation[project.EvaluationId] = packageVersions;
                             }
 
                             if (doRemoveOperation)
@@ -140,22 +146,25 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         }
     }
 
-    private static void ProcessProjectProperty(Dictionary<string, Dictionary<string, HashSet<string>>> projectResolvedDependencies, Property node)
+    private static void ProcessProjectProperty(Dictionary<string, Dictionary<string, Dictionary<int, HashSet<string>>>> projectResolvedDependencies, Property node)
     {
         if (PropertyPackageNames.TryGetValue(node.Name, out var packageName))
         {
             string projectFile;
+            int evaluationId;
             var projectEvaluation = node.GetNearestParent<ProjectEvaluation>();
             if (projectEvaluation is not null)
             {
                 // `.binlog` files store properties in a `ProjectEvaluation`
                 projectFile = projectEvaluation.ProjectFile;
+                evaluationId = projectEvaluation.Id;
             }
             else
             {
                 // `.buildlog` files store proeprties in `Project`
                 var project = node.GetNearestParent<Project>();
                 projectFile = project?.ProjectFile;
+                evaluationId = project?.EvaluationId ?? 0;
             }
 
             if (projectFile is not null)
@@ -167,10 +176,16 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
                     projectResolvedDependencies[projectFile] = projectDependencies;
                 }
 
-                if (!projectDependencies.TryGetValue(packageName, out var packageVersions))
+                if (!projectDependencies.TryGetValue(packageName, out var packageVersionsPerEvaluationId))
+                {
+                    packageVersionsPerEvaluationId = new();
+                    projectDependencies[packageName] = packageVersionsPerEvaluationId;
+                }
+
+                if (!packageVersionsPerEvaluationId.TryGetValue(evaluationId, out var packageVersions))
                 {
                     packageVersions = new(StringComparer.OrdinalIgnoreCase);
-                    projectDependencies[packageName] = packageVersions;
+                    packageVersionsPerEvaluationId[evaluationId] = packageVersions;
                 }
 
                 packageVersions.Add(packageVersion);
@@ -233,7 +248,7 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
     {
         // maps a project path to a set of resolved dependencies
         var projectTopLevelDependencies = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
-        var projectResolvedDependencies = new Dictionary<string, Dictionary<string, HashSet<string>>>(StringComparer.OrdinalIgnoreCase);
+        var projectResolvedDependencies = new Dictionary<string, Dictionary<string, Dictionary<int, HashSet<string>>>>(StringComparer.OrdinalIgnoreCase);
         buildRoot.VisitAllChildren<BaseNode>(node =>
         {
             switch (node)
@@ -260,18 +275,21 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
             }
 
             var projectDependencies = projectResolvedDependencies[projectPath];
-            foreach (var (packageName, packageVersions) in projectDependencies.OrderBy(p => p.Key))
+            foreach (var (packageName, packageVersionsPerEvaluationid) in projectDependencies.OrderBy(p => p.Key))
             {
-                foreach (var packageVersion in packageVersions.OrderBy(v => v))
+                foreach (var packageVersions in packageVersionsPerEvaluationid.OrderBy(p => p.Key).Select(kvp => kvp.Value))
                 {
-                    var key = $"{packageName}/{packageVersion}";
-                    if (!projectsPerPackage.TryGetValue(key, out var projectPaths))
+                    foreach (var packageVersion in packageVersions.OrderBy(v => v))
                     {
-                        projectPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                        projectsPerPackage[key] = projectPaths;
-                    }
+                        var key = $"{packageName}/{packageVersion}";
+                        if (!projectsPerPackage.TryGetValue(key, out var projectPaths))
+                        {
+                            projectPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            projectsPerPackage[key] = projectPaths;
+                        }
 
-                    projectPaths.Add(projectPath);
+                        projectPaths.Add(projectPath);
+                    }
                 }
             }
         }

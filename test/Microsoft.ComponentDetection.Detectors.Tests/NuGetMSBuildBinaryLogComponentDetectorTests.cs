@@ -272,6 +272,72 @@ EndGlobal
     }
 
     [TestMethod]
+    public async Task PackagesAreReportedWhenConflictResolutionRemovesPackages()
+    {
+        // This comes from a real-world scenario where the project file looks like this:
+        //
+        //   <Project Sdk="Microsoft.NET.Sdk">
+        //     <PropertyGroup>
+        //       <TargetFrameworks>net472;net8.0</TargetFrameworks>
+        //     </PropertyGroup>
+        //     <ItemGroup>
+        //       <PackageReference Include="System.Text.Json" Version="6.0.0" />
+        //     </ItemGroup>
+        //   </Project>
+        //
+        // During a build, the project is evantually evaluated twice: once for `net472` and once for `net8.0`.  In the
+        // `net472` scenario, `System.Text.Json/6.0.0` is added to the output, but in the `net8.0` scenario, that
+        // package is added but then removed by the conflict resolution logic in the SDK.  We need to ensure that the
+        // `RemoveItem` from the `net8.0` evaluation doesn't affect the `net472` evaluation.  The end result is that we
+        // _should_ report the package because it was used in at least one project evaluation.
+        //
+        // To make this easy to test, custom targets have been added to the test project below that do exactly what the
+        // SDK does, just without an expernsive build invocation; remove an item from the item group, but only for one
+        // of the target frameworks.  The end result is a binary log that mimics the shape of the real-world example
+        // given above.
+        var (scanResult, componentRecorder) = await this.ExecuteDetectorAndGetBinLogAsync(
+            projectContents: $@"
+                <Project Sdk=""Microsoft.NET.Sdk"">
+                  <PropertyGroup>
+                    <TargetFrameworks>netstandard2.0;{MSBuildTestUtilities.TestTargetFramework}</TargetFrameworks>
+                  </PropertyGroup>
+                  <ItemGroup>
+                    <PackageReference Include=""Some.Package"" Version=""1.2.3"" />
+                  </ItemGroup>
+                  <Target Name=""TEST_GenerateBuildDependencyFile"" DependsOnTargets=""GenerateBuildDependencyFile"">
+                    <ItemGroup>
+                      <RuntimeCopyLocalItems Remove=""$(NUGET_PACKAGES)/**/Some.Package.dll""
+                                             NuGetPackageId=""Some.Package""
+                                             NuGetPackageVersion=""1.2.3""
+                                             Condition=""'$(TargetFramework)' == '{MSBuildTestUtilities.TestTargetFramework}'"" />
+                    </ItemGroup>
+                  </Target>
+                  <Target Name=""TEST_GenerateBuildDependencyFileForTargetFrameworks"">
+                    <MSBuild Projects=""$(MSBuildThisFile)"" Properties=""TargetFramework=netstandard2.0"" Targets=""TEST_GenerateBuildDependencyFile"" />
+                    <MSBuild Projects=""$(MSBuildThisFile)"" Properties=""TargetFramework={MSBuildTestUtilities.TestTargetFramework}"" Targets=""TEST_GenerateBuildDependencyFile"" />
+                  </Target>
+                </Project>
+                ",
+            targetName: "TEST_GenerateBuildDependencyFileForTargetFrameworks",
+            mockedPackages: new[]
+                {
+                    ("NETStandard.Library", "2.0.3", "netstandard2.0", "<dependencies />"),
+                    ("Some.Package", "1.2.3", "netstandard2.0", null),
+                });
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        var packages = detectedComponents
+            .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/project.csproj")))
+            .Select(d => d.Component)
+            .Cast<NuGetComponent>()
+            .Where(c => c.Name != ".NET SDK") // dealt with in another test because the SDK version will change regularly
+            .OrderBy(c => c.Name).ThenBy(c => c.Version)
+            .Select(c => $"{c.Name}/{c.Version}");
+        packages.Should().Equal("NETStandard.Library/2.0.3", "Some.Package/1.2.3");
+    }
+
+    [TestMethod]
     public async Task PackagesImplicitlyAddedBySdkDuringPublishAreAdded()
     {
         // When a project is published, the SDK will add references to some AppHost specific packages.  Doing an actual
