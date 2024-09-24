@@ -26,13 +26,13 @@ jobs:
           fetch-depth: 0
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@4fa2a7953630fd2f3fb380f21be14ede0169dd4f # v3.25.12
+      uses: github/codeql-action/init@461ef6c76dfe95d5c364de2f431ddbd31a417628 # v3.26.9
       with:
         languages: 'csharp'
         debug: true
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@4fa2a7953630fd2f3fb380f21be14ede0169dd4f # v3.25.12
+      uses: github/codeql-action/autobuild@461ef6c76dfe95d5c364de2f431ddbd31a417628 # v3.26.9
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@4fa2a7953630fd2f3fb380f21be14ede0169dd4f # v3.25.12
+      uses: github/codeql-action/analyze@461ef6c76dfe95d5c364de2f431ddbd31a417628 # v3.26.9
