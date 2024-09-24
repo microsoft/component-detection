@@ -9,6 +9,7 @@ using Microsoft.Build.Logging.StructuredLogger;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.NuGet;
+using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -63,6 +64,7 @@ public class NuGetMSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<NuGe
             .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/project.csproj")))
             .Select(d => d.Component)
             .Cast<NuGetComponent>()
+            .Where(c => c.Name != ".NET SDK") // dealt with in another test because the SDK version will change regularly
             .OrderBy(c => c.Name)
             .Select(c => $"{c.Name}/{c.Version}");
         originalFileComponents.Should().Equal("Some.Package/1.2.3", "Transitive.Dependency/4.5.6");
@@ -71,6 +73,7 @@ public class NuGetMSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<NuGe
             .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/other-project/other-project.csproj")))
             .Select(d => d.Component)
             .Cast<NuGetComponent>()
+            .Where(c => c.Name != ".NET SDK") // dealt with in another test because the SDK version will change regularly
             .OrderBy(c => c.Name)
             .Select(c => $"{c.Name}/{c.Version}");
         referencedFileComponents.Should().Equal("Some.Package/1.2.3", "Transitive.Dependency/4.5.6");
@@ -114,7 +117,12 @@ public class NuGetMSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<NuGe
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        var packages = detectedComponents.Select(d => d.Component).Cast<NuGetComponent>().OrderBy(c => c.Name).Select(c => $"{c.Name}/{c.Version}");
+        var packages = detectedComponents
+            .Select(d => d.Component)
+            .Cast<NuGetComponent>()
+            .Where(c => c.Name != ".NET SDK") // dealt with in another test because the SDK version will change regularly
+            .OrderBy(c => c.Name)
+            .Select(c => $"{c.Name}/{c.Version}");
         packages.Should().Equal("Some.Package/1.2.3");
     }
 
@@ -193,6 +201,7 @@ EndGlobal
             .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/project1.csproj")))
             .Select(d => d.Component)
             .Cast<NuGetComponent>()
+            .Where(c => c.Name != ".NET SDK") // dealt with in another test because the SDK version will change regularly
             .OrderBy(c => c.Name)
             .Select(c => $"{c.Name}/{c.Version}");
         project1Components.Should().Equal("Package.A/1.2.3");
@@ -201,6 +210,7 @@ EndGlobal
             .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/project2.csproj")))
             .Select(d => d.Component)
             .Cast<NuGetComponent>()
+            .Where(c => c.Name != ".NET SDK") // dealt with in another test because the SDK version will change regularly
             .OrderBy(c => c.Name)
             .Select(c => $"{c.Name}/{c.Version}");
         project2Components.Should().Equal("Package.B/4.5.6");
@@ -253,7 +263,11 @@ EndGlobal
 
         var packages = detectedComponents
             .Where(d => d.FilePaths.Any(p => p.Replace("\\", "/").EndsWith("/project.csproj")))
-            .Select(d => d.Component).Cast<NuGetComponent>().OrderBy(c => c.Name).ThenBy(c => c.Version).Select(c => $"{c.Name}/{c.Version}");
+            .Select(d => d.Component)
+            .Cast<NuGetComponent>()
+            .Where(c => c.Name != ".NET SDK") // dealt with in another test because the SDK version will change regularly
+            .OrderBy(c => c.Name).ThenBy(c => c.Version)
+            .Select(c => $"{c.Name}/{c.Version}");
         packages.Should().Equal("NETStandard.Library/2.0.3", "Some.Package/1.2.3", "Some.Package/4.5.6");
     }
 
@@ -445,28 +459,68 @@ EndGlobal
         };
 
         // in-memory logs need to be `.buildlog`
-        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():d}.buildlog");
-        try
-        {
-            Serialization.Write(binlog, tempFile);
-            using var binLogStream = File.OpenRead(tempFile);
+        using var tempFile = new TemporaryFile(".buildlog");
+        Serialization.Write(binlog, tempFile.FilePath);
+        using var binLogStream = File.OpenRead(tempFile.FilePath);
 
-            var (scanResult, componentRecorder) = await this.DetectorTestUtility
-                .WithFile(tempFile, binLogStream)
-                .ExecuteDetectorAsync();
-            var detectedComponents = componentRecorder.GetDetectedComponents();
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(tempFile.FilePath, binLogStream)
+            .ExecuteDetectorAsync();
+        var detectedComponents = componentRecorder.GetDetectedComponents();
 
-            var components = detectedComponents
-                .Select(d => d.Component)
-                .Cast<NuGetComponent>()
-                .OrderBy(c => c.Name)
-                .Select(c => $"{c.Name}/{c.Version}");
-            components.Should().Equal("Microsoft.NETCore.App.Host.win-x64/6.0.33");
-        }
-        finally
+        var components = detectedComponents
+            .Select(d => d.Component)
+            .Cast<NuGetComponent>()
+            .OrderBy(c => c.Name)
+            .Select(c => $"{c.Name}/{c.Version}");
+        components.Should().Equal("Microsoft.NETCore.App.Host.win-x64/6.0.33");
+    }
+
+    [TestMethod]
+    public async Task DotNetSDKVersionIsReported()
+    {
+        var binlog = new Build()
         {
-            File.Delete(tempFile);
-        }
+            Succeeded = true,
+        };
+
+        binlog.EvaluationFolder.Children.Add(
+            new Project()
+            {
+                ProjectFile = "project.csproj",
+                Children =
+                {
+                    new Folder()
+                    {
+                        Name = "Properties",
+                        Children =
+                        {
+                            new Property()
+                            {
+                                Name = "NETCoreSdkVersion",
+                                Value = "6.0.789",
+                            },
+                        },
+                    },
+                },
+            });
+
+        // in-memory logs need to be `.buildlog`
+        using var tempFile = new TemporaryFile(".buildlog");
+        Serialization.Write(binlog, tempFile.FilePath);
+        using var binLogStream = File.OpenRead(tempFile.FilePath);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(tempFile.FilePath, binLogStream)
+            .ExecuteDetectorAsync();
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        var components = detectedComponents
+            .Select(d => d.Component)
+            .Cast<NuGetComponent>()
+            .OrderBy(c => c.Name)
+            .Select(c => $"{c.Name}/{c.Version}");
+        components.Should().Equal(".NET SDK/6.0.789");
     }
 
     private async Task<(IndividualDetectorScanResult ScanResult, IComponentRecorder ComponentRecorder)> ExecuteDetectorAndGetBinLogAsync(

@@ -38,6 +38,12 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         ["ResolvedIjwHostPack"] = ("NuGetPackageId", "NuGetPackageVersion"),
     };
 
+    // the items listed below represent top-level property names that correspond to well-known packages
+    private static readonly Dictionary<string, string> PropertyPackageNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["NETCoreSdkVersion"] = ".NET SDK",
+    };
+
     private static readonly object MSBuildRegistrationGate = new();
 
     public NuGetMSBuildBinaryLogComponentDetector(
@@ -134,6 +140,44 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         }
     }
 
+    private static void ProcessProjectProperty(Dictionary<string, Dictionary<string, HashSet<string>>> projectResolvedDependencies, Property node)
+    {
+        if (PropertyPackageNames.TryGetValue(node.Name, out var packageName))
+        {
+            string projectFile;
+            var projectEvaluation = node.GetNearestParent<ProjectEvaluation>();
+            if (projectEvaluation is not null)
+            {
+                // `.binlog` files store properties in a `ProjectEvaluation`
+                projectFile = projectEvaluation.ProjectFile;
+            }
+            else
+            {
+                // `.buildlog` files store proeprties in `Project`
+                var project = node.GetNearestParent<Project>();
+                projectFile = project?.ProjectFile;
+            }
+
+            if (projectFile is not null)
+            {
+                var packageVersion = node.Value;
+                if (!projectResolvedDependencies.TryGetValue(projectFile, out var projectDependencies))
+                {
+                    projectDependencies = new(StringComparer.OrdinalIgnoreCase);
+                    projectResolvedDependencies[projectFile] = projectDependencies;
+                }
+
+                if (!projectDependencies.TryGetValue(packageName, out var packageVersions))
+                {
+                    packageVersions = new(StringComparer.OrdinalIgnoreCase);
+                    projectDependencies[packageName] = packageVersions;
+                }
+
+                packageVersions.Add(packageVersion);
+            }
+        }
+    }
+
     private static string GetChildMetadataValue(TreeNode node, string metadataItemName)
     {
         var metadata = node.Children.OfType<Metadata>();
@@ -196,6 +240,9 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
             {
                 case NamedNode namedNode when namedNode is AddItem or RemoveItem:
                     ProcessResolvedPackageReference(projectTopLevelDependencies, projectResolvedDependencies, namedNode);
+                    break;
+                case Property property when property.Parent is Folder folder && folder.Name == "Properties":
+                    ProcessProjectProperty(projectResolvedDependencies, property);
                     break;
                 default:
                     break;
