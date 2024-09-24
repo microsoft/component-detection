@@ -38,8 +38,8 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         ["ResolvedIjwHostPack"] = ("NuGetPackageId", "NuGetPackageVersion"),
     };
 
-    // the items listed below represent top-level property names that correspond to well-known packages
-    private static readonly Dictionary<string, string> PropertyPackageNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    // the items listed below represent top-level property names that correspond to well-known components
+    private static readonly Dictionary<string, string> ComponentPropertyNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         ["NETCoreSdkVersion"] = ".NET SDK",
     };
@@ -64,7 +64,7 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
 
     public override int Version { get; } = 1;
 
-    private static void ProcessResolvedPackageReference(Dictionary<string, HashSet<string>> topLevelDependencies, Dictionary<string, Dictionary<string, Dictionary<int, HashSet<string>>>> projectResolvedDependencies, NamedNode node)
+    private static void ProcessResolvedComponentReference(ProjectPathToTopLevelComponents topLevelComponents, ProjectPathToComponents projectResolvedComponents, NamedNode node)
     {
         var doRemoveOperation = node is RemoveItem;
         var doAddOperation = node is AddItem;
@@ -75,21 +75,17 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
             {
                 foreach (var child in node.Children.OfType<Item>())
                 {
-                    var packageName = child.Name;
-                    if (!topLevelDependencies.TryGetValue(projectEvaluation.ProjectFile, out var topLevel))
-                    {
-                        topLevel = new(StringComparer.OrdinalIgnoreCase);
-                        topLevelDependencies[projectEvaluation.ProjectFile] = topLevel;
-                    }
+                    var componentName = child.Name;
+                    var topLevel = topLevelComponents.GetComponentNames(projectEvaluation.ProjectFile);
 
                     if (doRemoveOperation)
                     {
-                        topLevel.Remove(packageName);
+                        topLevel.Remove(componentName);
                     }
 
                     if (doAddOperation)
                     {
-                        topLevel.Add(packageName);
+                        topLevel.Add(componentName);
                     }
                 }
             }
@@ -103,39 +99,25 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
             {
                 foreach (var child in node.Children.OfType<Item>())
                 {
-                    var packageName = GetChildMetadataValue(child, nameMetadata);
-                    var packageVersion = GetChildMetadataValue(child, versionMetadata);
-                    if (packageName is not null && packageVersion is not null)
+                    var componentName = GetChildMetadataValue(child, nameMetadata);
+                    var componentVersion = GetChildMetadataValue(child, versionMetadata);
+                    if (componentName is not null && componentVersion is not null)
                     {
                         var project = originalProject;
                         while (project is not null)
                         {
-                            if (!projectResolvedDependencies.TryGetValue(project.ProjectFile, out var projectDependencies))
-                            {
-                                projectDependencies = new(StringComparer.OrdinalIgnoreCase);
-                                projectResolvedDependencies[project.ProjectFile] = projectDependencies;
-                            }
-
-                            if (!projectDependencies.TryGetValue(packageName, out var packageVersionsPerEvaluation))
-                            {
-                                packageVersionsPerEvaluation = new();
-                                projectDependencies[packageName] = packageVersionsPerEvaluation;
-                            }
-
-                            if (!packageVersionsPerEvaluation.TryGetValue(project.EvaluationId, out var packageVersions))
-                            {
-                                packageVersions = new(StringComparer.OrdinalIgnoreCase);
-                                packageVersionsPerEvaluation[project.EvaluationId] = packageVersions;
-                            }
+                            var components = projectResolvedComponents.GetComponents(project.ProjectFile);
+                            var evaluatedVersions = components.GetEvaluatedVersions(componentName);
+                            var componentVersions = evaluatedVersions.GetComponentVersions(project.EvaluationId);
 
                             if (doRemoveOperation)
                             {
-                                packageVersions.Remove(packageVersion);
+                                componentVersions.Remove(componentVersion);
                             }
 
                             if (doAddOperation)
                             {
-                                packageVersions.Add(packageVersion);
+                                componentVersions.Add(componentVersion);
                             }
 
                             project = project.GetNearestParent<Project>();
@@ -146,9 +128,9 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         }
     }
 
-    private static void ProcessProjectProperty(Dictionary<string, Dictionary<string, Dictionary<int, HashSet<string>>>> projectResolvedDependencies, Property node)
+    private static void ProcessProjectProperty(ProjectPathToComponents projectResolvedComponents, Property node)
     {
-        if (PropertyPackageNames.TryGetValue(node.Name, out var packageName))
+        if (ComponentPropertyNames.TryGetValue(node.Name, out var packageName))
         {
             string projectFile;
             int evaluationId;
@@ -169,26 +151,12 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
 
             if (projectFile is not null)
             {
-                var packageVersion = node.Value;
-                if (!projectResolvedDependencies.TryGetValue(projectFile, out var projectDependencies))
-                {
-                    projectDependencies = new(StringComparer.OrdinalIgnoreCase);
-                    projectResolvedDependencies[projectFile] = projectDependencies;
-                }
+                var componentVersion = node.Value;
+                var components = projectResolvedComponents.GetComponents(projectFile);
+                var evaluatedVersions = components.GetEvaluatedVersions(packageName);
+                var componentVersions = evaluatedVersions.GetComponentVersions(evaluationId);
 
-                if (!projectDependencies.TryGetValue(packageName, out var packageVersionsPerEvaluationId))
-                {
-                    packageVersionsPerEvaluationId = new();
-                    projectDependencies[packageName] = packageVersionsPerEvaluationId;
-                }
-
-                if (!packageVersionsPerEvaluationId.TryGetValue(evaluationId, out var packageVersions))
-                {
-                    packageVersions = new(StringComparer.OrdinalIgnoreCase);
-                    packageVersionsPerEvaluationId[evaluationId] = packageVersions;
-                }
-
-                packageVersions.Add(packageVersion);
+                componentVersions.Add(componentVersion);
             }
         }
     }
@@ -247,17 +215,17 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
     private void ProcessBinLog(Build buildRoot, ISingleFileComponentRecorder componentRecorder)
     {
         // maps a project path to a set of resolved dependencies
-        var projectTopLevelDependencies = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
-        var projectResolvedDependencies = new Dictionary<string, Dictionary<string, Dictionary<int, HashSet<string>>>>(StringComparer.OrdinalIgnoreCase);
+        var projectTopLevelComponents = new ProjectPathToTopLevelComponents();
+        var projectResolvedComponents = new ProjectPathToComponents();
         buildRoot.VisitAllChildren<BaseNode>(node =>
         {
             switch (node)
             {
                 case NamedNode namedNode when namedNode is AddItem or RemoveItem:
-                    ProcessResolvedPackageReference(projectTopLevelDependencies, projectResolvedDependencies, namedNode);
+                    ProcessResolvedComponentReference(projectTopLevelComponents, projectResolvedComponents, namedNode);
                     break;
                 case Property property when property.Parent is Folder folder && folder.Name == "Properties":
-                    ProcessProjectProperty(projectResolvedDependencies, property);
+                    ProcessProjectProperty(projectResolvedComponents, property);
                     break;
                 default:
                     break;
@@ -265,8 +233,8 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         });
 
         // dependencies were resolved per project, we need to re-arrange them to be per package/version
-        var projectsPerPackage = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var projectPath in projectResolvedDependencies.Keys.OrderBy(p => p))
+        var projectsPerComponent = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var projectPath in projectResolvedComponents.Keys.OrderBy(p => p))
         {
             if (Path.GetExtension(projectPath).Equals(".sln", StringComparison.OrdinalIgnoreCase))
             {
@@ -274,18 +242,18 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
                 continue;
             }
 
-            var projectDependencies = projectResolvedDependencies[projectPath];
-            foreach (var (packageName, packageVersionsPerEvaluationid) in projectDependencies.OrderBy(p => p.Key))
+            var projectComponents = projectResolvedComponents[projectPath];
+            foreach (var (componentName, componentVersionsPerEvaluationid) in projectComponents.OrderBy(p => p.Key))
             {
-                foreach (var packageVersions in packageVersionsPerEvaluationid.OrderBy(p => p.Key).Select(kvp => kvp.Value))
+                foreach (var componentVersions in componentVersionsPerEvaluationid.OrderBy(p => p.Key).Select(kvp => kvp.Value))
                 {
-                    foreach (var packageVersion in packageVersions.OrderBy(v => v))
+                    foreach (var componentVersion in componentVersions.OrderBy(v => v))
                     {
-                        var key = $"{packageName}/{packageVersion}";
-                        if (!projectsPerPackage.TryGetValue(key, out var projectPaths))
+                        var key = $"{componentName}/{componentVersion}";
+                        if (!projectsPerComponent.TryGetValue(key, out var projectPaths))
                         {
                             projectPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                            projectsPerPackage[key] = projectPaths;
+                            projectsPerComponent[key] = projectPaths;
                         }
 
                         projectPaths.Add(projectPath);
@@ -295,13 +263,13 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
         }
 
         // report it all
-        foreach (var packageNameAndVersion in projectsPerPackage.Keys.OrderBy(p => p))
+        foreach (var componentNameAndVersion in projectsPerComponent.Keys.OrderBy(p => p))
         {
-            var projectPaths = projectsPerPackage[packageNameAndVersion];
-            var parts = packageNameAndVersion.Split('/', 2);
-            var packageName = parts[0];
-            var packageVersion = parts[1];
-            var component = new NuGetComponent(packageName, packageVersion);
+            var projectPaths = projectsPerComponent[componentNameAndVersion];
+            var parts = componentNameAndVersion.Split('/', 2);
+            var componentName = parts[0];
+            var componentVersion = parts[1];
+            var component = new NuGetComponent(componentName, componentVersion);
             var libraryComponent = new DetectedComponent(component);
             foreach (var projectPath in projectPaths)
             {
@@ -309,6 +277,77 @@ public class NuGetMSBuildBinaryLogComponentDetector : FileComponentDetector
             }
 
             componentRecorder.RegisterUsage(libraryComponent);
+        }
+    }
+
+    // To make the above code easier to read, some helper types are added here.  Without these, the code above would contain a type of:
+    //   Dictionary<string, Dictionary<string, Dictionary<int, HashSet<string>>>>
+    // which isn't very descriptive.
+    private abstract class KeyedCollection<TKey, TValue> : Dictionary<TKey, TValue>
+        where TKey : notnull
+    {
+        protected KeyedCollection()
+            : base()
+        {
+        }
+
+        protected KeyedCollection(IEqualityComparer<TKey> comparer)
+            : base(comparer)
+        {
+        }
+
+        protected TValue GetOrAdd(TKey key, Func<TValue> valueFactory)
+        {
+            if (!this.TryGetValue(key, out var value))
+            {
+                value = valueFactory();
+                this[key] = value;
+            }
+
+            return value;
+        }
+    }
+
+    // Represents a collection of top-level components for a given project path.
+    private class ProjectPathToTopLevelComponents : KeyedCollection<string, HashSet<string>>
+    {
+        public HashSet<string> GetComponentNames(string projectPath) => this.GetOrAdd(projectPath, () => new(StringComparer.OrdinalIgnoreCase));
+    }
+
+    // Represents a collection of evaluated components for a given project path.
+    private class ProjectPathToComponents : KeyedCollection<string, ComponentNameToEvaluatedVersions>
+    {
+        public ProjectPathToComponents()
+            : base(StringComparer.OrdinalIgnoreCase)
+        {
+        }
+
+        public ComponentNameToEvaluatedVersions GetComponents(string projectPath) => this.GetOrAdd(projectPath, () => new());
+    }
+
+    // Represents a collection of evaluated components for a given component name.
+    private class ComponentNameToEvaluatedVersions : KeyedCollection<string, EvaluationIdToComponentVersions>
+    {
+        public ComponentNameToEvaluatedVersions()
+            : base(StringComparer.OrdinalIgnoreCase)
+        {
+        }
+
+        public EvaluationIdToComponentVersions GetEvaluatedVersions(string componentName) => this.GetOrAdd(componentName, () => new());
+    }
+
+    // Represents a collection of component versions for a given evaluation id.
+    private class EvaluationIdToComponentVersions : KeyedCollection<int, ComponentVersions>
+    {
+        public ComponentVersions GetComponentVersions(int evaluationId) => this.GetOrAdd(evaluationId, () => new());
+    }
+
+    // Represents a collection of version strings.
+    private class ComponentVersions : HashSet<string>
+    {
+        public ComponentVersions()
+            : base(StringComparer.OrdinalIgnoreCase)
+        {
         }
     }
 }
