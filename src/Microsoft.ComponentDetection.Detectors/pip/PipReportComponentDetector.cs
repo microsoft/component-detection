@@ -23,8 +23,12 @@ public class PipReportComponentDetector : FileComponentDetector
     private const string PipReportSkipFallbackOnFailureEnvVar = "PipReportSkipFallbackOnFailure";
     private const string PipReportFileLevelTimeoutSecondsEnvVar = "PipReportFileLevelTimeoutSeconds";
     private const string PipReportPersistReportsEnvVar = "PipReportPersistReports";
+    private const string PipReportCleanCreatedFilesDryRunEnvVar = "PipReportCleanCreatedFilesDryRun";
+    private const int DefaultCleanDepth = 5;
 
     private static readonly IList<string> PipReportPreGeneratedFilePatterns = new List<string> { "*.component-detection-pip-report.json", "component-detection-pip-report.json" };
+
+    private static readonly IList<string> CleanUpPatterns = new List<string> { "*.egg", "*.egg-info", "*.pyc", "*.pyo", "*.pyd", "__pycache__" };
 
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -127,7 +131,10 @@ public class PipReportComponentDetector : FileComponentDetector
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
+        DirectoryInfo fileParentDirectoryInfo = null;
         List<FileInfo> reportFiles = new();
+        HashSet<string> preExistingFiles = new();
+        HashSet<string> preExistingDirs = new();
         try
         {
             var pipOverride = this.GetPipReportOverrideBehavior();
@@ -173,13 +180,15 @@ public class PipReportComponentDetector : FileComponentDetector
                 return;
             }
 
-            var fileParentDirectoryInfo = Directory.Exists(fileParentDirectory)
+            fileParentDirectoryInfo = Directory.Exists(fileParentDirectory)
                 ? new DirectoryInfo(fileParentDirectory)
                 : null;
 
             List<FileInfo> preGeneratedReportFiles = null;
             if (fileParentDirectoryInfo is not null)
             {
+                (preExistingFiles, preExistingDirs) = this.fileUtilityService.GetFilesAndDirectories(fileParentDirectory, CleanUpPatterns, DefaultCleanDepth);
+
                 preGeneratedReportFiles = PipReportPreGeneratedFilePatterns
                     .SelectMany(pattern => fileParentDirectoryInfo.GetFiles(pattern))
                     .Where(file => File.Exists(file.FullName))
@@ -318,6 +327,55 @@ public class PipReportComponentDetector : FileComponentDetector
                     if (reportFile is not null && reportFile.Exists)
                     {
                         reportFile.Delete();
+                    }
+                }
+            }
+
+            // Clean up any new files or directories created during the scan that match the clean up patters
+            if (fileParentDirectoryInfo is not null)
+            {
+                var dryRun = this.envVarService.IsEnvironmentVariableValueTrue(PipReportCleanCreatedFilesDryRunEnvVar);
+                var dryRunStr = dryRun ? "[DRYRUN]" : string.Empty;
+                var (newFiles, newDirs) = this.fileUtilityService.GetFilesAndDirectories(fileParentDirectoryInfo.FullName, CleanUpPatterns, DefaultCleanDepth);
+                var createdFiles = newFiles.Except(preExistingFiles).ToList();
+                var createdDirs = newDirs.Except(preExistingDirs).ToList();
+
+                foreach (var createdDir in createdDirs)
+                {
+                    if (createdDir is null || !Directory.Exists(createdDir))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        this.Logger.LogDebug("{DryRun} PipReport: Cleaning up directory {Dir}", dryRunStr, createdDir);
+                        if (!dryRun)
+                        {
+                            Directory.Delete(createdDir, true);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        this.Logger.LogDebug(e, "{DryRun} PipReport: Failed to delete directory {Dir}", dryRunStr, createdDir);
+                    }
+                }
+
+                foreach (var createdFile in createdFiles)
+                {
+                    if (createdFile is null || !File.Exists(createdFile))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        this.Logger.LogDebug("{DryRun} PipReport: Cleaning up file {File}", dryRunStr, createdFile);
+                        File.Delete(createdFile);
+                    }
+                    catch (Exception e)
+                    {
+                        this.Logger.LogDebug(e, "{DryRun} PipReport: Failed to delete file {File}", dryRunStr, createdFile);
                     }
                 }
             }

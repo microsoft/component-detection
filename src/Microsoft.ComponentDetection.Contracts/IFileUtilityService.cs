@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts;
 
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -50,4 +51,13 @@ public interface IFileUtilityService
     /// <param name="removalIndicators">The strings that indicates a line should be removed.</param>
     /// <returns>Returns the path of the new file, and whether or not one was created.</returns>
     (string DuplicateFilePath, bool CreatedDuplicate) DuplicateFileWithoutLines(string fileName, params string[] removalIndicators);
+
+    /// <summary>
+    /// Enumerates files and directories that match 'pattern' in directories up to 'depth'.
+    /// </summary>
+    /// <param name="root">Root path to begin traversal.</param>
+    /// <param name="patterns">Patterns to match.</param>
+    /// <param name="depth">Directory depth to search.</param>
+    /// <returns>List of files and directories that match pattern.</returns>
+    (HashSet<string> Files, HashSet<string> Directories) GetFilesAndDirectories(string root, IList<string> patterns, int depth);
 }
