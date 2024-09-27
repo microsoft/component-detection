@@ -149,7 +149,7 @@ public class PipCommandService : IPipCommandService
                 if (this.environmentService.IsEnvironmentVariableValueTrue(PipReportIgnoreFileLevelIndexUrlEnvVar))
                 {
                     // check for --index-url in requirements.txt and remove it from the file, since we want to use PIP_INDEX_URL from the environment.
-                    var (duplicateFilePath, createdDuplicate) = this.fileUtilityService.DuplicateFileWithoutLines(formattedPath, "--index-url");
+                    var (duplicateFilePath, createdDuplicate) = this.fileUtilityService.DuplicateFileWithoutLines(formattedPath, "--index-url", "-i");
                     if (createdDuplicate)
                     {
                         var duplicateFileName = Path.GetFileName(duplicateFilePath);

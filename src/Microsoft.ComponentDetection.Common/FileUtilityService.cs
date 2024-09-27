@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Common;
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 
@@ -39,14 +40,14 @@ public class FileUtilityService : IFileUtilityService
     }
 
     /// <inheritdoc />
-    public (string DuplicateFilePath, bool CreatedDuplicate) DuplicateFileWithoutLines(string fileName, string removalIndicator)
+    public (string DuplicateFilePath, bool CreatedDuplicate) DuplicateFileWithoutLines(string fileName, params string[] removalIndicators)
     {
         // Read all lines from the file and filter out the lines that start with the removal indicator.
         var removedAnyLines = false;
         var linesToKeep = new List<string>();
         foreach (var line in File.ReadLines(fileName))
         {
-            if (line == null || line.Trim().StartsWith(removalIndicator, System.StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrEmpty(line) || removalIndicators.Any(removalIndicator => line.Trim().StartsWith(removalIndicator, System.StringComparison.OrdinalIgnoreCase)))
             {
                 removedAnyLines = true;
             }
