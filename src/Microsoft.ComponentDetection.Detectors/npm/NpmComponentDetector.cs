@@ -34,11 +34,11 @@ public class NpmComponentDetector : FileComponentDetector
 
     public override string Id { get; } = "Npm";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Npm)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "package.json" };
+    public override IList<string> SearchPatterns { get; } = ["package.json"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
     public override int Version { get; } = 2;
 
@@ -52,7 +52,7 @@ public class NpmComponentDetector : FileComponentDetector
         string contents;
         using (var reader = new StreamReader(file.Stream))
         {
-            contents = await reader.ReadToEndAsync();
+            contents = await reader.ReadToEndAsync(cancellationToken);
         }
 
         await this.SafeProcessAllPackageJTokensAsync(filePath, contents, (token) =>

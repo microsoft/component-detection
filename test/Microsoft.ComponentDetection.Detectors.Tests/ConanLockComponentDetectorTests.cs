@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -142,7 +142,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(6);
 
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First(); // There should only be 1
 
@@ -170,10 +170,10 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
         graph.GetDependenciesForComponent("libanotherlibrary4 5.6.7#someHashOfLibAnotherLibrary4 - Conan").Should().BeEmpty();
 
         // Verify dependencies for other dependencies
-        graph.GetDependenciesForComponent("libawesomelibrary 3.2.1#someHashOfLibAwesomeLibrary - Conan").Should().BeEquivalentTo(new[] { "libabc 1.2.12#someHashOfLibAbc - Conan" });
+        graph.GetDependenciesForComponent("libawesomelibrary 3.2.1#someHashOfLibAwesomeLibrary - Conan").Should().BeEquivalentTo(["libabc 1.2.12#someHashOfLibAbc - Conan"]);
         var a = graph.GetDependenciesForComponent("libanotherlibrary1 2.3.4#someHashOfLibAnotherLibrary1 - Conan");
-        graph.GetDependenciesForComponent("libanotherlibrary1 2.3.4#someHashOfLibAnotherLibrary1 - Conan").Should().BeEquivalentTo(new[] { "libanotherlibrary2 3.4.5#someHashOfLibAnotherLibrary2 - Conan", "libanotherlibrary4 5.6.7#someHashOfLibAnotherLibrary4 - Conan" });
-        graph.GetDependenciesForComponent("libanotherlibrary2 3.4.5#someHashOfLibAnotherLibrary2 - Conan").Should().BeEquivalentTo(new[] { "libanotherlibrary3 4.5.6#someHashOfLibAnotherLibrary3 - Conan" });
+        graph.GetDependenciesForComponent("libanotherlibrary1 2.3.4#someHashOfLibAnotherLibrary1 - Conan").Should().BeEquivalentTo(["libanotherlibrary2 3.4.5#someHashOfLibAnotherLibrary2 - Conan", "libanotherlibrary4 5.6.7#someHashOfLibAnotherLibrary4 - Conan"]);
+        graph.GetDependenciesForComponent("libanotherlibrary2 3.4.5#someHashOfLibAnotherLibrary2 - Conan").Should().BeEquivalentTo(["libanotherlibrary3 4.5.6#someHashOfLibAnotherLibrary3 - Conan"]);
     }
 
     [TestMethod]
@@ -184,7 +184,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(1);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
 
         (componentRecorder.GetDetectedComponents().First().Component as ConanComponent).Name.Should().Be("libabc");
         (componentRecorder.GetDetectedComponents().First().Component as ConanComponent).Version.Should().Be("1.2.12#someHashOfLibAbc");
@@ -198,7 +198,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(6);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(6);
 
         IDictionary<string, string> packageVersions = new Dictionary<string, string>()
         {

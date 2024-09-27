@@ -83,10 +83,10 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_HappyPathReturnsDetectedComponentsAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-        };
+        ];
 
         var results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
@@ -119,7 +119,7 @@ public class DetectorProcessingServiceTests
                 };
             });
 
-        this.detectorsToUse = new[] { mockComponentDetector.Object };
+        this.detectorsToUse = [mockComponentDetector.Object];
         var results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
         results.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -128,10 +128,10 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_HappyPathReturns_DependencyGraphAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-        };
+        ];
 
         var results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
@@ -154,10 +154,10 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_AdditionalTelemetryDetailsAreReturnedAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-        };
+        ];
 
         var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
         {
@@ -174,12 +174,12 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_ExperimentalDetectorsDoNotReturnComponentsAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
 
             this.experimentalFileComponentDetectorMock.Object,
-        };
+        ];
 
         DetectorProcessingResult results = null;
         var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
@@ -199,8 +199,11 @@ public class DetectorProcessingServiceTests
 
         // We should have all components except the ones that came from our experimental detector
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount(records.Sum(x => x.DetectedComponentCount ?? 0) - experimentalDetectorRecord.DetectedComponentCount ?? 0);
-        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).All(x => (x.Component as NuGetComponent)?.Name != experimentalComponent.Name)
-            .Should().BeTrue("Experimental component should not be in component list");
+        this.GetDiscoveredComponentsFromDetectorProcessingResult(results)
+            .Select(x => x.Component as NuGetComponent)
+            .Where(x => x != null)
+            .Should()
+            .OnlyContain(x => x.Name != experimentalComponent.Name, "Experimental component should not be in component list");
         results.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         this.firstFileComponentDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()));
@@ -211,18 +214,18 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_ExperimentalDetectorsDoNormalStuffIfExplicitlyEnabledAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             this.experimentalFileComponentDetectorMock.Object,
-        };
+        ];
 
         var experimentalDetectorId = this.experimentalFileComponentDetectorMock.Object.Id;
 
         DetectorProcessingResult results = null;
         var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
         {
-            results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions { ExplicitlyEnabledDetectorIds = new[] { experimentalDetectorId } });
+            results = await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions { ExplicitlyEnabledDetectorIds = [experimentalDetectorId] });
         });
 
         // We should have all components except the ones that came from our experimental detector
@@ -239,11 +242,11 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_ExperimentalDetectorsThrowingDoesntKillDetectionAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             this.experimentalFileComponentDetectorMock.Object,
-        };
+        ];
 
         this.experimentalFileComponentDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory), It.IsAny<CancellationToken>()))
             .Throws(new InvalidOperationException("Simulated experimental failure"));
@@ -272,14 +275,15 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpectedAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object,
-        };
+        ];
 
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Test is platform specific and fails on non-windows");
+            // Test is platform specific and fails on non-windows
+            return;
         }
 
         var d1 = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "shouldExclude", "stuff"));
@@ -302,7 +306,7 @@ public class DetectorProcessingServiceTests
         {
             SourceDirectory = DefaultSourceDirectory,
             DetectorArgs = new Dictionary<string, string>(),
-            DirectoryExclusionList = new[] { Path.Combine("**", "SomeSource", "**"), Path.Combine("**", "shouldExclude", "**") },
+            DirectoryExclusionList = [Path.Combine("**", "SomeSource", "**"), Path.Combine("**", "shouldExclude", "**")],
         };
 
         // Now exercise the exclusion code
@@ -336,7 +340,8 @@ public class DetectorProcessingServiceTests
 
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Test is inconsistent for non-windows platforms");
+            // Test is inconsistent for non-windows platforms
+            return;
         }
 
         // This unit test previously depended on defaultArgs.   But the author assumed that \Source\ was in the default source path, which may not be true on all developers machines.
@@ -347,32 +352,32 @@ public class DetectorProcessingServiceTests
         var dp = args.SourceDirectory.Parent.FullName.AsSpan();
 
         // Exclusion predicate is case sensitive and allow windows path, the exclusion list follow the windows path structure and has a case mismatch with the directory path, should not exclude
-        args.DirectoryExclusionList = new[] { @"**\source\**" };
+        args.DirectoryExclusionList = [@"**\source\**"];
         var exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: false);
         exclusionPredicate(dn, dp).Should().BeFalse();
 
         // Exclusion predicate is case sensitive and allow windows path, the exclusion list follow the windows path structure and match directory path case, should exclude
-        args.DirectoryExclusionList = new[] { @"**\Source\**" };
+        args.DirectoryExclusionList = [@"**\Source\**"];
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: false);
         exclusionPredicate(dn, dp).Should().BeTrue();
 
         // Exclusion predicate is not case sensitive and allow windows path, the exclusion list follow the windows path, should exclude
-        args.DirectoryExclusionList = new[] { @"**\sOuRce\**" };
+        args.DirectoryExclusionList = [@"**\sOuRce\**"];
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
         exclusionPredicate(dn, dp).Should().BeTrue();
 
         // Exclusion predicate does not support windows path and the exclusion list define the path as a windows path, should not exclude
-        args.DirectoryExclusionList = new[] { @"**\Source\**" };
+        args.DirectoryExclusionList = [@"**\Source\**"];
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: false, ignoreCase: true);
         exclusionPredicate(dn, dp).Should().BeFalse();
 
         // Exclusion predicate support windows path and the exclusion list define the path as a windows path, should exclude
-        args.DirectoryExclusionList = new[] { @"**\Source\**" };
+        args.DirectoryExclusionList = [@"**\Source\**"];
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
         exclusionPredicate(dn, dp).Should().BeTrue();
 
         // Exclusion predicate support windows path and the exclusion list does not define a windows path, should exclude
-        args.DirectoryExclusionList = new[] { @"**/Source/**", @"**/Source\**" };
+        args.DirectoryExclusionList = [@"**/Source/**", @"**/Source\**"];
         exclusionPredicate = this.serviceUnderTest.GenerateDirectoryExclusionPredicate(@"C:\somefake\dir", args.DirectoryExclusionList, args.DirectoryExclusionListObsolete, allowWindowsPaths: true, ignoreCase: true);
         exclusionPredicate(dn, dp).Should().BeTrue();
     }
@@ -380,10 +385,10 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_DirectoryExclusionPredicateWorksAsExpectedForObsoleteAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object,
-        };
+        ];
 
         var sourceDirectory = DefaultSourceDirectory;
         var args = DefaultArgs;
@@ -415,10 +420,10 @@ public class DetectorProcessingServiceTests
         capturedRequest.DirectoryExclusionPredicate(d1.Name.AsSpan(), d1.Parent.FullName.AsSpan()).Should().BeFalse();
 
         // Now exercise the exclusion code
-        args.DirectoryExclusionListObsolete = new[] { Path.Combine("Child"), Path.Combine("..", "bin") };
+        args.DirectoryExclusionListObsolete = [Path.Combine("Child"), Path.Combine("..", "bin")];
         await this.serviceUnderTest.ProcessDetectorsAsync(
             args,
-            new[] { this.firstFileComponentDetectorMock.Object },
+            [this.firstFileComponentDetectorMock.Object],
             new DetectorRestrictions());
 
         this.directoryWalkerFactory.Reset();
@@ -436,10 +441,10 @@ public class DetectorProcessingServiceTests
     {
         var args = DefaultArgs;
 
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-        };
+        ];
 
         var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
         {
@@ -463,13 +468,13 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_ExecutesMixedCommandAndFileDetectorsAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
             this.firstCommandComponentDetectorMock.Object,
 
             this.secondCommandComponentDetectorMock.Object,
-        };
+        ];
 
         DetectorProcessingResult results = null;
         var records = await TelemetryHelper.ExecuteWhileCapturingTelemetryAsync<DetectorExecutionTelemetryRecord>(async () =>
@@ -495,10 +500,10 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_FinishesExperimentsAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-        };
+        ];
 
         await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
@@ -508,10 +513,10 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_RecordsDetectorRunsAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-        };
+        ];
 
         var firstComponents = new[] { this.componentDictionary[this.firstFileComponentDetectorMock.Object.Id] };
         var secondComponents = new[] { this.componentDictionary[this.secondFileComponentDetectorMock.Object.Id] };
@@ -540,10 +545,10 @@ public class DetectorProcessingServiceTests
     [TestMethod]
     public async Task ProcessDetectorsAsync_InitializesExperimentsAsync()
     {
-        this.detectorsToUse = new[]
-        {
+        this.detectorsToUse =
+        [
             this.firstFileComponentDetectorMock.Object, this.secondFileComponentDetectorMock.Object,
-        };
+        ];
 
         await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 

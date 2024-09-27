@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
+namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
 
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;

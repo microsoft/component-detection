@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common;
+namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Threading;
@@ -21,10 +21,7 @@ public static class AsyncExecution
     /// <exception cref="TimeoutException">Thrown when the execution does not complete within the timeout.</exception>
     public static async Task<T> ExecuteWithTimeoutAsync<T>(Func<Task<T>> toExecute, TimeSpan timeout, CancellationToken cancellationToken)
     {
-        if (toExecute == null)
-        {
-            throw new ArgumentNullException(nameof(toExecute));
-        }
+        ArgumentNullException.ThrowIfNull(toExecute);
 
         var work = Task.Run(toExecute);
 
@@ -48,10 +45,7 @@ public static class AsyncExecution
     /// <exception cref="TimeoutException">Thrown when the execution does not complete within the timeout.</exception>
     public static async Task ExecuteVoidWithTimeoutAsync(Action toExecute, TimeSpan timeout, CancellationToken cancellationToken)
     {
-        if (toExecute == null)
-        {
-            throw new ArgumentNullException(nameof(toExecute));
-        }
+        ArgumentNullException.ThrowIfNull(toExecute);
 
         var work = Task.Run(toExecute, cancellationToken);
         var completedInTime = await Task.Run(() => work.Wait(timeout));

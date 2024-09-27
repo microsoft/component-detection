@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests;
+namespace Microsoft.ComponentDetection.Orchestrator.Tests;
 
 using System;
 using System.Collections.Concurrent;
@@ -24,7 +24,7 @@ public static class TelemetryHelper
                     records.Add(asT);
                 }
             });
-        TelemetryRelay.Instance.Init(new[] { telemetryServiceMock.Object });
+        TelemetryRelay.Instance.Init([telemetryServiceMock.Object]);
 
         try
         {

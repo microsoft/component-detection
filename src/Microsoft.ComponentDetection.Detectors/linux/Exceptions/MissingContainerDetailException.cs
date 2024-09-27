@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Linux.Exceptions;
+namespace Microsoft.ComponentDetection.Detectors.Linux.Exceptions;
 
 using System;
 

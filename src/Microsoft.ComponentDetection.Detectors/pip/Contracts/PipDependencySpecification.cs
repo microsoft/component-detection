@@ -26,8 +26,8 @@ public class PipDependencySpecification
     /// <summary>
     /// These are packages that we don't want to evaluate in our graph as they are generally python builtins.
     /// </summary>
-    public static readonly HashSet<string> PackagesToIgnore = new HashSet<string>
-    {
+    public static readonly HashSet<string> PackagesToIgnore =
+    [
         "-markerlib",
         "pip",
         "pip-tools",
@@ -35,7 +35,7 @@ public class PipDependencySpecification
         "pkg-resources",
         "setuptools",
         "wheel",
-    };
+    ];
 
     // Extracts abcd from a string like abcd==1.*,!=1.3
     private static readonly Regex PipNameExtractionRegex = new Regex(
@@ -82,9 +82,9 @@ public class PipDependencySpecification
     /// <summary>
     /// Gets or sets the set of dependency specifications that constrain the overall dependency request (ex: ==1.0, >=2.0).
     /// </summary>
-    public IList<string> DependencySpecifiers { get; set; } = new List<string>();
+    public IList<string> DependencySpecifiers { get; set; } = [];
 
-    public IList<string> ConditionalDependencySpecifiers { get; set; } = new List<string>();
+    public IList<string> ConditionalDependencySpecifiers { get; set; } = [];
 
     private string DebuggerDisplay => $"{this.Name} ({string.Join(';', this.DependencySpecifiers)})";
 
@@ -186,15 +186,12 @@ public class PipDependencySpecification
                     var conditionalSpec = $"{conditionalOperator}{conditionalValue}";
                     try
                     {
-                        conditionMet = PythonVersionUtilities.VersionValidForSpec(pythonEnvironmentVariables[conditionalVar], new List<string> { conditionalSpec });
+                        conditionMet = PythonVersionUtilities.VersionValidForSpec(pythonEnvironmentVariables[conditionalVar], [conditionalSpec]);
                     }
                     catch (ArgumentException ae)
                     {
                         conditionMet = false;
-                        if (this.Logger != null)
-                        {
-                            this.Logger.LogDebug("Could not create pip dependency: {ErrorMessage}", ae.Message);
-                        }
+                        this.Logger?.LogDebug("Could not create pip dependency: {ErrorMessage}", ae.Message);
                     }
                 }
                 else
@@ -256,10 +253,7 @@ public class PipDependencySpecification
         }
         catch (ArgumentException ae)
         {
-            if (this.Logger != null)
-            {
-                this.Logger.LogDebug("Could not create pip dependency: {ErrorMessage}", ae.Message);
-            }
+            this.Logger?.LogDebug("Could not create pip dependency: {ErrorMessage}", ae.Message);
 
             return null;
         }
