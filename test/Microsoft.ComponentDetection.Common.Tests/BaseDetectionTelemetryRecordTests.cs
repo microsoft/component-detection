@@ -65,8 +65,7 @@ public class BaseDetectionTelemetryRecordTests
         {
             foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (!serializableTypes.Contains(property.PropertyType) &&
-                    Attribute.GetCustomAttribute(property.PropertyType, typeof(DataContractAttribute)) == null)
+                if (!serializableTypes.Contains(property.PropertyType))
                 {
                     Attribute.GetCustomAttribute(property.PropertyType, typeof(DataContractAttribute)).Should().NotBeNull(
                         $"Type {property.PropertyType} on {type.Name}.{property.Name} is not allowed! " +
