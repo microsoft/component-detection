@@ -492,6 +492,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent), isExplicitReferencedDependency: true);
             }
         }
+        if(dependency.Replace != null && dependency.Replace.Path != null && dependency.Replace.Version == null
     }
 
     private bool TryCreateGoComponentFromRelationshipPart(string relationship, out GoComponent goComponent)
