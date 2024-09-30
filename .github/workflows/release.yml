@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rid: [win-x64, linux-x64, osx-x64]
+        rid: [win-x64, linux-x64, osx-x64, win-arm64, osx-arm64]
 
     env:
       # Set the build number in MinVer.
@@ -41,7 +41,7 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/*
-          asset_name: component-detection-${{ matrix.rid }}${{ matrix.rid == 'win-x64' && '.exe' || '' }}
+          asset_name: component-detection-${{ matrix.rid }}${{ matrix.rid == 'win-x64' && '.exe' || '' }}${{ matrix.rid == 'win-arm64' && '.exe' || '' }}
 
       - name: Build NuGet packages
         run: dotnet pack --configuration Release --output ./out
