@@ -53,7 +53,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
 
-    public override int Version => 1;
+    public override int Version => 2;
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
