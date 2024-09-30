@@ -27,19 +27,22 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;
+    private readonly IFileUtilityService fileUtilityService;
 
     public GoComponentWithReplaceDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         IEnvironmentVariableService envVarService,
-        ILogger<GoComponentWithReplaceDetector> logger)
+        ILogger<GoComponentWithReplaceDetector> logger,
+        IFileUtilityService fileUtilityService)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.commandLineInvocationService = commandLineInvocationService;
         this.envVarService = envVarService;
         this.Logger = logger;
+        this.fileUtilityService = fileUtilityService;
     }
 
     public override string Id => "GoWithReplace";
@@ -244,7 +247,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
             return false;
         }
 
-        this.RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
+        this.RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder, projectRootDirectory.FullName);
 
         var generateGraphProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, new List<string> { "mod", "graph" }.ToArray());
         if (generateGraphProcess.ExitCode == 0)
@@ -420,13 +423,15 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         return singleFileComponentRecorder.GetComponent(component.Id) != null;
     }
 
-    private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder, string projectRootDirectoryFullName)
     {
         var goBuildModules = new List<GoBuildModule>();
         var reader = new JsonTextReader(new StringReader(goListOutput))
         {
             SupportMultipleContent = true,
         };
+
+        using var record = new GoReplaceTelemetryRecord();
 
         while (reader.Read())
         {
@@ -444,10 +449,34 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
                 continue;
             }
 
-            GoComponent goComponent;
-            if (dependency.Replace != null)
+            if (dependency.Replace != null && dependency.Replace.Path != null && dependency.Replace.Version == null)
             {
+                var dirName = projectRootDirectoryFullName;
+                var combinedPath = Path.Combine(dirName, dependency.Replace.Path, "go.mod");
+                var goModFilePath = Path.GetFullPath(combinedPath);
+                if (this.fileUtilityService.Exists(goModFilePath))
+                {
+                    var dependencyName = dependency.Path + " " + dependency.Version;
+                    this.Logger.LogInformation("go Module {GoModule} is being replaced with module at path {GoModFilePath}", dependencyName, goModFilePath);
+                    record.GoModPathAndVersion = dependencyName;
+                    record.GoModReplacement = goModFilePath;
+                    continue;
+                }
+
+                this.Logger.LogWarning("go.mod file {GoModFilePath} does not exist in the relative path given for replacement", goModFilePath);
+                record.GoModPathAndVersion = goModFilePath;
+                record.GoModReplacement = null;
+            }
+
+            GoComponent goComponent;
+            if (dependency.Replace != null && dependency.Replace.Path != null && dependency.Replace.Version != null)
+            {
+                var dependencyName = dependency.Path + " " + dependency.Version;
+                var dependencyReplacementName = dependency.Replace.Path + " " + dependency.Replace.Version;
                 goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
+                this.Logger.LogInformation("go Module {GoModule} being replaced with module {GoModuleReplacement}", dependencyName, dependencyReplacementName);
+                record.GoModPathAndVersion = dependencyName;
+                record.GoModReplacement = dependencyReplacementName;
             }
             else
             {
