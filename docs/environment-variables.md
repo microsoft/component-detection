@@ -36,3 +36,7 @@ the given configurations are considered development dependencies.
 If an entire lockfile will contain only dev dependencies, see `CD_GRADLE_DEV_LOCKFILES` above.
 
 [1]: https://go.dev/ref/mod#go-mod-graph
+
+## `MvnCLIFileLevelTimeoutSeconds`
+
+When set to any positive integer value, it controls the max execution time Mvn CLI is allowed to take per each `pom.xml` file. Default behavior is unbounded.

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Yarn;
+namespace Microsoft.ComponentDetection.Detectors.Yarn;
 
 public class YarnDependency
 {

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System;
 using System.Collections.Generic;
@@ -95,7 +95,7 @@ public static class NpmComponentUtilities
 
     public static IDictionary<string, IDictionary<string, bool>> TryGetAllPackageJsonDependencies(Stream stream, out IList<string> yarnWorkspaces)
     {
-        yarnWorkspaces = new List<string>();
+        yarnWorkspaces = [];
 
         using var file = new StreamReader(stream);
         using var reader = new JsonTextReader(file);

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common.Tests;
+namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -20,13 +20,14 @@ public class FileEnumerationTests
         var testDirectory = Environment.GetEnvironmentVariable("COMPONENT_DETECTION_SYMLINK_TEST");
         if (string.IsNullOrWhiteSpace(testDirectory))
         {
-            Assert.Inconclusive("Test directory environment variable isn't set. Not testing");
+            // Test directory environment variable isn't set. Not testing
+            return;
         }
 
         var loggerMock = new Mock<ILogger<PathUtilityService>>();
 
         var pathUtility = new PathUtilityService(loggerMock.Object);
-        var sfe = new SafeFileEnumerable(new DirectoryInfo(Path.Combine(testDirectory, "root")), new[] { "*" }, loggerMock.Object, pathUtility, (name, directoryName) => false, true);
+        var sfe = new SafeFileEnumerable(new DirectoryInfo(Path.Combine(testDirectory, "root")), ["*"], loggerMock.Object, pathUtility, (name, directoryName) => false, true);
 
         var foundFiles = new List<string>();
         foreach (var f in sfe)

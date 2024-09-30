@@ -17,9 +17,9 @@ public sealed record PipReportGraphNode
 
     public PipComponent Value { get; set; }
 
-    public List<PipReportGraphNode> Children { get; } = new List<PipReportGraphNode>();
+    public List<PipReportGraphNode> Children { get; } = [];
 
-    public List<PipReportGraphNode> Parents { get; } = new List<PipReportGraphNode>();
+    public List<PipReportGraphNode> Parents { get; } = [];
 
     public bool Requested { get; set; }
 }

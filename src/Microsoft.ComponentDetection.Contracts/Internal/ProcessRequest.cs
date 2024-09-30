@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.Internal;
+namespace Microsoft.ComponentDetection.Contracts.Internal;
 
 public class ProcessRequest
 {

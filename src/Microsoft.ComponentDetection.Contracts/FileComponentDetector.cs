@@ -46,7 +46,7 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <summary>
     /// Gets the folder names that will be skipped by the Component Detector.
     /// </summary>
-    protected virtual IList<string> SkippedFolders => new List<string> { };
+    protected virtual IList<string> SkippedFolders => [];
 
     /// <summary>
     /// Gets or sets the active scan request -- only populated after a ScanDirectoryAsync is invoked. If ScanDirectoryAsync is overridden,
@@ -56,12 +56,12 @@ public abstract class FileComponentDetector : IComponentDetector
 
     public virtual bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
 
-    protected Dictionary<string, string> Telemetry { get; set; } = new Dictionary<string, string>();
+    protected Dictionary<string, string> Telemetry { get; set; } = [];
 
     /// <summary>
     /// List of any any additional properties as key-value pairs that we would like to capture for the detector.
     /// </summary>
-    public List<(string PropertyKey, string PropertyValue)> AdditionalProperties { get; set; } = new List<(string PropertyKey, string PropertyValue)>();
+    public List<(string PropertyKey, string PropertyValue)> AdditionalProperties { get; set; } = [];
 
     protected IObservable<IComponentStream> ComponentStreams { get; private set; }
 
@@ -110,15 +110,18 @@ public abstract class FileComponentDetector : IComponentDetector
 
     private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, CancellationToken cancellationToken = default)
     {
+        var threadsToUse = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1;
+        this.Telemetry["ThreadsUsed"] = $"{threadsToUse}";
+
         var processor = new ActionBlock<ProcessRequest>(
             async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken),
             new ExecutionDataflowBlockOptions
             {
                 // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
-                MaxDegreeOfParallelism = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1,
+                MaxDegreeOfParallelism = threadsToUse,
             });
 
-        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
+        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
 
         await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
 
@@ -135,7 +138,7 @@ public abstract class FileComponentDetector : IComponentDetector
         };
     }
 
-    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(processRequests);
     }

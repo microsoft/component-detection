@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@4d6c8fcf3c8f7a60068d26b594648e99df24cee3 # v4.0.0
+        uses: actions/setup-dotnet@6bd8b7f7774af54e05809fcc5431931b3eb1ddee # v4.0.1
 
       - name: Restore packages
         run: dotnet restore
@@ -35,7 +35,7 @@ jobs:
         run: dotnet build --no-restore --configuration Debug
 
       - name: Run tests
-        run: dotnet test --no-build --configuration Debug --collect:"XPlat Code Coverage"
+        run: dotnet test --no-build --configuration Debug --collect:"Code Coverage;Format=cobertura;CoverageFileName=coverage.cobertura.xml"
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0

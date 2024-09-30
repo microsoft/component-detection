@@ -679,6 +679,24 @@ dotnet_diagnostic.CA1848.severity = suggestion
 # JSON002: Probable JSON string detected
 dotnet_diagnostic.JSON002.severity = suggestion
 
+# IDE0290: Use primary constructor
+dotnet_diagnostic.IDE0290.severity = suggestion
+
+# IDE0305: Simplify collection initialization
+dotnet_diagnostic.IDE0305.severity = suggestion
+
+# SYSLIB1045: Convert to 'GeneratedRegexAttribute'.
+dotnet_diagnostic.SYSLIB1045.severity = suggestion
+
+# CA1859: Use concrete types when possible for improved performance
+dotnet_diagnostic.CA1859.severity = suggestion
+
+# CA1851: Possible multiple enumerations of 'IEnumerable' collection
+dotnet_diagnostic.CA1851.severity = suggestion
+
+# CA1861: Avoid constant arrays as arguments
+dotnet_diagnostic.CA1861.severity = suggestion
+
 # Workaround for https://github.com/dotnet/roslyn-analyzers/issues/5628
 [Program.cs]
 dotnet_diagnostic.ca1812.severity = none
