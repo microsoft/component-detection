@@ -445,6 +445,8 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
 
         foreach (var dependency in goBuildModules)
         {
+            var dependencyName = $"{dependency.Path} {dependency.Version}";
+
             if (dependency.Main)
             {
                 // main is the entry point module (superfluous as we already have the file location)
@@ -458,7 +460,6 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
                 var goModFilePath = Path.GetFullPath(combinedPath);
                 if (this.fileUtilityService.Exists(goModFilePath))
                 {
-                    var dependencyName = $"{dependency.Path} {dependency.Version}";
                     this.Logger.LogInformation("go Module {GoModule} is being replaced with module at path {GoModFilePath}", dependencyName, goModFilePath);
                     record.GoModPathAndVersion = dependencyName;
                     record.GoModReplacement = goModFilePath;
@@ -473,7 +474,6 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
             GoComponent goComponent;
             if (dependency.Replace?.Path != null && dependency.Replace.Version != null)
             {
-                var dependencyName = $"{dependency.Path} {dependency.Version}";
                 var dependencyReplacementName = $"{dependency.Replace.Path} {dependency.Replace.Version}";
                 goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
                 this.Logger.LogInformation("go Module {GoModule} being replaced with module {GoModuleReplacement}", dependencyName, dependencyReplacementName);
