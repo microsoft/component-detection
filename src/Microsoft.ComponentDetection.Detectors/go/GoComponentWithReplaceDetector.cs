@@ -451,9 +451,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
                 continue;
             }
 
-            var replacePathExists = this.ReplacePathExists(dependency);
-
-            if (replacePathExists && dependency.Replace.Version == null)
+            if (dependency.Replace?.Path != null && dependency.Replace.Version == null)
             {
                 var dirName = projectRootDirectoryFullName;
                 var combinedPath = Path.Combine(dirName, dependency.Replace.Path, "go.mod");
@@ -473,7 +471,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
             }
 
             GoComponent goComponent;
-            if (replacePathExists && dependency.Replace.Version != null)
+            if (dependency.Replace?.Path != null && dependency.Replace.Version != null)
             {
                 var dependencyName = $"{dependency.Path} {dependency.Version}";
                 var dependencyReplacementName = $"{dependency.Replace.Path} {dependency.Replace.Version}";
@@ -496,11 +494,6 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
                 singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent), isExplicitReferencedDependency: true);
             }
         }
-    }
-
-    private bool ReplacePathExists(GoBuildModule dependency)
-    {
-        return dependency.Replace != null && dependency.Replace.Path != null;
     }
 
     private bool TryCreateGoComponentFromRelationshipPart(string relationship, out GoComponent goComponent)
