@@ -41,7 +41,7 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/*
-          asset_name: component-detection-${{ matrix.rid }}${{ matrix.rid == 'win-x64' && '.exe' || '' }}${{ matrix.rid == 'win-arm64' && '.exe' || '' }}
+          asset_name: component-detection-${{ matrix.rid }}${{ (matrix.rid == 'win-x64' || matrix.rid == 'win-arm64') && '.exe' || '' }}
 
       - name: Build NuGet packages
         run: dotnet pack --configuration Release --output ./out
