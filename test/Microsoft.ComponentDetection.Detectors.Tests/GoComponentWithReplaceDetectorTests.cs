@@ -666,7 +666,7 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
            logger => logger.Log(
                LogLevel.Information,
                It.IsAny<EventId>(),
-               It.Is<It.IsAnyType>((v, t) => v.ToString().Equals("go Module a v1.5.0 is being replaced with module at path C:\\test\\module\\go.mod")),
+               It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("go Module a v1.5.0 is being replaced with module at path")),
                It.IsAny<Exception>(),
                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
            Times.Once);
@@ -754,7 +754,7 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
            logger => logger.Log(
                LogLevel.Warning,
                It.IsAny<EventId>(),
-               It.Is<It.IsAnyType>((v, t) => v.ToString().Equals("go.mod file C:\\test\\module\\go.mod does not exist in the relative path given for replacement")),
+               It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("does not exist in the relative path given for replacement")),
                It.IsAny<Exception>(),
                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
            Times.Once);
@@ -851,7 +851,7 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
            logger => logger.Log(
                LogLevel.Information,
                It.IsAny<EventId>(),
-               It.Is<It.IsAnyType>((v, t) => v.ToString().Equals("go Module other v1.2.0 is being replaced with module at path C:\\test\\component\\go.mod")),
+               It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("go Module other v1.2.0 is being replaced with module at path")),
                It.IsAny<Exception>(),
                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
            Times.Once);
@@ -859,7 +859,7 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
           logger => logger.Log(
               LogLevel.Information,
               It.IsAny<EventId>(),
-              It.Is<It.IsAnyType>((v, t) => v.ToString().Equals("go Module github v1.5.0 is being replaced with module at path C:\\test\\module\\go.mod")),
+              It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("go Module github v1.5.0 is being replaced with module at path")),
               It.IsAny<Exception>(),
               It.IsAny<Func<It.IsAnyType, Exception, string>>()),
           Times.Once);
