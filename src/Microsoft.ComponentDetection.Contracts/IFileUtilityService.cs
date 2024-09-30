@@ -42,4 +42,12 @@ public interface IFileUtilityService
     /// <param name="fileName">Path to the file.</param>
     /// <returns>Returns a stream representing the file.</returns>
     Stream MakeFileStream(string fileName);
+
+    /// <summary>
+    /// Duplicates a file, removing any lines that starts with the given string.
+    /// </summary>
+    /// <param name="fileName">Path to the file.</param>
+    /// <param name="removalIndicators">The strings that indicates a line should be removed.</param>
+    /// <returns>Returns the path of the new file, and whether or not one was created.</returns>
+    (string DuplicateFilePath, bool CreatedDuplicate) DuplicateFileWithoutLines(string fileName, params string[] removalIndicators);
 }

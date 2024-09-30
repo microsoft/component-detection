@@ -9,6 +9,12 @@ internal class PipReportUtilities
     private const string ClassifierFieldSeparator = " :: ";
     private const string ClassifierFieldLicensePrefix = "License";
 
+    // Python regular expression for version schema:
+    // https://www.python.org/dev/peps/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions
+    public static readonly Regex CanonicalVersionPatternMatch = new Regex(
+        @"^([1-9]\d*!)?(0|[1-9]\d*)(\.(0|[1-9]\d*))*((a|b|rc)(0|[1-9]\d*))?(\.post(0|[1-9]\d*))?(\.dev(0|[1-9]\d*))?(\+(?:(?<local>[a-z0-9]+(?:[.][a-z0-9]+)*))?)?$",
+        RegexOptions.Compiled);
+
     /// <summary>
     /// Normalize the package name format to the standard Python Packaging format.
     /// See https://packaging.python.org/en/latest/specifications/name-normalization/#name-normalization.
@@ -67,5 +73,10 @@ internal class PipReportUtilities
         }
 
         return null;
+    }
+
+    public static bool IsCanonicalVersion(string version)
+    {
+        return CanonicalVersionPatternMatch.Match(version).Success;
     }
 }

@@ -28,4 +28,34 @@ public class PipReportUtilitiesTests
         PipReportUtilities.NormalizePackageNameFormat("friendly--bard").Should().Be(normalizedForm);
         PipReportUtilities.NormalizePackageNameFormat("FrIeNdLy-._.-bArD").Should().Be(normalizedForm);
     }
+
+    [TestMethod]
+    [DataRow("1.0.0")]
+    [DataRow("2012.10")]
+    [DataRow("0.1rc2.post3")]
+    [DataRow("1.0.post2.dev3")]
+    [DataRow("1!2.0")]
+    [DataRow("1.0.post1")]
+    public void IsCanonicalVersion_ReturnsTrue_WhenVersionMatchesCanonicalVersionPattern(string version)
+    {
+        // Act
+        var isCanonicalVersion = PipReportUtilities.IsCanonicalVersion(version);
+
+        // Assert
+        isCanonicalVersion.Should().BeTrue();
+    }
+
+    [TestMethod]
+    [DataRow("0.0.1-beta")]
+    [DataRow("1.0.0-alpha.1")]
+    [DataRow(".1")]
+    [DataRow("-pkg-version-")]
+    public void IsCanonicalVersion_ReturnsFalse_WhenVersionDoesNotMatchCanonicalVersionPattern(string version)
+    {
+        // Act
+        var isCanonicalVersion = PipReportUtilities.IsCanonicalVersion(version);
+
+        // Assert
+        isCanonicalVersion.Should().BeFalse();
+    }
 }

@@ -13,9 +13,9 @@ using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
+public class VcpkgComponentDetector : FileComponentDetector
 {
-    private readonly HashSet<string> projectRoots = new HashSet<string>();
+    private readonly HashSet<string> projectRoots = [];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;
@@ -36,11 +36,11 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
 
     public override string Id { get; } = "Vcpkg";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Vcpkg) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Vcpkg)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "vcpkg.spdx.json" };
+    public override IList<string> SearchPatterns { get; } = ["vcpkg.spdx.json"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Vcpkg };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Vcpkg];
 
     public override int Version => 2;
 

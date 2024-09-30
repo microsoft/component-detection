@@ -32,15 +32,18 @@ public class SimplePipComponentDetector : FileComponentDetector, IDefaultOffComp
 
     public override string Id => "SimplePip";
 
-    public override IList<string> SearchPatterns => new List<string> { "setup.py", "requirements.txt" };
+    public override IList<string> SearchPatterns => ["setup.py", "requirements.txt"];
 
-    public override IEnumerable<string> Categories => new List<string> { "Python" };
+    public override IEnumerable<string> Categories => ["Python"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pip];
 
     public override int Version { get; } = 3;
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         if (!await this.pythonCommandService.PythonExistsAsync(pythonExePath))
@@ -65,7 +68,7 @@ public class SimplePipComponentDetector : FileComponentDetector, IDefaultOffComp
             var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
                 .Select(tuple => tuple.PackageString)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => new PipDependencySpecification(x))
+                .Select(x => new PipDependencySpecification(x, false))
                 .Where(x => !x.PackageIsUnsafe())
                 .ToList();
 

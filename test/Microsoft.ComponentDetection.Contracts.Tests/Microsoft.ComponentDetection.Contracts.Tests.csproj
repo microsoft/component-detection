@@ -5,12 +5,12 @@
     </ItemGroup>
 
     <ItemGroup Label="Package References">
-        <PackageReference Include="coverlet.collector" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="packageurl-dotnet" />
+        <PackageReference Include="MSTest.TestAdapter " />
+        <PackageReference Include="Microsoft.NET.Test.Sdk " />
         <PackageReference Include="FluentAssertions.Analyzers" PrivateAssets="all" />
     </ItemGroup>
 

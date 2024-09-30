@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
+namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
 
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ public sealed class TypeRegistrar : ITypeRegistrar, IDisposable
     public TypeRegistrar(IServiceCollection services)
     {
         this.Services = services;
-        this.BuiltProviders = new List<IDisposable>();
+        this.BuiltProviders = [];
     }
 
     private IServiceCollection Services { get; }
