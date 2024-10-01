@@ -69,30 +69,4 @@ public class FileUtilityService : IFileUtilityService
         File.WriteAllLines(duplicateFilePath, linesToKeep);
         return (duplicateFilePath, true);
     }
-
-    /// <inheritdoc />
-    public (HashSet<string> Files, HashSet<string> Directories) GetFilesAndDirectories(string root, IList<string> patterns, int depth)
-    {
-        var fileList = new List<string>();
-        var dirList = new List<string>();
-        foreach (var directory in Directory.EnumerateDirectories(root))
-        {
-            if (depth > 0)
-            {
-                var (files, directories) = this.GetFilesAndDirectories(directory, patterns, depth - 1);
-                fileList.AddRange(files);
-                dirList.AddRange(directories);
-            }
-        }
-
-        foreach (var pattern in patterns)
-        {
-            fileList.AddRange(Directory.EnumerateFiles(root, pattern, SearchOption.TopDirectoryOnly));
-            dirList.AddRange(Directory.EnumerateDirectories(root, pattern, SearchOption.TopDirectoryOnly));
-        }
-
-#pragma warning disable IDE0305 // Simplify collection initialization
-        return (fileList.ToHashSet(), dirList.ToHashSet());
-#pragma warning restore IDE0305 // Simplify collection initialization
-    }
 }

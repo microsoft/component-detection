@@ -14,4 +14,10 @@
         <PackageReference Include="FluentAssertions.Analyzers" PrivateAssets="all" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Resources\__pycache__\testing.pyc">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

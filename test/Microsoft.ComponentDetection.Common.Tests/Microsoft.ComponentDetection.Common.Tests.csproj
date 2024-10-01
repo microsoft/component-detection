@@ -17,13 +17,6 @@
       <None Update="Resources\test-file-duplicate.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Resources\__pycache__\testing.pyc">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Resources\__pycache__\" />
     </ItemGroup>
 
 </Project>
