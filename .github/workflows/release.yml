@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rid: [win-x64, linux-x64, osx-x64, win-arm64, osx-arm64]
+        rid: [win-x64, linux-x64, osx-x64, win-arm64, linux-arm64, osx-arm64]
 
     env:
       # Set the build number in MinVer.
