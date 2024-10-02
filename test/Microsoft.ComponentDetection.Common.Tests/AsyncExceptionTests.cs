@@ -24,13 +24,13 @@ public class AsyncExceptionTests
     [TestMethod]
     public async Task ExecuteWithoutTimeAsync_ThrowsTimeoutExceptionAsync()
     {
-        var toExecute = async () =>
+        static async Task<int> ToExecuteAsync()
         {
             await Task.Delay(5000);
             return 0;
-        };
+        }
 
-        var func = async () => await AsyncExecution.ExecuteWithTimeoutAsync(toExecute, TimeSpan.FromSeconds(1), CancellationToken.None);
+        var func = async () => await AsyncExecution.ExecuteWithTimeoutAsync(ToExecuteAsync, TimeSpan.FromSeconds(1), CancellationToken.None);
 
         await func.Should().ThrowAsync<TimeoutException>();
     }
@@ -48,9 +48,9 @@ public class AsyncExceptionTests
     [TestMethod]
     public async Task ExecuteVoidWithTimeoutAsync_ThrowsTimeoutExceptionAsync()
     {
-        var toExecute = () => Task.Delay(5000).Wait();
+        static void ToExecute() => Task.Delay(5000).Wait();
 
-        var func = async () => await AsyncExecution.ExecuteVoidWithTimeoutAsync(toExecute, TimeSpan.FromSeconds(1), CancellationToken.None);
+        var func = async () => await AsyncExecution.ExecuteVoidWithTimeoutAsync(ToExecute, TimeSpan.FromSeconds(1), CancellationToken.None);
 
         await func.Should().ThrowAsync<TimeoutException>();
     }

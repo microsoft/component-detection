@@ -24,7 +24,7 @@ public class PipReportComponentDetector : FileComponentDetector
     private const string PipReportFileLevelTimeoutSecondsEnvVar = "PipReportFileLevelTimeoutSeconds";
     private const string PipReportPersistReportsEnvVar = "PipReportPersistReports";
 
-    private static readonly IList<string> PipReportPreGeneratedFilePatterns = new List<string> { "*.component-detection-pip-report.json", "component-detection-pip-report.json" };
+    private static readonly IList<string> PipReportPreGeneratedFilePatterns = ["*.component-detection-pip-report.json", "component-detection-pip-report.json"];
 
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
@@ -71,11 +71,11 @@ public class PipReportComponentDetector : FileComponentDetector
 
     public override string Id => "PipReport";
 
-    public override IList<string> SearchPatterns => new List<string> { "setup.py", "requirements.txt" };
+    public override IList<string> SearchPatterns => ["setup.py", "requirements.txt"];
 
-    public override IEnumerable<string> Categories => new List<string> { "Python" };
+    public override IEnumerable<string> Categories => ["Python"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new List<ComponentType> { ComponentType.Pip };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pip];
 
     public override int Version { get; } = 8;
 
@@ -129,7 +129,7 @@ public class PipReportComponentDetector : FileComponentDetector
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
-        List<FileInfo> reportFiles = new();
+        List<FileInfo> reportFiles = [];
         try
         {
             var pipOverride = this.GetPipReportOverrideBehavior();
@@ -188,8 +188,8 @@ public class PipReportComponentDetector : FileComponentDetector
                     .ToList();
             }
 
-            List<PipInstallationReport> reports = new();
-            if (preGeneratedReportFiles is not null && preGeneratedReportFiles.Any())
+            List<PipInstallationReport> reports = [];
+            if (preGeneratedReportFiles is not null && preGeneratedReportFiles.Count != 0)
             {
                 this.Logger.LogInformation("PipReport: Found pre-generated pip report(s) for {File}.", file.Location);
 
@@ -213,7 +213,7 @@ public class PipReportComponentDetector : FileComponentDetector
                 }
             }
 
-            var foundPreGeneratedReport = reports.Any();
+            var foundPreGeneratedReport = reports.Count != 0;
             pipReportTypeRecord.PreGenerated = foundPreGeneratedReport;
             if (!foundPreGeneratedReport)
             {
@@ -235,7 +235,7 @@ public class PipReportComponentDetector : FileComponentDetector
                 reportFiles.Add(reportFile);
             }
 
-            if (!reports.Any())
+            if (reports.Count == 0)
             {
                 this.Logger.LogWarning("PipReport: Failed to generate or find pip installation report for {File}.", file.Location);
                 return;
@@ -390,7 +390,7 @@ public class PipReportComponentDetector : FileComponentDetector
                 }
                 else
                 {
-                    dependenciesByPkg.Add(normalizedPkgName, new List<PipDependencySpecification> { dependencySpec });
+                    dependenciesByPkg.Add(normalizedPkgName, [dependencySpec]);
                 }
             }
         }
@@ -442,7 +442,7 @@ public class PipReportComponentDetector : FileComponentDetector
         // parentComponentId is guaranteed to exist in the graph or an exception will be thrown.
         foreach (var node in graph.Values)
         {
-            if (!node.Parents.Any())
+            if (node.Parents.Count == 0)
             {
                 continue;
             }

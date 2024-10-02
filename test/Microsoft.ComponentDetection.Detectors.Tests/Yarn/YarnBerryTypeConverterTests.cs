@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests.Yarn;
+namespace Microsoft.ComponentDetection.Detectors.Tests.Yarn;
 
 using FluentAssertions;
 using Microsoft.ComponentDetection.Detectors.Yarn.Contracts;

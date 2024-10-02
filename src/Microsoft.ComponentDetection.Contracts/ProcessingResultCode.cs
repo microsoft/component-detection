@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
+namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>Code used to communicate the state of a scan after completion.</summary>
 public enum ProcessingResultCode

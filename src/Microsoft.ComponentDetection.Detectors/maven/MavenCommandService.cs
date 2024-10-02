@@ -16,7 +16,7 @@ public class MavenCommandService : IMavenCommandService
 
     internal const string MvnVersionArgument = "--version";
 
-    internal static readonly string[] AdditionalValidCommands = new[] { "mvn.cmd" };
+    internal static readonly string[] AdditionalValidCommands = ["mvn.cmd"];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IMavenStyleDependencyGraphParserService parserService;

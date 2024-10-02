@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Docker.DotNet.Models;
 using FluentAssertions;
@@ -77,7 +76,7 @@ public class DockerServiceTests
     [SkipTestOnWindows]
     public async Task DockerService_CanCreateAndRunImageAsync()
     {
-        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, new List<string>());
+        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, []);
         stdout.Should().StartWith("\nHello from Docker!");
         stderr.Should().BeEmpty();
     }
@@ -89,13 +88,13 @@ public class DockerServiceTests
         {
             Config = new Config
             {
-                Env = new List<string>
-                {
+                Env =
+                [
                     "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
                     "MARATHON_APP_RESOURCE_CPU=1",
                     "REGION=local",
                     "PIP_INDEX_URL=https://user:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@someregistry.localhost.com",
-                },
+                ],
             },
         };
 
@@ -103,13 +102,13 @@ public class DockerServiceTests
         {
             Config = new Config
             {
-                Env = new List<string>
-                {
+                Env =
+                [
                     "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
                     "MARATHON_APP_RESOURCE_CPU=1",
                     "REGION=local",
                     $"PIP_INDEX_URL=https://{StringUtilities.SensitivePlaceholder}@someregistry.localhost.com",
-                },
+                ],
             },
         };
 
@@ -120,12 +119,12 @@ public class DockerServiceTests
         {
             Config = new Config
             {
-                Env = new List<string>
-                {
+                Env =
+                [
                     "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
                     "MARATHON_APP_RESOURCE_CPU=1",
                     "REGION=local",
-                },
+                ],
             },
         };
 
@@ -133,12 +132,12 @@ public class DockerServiceTests
         {
             Config = new Config
             {
-                Env = new List<string>
-                {
+                Env =
+                [
                     "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
                     "MARATHON_APP_RESOURCE_CPU=1",
                     "REGION=local",
-                },
+                ],
             },
         };
 
@@ -149,13 +148,13 @@ public class DockerServiceTests
         {
             Config = new Config
             {
-                Env = new List<string>
-                {
+                Env =
+                [
                     "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
                     "MARATHON_APP_RESOURCE_CPU=1",
                     "REGION=local",
                     "PIP_INDEX_URL=https://someregistry.localhost.com",
-                },
+                ],
             },
         };
 
@@ -163,13 +162,13 @@ public class DockerServiceTests
         {
             Config = new Config
             {
-                Env = new List<string>
-                {
+                Env =
+                [
                     "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
                     "MARATHON_APP_RESOURCE_CPU=1",
                     "REGION=local",
                     "PIP_INDEX_URL=https://someregistry.localhost.com",
-                },
+                ],
             },
         };
 
@@ -211,7 +210,7 @@ public class DockerServiceTests
         {
             Config = new Config
             {
-                Env = new List<string>(),
+                Env = [],
             },
         };
 

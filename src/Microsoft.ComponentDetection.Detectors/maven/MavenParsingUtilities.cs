@@ -47,7 +47,7 @@ public static class MavenParsingUtilities
         {
             // Six part versions have an entry in their 4th index. We remove it to normalize. E.g.:
             // var mysteriousSixPartVersionPart = results[3];
-            results = new[] { results[0], results[1], results[2], results[4], results[5] };
+            results = [results[0], results[1], results[2], results[4], results[5]];
         }
 
         // 'MavenCompile' is a default scope for maven dependencies.

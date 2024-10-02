@@ -94,7 +94,7 @@ public class PipCommandService : IPipCommandService
 
     private async Task<bool> CanCommandBeLocatedAsync(string pipPath)
     {
-        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, new List<string> { "pip3" }, "--version");
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, ["pip3"], "--version");
     }
 
     private async Task<CommandLineExecutionResult> ExecuteCommandAsync(

@@ -21,10 +21,7 @@ public static class PnpmParsingUtilities
 
     public static bool IsPnpmPackageDevDependency(Package pnpmPackage)
     {
-        if (pnpmPackage == null)
-        {
-            throw new ArgumentNullException(nameof(pnpmPackage));
-        }
+        ArgumentNullException.ThrowIfNull(pnpmPackage);
 
         return string.Equals(bool.TrueString, pnpmPackage.Dev, StringComparison.InvariantCultureIgnoreCase);
     }
@@ -136,7 +133,7 @@ public static class PnpmParsingUtilities
         var packageVersion = packageNameParts[^1];
 
         // Check for leading `/` from pnpm.
-        if (!fullPackageName.StartsWith("/"))
+        if (!fullPackageName.StartsWith('/'))
         {
             throw new FormatException("Found pnpm dependency path not starting with `/`. This case is currently unhandled.");
         }
@@ -158,7 +155,7 @@ public static class PnpmParsingUtilities
     /// <returns>A pnpm dependency path for the specified version of the named package.</returns>
     public static string ReconstructPnpmDependencyPathV6(string dependencyName, string dependencyVersion)
     {
-        if (dependencyVersion.StartsWith("/"))
+        if (dependencyVersion.StartsWith('/'))
         {
             return dependencyVersion;
         }

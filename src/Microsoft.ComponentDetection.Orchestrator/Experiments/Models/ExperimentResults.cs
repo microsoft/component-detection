@@ -23,7 +23,7 @@ public class ExperimentResults
 
     private readonly ConcurrentDictionary<string, TimeSpan> experimentalDetectors = new();
 
-    private readonly ConcurrentBag<(string, string)> additionalProperties = new();
+    private readonly ConcurrentBag<(string, string)> additionalProperties = [];
 
     /// <summary>
     /// The set of components in the control group.

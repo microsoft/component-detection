@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common;
+namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.IO;
@@ -56,6 +56,6 @@ public class LazyComponentStream : IComponentStream
             this.logger.LogWarning(e, "Unhandled exception caught when trying to open {FileName}", this.fileInfo.FullName);
         }
 
-        return Array.Empty<byte>();
+        return [];
     }
 }

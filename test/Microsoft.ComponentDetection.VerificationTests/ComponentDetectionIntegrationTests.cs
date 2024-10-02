@@ -103,9 +103,9 @@ public class ComponentDetectionIntegrationTests
                 foundComponent.Should().BeTrue($"The component for {this.GetKey(leftComponent)} was not present in the {rightFileName} manifest file. Verify this is expected behavior before proceeding");
             }
 
-            if (leftComponent.IsDevelopmentDependency != null)
+            if (leftComponent.IsDevelopmentDependency is not null)
             {
-                leftComponent.IsDevelopmentDependency.Should().Be(rightComponent.IsDevelopmentDependency, $"Component: {this.GetKey(rightComponent)} has a different \"DevelopmentDependency\".");
+                _ = leftComponent.IsDevelopmentDependency.Should().Be(rightComponent.IsDevelopmentDependency, $"Component: {this.GetKey(rightComponent)} has a different \"DevelopmentDependency\".");
             }
         }
     }
@@ -232,7 +232,7 @@ public class ComponentDetectionIntegrationTests
     {
         var oldDetectors = this.oldScanResult.DetectorsInScan;
         var newDetectors = this.newScanResult.DetectorsInScan;
-        this.bumpedDetectorVersions = new List<string>();
+        this.bumpedDetectorVersions = [];
         foreach (var cd in oldDetectors)
         {
             var newDetector = newDetectors.FirstOrDefault(det => det.DetectorId == cd.DetectorId);

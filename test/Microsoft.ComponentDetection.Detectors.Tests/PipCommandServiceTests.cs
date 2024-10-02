@@ -698,7 +698,7 @@ public class PipCommandServiceTests
             .ReturnsAsync(TestResources.pip_report_single_pkg);
 
         var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
         var action = async () => await service.GenerateInstallationReportAsync(testPath, cancellationToken: cts.Token);
         await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("PipReport: Cancelled*");
     }
