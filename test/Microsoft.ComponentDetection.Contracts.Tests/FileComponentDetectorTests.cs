@@ -204,6 +204,34 @@ public class FileComponentDetectorTests
         File.Exists(createdFileDelete2).Should().BeFalse();
     }
 
+    [TestMethod]
+    public async Task WithCleanupAsync_NoCleanup_WhenCleanupPatternEmpty()
+    {
+        // Arrange
+        CancellationToken cancellationToken = default;
+        var detectorArgs = new Dictionary<string, string>();
+        var cleanupCreatedFiles = true;
+        var fileComponentDetector = new TestFileComponentDetector([], this.loggerMock.Object);
+        var createdFilePath = Path.Combine(this.testDirectory, "todelete.pyc");
+
+        // Act
+        await fileComponentDetector.TestCleanupAsync(
+            async (process, args, token) =>
+            {
+                // creates a single file
+                await File.WriteAllTextAsync(createdFilePath, "test", token).ConfigureAwait(false);
+            },
+            this.processRequest,
+            detectorArgs,
+            cleanupCreatedFiles,
+            cancellationToken).ConfigureAwait(false);
+
+        // Assert
+        Directory.Exists(this.testDirectory).Should().BeTrue();
+        File.Exists(this.existingFilePath).Should().BeTrue();
+        File.Exists(createdFilePath).Should().BeTrue();
+    }
+
     public class TestFileComponentDetector : FileComponentDetector
     {
         public TestFileComponentDetector(List<string> cleanupPatterns, ILogger logger)
