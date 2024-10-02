@@ -19,6 +19,11 @@ public abstract class FileComponentDetector : IComponentDetector
     private const int DefaultCleanDepth = 5;
 
     /// <summary>
+    /// SemaphoreSlim to ensure that only one cleanup process is running at a time.
+    /// </summary>
+    private readonly SemaphoreSlim cleanupSemaphore = new(1, 1);
+
+    /// <summary>
     /// Gets or sets the factory for handing back component streams to File detectors.
     /// </summary>
     protected IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
@@ -190,53 +195,63 @@ public abstract class FileComponentDetector : IComponentDetector
         }
         finally
         {
-            // Clean up any new files or directories created during the scan that match the clean up patterns
-            var dryRun = !cleanupCreatedFiles;
-            var dryRunStr = dryRun ? "[DRYRUN] " : string.Empty;
-            var (newFiles, newDirs) = DirectoryUtilities.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
-            var createdFiles = newFiles.Except(preExistingFiles).ToList();
-            var createdDirs = newDirs.Except(preExistingDirs).ToList();
+            // Ensure that only one cleanup process is running at a time, helping to prevent conflicts
+            await this.cleanupSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            foreach (var createdDir in createdDirs)
+            try
             {
-                if (createdDir is null || !Directory.Exists(createdDir))
-                {
-                    continue;
-                }
+                // Clean up any new files or directories created during the scan that match the clean up patterns
+                var dryRun = !cleanupCreatedFiles;
+                var dryRunStr = dryRun ? "[DRYRUN] " : string.Empty;
+                var (newFiles, newDirs) = DirectoryUtilities.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
+                var createdFiles = newFiles.Except(preExistingFiles).ToList();
+                var createdDirs = newDirs.Except(preExistingDirs).ToList();
 
-                try
+                foreach (var createdDir in createdDirs)
                 {
-                    this.Logger.LogDebug("{DryRun}Cleaning up directory {Dir}", dryRunStr, createdDir);
-                    if (!dryRun)
+                    if (createdDir is null || !Directory.Exists(createdDir))
                     {
-                        Directory.Delete(createdDir, true);
+                        continue;
+                    }
+
+                    try
+                    {
+                        this.Logger.LogDebug("{DryRun}Cleaning up directory {Dir}", dryRunStr, createdDir);
+                        if (!dryRun)
+                        {
+                            Directory.Delete(createdDir, true);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        this.Logger.LogDebug(e, "{DryRun}Failed to delete directory {Dir}", dryRunStr, createdDir);
                     }
                 }
-                catch (Exception e)
+
+                foreach (var createdFile in createdFiles)
                 {
-                    this.Logger.LogDebug(e, "{DryRun}Failed to delete directory {Dir}", dryRunStr, createdDir);
+                    if (createdFile is null || !File.Exists(createdFile))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        this.Logger.LogDebug("{DryRun}Cleaning up file {File}", dryRunStr, createdFile);
+                        if (!dryRun)
+                        {
+                            File.Delete(createdFile);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        this.Logger.LogDebug(e, "{DryRun}Failed to delete file {File}", dryRunStr, createdFile);
+                    }
                 }
             }
-
-            foreach (var createdFile in createdFiles)
+            finally
             {
-                if (createdFile is null || !File.Exists(createdFile))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    this.Logger.LogDebug("{DryRun}Cleaning up file {File}", dryRunStr, createdFile);
-                    if (!dryRun)
-                    {
-                        File.Delete(createdFile);
-                    }
-                }
-                catch (Exception e)
-                {
-                    this.Logger.LogDebug(e, "{DryRun}Failed to delete file {File}", dryRunStr, createdFile);
-                }
+                _ = this.cleanupSemaphore.Release();
             }
         }
     }
