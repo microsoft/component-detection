@@ -81,7 +81,7 @@ public class ScanSettings : BaseSettings
     public int? MaxDetectionThreads { get; set; }
 
     [CommandOption("--CleanupCreatedFiles")]
-    [Description("Whether or not to cleanup files that are created during detection, based on the rules provided in each detector.")]
+    [Description("Whether or not to cleanup files that are created during detection, based on the rules provided in each detector. Defaults to 'true'.")]
     public bool? CleanupCreatedFiles { get; set; }
 
     /// <inheritdoc />
