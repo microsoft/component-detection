@@ -19,7 +19,8 @@ public class ScanRequest
     /// <param name="imagesToScan">Container images to scan.</param>
     /// <param name="componentRecorder">Detector component recorder.</param>
     /// <param name="maxThreads">Max number of threads to use for detection.</param>
-    public ScanRequest(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate directoryExclusionPredicate, ILogger logger, IDictionary<string, string> detectorArgs, IEnumerable<string> imagesToScan, IComponentRecorder componentRecorder, int maxThreads = 5)
+    /// <param name="cleanupCreatedFiles">Whether or not to cleanup files that are created during detection.</param>
+    public ScanRequest(DirectoryInfo sourceDirectory, ExcludeDirectoryPredicate directoryExclusionPredicate, ILogger logger, IDictionary<string, string> detectorArgs, IEnumerable<string> imagesToScan, IComponentRecorder componentRecorder, int maxThreads = 5, bool cleanupCreatedFiles = true)
     {
         this.SourceDirectory = sourceDirectory;
         this.DirectoryExclusionPredicate = directoryExclusionPredicate;
@@ -27,6 +28,7 @@ public class ScanRequest
         this.ImagesToScan = imagesToScan;
         this.ComponentRecorder = componentRecorder;
         this.MaxThreads = maxThreads;
+        this.CleanupCreatedFiles = cleanupCreatedFiles;
     }
 
     /// <summary>
@@ -59,4 +61,9 @@ public class ScanRequest
     /// enabled for the detector.
     /// </summary>
     public int MaxThreads { get; private set; }
+
+    /// <summary>
+    /// Whether or not to cleanup files that are created during detection, based on the rules provided in each detector.
+    /// </summary>
+    public bool CleanupCreatedFiles { get; private set; }
 }

@@ -74,7 +74,7 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <summary>
     /// Patterns of files and folders that should be cleaned up after the detector has run, if they were created by the detector.
     /// </summary>
-    protected virtual IList<string> CleanUpPatterns { get; set; }
+    protected virtual IList<string> CleanupPatterns { get; set; }
 
     /// <inheritdoc />
     public async virtual Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
@@ -91,7 +91,7 @@ public abstract class FileComponentDetector : IComponentDetector
         var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
         this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
-        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, cancellationToken);
+        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, request.CleanupCreatedFiles, cancellationToken);
     }
 
     /// <summary>
@@ -117,13 +117,14 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <param name="lockfileVersion">The lockfile version.</param>
     protected void RecordLockfileVersion(string lockfileVersion) => this.Telemetry["LockfileVersion"] = lockfileVersion;
 
-    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, CancellationToken cancellationToken = default)
+    private async Task<IndividualDetectorScanResult> ProcessAsync(
+        IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, bool cleanupCreatedFiles, CancellationToken cancellationToken = default)
     {
         var threadsToUse = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1;
         this.Telemetry["ThreadsUsed"] = $"{threadsToUse}";
 
         var processor = new ActionBlock<ProcessRequest>(
-            async processRequest => await this.OnFileFoundWithCleanupAsync(processRequest, detectorArgs, cancellationToken),
+            async processRequest => await this.OnFileFoundWithCleanupAsync(processRequest, detectorArgs, cleanupCreatedFiles, cancellationToken),
             new ExecutionDataflowBlockOptions
             {
                 // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
@@ -159,25 +160,40 @@ public abstract class FileComponentDetector : IComponentDetector
         return Task.CompletedTask;
     }
 
-    private async Task OnFileFoundWithCleanupAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Takes a process and wraps it in a cleanup operation that will delete any files or
+    /// directories created during the process that match the clean up patterns.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    protected async Task WithCleanupAsync(
+        Func<ProcessRequest, IDictionary<string, string>, CancellationToken, Task> process,
+        ProcessRequest processRequest,
+        IDictionary<string, string> detectorArgs,
+        bool cleanupCreatedFiles,
+        CancellationToken cancellationToken = default)
     {
-        if (!this.TryGetFileDirectory(processRequest, out var fileParentDirectory))
+        if (process == null)
         {
-            await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken);
+            throw new ArgumentNullException(nameof(process));
+        }
+
+        if (!this.TryGetCleanupFileDirectory(processRequest, out var fileParentDirectory))
+        {
+            await process(processRequest, detectorArgs, cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        var (preExistingFiles, preExistingDirs) = DirectoryUtilities.GetFilesAndDirectories(fileParentDirectory, this.CleanUpPatterns, DefaultCleanDepth);
+        var (preExistingFiles, preExistingDirs) = DirectoryUtilities.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
         try
         {
-            await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken);
+            await process(processRequest, detectorArgs, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
-            // Clean up any new files or directories created during the scan that match the clean up patters
-            var dryRun = true;
-            var dryRunStr = dryRun ? "[DRYRUN]" : string.Empty;
-            var (newFiles, newDirs) = DirectoryUtilities.GetFilesAndDirectories(fileParentDirectory, this.CleanUpPatterns, DefaultCleanDepth);
+            // Clean up any new files or directories created during the scan that match the clean up patterns
+            var dryRun = !cleanupCreatedFiles;
+            var dryRunStr = dryRun ? "[DRYRUN] " : string.Empty;
+            var (newFiles, newDirs) = DirectoryUtilities.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
             var createdFiles = newFiles.Except(preExistingFiles).ToList();
             var createdDirs = newDirs.Except(preExistingDirs).ToList();
 
@@ -190,7 +206,7 @@ public abstract class FileComponentDetector : IComponentDetector
 
                 try
                 {
-                    this.Logger.LogDebug("{DryRun} PipReport: Cleaning up directory {Dir}", dryRunStr, createdDir);
+                    this.Logger.LogDebug("{DryRun}Cleaning up directory {Dir}", dryRunStr, createdDir);
                     if (!dryRun)
                     {
                         Directory.Delete(createdDir, true);
@@ -198,7 +214,7 @@ public abstract class FileComponentDetector : IComponentDetector
                 }
                 catch (Exception e)
                 {
-                    this.Logger.LogDebug(e, "{DryRun} PipReport: Failed to delete directory {Dir}", dryRunStr, createdDir);
+                    this.Logger.LogDebug(e, "{DryRun}Failed to delete directory {Dir}", dryRunStr, createdDir);
                 }
             }
 
@@ -211,23 +227,29 @@ public abstract class FileComponentDetector : IComponentDetector
 
                 try
                 {
-                    this.Logger.LogDebug("{DryRun} PipReport: Cleaning up file {File}", dryRunStr, createdFile);
-                    File.Delete(createdFile);
+                    this.Logger.LogDebug("{DryRun}Cleaning up file {File}", dryRunStr, createdFile);
+                    if (!dryRun)
+                    {
+                        File.Delete(createdFile);
+                    }
                 }
                 catch (Exception e)
                 {
-                    this.Logger.LogDebug(e, "{DryRun} PipReport: Failed to delete file {File}", dryRunStr, createdFile);
+                    this.Logger.LogDebug(e, "{DryRun}Failed to delete file {File}", dryRunStr, createdFile);
                 }
             }
         }
     }
 
+    private async Task OnFileFoundWithCleanupAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, bool cleanupCreatedFiles, CancellationToken cancellationToken = default) =>
+        await this.WithCleanupAsync(this.OnFileFoundAsync, processRequest, detectorArgs, cleanupCreatedFiles, cancellationToken).ConfigureAwait(false);
+
     // Confirm that there are existing clean up patterns and that the process request has an existing directory.
-    private bool TryGetFileDirectory(ProcessRequest processRequest, out string directory)
+    private bool TryGetCleanupFileDirectory(ProcessRequest processRequest, out string directory)
     {
         directory = string.Empty;
-        if (this.CleanUpPatterns != null
-            && this.CleanUpPatterns.Any()
+        if (this.CleanupPatterns != null
+            && this.CleanupPatterns.Any()
             && processRequest?.ComponentStream?.Location != null
             && Path.GetDirectoryName(processRequest.ComponentStream.Location) != null
             && Directory.Exists(Path.GetDirectoryName(processRequest.ComponentStream.Location)))

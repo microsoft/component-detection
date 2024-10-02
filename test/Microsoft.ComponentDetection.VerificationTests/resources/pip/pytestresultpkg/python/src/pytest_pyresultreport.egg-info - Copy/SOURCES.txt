@@ -1,0 +1,9 @@
+setup.py
+src/pytest_pyresultreport/__init__.py
+src/pytest_pyresultreport/plugin.py
+src/pytest_pyresultreport.egg-info/PKG-INFO
+src/pytest_pyresultreport.egg-info/SOURCES.txt
+src/pytest_pyresultreport.egg-info/dependency_links.txt
+src/pytest_pyresultreport.egg-info/entry_points.txt
+src/pytest_pyresultreport.egg-info/requires.txt
+src/pytest_pyresultreport.egg-info/top_level.txt

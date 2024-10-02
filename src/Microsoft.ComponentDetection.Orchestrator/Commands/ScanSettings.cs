@@ -80,6 +80,10 @@ public class ScanSettings : BaseSettings
     [Description("Max number of parallel threads used for a single detection process, ex: PipReport, Npm, Nuget.")]
     public int? MaxDetectionThreads { get; set; }
 
+    [CommandOption("--CleanupCreatedFiles")]
+    [Description("Whether or not to cleanup files that are created during detection, based on the rules provided in each detector.")]
+    public bool? CleanupCreatedFiles { get; set; }
+
     /// <inheritdoc />
     public override ValidationResult Validate()
     {

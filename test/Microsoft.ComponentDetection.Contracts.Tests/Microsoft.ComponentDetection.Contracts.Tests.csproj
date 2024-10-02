@@ -15,6 +15,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="Resources\filedetector\requirements.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
       <None Update="Resources\__pycache__\testing.pyc">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
