@@ -63,16 +63,15 @@ public class FileComponentDetectorTests
         CancellationToken cancellationToken = default;
         var detectorArgs = new Dictionary<string, string>();
         var cleanupCreatedFiles = true;
-        var fileComponentDetector = new TestFileComponentDetector(new List<string> { "*.pyc" }, this.loggerMock.Object);
+        var fileComponentDetector = new TestFileComponentDetector(["*.pyc"], this.loggerMock.Object);
         var createdFilePath = Path.Combine(this.testDirectory, "todelete.pyc");
 
         // Act
         await fileComponentDetector.TestCleanupAsync(
-            (process, args, token) =>
+            async (process, args, token) =>
             {
                 // creates a single file
-                File.WriteAllText(createdFilePath, "test");
-                return Task.CompletedTask;
+                await File.WriteAllTextAsync(createdFilePath, "test", token).ConfigureAwait(false);
             },
             this.processRequest,
             detectorArgs,
@@ -92,18 +91,17 @@ public class FileComponentDetectorTests
         CancellationToken cancellationToken = default;
         var detectorArgs = new Dictionary<string, string>();
         var cleanupCreatedFiles = true;
-        var fileComponentDetector = new TestFileComponentDetector(new List<string> { "*.egg-info" }, this.loggerMock.Object);
+        var fileComponentDetector = new TestFileComponentDetector(["*.egg-info"], this.loggerMock.Object);
         var createdDirectory = Path.Combine(this.testDirectory, "todelete.egg-info");
         var createdFilePath = Path.Combine(createdDirectory, "todelete.txt");
 
         // Act
         await fileComponentDetector.TestCleanupAsync(
-            (process, args, token) =>
+            async (process, args, token) =>
             {
                 // creates a single directory with a file in it
                 Directory.CreateDirectory(createdDirectory);
-                File.WriteAllText(createdFilePath, "test");
-                return Task.CompletedTask;
+                await File.WriteAllTextAsync(createdFilePath, "test", token).ConfigureAwait(false);
             },
             this.processRequest,
             detectorArgs,
@@ -124,18 +122,17 @@ public class FileComponentDetectorTests
         CancellationToken cancellationToken = default;
         var detectorArgs = new Dictionary<string, string>();
         var cleanupCreatedFiles = false;
-        var fileComponentDetector = new TestFileComponentDetector(new List<string> { "*.egg-info", "*.txt" }, this.loggerMock.Object);
+        var fileComponentDetector = new TestFileComponentDetector(["*.egg-info", "*.txt"], this.loggerMock.Object);
         var createdDirectory = Path.Combine(this.testDirectory, "todelete.egg-info");
         var createdFilePath = Path.Combine(createdDirectory, "todelete.txt");
 
         // Act
         await fileComponentDetector.TestCleanupAsync(
-            (process, args, token) =>
+            async (process, args, token) =>
             {
                 // creates a single directory with a file in it
                 Directory.CreateDirectory(createdDirectory);
-                File.WriteAllText(createdFilePath, "test");
-                return Task.CompletedTask;
+                await File.WriteAllTextAsync(createdFilePath, "test", token).ConfigureAwait(false);
             },
             this.processRequest,
             detectorArgs,
@@ -156,7 +153,7 @@ public class FileComponentDetectorTests
         CancellationToken cancellationToken = default;
         var detectorArgs = new Dictionary<string, string>();
         var cleanupCreatedFiles = true;
-        var fileComponentDetector = new TestFileComponentDetector(new List<string> { "*.egg-info", "*.pyc" }, this.loggerMock.Object);
+        var fileComponentDetector = new TestFileComponentDetector(["*.egg-info", "*.pyc"], this.loggerMock.Object);
 
         // creates following structure
         // - tokeep
@@ -177,17 +174,16 @@ public class FileComponentDetectorTests
 
         // Act
         await fileComponentDetector.TestCleanupAsync(
-            (process, args, token) =>
+            async (process, args, token) =>
             {
                 Directory.CreateDirectory(createdDirectoryKeep1);
-                File.WriteAllText(createdFileKeep1, "test");
+                await File.WriteAllTextAsync(createdFileKeep1, "test", token).ConfigureAwait(false);
                 Directory.CreateDirectory(createdDirectoryKeep2);
-                File.WriteAllText(createdFileKeep2, "test");
+                await File.WriteAllTextAsync(createdFileKeep2, "test", token).ConfigureAwait(false);
 
                 Directory.CreateDirectory(createdDirectoryDelete1);
-                File.WriteAllText(createdFileDelete1, "test");
-                File.WriteAllText(createdFileDelete2, "test");
-                return Task.CompletedTask;
+                await File.WriteAllTextAsync(createdFileDelete1, "test", token).ConfigureAwait(false);
+                await File.WriteAllTextAsync(createdFileDelete2, "test", token).ConfigureAwait(false);
             },
             this.processRequest,
             detectorArgs,
@@ -218,11 +214,11 @@ public class FileComponentDetectorTests
 
         public override string Id => "TestFileComponentDetector";
 
-        public override IList<string> SearchPatterns => new List<string> { "requirements.txt" };
+        public override IList<string> SearchPatterns => ["requirements.txt"];
 
-        public override IEnumerable<string> Categories => new List<string> { "Test" };
+        public override IEnumerable<string> Categories => ["Test"];
 
-        public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
+        public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pip];
 
         public override int Version { get; } = 1;
 

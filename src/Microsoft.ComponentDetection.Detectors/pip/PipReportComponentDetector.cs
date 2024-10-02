@@ -81,7 +81,7 @@ public class PipReportComponentDetector : FileComponentDetector
 
     protected override bool EnableParallelism { get; set; } = true;
 
-    protected override IList<string> CleanupPatterns => new List<string> { "*.egg", "*.egg-info", "*.pyc", "*.pyo", "*.pyd", "__pycache__" };
+    protected override IList<string> CleanupPatterns => ["*.egg", "*.egg-info", "*.pyc", "*.pyo", "*.pyd", "__pycache__"];
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
