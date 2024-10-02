@@ -17,7 +17,7 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class FileComponentDetectorTests
+public class FileComponentDetectorWithCleanupTests
 {
     private List<string> fileSystemMockDirectories;
     private List<string> fileSystemMockFiles;
@@ -297,7 +297,7 @@ public class FileComponentDetectorTests
         return Regex.IsMatch(path, "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$");
     }
 
-    public class TestFileComponentDetector : FileComponentDetector
+    public class TestFileComponentDetector : FileComponentDetectorWithCleanup
     {
         public TestFileComponentDetector(List<string> cleanupPatterns, ILogger logger, IFileUtilityService fileUtilityService, IDirectoryUtilityService directoryUtilityService)
             : base(fileUtilityService, directoryUtilityService)

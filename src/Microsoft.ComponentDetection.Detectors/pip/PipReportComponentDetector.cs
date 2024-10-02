@@ -16,7 +16,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-public class PipReportComponentDetector : FileComponentDetector
+public class PipReportComponentDetector : FileComponentDetectorWithCleanup
 {
     // environment variables
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
