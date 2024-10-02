@@ -1,15 +1,21 @@
-namespace Microsoft.ComponentDetection.Contracts.Tests;
+namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System.IO;
 using FluentAssertions;
-using Microsoft.ComponentDetection.Contracts.Utilities;
+using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class DirectoryUtilitiesTests
+public class DirectoryUtilityServiceTests
 {
+    private readonly IDirectoryUtilityService directoryUtilityService;
+
+    public DirectoryUtilityServiceTests() =>
+        this.directoryUtilityService = new DirectoryUtilityService();
+
     [TestMethod]
     public void GetFilesAndDirectories_WithLargeDepth_ShouldReturnFilesAndDirectories()
     {
@@ -21,7 +27,7 @@ public class DirectoryUtilitiesTests
         var depth = 10;
 
         // Act
-        var (files, directories) = DirectoryUtilities.GetFilesAndDirectories(directory, patterns, depth);
+        var (files, directories) = this.directoryUtilityService.GetFilesAndDirectories(directory, patterns, depth);
 
         // Assert
         files.Should().NotBeEmpty();
@@ -42,7 +48,7 @@ public class DirectoryUtilitiesTests
         var depth = 1;
 
         // Act
-        var (files, directories) = DirectoryUtilities.GetFilesAndDirectories(directory, patterns, depth);
+        var (files, directories) = this.directoryUtilityService.GetFilesAndDirectories(directory, patterns, depth);
 
         // Assert does not find file, as the file is one level below the __pycache__ directory
         files.Should().BeEmpty();
@@ -61,7 +67,7 @@ public class DirectoryUtilitiesTests
         var depth = 0;
 
         // Act
-        var (files, directories) = DirectoryUtilities.GetFilesAndDirectories(directory, patterns, depth);
+        var (files, directories) = this.directoryUtilityService.GetFilesAndDirectories(directory, patterns, depth);
 
         // Assert
         files.Should().BeEmpty();

@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Contracts.Utilities;
 using Microsoft.Extensions.Logging;
 
 /// <summary>Specialized base class for file based component detection.</summary>
@@ -23,6 +22,16 @@ public abstract class FileComponentDetector : IComponentDetector
     /// </summary>
     private readonly SemaphoreSlim cleanupSemaphore = new(1, 1);
 
+    protected FileComponentDetector()
+    {
+    }
+
+    protected FileComponentDetector(IFileUtilityService fileUtilityService, IDirectoryUtilityService directoryUtilityService)
+    {
+        this.FileUtilityService = fileUtilityService;
+        this.DirectoryUtilityService = directoryUtilityService;
+    }
+
     /// <summary>
     /// Gets or sets the factory for handing back component streams to File detectors.
     /// </summary>
@@ -34,6 +43,10 @@ public abstract class FileComponentDetector : IComponentDetector
     /// Gets or sets the logger for writing basic logging message to both console and file.
     /// </summary>
     protected ILogger Logger { get; set; }
+
+    public IFileUtilityService FileUtilityService { get; private set; }
+
+    public IDirectoryUtilityService DirectoryUtilityService { get; private set; }
 
     public IComponentRecorder ComponentRecorder { get; private set; }
 
@@ -184,14 +197,16 @@ public abstract class FileComponentDetector : IComponentDetector
 
         // If there are no cleanup patterns, or the relevant file does not have a valid directory, run the detection without even
         // creating the files that exist.
-        if (!this.TryGetCleanupFileDirectory(processRequest, out var fileParentDirectory))
+        if (this.FileUtilityService == null
+            || this.DirectoryUtilityService == null
+            || !this.TryGetCleanupFileDirectory(processRequest, out var fileParentDirectory))
         {
             await process(processRequest, detectorArgs, cancellationToken).ConfigureAwait(false);
             return;
         }
 
         // Get the files and directories that match the cleanup pattern and exist before the process runs.
-        var (preExistingFiles, preExistingDirs) = DirectoryUtilities.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
+        var (preExistingFiles, preExistingDirs) = this.DirectoryUtilityService.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
         try
         {
             await process(processRequest, detectorArgs, cancellationToken).ConfigureAwait(false);
@@ -206,13 +221,13 @@ public abstract class FileComponentDetector : IComponentDetector
                 // Clean up any new files or directories created during the scan that match the clean up patterns
                 var dryRun = !cleanupCreatedFiles;
                 var dryRunStr = dryRun ? "[DRYRUN] " : string.Empty;
-                var (newFiles, newDirs) = DirectoryUtilities.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
+                var (newFiles, newDirs) = this.DirectoryUtilityService.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
                 var createdFiles = newFiles.Except(preExistingFiles).ToList();
                 var createdDirs = newDirs.Except(preExistingDirs).ToList();
 
                 foreach (var createdDir in createdDirs)
                 {
-                    if (createdDir is null || !Directory.Exists(createdDir))
+                    if (createdDir is null || !this.DirectoryUtilityService.Exists(createdDir))
                     {
                         continue;
                     }
@@ -222,7 +237,7 @@ public abstract class FileComponentDetector : IComponentDetector
                         this.Logger.LogDebug("{DryRun}Cleaning up directory {Dir}", dryRunStr, createdDir);
                         if (!dryRun)
                         {
-                            Directory.Delete(createdDir, true);
+                            this.DirectoryUtilityService.Delete(createdDir, true);
                         }
                     }
                     catch (Exception e)
@@ -233,7 +248,7 @@ public abstract class FileComponentDetector : IComponentDetector
 
                 foreach (var createdFile in createdFiles)
                 {
-                    if (createdFile is null || !File.Exists(createdFile))
+                    if (createdFile is null || !this.FileUtilityService.Exists(createdFile))
                     {
                         continue;
                     }
@@ -243,7 +258,7 @@ public abstract class FileComponentDetector : IComponentDetector
                         this.Logger.LogDebug("{DryRun}Cleaning up file {File}", dryRunStr, createdFile);
                         if (!dryRun)
                         {
-                            File.Delete(createdFile);
+                            this.FileUtilityService.Delete(createdFile);
                         }
                     }
                     catch (Exception e)
@@ -270,7 +285,7 @@ public abstract class FileComponentDetector : IComponentDetector
             && this.CleanupPatterns.Any()
             && processRequest?.ComponentStream?.Location != null
             && Path.GetDirectoryName(processRequest.ComponentStream.Location) != null
-            && Directory.Exists(Path.GetDirectoryName(processRequest.ComponentStream.Location)))
+            && this.DirectoryUtilityService.Exists(Path.GetDirectoryName(processRequest.ComponentStream.Location)))
         {
             directory = Path.GetDirectoryName(processRequest.ComponentStream.Location);
             return true;

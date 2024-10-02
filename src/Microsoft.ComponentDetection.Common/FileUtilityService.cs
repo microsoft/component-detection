@@ -40,6 +40,9 @@ public class FileUtilityService : IFileUtilityService
     }
 
     /// <inheritdoc />
+    public void Delete(string path) => File.Delete(path);
+
+    /// <inheritdoc />
     public (string DuplicateFilePath, bool CreatedDuplicate) DuplicateFileWithoutLines(string fileName, params string[] removalIndicators)
     {
         // Read all lines from the file and filter out the lines that start with the removal indicator.

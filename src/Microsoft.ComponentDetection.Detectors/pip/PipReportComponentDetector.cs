@@ -50,7 +50,9 @@ public class PipReportComponentDetector : FileComponentDetector
         IPythonCommandService pythonCommandService,
         IPythonResolver pythonResolver,
         IFileUtilityService fileUtilityService,
+        IDirectoryUtilityService directoryUtilityService,
         ILogger<PipReportComponentDetector> logger)
+        : base(fileUtilityService, directoryUtilityService)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
