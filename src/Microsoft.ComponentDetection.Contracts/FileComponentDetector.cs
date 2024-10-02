@@ -182,12 +182,15 @@ public abstract class FileComponentDetector : IComponentDetector
             throw new ArgumentNullException(nameof(process));
         }
 
+        // If there are no cleanup patterns, or the relevant file does not have a valid directory, run the detection without even
+        // creating the files that exist.
         if (!this.TryGetCleanupFileDirectory(processRequest, out var fileParentDirectory))
         {
             await process(processRequest, detectorArgs, cancellationToken).ConfigureAwait(false);
             return;
         }
 
+        // Get the files and directories that match the cleanup pattern and exist before the process runs.
         var (preExistingFiles, preExistingDirs) = DirectoryUtilities.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
         try
         {
