@@ -32,20 +32,25 @@ function main()
     mkdir $output
     mkdir $releaseOutput
 
+    $env:PipReportSkipFallbackOnFailure = "true"
+    $env:PIP_INDEX_URL="https://pypi.python.org/simple"
+
     Write-Progress "Running detection....."
     Set-Location (Get-Item  $repoPath).FullName
     dotnet restore
     Set-Location ((Get-Item  $repoPath).FullName + "\src\Microsoft.ComponentDetection")
     dotnet run scan --SourceDirectory $verificationTestRepo --Output $output `
                     --DockerImagesToScan $dockerImagesToScan `
-                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff
+                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff `
+                    --MaxDetectionThreads 5 --DebugTelemetry
 
     Set-Location $CDRelease
     dotnet restore
     Set-Location ($CDRelease + "\src\Microsoft.ComponentDetection")
     dotnet run scan --SourceDirectory $verificationTestRepo --Output $releaseOutput `
                     --DockerImagesToScan $dockerImagesToScan `
-                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff
+                    --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff `
+                    --MaxDetectionThreads 5 --DebugTelemetry
 
     $env:GITHUB_OLD_ARTIFACTS_DIR = $releaseOutput
     $env:GITHUB_NEW_ARTIFACTS_DIR = $output

@@ -79,7 +79,7 @@ public class PipReportComponentDetector : FileComponentDetectorWithCleanup
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pip];
 
-    public override int Version { get; } = 8;
+    public override int Version { get; } = 9;
 
     protected override bool EnableParallelism { get; set; } = true;
 
