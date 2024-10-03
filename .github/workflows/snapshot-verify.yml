@@ -54,6 +54,11 @@ jobs:
       - name: Setup .NET Core
         uses: actions/setup-dotnet@6bd8b7f7774af54e05809fcc5431931b3eb1ddee # v4.0.1
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
       - run: dotnet restore
 
       - name: Install Apache Ivy
