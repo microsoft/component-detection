@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Common;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.ComponentDetection.Contracts;
@@ -32,6 +33,7 @@ public class DirectoryUtilityService : IDirectoryUtilityService
         var dirList = new List<string>();
         foreach (var directory in this.EnumerateDirectories(root))
         {
+            Console.WriteLine($"Processing directory: {directory}");
             if (depth > 0)
             {
                 var (files, directories) = this.GetFilesAndDirectories(directory, patterns, depth - 1);
