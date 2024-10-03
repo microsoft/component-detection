@@ -79,9 +79,9 @@ public abstract class FileComponentDetectorWithCleanup : FileComponentDetector
                 // If the cleanupCreatedFiles flag is set to false, this will be a dry run and will just log the files that it would clean.
                 var dryRun = !cleanupCreatedFiles;
                 var dryRunStr = dryRun ? "[DRYRUN] " : string.Empty;
-                var (newFiles, newDirs) = this.DirectoryUtilityService.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
-                var createdFiles = newFiles.Except(preExistingFiles).ToList();
-                var createdDirs = newDirs.Except(preExistingDirs).ToList();
+                var (latestFiles, latestDirs) = this.DirectoryUtilityService.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
+                var createdFiles = latestFiles.Except(preExistingFiles).ToList();
+                var createdDirs = latestDirs.Except(preExistingDirs).ToList();
 
                 foreach (var createdDir in createdDirs)
                 {
