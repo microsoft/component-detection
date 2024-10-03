@@ -82,7 +82,7 @@ public abstract class FileComponentDetector : IComponentDetector
         var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
         this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
-        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, cancellationToken);
+        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, request.CleanupCreatedFiles, cancellationToken);
     }
 
     /// <summary>
@@ -108,13 +108,14 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <param name="lockfileVersion">The lockfile version.</param>
     protected void RecordLockfileVersion(string lockfileVersion) => this.Telemetry["LockfileVersion"] = lockfileVersion;
 
-    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, CancellationToken cancellationToken = default)
+    private async Task<IndividualDetectorScanResult> ProcessAsync(
+        IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, bool cleanupCreatedFiles, CancellationToken cancellationToken = default)
     {
         var threadsToUse = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1;
         this.Telemetry["ThreadsUsed"] = $"{threadsToUse}";
 
         var processor = new ActionBlock<ProcessRequest>(
-            async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken),
+            async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cleanupCreatedFiles, cancellationToken),
             new ExecutionDataflowBlockOptions
             {
                 // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
@@ -149,4 +150,8 @@ public abstract class FileComponentDetector : IComponentDetector
     {
         return Task.CompletedTask;
     }
+
+    // Do not cleanup by default, only if the detector uses the FileComponentWithCleanup abstract class.
+    protected virtual async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, bool cleanupCreatedFiles, CancellationToken cancellationToken = default) =>
+        await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken);
 }

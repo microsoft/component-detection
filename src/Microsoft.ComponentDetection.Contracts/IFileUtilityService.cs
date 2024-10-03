@@ -44,10 +44,16 @@ public interface IFileUtilityService
     Stream MakeFileStream(string fileName);
 
     /// <summary>
-    /// Duplicates a file, removing any lines that starts with the given string.
+    /// Deletes the file at the specified path.
+    /// </summary>
+    /// <param name="path">Path to the file.</param>
+    void Delete(string path);
+
+    /// <summary>
+    /// Duplicates a file, removing any lines that start with the given string.
     /// </summary>
     /// <param name="fileName">Path to the file.</param>
-    /// <param name="removalIndicators">The strings that indicates a line should be removed.</param>
+    /// <param name="removalIndicators">The strings that indicate a line should be removed.</param>
     /// <returns>Returns the path of the new file, and whether or not one was created.</returns>
     (string DuplicateFilePath, bool CreatedDuplicate) DuplicateFileWithoutLines(string fileName, params string[] removalIndicators);
 }
