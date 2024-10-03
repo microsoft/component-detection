@@ -33,8 +33,8 @@ public class DirectoryUtilityServiceTests
         files.Should().NotBeEmpty();
         directories.Should().NotBeEmpty();
 
-        files.Should().Contain($"{directory}\\Resources\\__pycache__\\testing.pyc");
-        directories.Should().Contain($"{directory}\\Resources\\__pycache__");
+        files.Should().Contain(Path.Combine(directory, "Resources", "__pycache__", "testing.pyc"));
+        directories.Should().Contain(Path.Combine(directory, "Resources", "__pycache__"));
     }
 
     [TestMethod]
@@ -53,7 +53,7 @@ public class DirectoryUtilityServiceTests
         // Assert does not find file, as the file is one level below the __pycache__ directory
         files.Should().BeEmpty();
         directories.Should().NotBeEmpty();
-        directories.Should().Contain($"{directory}\\Resources\\__pycache__");
+        directories.Should().Contain(Path.Combine(directory, "Resources", "__pycache__"));
     }
 
     [TestMethod]
