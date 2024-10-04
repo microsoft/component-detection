@@ -7,7 +7,7 @@ public partial class FrameworkPackages
     internal static NuGetFramework NetStandard20 { get; } = NuGetFramework.Parse("netstandard2.0");
 
     /// <summary>
-    /// Packages provided by the .NET Standard 2.0 framework.
+    /// Packages overlapping with the .NET Standard 2.0 framework.
     /// NETStandard2.0 did not drop packages with PackageOverrides,
     /// instead it only dropped reference assemblies with conflict resolution via assembly comparison.
     /// This means that a user could still get these packages in their output if the force the
