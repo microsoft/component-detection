@@ -48,6 +48,7 @@ Component Detection supports detecting libraries from the following ecosystem:
 | [Poetry (Python, lockfiles only)](docs/detectors/poetry.md)                      | ✔                                               | ❌              |
 | Ruby                                                                             | ✔                                               | ✔              |
 | Rust                                                                             | ✔                                               | ✔              |
+| Pub                                                                              | ✔                                               | ❌              |
 
 For a complete feature overview refer to [feature-overview.md](docs/feature-overview.md)
 
