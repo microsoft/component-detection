@@ -15,7 +15,7 @@ using global::NuGet.Versioning;
 /// </summary>
 internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<string, NuGetVersion>>, IEnumerable
 {
-    private static readonly Dictionary<NuGetFramework, FrameworkPackages> FrameworkPackagesByFramework = new();
+    private static readonly Dictionary<NuGetFramework, FrameworkPackages> FrameworkPackagesByFramework = [];
 
     static FrameworkPackages()
     {
