@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETStandard21 { get; } = NuGetFramework.Parse("netstandard2.1");
-
-    internal static FrameworkPackages NETStandard21Packages { get; } = new(NETStandard21, NETStandard20Packages)
+    internal static class NETStandard21
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netstandard2.1"), NETStandard20.Instance)
+        {
         { "System.Buffers", "4.5.1" },
         { "System.Collections.Concurrent", "4.3.0" },
         { "System.Collections.Immutable", "1.4.0" },
@@ -43,5 +43,6 @@ internal partial class FrameworkPackages
         { "System.Threading.Tasks.Parallel", "4.3.0" },
         { "System.Xml.XDocument", "4.3.0" },
         { "System.Xml.XmlSerializer", "4.3.0" },
-    };
+        };
+    }
 }

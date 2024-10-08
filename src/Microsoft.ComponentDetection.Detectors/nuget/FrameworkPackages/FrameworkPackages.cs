@@ -19,23 +19,25 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
     static FrameworkPackages()
     {
-        FrameworkPackagesByFramework[NETStandard20] = NETStandard20Packages;
-        FrameworkPackagesByFramework[NETStandard21] = NETStandard21Packages;
-        FrameworkPackagesByFramework[NETCoreApp20] = NETCoreApp20Packages;
-        FrameworkPackagesByFramework[NETCoreApp21] = NETCoreApp21Packages;
-        FrameworkPackagesByFramework[NETCoreApp30] = NETCoreApp30Packages;
-        FrameworkPackagesByFramework[NETCoreApp31] = NETCoreApp31Packages;
-        FrameworkPackagesByFramework[NETCoreApp50] = NETCoreApp50Packages;
-        FrameworkPackagesByFramework[NETCoreApp60] = NETCoreApp60Packages;
-        FrameworkPackagesByFramework[NETCoreApp70] = NETCoreApp70Packages;
-        FrameworkPackagesByFramework[NETCoreApp80] = NETCoreApp80Packages;
-        FrameworkPackagesByFramework[NETCoreApp90] = NETCoreApp90Packages;
+        AddPackages(NETStandard20.Instance);
+        AddPackages(NETStandard21.Instance);
+        AddPackages(NETCoreApp20.Instance);
+        AddPackages(NETCoreApp21.Instance);
+        AddPackages(NETCoreApp30.Instance);
+        AddPackages(NETCoreApp31.Instance);
+        AddPackages(NETCoreApp50.Instance);
+        AddPackages(NETCoreApp60.Instance);
+        AddPackages(NETCoreApp70.Instance);
+        AddPackages(NETCoreApp80.Instance);
+        AddPackages(NETCoreApp90.Instance);
+
+        static void AddPackages(FrameworkPackages packages) => FrameworkPackagesByFramework[packages.Framework] = packages;
     }
 
     public FrameworkPackages(NuGetFramework framework) => this.Framework = framework;
 
     public FrameworkPackages(NuGetFramework framework, FrameworkPackages frameworkPackages)
-        : this(frameworkPackages.Framework) => this.Packages = new(frameworkPackages.Packages);
+        : this(framework) => this.Packages = new(frameworkPackages.Packages);
 
     public NuGetFramework Framework { get; }
 
@@ -99,7 +101,8 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
     private void Add(string id, string version)
     {
-        this.Packages.Add(id, NuGetVersion.Parse(version));
+        // intentionally redirect to indexer to allow for overwrite
+        this.Packages[id] = NuGetVersion.Parse(version);
     }
 
     public bool IsAFrameworkComponent(string id, NuGetVersion version) => this.Packages.TryGetValue(id, out var frameworkPackageVersion) && frameworkPackageVersion >= version;

@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETCoreApp50 { get; } = NuGetFramework.Parse("net5.0");
-
-    internal static FrameworkPackages NETCoreApp50Packages { get; } = new(NETCoreApp50, NETCoreApp31Packages)
+    internal static class NETCoreApp50
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("net5.0"), NETCoreApp31.Instance)
+        {
         { "Microsoft.CSharp", "4.7.0" },
         { "runtime.debian.8-x64.runtime.native.System", "4.3.0" },
         { "runtime.debian.8-x64.runtime.native.System.IO.Compression", "4.3.0" },
@@ -76,5 +76,6 @@ internal partial class FrameworkPackages
         { "System.Text.Json", "5.0.0" },
         { "System.Threading.Channels", "5.0.0" },
         { "System.Threading.Tasks.Dataflow", "5.0.0" },
-    };
+        };
+    }
 }

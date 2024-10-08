@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETCoreApp21 { get; } = NuGetFramework.Parse("netcoreapp2.1");
-
-    internal static FrameworkPackages NETCoreApp21Packages { get; } = new(NETCoreApp21, NETCoreApp20Packages)
+    internal static class NETCoreApp21
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netcoreapp2.1"), NETCoreApp20.Instance)
+        {
         { "System.Collections.Immutable", "1.5.0" },
         { "System.ComponentModel.Annotations", "4.4.1" },
         { "System.Diagnostics.DiagnosticSource", "4.5.0" },
@@ -20,5 +20,6 @@ internal partial class FrameworkPackages
         { "System.Threading.Tasks.Dataflow", "4.9.0" },
         { "System.Threading.Tasks.Extensions", "4.5.4" },
         { "System.ValueTuple", "4.5.0" },
-    };
+        };
+    }
 }

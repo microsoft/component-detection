@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETCoreApp20 { get; } = NuGetFramework.Parse("netcoreapp2.0");
-
-    internal static FrameworkPackages NETCoreApp20Packages { get; } = new(NETCoreApp20, NETStandard20Packages)
+    internal static class NETCoreApp20
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netcoreapp2.0"), NETStandard20.Instance)
+        {
         { "System.Buffers", "4.4.0" },
         { "System.Collections.Concurrent", "4.3.0" },
         { "System.Collections.Immutable", "1.4.0" },
@@ -44,5 +44,6 @@ internal partial class FrameworkPackages
         { "System.Threading.Tasks.Parallel", "4.3.0" },
         { "System.Xml.XDocument", "4.3.0" },
         { "System.Xml.XmlSerializer", "4.3.0" },
-    };
+        };
+    }
 }

@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETCoreApp31 { get; } = NuGetFramework.Parse("netcoreapp3.1");
-
-    internal static FrameworkPackages NETCoreApp31Packages { get; } = new(NETCoreApp31, NETCoreApp30Packages)
+    internal static class NETCoreApp31
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netcoreapp3.1"), NETCoreApp30.Instance)
+        {
         { "System.Collections.Immutable", "1.7.0" },
         { "System.ComponentModel.Annotations", "4.7.0" },
         { "System.Diagnostics.DiagnosticSource", "4.7.0" },
@@ -22,5 +22,6 @@ internal partial class FrameworkPackages
         { "System.Text.Json", "4.7.0" },
         { "System.Threading.Channels", "4.7.0" },
         { "System.Threading.Tasks.Dataflow", "4.11.0" },
-    };
+        };
+    }
 }

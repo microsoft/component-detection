@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETCoreApp60 { get; } = NuGetFramework.Parse("net6.0");
-
-    internal static FrameworkPackages NETCoreApp60Packages { get; } = new(NETCoreApp60, NETCoreApp50Packages)
+    internal static class NETCoreApp60
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("net6.0"), NETCoreApp50.Instance)
+        {
         { "Microsoft.Win32.Registry", "5.0.0" },
         { "System.Collections.Immutable", "6.0.0" },
         { "System.Diagnostics.DiagnosticSource", "6.0.1" },
@@ -29,5 +29,6 @@ internal partial class FrameworkPackages
         { "System.Text.Json", "6.0.9" },
         { "System.Threading.Channels", "6.0.0" },
         { "System.Threading.Tasks.Dataflow", "6.0.0" },
-    };
+        };
+    }
 }

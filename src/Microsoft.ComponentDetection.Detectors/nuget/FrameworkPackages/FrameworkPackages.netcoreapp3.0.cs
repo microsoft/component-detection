@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETCoreApp30 { get; } = NuGetFramework.Parse("netcoreapp3.0");
-
-    internal static FrameworkPackages NETCoreApp30Packages { get; } = new(NETCoreApp30, NETCoreApp21Packages)
+    internal static class NETCoreApp30
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netcoreapp3.0"), NETCoreApp21.Instance)
+        {
         { "Microsoft.CSharp", "4.4.0" },
         { "Microsoft.Win32.Registry", "4.4.0" },
         { "runtime.debian.8-x64.runtime.native.System.Security.Cryptography.OpenSsl", "4.3.0" },
@@ -44,5 +44,6 @@ internal partial class FrameworkPackages
         { "System.Text.Json", "4.6.0" },
         { "System.Threading.Channels", "4.6.0" },
         { "System.Threading.Tasks.Dataflow", "4.10.0" },
-    };
+        };
+    }
 }

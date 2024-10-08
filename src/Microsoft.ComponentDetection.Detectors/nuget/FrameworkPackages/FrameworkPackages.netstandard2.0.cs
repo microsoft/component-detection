@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETStandard20 { get; } = NuGetFramework.Parse("netstandard2.0");
-
-    internal static FrameworkPackages NETStandard20Packages { get; } = new(NETStandard20)
+    internal static class NETStandard20
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netstandard2.0"))
+        {
         { "Microsoft.Win32.Primitives", "4.3.0" },
         { "System.AppContext", "4.3.0" },
         { "System.Collections", "4.3.0" },
@@ -103,5 +103,6 @@ internal partial class FrameworkPackages
         { "System.Xml.XmlSerializer", "4.0.11" },
         { "System.Xml.XPath", "4.3.0" },
         { "System.Xml.XPath.XDocument", "4.3.0" },
-    };
+        };
+    }
 }

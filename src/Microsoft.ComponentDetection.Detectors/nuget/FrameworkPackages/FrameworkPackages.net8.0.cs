@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETCoreApp80 { get; } = NuGetFramework.Parse("net8.0");
-
-    internal static FrameworkPackages NETCoreApp80Packages { get; } = new(NETCoreApp80, NETCoreApp70Packages)
+    internal static class NETCoreApp80
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("net8.0"), NETCoreApp70.Instance)
+        {
         { "System.Collections.Immutable", "8.0.0" },
         { "System.Diagnostics.DiagnosticSource", "8.0.1" },
         { "System.Formats.Asn1", "8.0.1" },
@@ -21,5 +21,6 @@ internal partial class FrameworkPackages
         { "System.Text.Json", "8.0.4" },
         { "System.Threading.Channels", "8.0.0" },
         { "System.Threading.Tasks.Dataflow", "8.0.1" },
-    };
+        };
+    }
 }

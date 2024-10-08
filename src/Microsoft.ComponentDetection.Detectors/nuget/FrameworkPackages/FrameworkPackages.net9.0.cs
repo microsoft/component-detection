@@ -7,10 +7,10 @@ using global::NuGet.Frameworks;
 /// </summary>
 internal partial class FrameworkPackages
 {
-    internal static NuGetFramework NETCoreApp90 { get; } = NuGetFramework.Parse("net9.0");
-
-    internal static FrameworkPackages NETCoreApp90Packages { get; } = new(NETCoreApp90, NETCoreApp80Packages)
+    internal static class NETCoreApp90
     {
+        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("net9.0"), NETCoreApp80.Instance)
+        {
         { "Microsoft.VisualBasic", "10.4.0" },
         { "runtime.debian.8-x64.runtime.native.System", "4.3.1" },
         { "runtime.debian.8-x64.runtime.native.System.IO.Compression", "4.3.2" },
@@ -93,5 +93,6 @@ internal partial class FrameworkPackages
         { "System.Threading.Tasks.Dataflow", "9.0.0" },
         { "System.Threading.Tasks.Extensions", "5.0.0" },
         { "System.Xml.XPath.XDocument", "5.0.0" },
-    };
+        };
+    }
 }
