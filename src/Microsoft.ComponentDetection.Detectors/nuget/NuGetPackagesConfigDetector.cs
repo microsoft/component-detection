@@ -53,10 +53,11 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
     {
         try
         {
+            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var packagesConfig = new PackagesConfigReader(processRequest.ComponentStream.Stream);
             foreach (var package in packagesConfig.GetPackages(allowDuplicatePackageIds: true))
             {
-                processRequest.SingleFileComponentRecorder.RegisterUsage(
+                singleFileComponentRecorder.RegisterUsage(
                     new DetectedComponent(
                         new NuGetComponent(
                             package.PackageIdentity.Id,
@@ -64,6 +65,12 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
                     true,
                     null,
                     package.IsDevelopmentDependency);
+
+                // get the actual component in case it already exists
+                var libraryComponent = singleFileComponentRecorder.GetComponent(package.PackageIdentity.Id);
+
+                // Add framework information to the actual component
+                ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(package.TargetFramework.GetShortFolderName());
             }
         }
         catch (Exception e) when (e is PackagesConfigReaderException or XmlException)
