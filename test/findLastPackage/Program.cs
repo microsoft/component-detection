@@ -151,7 +151,7 @@ foreach (var framework in inboxPackages.Keys)
     fileWriter.WriteLine("        {");
     foreach(var package in reducedPackages.OrderBy(p => p.Key))
     {
-        fileWriter.WriteLine($"        {{ \"{package.Key}\", \"{package.Value}\" }},");
+        fileWriter.WriteLine($"            {{ \"{package.Key}\", \"{package.Value}\" }},");
     }
     fileWriter.WriteLine("        };");
     fileWriter.WriteLine("    }");

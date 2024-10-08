@@ -41,7 +41,6 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
     public NuGetFramework Framework { get; }
 
-    // Adapted from https://github.com/dotnet/sdk/blob/c3a8f72c3a5491c693ff8e49e7406136a12c3040/src/Tasks/Common/ConflictResolution/PackageOverride.cs#L52-L68
     public Dictionary<string, NuGetVersion> Packages { get; } = new Dictionary<string, NuGetVersion>(StringComparer.OrdinalIgnoreCase);
 
     public static FrameworkPackages GetFrameworkPackages(NuGetFramework framework)
@@ -51,6 +50,8 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
             return frameworkPackages;
         }
 
+        // if we didn't predefine the package overrides, load them from the targeting pack
+        // we might just leave this out since in future frameworks we'll have this functionality built into NuGet.
         var frameworkPackagesFromPack = LoadFrameworkPackagesFromPack(framework);
 
         return FrameworkPackagesByFramework[framework] = frameworkPackagesFromPack ?? new FrameworkPackages(framework);
@@ -75,9 +76,11 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
         if (packageOverridesFile == null)
         {
+            // we should also try to grab them from the user's package folder - they'll be in one location or the other.
             return null;
         }
 
+        // Adapted from https://github.com/dotnet/sdk/blob/c3a8f72c3a5491c693ff8e49e7406136a12c3040/src/Tasks/Common/ConflictResolution/PackageOverride.cs#L52-L68
         var frameworkPackages = new FrameworkPackages(framework);
         var packageOverrides = File.ReadAllLines(packageOverridesFile);
 
