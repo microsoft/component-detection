@@ -22,6 +22,11 @@ namespace findLastPackage
 {
     internal static class NuGetUtilities
     {
+        static NuGetUtilities()
+        {
+            Package.InitializeRuntimeGraph(Path.Combine(AppContext.BaseDirectory, "RuntimeIdentifierGraph.json"));
+        }
+
         public static Version[] GetStableVersions(string packageId)
         {
             string allPackageVersionsUrl = $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLowerInvariant()}/index.json";
@@ -58,31 +63,54 @@ namespace findLastPackage
                 logger,
                 cancellationToken).Result;
 
-            return packages.Select(p => p.Identity.Version.Version).OrderDescending().ToArray();
+            return packages.Select(p => p.Identity.Version.As3PartVersion()).OrderDescending().ToArray();
         }
+
+        private static Version As3PartVersion(this NuGetVersion nugetVersion) => new Version(nugetVersion.Major, nugetVersion.Minor, nugetVersion.Patch);
 
         public static IEnumerable<(string path, Version assemblyVersion, Version fileVersion)> ResolvePackageAssetVersions(string packageId, Version version, NuGetFramework framework)
         {
             string packageDownloadUrl = $"https://www.nuget.org/api/v2/package/{packageId}/{version}";
 
-            using (HttpClient httpClient = new HttpClient())
+            using var packageStream = DownloadPackage(packageId, version);
+
+            Package package;
+
+            try
             {
-                using var packageStream = httpClient.GetStreamAsync(packageDownloadUrl).Result;
-                //using var seekableStream = new MemoryStream();
-                //packageStream.CopyTo(seekableStream);
+                package = Package.Create(packageStream);
+            }
+            catch (InvalidDataException)
+            {
+                Console.WriteLine($"Error loading package {packageId}, {version}");
+                yield break;
+            }
 
-                using var package = Package.Create(packageStream);
+            using (package)
+            {
+                // we will compare against runtime asset since this may be higher version
+                // than compile - it's the one that's serviced when compile may be pinned
+                var assets = package.FindBestRuntimeAssetForFramework(framework);
 
-                var assets = package.FindBestCompileAssetForFramework(framework);
+                // if we couldn't find RID-agnostic assets, try for a single RID.
+                if (assets == null || assets.Count == 0)
+                {
+                    assets = package.FindBestRuntimeAssetForFrameworkAndRuntime(framework, "win");
+                }
+
+                if (assets == null || assets.Count == 0)
+                {
+                    assets = package.FindBestCompileAssetForFramework(framework);
+                }
 
                 if (assets != null)
                 {
-                    var matchingCompileAssets = assets.Where(ca => Path.GetFileNameWithoutExtension(ca.Path).Equals(packageId, StringComparison.OrdinalIgnoreCase));
+                    var matchingAssets = assets.Where(ca => Path.GetFileNameWithoutExtension(ca.Path).Equals(packageId, StringComparison.OrdinalIgnoreCase));
 
-                    foreach (var asset in matchingCompileAssets)
+                    foreach (var asset in matchingAssets)
                     {
                         var entry = package.PackageReader.GetEntry(asset.Path);
-                        using var assemblyStream = entry.Open(); ;
+                        using var assemblyStream = entry.Open();
                         using var seekableStream = new MemoryStream((int)entry.Length);
                         assemblyStream.CopyTo(seekableStream);
                         seekableStream.Position = 0;
@@ -93,6 +121,29 @@ namespace findLastPackage
                     }
                 }
             }
+        }
+
+        private static Stream DownloadPackage(string packageId, Version version)
+        {
+            ILogger logger = NullLogger.Instance;
+            CancellationToken cancellationToken = CancellationToken.None;
+
+            SourceCacheContext cache = new SourceCacheContext();
+            SourceRepository repository = Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json");
+            FindPackageByIdResource resource = repository.GetResourceAsync<FindPackageByIdResource>().Result;
+
+            NuGetVersion packageVersion = new NuGetVersion(version);
+            MemoryStream packageStream = new MemoryStream();
+
+            resource.CopyNupkgToStreamAsync(
+                packageId,
+                packageVersion,
+                packageStream,
+                cache,
+                logger,
+                cancellationToken).Wait();
+
+            return packageStream;
         }
 
         private class PackageVersions
