@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
+namespace Microsoft.ComponentDetection.Orchestrator.Experiments;
 
 using System;
 using System.Text.Json;
@@ -13,6 +13,11 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public class DefaultExperimentProcessor : IExperimentProcessor
 {
+    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    {
+        WriteIndented = true,
+    };
+
     private readonly IFileWritingService fileWritingService;
     private readonly ILogger<DefaultExperimentProcessor> logger;
 
@@ -34,7 +39,7 @@ public class DefaultExperimentProcessor : IExperimentProcessor
 
         this.logger.LogInformation("Writing experiment {Name} results to {Filename}", config.Name, this.fileWritingService.ResolveFilePath(filename));
 
-        var serializedDiff = JsonSerializer.Serialize(diff, new JsonSerializerOptions { WriteIndented = true });
+        var serializedDiff = JsonSerializer.Serialize(diff, JsonOptions);
         await this.fileWritingService.WriteFileAsync(filename, serializedDiff);
     }
 }

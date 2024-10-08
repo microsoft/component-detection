@@ -18,11 +18,11 @@ using Microsoft.Extensions.Logging;
 
 public class NuGetComponentDetector : FileComponentDetector
 {
-    private static readonly IEnumerable<string> LowConfidencePackages = new[] { "Newtonsoft.Json" };
+    private static readonly IEnumerable<string> LowConfidencePackages = ["Newtonsoft.Json"];
 
     public const string NugetConfigFileName = "nuget.config";
 
-    private readonly IList<string> repositoryPathKeyNames = new List<string> { "repositorypath", "globalpackagesfolder" };
+    private readonly IList<string> repositoryPathKeyNames = ["repositorypath", "globalpackagesfolder"];
 
     public NuGetComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -36,11 +36,11 @@ public class NuGetComponentDetector : FileComponentDetector
 
     public override string Id { get; } = "NuGet";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "*.nupkg", "*.nuspec", NugetConfigFileName, "paket.lock" };
+    public override IList<string> SearchPatterns { get; } = ["*.nupkg", "*.nuspec", NugetConfigFileName, "paket.lock"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.NuGet };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.NuGet];
 
     public override int Version { get; } = 2;
 

@@ -81,7 +81,7 @@ public class PythonCommandService : IPythonCommandService
         if (command.ExitCode != 0)
         {
             this.logger.LogDebug("Python: Failed distutils setup with error: {StdErr}", command.StdErr);
-            return new List<string>();
+            return [];
         }
 
         var result = command.StdOut;
@@ -91,7 +91,7 @@ public class PythonCommandService : IPythonCommandService
         // For Python2 if there are no packages (Result: "None") skip any parsing
         if (result.Equals("None", StringComparison.OrdinalIgnoreCase) && !command.StdOut.StartsWith('['))
         {
-            return new List<string>();
+            return [];
         }
 
         return result.Split(new string[] { "'," }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().Trim('\'').Trim()).ToList();
@@ -102,7 +102,7 @@ public class PythonCommandService : IPythonCommandService
         var items = new List<(string, GitComponent)>();
         foreach (var line in File.ReadAllLines(path)
                 .Select(x => x.Trim().TrimEnd('\\'))
-                .Where(x => !x.StartsWith("#") && !x.StartsWith("-") && !string.IsNullOrWhiteSpace(x)))
+                .Where(x => !x.StartsWith('#') && !x.StartsWith('-') && !string.IsNullOrWhiteSpace(x)))
         {
             // We technically shouldn't be ignoring information after the ;
             // It's used to indicate environment markers like specific python versions
@@ -170,13 +170,13 @@ public class PythonCommandService : IPythonCommandService
 
     private async Task<bool> CanCommandBeLocatedAsync(string pythonPath)
     {
-        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, new List<string> { "python3", "python2" }, "--version");
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonPath, ["python3", "python2"], "--version");
     }
 
     public async Task<string> GetPythonVersionAsync(string pythonPath)
     {
         var pythonCommand = await this.ResolvePythonAsync(pythonPath);
-        var versionResult = await this.commandLineInvocationService.ExecuteCommandAsync(pythonCommand, new List<string> { "python3", "python2" }, "--version");
+        var versionResult = await this.commandLineInvocationService.ExecuteCommandAsync(pythonCommand, ["python3", "python2"], "--version");
         var version = new Regex("Python ([\\d.]+)");
         var match = version.Match(versionResult.StdOut);
         return match.Success ? match.Groups[1].Value : null;
@@ -185,7 +185,7 @@ public class PythonCommandService : IPythonCommandService
     public async Task<string> GetOsTypeAsync(string pythonPath)
     {
         var pythonCommand = await this.ResolvePythonAsync(pythonPath);
-        var versionResult = await this.commandLineInvocationService.ExecuteCommandAsync(pythonCommand, new List<string> { "python3", "python2" }, "-c", "\"import sys; print(sys.platform);\"");
+        var versionResult = await this.commandLineInvocationService.ExecuteCommandAsync(pythonCommand, ["python3", "python2"], "-c", "\"import sys; print(sys.platform);\"");
         return versionResult.ExitCode == 0 && string.IsNullOrEmpty(versionResult.StdErr) ? versionResult.StdOut.Trim() : null;
     }
 }

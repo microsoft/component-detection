@@ -91,7 +91,15 @@ public class DetectorProcessingService : IDetectorProcessingService
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
                         () => detector.ExecuteDetectorAsync(
-                            new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder, settings.MaxDetectionThreads ?? DefaultMaxDetectionThreads),
+                            new ScanRequest(
+                                settings.SourceDirectory,
+                                exclusionPredicate,
+                                this.logger,
+                                settings.DetectorArgs,
+                                settings.DockerImagesToScan,
+                                componentRecorder,
+                                settings.MaxDetectionThreads ?? DefaultMaxDetectionThreads,
+                                settings.CleanupCreatedFiles ?? true),
                             cancellationToken),
                         isExperimentalDetector,
                         record);
@@ -291,7 +299,7 @@ public class DetectorProcessingService : IDetectorProcessingService
     {
         individualDetectorScanResult ??= new IndividualDetectorScanResult();
 
-        individualDetectorScanResult.ContainerDetails ??= Enumerable.Empty<ContainerDetails>();
+        individualDetectorScanResult.ContainerDetails ??= [];
 
         // Additional telemetry details can safely be null
         return individualDetectorScanResult;
@@ -374,13 +382,13 @@ public class DetectorProcessingService : IDetectorProcessingService
 
         AnsiConsole.Write(table);
 
-        var tsf = new TabularStringFormat(new Column[]
-        {
+        var tsf = new TabularStringFormat(
+        [
             new Column { Header = "Component Detector Id", Width = 30 },
             new Column { Header = "Detection Time", Width = 30, Format = "{0:g2} seconds" },
             new Column { Header = "# Components Found", Width = 30, },
             new Column { Header = "# Explicitly Referenced", Width = 40 },
-        });
+        ]);
 
         var rows = providerElapsedTime.OrderBy(a => a.Key).Select(x =>
         {
@@ -394,13 +402,13 @@ public class DetectorProcessingService : IDetectorProcessingService
             };
         }).ToList();
 
-        rows.Add(new object[]
-        {
+        rows.Add(
+        [
             "Total",
             totalElapsedTime,
             providerElapsedTime.Sum(x => x.Value.ComponentsFoundCount),
             providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount),
-        });
+        ]);
 
         foreach (var line in tsf.GenerateString(rows).Split(new[] { NewLine }, StringSplitOptions.None))
         {

@@ -43,7 +43,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     internal const string AntVersionArgument = "-version";
 
-    internal static readonly string[] AdditionalValidCommands = { "ant" };
+    internal static readonly string[] AdditionalValidCommands = ["ant"];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
 
@@ -61,13 +61,13 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     public override string Id => "Ivy";
 
-    public override IList<string> SearchPatterns => new List<string> { "ivy.xml" };
+    public override IList<string> SearchPatterns => ["ivy.xml"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Maven };
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Maven];
 
     public override int Version => 2;
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests,

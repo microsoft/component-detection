@@ -39,11 +39,11 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     public override string Id { get; } = "NuGetProjectCentric";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "project.assets.json" };
+    public override IList<string> SearchPatterns { get; } = ["project.assets.json"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.NuGet };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.NuGet];
 
     public override int Version { get; } = 1;
 
@@ -113,7 +113,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
         var isFrameworkComponent = frameworkPackages.IsAFrameworkComponent(library.Name, library.Version);
 
-        visited ??= new HashSet<string>();
+        visited ??= [];
 
         var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
         singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId, isDevelopmentDependency: isFrameworkComponent);
