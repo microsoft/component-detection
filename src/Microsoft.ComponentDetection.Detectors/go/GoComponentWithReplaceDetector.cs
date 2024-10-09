@@ -183,6 +183,7 @@ public class GoComponentWithReplaceDetector : FileComponentDetector, IExperiment
         catch (Exception ex)
         {
             this.Logger.LogError(ex, "Failed to detect components using go cli. Location: {Location}", file.Location);
+            record.ExceptionMessage = ex.Message;
         }
         finally
         {
