@@ -477,10 +477,19 @@ public class GoComponentDetector : FileComponentDetector
             if (dependency.Replace?.Path != null && dependency.Replace.Version != null)
             {
                 var dependencyReplacementName = $"{dependency.Replace.Path} {dependency.Replace.Version}";
-                goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
-                this.Logger.LogInformation("go Module {GoModule} being replaced with module {GoModuleReplacement}", dependencyName, dependencyReplacementName);
                 record.GoModPathAndVersion = dependencyName;
                 record.GoModReplacement = dependencyReplacementName;
+                try
+                {
+                    goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
+                    this.Logger.LogInformation("go Module {GoModule} being replaced with module {GoModuleReplacement}", dependencyName, dependencyReplacementName);
+                }
+                catch (Exception ex)
+                {
+                    record.ExceptionMessage = ex.Message;
+                    this.Logger.LogWarning("tried to use replace module {GoModuleReplacement} but got this error {ErrorMessage} using original module {GoModule} instead", dependencyReplacementName, ex.Message, dependencyName);
+                    goComponent = new GoComponent(dependency.Path, dependency.Version);
+                }
             }
             else
             {

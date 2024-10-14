@@ -7,4 +7,6 @@ public class GoReplaceTelemetryRecord : BaseDetectionTelemetryRecord
     public string GoModPathAndVersion { get; set; }
 
     public string GoModReplacement { get; set; }
+
+    public string ExceptionMessage { get; set; }
 }
