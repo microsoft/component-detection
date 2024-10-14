@@ -487,6 +487,7 @@ public class GoComponentDetector : FileComponentDetector
                 catch (Exception ex)
                 {
                     record.ExceptionMessage = ex.Message;
+                    this.Logger.LogWarning("tried to use replace module but got this error {ErrorMessage} using original module instead", ex.Message);
                     goComponent = new GoComponent(dependency.Path, dependency.Version);
                 }
             }
