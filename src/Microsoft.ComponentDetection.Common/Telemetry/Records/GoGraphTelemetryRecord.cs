@@ -19,4 +19,6 @@ public class GoGraphTelemetryRecord : BaseDetectionTelemetryRecord
     public string GoCliCommandError { get; set; }
 
     public string GoModVersion { get; set; }
+
+    public string ExceptionMessage { get; set; }
 }
