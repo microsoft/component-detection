@@ -112,11 +112,12 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         }
 
         var isFrameworkComponent = frameworkPackages.IsAFrameworkComponent(library.Name, library.Version);
+        var isDevelopmentDependency = IsADevelopmentDependency(library);
 
         visited ??= [];
 
         var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
-        singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId, isDevelopmentDependency: isFrameworkComponent);
+        singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId, isDevelopmentDependency: isFrameworkComponent || isDevelopmentDependency);
 
         // get the actual component in case it already exists
         libraryComponent = singleFileComponentRecorder.GetComponent(libraryComponent.Component.Id);
@@ -142,6 +143,12 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
                 this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, frameworkPackages, visited);
             }
         }
+
+        // a placeholder item is an empty file that doesn't exist with name _._ meant to indicate an empty folder in a nuget package, but also used by NuGet when a package's assets are excluded.
+        bool IsAPlaceholderItem(LockFileItem item) => Path.GetFileName(item.Path).Equals("_._", StringComparison.OrdinalIgnoreCase);
+
+        // A library is development dependency if all of the runtime assemblies and runtime targets are placeholders or empty (All returns true for empty).
+        bool IsADevelopmentDependency(LockFileTargetLibrary library) => library.RuntimeAssemblies.Concat(library.RuntimeTargets).All(IsAPlaceholderItem);
     }
 
     private List<(string Name, Version Version, VersionRange VersionRange)> GetTopLevelLibraries(LockFile lockFile)

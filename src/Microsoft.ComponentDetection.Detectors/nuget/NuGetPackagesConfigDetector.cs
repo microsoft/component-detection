@@ -64,6 +64,9 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
                             package.PackageIdentity.Version.ToNormalizedString())),
                     true,
                     null,
+                    /* TODO: Is this really the same concept?
+                       Docs for NuGet say packages.config development dependencies are just not persisted as dependencies in the package.
+                       That is not same as excluding from the output directory / runtime. */
                     package.IsDevelopmentDependency);
 
                 // get the actual component in case it already exists
