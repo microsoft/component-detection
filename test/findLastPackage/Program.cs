@@ -1,6 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using findLastPackage;
+﻿using findLastPackage;
 using Microsoft.DotNet.PackageValidation;
 using NuGet.Frameworks;
 using NuGet.Versioning;
@@ -66,7 +64,7 @@ foreach (var frameworkPack in frameworkPacks)
         foreach (var packageOverride in packageOverrides)
         {
             var packageOverrideParts = packageOverride.Trim().Split('|');
-            
+
             if (packageOverrideParts.Length == 2)
             {
                 var packageId = packageOverrideParts[0];
@@ -174,13 +172,13 @@ IEnumerable<(string packageId, Version version)> ProcessFiles(string referencePa
     }
 
     foreach (var libraryPath in Directory.EnumerateFiles(referencePath, "*.dll").Where(f => !filesToIgnore.Contains(Path.GetFileNameWithoutExtension(f))))
-    { 
+    {
         var assemblyName = AssemblyName.GetAssemblyName(libraryPath);
         var packageId = assemblyName.Name;
         var assemblyVersion = assemblyName.Version;
         var assemblyFileVersion = Version.Parse(FileVersionInfo.GetVersionInfo(libraryPath).FileVersion);
 
-        // For a library in a ref pack, look at all stable packages.  
+        // For a library in a ref pack, look at all stable packages.
         var stableVersions = NuGetUtilities.GetStableVersions2(packageId);
         // Starting with the latest download each.
         foreach (var stableVersion in stableVersions)
