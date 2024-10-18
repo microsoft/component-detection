@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Collections.Generic;
 using PackageUrl;
 
 public class NuGetComponent : TypedComponent
@@ -21,6 +22,8 @@ public class NuGetComponent : TypedComponent
     public string Version { get; set; }
 
     public string[] Authors { get; set; }
+
+    public ISet<string> TargetFrameworks { get; set; } = new HashSet<string>();
 
     public override ComponentType Type => ComponentType.NuGet;
 
