@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using global::NuGet.Packaging.Core;
 using global::NuGet.ProjectModel;
 using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
@@ -111,7 +112,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
             return;
         }
 
-        var isFrameworkComponent = frameworkPackages.IsAFrameworkComponent(library.Name, library.Version);
+        var isFrameworkComponent = frameworkPackages?.IsAFrameworkComponent(library.Name, library.Version) ?? false;
         var isDevelopmentDependency = IsADevelopmentDependency(library);
 
         visited ??= [];
@@ -123,7 +124,8 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         libraryComponent = singleFileComponentRecorder.GetComponent(libraryComponent.Component.Id);
 
         // Add framework information to the actual component
-        ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(target.TargetFramework.GetShortFolderName());
+        var targetFramework = target.TargetFramework?.GetShortFolderName() ?? "unknown";
+        ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(targetFramework);
 
         foreach (var dependency in library.Dependencies)
         {
@@ -145,7 +147,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         }
 
         // a placeholder item is an empty file that doesn't exist with name _._ meant to indicate an empty folder in a nuget package, but also used by NuGet when a package's assets are excluded.
-        bool IsAPlaceholderItem(LockFileItem item) => Path.GetFileName(item.Path).Equals("_._", StringComparison.OrdinalIgnoreCase);
+        bool IsAPlaceholderItem(LockFileItem item) => Path.GetFileName(item.Path).Equals(PackagingCoreConstants.EmptyFolder, StringComparison.OrdinalIgnoreCase);
 
         // A library is development dependency if all of the runtime assemblies and runtime targets are placeholders or empty (All returns true for empty).
         bool IsADevelopmentDependency(LockFileTargetLibrary library) => library.RuntimeAssemblies.Concat(library.RuntimeTargets).All(IsAPlaceholderItem);

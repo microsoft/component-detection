@@ -59,13 +59,18 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
     private static FrameworkPackages LoadFrameworkPackagesFromPack(NuGetFramework framework)
     {
-        if (framework.Framework != FrameworkConstants.FrameworkIdentifiers.NetCoreApp)
+        if (framework is null || framework.Framework != FrameworkConstants.FrameworkIdentifiers.NetCoreApp)
         {
             return null;
         }
 
         // packs location : %ProgramFiles%\dotnet\packs
         var packsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet", "packs", "Microsoft.NETCore.App.Ref");
+        if (!Directory.Exists(packsFolder))
+        {
+            return null;
+        }
+
         var packVersionPattern = $"{framework.Version.Major}.{framework.Version.Minor}.*";
         var packDirectories = Directory.GetDirectories(packsFolder, packVersionPattern);
         var packageOverridesFile = packDirectories
