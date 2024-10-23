@@ -23,6 +23,7 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
         AddPackages(NETStandard21.Instance);
         AddPackages(NETCoreApp20.Instance);
         AddPackages(NETCoreApp21.Instance);
+        AddPackages(NETCoreApp22.Instance);
         AddPackages(NETCoreApp30.Instance);
         AddPackages(NETCoreApp31.Instance);
         AddPackages(NETCoreApp50.Instance);

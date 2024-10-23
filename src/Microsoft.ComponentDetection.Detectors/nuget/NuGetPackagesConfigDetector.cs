@@ -57,11 +57,13 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
             var packagesConfig = new PackagesConfigReader(processRequest.ComponentStream.Stream);
             foreach (var package in packagesConfig.GetPackages(allowDuplicatePackageIds: true))
             {
-                singleFileComponentRecorder.RegisterUsage(
-                    new DetectedComponent(
+                var detectedComponent = new DetectedComponent(
                         new NuGetComponent(
                             package.PackageIdentity.Id,
-                            package.PackageIdentity.Version.ToNormalizedString())),
+                            package.PackageIdentity.Version.ToNormalizedString()));
+
+                singleFileComponentRecorder.RegisterUsage(
+                    detectedComponent,
                     true,
                     null,
                     /* TODO: Is this really the same concept?
@@ -70,7 +72,7 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
                     package.IsDevelopmentDependency);
 
                 // get the actual component in case it already exists
-                var libraryComponent = singleFileComponentRecorder.GetComponent(package.PackageIdentity.Id);
+                var libraryComponent = singleFileComponentRecorder.GetComponent(detectedComponent.Component.Id);
 
                 // Add framework information to the actual component
                 var targetFramework = package.TargetFramework?.GetShortFolderName();
