@@ -35,10 +35,10 @@ packages:
 registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
-
-        var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(yamlFile);
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV5>();
+        var version = pnpmParsingUtilities.DeserializePnpmYamlFileVersion(yamlFile);
         version.Should().BeNull(); // Versions older than 5 report null as they don't use the same version field.
-        var parsedYaml = PnpmParsingUtilities.DeserializePnpmYamlV5File(yamlFile);
+        var parsedYaml = pnpmParsingUtilities.DeserializePnpmYamlFile(yamlFile);
 
         parsedYaml.Packages.Should().HaveCount(2);
         parsedYaml.Packages.Should().ContainKey("/query-string/4.3.4");
@@ -58,19 +58,20 @@ shrinkwrapVersion: 3";
     [TestMethod]
     public void CreateDetectedComponentFromPnpmPathV5()
     {
-        var detectedComponent1 = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV5>();
+        var detectedComponent1 = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/@ms/items-view/0.128.9/react-dom@15.6.2+react@15.6.2");
         detectedComponent1.Should().NotBeNull();
         detectedComponent1.Component.Should().NotBeNull();
         ((NpmComponent)detectedComponent1.Component).Name.Should().BeEquivalentTo("@ms/items-view");
         ((NpmComponent)detectedComponent1.Component).Version.Should().BeEquivalentTo("0.128.9");
 
-        var detectedComponent2 = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/@babel/helper-compilation-targets/7.10.4_@babel+core@7.10.5");
+        var detectedComponent2 = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/@babel/helper-compilation-targets/7.10.4_@babel+core@7.10.5");
         detectedComponent2.Should().NotBeNull();
         detectedComponent2.Component.Should().NotBeNull();
         ((NpmComponent)detectedComponent2.Component).Name.Should().BeEquivalentTo("@babel/helper-compilation-targets");
         ((NpmComponent)detectedComponent2.Component).Version.Should().BeEquivalentTo("7.10.4");
 
-        var detectedComponent3 = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/query-string/4.3.4");
+        var detectedComponent3 = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/query-string/4.3.4");
         detectedComponent3.Should().NotBeNull();
         detectedComponent3.Component.Should().NotBeNull();
         ((NpmComponent)detectedComponent3.Component).Name.Should().BeEquivalentTo("query-string");
@@ -85,24 +86,26 @@ shrinkwrapVersion: 3";
             Dev = "true",
         };
 
-        PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeTrue();
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV5>();
+
+        pnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeTrue();
 
         pnpmPackage.Dev = "TRUE";
-        PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeTrue();
+        pnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeTrue();
 
         pnpmPackage.Dev = "false";
-        PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
+        pnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
 
         pnpmPackage.Dev = "FALSE";
-        PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
+        pnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
 
         pnpmPackage.Dev = string.Empty;
-        PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
+        pnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
 
         pnpmPackage.Dev = null;
-        PnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
+        pnpmParsingUtilities.IsPnpmPackageDevDependency(pnpmPackage).Should().BeFalse();
 
-        Action action = () => PnpmParsingUtilities.IsPnpmPackageDevDependency(null);
+        Action action = () => pnpmParsingUtilities.IsPnpmPackageDevDependency(null);
         action.Should().Throw<ArgumentNullException>();
     }
 
@@ -123,10 +126,10 @@ packages:
   /minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
     dev: false";
-
-        var version = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(yamlFile);
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV6>();
+        var version = PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(yamlFile);
         version.Should().Be("6.0");
-        var parsedYaml = PnpmParsingUtilities.DeserializePnpmYamlV6File(yamlFile);
+        var parsedYaml = pnpmParsingUtilities.DeserializePnpmYamlFile(yamlFile);
 
         parsedYaml.Packages.Should().ContainSingle();
         parsedYaml.Packages.Should().ContainKey("/minimist@1.2.8");
@@ -142,23 +145,25 @@ packages:
     [TestMethod]
     public void CreateDetectedComponentFromPnpmPathV6()
     {
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV6>();
+
         // Simple case: no scope, simple version
-        var simple = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV6("/sort-scripts@1.0.1");
+        var simple = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/sort-scripts@1.0.1");
         ((NpmComponent)simple.Component).Name.Should().BeEquivalentTo("sort-scripts");
         ((NpmComponent)simple.Component).Version.Should().BeEquivalentTo("1.0.1");
 
         // With scope:
-        var scoped = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV6("/@babel/eslint-parser@7.23.3");
+        var scoped = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/@babel/eslint-parser@7.23.3");
         ((NpmComponent)scoped.Component).Name.Should().BeEquivalentTo("@babel/eslint-parser");
         ((NpmComponent)scoped.Component).Version.Should().BeEquivalentTo("7.23.3");
 
         // With peer deps:
-        var withPeerDeps = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV6("/mocha-json-output-reporter@2.1.0(mocha@10.2.0)(moment@2.29.4)");
+        var withPeerDeps = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/mocha-json-output-reporter@2.1.0(mocha@10.2.0)(moment@2.29.4)");
         ((NpmComponent)withPeerDeps.Component).Name.Should().BeEquivalentTo("mocha-json-output-reporter");
         ((NpmComponent)withPeerDeps.Component).Version.Should().BeEquivalentTo("2.1.0");
 
         // With everything:
-        var complex = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV6("/@babel/eslint-parser@7.23.3(@babel/core@7.23.3)(eslint@8.55.0)");
+        var complex = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/@babel/eslint-parser@7.23.3(@babel/core@7.23.3)(eslint@8.55.0)");
         ((NpmComponent)complex.Component).Name.Should().BeEquivalentTo("@babel/eslint-parser");
         ((NpmComponent)complex.Component).Version.Should().BeEquivalentTo("7.23.3");
     }
@@ -166,16 +171,18 @@ packages:
     [TestMethod]
     public void ReconstructPnpmDependencyPathV6()
     {
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV6>();
+
         // Simple case: no scope, simple version
-        PnpmParsingUtilities.ReconstructPnpmDependencyPathV6("sort-scripts", "1.0.1").Should().BeEquivalentTo("/sort-scripts@1.0.1");
+        pnpmParsingUtilities.ReconstructPnpmDependencyPath("sort-scripts", "1.0.1").Should().BeEquivalentTo("/sort-scripts@1.0.1");
 
         // With scope:
-        PnpmParsingUtilities.ReconstructPnpmDependencyPathV6("@babel/eslint-parser", "7.23.3").Should().BeEquivalentTo("/@babel/eslint-parser@7.23.3");
+        pnpmParsingUtilities.ReconstructPnpmDependencyPath("@babel/eslint-parser", "7.23.3").Should().BeEquivalentTo("/@babel/eslint-parser@7.23.3");
 
         // With peer deps:
-        PnpmParsingUtilities.ReconstructPnpmDependencyPathV6("mocha-json-output-reporter", "2.1.0(mocha@10.2.0)(moment@2.29.4)").Should().BeEquivalentTo("/mocha-json-output-reporter@2.1.0(mocha@10.2.0)(moment@2.29.4)");
+        pnpmParsingUtilities.ReconstructPnpmDependencyPath("mocha-json-output-reporter", "2.1.0(mocha@10.2.0)(moment@2.29.4)").Should().BeEquivalentTo("/mocha-json-output-reporter@2.1.0(mocha@10.2.0)(moment@2.29.4)");
 
         // Absolute path:
-        PnpmParsingUtilities.ReconstructPnpmDependencyPathV6("events_pkg", "/events@3.3.0").Should().BeEquivalentTo("/events@3.3.0");
+        pnpmParsingUtilities.ReconstructPnpmDependencyPath("events_pkg", "/events@3.3.0").Should().BeEquivalentTo("/events@3.3.0");
     }
 }

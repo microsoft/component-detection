@@ -98,7 +98,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
 
     private IPnpmDetector GetPnpmComponentDetector(string fileContent, out string detectedVersion)
     {
-        detectedVersion = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(fileContent);
+        detectedVersion = PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(fileContent);
         this.RecordLockfileVersion(detectedVersion);
         var majorVersion = detectedVersion?.Split(".")[0];
         return majorVersion switch
@@ -110,6 +110,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
             null => new Pnpm5Detector(),
             Pnpm5Detector.MajorVersion => new Pnpm5Detector(),
             Pnpm6Detector.MajorVersion => new Pnpm6Detector(),
+            Pnpm9Detector.MajorVersion => new Pnpm9Detector(),
             _ => null,
         };
     }
