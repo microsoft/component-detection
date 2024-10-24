@@ -36,7 +36,7 @@ registry: 'https://test/registry'
 shrinkwrapMinorVersion: 7
 shrinkwrapVersion: 3";
         var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV5>();
-        var version = pnpmParsingUtilities.DeserializePnpmYamlFileVersion(yamlFile);
+        var version = PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(yamlFile);
         version.Should().BeNull(); // Versions older than 5 report null as they don't use the same version field.
         var parsedYaml = pnpmParsingUtilities.DeserializePnpmYamlFile(yamlFile);
 
