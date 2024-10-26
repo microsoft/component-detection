@@ -8,6 +8,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="packageurl-dotnet" />
+        <PackageReference Include="yamldotnet" />
         <PackageReference Include="System.Memory" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Text.Json" />
