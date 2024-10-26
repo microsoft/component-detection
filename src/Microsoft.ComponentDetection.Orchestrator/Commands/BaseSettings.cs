@@ -37,6 +37,10 @@ public abstract class BaseSettings : CommandSettings
     [CommandOption("--Output")]
     public string Output { get; set; }
 
+    [Description("File path for a ComponentDetection.yml config file with more instructions for detection")]
+    [CommandOption("--ComponentDetectionConfigFile")]
+    public string ComponentDetectionConfigFile { get; set; }
+
     /// <inheritdoc />
     public override ValidationResult Validate()
     {

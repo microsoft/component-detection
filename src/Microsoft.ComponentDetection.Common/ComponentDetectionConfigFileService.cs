@@ -10,7 +10,9 @@ using YamlDotNet.Serialization;
 /// <inheritdoc />
 public class ComponentDetectionConfigFileService : IComponentDetectionConfigFileService
 {
+    private const string ComponentDetectionConfigFileEnvVar = "ComponentDetection.ComponentDetectionConfigFile";
     private readonly IFileUtilityService fileUtilityService;
+    private readonly IEnvironmentVariableService environmentVariableService;
     private readonly IPathUtilityService pathUtilityService;
     private readonly ComponentDetectionConfigFile componentDetectionConfig;
     private readonly ILogger<FastDirectoryWalkerFactory> logger;
@@ -18,11 +20,13 @@ public class ComponentDetectionConfigFileService : IComponentDetectionConfigFile
 
     public ComponentDetectionConfigFileService(
         IFileUtilityService fileUtilityService,
+        IEnvironmentVariableService environmentVariableService,
         IPathUtilityService pathUtilityService,
         ILogger<FastDirectoryWalkerFactory> logger)
     {
         this.fileUtilityService = fileUtilityService;
         this.pathUtilityService = pathUtilityService;
+        this.environmentVariableService = environmentVariableService;
         this.logger = logger;
         this.componentDetectionConfig = new ComponentDetectionConfigFile();
         this.serviceInitComplete = false;
@@ -36,6 +40,12 @@ public class ComponentDetectionConfigFileService : IComponentDetectionConfigFile
 
     public async Task InitAsync(string explicitConfigPath, string rootDirectoryPath = null)
     {
+        await this.LoadFromEnvironmentVariableAsync();
+        if (!string.IsNullOrEmpty(explicitConfigPath))
+        {
+            await this.LoadComponentDetectionConfigAsync(explicitConfigPath);
+        }
+
         if (!string.IsNullOrEmpty(rootDirectoryPath))
         {
             await this.LoadComponentDetectionConfigFilesFromRootDirectoryAsync(rootDirectoryPath);
@@ -55,6 +65,18 @@ public class ComponentDetectionConfigFileService : IComponentDetectionConfigFile
         }
     }
 
+    private async Task LoadFromEnvironmentVariableAsync()
+    {
+        if (this.environmentVariableService.DoesEnvironmentVariableExist(ComponentDetectionConfigFileEnvVar))
+        {
+            var possibleConfigFilePath = this.environmentVariableService.GetEnvironmentVariable(ComponentDetectionConfigFileEnvVar);
+            if (this.fileUtilityService.Exists(possibleConfigFilePath))
+            {
+                await this.LoadComponentDetectionConfigAsync(possibleConfigFilePath);
+            }
+        }
+    }
+
     private async Task LoadComponentDetectionConfigAsync(string configFile)
     {
         if (!this.fileUtilityService.Exists(configFile))
@@ -65,7 +87,23 @@ public class ComponentDetectionConfigFileService : IComponentDetectionConfigFile
         var configFileInfo = new FileInfo(configFile);
         var fileContents = await this.fileUtilityService.ReadAllTextAsync(configFileInfo);
         var newConfig = this.ParseComponentDetectionConfig(fileContents);
+        this.MergeComponentDetectionConfig(newConfig);
         this.logger.LogInformation("Loaded component detection config file from {ConfigFile}", configFile);
+    }
+
+    /// <summary>
+    /// Merges two component detection configs, giving precedence to values already set in the first file.
+    /// </summary>
+    /// <param name="newConfig">The new config file to be merged into the existing config set.</param>
+    private void MergeComponentDetectionConfig(ComponentDetectionConfigFile newConfig)
+    {
+        foreach ((var name, var value) in newConfig.Variables)
+        {
+            if (!this.componentDetectionConfig.Variables.ContainsKey(name))
+            {
+                this.componentDetectionConfig.Variables[name] = value;
+            }
+        }
     }
 
     /// <summary>

@@ -44,7 +44,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     public override async Task<int> ExecuteAsync(CommandContext context, ScanSettings settings)
     {
         this.fileWritingService.Init(settings.Output);
-        await this.componentDetectionConfigFileService.InitAsync(settings.SourceDirectory.FullName);
+        await this.componentDetectionConfigFileService.InitAsync(settings.ComponentDetectionConfigFile, settings.SourceDirectory.FullName);
         var result = await this.scanExecutionService.ExecuteScanAsync(settings);
         this.WriteComponentManifest(settings, result);
         return 0;
