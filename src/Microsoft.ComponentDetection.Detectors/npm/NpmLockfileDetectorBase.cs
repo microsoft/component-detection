@@ -1,10 +1,11 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
@@ -46,16 +47,16 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
     /// <returns>Used in scenarios where one file path creates multiple JTokens, a false value indicates processing additional JTokens should be halted, proceed otherwise.</returns>
     protected delegate bool JTokenProcessingDelegate(JToken token);
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Npm)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "package-lock.json", "npm-shrinkwrap.json", LernaSearchPattern };
+    public override IList<string> SearchPatterns { get; } = ["package-lock.json", "npm-shrinkwrap.json", LernaSearchPattern];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
-    private List<ProcessRequest> LernaFiles { get; } = new();
+    private List<ProcessRequest> LernaFiles { get; } = [];
 
     /// <inheritdoc />
-    protected override IList<string> SkippedFolders => new List<string> { "node_modules", "pnpm-store" };
+    protected override IList<string> SkippedFolders => ["node_modules", "pnpm-store"];
 
     protected abstract bool IsSupportedLockfileVersion(int lockfileVersion);
 
@@ -75,7 +76,10 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         TypedComponent parentComponent = null,
         bool skipValidation = false);
 
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs) =>
+    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default) =>
         Task.FromResult(this.RemoveNodeModuleNestedFiles(processRequests)
             .Where(pr =>
             {
@@ -92,9 +96,9 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
                 }
             }));
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
-        IEnumerable<string> packageJsonPattern = new List<string> { "package.json" };
+        IEnumerable<string> packageJsonPattern = ["package.json"];
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
 
@@ -130,7 +134,7 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         });
     }
 
-    protected Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
+    protected async Task ProcessAllPackageJTokensAsync(IComponentStream componentStream, JTokenProcessingDelegate jtokenProcessor)
     {
         try
         {
@@ -142,15 +146,15 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         catch (Exception ex)
         {
             this.Logger.LogInformation(ex, "Could not read {ComponentStreamFile} file.", componentStream.Location);
-            return Task.CompletedTask;
+            return;
         }
 
         using var file = new StreamReader(componentStream.Stream);
         using var reader = new JsonTextReader(file);
 
-        var o = JToken.ReadFrom(reader);
+        var o = await JToken.ReadFromAsync(reader);
         jtokenProcessor(o);
-        return Task.CompletedTask;
+        return;
     }
 
     private void ProcessIndividualPackageJTokens(ISingleFileComponentRecorder singleFileComponentRecorder, JToken packageLockJToken, IEnumerable<IComponentStream> packageJsonComponentStream, bool skipValidation = false)
@@ -176,6 +180,7 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
             var packageJsonToken = JToken.ReadFrom(reader);
             var enqueued = this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["dependencies"], dependencyLookup, skipValidation: skipValidation);
             enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["devDependencies"], dependencyLookup, skipValidation: skipValidation);
+            enqueued = enqueued && this.TryEnqueueFirstLevelDependencies(topLevelDependencies, packageJsonToken["optionalDependencies"], dependencyLookup, skipValidation: skipValidation);
             if (!enqueued)
             {
                 // This represents a mismatch between lock file and package.json, break out and do not register anything for these files
@@ -238,8 +243,8 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
                             directoryItemFacadesByPath[currentDir] = current = new DirectoryItemFacade
                             {
                                 Name = currentDir,
-                                Files = new List<IComponentStream>(),
-                                Directories = new List<DirectoryItemFacade>(),
+                                Files = [],
+                                Directories = [],
                             };
                         }
 

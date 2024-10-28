@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
@@ -35,13 +36,13 @@ public class RustCrateDetector : FileComponentDetector
 
     public override string Id => "RustCrateDetector";
 
-    public override IList<string> SearchPatterns => new List<string> { CargoLockSearchPattern };
+    public override IList<string> SearchPatterns => [CargoLockSearchPattern];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Cargo };
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Cargo];
 
     public override int Version { get; } = 8;
 
-    public override IEnumerable<string> Categories => new List<string> { "Rust" };
+    public override IEnumerable<string> Categories => ["Rust"];
 
     private static bool ParseDependency(string dependency, out string packageName, out string version, out string source)
     {
@@ -54,7 +55,7 @@ public class RustCrateDetector : FileComponentDetector
         version = versionMatch.Success ? versionMatch.Value : null;
         source = sourceMatch.Success ? sourceMatch.Value : null;
 
-        if (string.IsNullOrEmpty(source))
+        if (string.IsNullOrWhiteSpace(source))
         {
             source = null;
         }
@@ -64,21 +65,24 @@ public class RustCrateDetector : FileComponentDetector
 
     private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var cargoLockFile = processRequest.ComponentStream;
+        var reader = new StreamReader(cargoLockFile.Stream);
+        var options = new TomlModelOptions
+        {
+            IgnoreMissingProperties = true,
+        };
+        var cargoLock = Toml.ToModel<CargoLock>(await reader.ReadToEndAsync(cancellationToken), options: options);
+        this.RecordLockfileVersion(cargoLock.Version);
+        this.ProcessCargoLock(cargoLock, singleFileComponentRecorder, cargoLockFile);
+    }
 
+    private void ProcessCargoLock(CargoLock cargoLock, ISingleFileComponentRecorder singleFileComponentRecorder, IComponentStream cargoLockFile)
+    {
         try
         {
-            var reader = new StreamReader(cargoLockFile.Stream);
-            var options = new TomlModelOptions
-            {
-                IgnoreMissingProperties = true,
-            };
-            var cargoLock = Toml.ToModel<CargoLock>(await reader.ReadToEndAsync(), options: options);
-            this.RecordLockfileVersion(cargoLock.Version);
-
             var seenAsDependency = new HashSet<CargoPackage>();
 
             // Pass 1: Create typed components and allow lookup by name.
@@ -91,7 +95,7 @@ public class RustCrateDetector : FileComponentDetector
                     if (!packagesByName.TryGetValue(cargoPackage.Name, out var packageList))
                     {
                         // First package with this name
-                        packageList = new List<(CargoPackage, CargoComponent)>();
+                        packageList = [];
                         packagesByName.Add(cargoPackage.Name, packageList);
                     }
                     else if (packageList.Any(p => p.Package.Equals(cargoPackage)))
@@ -152,8 +156,6 @@ public class RustCrateDetector : FileComponentDetector
             // If something went wrong, just ignore the file
             this.Logger.LogError(e, "Failed to process Cargo.lock file '{CargoLockLocation}'", cargoLockFile.Location);
         }
-
-        await Task.CompletedTask;
     }
 
     private void ProcessDependency(

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
+namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -6,9 +6,6 @@ using System.Runtime.Serialization;
 [DataContract]
 public class PoetryPackage
 {
-    [DataMember(Name = "category")]
-    public string Category { get; set; }
-
     [DataMember(Name = "name")]
     public string Name { get; set; }
 

@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using global::NuGet.Packaging;
@@ -32,23 +33,23 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
     }
 
     /// <inheritdoc />
-    public override IList<string> SearchPatterns => new[] { "packages.config" };
+    public override IList<string> SearchPatterns => ["packages.config"];
 
     /// <inheritdoc />
     public override string Id => "NuGetPackagesConfig";
 
     /// <inheritdoc />
     public override IEnumerable<string> Categories =>
-        new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
+        [Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)];
 
     /// <inheritdoc />
-    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.NuGet };
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.NuGet];
 
     /// <inheritdoc />
     public override int Version => 1;
 
     /// <inheritdoc />
-    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         try
         {

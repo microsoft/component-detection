@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
@@ -13,6 +14,8 @@ namespace Microsoft.ComponentDetection.Common.DependencyGraph;
 
 internal class DependencyGraph : IDependencyGraph
 {
+    private static readonly CompositeFormat MissingNodeFormat = CompositeFormat.Parse(Resources.MissingNodeInDependencyGraph);
+
     private readonly ConcurrentDictionary<string, ComponentRefNode> componentNodes;
 
     private readonly bool enableManualTrackingOfExplicitReferences;
@@ -27,14 +30,11 @@ internal class DependencyGraph : IDependencyGraph
 
     public void AddComponent(ComponentRefNode componentNode, string parentComponentId = null)
     {
-        if (componentNode == null)
-        {
-            throw new ArgumentNullException(nameof(componentNode));
-        }
+        ArgumentNullException.ThrowIfNull(componentNode);
 
         if (string.IsNullOrWhiteSpace(componentNode.Id))
         {
-            throw new ArgumentNullException(nameof(componentNode.Id), "Invalid component node id");
+            throw new ArgumentNullException(nameof(componentNode), "Invalid component node id");
         }
 
         this.componentNodes.AddOrUpdate(componentNode.Id, componentNode, (key, currentNode) =>
@@ -77,10 +77,10 @@ internal class DependencyGraph : IDependencyGraph
 
         if (!this.componentNodes.TryGetValue(componentId, out var componentRef))
         {
-            throw new ArgumentException(string.Format(Resources.MissingNodeInDependencyGraph, componentId), paramName: nameof(componentId));
+            throw new ArgumentException(string.Format(null, MissingNodeFormat, componentId), paramName: nameof(componentId));
         }
 
-        IList<string> explicitReferencedDependencyIds = new List<string>();
+        IList<string> explicitReferencedDependencyIds = [];
 
         this.GetExplicitReferencedDependencies(componentRef, explicitReferencedDependencyIds, new HashSet<string>());
 
@@ -129,7 +129,7 @@ internal class DependencyGraph : IDependencyGraph
         if (!this.componentNodes.TryGetValue(componentId, out var componentRef))
         {
             // this component isn't in the graph, so it has no ancestors
-            return new List<string>();
+            return [];
         }
 
         // store the component id and the depth we found it at
@@ -189,7 +189,7 @@ internal class DependencyGraph : IDependencyGraph
 
         if (!this.componentNodes.TryGetValue(parentComponentId, out var parentComponentRefNode))
         {
-            throw new ArgumentException(string.Format(Resources.MissingNodeInDependencyGraph, parentComponentId), nameof(parentComponentId));
+            throw new ArgumentException(string.Format(null, MissingNodeFormat, parentComponentId), nameof(parentComponentId));
         }
 
         parentComponentRefNode.DependencyIds.Add(componentId);

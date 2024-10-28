@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -21,8 +21,8 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 {
     private readonly string packageLockJsonFileName = "package-lock.json";
     private readonly string packageJsonFileName = "package.json";
-    private readonly List<string> packageJsonSearchPattern = new() { "package.json" };
-    private readonly List<string> packageLockJsonSearchPatterns = new() { "package-lock.json", "npm-shrinkwrap.json", "lerna.json" };
+    private readonly List<string> packageJsonSearchPattern = ["package.json"];
+    private readonly List<string> packageLockJsonSearchPatterns = ["package-lock.json", "npm-shrinkwrap.json", "lerna.json"];
     private readonly Mock<IPathUtilityService> mockPathUtilityService;
 
     public NpmLockfile3DetectorTests()
@@ -113,6 +113,112 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
     }
 
     [TestMethod]
+    public async Task TestNpmDetector_PackageLockVersion3WithDevDependenciesReturnsValidAsync()
+    {
+        var componentName0 = Guid.NewGuid().ToString("N");
+        var version0 = NewRandomVersion();
+        var componentName1 = Guid.NewGuid().ToString("N");
+        var version1 = NewRandomVersion();
+
+        var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedNestedPackageLock3WithDevDependencies(this.packageLockJsonFileName, componentName0, version0, componentName1, version1);
+
+        var packagejson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""devDependencies"": {{
+                    ""{0}"": ""{1}"",
+                    ""{2}"": ""{3}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(2);
+
+        var component0 = detectedComponents.First(x => x.Component.Id.Contains(componentName0));
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            component0.Component.Id,
+            parentComponent0 => parentComponent0.Name == componentName0);
+
+        var component1 = detectedComponents.First(x => x.Component.Id.Contains(componentName1));
+        componentRecorder.GetEffectiveDevDependencyValue(component0.Component.Id).Should().BeTrue();
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            component1.Component.Id,
+            parentComponent0 => parentComponent0.Name == componentName1);
+        componentRecorder.GetEffectiveDevDependencyValue(component1.Component.Id).Should().BeTrue();
+
+        foreach (var component in detectedComponents)
+        {
+            // check that either component0 or component1 is our parent
+            componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
+                component.Component.Id,
+                parentComponent0 => parentComponent0.Name == componentName0 || parentComponent0.Name == componentName1);
+            ((NpmComponent)component.Component).Hash.Should().NotBeNullOrWhiteSpace();
+        }
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockVersion3WithOptionalDependenciesReturnsValidAsync()
+    {
+        var componentName0 = Guid.NewGuid().ToString("N");
+        var version0 = NewRandomVersion();
+        var componentName1 = Guid.NewGuid().ToString("N");
+        var version1 = NewRandomVersion();
+
+        var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedNestedPackageLock3WithOptionalDependencies(this.packageLockJsonFileName, componentName0, version0, componentName1, version1);
+
+        var packagejson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""optionalDependencies"": {{
+                    ""{0}"": ""{1}"",
+                    ""{2}"": ""{3}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(2);
+
+        var component0 = detectedComponents.First(x => x.Component.Id.Contains(componentName0));
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            component0.Component.Id,
+            parentComponent0 => parentComponent0.Name == componentName0);
+
+        var component1 = detectedComponents.First(x => x.Component.Id.Contains(componentName1));
+        componentRecorder.GetEffectiveDevDependencyValue(component0.Component.Id).Should().BeFalse();
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            component1.Component.Id,
+            parentComponent0 => parentComponent0.Name == componentName1);
+        componentRecorder.GetEffectiveDevDependencyValue(component1.Component.Id).Should().BeFalse();
+
+        foreach (var component in detectedComponents)
+        {
+            // check that either component0 or component1 is our parent
+            componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
+                component.Component.Id,
+                parentComponent0 => parentComponent0.Name == componentName0 || parentComponent0.Name == componentName1);
+            ((NpmComponent)component.Component).Hash.Should().NotBeNullOrWhiteSpace();
+        }
+    }
+
+    [TestMethod]
     public async Task TestNpmDetector_NestedNodeModulesV3Async()
     {
         var componentA = (Name: "componentA", Version: "1.0.0");
@@ -174,8 +280,8 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
-        dependencyGraph.GetDependenciesForComponent(componentAId).Should().HaveCount(1);
+        dependencyGraph.GetDependenciesForComponent(componentAId).Should().ContainSingle();
         dependencyGraph.GetDependenciesForComponent(componentAId).Should().Contain(componentBId);
-        dependencyGraph.GetDependenciesForComponent(componentBId).Should().HaveCount(0);
+        dependencyGraph.GetDependenciesForComponent(componentBId).Should().BeEmpty();
     }
 }

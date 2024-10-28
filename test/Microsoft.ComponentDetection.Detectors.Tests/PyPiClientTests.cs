@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
@@ -30,11 +30,11 @@ public class PyPiClientTests
     [TestMethod]
     public async Task GetReleases_InvalidSpecVersion_NotThrowAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0", "==1.0.0notvalid" } };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0", "==1.0.0notvalid"] };
 
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },
@@ -43,18 +43,41 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
+        Func<Task> action = async () => await this.pypiClient.GetProjectAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
     }
 
     [TestMethod]
-    public async Task GetReleases_DuplicateEntries_CallsGetAsync_OnceAsync()
+    public async Task GetProject_SupportsReleaseCandidatesDependenciesAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
+        const string version = "1.0.0rc4";
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = [$"=={version}"] };
+
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
+            {
+                { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
+                { version, new List<PythonProjectRelease> { new PythonProjectRelease() } },
+            },
+        };
+
+        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
+        PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
+
+        var result = await this.pypiClient.GetProjectAsync(pythonSpecs);
+        result.Releases.Should().ContainSingle();
+        result.Releases.Keys.First().Should().Be(version);
+    }
+
+    [TestMethod]
+    public async Task GetReleases_DuplicateEntries_CallsGetAsync_OnceAsync()
+    {
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
+        var pythonProject = new PythonProject
+        {
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },
@@ -63,7 +86,7 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        Func<Task> action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
+        Func<Task> action = async () => await this.pypiClient.GetProjectAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
@@ -79,10 +102,10 @@ public class PyPiClientTests
     [TestMethod]
     public async Task GetReleases_DifferentEntries_CallsGetAsync_OnceAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },
@@ -94,7 +117,7 @@ public class PyPiClientTests
         Func<Task> action = async () =>
         {
             pythonSpecs.Name = Guid.NewGuid().ToString();
-            await this.pypiClient.GetReleasesAsync(pythonSpecs);
+            await this.pypiClient.GetProjectAsync(pythonSpecs);
         };
 
         await action.Should().NotThrowAsync();
@@ -149,10 +172,10 @@ public class PyPiClientTests
     [TestMethod]
     public async Task GetReleases_MaxEntriesVariable_CreatesNewCacheAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },
@@ -169,7 +192,7 @@ public class PyPiClientTests
             mockEvs.Object,
             mockLogger.Object);
 
-        Func<Task> action = async () => await mockedPyPi.GetReleasesAsync(pythonSpecs);
+        Func<Task> action = async () => await mockedPyPi.GetProjectAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
         await action.Should().NotThrowAsync();
@@ -189,10 +212,10 @@ public class PyPiClientTests
     [TestMethod]
     public async Task GetReleases_AddsUserAgentHeadersAsync()
     {
-        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = new List<string> { "==1.0.0" } };
+        var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
         var pythonProject = new PythonProject
         {
-            Releases = new Dictionary<string, IList<PythonProjectRelease>>
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>
             {
                 { "1.0.0", new List<PythonProjectRelease> { new PythonProjectRelease() } },
             },
@@ -201,7 +224,7 @@ public class PyPiClientTests
         var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject));
         PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
 
-        var action = async () => await this.pypiClient.GetReleasesAsync(pythonSpecs);
+        var action = async () => await this.pypiClient.GetProjectAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
 

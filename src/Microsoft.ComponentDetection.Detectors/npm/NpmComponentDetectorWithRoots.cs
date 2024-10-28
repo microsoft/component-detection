@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +29,7 @@ public class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
 
     public override string Id => "NpmWithRoots";
 
-    public override int Version => 2;
+    public override int Version => 3;
 
     protected override bool IsSupportedLockfileVersion(int lockfileVersion) => lockfileVersion != 3;
 

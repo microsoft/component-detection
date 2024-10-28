@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
+namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 /// <summary>Used to communicate Dependency Scope of Component.
 /// Currently only populated for Maven component.

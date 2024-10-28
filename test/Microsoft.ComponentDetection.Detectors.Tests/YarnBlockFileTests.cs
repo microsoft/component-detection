@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.IO;
@@ -17,9 +17,8 @@ public class YarnBlockFileTests
     [TestMethod]
     public async Task BlockFileParserWithNullStream_FailsAsync()
     {
-        static async Task Action() => await YarnBlockFile.CreateBlockFileAsync(null);
-
-        await Assert.ThrowsExceptionAsync<ArgumentNullException>(Action);
+        var action = async () => await YarnBlockFile.CreateBlockFileAsync(null);
+        await action.Should().ThrowAsync<ArgumentException>();
     }
 
     [TestMethod]
@@ -29,9 +28,8 @@ public class YarnBlockFileTests
 
         stream.Close();
 
-        async Task Action() => await YarnBlockFile.CreateBlockFileAsync(stream);
-
-        await Assert.ThrowsExceptionAsync<ArgumentException>(Action);
+        var action = async () => await YarnBlockFile.CreateBlockFileAsync(stream);
+        await action.Should().ThrowAsync<ArgumentException>();
     }
 
     [TestMethod]
@@ -169,7 +167,7 @@ public class YarnBlockFileTests
 
         file.Should().BeEmpty();
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
-        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.Berry);
     }
 
     [TestMethod]
@@ -208,7 +206,7 @@ public class YarnBlockFileTests
         block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
         var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
-        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.Berry);
     }
 
     [TestMethod]
@@ -247,7 +245,7 @@ public class YarnBlockFileTests
         block.Children.Single(x => x.Title == "block2").Values.Should().ContainKey("otherProperty");
         var value = block.Children.Single(x => x.Title == "block2").Values["otherProperty"];
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
-        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.Berry);
     }
 
     [TestMethod]
@@ -294,6 +292,6 @@ public class YarnBlockFileTests
 
         file.Should().HaveCount(3);
         file.VersionHeader.Should().Be(yarnLockFileVersionString);
-        file.YarnLockVersion.Should().Be(YarnLockVersion.V2);
+        file.YarnLockVersion.Should().Be(YarnLockVersion.Berry);
     }
 }

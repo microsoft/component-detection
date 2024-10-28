@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -50,7 +51,6 @@ public class RubyComponentDetector : FileComponentDetector
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
-        this.NeedsAutomaticRootDependencyCalculation = true;
         this.Logger = logger;
     }
 
@@ -63,15 +63,17 @@ public class RubyComponentDetector : FileComponentDetector
 
     public override string Id { get; } = "Ruby";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "Gemfile.lock" };
+    public override IList<string> SearchPatterns { get; } = ["Gemfile.lock"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.RubyGems };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.RubyGems];
 
     public override int Version { get; } = 3;
 
-    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    public override bool NeedsAutomaticRootDependencyCalculation => true;
+
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -134,7 +136,7 @@ public class RubyComponentDetector : FileComponentDetector
                         // Nothing in the lockfile tells us where bundler came from
                         var addComponent = new DetectedComponent(new RubyGemsComponent(name, line, "unknown"));
                         components.TryAdd<string, DetectedComponent>(string.Format("{0}:{1}", name, file.Location), addComponent);
-                        dependencies.TryAdd(string.Format("{0}:{1}", name, file.Location), new List<Dependency>());
+                        dependencies.TryAdd(string.Format("{0}:{1}", name, file.Location), []);
                         break;
                     default:
                         // We ignore other sections
@@ -247,7 +249,7 @@ public class RubyComponentDetector : FileComponentDetector
                         else
                         {
                             components.TryAdd<string, DetectedComponent>(lookupKey, addComponent);
-                            dependencies.Add(lookupKey, new List<Dependency>());
+                            dependencies.Add(lookupKey, []);
                         }
                     }
                 }
@@ -257,7 +259,7 @@ public class RubyComponentDetector : FileComponentDetector
 
     private bool IsVersionRelative(string version)
     {
-        return version.StartsWith("~") || version.StartsWith("=");
+        return version.StartsWith('~') || version.StartsWith('=');
     }
 
     private class Dependency

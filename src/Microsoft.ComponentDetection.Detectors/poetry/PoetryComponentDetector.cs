@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -26,15 +27,15 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override string Id => "Poetry";
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "poetry.lock" };
+    public override IList<string> SearchPatterns { get; } = ["poetry.lock"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Pip };
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Pip];
 
-    public override int Version { get; } = 2;
+    public override int Version { get; } = 3;
 
-    public override IEnumerable<string> Categories => new List<string> { "Python" };
+    public override IEnumerable<string> Categories => ["Python"];
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var poetryLockFile = processRequest.ComponentStream;
@@ -45,7 +46,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
         {
             IgnoreMissingProperties = true,
         };
-        var poetryLock = Toml.ToModel<PoetryLock>(await reader.ReadToEndAsync(), options: options);
+        var poetryLock = Toml.ToModel<PoetryLock>(await reader.ReadToEndAsync(cancellationToken), options: options);
 
         if (poetryLock.Metadata != null && poetryLock.Metadata.TryGetValue("lock-version", out var lockVersion))
         {
@@ -54,17 +55,15 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
 
         poetryLock.Package.ToList().ForEach(package =>
         {
-            var isDevelopmentDependency = package.Category != "main";
-
             if (package.Source != null && package.Source.Type == "git")
             {
                 var component = new DetectedComponent(new GitComponent(new Uri(package.Source.Url), package.Source.ResolvedReference));
-                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
+                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: false);
             }
             else
             {
                 var component = new DetectedComponent(new PipComponent(package.Name, package.Version));
-                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: isDevelopmentDependency);
+                singleFileComponentRecorder.RegisterUsage(component, isDevelopmentDependency: false);
             }
         });
         await Task.CompletedTask;

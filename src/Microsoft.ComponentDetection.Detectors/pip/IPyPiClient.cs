@@ -24,13 +24,13 @@ public interface IPyPiClient
 {
     Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(string name, string version, PythonProjectRelease release);
 
-    Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec);
+    Task<PythonProject> GetProjectAsync(PipDependencySpecification spec);
 }
 
 public sealed class PyPiClient : IPyPiClient, IDisposable
 {
     // Values used for cache creation
-    private const long CACHEINTERVALSECONDS = 60;
+    private const long CACHEINTERVALSECONDS = 180;
 
     private const long DEFAULTCACHEENTRIES = 4096;
 
@@ -99,7 +99,11 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
         var package = new ZipArchive(await response.Content.ReadAsStreamAsync());
 
-        var entry = package.GetEntry($"{name.Replace('-', '_')}-{version}.dist-info/METADATA");
+        var entryName = $"{name.Replace('-', '_')}-{version}.dist-info/METADATA";
+
+        // first try case insensitive dicitonary lookup O(1), then attempt case-insensitive match O(entries)
+        var entry = package.GetEntry(entryName)
+            ?? package.Entries.FirstOrDefault(x => string.Equals(x.FullName, entryName, StringComparison.OrdinalIgnoreCase));
 
         // If there is no metadata file, the package doesn't have any declared dependencies
         if (entry == null)
@@ -134,7 +138,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         return dependencies;
     }
 
-    public async Task<SortedDictionary<string, IList<PythonProjectRelease>>> GetReleasesAsync(PipDependencySpecification spec)
+    public async Task<PythonProject> GetProjectAsync(PipDependencySpecification spec)
     {
         var requestUri = new Uri($"https://pypi.org/pypi/{spec.Name}/json");
 
@@ -158,7 +162,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                 using var r = new PypiRetryTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = result.Result.StatusCode };
 
                 this.logger.LogWarning(
-                    "Received {StatusCode} {ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
+                    "Received status:{StatusCode} with reason:{ReasonPhrase} from {RequestUri}. Waiting {TimeSpan} before retry attempt {RetryCount}",
                     result.Result.StatusCode,
                     result.Result.ReasonPhrase,
                     requestUri,
@@ -183,21 +187,25 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
 
             this.logger.LogWarning($"Call to pypi.org failed, but no more retries allowed!");
 
-            return new SortedDictionary<string, IList<PythonProjectRelease>>();
+            return new PythonProject();
         }
 
         if (!request.IsSuccessStatusCode)
         {
             using var r = new PypiFailureTelemetryRecord { Name = spec.Name, DependencySpecifiers = spec.DependencySpecifiers?.ToArray(), StatusCode = request.StatusCode };
 
-            this.logger.LogWarning("Received {StatusCode} {ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
+            this.logger.LogWarning("Received status:{StatusCode} with reason:{ReasonPhrase} from {RequestUri}", request.StatusCode, request.ReasonPhrase, requestUri);
 
-            return new SortedDictionary<string, IList<PythonProjectRelease>>();
+            return new PythonProject();
         }
 
         var response = await request.Content.ReadAsStringAsync();
         var project = JsonConvert.DeserializeObject<PythonProject>(response);
-        var versions = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer());
+        var versions = new PythonProject
+        {
+            Info = project.Info,
+            Releases = new SortedDictionary<string, IList<PythonProjectRelease>>(new PythonVersionComparer()),
+        };
 
         foreach (var release in project.Releases)
         {
@@ -205,17 +213,17 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
             {
                 var parsedVersion = PythonVersion.Create(release.Key);
                 if (release.Value != null && release.Value.Count > 0 &&
-                    parsedVersion.Valid && parsedVersion.IsReleasedPackage &&
+                    parsedVersion.Valid &&
                     PythonVersionUtilities.VersionValidForSpec(release.Key, spec.DependencySpecifiers))
                 {
-                    versions.Add(release.Key, release.Value);
+                    versions.Releases[release.Key] = release.Value;
                 }
             }
             catch (ArgumentException ae)
             {
                 this.logger.LogError(
                     ae,
-                    "Component {ReleaseKey} : {ReleaseValue)} could not be added to the sorted list of pip components for spec={SpecName}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions).",
+                    "Component {ReleaseKey} : {ReleaseValue} could not be added to the sorted list of pip components for spec={SpecName}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions).",
                     release.Key,
                     JsonConvert.SerializeObject(release.Value),
                     spec.Name);

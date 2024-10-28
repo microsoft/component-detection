@@ -18,16 +18,16 @@ public class DetectedComponent
     public DetectedComponent(TypedComponent.TypedComponent component, IComponentDetector detector = null, int? containerDetailsId = null, int? containerLayerId = null)
     {
         this.Component = component;
-        this.FilePaths = new HashSet<string>();
+        this.FilePaths = [];
         this.DetectedBy = detector;
-        this.ContainerDetailIds = new HashSet<int>();
+        this.ContainerDetailIds = [];
         this.ContainerLayerIds = new Dictionary<int, IEnumerable<int>>();
         if (containerDetailsId.HasValue)
         {
             this.ContainerDetailIds.Add(containerDetailsId.Value);
             if (containerLayerId.HasValue)
             {
-                this.ContainerLayerIds.Add(containerDetailsId.Value, new List<int>() { containerLayerId.Value });
+                this.ContainerLayerIds.Add(containerDetailsId.Value, [containerLayerId.Value]);
             }
         }
     }
@@ -45,6 +45,9 @@ public class DetectedComponent
 
     /// <summary> Gets or sets the dependency roots for this component. </summary>
     public HashSet<TypedComponent.TypedComponent> DependencyRoots { get; set; }
+
+    /// <summary> Gets or sets the ancester dependency for this component. </summary>
+    public HashSet<TypedComponent.TypedComponent> AncestralDependencyRoots { get; set; }
 
     /// <summary>Gets or sets the flag to mark the component as a development dependency or not.
     /// This is used at build or development time not a distributed dependency.</summary>

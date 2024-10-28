@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -12,9 +13,9 @@ using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetector
+public class VcpkgComponentDetector : FileComponentDetector
 {
-    private readonly HashSet<string> projectRoots = new HashSet<string>();
+    private readonly HashSet<string> projectRoots = [];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;
@@ -35,15 +36,15 @@ public class VcpkgComponentDetector : FileComponentDetector, IExperimentalDetect
 
     public override string Id { get; } = "Vcpkg";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Vcpkg) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Vcpkg)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "vcpkg.spdx.json" };
+    public override IList<string> SearchPatterns { get; } = ["vcpkg.spdx.json"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Vcpkg };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Vcpkg];
 
     public override int Version => 2;
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;

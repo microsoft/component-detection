@@ -1,9 +1,10 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
@@ -20,12 +21,14 @@ using Moq;
 public class MavenCommandServiceTests
 {
     private readonly Mock<ICommandLineInvocationService> commandLineMock;
+    private readonly Mock<IEnvironmentVariableService> environmentVarServiceMock;
     private readonly Mock<IMavenStyleDependencyGraphParserService> parserServiceMock;
     private readonly MavenCommandService mavenCommandService;
 
     public MavenCommandServiceTests()
     {
         this.commandLineMock = new Mock<ICommandLineInvocationService>();
+        this.environmentVarServiceMock = new Mock<IEnvironmentVariableService>();
         var loggerMock = new Mock<ILogger<MavenCommandService>>();
 
         this.parserServiceMock = new Mock<IMavenStyleDependencyGraphParserService>();
@@ -33,6 +36,7 @@ public class MavenCommandServiceTests
         this.mavenCommandService = new MavenCommandService(
             this.commandLineMock.Object,
             this.parserServiceMock.Object,
+            this.environmentVarServiceMock.Object,
             loggerMock.Object);
     }
 
@@ -80,6 +84,7 @@ public class MavenCommandServiceTests
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
                 MavenCommandService.PrimaryCommand,
                 MavenCommandService.AdditionalValidCommands,
+                It.Is<CancellationToken>(x => !x.IsCancellationRequested),
                 It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
             .ReturnsAsync(new CommandLineExecutionResult
             {
@@ -90,6 +95,144 @@ public class MavenCommandServiceTests
         await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
 
         Mock.Verify(this.commandLineMock);
+    }
+
+    [TestMethod]
+    public async Task GenerateDependenciesFile_SuccessWithParentCancellationTokenAsync()
+    {
+        var cts = new CancellationTokenSource();
+        var pomLocation = "Test/location";
+        var processRequest = new ProcessRequest
+        {
+            ComponentStream = new ComponentStream
+            {
+                Location = pomLocation,
+            },
+        };
+
+        await cts.CancelAsync();
+
+        var bcdeMvnFileName = "bcde.mvndeps";
+        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
+                MavenCommandService.PrimaryCommand,
+                MavenCommandService.AdditionalValidCommands,
+                It.Is<CancellationToken>(x => x.IsCancellationRequested), // We just care that this is cancelled, not the actual output
+                It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
+            .ReturnsAsync(new CommandLineExecutionResult
+            {
+                ExitCode = 0,
+            })
+            .Verifiable();
+
+        await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, cts.Token);
+
+        this.commandLineMock.Verify();
+    }
+
+    [TestMethod]
+    public async Task GenerateDependenciesFile_SuccessWithTimeoutExceptionAsync()
+    {
+        var cts = new CancellationTokenSource();
+        var pomLocation = "Test/location";
+        var processRequest = new ProcessRequest
+        {
+            ComponentStream = new ComponentStream
+            {
+                Location = pomLocation,
+            },
+        };
+
+        var bcdeMvnFileName = "bcde.mvndeps";
+        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
+                MavenCommandService.PrimaryCommand,
+                MavenCommandService.AdditionalValidCommands,
+                It.IsAny<CancellationToken>(),
+                It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
+            .ReturnsAsync(new CommandLineExecutionResult
+            {
+                ExitCode = -1,
+            })
+            .Verifiable();
+
+        await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, cts.Token);
+
+        this.commandLineMock.Verify();
+    }
+
+    [TestMethod]
+    public async Task GenerateDependenciesFile_SuccessWithTimeoutVariableTimeoutAsync()
+    {
+        var cts = new CancellationTokenSource();
+        var pomLocation = "Test/location";
+        var processRequest = new ProcessRequest
+        {
+            ComponentStream = new ComponentStream
+            {
+                Location = pomLocation,
+            },
+        };
+
+        var bcdeMvnFileName = "bcde.mvndeps";
+        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
+
+        this.environmentVarServiceMock
+            .Setup(x => x.DoesEnvironmentVariableExist(MavenCommandService.MvnCLIFileLevelTimeoutSecondsEnvVar))
+            .Returns(true);
+
+        this.environmentVarServiceMock
+            .Setup(x => x.GetEnvironmentVariable(MavenCommandService.MvnCLIFileLevelTimeoutSecondsEnvVar))
+            .Returns("0")
+            .Callback(() => cts.Cancel());
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
+                MavenCommandService.PrimaryCommand,
+                MavenCommandService.AdditionalValidCommands,
+                It.Is<CancellationToken>(x => x.IsCancellationRequested),
+                It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
+            .ReturnsAsync(new CommandLineExecutionResult
+            {
+                ExitCode = -1,
+            })
+            .Verifiable();
+
+        await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, cts.Token);
+
+        this.commandLineMock.Verify();
+        this.environmentVarServiceMock.Verify();
+    }
+
+    [TestMethod]
+    public async Task GenerateDependenciesFile_SuccessWithRandomExceptionAsync()
+    {
+        var cts = new CancellationTokenSource();
+        var pomLocation = "Test/location";
+        var processRequest = new ProcessRequest
+        {
+            ComponentStream = new ComponentStream
+            {
+                Location = pomLocation,
+            },
+        };
+
+        var bcdeMvnFileName = "bcde.mvndeps";
+        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
+                MavenCommandService.PrimaryCommand,
+                MavenCommandService.AdditionalValidCommands,
+                It.IsAny<CancellationToken>(),
+                It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
+            .ThrowsAsync(new ArgumentNullException("Something Broke"))
+            .Verifiable();
+
+        var action = async () => await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, cts.Token);
+        await action.Should().ThrowAsync<ArgumentNullException>();
+
+        this.commandLineMock.Verify();
     }
 
     [TestMethod]
@@ -118,7 +261,7 @@ public class MavenCommandServiceTests
 
     protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
     {
-        result.Should<T>().BeEquivalentTo(expected);
+        result.Should().BeEquivalentTo(expected);
         return true;
     }
 }

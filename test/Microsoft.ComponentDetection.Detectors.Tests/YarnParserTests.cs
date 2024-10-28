@@ -51,7 +51,7 @@ public class YarnParserTests
     [TestMethod]
     public void YarnLockParser_CanParseV2LockFiles()
     {
-        var yarnLockFileVersion = YarnLockVersion.V2;
+        var yarnLockFileVersion = YarnLockVersion.Berry;
 
         var parser = new YarnLockParser(this.loggerMock.Object);
 
@@ -80,7 +80,7 @@ public class YarnParserTests
     }
 
     [TestMethod]
-    public void YarnLockParser_ParsesBlocks()
+    public void YarnLockParser_V1_ParsesBlocks()
     {
         var yarnLockFileVersion = YarnLockVersion.V1;
 
@@ -88,15 +88,23 @@ public class YarnParserTests
 
         var blocks = new List<YarnBlock>
         {
-            this.CreateBlock("a@^1.0.0", "1.0.0", "https://a", new List<YarnBlock>
-            {
-                this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
-            }),
-            this.CreateBlock("b@2.4.6", "2.4.6", "https://b", new List<YarnBlock>
-            {
-                this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
-            }),
-            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", Enumerable.Empty<YarnBlock>()),
+            this.CreateBlock(
+                "a@^1.0.0",
+                "1.0.0",
+                "https://a",
+                [
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
+                ],
+                yarnLockFileVersion),
+            this.CreateBlock(
+                "b@2.4.6",
+                "2.4.6",
+                "https://b",
+                [
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
+                ],
+                yarnLockFileVersion),
+            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", [], yarnLockFileVersion),
         };
 
         var blockFile = new Mock<IYarnBlockFile>();
@@ -105,14 +113,96 @@ public class YarnParserTests
 
         var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
 
-        file.LockVersion.Should().Be(YarnLockVersion.V1);
+        file.LockVersion.Should().Be(yarnLockFileVersion);
         file.Entries.Should().HaveCount(3);
 
         foreach (var entry in file.Entries)
         {
-            var block = blocks.Single(x => x.Values["resolved"] == entry.Resolved);
+            var block = blocks.Single(x => x.Values[this.GetResolvedEntryName(yarnLockFileVersion)] == entry.Resolved);
 
-            this.AssertBlockMatchesEntry(block, entry);
+            this.AssertBlockMatchesEntry(block, entry, yarnLockFileVersion);
+        }
+    }
+
+    [TestMethod]
+    public void YarnLockParser_Berry_ParsesBlocks()
+    {
+        var yarnLockFileVersion = YarnLockVersion.Berry;
+
+        var parser = new YarnLockParser(this.loggerMock.Object);
+
+        var blocks = new List<YarnBlock>
+        {
+            this.CreateBlock(
+                "a@^1.0.0",
+                "1.0.0",
+                "https://a",
+                [
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
+                ],
+                yarnLockFileVersion),
+            this.CreateBlock(
+                "b@2.4.6",
+                "2.4.6",
+                "https://b",
+                [
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
+                ],
+                yarnLockFileVersion),
+            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", [], yarnLockFileVersion),
+        };
+
+        var blockFile = new Mock<IYarnBlockFile>();
+        blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
+        blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
+
+        var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
+
+        file.LockVersion.Should().Be(yarnLockFileVersion);
+        file.Entries.Should().HaveCount(3);
+
+        foreach (var entry in file.Entries)
+        {
+            var block = blocks.Single(x => x.Values[this.GetResolvedEntryName(yarnLockFileVersion)] == entry.Resolved);
+
+            this.AssertBlockMatchesEntry(block, entry, yarnLockFileVersion);
+        }
+    }
+
+    [TestMethod]
+    public void YarnLockParser_Berry_SkipsWorkspaceEntries()
+    {
+        var yarnLockFileVersion = YarnLockVersion.Berry;
+
+        var parser = new YarnLockParser(this.loggerMock.Object);
+
+        var blocks = new List<YarnBlock>
+        {
+            this.CreateBlock(
+                "internal-package@npm:0.0.0, internal-package@workspace:packages/internal-package",
+                "0.0.0-use.local",
+                "internal-package@workspace:packages/internal-package",
+                [
+                    this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
+                ],
+                yarnLockFileVersion),
+            this.CreateBlock("xyz@2, xyz@2.4", "2.4.3", "https://xyz", [], yarnLockFileVersion),
+        };
+
+        var blockFile = new Mock<IYarnBlockFile>();
+        blockFile.Setup(x => x.YarnLockVersion).Returns(yarnLockFileVersion);
+        blockFile.Setup(x => x.GetEnumerator()).Returns(blocks.GetEnumerator());
+
+        var file = parser.Parse(this.recorderMock.Object, blockFile.Object, this.loggerMock.Object);
+
+        file.LockVersion.Should().Be(yarnLockFileVersion);
+        file.Entries.Should().ContainSingle();
+
+        foreach (var entry in file.Entries)
+        {
+            var block = blocks.Single(x => x.Values[this.GetResolvedEntryName(yarnLockFileVersion)] == entry.Resolved);
+
+            this.AssertBlockMatchesEntry(block, entry, yarnLockFileVersion);
         }
     }
 
@@ -125,14 +215,12 @@ public class YarnParserTests
 
         var blocks = new List<YarnBlock>
         {
-            this.CreateBlock("a", "1.0.0", "https://a", new List<YarnBlock>
-            {
+            this.CreateBlock("a", "1.0.0", "https://a", [
                 this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2" } }),
-            }),
-            this.CreateBlock("b", "2.4.6", "https://b", new List<YarnBlock>
-            {
+            ]),
+            this.CreateBlock("b", "2.4.6", "https://b", [
                 this.CreateDependencyBlock(new Dictionary<string, string> { { "xyz", "2.4" }, { "a", "^1.0.0" } }),
-            }),
+            ]),
         };
 
         var blockFile = new Mock<IYarnBlockFile>();
@@ -161,7 +249,7 @@ public class YarnParserTests
         return block;
     }
 
-    private YarnBlock CreateBlock(string title, string version, string resolved, IEnumerable<YarnBlock> dependencies)
+    private YarnBlock CreateBlock(string title, string version, string resolved, IEnumerable<YarnBlock> dependencies, YarnLockVersion lockfileVersion = YarnLockVersion.V1)
     {
         var block = new YarnBlock
         {
@@ -169,7 +257,7 @@ public class YarnParserTests
             Values =
             {
                 ["version"] = version,
-                ["resolved"] = resolved,
+                [this.GetResolvedEntryName(lockfileVersion)] = resolved,
             },
         };
 
@@ -181,7 +269,7 @@ public class YarnParserTests
         return block;
     }
 
-    private void AssertBlockMatchesEntry(YarnBlock block, YarnEntry entry)
+    private void AssertBlockMatchesEntry(YarnBlock block, YarnEntry entry, YarnLockVersion lockfileVersion = YarnLockVersion.V1)
     {
         var componentName = block.Title.Split(',').Select(x => x.Trim()).First().Split('@')[0];
         var blockVersions = block.Title.Split(',').Select(x => x.Trim()).Select(x => x.Split('@')[1]);
@@ -194,7 +282,7 @@ public class YarnParserTests
         }
 
         entry.Version.Should().Be(block.Values["version"]);
-        entry.Resolved.Should().Be(block.Values["resolved"]);
+        entry.Resolved.Should().Be(block.Values[this.GetResolvedEntryName(lockfileVersion)]);
 
         var dependencies = block.Children.SingleOrDefault(x => x.Title == "dependencies");
 
@@ -205,5 +293,10 @@ public class YarnParserTests
                 entry.Dependencies.SingleOrDefault(x => x.Name == dependency.Key && x.Version == dependency.Value).Should().NotBeNull();
             }
         }
+    }
+
+    private string GetResolvedEntryName(YarnLockVersion lockfileVersion)
+    {
+        return lockfileVersion == YarnLockVersion.Berry ? "resolution" : "resolved";
     }
 }

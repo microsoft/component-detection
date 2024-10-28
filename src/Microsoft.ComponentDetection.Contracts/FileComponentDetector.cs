@@ -1,9 +1,10 @@
-﻿namespace Microsoft.ComponentDetection.Contracts;
+namespace Microsoft.ComponentDetection.Contracts;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -45,7 +46,7 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <summary>
     /// Gets the folder names that will be skipped by the Component Detector.
     /// </summary>
-    protected virtual IList<string> SkippedFolders => new List<string> { };
+    protected virtual IList<string> SkippedFolders => [];
 
     /// <summary>
     /// Gets or sets the active scan request -- only populated after a ScanDirectoryAsync is invoked. If ScanDirectoryAsync is overridden,
@@ -53,28 +54,35 @@ public abstract class FileComponentDetector : IComponentDetector
     /// </summary>
     protected ScanRequest CurrentScanRequest { get; set; }
 
-    public bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
+    public virtual bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
 
-    protected Dictionary<string, string> Telemetry { get; set; } = new Dictionary<string, string>();
+    protected Dictionary<string, string> Telemetry { get; set; } = [];
+
+    /// <summary>
+    /// List of any any additional properties as key-value pairs that we would like to capture for the detector.
+    /// </summary>
+    public List<(string PropertyKey, string PropertyValue)> AdditionalProperties { get; set; } = [];
 
     protected IObservable<IComponentStream> ComponentStreams { get; private set; }
 
+    protected virtual bool EnableParallelism { get; set; }
+
     /// <inheritdoc />
-    public async virtual Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request)
+    public async virtual Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
         this.ComponentRecorder = request.ComponentRecorder;
         this.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
-        return await this.ScanDirectoryAsync(request);
+        return await this.ScanDirectoryAsync(request, cancellationToken);
     }
 
-    private Task<IndividualDetectorScanResult> ScanDirectoryAsync(ScanRequest request)
+    private Task<IndividualDetectorScanResult> ScanDirectoryAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest = request;
 
         var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
 
         this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
-        return this.ProcessAsync(filteredObservable, request.DetectorArgs);
+        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, request.CleanupCreatedFiles, cancellationToken);
     }
 
     /// <summary>
@@ -100,11 +108,21 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <param name="lockfileVersion">The lockfile version.</param>
     protected void RecordLockfileVersion(string lockfileVersion) => this.Telemetry["LockfileVersion"] = lockfileVersion;
 
-    private async Task<IndividualDetectorScanResult> ProcessAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    private async Task<IndividualDetectorScanResult> ProcessAsync(
+        IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, bool cleanupCreatedFiles, CancellationToken cancellationToken = default)
     {
-        var processor = new ActionBlock<ProcessRequest>(async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs));
+        var threadsToUse = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1;
+        this.Telemetry["ThreadsUsed"] = $"{threadsToUse}";
 
-        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs);
+        var processor = new ActionBlock<ProcessRequest>(
+            async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cleanupCreatedFiles, cancellationToken),
+            new ExecutionDataflowBlockOptions
+            {
+                // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
+                MaxDegreeOfParallelism = threadsToUse,
+            });
+
+        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
 
         await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
 
@@ -121,15 +139,19 @@ public abstract class FileComponentDetector : IComponentDetector
         };
     }
 
-    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(processRequests);
     }
 
-    protected abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs);
+    protected abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default);
 
     protected virtual Task OnDetectionFinishedAsync()
     {
         return Task.CompletedTask;
     }
+
+    // Do not cleanup by default, only if the detector uses the FileComponentWithCleanup abstract class.
+    protected virtual async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, bool cleanupCreatedFiles, CancellationToken cancellationToken = default) =>
+        await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken);
 }

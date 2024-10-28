@@ -47,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IEnvironmentVariableService, EnvironmentVariableService>();
         services.AddSingleton<IObservableDirectoryWalkerFactory, FastDirectoryWalkerFactory>();
         services.AddSingleton<IFileUtilityService, FileUtilityService>();
+        services.AddSingleton<IDirectoryUtilityService, DirectoryUtilityService>();
         services.AddSingleton<IFileWritingService, FileWritingService>();
         services.AddSingleton<IGraphTranslationService, DefaultGraphTranslationService>();
         services.AddSingleton<IPathUtilityService, PathUtilityService>();
@@ -61,8 +62,6 @@ public static class ServiceCollectionExtensions
         // Experiments
         services.AddSingleton<IExperimentService, ExperimentService>();
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
-        services.AddSingleton<IExperimentConfiguration, NewNugetExperiment>();
-        services.AddSingleton<IExperimentConfiguration, NpmLockfile3Experiment>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
 
@@ -115,9 +114,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISimplePythonResolver, SimplePythonResolver>();
         services.AddSingleton<IComponentDetector, PipComponentDetector>();
         services.AddSingleton<IComponentDetector, SimplePipComponentDetector>();
+        services.AddSingleton<IPipCommandService, PipCommandService>();
+        services.AddSingleton<IComponentDetector, PipReportComponentDetector>();
 
         // pnpm
-        services.AddSingleton<IComponentDetector, PnpmComponentDetector>();
+        services.AddSingleton<IComponentDetector, PnpmComponentDetectorFactory>();
 
         // Poetry
         services.AddSingleton<IComponentDetector, PoetryComponentDetector>();

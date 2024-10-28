@@ -1,8 +1,8 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using Docker.DotNet.Models;
 using FluentAssertions;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
@@ -76,8 +76,146 @@ public class DockerServiceTests
     [SkipTestOnWindows]
     public async Task DockerService_CanCreateAndRunImageAsync()
     {
-        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, new List<string>());
+        var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, []);
         stdout.Should().StartWith("\nHello from Docker!");
         stderr.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void DockerService_SanitizeEnvironmentVariables()
+    {
+        var responseInput = new ImageInspectResponse
+        {
+            Config = new Config
+            {
+                Env =
+                [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                    "MARATHON_APP_RESOURCE_CPU=1",
+                    "REGION=local",
+                    "PIP_INDEX_URL=https://user:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@someregistry.localhost.com",
+                ],
+            },
+        };
+
+        var expected = new ImageInspectResponse
+        {
+            Config = new Config
+            {
+                Env =
+                [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                    "MARATHON_APP_RESOURCE_CPU=1",
+                    "REGION=local",
+                    $"PIP_INDEX_URL=https://{StringUtilities.SensitivePlaceholder}@someregistry.localhost.com",
+                ],
+            },
+        };
+
+        this.dockerService.SanitizeEnvironmentVariables(responseInput);
+        responseInput.Should().BeEquivalentTo(expected);
+
+        responseInput = new ImageInspectResponse
+        {
+            Config = new Config
+            {
+                Env =
+                [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                    "MARATHON_APP_RESOURCE_CPU=1",
+                    "REGION=local",
+                ],
+            },
+        };
+
+        expected = new ImageInspectResponse
+        {
+            Config = new Config
+            {
+                Env =
+                [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                    "MARATHON_APP_RESOURCE_CPU=1",
+                    "REGION=local",
+                ],
+            },
+        };
+
+        this.dockerService.SanitizeEnvironmentVariables(responseInput);
+        responseInput.Should().BeEquivalentTo(expected);
+
+        responseInput = new ImageInspectResponse
+        {
+            Config = new Config
+            {
+                Env =
+                [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                    "MARATHON_APP_RESOURCE_CPU=1",
+                    "REGION=local",
+                    "PIP_INDEX_URL=https://someregistry.localhost.com",
+                ],
+            },
+        };
+
+        expected = new ImageInspectResponse
+        {
+            Config = new Config
+            {
+                Env =
+                [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                    "MARATHON_APP_RESOURCE_CPU=1",
+                    "REGION=local",
+                    "PIP_INDEX_URL=https://someregistry.localhost.com",
+                ],
+            },
+        };
+
+        this.dockerService.SanitizeEnvironmentVariables(responseInput);
+        responseInput.Should().BeEquivalentTo(expected);
+    }
+
+    [TestMethod]
+    public void DockerService_SanitizeEnvironmentVariables_DoesNotThrow()
+    {
+        var responseInput = new ImageInspectResponse
+        {
+            Config = new Config
+            {
+                Env = null,
+            },
+        };
+
+        var action = () => this.dockerService.SanitizeEnvironmentVariables(responseInput);
+        action.Should().NotThrow();
+        responseInput.Should().BeEquivalentTo(responseInput);
+
+        responseInput = new ImageInspectResponse
+        {
+            Config = null,
+        };
+
+        action = () => this.dockerService.SanitizeEnvironmentVariables(responseInput);
+        action.Should().NotThrow();
+        responseInput.Should().BeEquivalentTo(responseInput);
+
+        responseInput = null;
+
+        action = () => this.dockerService.SanitizeEnvironmentVariables(responseInput);
+        action.Should().NotThrow();
+        responseInput.Should().BeNull();
+
+        responseInput = new ImageInspectResponse
+        {
+            Config = new Config
+            {
+                Env = [],
+            },
+        };
+
+        action = () => this.dockerService.SanitizeEnvironmentVariables(responseInput);
+        action.Should().NotThrow();
+        responseInput.Should().BeEquivalentTo(responseInput);
     }
 }

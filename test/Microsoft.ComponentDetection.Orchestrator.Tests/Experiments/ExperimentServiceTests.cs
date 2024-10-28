@@ -3,7 +3,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
@@ -44,6 +43,7 @@ public class ExperimentServiceTests
 
         this.componentRecorder = new ComponentRecorder();
 
+        this.detectorMock.SetupGet(x => x.Id).Returns(Guid.NewGuid().ToString());
         this.experimentConfigMock.Setup(x => x.IsInControlGroup(this.detectorMock.Object)).Returns(true);
         this.experimentConfigMock.Setup(x => x.IsInExperimentGroup(this.detectorMock.Object)).Returns(true);
         this.experimentConfigMock.Setup(x => x.ShouldRecord(this.detectorMock.Object, It.IsAny<int>())).Returns(true);
@@ -69,8 +69,8 @@ public class ExperimentServiceTests
         var components = ExperimentTestUtils.CreateRandomComponents();
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            Enumerable.Empty<IExperimentProcessor>(),
+            [this.experimentConfigMock.Object],
+            [],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
         this.SetupGraphMock(components);
@@ -101,8 +101,8 @@ public class ExperimentServiceTests
         this.SetupGraphMock(components);
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object, filterConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object, filterConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
 
@@ -127,8 +127,8 @@ public class ExperimentServiceTests
         var components = ExperimentTestUtils.CreateRandomComponents();
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object, filterConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object, filterConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
 
@@ -151,8 +151,8 @@ public class ExperimentServiceTests
         this.SetupGraphMock(components);
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
         service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
@@ -176,8 +176,8 @@ public class ExperimentServiceTests
         this.SetupGraphMock(components);
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
         service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
@@ -190,8 +190,8 @@ public class ExperimentServiceTests
     public async Task FinishAsync_SkipsEmptyExperimentsAsync()
     {
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
         await service.FinishAsync();
@@ -208,8 +208,8 @@ public class ExperimentServiceTests
         this.SetupGraphMock(components);
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
         service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
@@ -230,8 +230,8 @@ public class ExperimentServiceTests
         this.SetupGraphMock(components);
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
         service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
@@ -252,8 +252,8 @@ public class ExperimentServiceTests
         this.SetupGraphMock(components);
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
         service.RecordDetectorRun(this.detectorMock.Object, this.componentRecorder, this.scanSettingsMock.Object);
@@ -271,8 +271,8 @@ public class ExperimentServiceTests
         var components = ExperimentTestUtils.CreateRandomComponents();
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
         this.SetupGraphMock(components);
@@ -302,8 +302,8 @@ public class ExperimentServiceTests
         var components = ExperimentTestUtils.CreateRandomComponents();
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
         this.SetupGraphMock(components);
@@ -331,8 +331,8 @@ public class ExperimentServiceTests
     public async Task InitializeAsync_InitsConfigsAsync()
     {
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
 
@@ -347,8 +347,8 @@ public class ExperimentServiceTests
         this.experimentConfigMock.Setup(x => x.InitAsync()).ThrowsAsync(new InvalidOperationException());
 
         var service = new ExperimentService(
-            new[] { this.experimentConfigMock.Object },
-            new[] { this.experimentProcessorMock.Object },
+            [this.experimentConfigMock.Object],
+            [this.experimentProcessorMock.Object],
             this.graphTranslationServiceMock.Object,
             this.loggerMock.Object);
 

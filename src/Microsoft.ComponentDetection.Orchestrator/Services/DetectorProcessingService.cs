@@ -23,6 +23,10 @@ using static System.Environment;
 
 public class DetectorProcessingService : IDetectorProcessingService
 {
+    private const int DefaultMaxDetectionThreads = 5;
+    private const int ExperimentalTimeoutSeconds = 240; // 4 minutes
+    private const int ProcessTimeoutBufferSeconds = 5;
+
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
     private readonly IExperimentService experimentService;
@@ -65,17 +69,38 @@ public class DetectorProcessingService : IDetectorProcessingService
                 providerStopwatch.Start();
 
                 var componentRecorder = new ComponentRecorder(this.logger, !detector.NeedsAutomaticRootDependencyCalculation);
-
                 var isExperimentalDetector = detector is IExperimentalDetector && !(detectorRestrictions.ExplicitlyEnabledDetectorIds?.Contains(detector.Id)).GetValueOrDefault();
+
+                var cancellationToken = CancellationToken.None;
+                if (settings.Timeout != null && settings.Timeout > 0)
+                {
+                    var cts = new CancellationTokenSource();
+                    cancellationToken = cts.Token;
+                    var timeout = GetProcessTimeout(settings.Timeout.Value, isExperimentalDetector);
+
+                    this.logger.LogDebug("Setting {DetectorName} process detector timeout to {Timeout} seconds.", detector.Id, timeout.TotalSeconds);
+                    cts.CancelAfter(timeout);
+                }
 
                 IEnumerable<DetectedComponent> detectedComponents;
                 ProcessingResultCode resultCode;
                 IEnumerable<ContainerDetails> containerDetails;
                 IndividualDetectorScanResult result;
+                DetectorRunResult runResult;
                 using (var record = new DetectorExecutionTelemetryRecord())
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
-                        () => detector.ExecuteDetectorAsync(new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder)),
+                        () => detector.ExecuteDetectorAsync(
+                            new ScanRequest(
+                                settings.SourceDirectory,
+                                exclusionPredicate,
+                                this.logger,
+                                settings.DetectorArgs,
+                                settings.DockerImagesToScan,
+                                componentRecorder,
+                                settings.MaxDetectionThreads ?? DefaultMaxDetectionThreads,
+                                settings.CleanupCreatedFiles ?? true),
+                            cancellationToken),
                         isExperimentalDetector,
                         record);
 
@@ -91,23 +116,21 @@ public class DetectorProcessingService : IDetectorProcessingService
                     record.DetectorId = detector.Id;
                     record.DetectedComponentCount = detectedComponents.Count();
                     var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation().Values;
-                    record.ExplicitlyReferencedComponentCount = dependencyGraphs.Select(dependencyGraph =>
-                        {
-                            return dependencyGraph.GetAllExplicitlyReferencedComponents();
-                        })
+                    record.ExplicitlyReferencedComponentCount = dependencyGraphs.Select(dependencyGraph => dependencyGraph.GetAllExplicitlyReferencedComponents())
                         .SelectMany(x => x)
                         .Distinct()
                         .Count();
 
                     record.ReturnCode = (int)resultCode;
                     record.StopExecutionTimer();
-                    providerElapsedTime.TryAdd(detector.Id + (isExperimentalDetector ? " (Beta)" : string.Empty), new DetectorRunResult
+                    runResult = new DetectorRunResult
                     {
                         ExecutionTime = record.ExecutionTime.Value,
                         ComponentsFoundCount = record.DetectedComponentCount.GetValueOrDefault(),
                         ExplicitlyReferencedComponentCount = record.ExplicitlyReferencedComponentCount.GetValueOrDefault(),
                         IsExperimental = isExperimentalDetector,
-                    });
+                    };
+                    providerElapsedTime.TryAdd(this.GetDetectorId(detector.Id, isExperimentalDetector), runResult);
                 }
 
                 if (exitCode < resultCode && !isExperimentalDetector)
@@ -115,7 +138,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                     exitCode = resultCode;
                 }
 
-                this.experimentService.RecordDetectorRun(detector, componentRecorder, settings);
+                this.experimentService.RecordDetectorRun(detector, componentRecorder, settings, runResult);
 
                 if (isExperimentalDetector)
                 {
@@ -133,7 +156,11 @@ public class DetectorProcessingService : IDetectorProcessingService
         var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
         var totalElapsedTime = stopwatch.Elapsed.TotalSeconds;
-        this.LogTabularOutput(providerElapsedTime, totalElapsedTime);
+
+        if (!settings.NoSummary)
+        {
+            this.LogTabularOutput(providerElapsedTime, totalElapsedTime);
+        }
 
         // If there are components which are skipped due to connection or parsing
         // errors, log them by detector.
@@ -247,11 +274,32 @@ public class DetectorProcessingService : IDetectorProcessingService
         };
     }
 
+    /// <summary>
+    /// Gets the timeout for the individual running process. This is calculated based on
+    /// whether we want the experimental timeout or not. Regardless, we will take a buffer of 5 seconds off of
+    /// the timeout value so that the process has time to exit before the invoking process is cancelled. If the timeout is
+    /// set to less than 5 seconds, we set the process timeout to 1 second prior, since the CLI rejects any timeouts
+    /// less than 1.
+    /// </summary>
+    /// <param name="settingsTimeoutSeconds">Number of seconds before the detection process times out.</param>
+    /// <param name="isExperimental">Whether we should get the experimental timeout or not.</param>
+    /// <returns>Number of seconds before a process cancellation should be invoked.</returns>
+    private static TimeSpan GetProcessTimeout(int settingsTimeoutSeconds, bool isExperimental)
+    {
+        var timeoutSeconds = isExperimental
+            ? Math.Min(settingsTimeoutSeconds, ExperimentalTimeoutSeconds)
+            : settingsTimeoutSeconds;
+
+        return timeoutSeconds > ProcessTimeoutBufferSeconds
+            ? TimeSpan.FromSeconds(timeoutSeconds - ProcessTimeoutBufferSeconds)
+            : TimeSpan.FromSeconds(timeoutSeconds - 1);
+    }
+
     private IndividualDetectorScanResult CoalesceResult(IndividualDetectorScanResult individualDetectorScanResult)
     {
         individualDetectorScanResult ??= new IndividualDetectorScanResult();
 
-        individualDetectorScanResult.ContainerDetails ??= Enumerable.Empty<ContainerDetails>();
+        individualDetectorScanResult.ContainerDetails ??= [];
 
         // Additional telemetry details can safely be null
         return individualDetectorScanResult;
@@ -276,7 +324,7 @@ public class DetectorProcessingService : IDetectorProcessingService
 
         try
         {
-            return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromMinutes(4), CancellationToken.None);
+            return await AsyncExecution.ExecuteWithTimeoutAsync(detectionTaskGenerator, TimeSpan.FromSeconds(ExperimentalTimeoutSeconds), CancellationToken.None);
         }
         catch (TimeoutException)
         {
@@ -298,6 +346,11 @@ public class DetectorProcessingService : IDetectorProcessingService
     private bool IsOSLinuxOrMac()
     {
         return OSVersion.Platform == PlatformID.MacOSX || OSVersion.Platform == PlatformID.Unix;
+    }
+
+    private string GetDetectorId(string detectorId, bool isExperimentalDetector)
+    {
+        return detectorId + (isExperimentalDetector ? " (Beta)" : string.Empty);
     }
 
     private void LogTabularOutput(ConcurrentDictionary<string, DetectorRunResult> providerElapsedTime, double totalElapsedTime)
@@ -329,13 +382,13 @@ public class DetectorProcessingService : IDetectorProcessingService
 
         AnsiConsole.Write(table);
 
-        var tsf = new TabularStringFormat(new Column[]
-        {
+        var tsf = new TabularStringFormat(
+        [
             new Column { Header = "Component Detector Id", Width = 30 },
             new Column { Header = "Detection Time", Width = 30, Format = "{0:g2} seconds" },
             new Column { Header = "# Components Found", Width = 30, },
             new Column { Header = "# Explicitly Referenced", Width = 40 },
-        });
+        ]);
 
         var rows = providerElapsedTime.OrderBy(a => a.Key).Select(x =>
         {
@@ -349,13 +402,13 @@ public class DetectorProcessingService : IDetectorProcessingService
             };
         }).ToList();
 
-        rows.Add(new object[]
-        {
+        rows.Add(
+        [
             "Total",
             totalElapsedTime,
             providerElapsedTime.Sum(x => x.Value.ComponentsFoundCount),
             providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount),
-        });
+        ]);
 
         foreach (var line in tsf.GenerateString(rows).Split(new[] { NewLine }, StringSplitOptions.None))
         {

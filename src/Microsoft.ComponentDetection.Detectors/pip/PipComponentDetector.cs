@@ -4,13 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class PipComponentDetector : FileComponentDetector
+public class PipComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     private readonly IPythonCommandService pythonCommandService;
     private readonly IPythonResolver pythonResolver;
@@ -31,15 +32,18 @@ public class PipComponentDetector : FileComponentDetector
 
     public override string Id => "Pip";
 
-    public override IList<string> SearchPatterns => new List<string> { "setup.py", "requirements.txt" };
+    public override IList<string> SearchPatterns => ["setup.py", "requirements.txt"];
 
-    public override IEnumerable<string> Categories => new List<string> { "Python" };
+    public override IEnumerable<string> Categories => ["Python"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pip };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pip];
 
-    public override int Version { get; } = 6;
+    public override int Version { get; } = 13;
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         if (!await this.pythonCommandService.PythonExistsAsync(pythonExePath))
@@ -48,11 +52,19 @@ public class PipComponentDetector : FileComponentDetector
 
             return Enumerable.Empty<ProcessRequest>().ToObservable();
         }
+        else
+        {
+            var pythonVersion = await this.pythonCommandService.GetPythonVersionAsync(pythonExePath);
+            this.pythonResolver.SetPythonEnvironmentVariable("python_version", pythonVersion);
+
+            var pythonPlatformString = await this.pythonCommandService.GetOsTypeAsync(pythonExePath);
+            this.pythonResolver.SetPythonEnvironmentVariable("sys_platform", pythonPlatformString);
+        }
 
         return processRequests;
     }
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         this.CurrentScanRequest.DetectorArgs.TryGetValue("Pip.PythonExePath", out var pythonExePath);
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -61,11 +73,10 @@ public class PipComponentDetector : FileComponentDetector
         try
         {
             var initialPackages = await this.pythonCommandService.ParseFileAsync(file.Location, pythonExePath);
-            var listedPackage = initialPackages.Where(tuple => tuple.PackageString != null)
-                .Select(tuple => tuple.PackageString)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => new PipDependencySpecification(x))
-                .Where(x => !x.PackageIsUnsafe())
+            var listedPackage = SharedPipUtilities.ParsedPackagesToPipDependencies(
+                    initialPackages,
+                    this.pythonResolver.GetPythonEnvironmentVariables(),
+                    this.Logger)
                 .ToList();
 
             var roots = await this.pythonResolver.ResolveRootsAsync(singleFileComponentRecorder, listedPackage);

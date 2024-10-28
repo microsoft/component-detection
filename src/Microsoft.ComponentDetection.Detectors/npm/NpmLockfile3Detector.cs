@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
-public class NpmLockfile3Detector : NpmLockfileDetectorBase, IExperimentalDetector
+public class NpmLockfile3Detector : NpmLockfileDetectorBase
 {
     private static readonly string NodeModules = NpmComponentUtilities.NodeModules;
 
@@ -31,7 +31,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase, IExperimentalDetect
 
     public override string Id => "NpmLockfile3";
 
-    public override int Version => 1;
+    public override int Version => 2;
 
     protected override bool IsSupportedLockfileVersion(int lockfileVersion) => lockfileVersion == 3;
 

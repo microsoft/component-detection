@@ -72,12 +72,29 @@ public class ScanSettings : BaseSettings
     [TypeConverter(typeof(CommaDelimitedConverter))]
     public IEnumerable<string> DockerImagesToScan { get; set; }
 
+    [CommandOption("--NoSummary")]
+    [Description("Do not display the detection summary on the standard output nor in the logs.")]
+    public bool NoSummary { get; set; }
+
+    [CommandOption("--MaxDetectionThreads")]
+    [Description("Max number of parallel threads used for a single detection process, ex: PipReport, Npm, Nuget.")]
+    public int? MaxDetectionThreads { get; set; }
+
+    [CommandOption("--CleanupCreatedFiles")]
+    [Description("Whether or not to cleanup files that are created during detection, based on the rules provided in each detector. Defaults to 'true'.")]
+    public bool? CleanupCreatedFiles { get; set; }
+
     /// <inheritdoc />
     public override ValidationResult Validate()
     {
         if (this.SourceDirectory is null)
         {
             return ValidationResult.Error($"{nameof(this.SourceDirectory)} is required");
+        }
+
+        if (this.MaxDetectionThreads is <= 0)
+        {
+            return ValidationResult.Error($"{nameof(this.MaxDetectionThreads)} must be a positive integer");
         }
 
         return !this.SourceDirectory.Exists ? ValidationResult.Error($"The {nameof(this.SourceDirectory)} {this.SourceDirectory} does not exist") : base.Validate();

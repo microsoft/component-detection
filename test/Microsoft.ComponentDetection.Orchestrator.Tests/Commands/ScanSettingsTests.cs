@@ -62,4 +62,37 @@ public class ScanSettingsTests
 
         action.Should().NotThrow();
     }
+
+    [DataTestMethod]
+    [DataRow(-1)]
+    [DataRow(0)]
+    public void Validate_FailInvalidMaxThreads(int? input)
+    {
+        var settings = new ScanSettings
+        {
+            SourceDirectory = new DirectoryInfo(Path.GetTempPath()),
+            MaxDetectionThreads = input,
+        };
+
+        var result = settings.Validate();
+
+        result.Successful.Should().BeFalse();
+    }
+
+    [DataTestMethod]
+    [DataRow(null)]
+    [DataRow(1)]
+    [DataRow(99)]
+    public void Validate_SuccessMaxThreads(int? input)
+    {
+        var settings = new ScanSettings
+        {
+            SourceDirectory = new DirectoryInfo(Path.GetTempPath()),
+            MaxDetectionThreads = input,
+        };
+
+        var result = settings.Validate();
+
+        result.Successful.Should().BeTrue();
+    }
 }

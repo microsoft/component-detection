@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using global::NuGet.Packaging.Core;
 using global::NuGet.ProjectModel;
@@ -23,13 +24,13 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     private readonly ConcurrentDictionary<string, int> frameworkComponentsThatWereOmmittedWithCount = new ConcurrentDictionary<string, int>();
 
-    private readonly List<string> netCoreFrameworkNames = new List<string> { "Microsoft.AspNetCore.App", "Microsoft.AspNetCore.Razor.Design", "Microsoft.NETCore.App" };
+    private readonly List<string> netCoreFrameworkNames = ["Microsoft.AspNetCore.App", "Microsoft.AspNetCore.Razor.Design", "Microsoft.NETCore.App"];
 
     // This list is meant to encompass all net standard dependencies, but likely contains some net core app 1.x ones, too.
     // The specific guidance we got around populating this list is to do so based on creating a dotnet core 1.x app to make sure we had the complete
     //  set of netstandard.library files that could show up in later sdk versions.
-    private readonly string[] netStandardDependencies = new[]
-    {
+    private readonly string[] netStandardDependencies =
+    [
         "Libuv",
         "Microsoft.CodeAnalysis.Analyzers",
         "Microsoft.CodeAnalysis.Common",
@@ -182,7 +183,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         "System.Xml.XmlSerializer",
         "System.Xml.XPath",
         "System.Xml.XPath.XDocument",
-    };
+    ];
 
     private readonly IFileUtilityService fileUtilityService;
 
@@ -200,15 +201,15 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     public override string Id { get; } = "NuGetProjectCentric";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "project.assets.json" };
+    public override IList<string> SearchPatterns { get; } = ["project.assets.json"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.NuGet };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.NuGet];
 
     public override int Version { get; } = 1;
 
-    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -272,7 +273,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
             return;
         }
 
-        visited ??= new HashSet<string>();
+        visited ??= [];
 
         var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
         singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId);
@@ -426,7 +427,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     private HashSet<string> GetDependencyComponentIds(LockFile lockFile, LockFileTarget target, IList<PackageDependency> dependencies, HashSet<string> visited = null)
     {
-        visited ??= new HashSet<string>();
+        visited ??= [];
         var currentComponents = new HashSet<string>();
         foreach (var dependency in dependencies)
         {

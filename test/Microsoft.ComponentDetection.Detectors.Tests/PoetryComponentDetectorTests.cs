@@ -23,7 +23,6 @@ public class PoetryComponentDetectorTests : BaseDetectorTest<PoetryComponentDete
 name = ""certifi""
 version = ""2021.10.8""
 description = ""Python package for providing Mozilla's CA Bundle.""
-category = ""main""
 optional = false
 python-versions = ""*""
 
@@ -48,40 +47,12 @@ reference = ""custom""
     }
 
     [TestMethod]
-    public async Task TestPoetryDetector_TestDevDependencyAsync()
-    {
-        var poetryLockContent = @"[[package]]
-name = ""certifi""
-version = ""2021.10.8""
-description = ""Python package for providing Mozilla's CA Bundle.""
-category = ""dev""
-optional = false
-python-versions = ""*""
-";
-
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("poetry.lock", poetryLockContent)
-            .ExecuteDetectorAsync();
-
-        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().ContainSingle();
-
-        this.AssertPipComponentNameAndVersion(detectedComponents, "certifi", "2021.10.8");
-
-        var queryString = detectedComponents.Single(component => ((PipComponent)component.Component).Name.Contains("certifi"));
-        componentRecorder.GetEffectiveDevDependencyValue(queryString.Component.Id).GetValueOrDefault(false).Should().BeTrue();
-    }
-
-    [TestMethod]
     public async Task TestPoetryDetector_TestGitDependencyAsync()
     {
         var poetryLockContent = @"[[package]]
 name = ""certifi""
 version = ""2021.10.8""
 description = ""Python package for providing Mozilla's CA Bundle.""
-category = ""dev""
 optional = false
 python-versions = ""*""
 
@@ -89,7 +60,6 @@ python-versions = ""*""
 name = ""requests""
 version = ""2.26.0""
 description = ""Python HTTP for Humans.""
-category = ""main""
 optional = false
 python-versions = "">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*""
 develop = false

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common;
+namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.IO;
@@ -23,12 +23,12 @@ public class PathUtilityService : IPathUtilityService
 
     public static bool MatchesPattern(string searchPattern, ref FileSystemEntry fse)
     {
-        if (searchPattern.StartsWith("*") && fse.FileName.EndsWith(searchPattern.AsSpan()[1..], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.StartsWith('*') && fse.FileName.EndsWith(searchPattern.AsSpan()[1..], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        if (searchPattern.EndsWith("*") && fse.FileName.StartsWith(searchPattern.AsSpan()[..^1], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.EndsWith('*') && fse.FileName.StartsWith(searchPattern.AsSpan()[..^1], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -49,12 +49,12 @@ public class PathUtilityService : IPathUtilityService
 
     public bool MatchesPattern(string searchPattern, string fileName)
     {
-        if (searchPattern.StartsWith("*") && fileName.EndsWith(searchPattern[1..], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.StartsWith('*') && fileName.EndsWith(searchPattern[1..], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
-        if (searchPattern.EndsWith("*") && fileName.StartsWith(searchPattern[..^1], StringComparison.OrdinalIgnoreCase))
+        if (searchPattern.EndsWith('*') && fileName.StartsWith(searchPattern[..^1], StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -75,4 +75,17 @@ public class PathUtilityService : IPathUtilityService
     }
 
     private string ResolvePathFromInfo(FileSystemInfo info) => info.LinkTarget ?? info.FullName;
+
+    public string NormalizePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return path;
+        }
+
+        // Normalize the path directory seperator to / on Unix systems and on Windows.
+        // This is the behavior we want as Windows accepts / as a separator.
+        // AltDirectorySeparatorChar is / on Unix and on Windows.
+        return path.Replace('\\', Path.AltDirectorySeparatorChar);
+    }
 }

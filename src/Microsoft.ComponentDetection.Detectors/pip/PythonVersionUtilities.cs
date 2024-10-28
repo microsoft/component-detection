@@ -85,19 +85,10 @@ public static class PythonVersionUtilities
 
     private static bool VersionValidForSpec(string version, string spec)
     {
-        var opChars = new char[] { '=', '<', '>', '~', '!' };
-        var specArray = spec.ToCharArray();
-
-        var i = 0;
-        while (i < spec.Length && i < 3 && opChars.Contains(specArray[i]))
-        {
-            i++;
-        }
-
-        var op = spec[..i];
+        (var op, var specVersion) = ParseSpec(spec);
 
         var targetVer = PythonVersion.Create(version);
-        var specVer = PythonVersion.Create(spec[i..]);
+        var specVer = PythonVersion.Create(specVersion);
 
         if (!targetVer.Valid)
         {
@@ -106,7 +97,7 @@ public static class PythonVersionUtilities
 
         if (!specVer.Valid)
         {
-            throw new ArgumentException($"The version specification {spec[i..]} is not a valid python version");
+            throw new ArgumentException($"The version specification {specVersion} is not a valid python version");
         }
 
         return op switch
@@ -118,8 +109,25 @@ public static class PythonVersionUtilities
             "<=" => specVer >= targetVer,
             ">=" => targetVer >= specVer,
             "!=" => targetVer.CompareTo(specVer) != 0,
-            "~=" => CheckEquality(version, spec[i..], true),
+            "~=" => CheckEquality(version, specVersion, true),
             _ => false,
         };
+    }
+
+    public static (string Operator, string Version) ParseSpec(string spec)
+    {
+        var opChars = new char[] { '=', '<', '>', '~', '!' };
+        var specArray = spec.ToCharArray();
+
+        var i = 0;
+        while (i < spec.Length && i < 3 && opChars.Contains(specArray[i]))
+        {
+            i++;
+        }
+
+        var op = spec[..i];
+        var specVerSection = spec[i..].Trim();
+
+        return (op, specVerSection);
     }
 }

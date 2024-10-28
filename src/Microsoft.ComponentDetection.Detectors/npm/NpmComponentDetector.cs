@@ -1,9 +1,10 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Npm;
+namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
@@ -14,6 +15,8 @@ using Newtonsoft.Json.Linq;
 
 public class NpmComponentDetector : FileComponentDetector
 {
+    private static readonly Regex SingleAuthor = new Regex(@"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)", RegexOptions.Compiled);
+
     public NpmComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -31,15 +34,15 @@ public class NpmComponentDetector : FileComponentDetector
 
     public override string Id { get; } = "Npm";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Npm) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Npm)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "package.json" };
+    public override IList<string> SearchPatterns { get; } = ["package.json"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Npm };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
     public override int Version { get; } = 2;
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -49,7 +52,7 @@ public class NpmComponentDetector : FileComponentDetector
         string contents;
         using (var reader = new StreamReader(file.Stream))
         {
-            contents = await reader.ReadToEndAsync();
+            contents = await reader.ReadToEndAsync(cancellationToken);
         }
 
         await this.SafeProcessAllPackageJTokensAsync(filePath, contents, (token) =>
@@ -113,9 +116,7 @@ public class NpmComponentDetector : FileComponentDetector
 
         string authorName;
         string authorEmail;
-        var authorSingleStringPattern = @"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)";
-        var authorMatch = new Regex(authorSingleStringPattern).Match(authorString);
-
+        var authorMatch = SingleAuthor.Match(authorString);
         /*
          * for parsing author in Json Format
          * for e.g.

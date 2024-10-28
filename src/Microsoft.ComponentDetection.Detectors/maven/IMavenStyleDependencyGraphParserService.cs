@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Maven;
+namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 using Microsoft.ComponentDetection.Contracts;
 

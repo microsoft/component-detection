@@ -83,16 +83,17 @@ public class PythonVersionTests
     [TestMethod]
     public void TestVersionValidForSpec()
     {
-        IList<(IList<string>, IList<string>, IList<string>)> testCases = new List<(IList<string>, IList<string>, IList<string>)>
-        {
+        IList<(IList<string>, IList<string>, IList<string>)> testCases =
+        [
             (new List<string> { "==1.0" }, new List<string> { "1.0" }, new List<string> { "1.0.1", "2.0", "0.1" }),
+            (new List<string> { "== 1.0 " }, new List<string> { "1.0" }, new List<string> { "1.0.1", "2.0", "0.1" }),
             (new List<string> { "==1.4.*" }, new List<string> { "1.4", "1.4.1", "1.4.2", "1.4.3" }, new List<string> { "1.0.1", "2.0", "0.1", "1.5", "1.5.0" }),
             (new List<string> { ">=1.0" }, new List<string> { "1.0", "1.1", "1.5" }, new List<string> { "0.9" }),
             (new List<string> { ">=1.0", "<=1.4" }, new List<string> { "1.0", "1.1", "1.4" }, new List<string> { "0.9", "1.5" }),
             (new List<string> { ">1.0", "<1.4" }, new List<string> { "1.1", "1.3" }, new List<string> { "0.9", "1.5", "1.0", "1.4" }),
             (new List<string> { ">1.0", "<1.4", "!=1.2" }, new List<string> { "1.1", "1.3" }, new List<string> { "0.9", "1.5", "1.0", "1.4", "1.2" }),
             (new List<string> { "==1.1.1.dev17+gcae73d8.d20200403" }, new List<string> { "1.1.1.dev17", "v1.1.1.dev17", "1.1.1.dev17+gcae73d8.d20200403" }, new List<string> { "1.1.1.dev18", "1.0.1", "1.1.1" }),
-        };
+        ];
 
         foreach (var (specs, validVersions, invalidVersions) in testCases)
         {
@@ -104,17 +105,17 @@ public class PythonVersionTests
     [TestMethod]
     public void TestVersionValidForSpec_VersionIsNotValid_ArgumentExceptionIsThrown()
     {
-        Action action = () => PythonVersionUtilities.VersionValidForSpec("notvalid", new List<string> { "==1.0" });
+        Action action = () => PythonVersionUtilities.VersionValidForSpec("notvalid", ["==1.0"]);
         action.Should().Throw<ArgumentException>();
     }
 
     [TestMethod]
     public void TestVersionValidForSpec_SomeSpecIsNotValid_ArgumentExceptionIsThrown()
     {
-        Action action = () => PythonVersionUtilities.VersionValidForSpec("1.0.0", new List<string> { "==notvalid" });
+        Action action = () => PythonVersionUtilities.VersionValidForSpec("1.0.0", ["==notvalid"]);
         action.Should().Throw<ArgumentException>();
 
-        action = () => PythonVersionUtilities.VersionValidForSpec("1.0.0", new List<string> { "==1.1+gcae73d8.d20200403+1.0" });
+        action = () => PythonVersionUtilities.VersionValidForSpec("1.0.0", ["==1.1+gcae73d8.d20200403+1.0"]);
         action.Should().Throw<ArgumentException>();
     }
 }

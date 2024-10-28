@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
@@ -28,15 +29,15 @@ public class PodComponentDetector : FileComponentDetector
 
     public override string Id { get; } = "CocoaPods";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "Podfile.lock" };
+    public override IList<string> SearchPatterns { get; } = ["Podfile.lock"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Pod, ComponentType.Git };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pod, ComponentType.Git];
 
     public override int Version { get; } = 2;
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -224,7 +225,7 @@ public class PodComponentDetector : FileComponentDetector
         foreach (var pod in podDependencies)
         {
             // Add all the dependencies to the map, without duplicates
-            dependenciesMap.TryAdd(pod.Key, new HashSet<string>());
+            dependenciesMap.TryAdd(pod.Key, []);
 
             foreach (var dependency in pod.Value)
             {

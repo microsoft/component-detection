@@ -103,9 +103,9 @@ public class ComponentDetectionIntegrationTests
                 foundComponent.Should().BeTrue($"The component for {this.GetKey(leftComponent)} was not present in the {rightFileName} manifest file. Verify this is expected behavior before proceeding");
             }
 
-            if (leftComponent.IsDevelopmentDependency != null)
+            if (leftComponent.IsDevelopmentDependency is not null)
             {
-                leftComponent.IsDevelopmentDependency.Should().Be(rightComponent.IsDevelopmentDependency, $"Component: {this.GetKey(rightComponent)} has a different \"DevelopmentDependency\".");
+                _ = leftComponent.IsDevelopmentDependency.Should().Be(rightComponent.IsDevelopmentDependency, $"Component: {this.GetKey(rightComponent)} has a different \"DevelopmentDependency\".");
             }
         }
     }
@@ -178,7 +178,7 @@ public class ComponentDetectionIntegrationTests
         using (new AssertionScope())
         {
             this.ProcessDetectorVersions();
-            var regexPattern = @"Detection time: (\w+\.\w+) seconds.\w?|(\w+ *[\w()]+) *\|(\w+\.*\w*) seconds *\|(\d+)";
+            var regexPattern = @"Detection time: (\w+\.\w+) seconds.\w?|(\w+) +[\w()]* *\|(\w+\.*\w*) seconds *\|(\d+)";
             var oldMatches = Regex.Matches(this.oldLogFileContents, regexPattern);
             var newMatches = Regex.Matches(this.newLogFileContents, regexPattern);
 
@@ -217,7 +217,7 @@ public class ComponentDetectionIntegrationTests
                 {
                     var detectorId = match.Groups[2].Value;
                     var newCount = int.Parse(match.Groups[4].Value);
-                    if (detectorCounts.TryGetValue(detectorId, out var oldCount))
+                    if (detectorCounts.TryGetValue(detectorId, out var oldCount) && detectorId != "Total")
                     {
                         newCount.Should().BeGreaterOrEqualTo(oldCount, $"{oldCount - newCount} Components were lost for detector {detectorId}. Verify this is expected behavior. \n Old Count: {oldCount}, PPE Count: {newCount}");
 
@@ -232,7 +232,7 @@ public class ComponentDetectionIntegrationTests
     {
         var oldDetectors = this.oldScanResult.DetectorsInScan;
         var newDetectors = this.newScanResult.DetectorsInScan;
-        this.bumpedDetectorVersions = new List<string>();
+        this.bumpedDetectorVersions = [];
         foreach (var cd in oldDetectors)
         {
             var newDetector = newDetectors.FirstOrDefault(det => det.DetectorId == cd.DetectorId);

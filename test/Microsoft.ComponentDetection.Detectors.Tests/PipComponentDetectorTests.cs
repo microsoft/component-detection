@@ -14,7 +14,6 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
 
 [TestClass]
 public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
@@ -70,8 +69,8 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
     {
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
 
-        var baseSetupPyDependencies = this.ToGitTuple(new List<string> { "a==1.0", "b>=2.0,!=2.1", "c!=1.1" });
-        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1" });
+        var baseSetupPyDependencies = this.ToGitTuple(["a==1.0", "b>=2.0,!=2.1", "c!=1.1"]);
+        var baseRequirementsTextDependencies = this.ToGitTuple(["d~=1.0", "e<=2.0", "f===1.1"]);
         baseRequirementsTextDependencies.Add((null, new GitComponent(new Uri("https://github.com/example/example"), "deadbee")));
 
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "setup.py"), null)).ReturnsAsync(baseSetupPyDependencies);
@@ -129,8 +128,8 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
     {
         this.pythonCommandService.Setup(x => x.PythonExistsAsync(It.IsAny<string>())).ReturnsAsync(true);
 
-        var baseRequirementsTextDependencies = this.ToGitTuple(new List<string> { "d~=1.0", "e<=2.0", "f===1.1", "h==1.3" });
-        var baseRequirementsTextDependencies2 = this.ToGitTuple(new List<string> { "D~=1.0", "E<=2.0", "F===1.1", "g==2" });
+        var baseRequirementsTextDependencies = this.ToGitTuple(["d~=1.0", "e<=2.0", "f===1.1", "h==1.3"]);
+        var baseRequirementsTextDependencies2 = this.ToGitTuple(["D~=1.0", "E<=2.0", "F===1.1", "g==2"]);
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies);
         this.pythonCommandService.Setup(x => x.ParseFileAsync(Path.Join(Path.GetTempPath(), "TEST", "requirements.txt"), null)).ReturnsAsync(baseRequirementsTextDependencies2);
 
@@ -158,7 +157,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(5);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(5);
     }
 
     [TestMethod]
@@ -169,8 +168,8 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         const string file1 = "c:\\repo\\setup.py";
         const string file2 = "c:\\repo\\lib\\requirements.txt";
 
-        var baseReqs = this.ToGitTuple(new List<string> { "a~=1.0", "b<=2.0", });
-        var altReqs = this.ToGitTuple(new List<string> { "c~=1.0", "d<=2.0", "e===1.1" });
+        var baseReqs = this.ToGitTuple(["a~=1.0", "b<=2.0",]);
+        var altReqs = this.ToGitTuple(["c~=1.0", "d<=2.0", "e===1.1"]);
         this.pythonCommandService.Setup(x => x.ParseFileAsync(file1, null)).ReturnsAsync(baseReqs);
         this.pythonCommandService.Setup(x => x.ParseFileAsync(file2, null)).ReturnsAsync(altReqs);
 
@@ -190,7 +189,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 
         rootA.Children.Add(red);
         rootB.Children.Add(green);
-        rootC.Children.AddRange(new[] { red, blue, });
+        rootC.Children.AddRange([red, blue,]);
         rootD.Children.Add(cat);
         green.Children.Add(cat);
         cat.Children.Add(lion);
@@ -199,11 +198,11 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
 
         this.pythonResolver.Setup(x =>
                 x.ResolveRootsAsync(It.IsAny<ISingleFileComponentRecorder>(), It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "a"))))
-            .ReturnsAsync(new List<PipGraphNode> { rootA, rootB, });
+            .ReturnsAsync([rootA, rootB,]);
 
         this.pythonResolver.Setup(x =>
                 x.ResolveRootsAsync(It.IsAny<ISingleFileComponentRecorder>(), It.Is<IList<PipDependencySpecification>>(p => p.Any(d => d.Name == "c"))))
-            .ReturnsAsync(new List<PipGraphNode> { rootC, rootD, rootE, });
+            .ReturnsAsync([rootC, rootD, rootE,]);
 
         var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty, fileLocation: file1)
@@ -231,12 +230,12 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
                 x => x.Id == rootId);
         }
 
-        this.CheckChild(componentRecorder, "red 0.2 - pip", new[] { "a 1.0 - pip", "c 1.0 - pip", });
-        this.CheckChild(componentRecorder, "green 1.3 - pip", new[] { "b 2.1 - pip", });
-        this.CheckChild(componentRecorder, "blue 0.4 - pip", new[] { "c 1.0 - pip", });
-        this.CheckChild(componentRecorder, "cat 1.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
-        this.CheckChild(componentRecorder, "lion 3.8 - pip", new[] { "b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip", });
-        this.CheckChild(componentRecorder, "dog 2.1 - pip", new[] { "c 1.0 - pip", });
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "red 0.2 - pip", ["a 1.0 - pip", "c 1.0 - pip",]);
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "green 1.3 - pip", ["b 2.1 - pip",]);
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "blue 0.4 - pip", ["c 1.0 - pip",]);
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "cat 1.8 - pip", ["b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip",]);
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "lion 3.8 - pip", ["b 2.1 - pip", "c 1.0 - pip", "d 1.9 - pip",]);
+        ComponentRecorderTestUtilities.CheckChild<PipComponent>(componentRecorder, "dog 2.1 - pip", ["c 1.0 - pip",]);
 
         var graphsByLocations = componentRecorder.GetDependencyGraphsByLocation();
         graphsByLocations.Should().HaveCount(2);
@@ -254,7 +253,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         var graph1 = graphsByLocations[file1];
         graph1ComponentsWithDeps.Keys.Take(2).All(graph1.IsComponentExplicitlyReferenced).Should().BeTrue();
         graph1ComponentsWithDeps.Keys.Skip(2).Should().OnlyContain(a => !graph1.IsComponentExplicitlyReferenced(a));
-        this.CheckGraphStructure(graph1, graph1ComponentsWithDeps);
+        ComponentRecorderTestUtilities.CheckGraphStructure(graph1, graph1ComponentsWithDeps);
 
         var graph2ComponentsWithDeps = new Dictionary<string, string[]>
         {
@@ -271,41 +270,7 @@ public class PipComponentDetectorTests : BaseDetectorTest<PipComponentDetector>
         var graph2 = graphsByLocations[file2];
         graph2ComponentsWithDeps.Keys.Take(3).All(graph2.IsComponentExplicitlyReferenced).Should().BeTrue();
         graph2ComponentsWithDeps.Keys.Skip(3).Should().OnlyContain(a => !graph2.IsComponentExplicitlyReferenced(a));
-        this.CheckGraphStructure(graph2, graph2ComponentsWithDeps);
-    }
-
-    private void CheckGraphStructure(IDependencyGraph graph, Dictionary<string, string[]> graphComponentsWithDeps)
-    {
-        var graphComponents = graph.GetComponents().ToArray();
-        graphComponents.Should().HaveCount(
-            graphComponentsWithDeps.Keys.Count,
-            $"Expected {graphComponentsWithDeps.Keys.Count} component to be recorded but got {graphComponents.Length} instead!");
-
-        foreach (var componentId in graphComponentsWithDeps.Keys)
-        {
-            graphComponents.Should().Contain(
-                componentId, $"Component `{componentId}` not recorded!");
-
-            var recordedDeps = graph.GetDependenciesForComponent(componentId).ToArray();
-            var expectedDeps = graphComponentsWithDeps[componentId];
-
-            recordedDeps.Should().HaveCount(
-                expectedDeps.Length,
-                $"Count missmatch of expected dependencies ({JsonConvert.SerializeObject(expectedDeps)}) and recorded dependencies ({JsonConvert.SerializeObject(recordedDeps)}) for `{componentId}`!");
-
-            foreach (var expectedDep in expectedDeps)
-            {
-                recordedDeps.Should().Contain(
-                    expectedDep, $"Expected `{expectedDep}` in the list of dependencies for `{componentId}` but only recorded: {JsonConvert.SerializeObject(recordedDeps)}");
-            }
-        }
-    }
-
-    private void CheckChild(IComponentRecorder recorder, string childId, string[] parentIds)
-    {
-        recorder.AssertAllExplicitlyReferencedComponents<PipComponent>(
-            childId,
-            parentIds.Select(parentId => new Func<PipComponent, bool>(x => x.Id == parentId)).ToArray());
+        ComponentRecorderTestUtilities.CheckGraphStructure(graph2, graph2ComponentsWithDeps);
     }
 
     private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)

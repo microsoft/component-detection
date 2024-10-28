@@ -5,7 +5,7 @@
 | CocoaPods | <ul><li>podfile.lock</li></ul> | - | ❌ | - |
 | Conda (Python) | <ul><li>conda-lock.yml</li><li>*.conda-lock.yml</li></ul> | - | ❌ | ✔ |
 | Linux (Debian, Alpine, Rhel, Centos, Fedora, Ubuntu)| <ul><li>(via [syft](https://github.com/anchore/syft))</li></ul> | - | - | - | - |
-| Gradle | <ul><li>*.lockfile</li></ul> | <ul><li>Gradle 7 or prior using [Single File lock](https://docs.gradle.org/6.8.1/userguide/dependency_locking.html#single_lock_file_per_project)</li></ul> | ❌ | ❌ |
+| Gradle | <ul><li>*.lockfile</li></ul> | <ul><li>Gradle 7 or prior using [Single File lock](https://docs.gradle.org/6.8.1/userguide/dependency_locking.html#single_lock_file_per_project)</li></ul> |  ✔ (requires env var configuration for full effect) | ❌ |
 | Go | <ul><li>*go list -m -json all*</li><li>*go mod graph* (edge information only)</li></ul>Fallback</br><ul><li>go.mod</li><li>go.sum</li></ul> | <ul><li>Go 1.11+ (will fallback if not present)</li></ul> | ❌ | ✔ (root idenditication only for fallback) |
 | Maven | <ul><li>pom.xml</li><li>*mvn dependency:tree -f {pom.xml}*</li></ul> | <ul><li>Maven</li><li>Maven Dependency Plugin (auto-installed with Maven)</li></ul> | ✔ (test dependency scope) | ✔ |
 | NPM | <ul><li>package.json</li><li>package-lock.json</li><li>npm-shrinkwrap.json</li><li>lerna.json</li></ul> | - | ✔ (dev-dependencies in package.json, dev flag in package-lock.json) | ✔ |

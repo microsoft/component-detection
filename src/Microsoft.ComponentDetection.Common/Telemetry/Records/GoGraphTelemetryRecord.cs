@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
+namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 public class GoGraphTelemetryRecord : BaseDetectionTelemetryRecord
 {
@@ -19,4 +19,6 @@ public class GoGraphTelemetryRecord : BaseDetectionTelemetryRecord
     public string GoCliCommandError { get; set; }
 
     public string GoModVersion { get; set; }
+
+    public string ExceptionMessage { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.IO;
 using System.IO.Compression;
@@ -16,7 +16,7 @@ public static class NugetTestUtilities
         var componentName = GetRandomString();
         var componentSpecFileName = $"{componentName}.nuspec";
         var componentSpecPath = Path.Combine(Path.GetTempPath(), componentSpecFileName);
-        var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
+        var template = GetTemplatedNuspec(componentName, NewRandomVersion(), [GetRandomString(), GetRandomString()]);
 
         return template;
     }
@@ -26,7 +26,7 @@ public static class NugetTestUtilities
         var componentName = GetRandomString();
         var componentSpecFileName = $"{componentName}.nuspec";
         var componentSpecPath = Path.Combine(Path.GetTempPath(), componentSpecFileName);
-        var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
+        var template = GetTemplatedNuspec(componentName, NewRandomVersion(), [GetRandomString(), GetRandomString()]);
 
         var mock = new Mock<IComponentStream>();
         mock.SetupGet(x => x.Stream).Returns(template.ToStream());
@@ -51,7 +51,7 @@ public static class NugetTestUtilities
     public static string GetRandomValidNuspec()
     {
         var componentName = GetRandomString();
-        var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
+        var template = GetTemplatedNuspec(componentName, NewRandomVersion(), [GetRandomString(), GetRandomString()]);
         return template;
     }
 
@@ -81,7 +81,7 @@ public static class NugetTestUtilities
     public static string GetRandomMalformedNuPkgComponent()
     {
         var componentName = GetRandomString();
-        var template = GetTemplatedNuspec(componentName, NewRandomVersion(), new string[] { GetRandomString(), GetRandomString() });
+        var template = GetTemplatedNuspec(componentName, NewRandomVersion(), [GetRandomString(), GetRandomString()]);
         template = template.Replace("<id>", "<?malformed>");
         return template;
     }

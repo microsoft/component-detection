@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Common;
+namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Collections.Concurrent;
@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
@@ -19,8 +20,8 @@ public class CommandLineInvocationService : ICommandLineInvocationService
     /// <inheritdoc/>
     public async Task<bool> CanCommandBeLocatedAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
     {
-        additionalCandidateCommands ??= Enumerable.Empty<string>();
-        parameters ??= Array.Empty<string>();
+        additionalCandidateCommands ??= [];
+        parameters ??= [];
         var allCommands = new[] { command }.Concat(additionalCandidateCommands);
         if (!this.commandLocatableCache.TryGetValue(command, out var validCommand))
         {
@@ -52,7 +53,12 @@ public class CommandLineInvocationService : ICommandLineInvocationService
     }
 
     /// <inheritdoc/>
-    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, DirectoryInfo workingDirectory = null, params string[] parameters)
+    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(
+        string command,
+        IEnumerable<string> additionalCandidateCommands = null,
+        DirectoryInfo workingDirectory = null,
+        CancellationToken cancellationToken = default,
+        params string[] parameters)
     {
         var isCommandLocatable = await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands);
         if (!isCommandLocatable)
@@ -71,15 +77,16 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
         var pathToRun = this.commandLocatableCache[command];
         var joinedParameters = string.Join(" ", parameters);
+        var commandForLogging = joinedParameters.RemoveSensitiveInformation();
         try
         {
-            var result = await RunProcessAsync(pathToRun, joinedParameters, workingDirectory);
-            record.Track(result, pathToRun, joinedParameters);
+            var result = await RunProcessAsync(pathToRun, joinedParameters, workingDirectory, cancellationToken);
+            record.Track(result, pathToRun, commandForLogging);
             return result;
         }
         catch (Exception ex)
         {
-            record.Track(ex, pathToRun, joinedParameters);
+            record.Track(ex, pathToRun, commandForLogging);
             throw;
         }
     }
@@ -97,12 +104,33 @@ public class CommandLineInvocationService : ICommandLineInvocationService
     }
 
     /// <inheritdoc/>
+    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, CancellationToken cancellationToken = default, params string[] parameters)
+    {
+        return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, cancellationToken, parameters);
+    }
+
+    /// <inheritdoc/>
+    public async Task<CommandLineExecutionResult> ExecuteCommandAsync(
+        string command,
+        IEnumerable<string> additionalCandidateCommands = null,
+        DirectoryInfo workingDirectory = null,
+        params string[] parameters)
+    {
+        return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory, CancellationToken.None, parameters);
+    }
+
+    /// <inheritdoc/>
     public async Task<CommandLineExecutionResult> ExecuteCommandAsync(string command, IEnumerable<string> additionalCandidateCommands = null, params string[] parameters)
     {
-        return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, parameters);
+        return await this.ExecuteCommandAsync(command, additionalCandidateCommands, workingDirectory: null, CancellationToken.None, parameters);
     }
 
     private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null)
+    {
+        return RunProcessAsync(fileName, parameters, workingDirectory, CancellationToken.None);
+    }
+
+    private static Task<CommandLineExecutionResult> RunProcessAsync(string fileName, string parameters, DirectoryInfo workingDirectory = null, CancellationToken cancellationToken = default)
     {
         var tcs = new TaskCompletionSource<CommandLineExecutionResult>();
 
@@ -148,13 +176,28 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         process.Exited += (sender, args) =>
         {
             Task.WaitAll(t1, t2);
-            tcs.SetResult(new CommandLineExecutionResult { ExitCode = process.ExitCode, StdErr = errorText, StdOut = stdOutText });
+            tcs.TrySetResult(new CommandLineExecutionResult { ExitCode = process.ExitCode, StdErr = errorText, StdOut = stdOutText });
             process.Dispose();
         };
 
         process.Start();
         t1.Start();
         t2.Start();
+
+        cancellationToken.Register(() =>
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch (InvalidOperationException)
+            {
+                // swallow invalid operations, which indicate that there is no process associated with
+                // the process object, and therefore nothing to kill
+                // https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.process.kill?view=net-8.0#system-diagnostics-process-kill
+                return;
+            }
+        });
 
         return tcs.Task;
     }

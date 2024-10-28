@@ -71,7 +71,7 @@ View the [detector arguments](docs/detector-arguments.md) for more information o
 
 ## Download
 
-You can [download](https://github.com/microsoft/component-detection/releases/tag/latest) the latest version of Component Detection for Windows, macOS and Linux.
+You can [download](https://github.com/microsoft/component-detection/releases/latest) the latest version of Component Detection for Windows, macOS and Linux.
 
 ## Contributing
 

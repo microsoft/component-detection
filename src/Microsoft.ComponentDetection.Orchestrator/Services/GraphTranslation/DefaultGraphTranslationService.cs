@@ -76,7 +76,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                 foreach (var component in detectedComponents)
                 {
                     // clone custom locations and make them relative to root.
-                    var declaredRawFilePaths = component.FilePaths ?? new HashSet<string>();
+                    var declaredRawFilePaths = component.FilePaths ?? [];
                     var componentCustomLocations = JsonConvert.DeserializeObject<HashSet<string>>(JsonConvert.SerializeObject(declaredRawFilePaths));
                     component.FilePaths?.Clear();
 
@@ -88,6 +88,9 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
                         // Calculate roots of the component
                         this.AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
+
+                        // Calculate Ancestors of the component
+                        this.AddAncestorsToDetectedComponent(component, dependencyGraph, componentRecorder);
                         component.DevelopmentDependency = this.MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
                         component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
                         component.DetectedBy = detector;
@@ -201,6 +204,23 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         }
     }
 
+    private void AddAncestorsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
+    {
+        detectedComponent.AncestralDependencyRoots ??= new HashSet<TypedComponent>(new ComponentComparer());
+
+        if (dependencyGraph == null)
+        {
+            return;
+        }
+
+        var roots = dependencyGraph.GetAncestors(detectedComponent.Component.Id);
+
+        foreach (var rootId in roots)
+        {
+            detectedComponent.AncestralDependencyRoots.Add(componentRecorder.GetComponent(rootId));
+        }
+    }
+
     private HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, HashSet<string> filePaths)
     {
         if (rootDirectory == null)
@@ -222,7 +242,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             try
             {
                 var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
-                if (!relativePath.StartsWith("/"))
+                if (!relativePath.StartsWith('/'))
                 {
                     relativePath = "/" + relativePath;
                 }
@@ -248,6 +268,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             LocationsFoundAt = component.FilePaths,
             Component = component.Component,
             TopLevelReferrers = component.DependencyRoots,
+            AncestralReferrers = component.AncestralDependencyRoots,
             ContainerDetailIds = component.ContainerDetailIds,
             ContainerLayerIds = component.ContainerLayerIds,
         };

@@ -1,9 +1,10 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Conan;
+namespace Microsoft.ComponentDetection.Detectors.Conan;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -25,22 +26,22 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
 
     public override string Id => "ConanLock";
 
-    public override IList<string> SearchPatterns => new List<string> { "conan.lock" };
+    public override IList<string> SearchPatterns => ["conan.lock"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Conan };
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Conan];
 
     public override int Version { get; } = 1;
 
-    public override IEnumerable<string> Categories => new List<string> { "Conan" };
+    public override IEnumerable<string> Categories => ["Conan"];
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var conanLockFile = processRequest.ComponentStream;
 
         try
         {
-            var conanLock = await JsonSerializer.DeserializeAsync<ConanLock>(conanLockFile.Stream);
+            var conanLock = await JsonSerializer.DeserializeAsync<ConanLock>(conanLockFile.Stream, cancellationToken: cancellationToken);
             this.RecordLockfileVersion(conanLock.Version);
 
             if (!conanLock.HasNodes())
@@ -51,9 +52,8 @@ public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComp
             var packagesDictionary = conanLock.GraphLock.Nodes;
             var explicitReferencedDependencies = new HashSet<string>();
             var developmentDependencies = new HashSet<string>();
-            if (packagesDictionary.ContainsKey("0"))
+            if (packagesDictionary.Remove("0", out var rootNode))
             {
-                packagesDictionary.Remove("0", out var rootNode);
                 if (rootNode?.Requires != null)
                 {
                     explicitReferencedDependencies = new HashSet<string>(rootNode.Requires);

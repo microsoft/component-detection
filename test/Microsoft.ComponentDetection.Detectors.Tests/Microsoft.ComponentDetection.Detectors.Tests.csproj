@@ -6,15 +6,16 @@
     </ItemGroup>
 
     <ItemGroup Label="Package References">
-        <PackageReference Include="coverlet.collector" PrivateAssets="all" />
         <PackageReference Include="FluentAssertions.Analyzers" PrivateAssets="all" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="NuGet.Versioning" />
+        <PackageReference Include="SemanticVersioning" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="packageurl-dotnet" />
         <PackageReference Include="YamlDotNet" />
+        <PackageReference Include="MSTest.TestAdapter" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
     </ItemGroup>
 
     <ItemGroup>
@@ -32,6 +33,27 @@
         </None>
         <None Update="Mocks\MvnCliDependencyOutput.txt">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\pip_report_multi_pkg.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\pip_report_jupyterlab.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\pip_report_single_pkg_invalid_pkg_version.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\pip_report_single_pkg.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\pip_report_single_pkg_bad_version.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\Invalid\invalid.component-detection-pip-report.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\test.component-detection-pip-report.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 

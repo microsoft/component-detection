@@ -1,6 +1,5 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Tests;
+namespace Microsoft.ComponentDetection.Detectors.Tests;
 
-using System;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -13,7 +12,7 @@ using static Microsoft.ComponentDetection.Detectors.Maven.MavenParsingUtilities;
 public class MavenParsingUtilitiesTests
 {
     [TestMethod]
-    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_HappyPath()
+    public void GenerateDetectedComponentAndIsDevDependencyAndDependencyScope_HappyPath()
     {
         var componentAndMetaData =
             GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided");
@@ -37,7 +36,7 @@ public class MavenParsingUtilitiesTests
     }
 
     [TestMethod]
-    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DefaultScopeCompile()
+    public void GenerateDetectedComponentAndIsDevDependencyAndDependencyScope_DefaultScopeCompile()
     {
         var componentAndMetaData =
             GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT");
@@ -51,7 +50,7 @@ public class MavenParsingUtilitiesTests
     }
 
     [TestMethod]
-    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DiscardLeftoverStringWhileParsingScope()
+    public void GenerateDetectedComponentAndIsDevDependencyAndDependencyScope_DiscardLeftoverStringWhileParsingScope()
     {
         var componentAndMetaData =
             GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:provided (optional)");
@@ -65,7 +64,7 @@ public class MavenParsingUtilitiesTests
     }
 
     [TestMethod]
-    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_DevelopmentDependencyTrue()
+    public void GenerateDetectedComponentAndIsDevDependencyAndDependencyScope_DevelopmentDependencyTrue()
     {
         var componentAndMetaData =
             GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:test");
@@ -79,10 +78,16 @@ public class MavenParsingUtilitiesTests
     }
 
     [TestMethod]
-    public void GenerateDetectedComponentAndIsDeveDependencyAndDependencyScope_InvalidScope()
+    public void GenerateDetectedComponentAndIsDevDependencyAndDependencyScope_InvalidScopeIsEvaluatedAsCompile()
     {
-        var ex = Assert.ThrowsException<InvalidOperationException>(
-            () => GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:invalidScope"));
-        ex.Message.Contains("invalid scope", StringComparison.OrdinalIgnoreCase).Should().BeTrue();
+        var componentAndMetaData =
+           GenerateDetectedComponentAndMetadataFromMavenString("org.apache.maven:maven-artifact:jar:3.6.1-SNAPSHOT:invalidScope");
+
+        componentAndMetaData.Should().NotBeNull();
+        componentAndMetaData.DependencyScope.Should().NotBeNull();
+
+        var actualComponent = (MavenComponent)componentAndMetaData.Component.Component;
+        actualComponent.Should().BeOfType<MavenComponent>();
+        componentAndMetaData.DependencyScope.Should().Be(DependencyScope.MavenCompile);
     }
 }

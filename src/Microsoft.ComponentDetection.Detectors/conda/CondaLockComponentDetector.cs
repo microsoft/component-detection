@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Poetry;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -26,16 +27,16 @@ public class CondaLockComponentDetector : FileComponentDetector, IDefaultOffComp
 
     public override string Id => "CondaLock";
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "conda-lock.yml", "*.conda-lock.yml" };
+    public override IList<string> SearchPatterns { get; } = ["conda-lock.yml", "*.conda-lock.yml"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Conda, ComponentType.Pip };
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Conda, ComponentType.Pip];
 
     public override int Version { get; } = 2;
 
-    public override IEnumerable<string> Categories => new List<string> { "Python" };
+    public override IEnumerable<string> Categories => ["Python"];
 
     /// <inheritdoc/>
-    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
 

@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
@@ -64,7 +63,8 @@ public class ExperimentService : IExperimentService
     public void RecordDetectorRun(
         IComponentDetector detector,
         ComponentRecorder componentRecorder,
-        ScanSettings settings)
+        ScanSettings settings,
+        DetectorRunResult detectorRunResult = null)
     {
         if (!DetectorExperiments.AreExperimentsEnabled)
         {
@@ -76,8 +76,8 @@ public class ExperimentService : IExperimentService
             var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(
                 new DetectorProcessingResult()
                 {
-                    ComponentRecorders = new[] { (detector, componentRecorder) },
-                    ContainersDetailsMap = new Dictionary<int, ContainerDetails>(),
+                    ComponentRecorders = [(detector, componentRecorder)],
+                    ContainersDetailsMap = [],
                     ResultCode = ProcessingResultCode.Success,
                 },
                 settings,
@@ -91,6 +91,8 @@ public class ExperimentService : IExperimentService
                 if (config.IsInControlGroup(detector))
                 {
                     experimentResults.AddComponentsToControlGroup(components);
+
+                    experimentResults.AddControlDetectorTime(detector.Id, detectorRunResult?.ExecutionTime ?? TimeSpan.Zero);
                     this.logger.LogDebug(
                         "Adding {Count} Components from {Id} to Control Group for {Experiment}",
                         components.Count(),
@@ -101,11 +103,18 @@ public class ExperimentService : IExperimentService
                 if (config.IsInExperimentGroup(detector))
                 {
                     experimentResults.AddComponentsToExperimentalGroup(components);
+
+                    experimentResults.AddExperimentalDetectorTime(detector.Id, detectorRunResult?.ExecutionTime ?? TimeSpan.Zero);
                     this.logger.LogDebug(
                         "Adding {Count} Components from {Id} to Experiment Group for {Experiment}",
                         components.Count(),
                         detector.Id,
                         config.Name);
+                }
+
+                if (detector is FileComponentDetector fileDetector)
+                {
+                    experimentResults.AddAdditionalPropertiesToExperiment(fileDetector.AdditionalProperties);
                 }
             }
         }
@@ -162,6 +171,9 @@ public class ExperimentService : IExperimentService
         {
             var controlComponents = experiment.ControlGroupComponents;
             var experimentComponents = experiment.ExperimentGroupComponents;
+            var controlDetectors = experiment.ControlDetectors;
+            var experimentDetectors = experiment.ExperimentalDetectors;
+            var additionalProperties = experiment.AdditionalProperties;
             this.logger.LogInformation(
                 "Experiment {Experiment} finished with {ControlCount} components in the control group and {ExperimentCount} components in the experiment group",
                 config.Name,
@@ -172,13 +184,13 @@ public class ExperimentService : IExperimentService
             // process empty diffs as this means the experiment was successful.
             if (!experimentComponents.Any() && !controlComponents.Any())
             {
-                this.logger.LogWarning("Experiment {Experiment} has no components in either group, skipping processing", config.Name);
+                this.logger.LogInformation("Experiment {Experiment} has no components in either group, skipping processing", config.Name);
                 continue;
             }
 
             try
             {
-                var diff = new ExperimentDiff(controlComponents, experimentComponents);
+                var diff = new ExperimentDiff(controlComponents, experimentComponents, controlDetectors, experimentDetectors, additionalProperties);
                 var tasks = this.experimentProcessors.Select(x => x.ProcessExperimentAsync(config, diff));
                 await Task.WhenAll(tasks);
             }

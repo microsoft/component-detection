@@ -1,10 +1,11 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
+namespace Microsoft.ComponentDetection.Detectors.Dockerfile;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
@@ -34,15 +35,15 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     public override string Id { get; } = "DockerReference";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.DockerReference)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "dockerfile", "dockerfile.*", "*.dockerfile" };
+    public override IList<string> SearchPatterns { get; } = ["dockerfile", "dockerfile.*", "*.dockerfile"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.DockerReference };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.DockerReference];
 
     public override int Version => 1;
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -54,7 +55,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
             string contents;
             using (var reader = new StreamReader(file.Stream))
             {
-                contents = await reader.ReadToEndAsync();
+                contents = await reader.ReadToEndAsync(cancellationToken);
             }
 
             var stageNameMap = new Dictionary<string, string>();
@@ -68,7 +69,7 @@ public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffCom
 
     private Task ParseDockerFileAsync(string fileContents, string fileLocation, ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, string> stageNameMap)
     {
-        var dockerfileModel = Valleysoft.DockerfileModel.Dockerfile.Parse(fileContents);
+        var dockerfileModel = Dockerfile.Parse(fileContents);
         var instructions = dockerfileModel.Items;
         foreach (var instruction in instructions)
         {

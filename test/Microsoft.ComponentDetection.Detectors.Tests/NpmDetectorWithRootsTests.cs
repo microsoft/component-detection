@@ -22,8 +22,8 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 {
     private readonly string packageLockJsonFileName = "package-lock.json";
     private readonly string packageJsonFileName = "package.json";
-    private readonly List<string> packageJsonSearchPattern = new() { "package.json" };
-    private readonly List<string> packageLockJsonSearchPatterns = new() { "package-lock.json", "npm-shrinkwrap.json", "lerna.json" };
+    private readonly List<string> packageJsonSearchPattern = ["package.json"];
+    private readonly List<string> packageLockJsonSearchPatterns = ["package-lock.json", "npm-shrinkwrap.json", "lerna.json"];
     private readonly Mock<IPathUtilityService> mockPathUtilityService;
 
     public NpmDetectorWithRootsTests()
@@ -59,6 +59,35 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     }
 
     [TestMethod]
+    public async Task TestNpmDetector_PackageLockReturnsValidWhenDevAndOptionalDependenciesAsync()
+    {
+        var rootName = Guid.NewGuid().ToString("N");
+        var rootVersion = NewRandomVersion();
+        var devDepName = Guid.NewGuid().ToString("N");
+        var devDepVersion = NewRandomVersion();
+        var optDepName = Guid.NewGuid().ToString("N");
+        var optDepVersion = NewRandomVersion();
+
+        var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock2WithOptionalAndDevDependency(this.packageLockJsonFileName, rootName, rootVersion, devDepName, devDepVersion, optDepName, optDepVersion);
+        var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRootOneDevDependencyOneOptionalDependency(rootName, rootVersion, devDepName, devDepVersion, optDepName, optDepVersion);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
+            .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+
+        var retrievedDevDep = detectedComponents.Single(c => ((NpmComponent)c.Component).Name.Equals(devDepName));
+        componentRecorder.GetEffectiveDevDependencyValue(retrievedDevDep.Component.Id).Should().BeTrue();
+
+        var retrievedOptDep = detectedComponents.Single(c => ((NpmComponent)c.Component).Name.Equals(optDepName));
+        componentRecorder.GetEffectiveDevDependencyValue(retrievedOptDep.Component.Id).Should().BeFalse();
+    }
+
+    [TestMethod]
     public async Task TestNpmDetector_MismatchedFilesReturnsEmptyAsync()
     {
         var componentName0 = Guid.NewGuid().ToString("N");
@@ -73,7 +102,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -86,7 +115,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -238,7 +267,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -291,7 +320,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(0);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
     }
 
     [TestMethod]
@@ -354,7 +383,7 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        componentRecorder.GetDetectedComponents().Count().Should().Be(2);
+        componentRecorder.GetDetectedComponents().Should().HaveCount(2);
     }
 
     [TestMethod]
@@ -574,10 +603,10 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
-        dependencyGraph.GetDependenciesForComponent(componentAId).Should().HaveCount(1);
+        dependencyGraph.GetDependenciesForComponent(componentAId).Should().ContainSingle();
         dependencyGraph.GetDependenciesForComponent(componentAId).Should().Contain(componentBId);
-        dependencyGraph.GetDependenciesForComponent(componentBId).Should().HaveCount(1);
+        dependencyGraph.GetDependenciesForComponent(componentBId).Should().ContainSingle();
         dependencyGraph.GetDependenciesForComponent(componentBId).Should().Contain(componentCId);
-        dependencyGraph.GetDependenciesForComponent(componentCId).Should().HaveCount(0);
+        dependencyGraph.GetDependenciesForComponent(componentCId).Should().BeEmpty();
     }
 }

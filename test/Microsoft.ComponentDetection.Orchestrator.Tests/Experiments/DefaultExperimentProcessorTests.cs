@@ -1,6 +1,7 @@
-﻿namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
+namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
@@ -15,6 +16,8 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class DefaultExperimentProcessorTests
 {
+    private static readonly JsonSerializerOptions TestJsonOptions = new JsonSerializerOptions { WriteIndented = true };
+
     private readonly Mock<IFileWritingService> fileWritingServiceMock;
     private readonly DefaultExperimentProcessor processor;
 
@@ -35,14 +38,15 @@ public class DefaultExperimentProcessorTests
             ExperimentTestUtils.CreateRandomExperimentComponents(),
             ExperimentTestUtils.CreateRandomExperimentComponents());
 
-        var serializedDiff = JsonSerializer.Serialize(diff, new JsonSerializerOptions { WriteIndented = true });
+        var serializedDiff = JsonSerializer.Serialize(diff, TestJsonOptions);
 
         await this.processor.ProcessExperimentAsync(config.Object, diff);
 
         this.fileWritingServiceMock.Verify(
             f => f.WriteFileAsync(
                 It.Is<string>(s => s.StartsWith($"Experiment_{config.Object.Name}_")),
-                serializedDiff),
+                serializedDiff,
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

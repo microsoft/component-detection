@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Ivy;
+namespace Microsoft.ComponentDetection.Detectors.Ivy;
 
 using System;
 using System.Collections.Generic;
@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -42,7 +43,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     internal const string AntVersionArgument = "-version";
 
-    internal static readonly string[] AdditionalValidCommands = { "ant" };
+    internal static readonly string[] AdditionalValidCommands = ["ant"];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
 
@@ -60,15 +61,18 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
 
     public override string Id => "Ivy";
 
-    public override IList<string> SearchPatterns => new List<string> { "ivy.xml" };
+    public override IList<string> SearchPatterns => ["ivy.xml"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => new[] { ComponentType.Maven };
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Maven];
 
     public override int Version => 2;
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.Maven) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
 
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
     {
         if (await this.IsAntLocallyAvailableAsync())
         {
@@ -79,7 +83,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
         return Enumerable.Empty<ProcessRequest>().ToObservable();
     }
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var ivyXmlFile = processRequest.ComponentStream;
@@ -125,7 +129,7 @@ public class IvyDetector : FileComponentDetector, IExperimentalDetector
     {
         try
         {
-            var workingDirectory = Path.Combine(Path.GetTempPath(), "ComponentDetection_Ivy");
+            var workingDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             this.Logger.LogDebug("Preparing temporary Ivy project in {WorkingDirectory}", workingDirectory);
             if (Directory.Exists(workingDirectory))
             {

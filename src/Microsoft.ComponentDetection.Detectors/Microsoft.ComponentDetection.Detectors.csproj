@@ -14,7 +14,10 @@
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="Tomlyn.Signed" />
-        <PackageReference Include="Valleysoft.DockerfileModel " />
+        <PackageReference Include="Valleysoft.DockerfileModel" />
+
+        <!-- Fix alerts -->
+        <PackageReference Include="System.Formats.Asn1" />
     </ItemGroup>
 
     <ItemGroup Label="Package References">

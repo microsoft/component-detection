@@ -1,4 +1,4 @@
-﻿namespace Microsoft.ComponentDetection.Detectors.Go;
+namespace Microsoft.ComponentDetection.Detectors.Go;
 
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -18,41 +19,48 @@ using Newtonsoft.Json;
 
 public class GoComponentDetector : FileComponentDetector
 {
+    private const string StartString = "require ";
+
     private static readonly Regex GoSumRegex = new(
         @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",
         RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
-    private readonly HashSet<string> projectRoots = new();
+    private readonly HashSet<string> projectRoots = [];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;
+    private readonly IFileUtilityService fileUtilityService;
 
     public GoComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService commandLineInvocationService,
         IEnvironmentVariableService envVarService,
-        ILogger<GoComponentDetector> logger)
+        ILogger<GoComponentDetector> logger,
+        IFileUtilityService fileUtilityService)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.commandLineInvocationService = commandLineInvocationService;
         this.envVarService = envVarService;
         this.Logger = logger;
+        this.fileUtilityService = fileUtilityService;
     }
 
     public override string Id => "Go";
 
-    public override IEnumerable<string> Categories => new[] { Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod) };
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod)];
 
-    public override IList<string> SearchPatterns { get; } = new List<string> { "go.mod", "go.sum" };
+    public override IList<string> SearchPatterns { get; } = ["go.mod", "go.sum"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = new[] { ComponentType.Go };
+    public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Go];
 
-    public override int Version => 7;
+    public override int Version => 8;
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
-        IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs)
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
     {
         // Filter out any go.sum process requests if the adjacent go.mod file is present and has a go version >= 1.17
         var goModProcessRequests = processRequests.Where(processRequest =>
@@ -87,7 +95,7 @@ public class GoComponentDetector : FileComponentDetector
     private IEnumerable<ComponentStream> FindAdjacentGoModComponentStreams(ProcessRequest processRequest) =>
         this.ComponentStreamEnumerableFactory.GetComponentStreams(
                 new FileInfo(processRequest.ComponentStream.Location).Directory,
-                new[] { "go.mod" },
+                ["go.mod"],
                 (_, _) => false,
                 false)
             .Select(x =>
@@ -145,7 +153,7 @@ public class GoComponentDetector : FileComponentDetector
         return true;
     }
 
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs)
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var file = processRequest.ComponentStream;
@@ -177,6 +185,7 @@ public class GoComponentDetector : FileComponentDetector
         catch (Exception ex)
         {
             this.Logger.LogError(ex, "Failed to detect components using go cli. Location: {Location}", file.Location);
+            record.ExceptionMessage = ex.Message;
         }
         finally
         {
@@ -221,7 +230,7 @@ public class GoComponentDetector : FileComponentDetector
         var projectRootDirectory = Directory.GetParent(location);
         record.ProjectRoot = projectRootDirectory.FullName;
 
-        var isGoAvailable = await this.commandLineInvocationService.CanCommandBeLocatedAsync("go", null, workingDirectory: projectRootDirectory, new[] { "version" });
+        var isGoAvailable = await this.commandLineInvocationService.CanCommandBeLocatedAsync("go", null, workingDirectory: projectRootDirectory, ["version"]);
         record.IsGoAvailable = isGoAvailable;
 
         if (!isGoAvailable)
@@ -233,7 +242,7 @@ public class GoComponentDetector : FileComponentDetector
         this.Logger.LogInformation("Go CLI was found in system and will be used to generate dependency graph. " +
                                    "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
                                    "But, it will introduce noise into the detected components.");
-        var goDependenciesProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, new[] { "list", "-mod=readonly", "-m", "-json", "all" });
+        var goDependenciesProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, ["list", "-mod=readonly", "-m", "-json", "all"]);
         if (goDependenciesProcess.ExitCode != 0)
         {
             this.Logger.LogError("Go CLI command \"go list -m -json all\" failed with error: {GoDependenciesProcessStdErr}", goDependenciesProcess.StdErr);
@@ -243,7 +252,7 @@ public class GoComponentDetector : FileComponentDetector
             return false;
         }
 
-        this.RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder);
+        this.RecordBuildDependencies(goDependenciesProcess.StdOut, singleFileComponentRecorder, projectRootDirectory.FullName);
 
         var generateGraphProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, new List<string> { "mod", "graph" }.ToArray());
         if (generateGraphProcess.ExitCode == 0)
@@ -257,6 +266,12 @@ public class GoComponentDetector : FileComponentDetector
 
     private void TryRegisterDependencyFromModLine(string line, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
+        if (line.Trim().StartsWith("//"))
+        {
+            // this is a comment line, ignore it
+            return;
+        }
+
         if (this.TryToCreateGoComponentFromModLine(line, out var goComponent))
         {
             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
@@ -290,16 +305,16 @@ public class GoComponentDetector : FileComponentDetector
 
                 // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
                 // are listed in the require () section
-                if (line.StartsWith("require "))
+                if (line.StartsWith(StartString))
                 {
-                    this.TryRegisterDependencyFromModLine(line[8..], singleFileComponentRecorder);
+                    this.TryRegisterDependencyFromModLine(line[StartString.Length..], singleFileComponentRecorder);
                 }
 
                 line = await reader.ReadLineAsync();
             }
 
             // Stopping at the first ) restrict the detection to only the require section.
-            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(")"))
+            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(')'))
             {
                 this.TryRegisterDependencyFromModLine(line, singleFileComponentRecorder);
             }
@@ -412,13 +427,15 @@ public class GoComponentDetector : FileComponentDetector
         return singleFileComponentRecorder.GetComponent(component.Id) != null;
     }
 
-    private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder)
+    private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder, string projectRootDirectoryFullName)
     {
         var goBuildModules = new List<GoBuildModule>();
         var reader = new JsonTextReader(new StringReader(goListOutput))
         {
             SupportMultipleContent = true,
         };
+
+        using var record = new GoReplaceTelemetryRecord();
 
         while (reader.Read())
         {
@@ -430,13 +447,54 @@ public class GoComponentDetector : FileComponentDetector
 
         foreach (var dependency in goBuildModules)
         {
+            var dependencyName = $"{dependency.Path} {dependency.Version}";
+
             if (dependency.Main)
             {
                 // main is the entry point module (superfluous as we already have the file location)
                 continue;
             }
 
-            var goComponent = new GoComponent(dependency.Path, dependency.Version);
+            if (dependency.Replace?.Path != null && dependency.Replace.Version == null)
+            {
+                var dirName = projectRootDirectoryFullName;
+                var combinedPath = Path.Combine(dirName, dependency.Replace.Path, "go.mod");
+                var goModFilePath = Path.GetFullPath(combinedPath);
+                if (this.fileUtilityService.Exists(goModFilePath))
+                {
+                    this.Logger.LogInformation("go Module {GoModule} is being replaced with module at path {GoModFilePath}", dependencyName, goModFilePath);
+                    record.GoModPathAndVersion = dependencyName;
+                    record.GoModReplacement = goModFilePath;
+                    continue;
+                }
+
+                this.Logger.LogWarning("go.mod file {GoModFilePath} does not exist in the relative path given for replacement", goModFilePath);
+                record.GoModPathAndVersion = goModFilePath;
+                record.GoModReplacement = null;
+            }
+
+            GoComponent goComponent;
+            if (dependency.Replace?.Path != null && dependency.Replace.Version != null)
+            {
+                var dependencyReplacementName = $"{dependency.Replace.Path} {dependency.Replace.Version}";
+                record.GoModPathAndVersion = dependencyName;
+                record.GoModReplacement = dependencyReplacementName;
+                try
+                {
+                    goComponent = new GoComponent(dependency.Replace.Path, dependency.Replace.Version);
+                    this.Logger.LogInformation("go Module {GoModule} being replaced with module {GoModuleReplacement}", dependencyName, dependencyReplacementName);
+                }
+                catch (Exception ex)
+                {
+                    record.ExceptionMessage = ex.Message;
+                    this.Logger.LogWarning("tried to use replace module {GoModuleReplacement} but got this error {ErrorMessage} using original module {GoModule} instead", dependencyReplacementName, ex.Message, dependencyName);
+                    goComponent = new GoComponent(dependency.Path, dependency.Version);
+                }
+            }
+            else
+            {
+                goComponent = new GoComponent(dependency.Path, dependency.Version);
+            }
 
             if (dependency.Indirect)
             {
@@ -476,5 +534,7 @@ public class GoComponentDetector : FileComponentDetector
         public string Version { get; set; }
 
         public bool Indirect { get; set; }
+
+        public GoBuildModule Replace { get; set; }
     }
 }
