@@ -39,16 +39,4 @@ where T : PnpmYaml
 
         return new DetectedComponent(new NpmComponent(normalizedPackageName, packageVersion));
     }
-
-    public override string ReconstructPnpmDependencyPath(string dependencyName, string dependencyVersion)
-    {
-        if (dependencyVersion.StartsWith('/'))
-        {
-            return dependencyVersion;
-        }
-        else
-        {
-            return $"/{dependencyName}@{dependencyVersion}";
-        }
-    }
 }
