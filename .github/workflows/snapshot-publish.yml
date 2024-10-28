@@ -28,6 +28,11 @@ jobs:
 
       - run: dotnet restore
 
+      - name: Setup Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5
+        with:
+          python-version: '3.10'
+
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: curl https://downloads.apache.org/ant/ivy/2.5.2/apache-ivy-2.5.2-bin.tar.gz | tar xOz apache-ivy-2.5.2/ivy-2.5.2.jar > /usr/share/ant/lib/ivy.jar
