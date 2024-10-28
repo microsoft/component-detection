@@ -749,8 +749,10 @@ snapshots:
     dependencies:
       sampleIndirectDependency: 3.3.3
       sampleIndirectDependency2: 2.2.2
+      'file://../sampleFile':  'link:../\\'
   sampleIndirectDependency2@2.2.2: {}
   sampleIndirectDependency@3.3.3: {}
+  'file://../sampleFile@link:../': {}
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -779,5 +781,31 @@ snapshots:
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             indirectDependencyComponent2.Component.Id,
             parentComponent => parentComponent.Name == "sampleDependency");
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V9_GoodLockVersion_MissingSnapshotsSuccess()
+    {
+        var yamlFile = @"
+lockfileVersion: '9.0'
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+importers:
+  .:
+    dependencies:
+      SampleLinkDependency:
+        specifier: workspace:*
+        version: link:SampleLinkDependency
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
     }
 }

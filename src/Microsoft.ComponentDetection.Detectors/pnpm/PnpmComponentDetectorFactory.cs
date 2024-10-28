@@ -21,7 +21,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
     /// </summary>
-    private static readonly Version MaxLockfileVersion = new(6, 0);
+    private static readonly Version MaxLockfileVersion = new(9, 0);
 
     public PnpmComponentDetectorFactory(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -41,7 +41,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
-    public override int Version { get; } = 6;
+    public override int Version { get; } = 7;
 
     public override bool NeedsAutomaticRootDependencyCalculation => true;
 
