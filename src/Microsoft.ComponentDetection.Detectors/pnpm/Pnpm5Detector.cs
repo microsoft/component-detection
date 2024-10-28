@@ -16,7 +16,7 @@ public class Pnpm5Detector : IPnpmDetector
         foreach (var packageKeyValue in yaml.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
         {
             // Ignore file: as these are local packages.
-            if (packageKeyValue.Key.StartsWith("file:"))
+            if (packageKeyValue.Key.StartsWith(PnpmConstants.PnpmFileDependencyPath))
             {
                 continue;
             }

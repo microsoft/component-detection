@@ -28,7 +28,7 @@ where T : PnpmYaml
     {
         // Local dependencies are dependencies that live in the file system
         // this requires an extra parsing that is not supported yet
-        return dependency.Key.StartsWith("file:") || dependency.Value.StartsWith("file:") || dependency.Value.StartsWith("link:");
+        return dependency.Key.StartsWith(PnpmConstants.PnpmFileDependencyPath) || dependency.Value.StartsWith(PnpmConstants.PnpmFileDependencyPath) || dependency.Value.StartsWith(PnpmConstants.PnpmLinkDependencyPath);
     }
 
     /// <summary>

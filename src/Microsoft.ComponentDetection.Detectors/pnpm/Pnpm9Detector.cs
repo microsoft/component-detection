@@ -30,7 +30,7 @@ public class Pnpm9Detector : IPnpmDetector
             // Ignore "file:" as these are local packages.
             // Such local packages should only be referenced at the top level (via ProcessDependencyList) which also skips them or from other local packages (which this skips).
             // There should be no cases where a non-local package references a local package, so skipping them here should not result in failed lookups below when adding all the graph references.
-            if (pnpmDependencyPath.StartsWith("file:"))
+            if (pnpmDependencyPath.StartsWith(PnpmConstants.PnpmFileDependencyPath))
             {
                 continue;
             }
@@ -65,7 +65,7 @@ public class Pnpm9Detector : IPnpmDetector
         foreach (var (name, dep) in dependencies ?? Enumerable.Empty<KeyValuePair<string, PnpmYamlV9Dependency>>())
         {
             // Ignore "file:" and "link:" as these are local packages.
-            if (dep.Version.StartsWith("link:") || dep.Version.StartsWith("file:"))
+            if (dep.Version.StartsWith(PnpmConstants.PnpmLinkDependencyPath) || dep.Version.StartsWith(PnpmConstants.PnpmFileDependencyPath))
             {
                 continue;
             }
@@ -86,7 +86,7 @@ public class Pnpm9Detector : IPnpmDetector
         foreach (var (name, version) in dependencies ?? Enumerable.Empty<KeyValuePair<string, string>>())
         {
             // Ignore "file:" and "link:" as these are local packages.
-            if (version.StartsWith("link:") || version.StartsWith("file:"))
+            if (version.StartsWith(PnpmConstants.PnpmLinkDependencyPath) || version.StartsWith(PnpmConstants.PnpmFileDependencyPath))
             {
                 continue;
             }

@@ -10,8 +10,10 @@ where T : PnpmYaml
     {
         /*
          * The format is documented at https://github.com/pnpm/spec/blob/master/dependency-path.md.
-         * At the writing it does not seem to reflect changes which were made in lock file format v6:
+         * At the writing it does not seem to reflect changes which were made in lock file format v9:
          * See https://github.com/pnpm/spec/issues/5.
+         * In general, the spec sheet for the v9 lockfile is not published, so parsing of this lockfile was emperically determined.
+         * see https://github.com/pnpm/spec/issues/6
          */
 
         // Strip parenthesized suffices from package. These hold peed dep related information that is unneeded here.
@@ -27,12 +29,6 @@ where T : PnpmYaml
         var packageVersion = packageNameParts[^1];
 
         return new DetectedComponent(new NpmComponent(fullPackageName, packageVersion));
-    }
-
-    public override bool IsPnpmPackageDevDependency(Package pnpmPackage)
-    {
-        // TODO: Implement
-        return false;
     }
 
     /// <summary>
