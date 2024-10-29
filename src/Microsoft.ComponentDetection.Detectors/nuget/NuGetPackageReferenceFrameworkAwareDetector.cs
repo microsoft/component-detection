@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,15 +13,12 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
-public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
+public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector, IExperimentalDetector
 {
     public const string OmittedFrameworkComponentsTelemetryKey = "OmittedFrameworkComponents";
 
     public const string ProjectDependencyType = "project";
-
-    private readonly ConcurrentDictionary<string, int> frameworkComponentsThatWereOmmittedWithCount = new ConcurrentDictionary<string, int>();
 
     private readonly IFileUtilityService fileUtilityService;
 
@@ -76,6 +72,7 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
                 var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework);
 
                 // This call to GetTargetLibrary is not guarded, because if this can't be resolved then something is fundamentally broken (e.g. an explicit dependency reference not being in the list of libraries)
+                // issue: we treat top level dependencies for all targets as top level for each target, but some may not be top level for other targets, or may not even be present for other targets.
                 foreach (var library in explicitReferencedDependencies.Select(x => target.GetTargetLibrary(x.Name)).Where(x => x != null))
                 {
                     this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, frameworkPackages);
@@ -87,13 +84,6 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             // If something went wrong, just ignore the package
             this.Logger.LogError(e, "Failed to process NuGet lockfile {NuGetLockFile}", processRequest.ComponentStream.Location);
         }
-
-        return Task.CompletedTask;
-    }
-
-    protected override Task OnDetectionFinishedAsync()
-    {
-        this.Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonConvert.SerializeObject(this.frameworkComponentsThatWereOmmittedWithCount));
 
         return Task.CompletedTask;
     }
@@ -124,8 +114,10 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         libraryComponent = singleFileComponentRecorder.GetComponent(libraryComponent.Component.Id);
 
         // Add framework information to the actual component
-        var targetFramework = target.TargetFramework?.GetShortFolderName() ?? "unknown";
-        ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(targetFramework);
+        if (target.TargetFramework is not null)
+        {
+            ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(target.TargetFramework.GetShortFolderName());
+        }
 
         foreach (var dependency in library.Dependencies)
         {
@@ -155,7 +147,7 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
 
     private List<(string Name, Version Version, VersionRange VersionRange)> GetTopLevelLibraries(LockFile lockFile)
     {
-        // First, populate target frameworks -- This is the base level authoritative list of nuget packages a project has dependencies on.
+        // First, populate libraries from the TargetFrameworks section -- This is the base level authoritative list of nuget packages a project has dependencies on.
         var toBeFilled = new List<(string Name, Version Version, VersionRange VersionRange)>();
 
         foreach (var framework in lockFile.PackageSpec.TargetFrameworks)

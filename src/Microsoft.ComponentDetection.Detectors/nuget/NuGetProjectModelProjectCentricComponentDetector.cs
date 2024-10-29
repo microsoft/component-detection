@@ -282,8 +282,10 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         libraryComponent = singleFileComponentRecorder.GetComponent(libraryComponent.Component.Id);
 
         // Add framework information to the actual component
-        var targetFramework = target.TargetFramework?.GetShortFolderName() ?? "unknown";
-        ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(targetFramework);
+        if (target.TargetFramework is not null)
+        {
+            ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(target.TargetFramework.GetShortFolderName());
+        }
 
         foreach (var dependency in library.Dependencies)
         {

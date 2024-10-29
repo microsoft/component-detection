@@ -75,11 +75,9 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
                 var libraryComponent = singleFileComponentRecorder.GetComponent(detectedComponent.Component.Id);
 
                 // Add framework information to the actual component
-                var targetFramework = package.TargetFramework?.GetShortFolderName();
-
-                if (targetFramework is not null)
+                if (package.TargetFramework is not null)
                 {
-                    ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(targetFramework);
+                    ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(package.TargetFramework.GetShortFolderName());
                 }
             }
         }

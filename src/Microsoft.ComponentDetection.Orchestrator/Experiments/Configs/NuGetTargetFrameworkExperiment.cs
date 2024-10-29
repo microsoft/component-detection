@@ -2,10 +2,9 @@ namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.NuGet;
-using Microsoft.ComponentDetection.Detectors.Pip;
 
 /// <summary>
-/// Validating the <see cref="SimplePipComponentDetector"/>.
+/// Validating the <see cref="NuGetTargetFrameworkExperiment"/>.
 /// </summary>
 public class NuGetTargetFrameworkExperiment : IExperimentConfiguration
 {
