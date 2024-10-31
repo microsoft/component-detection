@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using global::NuGet.Frameworks;
 using global::NuGet.Packaging.Core;
 using global::NuGet.ProjectModel;
 using global::NuGet.Versioning;
@@ -44,6 +45,25 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
 
     public override int Version { get; } = 1;
 
+    private static void RegisterComponentWithFramework(
+        ISingleFileComponentRecorder singleFileComponentRecorder,
+        DetectedComponent detectedComponent,
+        bool isExplicitReferencedDependency = false,
+        string parentComponentId = null,
+        bool? isDevelopmentDependency = null,
+        NuGetFramework targetFramework = null)
+    {
+        singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency);
+
+        // Add framework information to the actual component
+        if (targetFramework is not null)
+        {
+            // get the actual component in case it already exists
+            detectedComponent = singleFileComponentRecorder.GetComponent(detectedComponent.Component.Id);
+            ((NuGetComponent)detectedComponent.Component).TargetFrameworks.Add(targetFramework.GetShortFolderName());
+        }
+    }
+
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         try
@@ -78,6 +98,9 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
                     this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, frameworkPackages);
                 }
             }
+
+            // Register PackageDownload
+            this.RegisterPackageDownloads(singleFileComponentRecorder, lockFile);
         }
         catch (Exception e)
         {
@@ -103,21 +126,13 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         }
 
         var isFrameworkComponent = frameworkPackages?.IsAFrameworkComponent(library.Name, library.Version) ?? false;
-        var isDevelopmentDependency = IsADevelopmentDependency(library);
+        var isDevelopmentDependency = isFrameworkComponent || IsADevelopmentDependency(library);
 
         visited ??= [];
 
         var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
-        singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId, isDevelopmentDependency: isFrameworkComponent || isDevelopmentDependency);
-
-        // get the actual component in case it already exists
-        libraryComponent = singleFileComponentRecorder.GetComponent(libraryComponent.Component.Id);
-
-        // Add framework information to the actual component
-        if (target.TargetFramework is not null)
-        {
-            ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(target.TargetFramework.GetShortFolderName());
-        }
+        var isExplicitReferencedDependency = explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id);
+        RegisterComponentWithFramework(singleFileComponentRecorder, libraryComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, targetFramework: target.TargetFramework);
 
         foreach (var dependency in library.Dependencies)
         {
@@ -145,16 +160,30 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         bool IsADevelopmentDependency(LockFileTargetLibrary library) => library.RuntimeAssemblies.Concat(library.RuntimeTargets).All(IsAPlaceholderItem);
     }
 
-    private List<(string Name, Version Version, VersionRange VersionRange)> GetTopLevelLibraries(LockFile lockFile)
+    private void RegisterPackageDownloads(ISingleFileComponentRecorder singleFileComponentRecorder, LockFile lockFile)
+    {
+        foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
+        {
+            foreach (var packageDownload in framework.DownloadDependencies)
+            {
+                var libraryComponent = new DetectedComponent(new NuGetComponent(packageDownload.Name, packageDownload.VersionRange.MinVersion.ToNormalizedString()));
+
+                // PackageDownload is always a development dependency since it's usage does not make it part of the application
+                RegisterComponentWithFramework(singleFileComponentRecorder, libraryComponent, isExplicitReferencedDependency: true, isDevelopmentDependency: true, targetFramework: framework.FrameworkName);
+            }
+        }
+    }
+
+    private List<(string Name, Version Version, VersionRange VersionRange, bool IsPackageDownload)> GetTopLevelLibraries(LockFile lockFile)
     {
         // First, populate libraries from the TargetFrameworks section -- This is the base level authoritative list of nuget packages a project has dependencies on.
-        var toBeFilled = new List<(string Name, Version Version, VersionRange VersionRange)>();
+        var toBeFilled = new List<(string Name, Version Version, VersionRange VersionRange, bool IsPackageDownload)>();
 
         foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
         {
             foreach (var dependency in framework.Dependencies)
             {
-                toBeFilled.Add((dependency.Name, Version: null, dependency.LibraryRange.VersionRange));
+                toBeFilled.Add((dependency.Name, Version: null, dependency.LibraryRange.VersionRange, false));
             }
         }
 
@@ -173,7 +202,7 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             {
                 if (librariesWithAbsolutePath.TryGetValue(Path.GetFullPath(projectReference.ProjectPath), out var library))
                 {
-                    toBeFilled.Add((library.Name, library.Version.Version, null));
+                    toBeFilled.Add((library.Name, library.Version.Version, null, false));
                 }
             }
         }

@@ -311,5 +311,11 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("project_assets_3_1", resourceCulture);
             }
         }
+
+        internal static string project_assets_packageDownload {
+            get {
+                return ResourceManager.GetString("project_assets_packageDownload", resourceCulture);
+            }
+        }
     }
 }

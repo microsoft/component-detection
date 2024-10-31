@@ -261,6 +261,19 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
     }
 
     [TestMethod]
+    public async Task ScanDirectoryAsync_PackageDownload_VerificationAsync()
+    {
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, TestResources.project_assets_packageDownload)
+            .ExecuteDetectorAsync();
+
+        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(3, "PackageDownload dev dependencies should exist.");
+        developmentDependencies.Select(c => c.Component).Should().AllBeOfType<NuGetComponent>();
+        developmentDependencies.Select(c => ((NuGetComponent)c.Component).TargetFrameworks).Should().AllSatisfy(tfms => tfms.Should().BeEquivalentTo(["net8.0"]));
+    }
+
+    [TestMethod]
     public async Task ScanDirectory_NoPackageSpecAsync()
     {
         var osAgnostic =
