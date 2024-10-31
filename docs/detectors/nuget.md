@@ -20,8 +20,8 @@ NuGet Detection is performed by parsing any `*.nuspec`, `*.nupkg`, `*.packages.c
 
 ## Known Limitations
 
-- The NuGet detector is currently overreporting because the global NuGet cache gets searched. This is because of NuGet's [restore behaviour][4] which downloads all possible dependencies before [resolving the final dependency graph][5]. To solve this overreporting a new NuGet Detector approach will be rolled out. This new approach will now only parse `*.packages.config` and `*.project.assets` (`*.csproj`) files. This means any components that are only found in `*.nuspec` or `*.nupkg` files will not be detected with the new NuGet Detector approach.
-- There are also dependencies from the .NET SDK that are underreported. The list of dependencies can be found [here][6].
+- Any components that are only found in `*.nuspec` or `*.nupkg` files will not be detected with the latest NuGet Detector approach, because the NuGet detector that scans `*.nuspec` or `*.nupkg` files overreports. This is due to of NuGet's [restore behaviour][4] which downloads all possible dependencies before [resolving the final dependency graph][5].
+- Dependencies from the .NET SDK that are underreported. The list of dependencies can be found [here][6].
 
 [4]: https://learn.microsoft.com/en-us/nuget/consume-packages/package-restore#package-restore-behavior
 [5]: https://learn.microsoft.com/en-us/nuget/concepts/dependency-resolution
