@@ -1,0 +1,7 @@
+The .NET SDK does conflict resolution with NuGet packages to decide when to ignore the content of packages in favor of that from other sources (like other packages or the Framework itself).
+
+Since packages are immutable - we can precompute what packages will "lose" to framework assets.  These lists were calculated with a tool that downloads packages, resolve what assets apply for a given frameowrk, then compares those to the framework's reference assemblies.
+
+The framework targeting packs have a file to ship these precomputed package versions, [PackageOverrides.txt](https://github.com/dotnet/sdk/blob/7deb36232b9c0ccd5084fced1df07920c10a5b72/src/Tasks/Microsoft.NET.Build.Tasks/ResolveTargetingPackAssets.cs#L199) -- but that file wasn't kept up to date of the course framework versions.  It was meant as a "fast path" not a source of truth.  In future framework versions this will need to be the source of truth since it will feed into NuGet's supplied by platform feature.  The latest version of this file for net9.0 can be seen [here](https://github.com/dotnet/runtime/blob/release/9.0/src/installer/pkg/sfx/Microsoft.NETCore.App/PackageOverrides.txt) and is included in the [targeting pack package](https://www.nuget.org/packages/Microsoft.NETCore.App.Ref).
+
+Once caclculating these we reduce them to a minimum set by allowing compatible frameworks to build upon the previous framework's data - thus reducing the total code size and memory usage of the set of framework packages.
