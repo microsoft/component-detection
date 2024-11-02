@@ -52,6 +52,11 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
                 x.Component.Id,
                 y => y.Id == x.Component.Id));
 
+        foreach (var component in detectedComponents)
+        {
+            component.TargetFrameworks.Should().BeEquivalentTo(["netcoreapp2.2"]);
+        }
+
         componentRecorder.ForAllComponents(grouping => grouping.AllFileLocations.Should().Contain(location => location.Contains("Loader.csproj")));
     }
 
@@ -194,6 +199,11 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NuGetComponent>(
             systemTextJson.Component.Id,
             x => x.Name.Contains("Microsoft.Extensions.DependencyModel")).Should().BeTrue();
+
+        foreach (var component in detectedComponents)
+        {
+            component.TargetFrameworks.Should().BeEquivalentTo(["netcoreapp3.1"]);
+        }
 
         componentRecorder.ForAllComponents(grouping => grouping.AllFileLocations.Should().Contain(location => location.Contains("ExtCore.WebApplication.csproj")));
     }

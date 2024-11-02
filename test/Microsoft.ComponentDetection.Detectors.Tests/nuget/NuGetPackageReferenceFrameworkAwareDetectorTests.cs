@@ -40,12 +40,15 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Number of unique nodes in ProjectAssetsJson
-        Console.WriteLine(string.Join(",", detectedComponents.Select(x => x.Component.Id)));
         detectedComponents.Should().HaveCount(22);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
         nonDevComponents.Should().HaveCount(3);
+
+        foreach (var component in detectedComponents)
+        {
+            component.TargetFrameworks.Should().BeEquivalentTo(["netcoreapp2.2"]);
+        }
 
         detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("coverlet.msbuild")).Should().NotBeNull();
 
@@ -62,8 +65,6 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Number of unique nodes in ProjectAssetsJson
-        Console.WriteLine(string.Join(",", detectedComponents.Select(x => x.Component.Id)));
         detectedComponents.Should().HaveCount(68);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
@@ -197,6 +198,11 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
         componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NuGetComponent>(
             systemTextJson.Component.Id,
             x => x.Name.Contains("Microsoft.Extensions.DependencyModel")).Should().BeTrue();
+
+        foreach (var component in detectedComponents)
+        {
+            component.TargetFrameworks.Should().BeEquivalentTo(["netcoreapp3.1"]);
+        }
 
         componentRecorder.ForAllComponents(grouping => grouping.AllFileLocations.Should().Contain(location => location.Contains("ExtCore.WebApplication.csproj")));
     }
