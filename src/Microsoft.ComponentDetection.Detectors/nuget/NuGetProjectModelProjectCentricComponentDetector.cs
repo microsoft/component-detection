@@ -276,16 +276,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         visited ??= [];
 
         var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
-        singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId);
-
-        // get the actual component in case it already exists
-        libraryComponent = singleFileComponentRecorder.GetComponent(libraryComponent.Component.Id);
-
-        // Add framework information to the actual component
-        if (target.TargetFramework is not null)
-        {
-            ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(target.TargetFramework.GetShortFolderName());
-        }
+        singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId, targetFramework: target.TargetFramework?.GetShortFolderName());
 
         foreach (var dependency in library.Dependencies)
         {

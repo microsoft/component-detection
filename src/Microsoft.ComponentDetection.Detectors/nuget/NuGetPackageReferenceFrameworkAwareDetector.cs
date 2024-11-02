@@ -108,16 +108,14 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         visited ??= [];
 
         var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
-        singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId, isDevelopmentDependency: isFrameworkComponent || isDevelopmentDependency);
 
-        // get the actual component in case it already exists
-        libraryComponent = singleFileComponentRecorder.GetComponent(libraryComponent.Component.Id);
-
-        // Add framework information to the actual component
-        if (target.TargetFramework is not null)
-        {
-            ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(target.TargetFramework.GetShortFolderName());
-        }
+        // Possibly adding target framework to single file recorder
+        singleFileComponentRecorder.RegisterUsage(
+            libraryComponent,
+            explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id),
+            parentComponentId,
+            isDevelopmentDependency: isFrameworkComponent || isDevelopmentDependency,
+            targetFramework: target.TargetFramework?.GetShortFolderName());
 
         foreach (var dependency in library.Dependencies)
         {
@@ -127,11 +125,9 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             }
 
             var targetLibrary = target.GetTargetLibrary(dependency.Id);
-            if (targetLibrary == null)
-            {
-                // We have to exclude this case -- it looks like a bug in project.assets.json, but there are project.assets.json files that don't have a dependency library in the libraries set.
-            }
-            else
+
+            // There are project.assets.json files that don't have a dependency library in the libraries set.
+            if (targetLibrary != null)
             {
                 visited.Add(dependency.Id);
                 this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, frameworkPackages, visited);

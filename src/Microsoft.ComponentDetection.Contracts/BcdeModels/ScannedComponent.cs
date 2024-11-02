@@ -26,4 +26,6 @@ public class ScannedComponent
     public IEnumerable<int> ContainerDetailIds { get; set; }
 
     public IDictionary<int, IEnumerable<int>> ContainerLayerIds { get; set; }
+
+    public ISet<string> TargetFrameworks { get; set; }
 }
