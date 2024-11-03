@@ -14,11 +14,12 @@ public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesCo
     [TestMethod]
     public async Task Should_WorkAsync()
     {
+        var targetFramework = "net46";
         var packagesConfig =
-            @"<?xml version=""1.0"" encoding=""utf-8""?>
+            @$"<?xml version=""1.0"" encoding=""utf-8""?>
                 <packages>
-                    <package id=""jQuery"" version=""3.1.1"" targetFramework=""net46"" />
-                    <package id=""NLog"" version=""4.3.10"" targetFramework=""net46"" />
+                    <package id=""jQuery"" version=""3.1.1"" targetFramework=""{targetFramework}"" />
+                    <package id=""NLog"" version=""4.3.10"" targetFramework=""{targetFramework}"" />
                 </packages>";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -27,10 +28,17 @@ public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesCo
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        var jqueryDetectedComponent = new DetectedComponent(new NuGetComponent("jQuery", "3.1.1"));
+        jqueryDetectedComponent.TargetFrameworks.Add(targetFramework);
+
+        var nlogDetectedComponent = new DetectedComponent(new NuGetComponent("NLog", "4.3.10"));
+        nlogDetectedComponent.TargetFrameworks.Add(targetFramework);
+
         detectedComponents.Should().NotBeEmpty()
             .And.HaveCount(2)
-            .And.ContainEquivalentOf(new DetectedComponent(new NuGetComponent("jQuery", "3.1.1")))
-            .And.ContainEquivalentOf(new DetectedComponent(new NuGetComponent("NLog", "4.3.10")));
+            .And.ContainEquivalentOf(jqueryDetectedComponent)
+            .And.ContainEquivalentOf(nlogDetectedComponent);
     }
 
     [TestMethod]
