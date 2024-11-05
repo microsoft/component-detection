@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,91 +16,139 @@ using global::NuGet.Versioning;
 /// </summary>
 internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<string, NuGetVersion>>, IEnumerable
 {
-    private static readonly Dictionary<NuGetFramework, FrameworkPackages> FrameworkPackagesByFramework = [];
+    private const string DefaultFrameworkName = "";
+    private static readonly ConcurrentDictionary<NuGetFramework, ConcurrentDictionary<string, FrameworkPackages>> FrameworkPackagesByFramework = [];
 
     static FrameworkPackages()
     {
-        AddPackages(NETStandard20.Instance);
-        AddPackages(NETStandard21.Instance);
-        AddPackages(NETCoreApp20.Instance);
-        AddPackages(NETCoreApp21.Instance);
-        AddPackages(NETCoreApp22.Instance);
-        AddPackages(NETCoreApp30.Instance);
-        AddPackages(NETCoreApp31.Instance);
-        AddPackages(NETCoreApp50.Instance);
-        AddPackages(NETCoreApp60.Instance);
-        AddPackages(NETCoreApp70.Instance);
-        AddPackages(NETCoreApp80.Instance);
-        AddPackages(NETCoreApp90.Instance);
-
-        static void AddPackages(FrameworkPackages packages) => FrameworkPackagesByFramework[packages.Framework] = packages;
+        NETStandard20.Register();
+        NETStandard21.Register();
+        NETCoreApp20.Register();
+        NETCoreApp21.Register();
+        NETCoreApp22.Register();
+        NETCoreApp30.Register();
+        NETCoreApp31.Register();
+        NETCoreApp50.Register();
+        NETCoreApp60.Register();
+        NETCoreApp70.Register();
+        NETCoreApp80.Register();
+        NETCoreApp90.Register();
     }
 
-    public FrameworkPackages(NuGetFramework framework) => this.Framework = framework;
+    public FrameworkPackages(NuGetFramework framework, string frameworkName)
+    {
+        this.Framework = framework;
+        this.FrameworkName = frameworkName;
+    }
 
-    public FrameworkPackages(NuGetFramework framework, FrameworkPackages frameworkPackages)
-        : this(framework) => this.Packages = new(frameworkPackages.Packages);
+    public FrameworkPackages(NuGetFramework framework, string frameworkName, FrameworkPackages frameworkPackages)
+        : this(framework, frameworkName) => this.Packages = new(frameworkPackages.Packages);
 
     public NuGetFramework Framework { get; }
 
+    public string FrameworkName { get; }
+
     public Dictionary<string, NuGetVersion> Packages { get; } = new Dictionary<string, NuGetVersion>(StringComparer.OrdinalIgnoreCase);
 
-    public static FrameworkPackages GetFrameworkPackages(NuGetFramework framework)
-    {
-        if (FrameworkPackagesByFramework.TryGetValue(framework, out var frameworkPackages))
+    private static string GetFrameworkKey(string frameworkName) =>
+        frameworkName switch
         {
-            return frameworkPackages;
+            "NETStandard.Library" => DefaultFrameworkName,
+            "Microsoft.NETCore.App" => DefaultFrameworkName,
+            _ => frameworkName,
+        };
+
+    internal static void Register(params FrameworkPackages[] toRegister)
+    {
+        foreach (var frameworkPackages in toRegister)
+        {
+            if (!FrameworkPackagesByFramework.TryGetValue(frameworkPackages.Framework, out var frameworkPackagesForVersion))
+            {
+                FrameworkPackagesByFramework[frameworkPackages.Framework] = frameworkPackagesForVersion = [];
+            }
+
+            var frameworkKey = GetFrameworkKey(frameworkPackages.FrameworkName);
+            frameworkPackagesForVersion[frameworkKey] = frameworkPackages;
         }
-
-        // if we didn't predefine the package overrides, load them from the targeting pack
-        // we might just leave this out since in future frameworks we'll have this functionality built into NuGet.
-        var frameworkPackagesFromPack = LoadFrameworkPackagesFromPack(framework);
-
-        return FrameworkPackagesByFramework[framework] = frameworkPackagesFromPack ?? new FrameworkPackages(framework);
     }
 
-    private static FrameworkPackages LoadFrameworkPackagesFromPack(NuGetFramework framework)
+    public static FrameworkPackages[] GetFrameworkPackages(NuGetFramework framework, string[] frameworkReferences)
+    {
+        var frameworkPackages = new List<FrameworkPackages>();
+
+        if (frameworkReferences.Length == 0)
+        {
+            frameworkReferences = [DefaultFrameworkName];
+        }
+
+        foreach (var frameworkReference in frameworkReferences)
+        {
+            var frameworkKey = GetFrameworkKey(frameworkReference);
+            if (FrameworkPackagesByFramework.TryGetValue(framework, out var frameworkPackagesForVersion) &&
+                frameworkPackagesForVersion.TryGetValue(frameworkKey, out var frameworkPackage))
+            {
+                frameworkPackages.Add(frameworkPackage);
+            }
+            else
+            {
+                // if we didn't predefine the package overrides, load them from the targeting pack
+                // we might just leave this out since in future frameworks we'll have this functionality built into NuGet.Frameworks
+                var frameworkPackagesFromPack = LoadFrameworkPackagesFromPack(framework, frameworkReference) ?? new FrameworkPackages(framework, frameworkReference);
+
+                Register(frameworkPackagesFromPack);
+
+                frameworkPackages.Add(frameworkPackagesFromPack);
+            }
+        }
+
+        return frameworkPackages.ToArray();
+    }
+
+    private static FrameworkPackages LoadFrameworkPackagesFromPack(NuGetFramework framework, string frameworkName)
     {
         if (framework is null || framework.Framework != FrameworkConstants.FrameworkIdentifiers.NetCoreApp)
         {
             return null;
         }
 
+        var reducer = new FrameworkReducer();
+        var frameworkKey = GetFrameworkKey(frameworkName);
+        var candidateFrameworks = FrameworkPackagesByFramework.Where(pair => pair.Value.ContainsKey(frameworkKey)).Select(pair => pair.Key);
+        var nearestFramework = reducer.GetNearest(framework, candidateFrameworks);
+
+        var frameworkPackages = nearestFramework is null ?
+            new FrameworkPackages(framework, frameworkName) :
+            new FrameworkPackages(framework, frameworkName, FrameworkPackagesByFramework[nearestFramework][frameworkKey]);
+
         // packs location : %ProgramFiles%\dotnet\packs
-        var packsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet", "packs", "Microsoft.NETCore.App.Ref");
-        if (!Directory.Exists(packsFolder))
+        var packsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet", "packs", frameworkName + ".Ref");
+        if (Directory.Exists(packsFolder))
         {
-            return null;
-        }
+            var packVersionPattern = $"{framework.Version.Major}.{framework.Version.Minor}.*";
+            var packDirectories = Directory.GetDirectories(packsFolder, packVersionPattern);
+            var packageOverridesFile = packDirectories
+                                            .Select(d => (Overrides: Path.Combine(d, "data", "PackageOverrides.txt"), Version: ParseVersion(Path.GetFileName(d))))
+                                            .Where(d => File.Exists(d.Overrides))
+                                            .OrderByDescending(d => d.Version)
+                                            .FirstOrDefault().Overrides;
 
-        var packVersionPattern = $"{framework.Version.Major}.{framework.Version.Minor}.*";
-        var packDirectories = Directory.GetDirectories(packsFolder, packVersionPattern);
-        var packageOverridesFile = packDirectories
-                                        .Select(d => (Overrides: Path.Combine(d, "data", "PackageOverrides.txt"), Version: ParseVersion(Path.GetFileName(d))))
-                                        .Where(d => File.Exists(d.Overrides))
-                                        .OrderByDescending(d => d.Version)
-                                        .FirstOrDefault().Overrides;
-
-        if (packageOverridesFile == null)
-        {
-            // we should also try to grab them from the user's package folder - they'll be in one location or the other.
-            return null;
-        }
-
-        // Adapted from https://github.com/dotnet/sdk/blob/c3a8f72c3a5491c693ff8e49e7406136a12c3040/src/Tasks/Common/ConflictResolution/PackageOverride.cs#L52-L68
-        var frameworkPackages = new FrameworkPackages(framework);
-        var packageOverrides = File.ReadAllLines(packageOverridesFile);
-
-        foreach (var packageOverride in packageOverrides)
-        {
-            var packageOverrideParts = packageOverride.Trim().Split('|');
-
-            if (packageOverrideParts.Length == 2)
+            if (packageOverridesFile is not null)
             {
-                var packageId = packageOverrideParts[0];
-                var packageVersion = ParseVersion(packageOverrideParts[1]);
+                // Adapted from https://github.com/dotnet/sdk/blob/c3a8f72c3a5491c693ff8e49e7406136a12c3040/src/Tasks/Common/ConflictResolution/PackageOverride.cs#L52-L68
+                var packageOverrides = File.ReadAllLines(packageOverridesFile);
 
-                frameworkPackages.Packages[packageId] = packageVersion;
+                foreach (var packageOverride in packageOverrides)
+                {
+                    var packageOverrideParts = packageOverride.Trim().Split('|');
+
+                    if (packageOverrideParts.Length == 2)
+                    {
+                        var packageId = packageOverrideParts[0];
+                        var packageVersion = ParseVersion(packageOverrideParts[1]);
+
+                        frameworkPackages.Packages[packageId] = packageVersion;
+                    }
+                }
             }
         }
 

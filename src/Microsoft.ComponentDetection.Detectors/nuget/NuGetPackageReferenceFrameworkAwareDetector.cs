@@ -44,6 +44,24 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
 
     public override int Version { get; } = 1;
 
+    private static string[] GetFrameworkReferences(LockFile lockFile, LockFileTarget target)
+    {
+        var frameworkInformation = lockFile.PackageSpec.TargetFrameworks.FirstOrDefault(x => x.FrameworkName.Equals(target.TargetFramework));
+
+        if (frameworkInformation == null)
+        {
+            return [];
+        }
+
+        // add directly referenced frameworks
+        var results = frameworkInformation.FrameworkReferences.Select(x => x.Name);
+
+        // add transitive framework references
+        results = results.Concat(target.Libraries.SelectMany(l => l.FrameworkReferences));
+
+        return results.Distinct().ToArray();
+    }
+
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         try
@@ -69,13 +87,15 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(lockFile.PackageSpec.RestoreMetadata.ProjectPath);
             foreach (var target in lockFile.Targets)
             {
-                var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework);
+                var frameworkReferences = GetFrameworkReferences(lockFile, target);
+                var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework, frameworkReferences);
+                bool IsAFrameworkPackage(string id, NuGetVersion version) => frameworkPackages.Any(fp => fp.IsAFrameworkComponent(id, version));
 
                 // This call to GetTargetLibrary is not guarded, because if this can't be resolved then something is fundamentally broken (e.g. an explicit dependency reference not being in the list of libraries)
                 // issue: we treat top level dependencies for all targets as top level for each target, but some may not be top level for other targets, or may not even be present for other targets.
                 foreach (var library in explicitReferencedDependencies.Select(x => target.GetTargetLibrary(x.Name)).Where(x => x != null))
                 {
-                    this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, frameworkPackages);
+                    this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, IsAFrameworkPackage);
                 }
             }
         }
@@ -94,7 +114,7 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         ISingleFileComponentRecorder singleFileComponentRecorder,
         LockFileTargetLibrary library,
         string parentComponentId,
-        FrameworkPackages frameworkPackages,
+        Func<string, NuGetVersion, bool> isAFrameworkComponent,
         HashSet<string> visited = null)
     {
         if (library.Type == ProjectDependencyType)
@@ -102,7 +122,7 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             return;
         }
 
-        var isFrameworkComponent = frameworkPackages?.IsAFrameworkComponent(library.Name, library.Version) ?? false;
+        var isFrameworkComponent = isAFrameworkComponent(library.Name, library.Version);
         var isDevelopmentDependency = IsADevelopmentDependency(library);
 
         visited ??= [];
@@ -130,7 +150,7 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             if (targetLibrary != null)
             {
                 visited.Add(dependency.Id);
-                this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, frameworkPackages, visited);
+                this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, isAFrameworkComponent, visited);
             }
         }
 
