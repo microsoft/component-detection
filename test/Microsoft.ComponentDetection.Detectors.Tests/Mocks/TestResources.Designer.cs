@@ -10,8 +10,8 @@
 
 namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
     using System;
-    
-    
+
+
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
     /// </summary>
@@ -23,15 +23,15 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class TestResources {
-        
+
         private static global::System.Resources.ResourceManager resourceMan;
-        
+
         private static global::System.Globalization.CultureInfo resourceCulture;
-        
+
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal TestResources() {
         }
-        
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
@@ -45,7 +45,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return resourceMan;
             }
         }
-        
+
         /// <summary>
         ///   Overrides the current thread's CurrentUICulture property for all
         ///   resource lookups using this strongly typed resource class.
@@ -59,7 +59,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 resourceCulture = value;
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to integrationTestCompileClasspath - Compile classpath for source set &apos;integration test&apos;.
         ///+--- commons-io:commons-io:2.5
@@ -77,7 +77,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("GradlewDependencyOutput", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT
         ///+- org.apache.maven:maven-model:jar:3.6.1-SNAPSHOT:compile
@@ -94,7 +94,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("MvnCliDependencyOutput", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {
         ///  &quot;version&quot;: &quot;1&quot;,
@@ -115,7 +115,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("pip_report_jupyterlab", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {
         ///  &quot;version&quot;: &quot;1&quot;,
@@ -137,7 +137,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("pip_report_multi_pkg", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {
         ///  &quot;version&quot;: &quot;1&quot;,
@@ -158,7 +158,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("pip_report_simple_extras", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {
         ///  &quot;version&quot;: &quot;1&quot;,
@@ -180,7 +180,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("pip_report_single_pkg", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {
         ///  &quot;version&quot;: &quot;2&quot;,
@@ -256,7 +256,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("project_assets_2_2", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {
         ///	&quot;version&quot;: 3,
@@ -286,7 +286,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("project_assets_2_2_additional", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {
         ///    &quot;version&quot;: 3,
@@ -312,6 +312,27 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
             }
         }
 
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: 3,
+        ///  &quot;targets&quot;: {
+        ///    &quot;.NETFramework,Version=v4.7.2&quot;: {},
+        ///    &quot;net8.0&quot;: {}
+        ///  },
+        ///  &quot;libraries&quot;: {},
+        ///  &quot;projectFileDependencyGroups&quot;: {
+        ///    &quot;.NETFramework,Version=v4.7.2&quot;: [],
+        ///    &quot;net8.0&quot;: []
+        ///  },
+        ///  &quot;packageFolders&quot;: {
+        ///    &quot;C:\\Users\\username\\.nuget\\packages\\&quot;: {},
+        ///    &quot;C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages&quot;: {}
+        ///  },
+        ///  &quot;project&quot;: {
+        ///    &quot;version&quot;: &quot;1.0.0&quot;,
+        ///    &quot;restore&quot;: {
+        ///      &quot;projectUniqueName&quot;: &quot;C:\\src\\packageDownloadSample\\package [rest of string was truncated]&quot;;.
+        /// </summary>
         internal static string project_assets_packageDownload {
             get {
                 return ResourceManager.GetString("project_assets_packageDownload", resourceCulture);
