@@ -40,12 +40,15 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Number of unique nodes in ProjectAssetsJson
-        Console.WriteLine(string.Join(",", detectedComponents.Select(x => x.Component.Id)));
         detectedComponents.Should().HaveCount(22);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
         nonDevComponents.Should().HaveCount(3);
+
+        foreach (var component in detectedComponents)
+        {
+            component.TargetFrameworks.Should().BeEquivalentTo(["netcoreapp2.2"]);
+        }
 
         detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("coverlet.msbuild")).Should().NotBeNull();
 
@@ -62,8 +65,6 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Number of unique nodes in ProjectAssetsJson
-        Console.WriteLine(string.Join(",", detectedComponents.Select(x => x.Component.Id)));
         detectedComponents.Should().HaveCount(68);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
@@ -198,6 +199,11 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
             systemTextJson.Component.Id,
             x => x.Name.Contains("Microsoft.Extensions.DependencyModel")).Should().BeTrue();
 
+        foreach (var component in detectedComponents)
+        {
+            component.TargetFrameworks.Should().BeEquivalentTo(["netcoreapp3.1"]);
+        }
+
         componentRecorder.ForAllComponents(grouping => grouping.AllFileLocations.Should().Contain(location => location.Contains("ExtCore.WebApplication.csproj")));
     }
 
@@ -270,7 +276,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
         var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
         developmentDependencies.Should().HaveCount(3, "PackageDownload dev dependencies should exist.");
         developmentDependencies.Select(c => c.Component).Should().AllBeOfType<NuGetComponent>();
-        developmentDependencies.Select(c => ((NuGetComponent)c.Component).TargetFrameworks).Should().AllSatisfy(tfms => tfms.Should().BeEquivalentTo(["net8.0"]));
+        developmentDependencies.Select(c => c.TargetFrameworks).Should().AllSatisfy(tfms => tfms.Should().BeEquivalentTo(["net8.0"]));
     }
 
     [TestMethod]

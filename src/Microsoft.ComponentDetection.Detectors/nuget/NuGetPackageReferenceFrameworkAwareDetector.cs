@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using global::NuGet.Frameworks;
 using global::NuGet.Packaging.Core;
 using global::NuGet.ProjectModel;
 using global::NuGet.Versioning;
@@ -44,25 +43,6 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.NuGet];
 
     public override int Version { get; } = 1;
-
-    private static void RegisterComponentWithFramework(
-        ISingleFileComponentRecorder singleFileComponentRecorder,
-        DetectedComponent detectedComponent,
-        bool isExplicitReferencedDependency = false,
-        string parentComponentId = null,
-        bool? isDevelopmentDependency = null,
-        NuGetFramework targetFramework = null)
-    {
-        singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency);
-
-        // Add framework information to the actual component
-        if (targetFramework is not null)
-        {
-            // get the actual component in case it already exists
-            detectedComponent = singleFileComponentRecorder.GetComponent(detectedComponent.Component.Id);
-            ((NuGetComponent)detectedComponent.Component).TargetFrameworks.Add(targetFramework.GetShortFolderName());
-        }
-    }
 
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -126,13 +106,19 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         }
 
         var isFrameworkComponent = frameworkPackages?.IsAFrameworkComponent(library.Name, library.Version) ?? false;
-        var isDevelopmentDependency = isFrameworkComponent || IsADevelopmentDependency(library);
+        var isDevelopmentDependency = IsADevelopmentDependency(library);
 
         visited ??= [];
 
         var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
-        var isExplicitReferencedDependency = explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id);
-        RegisterComponentWithFramework(singleFileComponentRecorder, libraryComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, targetFramework: target.TargetFramework);
+
+        // Possibly adding target framework to single file recorder
+        singleFileComponentRecorder.RegisterUsage(
+            libraryComponent,
+            explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id),
+            parentComponentId,
+            isDevelopmentDependency: isFrameworkComponent || isDevelopmentDependency,
+            targetFramework: target.TargetFramework?.GetShortFolderName());
 
         foreach (var dependency in library.Dependencies)
         {
@@ -142,11 +128,9 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             }
 
             var targetLibrary = target.GetTargetLibrary(dependency.Id);
-            if (targetLibrary == null)
-            {
-                // We have to exclude this case -- it looks like a bug in project.assets.json, but there are project.assets.json files that don't have a dependency library in the libraries set.
-            }
-            else
+
+            // There are project.assets.json files that don't have a dependency library in the libraries set.
+            if (targetLibrary != null)
             {
                 visited.Add(dependency.Id);
                 this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, frameworkPackages, visited);
@@ -169,7 +153,12 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
                 var libraryComponent = new DetectedComponent(new NuGetComponent(packageDownload.Name, packageDownload.VersionRange.MinVersion.ToNormalizedString()));
 
                 // PackageDownload is always a development dependency since it's usage does not make it part of the application
-                RegisterComponentWithFramework(singleFileComponentRecorder, libraryComponent, isExplicitReferencedDependency: true, isDevelopmentDependency: true, targetFramework: framework.FrameworkName);
+                singleFileComponentRecorder.RegisterUsage(
+                    libraryComponent,
+                    isExplicitReferencedDependency: true,
+                    parentComponentId: null,
+                    isDevelopmentDependency: true,
+                    targetFramework: framework.FrameworkName?.GetShortFolderName());
             }
         }
     }

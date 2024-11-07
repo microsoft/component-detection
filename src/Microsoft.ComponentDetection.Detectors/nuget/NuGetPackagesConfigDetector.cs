@@ -66,19 +66,11 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
                     detectedComponent,
                     true,
                     null,
+                    targetFramework: package.TargetFramework?.GetShortFolderName(),
                     /* TODO: Is this really the same concept?
                        Docs for NuGet say packages.config development dependencies are just not persisted as dependencies in the package.
                        That is not same as excluding from the output directory / runtime. */
-                    package.IsDevelopmentDependency);
-
-                // get the actual component in case it already exists
-                var libraryComponent = singleFileComponentRecorder.GetComponent(detectedComponent.Component.Id);
-
-                // Add framework information to the actual component
-                if (package.TargetFramework is not null)
-                {
-                    ((NuGetComponent)libraryComponent.Component).TargetFrameworks.Add(package.TargetFramework.GetShortFolderName());
-                }
+                    isDevelopmentDependency: package.IsDevelopmentDependency);
             }
         }
         catch (Exception e) when (e is PackagesConfigReaderException or XmlException)

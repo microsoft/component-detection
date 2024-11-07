@@ -46,6 +46,31 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         };
     }
 
+    private static ConcurrentHashSet<string> MergeTargetFrameworks(ConcurrentHashSet<string> left, ConcurrentHashSet<string> right)
+    {
+        if (left == null && right == null)
+        {
+            return [];
+        }
+
+        if (left == null)
+        {
+            return right;
+        }
+
+        if (right == null)
+        {
+            return left;
+        }
+
+        foreach (var targetFramework in right)
+        {
+            left.Add(targetFramework);
+        }
+
+        return left;
+    }
+
     private void LogComponentScopeTelemetry(List<DetectedComponent> components)
     {
         using var record = new DetectedComponentScopeRecord();
@@ -182,6 +207,8 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                     firstComponent.ContainerDetailIds.Add(containerDetailId);
                 }
             }
+
+            firstComponent.TargetFrameworks = MergeTargetFrameworks(firstComponent.TargetFrameworks, nextComponent.TargetFrameworks);
         }
 
         return firstComponent;
@@ -271,6 +298,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             AncestralReferrers = component.AncestralDependencyRoots,
             ContainerDetailIds = component.ContainerDetailIds,
             ContainerLayerIds = component.ContainerLayerIds,
+            TargetFrameworks = component.TargetFrameworks?.ToHashSet(),
         };
     }
 }
