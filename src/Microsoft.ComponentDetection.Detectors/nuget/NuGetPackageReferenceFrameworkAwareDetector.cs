@@ -78,6 +78,9 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
                     this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, frameworkPackages);
                 }
             }
+
+            // Register PackageDownload
+            this.RegisterPackageDownloads(singleFileComponentRecorder, lockFile);
         }
         catch (Exception e)
         {
@@ -139,6 +142,30 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
 
         // A library is development dependency if all of the runtime assemblies and runtime targets are placeholders or empty (All returns true for empty).
         bool IsADevelopmentDependency(LockFileTargetLibrary library) => library.RuntimeAssemblies.Concat(library.RuntimeTargets).All(IsAPlaceholderItem);
+    }
+
+    private void RegisterPackageDownloads(ISingleFileComponentRecorder singleFileComponentRecorder, LockFile lockFile)
+    {
+        foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
+        {
+            foreach (var packageDownload in framework.DownloadDependencies)
+            {
+                if (packageDownload?.Name is null || packageDownload?.VersionRange?.MinVersion is null)
+                {
+                    continue;
+                }
+
+                var libraryComponent = new DetectedComponent(new NuGetComponent(packageDownload.Name, packageDownload.VersionRange.MinVersion.ToNormalizedString()));
+
+                // PackageDownload is always a development dependency since it's usage does not make it part of the application
+                singleFileComponentRecorder.RegisterUsage(
+                    libraryComponent,
+                    isExplicitReferencedDependency: true,
+                    parentComponentId: null,
+                    isDevelopmentDependency: true,
+                    targetFramework: framework.FrameworkName?.GetShortFolderName());
+            }
+        }
     }
 
     private List<(string Name, Version Version, VersionRange VersionRange)> GetTopLevelLibraries(LockFile lockFile)
