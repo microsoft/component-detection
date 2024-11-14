@@ -143,13 +143,25 @@
     <value>pip_report_single_pkg_invalid_pkg_version.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="project_assets_2_2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\project_assets_2_2.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+    <value>..\Resources\project_assets_2_2.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="project_assets_2_2_additional" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\project_assets_2_2_additional.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+    <value>..\Resources\project_assets_2_2_additional.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="project_assets_3_1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\project_assets_3_1.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+    <value>..\Resources\project_assets_3_1.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="project_assets_42_15_web" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\project_assets_42_15_web.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="project_assets_6_0_8_0_multi_framework" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\project_assets_6_0_8_0_multi_framework.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="project_assets_8_0_multi_framework" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\project_assets_8_0_multi_framework.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="project_assets_8_0_web" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\project_assets_8_0_web.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="project_assets_packageDownload" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\project_assets_packageDownload.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>

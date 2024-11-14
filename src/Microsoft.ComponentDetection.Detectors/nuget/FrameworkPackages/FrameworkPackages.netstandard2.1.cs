@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
-using global::NuGet.Frameworks;
+using static global::NuGet.Frameworks.FrameworkConstants.CommonFrameworks;
 
 /// <summary>
 /// Framework packages for .NETStandard,Version=v2.1.
@@ -9,7 +9,7 @@ internal partial class FrameworkPackages
 {
     internal static class NETStandard21
     {
-        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netstandard2.1"), NETStandard20.Instance)
+        internal static FrameworkPackages Instance { get; } = new(NetStandard21, FrameworkNames.NetStandardLibrary, NETStandard20.Instance)
         {
             { "System.Buffers", "4.5.1" },
             { "System.Collections.Concurrent", "4.3.0" },
@@ -44,5 +44,7 @@ internal partial class FrameworkPackages
             { "System.Xml.XDocument", "4.3.0" },
             { "System.Xml.XmlSerializer", "4.3.0" },
         };
+
+        internal static void Register() => FrameworkPackages.Register(Instance);
     }
 }

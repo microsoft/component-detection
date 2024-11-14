@@ -68,7 +68,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
         detectedComponents.Should().HaveCount(68);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
-        nonDevComponents.Should().HaveCount(23);
+        nonDevComponents.Should().HaveCount(22);
         nonDevComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Polly")).Should().NotBeNull();
         nonDevComponents.Select(x => x.Component).Cast<NuGetComponent>().Count(x => x.Name.Contains("System.Composition")).Should().Be(5);
 
@@ -264,6 +264,59 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
             var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
             graph.IsComponentExplicitlyReferenced(componentId).Should().Be(expectedExplicitRefValue, "{0} should{1} be explicitly referenced.", componentId, expectedExplicitRefValue ? string.Empty : "n't");
         }
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_8_0_web_VerificationAsync()
+    {
+        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_8_0_web);
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, osAgnostic)
+            .ExecuteDetectorAsync();
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault(), "All should be development dependencies");
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_42_15_web_VerificationAsync()
+    {
+        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_42_15_web);
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, osAgnostic)
+            .ExecuteDetectorAsync();
+
+        // net42.15 is not a known framework, but it can import framework packages from the closest known framework.
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault(), "All should be development dependencies");
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_8_0_multi_framework_VerificationAsync()
+    {
+        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_8_0_multi_framework);
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, osAgnostic)
+            .ExecuteDetectorAsync();
+
+        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(3, "Omitted framework assemblies are missing.");
+        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.Extensions.Primitives "), "Microsoft.Extensions.Primitives should be treated as a development dependency.");
+        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("System.IO.Packaging "), "System.IO.Packaging should be treated as a development dependency.");
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_6_0_8_0_multi_framework_VerificationAsync()
+    {
+        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_6_0_8_0_multi_framework);
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, osAgnostic)
+            .ExecuteDetectorAsync();
+
+        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(2, "Omitted framework assemblies are missing.");
+        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.Extensions.Primitives "), "Microsoft.Extensions.Primitives should be treated as a development dependency.");
+        developmentDependencies.Should().NotContain(c => c.Component.Id.StartsWith("System.IO.Packaging "), "System.IO.Packaging should not be treated as a development dependency.");
     }
 
     [TestMethod]
