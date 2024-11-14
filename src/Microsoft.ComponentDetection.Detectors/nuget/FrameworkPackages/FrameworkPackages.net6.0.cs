@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
-using global::NuGet.Frameworks;
+using static global::NuGet.Frameworks.FrameworkConstants.CommonFrameworks;
 
 /// <summary>
 /// Framework packages for net6.0.
@@ -9,7 +9,7 @@ internal partial class FrameworkPackages
 {
     internal static class NETCoreApp60
     {
-        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("net6.0"), "Microsoft.NETCore.App", NETCoreApp50.Instance)
+        internal static FrameworkPackages Instance { get; } = new(Net60, FrameworkNames.NetCoreApp, NETCoreApp50.Instance)
         {
             { "System.Collections.Immutable", "6.0.0" },
             { "System.Diagnostics.DiagnosticSource", "6.0.0" },
@@ -25,7 +25,7 @@ internal partial class FrameworkPackages
             { "System.Threading.Tasks.Dataflow", "6.0.0" },
         };
 
-        internal static FrameworkPackages AspNetCore { get; } = new(NuGetFramework.Parse("net6.0"), "Microsoft.AspNetCore.App", NETCoreApp50.AspNetCore)
+        internal static FrameworkPackages AspNetCore { get; } = new(Net60, FrameworkNames.AspNetCoreApp, NETCoreApp50.AspNetCore)
         {
             { "Microsoft.AspNetCore", "6.0.0" },
             { "Microsoft.AspNetCore.Antiforgery", "6.0.0" },
@@ -159,7 +159,7 @@ internal partial class FrameworkPackages
             { "System.Security.Cryptography.Xml", "6.0.0" },
         };
 
-        internal static FrameworkPackages WindowsDesktop { get; } = new(NuGetFramework.Parse("net6.0"), "Microsoft.WindowsDesktop.App", NETCoreApp50.WindowsDesktop)
+        internal static FrameworkPackages WindowsDesktop { get; } = new(Net60, FrameworkNames.WindowsDesktopApp, NETCoreApp50.WindowsDesktop)
         {
             { "Microsoft.Win32.Registry.AccessControl", "6.0.0" },
             { "Microsoft.Win32.SystemEvents", "6.0.0" },

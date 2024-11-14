@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
-using global::NuGet.Frameworks;
+using static global::NuGet.Frameworks.FrameworkConstants.CommonFrameworks;
 
 /// <summary>
 /// Framework packages for net5.0.
@@ -9,7 +9,7 @@ internal partial class FrameworkPackages
 {
     internal static class NETCoreApp50
     {
-        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("net5.0"), "Microsoft.NETCore.App", NETCoreApp31.Instance)
+        internal static FrameworkPackages Instance { get; } = new(Net50, FrameworkNames.NetCoreApp, NETCoreApp31.Instance)
         {
             { "Microsoft.Win32.Registry", "5.0.0" },
             { "System.Collections.Immutable", "5.0.0" },
@@ -31,7 +31,7 @@ internal partial class FrameworkPackages
             { "System.Threading.Tasks.Dataflow", "5.0.0" },
         };
 
-        internal static FrameworkPackages AspNetCore { get; } = new(NuGetFramework.Parse("net5.0"), "Microsoft.AspNetCore.App", NETCoreApp31.AspNetCore)
+        internal static FrameworkPackages AspNetCore { get; } = new(Net50, FrameworkNames.AspNetCoreApp, NETCoreApp31.AspNetCore)
         {
             { "Microsoft.AspNetCore", "5.0.0" },
             { "Microsoft.AspNetCore.Antiforgery", "5.0.0" },
@@ -169,7 +169,7 @@ internal partial class FrameworkPackages
             { "System.Windows.Extensions", "5.0.0" },
         };
 
-        internal static FrameworkPackages WindowsDesktop { get; } = new(NuGetFramework.Parse("net5.0"), "Microsoft.WindowsDesktop.App", NETCoreApp31.WindowsDesktop)
+        internal static FrameworkPackages WindowsDesktop { get; } = new(Net50, FrameworkNames.WindowsDesktopApp, NETCoreApp31.WindowsDesktop)
         {
             { "Microsoft.VisualBasic", "10.3.0" },
             { "Microsoft.Win32.Registry", "5.0.0" },

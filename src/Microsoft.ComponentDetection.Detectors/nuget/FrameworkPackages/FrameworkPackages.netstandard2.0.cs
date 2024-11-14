@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
-using global::NuGet.Frameworks;
+using static global::NuGet.Frameworks.FrameworkConstants.CommonFrameworks;
 
 /// <summary>
 /// Framework packages for .NETStandard,Version=v2.0.
@@ -9,7 +9,7 @@ internal partial class FrameworkPackages
 {
     internal static class NETStandard20
     {
-        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netstandard2.0"), "NETStandard.Library")
+        internal static FrameworkPackages Instance { get; } = new(NetStandard20, FrameworkNames.NetStandardLibrary)
         {
             { "Microsoft.Win32.Primitives", "4.3.0" },
             { "System.AppContext", "4.3.0" },

@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
-using global::NuGet.Frameworks;
+using static global::NuGet.Frameworks.FrameworkConstants.CommonFrameworks;
 
 /// <summary>
 /// Framework packages for net7.0.
@@ -9,7 +9,7 @@ internal partial class FrameworkPackages
 {
     internal static class NETCoreApp70
     {
-        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("net7.0"), "Microsoft.NETCore.App", NETCoreApp60.Instance)
+        internal static FrameworkPackages Instance { get; } = new(Net70, FrameworkNames.NetCoreApp, NETCoreApp60.Instance)
         {
             { "System.Collections.Immutable", "7.0.0" },
             { "System.Diagnostics.DiagnosticSource", "7.0.2" },
@@ -24,7 +24,7 @@ internal partial class FrameworkPackages
             { "System.Threading.Tasks.Dataflow", "7.0.0" },
         };
 
-        internal static FrameworkPackages AspNetCore { get; } = new(NuGetFramework.Parse("net7.0"), "Microsoft.AspNetCore.App", NETCoreApp60.AspNetCore)
+        internal static FrameworkPackages AspNetCore { get; } = new(Net70, FrameworkNames.AspNetCoreApp, NETCoreApp60.AspNetCore)
         {
             { "Microsoft.AspNetCore", "7.0.0" },
             { "Microsoft.AspNetCore.Antiforgery", "7.0.0" },
@@ -162,7 +162,7 @@ internal partial class FrameworkPackages
             { "System.Threading.RateLimiting", "7.0.0" },
         };
 
-        internal static FrameworkPackages WindowsDesktop { get; } = new(NuGetFramework.Parse("net7.0"), "Microsoft.WindowsDesktop.App", NETCoreApp60.WindowsDesktop)
+        internal static FrameworkPackages WindowsDesktop { get; } = new(Net70, FrameworkNames.WindowsDesktopApp, NETCoreApp60.WindowsDesktop)
         {
             { "Microsoft.Win32.Registry.AccessControl", "7.0.0" },
             { "Microsoft.Win32.SystemEvents", "7.0.0" },

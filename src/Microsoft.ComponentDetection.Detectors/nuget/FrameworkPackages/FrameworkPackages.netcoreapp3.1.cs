@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
-using global::NuGet.Frameworks;
+using static global::NuGet.Frameworks.FrameworkConstants.CommonFrameworks;
 
 /// <summary>
 /// Framework packages for .NETCoreApp,Version=v3.1.
@@ -9,7 +9,7 @@ internal partial class FrameworkPackages
 {
     internal static class NETCoreApp31
     {
-        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netcoreapp3.1"), "Microsoft.NETCore.App", NETCoreApp30.Instance)
+        internal static FrameworkPackages Instance { get; } = new(NetCoreApp31, FrameworkNames.NetCoreApp, NETCoreApp30.Instance)
         {
             { "Microsoft.CSharp", "4.7.0" },
             { "Microsoft.Win32.Registry", "4.7.0" },
@@ -32,7 +32,7 @@ internal partial class FrameworkPackages
             { "System.Threading.Tasks.Dataflow", "4.11.0" },
         };
 
-        internal static FrameworkPackages AspNetCore { get; } = new(NuGetFramework.Parse("netcoreapp3.1"), "Microsoft.AspNetCore.App", NETCoreApp30.AspNetCore)
+        internal static FrameworkPackages AspNetCore { get; } = new(NetCoreApp31, FrameworkNames.AspNetCoreApp, NETCoreApp30.AspNetCore)
         {
             { "Microsoft.AspNetCore", "3.1.0" },
             { "Microsoft.AspNetCore.Antiforgery", "3.1.0" },
@@ -170,7 +170,7 @@ internal partial class FrameworkPackages
             { "System.Windows.Extensions", "4.7.0" },
         };
 
-        internal static FrameworkPackages WindowsDesktop { get; } = new(NuGetFramework.Parse("netcoreapp3.1"), "Microsoft.WindowsDesktop.App", NETCoreApp30.WindowsDesktop)
+        internal static FrameworkPackages WindowsDesktop { get; } = new(NetCoreApp31, FrameworkNames.WindowsDesktopApp, NETCoreApp30.WindowsDesktop)
         {
             { "Microsoft.Win32.Registry.AccessControl", "4.7.0" },
             { "Microsoft.Win32.SystemEvents", "4.7.0" },

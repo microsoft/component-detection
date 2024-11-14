@@ -16,7 +16,7 @@ using global::NuGet.Versioning;
 /// </summary>
 internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<string, NuGetVersion>>, IEnumerable
 {
-    private const string DefaultFrameworkName = "";
+    private const string DefaultFrameworkKey = "";
     private static readonly ConcurrentDictionary<NuGetFramework, ConcurrentDictionary<string, FrameworkPackages>> FrameworkPackagesByFramework = [];
 
     static FrameworkPackages()
@@ -53,8 +53,8 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
     private static string GetFrameworkKey(string frameworkName) =>
         frameworkName switch
         {
-            "NETStandard.Library" => DefaultFrameworkName,
-            "Microsoft.NETCore.App" => DefaultFrameworkName,
+            FrameworkNames.NetStandardLibrary => DefaultFrameworkKey,
+            FrameworkNames.NetCoreApp => DefaultFrameworkKey,
             _ => frameworkName,
         };
 
@@ -78,7 +78,7 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
         if (frameworkReferences.Length == 0)
         {
-            frameworkReferences = [DefaultFrameworkName];
+            frameworkReferences = [DefaultFrameworkKey];
         }
 
         foreach (var frameworkReference in frameworkReferences)
@@ -168,4 +168,12 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
     IEnumerator<KeyValuePair<string, NuGetVersion>> IEnumerable<KeyValuePair<string, NuGetVersion>>.GetEnumerator() => this.Packages.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
+
+    internal static class FrameworkNames
+    {
+        public const string AspNetCoreApp = "Microsoft.AspNetCore.App";
+        public const string NetCoreApp = "Microsoft.NETCore.App";
+        public const string NetStandardLibrary = "NETStandard.Library";
+        public const string WindowsDesktopApp = "Microsoft.WindowsDesktop.App";
+    }
 }

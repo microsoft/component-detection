@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
+using System;
 using global::NuGet.Frameworks;
 
 /// <summary>
@@ -9,7 +10,9 @@ internal partial class FrameworkPackages
 {
     internal static class NETCoreApp90
     {
-        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("net9.0"), "Microsoft.NETCore.App", NETCoreApp80.Instance)
+        private static NuGetFramework Net90 { get; } = new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.NetCoreApp, new Version(9, 0));
+
+        internal static FrameworkPackages Instance { get; } = new(Net90, FrameworkNames.NetCoreApp, NETCoreApp80.Instance)
         {
             { "Microsoft.VisualBasic", "10.4.0" },
             { "System.Buffers", "5.0.0" },
@@ -34,7 +37,7 @@ internal partial class FrameworkPackages
             { "System.Xml.XPath.XDocument", "5.0.0" },
         };
 
-        internal static FrameworkPackages AspNetCore { get; } = new(NuGetFramework.Parse("net9.0"), "Microsoft.AspNetCore.App", NETCoreApp80.AspNetCore)
+        internal static FrameworkPackages AspNetCore { get; } = new(Net90, FrameworkNames.AspNetCoreApp, NETCoreApp80.AspNetCore)
         {
             { "Microsoft.AspNetCore", "9.0.0" },
             { "Microsoft.AspNetCore.Antiforgery", "9.0.0" },
@@ -177,7 +180,7 @@ internal partial class FrameworkPackages
             { "System.Threading.RateLimiting", "9.0.0" },
         };
 
-        internal static FrameworkPackages WindowsDesktop { get; } = new(NuGetFramework.Parse("net9.0"), "Microsoft.WindowsDesktop.App", NETCoreApp80.WindowsDesktop)
+        internal static FrameworkPackages WindowsDesktop { get; } = new(Net90, FrameworkNames.WindowsDesktopApp, NETCoreApp80.WindowsDesktop)
         {
             { "System.Configuration.ConfigurationManager", "8.0.1" },
             { "System.Diagnostics.EventLog", "8.0.1" },

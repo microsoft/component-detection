@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
-using global::NuGet.Frameworks;
+using static global::NuGet.Frameworks.FrameworkConstants.CommonFrameworks;
 
 /// <summary>
 /// Framework packages for .NETCoreApp,Version=v2.1.
@@ -9,7 +9,7 @@ internal partial class FrameworkPackages
 {
     internal static class NETCoreApp21
     {
-        internal static FrameworkPackages Instance { get; } = new(NuGetFramework.Parse("netcoreapp2.1"), "Microsoft.NETCore.App", NETCoreApp20.Instance)
+        internal static FrameworkPackages Instance { get; } = new(NetCoreApp21, FrameworkNames.NetCoreApp, NETCoreApp20.Instance)
         {
             { "Microsoft.CSharp", "4.5.0" },
             { "Microsoft.VisualBasic", "10.3.0" },
