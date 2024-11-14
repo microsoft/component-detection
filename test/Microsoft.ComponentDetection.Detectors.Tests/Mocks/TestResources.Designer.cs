@@ -409,5 +409,32 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
                 return ResourceManager.GetString("project_assets_8_0_web", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: 3,
+        ///  &quot;targets&quot;: {
+        ///    &quot;.NETFramework,Version=v4.7.2&quot;: {},
+        ///    &quot;net8.0&quot;: {}
+        ///  },
+        ///  &quot;libraries&quot;: {},
+        ///  &quot;projectFileDependencyGroups&quot;: {
+        ///    &quot;.NETFramework,Version=v4.7.2&quot;: [],
+        ///    &quot;net8.0&quot;: []
+        ///  },
+        ///  &quot;packageFolders&quot;: {
+        ///    &quot;C:\\Users\\username\\.nuget\\packages\\&quot;: {},
+        ///    &quot;C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages&quot;: {}
+        ///  },
+        ///  &quot;project&quot;: {
+        ///    &quot;version&quot;: &quot;1.0.0&quot;,
+        ///    &quot;restore&quot;: {
+        ///      &quot;projectUniqueName&quot;: &quot;C:\\src\\packageDownloadSample\\package [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string project_assets_packageDownload {
+            get {
+                return ResourceManager.GetString("project_assets_packageDownload", resourceCulture);
+            }
+        }
     }
 }
