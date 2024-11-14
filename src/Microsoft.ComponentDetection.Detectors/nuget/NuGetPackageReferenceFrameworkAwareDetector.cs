@@ -150,6 +150,11 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         {
             foreach (var packageDownload in framework.DownloadDependencies)
             {
+                if (packageDownload?.Name is null || packageDownload?.VersionRange?.MinVersion is null)
+                {
+                    continue;
+                }
+
                 var libraryComponent = new DetectedComponent(new NuGetComponent(packageDownload.Name, packageDownload.VersionRange.MinVersion.ToNormalizedString()));
 
                 // PackageDownload is always a development dependency since it's usage does not make it part of the application
@@ -163,16 +168,16 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         }
     }
 
-    private List<(string Name, Version Version, VersionRange VersionRange, bool IsPackageDownload)> GetTopLevelLibraries(LockFile lockFile)
+    private List<(string Name, Version Version, VersionRange VersionRange)> GetTopLevelLibraries(LockFile lockFile)
     {
         // First, populate libraries from the TargetFrameworks section -- This is the base level authoritative list of nuget packages a project has dependencies on.
-        var toBeFilled = new List<(string Name, Version Version, VersionRange VersionRange, bool IsPackageDownload)>();
+        var toBeFilled = new List<(string Name, Version Version, VersionRange VersionRange)>();
 
         foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
         {
             foreach (var dependency in framework.Dependencies)
             {
-                toBeFilled.Add((dependency.Name, Version: null, dependency.LibraryRange.VersionRange, false));
+                toBeFilled.Add((dependency.Name, Version: null, dependency.LibraryRange.VersionRange));
             }
         }
 
@@ -191,7 +196,7 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             {
                 if (librariesWithAbsolutePath.TryGetValue(Path.GetFullPath(projectReference.ProjectPath), out var library))
                 {
-                    toBeFilled.Add((library.Name, library.Version.Version, null, false));
+                    toBeFilled.Add((library.Name, library.Version.Version, null));
                 }
             }
         }
