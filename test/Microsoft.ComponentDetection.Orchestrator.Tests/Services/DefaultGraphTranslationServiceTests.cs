@@ -97,4 +97,72 @@ public class DefaultGraphTranslationServiceTests
         actualNpmComponent.Should().BeEquivalentTo(expectedNpmComponent);
         actualNugetComponent.Should().BeEquivalentTo(expectedNugetComponent);
     }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_WithCustomLocations_WithExperimentsDryRun()
+    {
+        var detectedFilePath = "/some/file/path";
+        var npmCustomPath = "/custom/path.js";
+        var npmCustomPath2 = "D:/dummy/engtools/packages.lock.json";
+        var nugetCustomPath = "/custom/path2.csproj";
+        var relatedFilePath = "/generic/relevant/path";
+
+        var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, detectedFilePath));
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = new Dictionary<int, ContainerDetails>
+            {
+                {
+                    this.sampleContainerDetails.Id, this.sampleContainerDetails
+                },
+            },
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var expectedNpmComponent = new NpmComponent("npm-component", "1.2.3");
+        var expectedNugetComponent = new NuGetComponent("nugetComponent", "4.5.6");
+        var detectedNpmComponent = new DetectedComponent(expectedNpmComponent);
+        var detectedNugetComponent = new DetectedComponent(expectedNugetComponent);
+
+        // Any Related File will be reported for ALL components found in this graph
+        singleFileComponentRecorder.AddAdditionalRelatedFile(Path.Join(this.sourceDirectory.FullName, relatedFilePath));
+
+        // Registering components in same manifest with different custom paths
+        detectedNpmComponent.AddComponentFilePath(Path.Join(this.sourceDirectory.FullName, npmCustomPath));
+        detectedNpmComponent.AddComponentFilePath(npmCustomPath2);
+        detectedNugetComponent.AddComponentFilePath(Path.Join(this.sourceDirectory.FullName, nugetCustomPath));
+
+        singleFileComponentRecorder.RegisterUsage(detectedNpmComponent, isDevelopmentDependency: false);
+        singleFileComponentRecorder.RegisterUsage(detectedNugetComponent, isDevelopmentDependency: true);
+
+        var settings = new ScanSettings
+        {
+            SourceDirectory = this.sourceDirectory,
+        };
+
+        // Experiments tool generates the graph but should not update the locations at all.
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(processingResult, settings, updateLocations: false);
+        result.Should().NotBeNull();
+        result.ComponentsFound.Should().HaveCount(2);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // next run will record the actual locations from non-experimental detectors
+        result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(processingResult, settings);
+        result.Should().NotBeNull();
+        result.ComponentsFound.Should().HaveCount(2);
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var resultNpmComponent = result.ComponentsFound.Single(c => c.Component.Type == ComponentType.Npm);
+        var resultNugetComponent = result.ComponentsFound.Single(c => c.Component.Type == ComponentType.NuGet);
+
+        resultNpmComponent.LocationsFoundAt.Should().BeEquivalentTo([npmCustomPath, detectedFilePath, relatedFilePath, npmCustomPath2]);
+        resultNugetComponent.LocationsFoundAt.Should().BeEquivalentTo([nugetCustomPath, detectedFilePath, relatedFilePath]);
+
+        var actualNpmComponent = resultNpmComponent.Component as NpmComponent;
+        var actualNugetComponent = resultNugetComponent.Component as NuGetComponent;
+
+        actualNpmComponent.Should().BeEquivalentTo(expectedNpmComponent);
+        actualNugetComponent.Should().BeEquivalentTo(expectedNugetComponent);
+    }
 }
