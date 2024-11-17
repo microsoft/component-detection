@@ -273,7 +273,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             try
             {
                 var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
-                if (!relativePath.StartsWith('/') && !relativePath.Contains(':', StringComparison.CurrentCultureIgnoreCase))
+                if (!relativePath.StartsWith('/'))
                 {
                     relativePath = "/" + relativePath;
                 }
