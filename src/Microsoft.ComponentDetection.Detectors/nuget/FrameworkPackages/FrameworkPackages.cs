@@ -23,6 +23,7 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
     {
         NETStandard20.Register();
         NETStandard21.Register();
+        NET461.Register();
         NETCoreApp20.Register();
         NETCoreApp21.Register();
         NETCoreApp22.Register();
