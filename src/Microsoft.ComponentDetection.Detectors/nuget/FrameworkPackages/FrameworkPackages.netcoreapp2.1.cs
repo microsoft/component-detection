@@ -12,6 +12,7 @@ internal partial class FrameworkPackages
         internal static FrameworkPackages Instance { get; } = new(NetCoreApp21, FrameworkNames.NetCoreApp, NETCoreApp20.Instance)
         {
             { "Microsoft.CSharp", "4.5.0" },
+            { "Microsoft.NETCore.App", "2.1.0" },
             { "Microsoft.VisualBasic", "10.3.0" },
             { "Microsoft.Win32.Registry", "4.5.0" },
             { "System.Buffers", "4.5.0" },

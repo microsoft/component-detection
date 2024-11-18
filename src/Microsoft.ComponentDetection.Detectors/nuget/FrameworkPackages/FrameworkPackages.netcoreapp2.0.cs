@@ -12,6 +12,7 @@ internal partial class FrameworkPackages
         internal static FrameworkPackages Instance { get; } = new(NetCoreApp20, FrameworkNames.NetCoreApp, NETStandard20.Instance)
         {
             { "Microsoft.CSharp", "4.4.0" },
+            { "Microsoft.NETCore.App", "2.0.0" },
             { "Microsoft.VisualBasic", "10.2.0" },
             { "Microsoft.Win32.Registry", "4.4.0" },
             { "runtime.any.System.Collections", "4.3.0" },
@@ -182,6 +183,7 @@ internal partial class FrameworkPackages
             { "System.Numerics.Vectors", "4.4.0" },
             { "System.ObjectModel", "4.3.0" },
             { "System.Private.DataContractSerialization", "4.3.0" },
+            { "System.Private.Uri", "4.3.0" },
             { "System.Reflection.DispatchProxy", "4.4.0" },
             { "System.Reflection.Emit", "4.7.0" },
             { "System.Reflection.Emit.ILGeneration", "4.7.0" },
