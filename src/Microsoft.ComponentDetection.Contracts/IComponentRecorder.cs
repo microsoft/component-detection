@@ -23,20 +23,22 @@ public interface ISingleFileComponentRecorder
     IDependencyGraph DependencyGraph { get; }
 
     /// <summary>
-    /// Add or Update a component. In case that a parent componentId is specified
-    /// an edge is created between those components in the dependency graph.
+    /// Add or Update a component. In case that a parent componentId is specified an edge is created between those components in the dependency graph.
+    /// Metadata provided to this method specifies how the component was consumed, not uniquely identifying details about the component itself.
     /// </summary>
     /// <param name="detectedComponent">Component to add.</param>
     /// <param name="isExplicitReferencedDependency">The value define if the component was referenced manually by the user in the location where the scanning is taking place.</param>
     /// <param name="parentComponentId">Id of the parent component.</param>
     /// <param name="isDevelopmentDependency">Boolean value indicating whether or not a component is a development-time dependency. Null implies that the value is unknown.</param>
     /// <param name="dependencyScope">Enum value indicating scope of the component. </param>
+    /// <param name="targetFramework">Optional value to determine the framework where the component was consumed.</param>
     void RegisterUsage(
         DetectedComponent detectedComponent,
         bool isExplicitReferencedDependency = false,
         string parentComponentId = null,
         bool? isDevelopmentDependency = null,
-        DependencyScope? dependencyScope = null);
+        DependencyScope? dependencyScope = null,
+        string targetFramework = null);
 
     /// <summary>
     /// Register that a package was unable to be processed.

@@ -53,17 +53,24 @@ public sealed class NuGetPackagesConfigDetector : FileComponentDetector
     {
         try
         {
+            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var packagesConfig = new PackagesConfigReader(processRequest.ComponentStream.Stream);
             foreach (var package in packagesConfig.GetPackages(allowDuplicatePackageIds: true))
             {
-                processRequest.SingleFileComponentRecorder.RegisterUsage(
-                    new DetectedComponent(
+                var detectedComponent = new DetectedComponent(
                         new NuGetComponent(
                             package.PackageIdentity.Id,
-                            package.PackageIdentity.Version.ToNormalizedString())),
+                            package.PackageIdentity.Version.ToNormalizedString()));
+
+                singleFileComponentRecorder.RegisterUsage(
+                    detectedComponent,
                     true,
                     null,
-                    package.IsDevelopmentDependency);
+                    targetFramework: package.TargetFramework?.GetShortFolderName(),
+                    /* TODO: Is this really the same concept?
+                       Docs for NuGet say packages.config development dependencies are just not persisted as dependencies in the package.
+                       That is not same as excluding from the output directory / runtime. */
+                    isDevelopmentDependency: package.IsDevelopmentDependency);
             }
         }
         catch (Exception e) when (e is PackagesConfigReaderException or XmlException)
