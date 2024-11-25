@@ -43,7 +43,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
         detectedComponents.Should().HaveCount(22);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
-        nonDevComponents.Should().HaveCount(3);
+        nonDevComponents.Should().HaveCount(17);
 
         foreach (var component in detectedComponents)
         {
@@ -68,7 +68,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
         detectedComponents.Should().HaveCount(68);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
-        nonDevComponents.Should().HaveCount(22);
+        nonDevComponents.Should().HaveCount(27);
         nonDevComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Polly")).Should().NotBeNull();
         nonDevComponents.Select(x => x.Component).Cast<NuGetComponent>().Count(x => x.Name.Contains("System.Composition")).Should().Be(5);
 
@@ -90,9 +90,10 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
-        developmentDependencies.Should().HaveCountGreaterThan(5, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
-        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.NETCore.App "), "Microsoft.NETCore.App should be treated as a development dependency.");
+        var dependencies = componentRecorder.GetDetectedComponents();
+        var developmentDependencies = dependencies.Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(5);
+        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.NETCore.Platforms "), "Microsoft.NETCore.Platforms should be treated as a development dependency.");
     }
 
     [TestMethod]
@@ -326,10 +327,10 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
             .WithFile(this.projectAssetsJsonFileName, TestResources.project_assets_packageDownload)
             .ExecuteDetectorAsync();
 
-        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
-        developmentDependencies.Should().HaveCount(3, "PackageDownload dev dependencies should exist.");
-        developmentDependencies.Select(c => c.Component).Should().AllBeOfType<NuGetComponent>();
-        developmentDependencies.Select(c => c.TargetFrameworks).Should().AllSatisfy(tfms => tfms.Should().BeEquivalentTo(["net8.0"]));
+        var dependencies = componentRecorder.GetDetectedComponents();
+        dependencies.Should().HaveCount(3, "PackageDownload dependencies should exist.");
+        dependencies.Select(c => c.Component).Should().AllBeOfType<NuGetComponent>();
+        dependencies.Select(c => c.TargetFrameworks).Should().AllSatisfy(tfms => tfms.Should().BeEquivalentTo(["net8.0"]));
     }
 
     [TestMethod]
