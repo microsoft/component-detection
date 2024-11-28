@@ -39,6 +39,18 @@ public class ExperimentDiff
         var controlDetectorList = new List<ExperimentDetector>();
         var experimentDetectorList = new List<ExperimentDetector>();
 
+        foreach (var id in this.AddedIds)
+        {
+            var newComponent = newComponentDictionary[id];
+            if (newComponent.DevelopmentDependency)
+            {
+                developmentDependencyChanges.Add(new DevelopmentDependencyChange(
+                    id,
+                    false, // Old value is false because the component was not present in the old dictionary
+                    newComponent.DevelopmentDependency));
+            }
+        }
+
         // Need performance benchmark to see if this is worth parallelization
         foreach (var id in newComponentDictionary.Keys.Intersect(oldComponentDictionary.Keys))
         {
