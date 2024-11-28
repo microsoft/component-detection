@@ -46,8 +46,8 @@ public class ExperimentDiff
             {
                 developmentDependencyChanges.Add(new DevelopmentDependencyChange(
                     id,
-                    false, // Old value is false because the component was not present in the old dictionary
-                    newComponent.DevelopmentDependency));
+                    oldValue: false,
+                    newValue: newComponent.DevelopmentDependency));
             }
         }
 
