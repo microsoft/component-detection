@@ -5,7 +5,7 @@ using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
 /// <summary>
-/// There is still no official docs for the new v9 lock if format, so these parsing contracts are empirically based.
+/// There is still no official docs for the new v9 lock format, so these parsing contracts are empirically based.
 /// Issue tracking v9 specs: https://github.com/pnpm/spec/issues/6
 /// Format should eventually get updated here: https://github.com/pnpm/spec/blob/master/lockfile/6.0.md.
 /// </summary>
