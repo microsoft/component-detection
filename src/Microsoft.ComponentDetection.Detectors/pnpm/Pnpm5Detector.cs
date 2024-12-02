@@ -13,7 +13,7 @@ public class Pnpm5Detector : IPnpmDetector
     {
         var yaml = this.pnpmParsingUtilities.DeserializePnpmYamlFile(yamlFileContent);
 
-        foreach (var packageKeyValue in yaml.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
+        foreach (var packageKeyValue in yaml?.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
         {
             // Ignore file: as these are local packages.
             if (packageKeyValue.Key.StartsWith(PnpmConstants.PnpmFileDependencyPath))

@@ -42,7 +42,7 @@ where T : PnpmYaml
     /// <returns>A pnpm dependency path for the specified version of the named package.</returns>
     public override string ReconstructPnpmDependencyPath(string dependencyName, string dependencyVersion)
     {
-        if (dependencyVersion.Contains('@'))
+        if (dependencyVersion.StartsWith('/') || dependencyVersion.Split("(")[0].Contains('@'))
         {
             return dependencyVersion;
         }

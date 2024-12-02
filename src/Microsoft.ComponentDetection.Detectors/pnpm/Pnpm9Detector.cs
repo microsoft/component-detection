@@ -35,8 +35,14 @@ public class Pnpm9Detector : IPnpmDetector
                 continue;
             }
 
-            var parentDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: pnpmDependencyPath);
-            components.Add(pnpmDependencyPath, (parentDetectedComponent, package));
+            var dependencyPath = pnpmDependencyPath;
+            if (pnpmDependencyPath.StartsWith('/'))
+            {
+                dependencyPath = pnpmDependencyPath[1..];
+            }
+
+            var parentDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: dependencyPath);
+            components.Add(dependencyPath, (parentDetectedComponent, package));
 
             // Register the component.
             // It should get registered again with with additional information (what depended on it) later,
@@ -76,11 +82,12 @@ public class Pnpm9Detector : IPnpmDetector
             // Lockfile v9 apparently removed the tagging of dev dependencies in the lockfile, so we revert to using the dependency tree to establish dev dependency state.
             // At this point, the root dependencies are marked according to which dependency group they are declared in the lockfile itself.
             singleFileComponentRecorder.RegisterUsage(component, isExplicitReferencedDependency: true, isDevelopmentDependency: isDevelopmentDependency);
-            this.ProcessIndirectDependencies(singleFileComponentRecorder, components, component.Component.Id, package.Dependencies, isDevelopmentDependency);
+            var seenDependencies = new HashSet<string>();
+            this.ProcessIndirectDependencies(singleFileComponentRecorder, components, component.Component.Id, package.Dependencies, isDevelopmentDependency, seenDependencies);
         }
     }
 
-    private void ProcessIndirectDependencies(ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, (DetectedComponent C, Package P)> components, string parentComponentId, Dictionary<string, string> dependencies, bool isDevDependency)
+    private void ProcessIndirectDependencies(ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, (DetectedComponent C, Package P)> components, string parentComponentId, Dictionary<string, string> dependencies, bool isDevDependency, HashSet<string> seenDependencies)
     {
         // Now that the `components` dictionary is populated, make another pass of all components, registering all the dependency edges in the graph.
         foreach (var (name, version) in dependencies ?? Enumerable.Empty<KeyValuePair<string, string>>())
@@ -92,11 +99,16 @@ public class Pnpm9Detector : IPnpmDetector
             }
 
             var pnpmDependencyPath = this.pnpmParsingUtilities.ReconstructPnpmDependencyPath(name, version);
+            if (seenDependencies.Contains(pnpmDependencyPath))
+            {
+                continue;
+            }
 
             // If this lookup fails, then pnpmDependencyPath was either parsed incorrectly or constructed incorrectly.
             var (component, package) = components[pnpmDependencyPath];
             singleFileComponentRecorder.RegisterUsage(component, parentComponentId: parentComponentId, isExplicitReferencedDependency: false, isDevelopmentDependency: isDevDependency);
-            this.ProcessIndirectDependencies(singleFileComponentRecorder, components, component.Component.Id, package.Dependencies, isDevDependency);
+            seenDependencies.Add(pnpmDependencyPath);
+            this.ProcessIndirectDependencies(singleFileComponentRecorder, components, component.Component.Id, package.Dependencies, isDevDependency, seenDependencies);
         }
     }
 }

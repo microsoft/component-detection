@@ -22,6 +22,6 @@ public static class PnpmParsingUtilitiesFactory
         var deserializer = new DeserializerBuilder()
             .IgnoreUnmatchedProperties()
             .Build();
-        return deserializer.Deserialize<PnpmYaml>(new StringReader(fileContent)).LockfileVersion;
+        return deserializer.Deserialize<PnpmYaml>(new StringReader(fileContent))?.LockfileVersion;
     }
 }
