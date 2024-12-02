@@ -17,7 +17,4 @@ public class PnpmYamlV6 : PnpmHasDependenciesV6
 
     [YamlMember(Alias = "packages")]
     public Dictionary<string, Package> Packages { get; set; }
-
-    [YamlMember(Alias = "lockfileVersion")]
-    public string LockfileVersion { get; set; }
 }

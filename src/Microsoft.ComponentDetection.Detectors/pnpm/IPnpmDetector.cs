@@ -14,3 +14,13 @@ public interface IPnpmDetector
     /// <param name="singleFileComponentRecorder">Component recorder to which to write the dependency graph.</param>
     public void RecordDependencyGraphFromFile(string yamlFileContent, ISingleFileComponentRecorder singleFileComponentRecorder);
 }
+
+/// <summary>
+/// Constants used in Pnpm Detectors.
+/// </summary>
+public static class PnpmConstants
+{
+    public const string PnpmFileDependencyPath = "file:";
+
+    public const string PnpmLinkDependencyPath = "link:";
+}
