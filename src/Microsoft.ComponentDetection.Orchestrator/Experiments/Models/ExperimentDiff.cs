@@ -39,23 +39,24 @@ public class ExperimentDiff
         var controlDetectorList = new List<ExperimentDetector>();
         var experimentDetectorList = new List<ExperimentDetector>();
 
-        foreach (var id in this.AddedIds)
-        {
-            var newComponent = newComponentDictionary[id];
-            if (newComponent.DevelopmentDependency)
-            {
-                developmentDependencyChanges.Add(new DevelopmentDependencyChange(
-                    id,
-                    oldValue: false,
-                    newValue: newComponent.DevelopmentDependency));
-            }
-        }
-
         // Need performance benchmark to see if this is worth parallelization
-        foreach (var id in newComponentDictionary.Keys.Intersect(oldComponentDictionary.Keys))
+        foreach (var newComponentPair in newComponentDictionary)
         {
-            var oldComponent = oldComponentDictionary[id];
-            var newComponent = newComponentDictionary[id];
+            var newComponent = newComponentPair.Value;
+            var id = newComponentPair.Key;
+
+            if (!oldComponentDictionary.TryGetValue(id, out var oldComponent))
+            {
+                if (newComponent.DevelopmentDependency)
+                {
+                    developmentDependencyChanges.Add(new DevelopmentDependencyChange(
+                        id,
+                        oldValue: false,
+                        newValue: newComponent.DevelopmentDependency));
+                }
+
+                continue;
+            }
 
             if (oldComponent.DevelopmentDependency != newComponent.DevelopmentDependency)
             {
