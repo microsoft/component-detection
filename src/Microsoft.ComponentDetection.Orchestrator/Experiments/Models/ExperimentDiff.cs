@@ -40,10 +40,23 @@ public class ExperimentDiff
         var experimentDetectorList = new List<ExperimentDetector>();
 
         // Need performance benchmark to see if this is worth parallelization
-        foreach (var id in newComponentDictionary.Keys.Intersect(oldComponentDictionary.Keys))
+        foreach (var newComponentPair in newComponentDictionary)
         {
-            var oldComponent = oldComponentDictionary[id];
-            var newComponent = newComponentDictionary[id];
+            var newComponent = newComponentPair.Value;
+            var id = newComponentPair.Key;
+
+            if (!oldComponentDictionary.TryGetValue(id, out var oldComponent))
+            {
+                if (newComponent.DevelopmentDependency)
+                {
+                    developmentDependencyChanges.Add(new DevelopmentDependencyChange(
+                        id,
+                        oldValue: false,
+                        newValue: newComponent.DevelopmentDependency));
+                }
+
+                continue;
+            }
 
             if (oldComponent.DevelopmentDependency != newComponent.DevelopmentDependency)
             {

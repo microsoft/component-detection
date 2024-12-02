@@ -7,21 +7,22 @@ using Microsoft.ComponentDetection.Contracts;
 public class Pnpm5Detector : IPnpmDetector
 {
     public const string MajorVersion = "5";
+    private readonly PnpmParsingUtilitiesBase<PnpmYamlV5> pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV5>();
 
     public void RecordDependencyGraphFromFile(string yamlFileContent, ISingleFileComponentRecorder singleFileComponentRecorder)
     {
-        var yaml = PnpmParsingUtilities.DeserializePnpmYamlV5File(yamlFileContent);
+        var yaml = this.pnpmParsingUtilities.DeserializePnpmYamlFile(yamlFileContent);
 
-        foreach (var packageKeyValue in yaml.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
+        foreach (var packageKeyValue in yaml?.Packages ?? Enumerable.Empty<KeyValuePair<string, Package>>())
         {
             // Ignore file: as these are local packages.
-            if (packageKeyValue.Key.StartsWith("file:"))
+            if (packageKeyValue.Key.StartsWith(PnpmConstants.PnpmFileDependencyPath))
             {
                 continue;
             }
 
-            var parentDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5(pnpmPackagePath: packageKeyValue.Key);
-            var isDevDependency = packageKeyValue.Value != null && PnpmParsingUtilities.IsPnpmPackageDevDependency(packageKeyValue.Value);
+            var parentDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(pnpmPackagePath: packageKeyValue.Key);
+            var isDevDependency = packageKeyValue.Value != null && this.pnpmParsingUtilities.IsPnpmPackageDevDependency(packageKeyValue.Value);
             singleFileComponentRecorder.RegisterUsage(parentDetectedComponent, isDevelopmentDependency: isDevDependency);
             parentDetectedComponent = singleFileComponentRecorder.GetComponent(parentDetectedComponent.Component.Id);
 
@@ -30,13 +31,13 @@ public class Pnpm5Detector : IPnpmDetector
                 foreach (var dependency in packageKeyValue.Value.Dependencies)
                 {
                     // Ignore local packages.
-                    if (PnpmParsingUtilities.IsLocalDependency(dependency))
+                    if (this.pnpmParsingUtilities.IsLocalDependency(dependency))
                     {
                         continue;
                     }
 
-                    var childDetectedComponent = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5(
-                        pnpmPackagePath: PnpmParsingUtilities.CreatePnpmPackagePathFromDependencyV5(dependency.Key, dependency.Value));
+                    var childDetectedComponent = this.pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath(
+                        pnpmPackagePath: this.CreatePnpmPackagePathFromDependency(dependency.Key, dependency.Value));
 
                     // Older code used the root's dev dependency value. We're leaving this null until we do a second pass to look at each components' top level referrers.
                     singleFileComponentRecorder.RegisterUsage(childDetectedComponent, parentComponentId: parentDetectedComponent.Component.Id, isDevelopmentDependency: null);
@@ -54,5 +55,10 @@ public class Pnpm5Detector : IPnpmDetector
                 singleFileComponentRecorder.RegisterUsage(component.Value, isDevelopmentDependency: graph.IsDevelopmentDependency(explicitReference));
             }
         }
+    }
+
+    private string CreatePnpmPackagePathFromDependency(string dependencyName, string dependencyVersion)
+    {
+        return dependencyVersion.Contains('/') ? dependencyVersion : $"/{dependencyName}/{dependencyVersion}";
     }
 }

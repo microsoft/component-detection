@@ -46,6 +46,31 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         };
     }
 
+    private static ConcurrentHashSet<string> MergeTargetFrameworks(ConcurrentHashSet<string> left, ConcurrentHashSet<string> right)
+    {
+        if (left == null && right == null)
+        {
+            return [];
+        }
+
+        if (left == null)
+        {
+            return right;
+        }
+
+        if (right == null)
+        {
+            return left;
+        }
+
+        foreach (var targetFramework in right)
+        {
+            left.Add(targetFramework);
+        }
+
+        return left;
+    }
+
     private void LogComponentScopeTelemetry(List<DetectedComponent> components)
     {
         using var record = new DetectedComponentScopeRecord();
@@ -78,7 +103,11 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                     // clone custom locations and make them relative to root.
                     var declaredRawFilePaths = component.FilePaths ?? [];
                     var componentCustomLocations = JsonConvert.DeserializeObject<HashSet<string>>(JsonConvert.SerializeObject(declaredRawFilePaths));
-                    component.FilePaths?.Clear();
+
+                    if (updateLocations)
+                    {
+                        component.FilePaths?.Clear();
+                    }
 
                     // Information about each component is relative to all of the graphs it is present in, so we take all graphs containing a given component and apply the graph data.
                     foreach (var graphKvp in dependencyGraphsByLocation.Where(x => x.Value.Contains(component.Component.Id)))
@@ -182,6 +211,8 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                     firstComponent.ContainerDetailIds.Add(containerDetailId);
                 }
             }
+
+            firstComponent.TargetFrameworks = MergeTargetFrameworks(firstComponent.TargetFrameworks, nextComponent.TargetFrameworks);
         }
 
         return firstComponent;
@@ -271,6 +302,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             AncestralReferrers = component.AncestralDependencyRoots,
             ContainerDetailIds = component.ContainerDetailIds,
             ContainerLayerIds = component.ContainerLayerIds,
+            TargetFrameworks = component.TargetFrameworks?.ToHashSet(),
         };
     }
 }
