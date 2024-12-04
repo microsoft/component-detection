@@ -192,13 +192,12 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
 
                 var libraryComponent = new DetectedComponent(new NuGetComponent(packageDownload.Name, packageDownload.VersionRange.MinVersion.ToNormalizedString()));
 
-                // Conservatively assume that PackageDownloads are not develeopment dependencies even though usage will not effect any runtime behavior.
-                // Most often they are used for some runtime deployment -- runtime packs, host packs, AOT infrastructure, etc, so opt in treating them as non-development-dependencies.
+                // PackageDownload is always a development dependency since it's usage does not make it part of the application
                 singleFileComponentRecorder.RegisterUsage(
                     libraryComponent,
                     isExplicitReferencedDependency: true,
                     parentComponentId: null,
-                    isDevelopmentDependency: false,
+                    isDevelopmentDependency: true,
                     targetFramework: framework.FrameworkName?.GetShortFolderName());
             }
         }
