@@ -276,7 +276,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
             .ExecuteDetectorAsync();
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault(), "All should be development dependencies");
+        detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue(), "All should be development dependencies");
     }
 
     [TestMethod]
@@ -289,7 +289,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
 
         // net42.15 is not a known framework, but it can import framework packages from the closest known framework.
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault(), "All should be development dependencies");
+        detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue(), "All should be development dependencies");
     }
 
     [TestMethod]
@@ -329,6 +329,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
 
         var dependencies = componentRecorder.GetDetectedComponents();
         dependencies.Should().HaveCount(3, "PackageDownload dependencies should exist.");
+        dependencies.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue(), "All PackageDownloads should be development dependencies");
         dependencies.Select(c => c.Component).Should().AllBeOfType<NuGetComponent>();
         dependencies.Select(c => c.TargetFrameworks).Should().AllSatisfy(tfms => tfms.Should().BeEquivalentTo(["net8.0"]));
     }
