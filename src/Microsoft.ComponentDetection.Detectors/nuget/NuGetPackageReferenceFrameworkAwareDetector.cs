@@ -62,6 +62,28 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         return results.Distinct().ToArray();
     }
 
+    private static bool IsADevelopmentDependency(LockFileTargetLibrary library, LockFile lockFile)
+    {
+        // a placeholder item is an empty file that doesn't exist with name _._ meant to indicate an empty folder in a nuget package, but also used by NuGet when a package's assets are excluded.
+        static bool IsAPlaceholderItem(LockFileItem item) => Path.GetFileName(item.Path).Equals(PackagingCoreConstants.EmptyFolder, StringComparison.OrdinalIgnoreCase);
+
+        // All(IsAPlaceholderItem) checks if the collection is empty or all items are placeholders.
+        return library.RuntimeAssemblies.All(IsAPlaceholderItem) &&
+            library.RuntimeTargets.All(IsAPlaceholderItem) &&
+            library.ResourceAssemblies.All(IsAPlaceholderItem) &&
+            library.NativeLibraries.All(IsAPlaceholderItem) &&
+            library.ContentFiles.All(IsAPlaceholderItem) &&
+            library.Build.All(IsAPlaceholderItem) &&
+            library.BuildMultiTargeting.All(IsAPlaceholderItem) &&
+
+            // The SDK looks at the library for analyzers using the following hueristic:
+            // https://github.com/dotnet/sdk/blob/d7fe6e66d8f67dc93c5c294a75f42a2924889196/src/Tasks/Microsoft.NET.Build.Tasks/NuGetUtils.NuGet.cs#L43
+            (!lockFile.GetLibrary(library.Name, library.Version)?.Files
+                .Any(file => file.StartsWith("analyzers", StringComparison.Ordinal)
+                    && file.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+                    && !file.EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase)) ?? false);
+    }
+
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         try
@@ -89,13 +111,15 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             {
                 var frameworkReferences = GetFrameworkReferences(lockFile, target);
                 var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework, frameworkReferences);
-                bool IsAFrameworkPackage(string id, NuGetVersion version) => frameworkPackages.Any(fp => fp.IsAFrameworkComponent(id, version));
+                bool IsFrameworkOrDevelopmentDependency(LockFileTargetLibrary library) =>
+                    frameworkPackages.Any(fp => fp.IsAFrameworkComponent(library.Name, library.Version)) ||
+                    IsADevelopmentDependency(library, lockFile);
 
                 // This call to GetTargetLibrary is not guarded, because if this can't be resolved then something is fundamentally broken (e.g. an explicit dependency reference not being in the list of libraries)
                 // issue: we treat top level dependencies for all targets as top level for each target, but some may not be top level for other targets, or may not even be present for other targets.
                 foreach (var library in explicitReferencedDependencies.Select(x => target.GetTargetLibrary(x.Name)).Where(x => x != null))
                 {
-                    this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, IsAFrameworkPackage);
+                    this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, IsFrameworkOrDevelopmentDependency);
                 }
             }
 
@@ -117,16 +141,13 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
         ISingleFileComponentRecorder singleFileComponentRecorder,
         LockFileTargetLibrary library,
         string parentComponentId,
-        Func<string, NuGetVersion, bool> isAFrameworkComponent,
+        Func<LockFileTargetLibrary, bool> isDevelopmentDependency,
         HashSet<string> visited = null)
     {
         if (library.Type == ProjectDependencyType)
         {
             return;
         }
-
-        var isFrameworkComponent = isAFrameworkComponent(library.Name, library.Version);
-        var isDevelopmentDependency = IsADevelopmentDependency(library);
 
         visited ??= [];
 
@@ -137,7 +158,7 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             libraryComponent,
             explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id),
             parentComponentId,
-            isDevelopmentDependency: isFrameworkComponent || isDevelopmentDependency,
+            isDevelopmentDependency: isDevelopmentDependency(library),
             targetFramework: target.TargetFramework?.GetShortFolderName());
 
         foreach (var dependency in library.Dependencies)
@@ -153,15 +174,9 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
             if (targetLibrary != null)
             {
                 visited.Add(dependency.Id);
-                this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, isAFrameworkComponent, visited);
+                this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, isDevelopmentDependency, visited);
             }
         }
-
-        // a placeholder item is an empty file that doesn't exist with name _._ meant to indicate an empty folder in a nuget package, but also used by NuGet when a package's assets are excluded.
-        bool IsAPlaceholderItem(LockFileItem item) => Path.GetFileName(item.Path).Equals(PackagingCoreConstants.EmptyFolder, StringComparison.OrdinalIgnoreCase);
-
-        // A library is development dependency if all of the runtime assemblies and runtime targets are placeholders or empty (All returns true for empty).
-        bool IsADevelopmentDependency(LockFileTargetLibrary library) => library.RuntimeAssemblies.Concat(library.RuntimeTargets).All(IsAPlaceholderItem);
     }
 
     private void RegisterPackageDownloads(ISingleFileComponentRecorder singleFileComponentRecorder, LockFile lockFile)
@@ -177,12 +192,13 @@ public class NuGetPackageReferenceFrameworkAwareDetector : FileComponentDetector
 
                 var libraryComponent = new DetectedComponent(new NuGetComponent(packageDownload.Name, packageDownload.VersionRange.MinVersion.ToNormalizedString()));
 
-                // PackageDownload is always a development dependency since it's usage does not make it part of the application
+                // Conservatively assume that PackageDownloads are not develeopment dependencies even though usage will not effect any runtime behavior.
+                // Most often they are used for some runtime deployment -- runtime packs, host packs, AOT infrastructure, etc, so opt in treating them as non-development-dependencies.
                 singleFileComponentRecorder.RegisterUsage(
                     libraryComponent,
                     isExplicitReferencedDependency: true,
                     parentComponentId: null,
-                    isDevelopmentDependency: true,
+                    isDevelopmentDependency: false,
                     targetFramework: framework.FrameworkName?.GetShortFolderName());
             }
         }
