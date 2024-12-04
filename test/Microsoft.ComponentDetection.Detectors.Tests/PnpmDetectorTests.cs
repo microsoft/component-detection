@@ -332,10 +332,12 @@ packages:
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().HaveCount(4);
 
-        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/query-string/4.3.4").Component.Id;
-        var objectAssignComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/object-assign/4.1.1").Component.Id;
-        var strictUriComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/strict-uri-encode/1.1.0").Component.Id;
-        var testComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/test/1.0.0").Component.Id;
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV5>();
+
+        var queryStringComponentId = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/query-string/4.3.4").Component.Id;
+        var objectAssignComponentId = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/object-assign/4.1.1").Component.Id;
+        var strictUriComponentId = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/strict-uri-encode/1.1.0").Component.Id;
+        var testComponentId = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/test/1.0.0").Component.Id;
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
@@ -380,8 +382,10 @@ packages:
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().HaveCount(2, "Components that comes from a file (file:* or link:*) should be ignored.");
 
-        var queryStringComponentId = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/query-string/4.3.4").Component.Id;
-        var nthcheck = PnpmParsingUtilities.CreateDetectedComponentFromPnpmPathV5("/nth-check/2.0.0").Component.Id;
+        var pnpmParsingUtilities = PnpmParsingUtilitiesFactory.Create<PnpmYamlV5>();
+
+        var queryStringComponentId = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/query-string/4.3.4").Component.Id;
+        var nthcheck = pnpmParsingUtilities.CreateDetectedComponentFromPnpmPath("/nth-check/2.0.0").Component.Id;
 
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
@@ -589,6 +593,210 @@ packages:
   /minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
     dev: false
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V9_GoodLockVersion_ParsesDependencies()
+    {
+        var yamlFile = @"
+lockfileVersion: '9.0'
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+importers:
+  .:
+    dependencies:
+      sampleDependency:
+        specifier: ^1.1.1
+        version: 1.1.1
+    devDependencies:
+      sampleDevDependency:
+        specifier: ^2.2.2
+        version: 2.2.2
+packages:
+  sampleDependency@1.1.1:
+    resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
+  sampleDevDependency@2.2.2:
+    resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
+    engines: {node: '>= 0.8'}
+  sampleIndirectDependency@3.3.3:
+    resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
+    engines: {node: '>=0.4.0'}
+
+snapshots:
+  sampleDependency@1.1.1:
+    dependencies:
+      sampleIndirectDependency: 3.3.3
+  sampleDevDependency@2.2.2: {}
+  sampleIndirectDependency@3.3.3: {}
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(3);
+        var npmComponents = detectedComponents.Select(x => new { Component = x.Component as NpmComponent, DetectedComponent = x });
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleDependency" && x.Component.Version == "1.1.1");
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleDevDependency" && x.Component.Version == "2.2.2");
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleIndirectDependency" && x.Component.Version == "3.3.3");
+
+        var noDevDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleDependency");
+        var devDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleDevDependency");
+        var indirectDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleIndirectDependency");
+
+        componentRecorder.GetEffectiveDevDependencyValue(noDevDependencyComponent.Component.Id).Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue(devDependencyComponent.Component.Id).Should().BeTrue();
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            indirectDependencyComponent.Component.Id,
+            parentComponent => parentComponent.Name == "sampleDependency");
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V9_GoodLockVersion_ParsesAliasedDependency()
+    {
+        var yamlFile = @"
+lockfileVersion: '9.0'
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+importers:
+  .:
+    dependencies:
+      aliasedSample:
+        specifier: npm:sampleDependency@1.1.1
+        version: sampleDependency@1.1.1
+packages:
+  sampleDependency@1.1.1:
+    resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
+  sampleIndirectDependency@3.3.3:
+    resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
+    engines: {node: '>=0.4.0'}
+
+snapshots:
+  sampleDependency@1.1.1:
+    dependencies:
+      sampleIndirectDependency: 3.3.3
+  sampleIndirectDependency@3.3.3: {}
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+        var npmComponents = detectedComponents.Select(x => new { Component = x.Component as NpmComponent, DetectedComponent = x });
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleDependency" && x.Component.Version == "1.1.1");
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleIndirectDependency" && x.Component.Version == "3.3.3");
+
+        var noDevDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleDependency");
+        var indirectDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleIndirectDependency");
+
+        componentRecorder.GetEffectiveDevDependencyValue(noDevDependencyComponent.Component.Id).Should().BeFalse();
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            indirectDependencyComponent.Component.Id,
+            parentComponent => parentComponent.Name == "sampleDependency");
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V9_GoodLockVersion_SkipsFileAndLinkDependencies()
+    {
+        var yamlFile = @"
+lockfileVersion: '9.0'
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+importers:
+  .:
+    dependencies:
+      sampleDependency:
+        specifier: ^1.1.1
+        version: 1.1.1
+      SampleFileDependency:
+        specifier: file://../sampleFile
+        version: link:../
+      SampleLinkDependency:
+        specifier: workspace:*
+        version: link:SampleLinkDependency
+packages:
+  sampleDependency@1.1.1:
+    resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
+  sampleIndirectDependency2@2.2.2:
+    resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
+    engines: {node: '>= 0.8'}
+  sampleIndirectDependency@3.3.3:
+    resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
+    engines: {node: '>=0.4.0'}
+
+snapshots:
+  sampleDependency@1.1.1:
+    dependencies:
+      sampleIndirectDependency: 3.3.3
+      sampleIndirectDependency2: 2.2.2
+      'file://../sampleFile':  'link:../\\'
+  sampleIndirectDependency2@2.2.2: {}
+  sampleIndirectDependency@3.3.3: {}
+  'file://../sampleFile@link:../': {}
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pnpm-lock.yaml", yamlFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(3);
+        var npmComponents = detectedComponents.Select(x => new { Component = x.Component as NpmComponent, DetectedComponent = x });
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleDependency" && x.Component.Version == "1.1.1");
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleIndirectDependency2" && x.Component.Version == "2.2.2");
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleIndirectDependency" && x.Component.Version == "3.3.3");
+
+        var noDevDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleDependency");
+        var indirectDependencyComponent2 = npmComponents.First(x => x.Component.Name == "sampleIndirectDependency2");
+        var indirectDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleIndirectDependency");
+
+        componentRecorder.GetEffectiveDevDependencyValue(noDevDependencyComponent.Component.Id).Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue(indirectDependencyComponent2.Component.Id).Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue(indirectDependencyComponent.Component.Id).Should().BeFalse();
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            indirectDependencyComponent.Component.Id,
+            parentComponent => parentComponent.Name == "sampleDependency");
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            indirectDependencyComponent2.Component.Id,
+            parentComponent => parentComponent.Name == "sampleDependency");
+    }
+
+    [TestMethod]
+    public async Task TestPnpmDetector_V9_GoodLockVersion_MissingSnapshotsSuccess()
+    {
+        var yamlFile = @"
+lockfileVersion: '9.0'
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+importers:
+  .:
+    dependencies:
+      SampleLinkDependency:
+        specifier: workspace:*
+        version: link:SampleLinkDependency
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
