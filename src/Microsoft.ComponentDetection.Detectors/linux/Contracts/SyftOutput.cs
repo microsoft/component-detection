@@ -30,7 +30,7 @@ public partial class ArtifactRelationshipElement
 
 public partial class ArtifactElement
 {
-    public CpeElement[] Cpes { get; set; }
+    public string[] Cpes { get; set; }
     public string FoundBy { get; set; }
     public string Id { get; set; }
     public string Language { get; set; }
@@ -42,12 +42,6 @@ public partial class ArtifactElement
     public string Purl { get; set; }
     public string Type { get; set; }
     public string Version { get; set; }
-}
-
-public partial class CpeElement
-{
-    public string Cpe { get; set; }
-    public string Source { get; set; }
 }
 
 public partial class ArtifactLicense
@@ -72,40 +66,33 @@ public partial class MetadataClass
     public string Architecture { get; set; }
     public BackupElement[] Backup { get; set; }
     public string Basepackage { get; set; }
-    public string[] Depends { get; set; }
     public string Description { get; set; }
     public File[] Files { get; set; }
     public string Package { get; set; }
     public string Packager { get; set; }
-    public string[] Provides { get; set; }
     public long? Reason { get; set; }
     public long? Size { get; set; }
-    public Checksum? Url { get; set; }
+    public License? Url { get; set; }
     public string Validation { get; set; }
     public string Version { get; set; }
     public string GitCommitOfApkPort { get; set; }
     public long? InstalledSize { get; set; }
     public string Maintainer { get; set; }
     public string OriginPackage { get; set; }
+    public string[] Provides { get; set; }
     public string PullChecksum { get; set; }
     public string[] PullDependencies { get; set; }
     public MatchElement[] Matches { get; set; }
     public string Ref { get; set; }
-    public string SyftOutpuPackageId { get; set; }
+    public string PackageId { get; set; }
     public string[] BuildRequires { get; set; }
     public string Context { get; set; }
-    public GoBuildSettingElement[] Options { get; set; }
+    public Dictionary<string, string> Options { get; set; }
     public string Path { get; set; }
     public string Prev { get; set; }
     public string[] PyRequires { get; set; }
     public string[] Requires { get; set; }
-    public string Channel { get; set; }
-    public string PackageId { get; set; }
-    public string PackageRevision { get; set; }
-    public string RecipeRevision { get; set; }
-    public string Timestamp { get; set; }
-    public string Username { get; set; }
-    public Checksum? Checksum { get; set; }
+    public string Checksum { get; set; }
     public string HostedUrl { get; set; }
     public string Name { get; set; }
     public string VcsUrl { get; set; }
@@ -118,23 +105,15 @@ public partial class MetadataClass
     public string LegalCopyright { get; set; }
     public string ProductName { get; set; }
     public string ProductVersion { get; set; }
+    public string[] Depends { get; set; }
     public string[] PreDepends { get; set; }
     public SourceUnion? Source { get; set; }
     public string SourceVersion { get; set; }
-    public string Commit { get; set; }
-    public string Os { get; set; }
-    public string OsCpe { get; set; }
-    public string OsVersion { get; set; }
-    public string SourceRepo { get; set; }
-    public string System { get; set; }
-    public string Type { get; set; }
-    public string Vendor { get; set; }
     public string PkgHash { get; set; }
     public string PkgHashExt { get; set; }
-    public GoBuildSettingElement[] GoBuildSettings { get; set; }
+    public Dictionary<string, string> GoBuildSettings { get; set; }
     public string GoCompiledVersion { get; set; }
     public string[] GoCryptoSettings { get; set; }
-    public string[] GoExperiments { get; set; }
     public string H1Digest { get; set; }
     public string MainModule { get; set; }
     public string SnapshotUrl { get; set; }
@@ -143,7 +122,6 @@ public partial class MetadataClass
     public PomProject PomProject { get; set; }
     public PomProperties PomProperties { get; set; }
     public string VirtualPath { get; set; }
-    public ReleaseUnion? Release { get; set; }
     public string Author { get; set; }
     public string Homepage { get; set; }
     public bool? Private { get; set; }
@@ -157,15 +135,13 @@ public partial class MetadataClass
     public long? SwapDevice { get; set; }
     public string VideoMode { get; set; }
     public string KernelVersion { get; set; }
-    public Checksum? License { get; set; }
+    public License? License { get; set; }
     public Dictionary<string, ParameterValue> Parameters { get; set; }
     public string VersionMagic { get; set; }
-    public Dependencies? Dependencies { get; set; }
     public string Kb { get; set; }
     public string ProductId { get; set; }
     public string Output { get; set; }
     public string OutputHash { get; set; }
-    public string[] Licenses { get; set; }
     public Author[] Authors { get; set; }
     public string[] Bin { get; set; }
     public Dist Dist { get; set; }
@@ -176,15 +152,13 @@ public partial class MetadataClass
     public Dictionary<string, string> RequireDev { get; set; }
     public Dictionary<string, string> Suggest { get; set; }
     public string Time { get; set; }
+    public string Type { get; set; }
     public string AuthorEmail { get; set; }
     public DirectUrlOrigin DirectUrlOrigin { get; set; }
     public string Platform { get; set; }
-    public string[] ProvidesExtra { get; set; }
-    public string[] RequiresDist { get; set; }
-    public string RequiresPython { get; set; }
     public string SitePackagesRootPath { get; set; }
     public string[] TopLevelPackages { get; set; }
-    public Extra[] Extras { get; set; }
+    public string[] Extras { get; set; }
     public string Markers { get; set; }
     public string VersionConstraint { get; set; }
     public string[] Hashes { get; set; }
@@ -197,11 +171,11 @@ public partial class MetadataClass
     public string Title { get; set; }
     public long? Epoch { get; set; }
     public string ModularityLabel { get; set; }
+    public string Release { get; set; }
     public string SourceRpm { get; set; }
+    public string Vendor { get; set; }
+    public string[] Dependencies { get; set; }
     public string Revision { get; set; }
-    public string PackagerEmail { get; set; }
-    public string AuthorUri { get; set; }
-    public string PluginInstallDirectory { get; set; }
 }
 
 public partial class AuthorClass
@@ -229,15 +203,6 @@ public partial class DigestElement
     public string Value { get; set; }
 }
 
-public partial class DependencyClass
-{
-    public string[] Extras { get; set; }
-    public string Markers { get; set; }
-    public string Name { get; set; }
-    public bool Optional { get; set; }
-    public string Version { get; set; }
-}
-
 public partial class DirectUrlOrigin
 {
     public string CommitId { get; set; }
@@ -251,12 +216,6 @@ public partial class Dist
     public string Shasum { get; set; }
     public string Type { get; set; }
     public string Url { get; set; }
-}
-
-public partial class ExtraClass
-{
-    public string[] Dependencies { get; set; }
-    public string Name { get; set; }
 }
 
 public partial class FileFile
@@ -285,16 +244,10 @@ public partial class PurpleSyftOutpu
     public string Value { get; set; }
 }
 
-public partial class GoBuildSettingElement
-{
-    public string Key { get; set; }
-    public string Value { get; set; }
-}
-
 public partial class Manifest
 {
-    public GoBuildSettingElement[] Main { get; set; }
-    public GoBuildSettingElement[][] Sections { get; set; }
+    public Dictionary<string, string> Main { get; set; }
+    public Dictionary<string, Dictionary<string, string>> NamedSections { get; set; }
 }
 
 public partial class MatchElement
@@ -339,31 +292,6 @@ public partial class PomProperties
     public string Version { get; set; }
 }
 
-public partial class ReleaseClass
-{
-    public string BuildInfo { get; set; }
-    public string BuildSource { get; set; }
-    public string BuildSourceRepo { get; set; }
-    public string BuildType { get; set; }
-    public string FullVersion { get; set; }
-    public string ImageType { get; set; }
-    public string Implementor { get; set; }
-    public string ImplementorVersion { get; set; }
-    public string JavaRuntimeVersion { get; set; }
-    public string JavaVersion { get; set; }
-    public string JavaVersionDate { get; set; }
-    public string JvmVariant { get; set; }
-    public string JvmVersion { get; set; }
-    public string Libc { get; set; }
-    public string[] Modules { get; set; }
-    public string OsArch { get; set; }
-    public string OsName { get; set; }
-    public string OsVersion { get; set; }
-    public string SemanticVersion { get; set; }
-    public string Source { get; set; }
-    public string SourceRepo { get; set; }
-}
-
 public partial class Descriptor
 {
     public object Configuration { get; set; }
@@ -397,34 +325,10 @@ public partial class FileElement
 {
     public string Contents { get; set; }
     public DigestElement[] Digests { get; set; }
-    public Executable Executable { get; set; }
     public string Id { get; set; }
     public FileLicense[] Licenses { get; set; }
     public Location Location { get; set; }
     public Metadata Metadata { get; set; }
-    public string[] Unknowns { get; set; }
-}
-
-public partial class Executable
-{
-    public ElfSecurityFeatures ElfSecurityFeatures { get; set; }
-    public string Format { get; set; }
-    public bool HasEntrypoint { get; set; }
-    public bool HasExports { get; set; }
-    public string[] ImportedLibraries { get; set; }
-}
-
-public partial class ElfSecurityFeatures
-{
-    public bool? Cfi { get; set; }
-    public bool Dso { get; set; }
-    public bool? Fortify { get; set; }
-    public bool Nx { get; set; }
-    public bool Pie { get; set; }
-    public string RelRo { get; set; }
-    public bool? SafeStack { get; set; }
-    public bool? StackCanary { get; set; }
-    public bool SymbolTableStripped { get; set; }
 }
 
 public partial class FileLicense
@@ -479,74 +383,8 @@ public partial struct Author
     public AuthorClass AuthorClass;
     public string String;
 
-    public static implicit operator Author(AuthorClass AuthorClass)
-    {
-        return new Author { AuthorClass = AuthorClass };
-    }
-    public static implicit operator Author(string String)
-    {
-        return new Author { String = String };
-    }
-}
-
-public partial struct Checksum
-{
-    public string String;
-    public string[] StringArray;
-
-    public static implicit operator Checksum(string String)
-    {
-        return new Checksum { String = String };
-    }
-    public static implicit operator Checksum(string[] StringArray)
-    {
-        return new Checksum { StringArray = StringArray };
-    }
-}
-
-public partial struct Dependency
-{
-    public DependencyClass DependencyClass;
-    public string String;
-
-    public static implicit operator Dependency(DependencyClass DependencyClass)
-    {
-        return new Dependency { DependencyClass = DependencyClass };
-    }
-    public static implicit operator Dependency(string String)
-    {
-        return new Dependency { String = String };
-    }
-}
-
-public partial struct Dependencies
-{
-    public Dependency[] AnythingArray;
-    public Dictionary<string, string> StringMap;
-
-    public static implicit operator Dependencies(Dependency[] AnythingArray)
-    {
-        return new Dependencies { AnythingArray = AnythingArray };
-    }
-    public static implicit operator Dependencies(Dictionary<string, string> StringMap)
-    {
-        return new Dependencies { StringMap = StringMap };
-    }
-}
-
-public partial struct Extra
-{
-    public ExtraClass ExtraClass;
-    public string String;
-
-    public static implicit operator Extra(ExtraClass ExtraClass)
-    {
-        return new Extra { ExtraClass = ExtraClass };
-    }
-    public static implicit operator Extra(string String)
-    {
-        return new Extra { String = String };
-    }
+    public static implicit operator Author(AuthorClass AuthorClass) => new Author { AuthorClass = AuthorClass };
+    public static implicit operator Author(string String) => new Author { String = String };
 }
 
 public partial struct Digest
@@ -554,14 +392,8 @@ public partial struct Digest
     public DigestElement[] DigestElementArray;
     public PurpleSyftOutpu PurpleSyftOutpu;
 
-    public static implicit operator Digest(DigestElement[] DigestElementArray)
-    {
-        return new Digest { DigestElementArray = DigestElementArray };
-    }
-    public static implicit operator Digest(PurpleSyftOutpu PurpleSyftOutpu)
-    {
-        return new Digest { PurpleSyftOutpu = PurpleSyftOutpu };
-    }
+    public static implicit operator Digest(DigestElement[] DigestElementArray) => new Digest { DigestElementArray = DigestElementArray };
+    public static implicit operator Digest(PurpleSyftOutpu PurpleSyftOutpu) => new Digest { PurpleSyftOutpu = PurpleSyftOutpu };
 }
 
 public partial struct Size
@@ -569,14 +401,8 @@ public partial struct Size
     public long? Integer;
     public string String;
 
-    public static implicit operator Size(long Integer)
-    {
-        return new Size { Integer = Integer };
-    }
-    public static implicit operator Size(string String)
-    {
-        return new Size { String = String };
-    }
+    public static implicit operator Size(long Integer) => new Size { Integer = Integer };
+    public static implicit operator Size(string String) => new Size { String = String };
 }
 
 public partial struct File
@@ -584,29 +410,17 @@ public partial struct File
     public FileFile FileFile;
     public string String;
 
-    public static implicit operator File(FileFile FileFile)
-    {
-        return new File { FileFile = FileFile };
-    }
-    public static implicit operator File(string String)
-    {
-        return new File { String = String };
-    }
+    public static implicit operator File(FileFile FileFile) => new File { FileFile = FileFile };
+    public static implicit operator File(string String) => new File { String = String };
 }
 
-public partial struct ReleaseUnion
+public partial struct License
 {
-    public ReleaseClass ReleaseClass;
     public string String;
+    public string[] StringArray;
 
-    public static implicit operator ReleaseUnion(ReleaseClass ReleaseClass)
-    {
-        return new ReleaseUnion { ReleaseClass = ReleaseClass };
-    }
-    public static implicit operator ReleaseUnion(string String)
-    {
-        return new ReleaseUnion { String = String };
-    }
+    public static implicit operator License(string String) => new License { String = String };
+    public static implicit operator License(string[] StringArray) => new License { StringArray = StringArray };
 }
 
 public partial struct SourceUnion
@@ -614,12 +428,6 @@ public partial struct SourceUnion
     public Dist Dist;
     public string String;
 
-    public static implicit operator SourceUnion(Dist Dist)
-    {
-        return new SourceUnion { Dist = Dist };
-    }
-    public static implicit operator SourceUnion(string String)
-    {
-        return new SourceUnion { String = String };
-    }
+    public static implicit operator SourceUnion(Dist Dist) => new SourceUnion { Dist = Dist };
+    public static implicit operator SourceUnion(string String) => new SourceUnion { String = String };
 }
