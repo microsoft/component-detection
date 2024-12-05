@@ -44,4 +44,7 @@ public enum DetectorClass
 
     /// <summary>Indicates a detector applies to Docker references.</summary>
     DockerReference,
+
+    /// <summary> Indicates a detector applies to SwiftPM packages.</summary>
+    SwiftPM,
 }

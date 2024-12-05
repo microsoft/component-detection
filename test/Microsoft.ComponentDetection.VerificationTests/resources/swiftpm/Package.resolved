@@ -1,0 +1,60 @@
+{
+  "originHash" : "9e7d32d14f81c4312e8b239503282bdc958b2b52492ede2c123001eeac298b0e",
+  "pins" : [
+    {
+      "identity" : "appauth-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/openid/AppAuth-iOS.git",
+      "state" : {
+        "revision" : "c89ed571ae140f8eb1142735e6e23d7bb8c34cb2",
+        "version" : "1.7.5"
+      }
+    },
+    {
+      "identity" : "google-api-objectivec-client-for-rest",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/google/google-api-objectivec-client-for-rest",
+      "state" : {
+        "branch" : "main",
+        "revision" : "a8c1e0b1173659d0be452680582c28556372ef74"
+      }
+    },
+    {
+      "identity" : "googlesignin-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/google/GoogleSignIn-iOS",
+      "state" : {
+        "revision" : "a7965d134c5d3567026c523e0a8a583f73b62b0d",
+        "version" : "7.1.0"
+      }
+    },
+    {
+      "identity" : "gtm-session-fetcher",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/google/gtm-session-fetcher.git",
+      "state" : {
+        "revision" : "a2ab612cb980066ee56d90d60d8462992c07f24b",
+        "version" : "3.5.0"
+      }
+    },
+    {
+      "identity" : "gtmappauth",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/google/GTMAppAuth.git",
+      "state" : {
+        "revision" : "5d7d66f647400952b1758b230e019b07c0b4b22a",
+        "version" : "4.1.1"
+      }
+    },
+    {
+      "identity" : "microsoft-authentication-library-for-objc",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AzureAD/microsoft-authentication-library-for-objc",
+      "state" : {
+        "revision" : "9ae8b61c868962153d5fa6a2492deddf804b1acd",
+        "version" : "1.4.0"
+      }
+    }
+  ],
+  "version" : 3
+}
