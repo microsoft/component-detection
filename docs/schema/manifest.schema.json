@@ -117,7 +117,8 @@
               "Conda",
               "Spdx",
               "Vcpkg",
-              "DockerReference"
+              "DockerReference",
+              "Pub"
             ]
           }
         }
@@ -343,7 +344,8 @@
             "Conda",
             "Spdx",
             "Vcpkg",
-            "DockerReference"
+            "DockerReference",
+            "Pub"
           ]
         },
         "id": {
