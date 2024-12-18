@@ -56,79 +56,77 @@ public abstract class FileComponentDetectorWithCleanup : FileComponentDetector
         // determining the files that exist as there will be no subsequent cleanup process.
         if (this.FileUtilityService == null
             || this.DirectoryUtilityService == null
-            || !this.TryGetCleanupFileDirectory(processRequest, out var fileParentDirectory))
+            || !this.TryGetCleanupFileDirectory(processRequest, out var fileParentDirectory)
+            || !cleanupCreatedFiles)
         {
             await process(processRequest, detectorArgs, cancellationToken).ConfigureAwait(false);
             return;
         }
 
         // Get the files and directories that match the cleanup pattern and exist before the process runs.
-        var (preExistingFiles, preExistingDirs) = this.DirectoryUtilityService.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
+        var (preSuccess, preExistingFiles, preExistingDirs) = this.TryGetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
+
+        await process(processRequest, detectorArgs, cancellationToken).ConfigureAwait(false);
+        if (!preSuccess)
+        {
+            // return early if we failed to get the pre-existing files and directories, since no need for cleanup
+            return;
+        }
+
+        // Ensure that only one cleanup process is running at a time, helping to prevent conflicts
+        await this.cleanupSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+
         try
         {
-            await process(processRequest, detectorArgs, cancellationToken).ConfigureAwait(false);
+            // Clean up any new files or directories created during the scan that match the clean up patterns.
+            var (postSuccess, latestFiles, latestDirs) = this.TryGetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
+            if (!postSuccess)
+            {
+                return;
+            }
+
+            var createdFiles = latestFiles.Except(preExistingFiles).ToList();
+            var createdDirs = latestDirs.Except(preExistingDirs).ToList();
+
+            foreach (var createdDir in createdDirs)
+            {
+                if (createdDir is null || !this.DirectoryUtilityService.Exists(createdDir))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    this.Logger.LogDebug("Cleaning up directory {Dir}", createdDir);
+                    this.DirectoryUtilityService.Delete(createdDir, true);
+                }
+                catch (Exception e)
+                {
+                    this.Logger.LogDebug(e, "Failed to delete directory {Dir}", createdDir);
+                }
+            }
+
+            foreach (var createdFile in createdFiles)
+            {
+                if (createdFile is null || !this.FileUtilityService.Exists(createdFile))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    this.Logger.LogDebug("Cleaning up file {File}", createdFile);
+                    this.FileUtilityService.Delete(createdFile);
+                }
+                catch (Exception e)
+                {
+                    this.Logger.LogDebug(e, "Failed to delete file {File}", createdFile);
+                }
+            }
         }
         finally
         {
-            // Ensure that only one cleanup process is running at a time, helping to prevent conflicts
-            await this.cleanupSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-            try
-            {
-                // Clean up any new files or directories created during the scan that match the clean up patterns.
-                // If the cleanupCreatedFiles flag is set to false, this will be a dry run and will just log the files that it would clean.
-                var dryRun = !cleanupCreatedFiles;
-                var dryRunStr = dryRun ? "[DRYRUN] " : string.Empty;
-                var (latestFiles, latestDirs) = this.DirectoryUtilityService.GetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
-                var createdFiles = latestFiles.Except(preExistingFiles).ToList();
-                var createdDirs = latestDirs.Except(preExistingDirs).ToList();
-
-                foreach (var createdDir in createdDirs)
-                {
-                    if (createdDir is null || !this.DirectoryUtilityService.Exists(createdDir))
-                    {
-                        continue;
-                    }
-
-                    try
-                    {
-                        this.Logger.LogDebug("{DryRun}Cleaning up directory {Dir}", dryRunStr, createdDir);
-                        if (!dryRun)
-                        {
-                            this.DirectoryUtilityService.Delete(createdDir, true);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        this.Logger.LogDebug(e, "{DryRun}Failed to delete directory {Dir}", dryRunStr, createdDir);
-                    }
-                }
-
-                foreach (var createdFile in createdFiles)
-                {
-                    if (createdFile is null || !this.FileUtilityService.Exists(createdFile))
-                    {
-                        continue;
-                    }
-
-                    try
-                    {
-                        this.Logger.LogDebug("{DryRun}Cleaning up file {File}", dryRunStr, createdFile);
-                        if (!dryRun)
-                        {
-                            this.FileUtilityService.Delete(createdFile);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        this.Logger.LogDebug(e, "{DryRun}Failed to delete file {File}", dryRunStr, createdFile);
-                    }
-                }
-            }
-            finally
-            {
-                _ = this.cleanupSemaphore.Release();
-            }
+            _ = this.cleanupSemaphore.Release();
         }
     }
 
@@ -150,5 +148,20 @@ public abstract class FileComponentDetectorWithCleanup : FileComponentDetector
         }
 
         return false;
+    }
+
+    private (bool Success, HashSet<string> Files, HashSet<string> Directories) TryGetFilesAndDirectories(string root, IList<string> patterns, int depth)
+    {
+        try
+        {
+            var (files, directories) = this.DirectoryUtilityService.GetFilesAndDirectories(root, patterns, depth);
+            return (true, files, directories);
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            // ignore files and directories that we don't have access to
+            this.Logger.LogDebug(e, "Failed to get files and directories for {Root}", root);
+            return (false, new HashSet<string>(), new HashSet<string>());
+        }
     }
 }
