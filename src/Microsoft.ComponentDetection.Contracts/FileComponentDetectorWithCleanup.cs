@@ -82,6 +82,8 @@ public abstract class FileComponentDetectorWithCleanup : FileComponentDetector
             var (postSuccess, latestFiles, latestDirs) = this.TryGetFilesAndDirectories(fileParentDirectory, this.CleanupPatterns, DefaultCleanDepth);
             if (!postSuccess)
             {
+                // return early if we failed to get the latest files and directories, since we will not be able
+                // to determine what to clean up
                 return;
             }
 
@@ -159,8 +161,8 @@ public abstract class FileComponentDetectorWithCleanup : FileComponentDetector
         }
         catch (UnauthorizedAccessException e)
         {
-            // ignore files and directories that we don't have access to
-            this.Logger.LogDebug(e, "Failed to get files and directories for {Root}", root);
+            // log and return false if we are unauthorized to get files and directories
+            this.Logger.LogDebug(e, "Unauthorized to get files and directories for {Root}", root);
             return (false, new HashSet<string>(), new HashSet<string>());
         }
     }
