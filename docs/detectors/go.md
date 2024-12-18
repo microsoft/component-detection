@@ -17,8 +17,8 @@ on the build agent. If no Go v1.11+ is present, fallback detection
 strategy is performed.
 
 Go detection is performed by parsing output from executing
-[go list -mod=readonly -m -json all](1). To generate the graph, the command
-[go mod graph](2) is executed. This only adds edges between the components
+[go list -mod=readonly -m -json all][1]. To generate the graph, the command
+[go mod graph][2] is executed. This only adds edges between the components
 that were already registered by `go list`.
 
 ## Fallback Detection strategy
@@ -44,7 +44,7 @@ strategy. The full graph is not detected.
 
 Go detection is performed by only scanning the `go.mod` files. This
 reduces over reporting dependencies. The `go.mod` file contains all
-dependencies, including transitive ones. [^3]
+dependencies, including transitive ones. [<sup>3</sup>][3]
 
 Similarly, no graph is generated.
 
@@ -160,7 +160,7 @@ manages external packages and dependencies.
 ### `go.mod` File
 
 The `go.mod` file, short for "module file," is a fundamental component
-of Go's module system.[^4] It serves several crucial purposes:
+of Go's module system.[<sup>4</sup>][4] It serves several crucial purposes:
 
 1. **Module Definition**: The `go.mod` file defines the module name,
    which uniquely identifies the project. The module name typically
@@ -206,7 +206,7 @@ of Go's module system.[^4] It serves several crucial purposes:
 The `go.sum` file, short for "checksum file," is used for ensuring the
 integrity and security of dependencies. It contains checksums
 (cryptographic hashes) of specific versions of packages listed in the
-`go.mod` file.[^5] The `go.sum` file serves the following purposes:
+`go.mod` file.[<sup>5</sup>][5] The `go.sum` file serves the following purposes:
 
 1. **Cryptographic Verification**: When Go downloads a package
    specified in the `go.mod` file, it verifies the downloaded
