@@ -16,7 +16,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-public class PipReportComponentDetector : FileComponentDetector
+public class PipReportComponentDetector : FileComponentDetectorWithCleanup
 {
     // environment variables
     private const string PipReportOverrideBehaviorEnvVar = "PipReportOverrideBehavior";
@@ -50,7 +50,9 @@ public class PipReportComponentDetector : FileComponentDetector
         IPythonCommandService pythonCommandService,
         IPythonResolver pythonResolver,
         IFileUtilityService fileUtilityService,
+        IDirectoryUtilityService directoryUtilityService,
         ILogger<PipReportComponentDetector> logger)
+        : base(fileUtilityService, directoryUtilityService)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -77,9 +79,11 @@ public class PipReportComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Pip];
 
-    public override int Version { get; } = 8;
+    public override int Version { get; } = 9;
 
     protected override bool EnableParallelism { get; set; } = true;
+
+    protected override IList<string> CleanupPatterns => ["*.egg", "*.egg-info", "*.pyc", "*.pyo", "*.pyd", "__pycache__"];
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {

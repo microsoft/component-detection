@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup Label="Project References">
         <ProjectReference Include="..\Microsoft.ComponentDetection.TestsUtilities\Microsoft.ComponentDetection.TestsUtilities.csproj" />
@@ -15,6 +15,9 @@
 
     <ItemGroup>
       <None Update="Resources\test-file-duplicate.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Resources\__pycache__\testing.pyc">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>

@@ -160,7 +160,8 @@ public class ComponentRecorder : IComponentRecorder
             bool isExplicitReferencedDependency = false,
             string parentComponentId = null,
             bool? isDevelopmentDependency = null,
-            DependencyScope? dependencyScope = null)
+            DependencyScope? dependencyScope = null,
+            string targetFramework = null)
         {
             ArgumentNullException.ThrowIfNull(detectedComponent);
 
@@ -186,6 +187,12 @@ public class ComponentRecorder : IComponentRecorder
             lock (this.registerUsageLock)
             {
                 storedComponent = this.detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
+
+                if (!string.IsNullOrWhiteSpace(targetFramework))
+                {
+                    storedComponent.TargetFrameworks.Add(targetFramework.Trim());
+                }
+
                 this.AddComponentToGraph(this.ManifestFileLocation, detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, dependencyScope);
             }
         }

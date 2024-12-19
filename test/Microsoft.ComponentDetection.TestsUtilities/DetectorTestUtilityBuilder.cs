@@ -45,6 +45,9 @@ public class DetectorTestUtilityBuilder<T>
         this.mockLogger = new Mock<ILogger<T>>();
         this.serviceCollection.AddSingleton(_ =>
             this.mockLogger?.Object);
+
+        this.serviceCollection.AddSingleton(_ => new Mock<IFileUtilityService>().Object);
+        this.serviceCollection.AddSingleton(_ => new Mock<IDirectoryUtilityService>().Object);
     }
 
     public DetectorTestUtilityBuilder<T> WithFile(string fileName, string fileContents, IEnumerable<string> searchPatterns = null, string fileLocation = null) =>

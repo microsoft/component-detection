@@ -46,6 +46,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IEnvironmentVariableService, EnvironmentVariableService>();
         services.AddSingleton<IObservableDirectoryWalkerFactory, FastDirectoryWalkerFactory>();
         services.AddSingleton<IFileUtilityService, FileUtilityService>();
+        services.AddSingleton<IDirectoryUtilityService, DirectoryUtilityService>();
         services.AddSingleton<IFileWritingService, FileWritingService>();
         services.AddSingleton<IGraphTranslationService, DefaultGraphTranslationService>();
         services.AddSingleton<IPathUtilityService, PathUtilityService>();
@@ -62,7 +63,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
-        services.AddSingleton<IExperimentConfiguration, GoDetectorReplaceExperiment>();
+        services.AddSingleton<IExperimentConfiguration, NuGetTargetFrameworkExperiment>();
 
         // Detectors
         // CocoaPods
@@ -79,7 +80,6 @@ public static class ServiceCollectionExtensions
 
         // Go
         services.AddSingleton<IComponentDetector, GoComponentDetector>();
-        services.AddSingleton<IComponentDetector, GoComponentWithReplaceDetector>();
 
         // Gradle
         services.AddSingleton<IComponentDetector, GradleComponentDetector>();
@@ -105,6 +105,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, NuGetComponentDetector>();
         services.AddSingleton<IComponentDetector, NuGetPackagesConfigDetector>();
         services.AddSingleton<IComponentDetector, NuGetProjectModelProjectCentricComponentDetector>();
+        services.AddSingleton<IComponentDetector, NuGetPackageReferenceFrameworkAwareDetector>();
 
         // PIP
         services.AddSingleton<IPyPiClient, PyPiClient>();

@@ -91,7 +91,15 @@ public class DetectorProcessingService : IDetectorProcessingService
                 {
                     result = await this.WithExperimentalScanGuardsAsync(
                         () => detector.ExecuteDetectorAsync(
-                            new ScanRequest(settings.SourceDirectory, exclusionPredicate, this.logger, settings.DetectorArgs, settings.DockerImagesToScan, componentRecorder, settings.MaxDetectionThreads ?? DefaultMaxDetectionThreads),
+                            new ScanRequest(
+                                settings.SourceDirectory,
+                                exclusionPredicate,
+                                this.logger,
+                                settings.DetectorArgs,
+                                settings.DockerImagesToScan,
+                                componentRecorder,
+                                settings.MaxDetectionThreads ?? DefaultMaxDetectionThreads,
+                                settings.CleanupCreatedFiles ?? true),
                             cancellationToken),
                         isExperimentalDetector,
                         record);

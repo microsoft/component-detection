@@ -22,6 +22,8 @@ public class DetectedComponent
         this.DetectedBy = detector;
         this.ContainerDetailIds = [];
         this.ContainerLayerIds = new Dictionary<int, IEnumerable<int>>();
+        this.TargetFrameworks = [];
+
         if (containerDetailsId.HasValue)
         {
             this.ContainerDetailIds.Add(containerDetailsId.Value);
@@ -61,6 +63,9 @@ public class DetectedComponent
 
     /// <summary> Gets or sets Dependency Scope of the component.</summary>
     public DependencyScope? DependencyScope { get; set; }
+
+    /// <summary> Gets Target Frameworks where the component was consumed.</summary>
+    public ConcurrentHashSet<string> TargetFrameworks { get; set; }
 
     private string DebuggerDisplay => $"{this.Component.DebuggerDisplay}";
 
