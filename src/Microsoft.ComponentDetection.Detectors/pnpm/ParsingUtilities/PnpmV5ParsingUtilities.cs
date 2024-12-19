@@ -14,7 +14,7 @@ where T : PnpmYaml
         return new DetectedComponent(new NpmComponent(parentName, parentVersion));
     }
 
-    private (string Name, string Version) ExtractNameAndVersionFromPnpmPackagePath(string pnpmPackagePath)
+    public override (string FullPackageName, string PackageVersion) ExtractNameAndVersionFromPnpmPackagePath(string pnpmPackagePath)
     {
         var pnpmComponentDefSections = pnpmPackagePath.Trim('/').Split('/');
         (var packageVersion, var indexVersionIsAt) = this.GetPackageVersion(pnpmComponentDefSections);

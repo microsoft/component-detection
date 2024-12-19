@@ -32,11 +32,18 @@ where T : PnpmYaml
     }
 
     /// <summary>
-    /// Parse a pnpm path of the form "/package-name/version".
+    /// Parse a pnpm path of the form "/package-name/version and create an npm component".
     /// </summary>
     /// <param name="pnpmPackagePath">a pnpm path of the form "/package-name/version".</param>
     /// <returns>Data parsed from path.</returns>
     public abstract DetectedComponent CreateDetectedComponentFromPnpmPath(string pnpmPackagePath);
+
+    /// <summary>
+    /// Parse a pnpm path of the form "/package-name/version into a packageName and Version.
+    /// </summary>
+    /// <param name="pnpmPackagePath">a pnpm path of the form "/package-name/version".</param>
+    /// <returns>Data parsed from path.</returns>
+    public abstract (string FullPackageName, string PackageVersion) ExtractNameAndVersionFromPnpmPackagePath(string pnpmPackagePath);
 
     public virtual string ReconstructPnpmDependencyPath(string dependencyName, string dependencyVersion)
     {
