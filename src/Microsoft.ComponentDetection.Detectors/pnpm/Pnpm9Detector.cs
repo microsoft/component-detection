@@ -31,7 +31,7 @@ public class Pnpm9Detector : IPnpmDetector
             // Such local packages should only be referenced at the top level (via ProcessDependencyList) which also skips them or from other local packages (which this skips).
             // There should be no cases where a non-local package references a local package, so skipping them here should not result in failed lookups below when adding all the graph references.
             var (packageName, packageVersion) = this.pnpmParsingUtilities.ExtractNameAndVersionFromPnpmPackagePath(pnpmDependencyPath);
-            var isFileOrLink = packageVersion.StartsWith(PnpmConstants.PnpmLinkDependencyPath) || packageVersion.StartsWith(PnpmConstants.PnpmFileDependencyPath);
+            var isFileOrLink = this.IsFileOrLink(packageVersion) || this.IsFileOrLink(pnpmDependencyPath);
 
             var dependencyPath = pnpmDependencyPath;
             if (pnpmDependencyPath.StartsWith('/'))
@@ -77,7 +77,7 @@ public class Pnpm9Detector : IPnpmDetector
             // Lockfile v9 apparently removed the tagging of dev dependencies in the lockfile, so we revert to using the dependency tree to establish dev dependency state.
             // At this point, the root dependencies are marked according to which dependency group they are declared in the lockfile itself.
             // Ignore "file:" and "link:" as these are local packages.
-            var isFileOrLink = dep.Version.StartsWith(PnpmConstants.PnpmLinkDependencyPath) || dep.Version.StartsWith(PnpmConstants.PnpmFileDependencyPath);
+            var isFileOrLink = this.IsFileOrLink(dep.Version);
             if (!isFileOrLink)
             {
                 singleFileComponentRecorder.RegisterUsage(component, isExplicitReferencedDependency: true, isDevelopmentDependency: isDevelopmentDependency);
@@ -86,6 +86,14 @@ public class Pnpm9Detector : IPnpmDetector
             var seenDependencies = new HashSet<string>();
             this.ProcessIndirectDependencies(singleFileComponentRecorder, components, isFileOrLink ? null : component.Component.Id, package.Dependencies, isDevelopmentDependency, seenDependencies);
         }
+    }
+
+    private bool IsFileOrLink(string packagePath)
+    {
+        return packagePath.StartsWith(PnpmConstants.PnpmLinkDependencyPath) ||
+               packagePath.StartsWith(PnpmConstants.PnpmFileDependencyPath) ||
+               packagePath.StartsWith(PnpmConstants.PnpmHttpDependencyPath) ||
+               packagePath.StartsWith(PnpmConstants.PnpmHttpsDependencyPath);
     }
 
     private void ProcessIndirectDependencies(ISingleFileComponentRecorder singleFileComponentRecorder, Dictionary<string, (DetectedComponent C, Package P)> components, string parentComponentId, Dictionary<string, string> dependencies, bool isDevDependency, HashSet<string> seenDependencies)
