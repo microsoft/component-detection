@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -14,7 +13,6 @@ using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -42,20 +40,17 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Number of unique nodes in ProjectAssetsJson
-        Console.WriteLine(string.Join(",", detectedComponents.Select(x => x.Component.Id)));
-        detectedComponents.Should().HaveCount(3);
-        detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("coverlet.msbuild")).Should().NotBeNull();
+        detectedComponents.Should().HaveCount(22);
 
-        detectedComponents.Should().OnlyContain(x =>
-            componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NuGetComponent>(
-                x.Component.Id,
-                y => y.Id == x.Component.Id));
+        var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        nonDevComponents.Should().HaveCount(17);
 
         foreach (var component in detectedComponents)
         {
             component.TargetFrameworks.Should().BeEquivalentTo(["netcoreapp2.2"]);
         }
+
+        detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("coverlet.msbuild")).Should().NotBeNull();
 
         componentRecorder.ForAllComponents(grouping => grouping.AllFileLocations.Should().Contain(location => location.Contains("Loader.csproj")));
     }
@@ -70,13 +65,14 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Number of unique nodes in ProjectAssetsJson
-        Console.WriteLine(string.Join(",", detectedComponents.Select(x => x.Component.Id)));
-        detectedComponents.Should().HaveCount(26);
-        detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Polly")).Should().NotBeNull();
-        detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().Count(x => x.Name.Contains("System.Composition")).Should().Be(5);
+        detectedComponents.Should().HaveCount(68);
 
-        var nugetVersioning = detectedComponents.FirstOrDefault(x => (x.Component as NuGetComponent).Name.Contains("NuGet.DependencyResolver.Core"));
+        var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        nonDevComponents.Should().HaveCount(27);
+        nonDevComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Polly")).Should().NotBeNull();
+        nonDevComponents.Select(x => x.Component).Cast<NuGetComponent>().Count(x => x.Name.Contains("System.Composition")).Should().Be(5);
+
+        var nugetVersioning = nonDevComponents.FirstOrDefault(x => (x.Component as NuGetComponent).Name.Contains("NuGet.DependencyResolver.Core"));
         nugetVersioning.Should().NotBeNull();
 
         componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NuGetComponent>(
@@ -94,11 +90,10 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var ommittedComponentInformationJson = scanResult.AdditionalTelemetryDetails[NuGetProjectModelProjectCentricComponentDetector.OmittedFrameworkComponentsTelemetryKey];
-        var omittedComponentsWithCount = JsonConvert.DeserializeObject<Dictionary<string, int>>(ommittedComponentInformationJson);
-
-        (omittedComponentsWithCount.Keys.Count > 5).Should().BeTrue("Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
-        omittedComponentsWithCount.Should().Contain("Microsoft.NETCore.App", 4, "There should be four cases of the NETCore.App library being omitted in the test data.");
+        var dependencies = componentRecorder.GetDetectedComponents();
+        var developmentDependencies = dependencies.Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(5);
+        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.NETCore.Platforms "), "Microsoft.NETCore.Platforms should be treated as a development dependency.");
     }
 
     [TestMethod]
@@ -155,6 +150,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         var expectedExplicitRefs = new[]
         {
             "DotNet.Glob",
+            "Microsoft.NETCore.App",
             "MinVer",
             "Nett",
             "Newtonsoft.Json",
@@ -169,6 +165,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
             "System.Composition.Runtime",
             "System.Composition.TypedParts",
             "System.Reactive",
+            "System.Threading.Tasks.Dataflow",
             "coverlet.msbuild",
             "YamlDotNet",
         };
@@ -177,7 +174,7 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         {
             var component = detectedComponents.First(x => x.Component.Id == componentId);
             var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
-            graph.IsComponentExplicitlyReferenced(componentId).Should().Be(expectedExplicitRefValue);
+            graph.IsComponentExplicitlyReferenced(componentId).Should().Be(expectedExplicitRefValue, "{0} should{1} be explicitly referenced.", componentId, expectedExplicitRefValue ? string.Empty : "n't");
         }
     }
 
@@ -191,8 +188,11 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
 
         // Number of unique nodes in ProjectAssetsJson
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().HaveCount(2);
-        detectedComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Microsoft.Extensions.DependencyModel")).Should().NotBeNull();
+        detectedComponents.Should().HaveCount(11);
+
+        var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        nonDevComponents.Should().ContainSingle();
+        nonDevComponents.Select(x => x.Component).Cast<NuGetComponent>().Single().Name.Should().StartWith("Microsoft.Extensions.DependencyModel");
 
         var systemTextJson = detectedComponents.FirstOrDefault(x => (x.Component as NuGetComponent).Name.Contains("System.Text.Json"));
 
@@ -216,12 +216,9 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
             .WithFile(this.projectAssetsJsonFileName, osAgnostic)
             .ExecuteDetectorAsync();
 
-        var ommittedComponentInformationJson = scanResult.AdditionalTelemetryDetails[NuGetProjectModelProjectCentricComponentDetector.OmittedFrameworkComponentsTelemetryKey];
-        var omittedComponentsWithCount = JsonConvert.DeserializeObject<Dictionary<string, int>>(ommittedComponentInformationJson);
-
-        // With 3.X, we don't expect there to be a lot of these, but there are still netstandard libraries present which can bring things into the graph
-        omittedComponentsWithCount.Keys.Should().HaveCount(4, "Ommitted framework assemblies are missing. There should be more than ten, but this is a gut check to make sure we have data.");
-        omittedComponentsWithCount.Should().Contain("System.Reflection", 1, "There should be one case of the System.Reflection library being omitted in the test data.");
+        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(10, "Omitted framework assemblies are missing.");
+        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("System.Reflection "), "System.Reflection should be treated as a development dependency.");
     }
 
     [TestMethod]
@@ -254,20 +251,87 @@ public class NuGetProjectModelProjectCentricComponentDetectorTests : BaseDetecto
         // Top level dependencies look like this:
         // (we expect all non-proj and non-framework to show up as explicit refs, so those will be absent from the check)
         //
-        // "ExtCore.Infrastructure >= 5.1.0",
         // "Microsoft.Extensions.DependencyModel >= 3.0.0",
         // "System.Runtime.Loader >= 4.3.0"
         var expectedExplicitRefs = new[]
         {
             "Microsoft.Extensions.DependencyModel",
+            "System.Runtime.Loader",
         };
 
         foreach (var componentId in graph.GetComponents())
         {
             var component = detectedComponents.First(x => x.Component.Id == componentId);
             var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
-            graph.IsComponentExplicitlyReferenced(componentId).Should().Be(expectedExplicitRefValue);
+            graph.IsComponentExplicitlyReferenced(componentId).Should().Be(expectedExplicitRefValue, "{0} should{1} be explicitly referenced.", componentId, expectedExplicitRefValue ? string.Empty : "n't");
         }
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_8_0_web_VerificationAsync()
+    {
+        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_8_0_web);
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, osAgnostic)
+            .ExecuteDetectorAsync();
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue(), "All should be development dependencies");
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_42_15_web_VerificationAsync()
+    {
+        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_42_15_web);
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, osAgnostic)
+            .ExecuteDetectorAsync();
+
+        // net42.15 is not a known framework, but it can import framework packages from the closest known framework.
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue(), "All should be development dependencies");
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_8_0_multi_framework_VerificationAsync()
+    {
+        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_8_0_multi_framework);
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, osAgnostic)
+            .ExecuteDetectorAsync();
+
+        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(3, "Omitted framework assemblies are missing.");
+        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.Extensions.Primitives "), "Microsoft.Extensions.Primitives should be treated as a development dependency.");
+        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("System.IO.Packaging "), "System.IO.Packaging should be treated as a development dependency.");
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_6_0_8_0_multi_framework_VerificationAsync()
+    {
+        var osAgnostic = this.Convert31SampleToOSAgnostic(TestResources.project_assets_6_0_8_0_multi_framework);
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, osAgnostic)
+            .ExecuteDetectorAsync();
+
+        var developmentDependencies = componentRecorder.GetDetectedComponents().Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(2, "Omitted framework assemblies are missing.");
+        developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.Extensions.Primitives "), "Microsoft.Extensions.Primitives should be treated as a development dependency.");
+        developmentDependencies.Should().NotContain(c => c.Component.Id.StartsWith("System.IO.Packaging "), "System.IO.Packaging should not be treated as a development dependency.");
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_PackageDownload_VerificationAsync()
+    {
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, TestResources.project_assets_packageDownload)
+            .ExecuteDetectorAsync();
+
+        var dependencies = componentRecorder.GetDetectedComponents();
+        dependencies.Should().HaveCount(3, "PackageDownload dependencies should exist.");
+        dependencies.Should().AllSatisfy(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue(), "All PackageDownloads should be development dependencies");
+        dependencies.Select(c => c.Component).Should().AllBeOfType<NuGetComponent>();
+        dependencies.Select(c => c.TargetFrameworks).Should().AllSatisfy(tfms => tfms.Should().BeEquivalentTo(["net8.0"]));
     }
 
     [TestMethod]
