@@ -104,6 +104,13 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
             }
         }
 
+        frameworkPackages.AddRange(GetLegacyFrameworkPackagesFromPlatformPackages(framework, lockFileTarget));
+
+        return frameworkPackages.ToArray();
+    }
+
+    private static IEnumerable<FrameworkPackages> GetLegacyFrameworkPackagesFromPlatformPackages(NuGetFramework framework, LockFileTarget lockFileTarget)
+    {
         if (framework.Framework == FrameworkConstants.FrameworkIdentifiers.NetCoreApp && framework.Version.Major < 3)
         {
             // For .NETCore 1.x (all frameworks) and 2.x (ASP.NET Core) the $(MicrosoftNETPlatformLibrary) property specified the framework package of the project.
@@ -114,7 +121,13 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
             // and that the app is framework-dependent.
             // This is consistent with the old behavior of the old NuGet Detector.
             var lookup = lockFileTarget.Libraries.ToDictionary(l => l.Name, l => l, StringComparer.OrdinalIgnoreCase);
-            string[] platformPackageNames = [FrameworkNames.NetCoreApp, FrameworkNames.AspNetCoreApp, "Microsoft.AspNetCore", "Microsoft.AspNetCore.Razor.Design"];
+            string[] platformPackageNames = [
+                FrameworkNames.NetCoreApp,           // Default platform package for .NET Core 1.x and 2.x    https://github.com/dotnet/sdk/blob/516dcf4a3bcf52ac3dce2452ea15ddd5cf057300/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.targets#L519
+                FrameworkNames.AspNetCoreApp,        // ASP.NET platform package for .NET Core 2.x            https://github.com/dotnet/aspnetcore/blob/ac66280fe9024bdd686354e342fcdfb3409597f7/src/Microsoft.AspNetCore.App/build/netcoreapp2.1/Microsoft.AspNetCore.App.targets#L10
+                "Microsoft.AspNetCore.All",          // Alternate ASP.NET platform package for .NET Core 2.x  https://github.com/dotnet/aspnetcore/blob/ac66280fe9024bdd686354e342fcdfb3409597f7/src/Microsoft.AspNetCore.All/build/netcoreapp2.1/Microsoft.AspNetCore.All.targets#L10
+
+                // ASP.NET did not have platform package / shared framework for .NET Core 1.x - it was app-local only
+            ];
 
             foreach (var platformPackageName in platformPackageNames)
             {
@@ -126,7 +139,7 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
                     CollectDependencies(platformLibrary.Dependencies);
 
-                    frameworkPackages.Add(frameworkPackagesFromPlatformPackage);
+                    yield return frameworkPackagesFromPlatformPackage;
 
                     // recursively include dependencies, so long as they were not upgraded by some other reference
                     void CollectDependencies(IEnumerable<PackageDependency> dependencies)
@@ -147,8 +160,6 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
                 }
             }
         }
-
-        return frameworkPackages.ToArray();
     }
 
     private static FrameworkPackages LoadFrameworkPackagesFromPack(NuGetFramework framework, string frameworkName)

@@ -273,7 +273,6 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
         var testResources = new[]
         {
             TestResources.project_assets_1_1_console,
-            TestResources.project_assets_1_1_web,
             TestResources.project_assets_2_1_web,
         };
 
@@ -287,6 +286,20 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
             detectedComponents.Should().AllSatisfy(c =>
                 componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue($"{c.Component.Id} should be a dev dependency"));
         }
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_1_1_web_VerificationAsync()
+    {
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, TestResources.project_assets_1_1_web)
+            .ExecuteDetectorAsync();
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(169, "Find expected dependencies.");
+
+        var developmentDependencies = detectedComponents.Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(122, "NETCore.App packages should be dev dependencies.");
     }
 
     [TestMethod]
