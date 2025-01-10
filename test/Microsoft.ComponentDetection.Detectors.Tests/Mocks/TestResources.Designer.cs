@@ -223,6 +223,86 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Mocks {
         
         /// <summary>
         ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: 3,
+        ///  &quot;targets&quot;: {
+        ///    &quot;.NETCoreApp,Version=v1.1&quot;: {
+        ///      &quot;Libuv/1.9.1&quot;: {
+        ///        &quot;type&quot;: &quot;package&quot;,
+        ///        &quot;dependencies&quot;: {
+        ///          &quot;Microsoft.NETCore.Platforms&quot;: &quot;1.0.1&quot;
+        ///        },
+        ///        &quot;runtimeTargets&quot;: {
+        ///          &quot;runtimes/debian-x64/native/libuv.so&quot;: {
+        ///            &quot;assetType&quot;: &quot;native&quot;,
+        ///            &quot;rid&quot;: &quot;debian-x64&quot;
+        ///          },
+        ///          &quot;runtimes/fedora-x64/native/libuv.so&quot;: {
+        ///            &quot;assetType&quot;: &quot;native&quot;,
+        ///            &quot;rid&quot;: &quot;fedora-x64&quot;
+        ///          },
+        ///  [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string project_assets_1_1_console {
+            get {
+                return ResourceManager.GetString("project_assets_1_1_console", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: 3,
+        ///  &quot;targets&quot;: {
+        ///    &quot;.NETCoreApp,Version=v1.1&quot;: {
+        ///      &quot;Libuv/1.9.2&quot;: {
+        ///        &quot;type&quot;: &quot;package&quot;,
+        ///        &quot;dependencies&quot;: {
+        ///          &quot;Microsoft.NETCore.Platforms&quot;: &quot;1.0.1&quot;
+        ///        },
+        ///        &quot;runtimeTargets&quot;: {
+        ///          &quot;runtimes/debian-x64/native/libuv.so&quot;: {
+        ///            &quot;assetType&quot;: &quot;native&quot;,
+        ///            &quot;rid&quot;: &quot;debian-x64&quot;
+        ///          },
+        ///          &quot;runtimes/osx/native/libuv.dylib&quot;: {
+        ///            &quot;assetType&quot;: &quot;native&quot;,
+        ///            &quot;rid&quot;: &quot;osx&quot;
+        ///          },
+        ///          &quot;r [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string project_assets_1_1_web {
+            get {
+                return ResourceManager.GetString("project_assets_1_1_web", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///  &quot;version&quot;: 3,
+        ///  &quot;targets&quot;: {
+        ///    &quot;.NETCoreApp,Version=v2.1&quot;: {
+        ///      &quot;Microsoft.AspNet.WebApi.Client/5.2.6&quot;: {
+        ///        &quot;type&quot;: &quot;package&quot;,
+        ///        &quot;dependencies&quot;: {
+        ///          &quot;Newtonsoft.Json&quot;: &quot;10.0.1&quot;,
+        ///          &quot;Newtonsoft.Json.Bson&quot;: &quot;1.0.1&quot;
+        ///        },
+        ///        &quot;compile&quot;: {
+        ///          &quot;lib/netstandard2.0/System.Net.Http.Formatting.dll&quot;: {}
+        ///        },
+        ///        &quot;runtime&quot;: {
+        ///          &quot;lib/netstandard2.0/System.Net.Http.Formatting.dll&quot;: {}
+        ///        }
+        ///      },
+        ///      &quot;Microsoft.AspNetCore/2.1 [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string project_assets_2_1_web {
+            get {
+                return ResourceManager.GetString("project_assets_2_1_web", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
         ///	&quot;version&quot;: 3,
         ///	&quot;targets&quot;: {
         ///		&quot;.NETCoreApp,Version=v2.2&quot;: {

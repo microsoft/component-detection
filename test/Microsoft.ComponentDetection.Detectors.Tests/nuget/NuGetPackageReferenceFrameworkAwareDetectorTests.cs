@@ -43,7 +43,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
         detectedComponents.Should().HaveCount(22);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
-        nonDevComponents.Should().HaveCount(17);
+        nonDevComponents.Should().HaveCount(3);
 
         foreach (var component in detectedComponents)
         {
@@ -68,7 +68,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
         detectedComponents.Should().HaveCount(68);
 
         var nonDevComponents = detectedComponents.Where(c => !componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
-        nonDevComponents.Should().HaveCount(27);
+        nonDevComponents.Should().HaveCount(25);
         nonDevComponents.Select(x => x.Component).Cast<NuGetComponent>().FirstOrDefault(x => x.Name.Contains("Polly")).Should().NotBeNull();
         nonDevComponents.Select(x => x.Component).Cast<NuGetComponent>().Count(x => x.Name.Contains("System.Composition")).Should().Be(5);
 
@@ -92,7 +92,7 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
 
         var dependencies = componentRecorder.GetDetectedComponents();
         var developmentDependencies = dependencies.Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
-        developmentDependencies.Should().HaveCount(5);
+        developmentDependencies.Should().HaveCount(19);
         developmentDependencies.Should().Contain(c => c.Component.Id.StartsWith("Microsoft.NETCore.Platforms "), "Microsoft.NETCore.Platforms should be treated as a development dependency.");
     }
 
@@ -265,6 +265,41 @@ public class NuGetPackageReferenceFrameworkAwareDetectorTests : BaseDetectorTest
             var expectedExplicitRefValue = expectedExplicitRefs.Contains(((NuGetComponent)component.Component).Name);
             graph.IsComponentExplicitlyReferenced(componentId).Should().Be(expectedExplicitRefValue, "{0} should{1} be explicitly referenced.", componentId, expectedExplicitRefValue ? string.Empty : "n't");
         }
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_1x_2x_VerificationAsync()
+    {
+        var testResources = new[]
+        {
+            TestResources.project_assets_1_1_console,
+            TestResources.project_assets_2_1_web,
+        };
+
+        foreach (var testResource in testResources)
+        {
+            var (scanResult, componentRecorder) = await this.DetectorTestUtility
+                .WithFile(this.projectAssetsJsonFileName, testResource)
+                .ExecuteDetectorAsync();
+
+            var detectedComponents = componentRecorder.GetDetectedComponents();
+            detectedComponents.Should().AllSatisfy(c =>
+                componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).Should().BeTrue($"{c.Component.Id} should be a dev dependency"));
+        }
+    }
+
+    [TestMethod]
+    public async Task ScanDirectoryAsync_ExcludedFrameworkComponent_1_1_web_VerificationAsync()
+    {
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.projectAssetsJsonFileName, TestResources.project_assets_1_1_web)
+            .ExecuteDetectorAsync();
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(169, "Find expected dependencies.");
+
+        var developmentDependencies = detectedComponents.Where(c => componentRecorder.GetEffectiveDevDependencyValue(c.Component.Id).GetValueOrDefault());
+        developmentDependencies.Should().HaveCount(122, "NETCore.App packages should be dev dependencies.");
     }
 
     [TestMethod]
