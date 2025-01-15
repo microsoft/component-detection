@@ -108,7 +108,7 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
             foreach (var target in lockFile.Targets)
             {
                 var frameworkReferences = GetFrameworkReferences(lockFile, target);
-                var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework, frameworkReferences);
+                var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework, frameworkReferences, target);
                 bool IsFrameworkOrDevelopmentDependency(LockFileTargetLibrary library) =>
                     frameworkPackages.Any(fp => fp.IsAFrameworkComponent(library.Name, library.Version)) ||
                     IsADevelopmentDependency(library, lockFile);
