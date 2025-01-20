@@ -2,6 +2,8 @@ name: Publish snapshot of test scan
 
 env:
   CD_DETECTOR_EXPERIMENTS: 1
+  PipReportSkipFallbackOnFailure: "true"
+  PIP_INDEX_URL: "https://pypi.python.org/simple"
 
 on:
   push:
