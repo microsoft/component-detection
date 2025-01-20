@@ -139,4 +139,27 @@ public class ExperimentDiffTests
 
         action.Should().NotThrow();
     }
+
+    [TestMethod]
+    public void ExperimentDiff_DiffsAddedDevDependenciesMissingInControlGroup()
+    {
+        var componentA = ExperimentTestUtils.CreateRandomScannedComponent();
+        componentA.IsDevelopmentDependency = true;
+
+        var diff = new ExperimentDiff(
+            [],
+            [new ExperimentComponent(componentA)]);
+
+        diff.DevelopmentDependencyChanges.Should().ContainSingle();
+
+        var change = diff.DevelopmentDependencyChanges.First();
+        change.Id.Should().Be(componentA.Component.Id);
+        change.OldValue.Should().BeFalse();
+        change.NewValue.Should().BeTrue();
+
+        diff.AddedIds.Should().BeEquivalentTo([componentA.Component.Id]);
+        diff.RemovedIds.Should().BeEmpty();
+        diff.AddedRootIds.Should().BeEmpty();
+        diff.RemovedRootIds.Should().BeEmpty();
+    }
 }

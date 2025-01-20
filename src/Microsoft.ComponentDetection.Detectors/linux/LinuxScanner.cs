@@ -15,7 +15,7 @@ using Newtonsoft.Json;
 
 public class LinuxScanner : ILinuxScanner
 {
-    private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v1.16.0@sha256:12774e791a2b2bc48935c73da15180eee7f31815bc978b14f8f85cc408ec960b";
+    private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v0.100.0@sha256:df7b07bfadff45e0135d74f22478f47b16ac6aff4e8dbd93133fcae3bbbb790d";
 
     private static readonly IList<string> CmdParameters =
     [

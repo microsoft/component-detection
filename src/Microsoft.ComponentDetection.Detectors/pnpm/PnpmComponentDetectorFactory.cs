@@ -21,7 +21,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.
     /// </summary>
-    private static readonly Version MaxLockfileVersion = new(6, 0);
+    private static readonly Version MaxLockfileVersion = new(9, 0);
 
     public PnpmComponentDetectorFactory(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -41,7 +41,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
-    public override int Version { get; } = 6;
+    public override int Version { get; } = 7;
 
     public override bool NeedsAutomaticRootDependencyCalculation => true;
 
@@ -98,7 +98,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
 
     private IPnpmDetector GetPnpmComponentDetector(string fileContent, out string detectedVersion)
     {
-        detectedVersion = PnpmParsingUtilities.DeserializePnpmYamlFileVersion(fileContent);
+        detectedVersion = PnpmParsingUtilitiesFactory.DeserializePnpmYamlFileVersion(fileContent);
         this.RecordLockfileVersion(detectedVersion);
         var majorVersion = detectedVersion?.Split(".")[0];
         return majorVersion switch
@@ -110,6 +110,7 @@ public class PnpmComponentDetectorFactory : FileComponentDetector
             null => new Pnpm5Detector(),
             Pnpm5Detector.MajorVersion => new Pnpm5Detector(),
             Pnpm6Detector.MajorVersion => new Pnpm6Detector(),
+            Pnpm9Detector.MajorVersion => new Pnpm9Detector(),
             _ => null,
         };
     }

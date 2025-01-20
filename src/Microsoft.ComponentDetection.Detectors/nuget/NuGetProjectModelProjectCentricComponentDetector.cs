@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,176 +13,10 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDetector
 {
-    public const string OmittedFrameworkComponentsTelemetryKey = "OmittedFrameworkComponents";
-
     public const string ProjectDependencyType = "project";
-
-    private readonly ConcurrentDictionary<string, int> frameworkComponentsThatWereOmmittedWithCount = new ConcurrentDictionary<string, int>();
-
-    private readonly List<string> netCoreFrameworkNames = ["Microsoft.AspNetCore.App", "Microsoft.AspNetCore.Razor.Design", "Microsoft.NETCore.App"];
-
-    // This list is meant to encompass all net standard dependencies, but likely contains some net core app 1.x ones, too.
-    // The specific guidance we got around populating this list is to do so based on creating a dotnet core 1.x app to make sure we had the complete
-    //  set of netstandard.library files that could show up in later sdk versions.
-    private readonly string[] netStandardDependencies =
-    [
-        "Libuv",
-        "Microsoft.CodeAnalysis.Analyzers",
-        "Microsoft.CodeAnalysis.Common",
-        "Microsoft.CodeAnalysis.CSharp",
-        "Microsoft.CodeAnalysis.VisualBasic",
-        "Microsoft.CSharp",
-        "Microsoft.DiaSymReader.Native",
-        "Microsoft.NETCore.DotNetHost",
-        "Microsoft.NETCore.DotNetHostPolicy",
-        "Microsoft.NETCore.DotNetHostResolver",
-        "Microsoft.NETCore.Jit",
-        "Microsoft.NETCore.Platforms",
-        "Microsoft.NETCore.Runtime.CoreCLR",
-        "Microsoft.NETCore.Targets",
-        "Microsoft.NETCore.Windows.ApiSets",
-        "Microsoft.VisualBasic",
-        "Microsoft.Win32.Primitives",
-        "Microsoft.Win32.Registry",
-        "NETStandard.Library",
-        "runtime.debian.8-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.fedora.23-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.fedora.24-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.native.System",
-        "runtime.native.System.IO.Compression",
-        "runtime.native.System.Net.Http",
-        "runtime.native.System.Net.Security",
-        "runtime.native.System.Security.Cryptography.Apple",
-        "runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.opensuse.13.2-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.opensuse.42.1-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.osx.10.10-x64.runtime.native.System.Security.Cryptography.Apple",
-        "runtime.osx.10.10-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.rhel.7-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.ubuntu.14.04-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.ubuntu.16.04-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "runtime.ubuntu.16.10-x64.runtime.native.System.Security.Cryptography.OpenSsl",
-        "System.AppContext",
-        "System.Buffers",
-        "System.Collections",
-        "System.Collections.Concurrent",
-        "System.Collections.Immutable",
-        "System.Collections.NonGeneric",
-        "System.Collections.Specialized",
-        "System.ComponentModel",
-        "System.ComponentModel.Annotations",
-        "System.ComponentModel.EventBasedAsync",
-        "System.ComponentModel.Primitives",
-        "System.ComponentModel.TypeConverter",
-        "System.Console",
-        "System.Data.Common",
-        "System.Diagnostics.Contracts",
-        "System.Diagnostics.Debug",
-        "System.Diagnostics.DiagnosticSource",
-        "System.Diagnostics.FileVersionInfo",
-        "System.Diagnostics.Process",
-        "System.Diagnostics.StackTrace",
-        "System.Diagnostics.TextWriterTraceListener",
-        "System.Diagnostics.Tools",
-        "System.Diagnostics.TraceSource",
-        "System.Diagnostics.Tracing",
-        "System.Drawing.Primitives",
-        "System.Dynamic.Runtime",
-        "System.Globalization",
-        "System.Globalization.Calendars",
-        "System.Globalization.Extensions",
-        "System.IO",
-        "System.IO.Compression",
-        "System.IO.Compression.ZipFile",
-        "System.IO.FileSystem",
-        "System.IO.FileSystem.DriveInfo",
-        "System.IO.FileSystem.Primitives",
-        "System.IO.FileSystem.Watcher",
-        "System.IO.IsolatedStorage",
-        "System.IO.MemoryMappedFiles",
-        "System.IO.Pipes",
-        "System.IO.UnmanagedMemoryStream",
-        "System.Linq",
-        "System.Linq.Expressions",
-        "System.Linq.Parallel",
-        "System.Linq.Queryable",
-        "System.Net.Http",
-        "System.Net.HttpListener",
-        "System.Net.Mail",
-        "System.Net.NameResolution",
-        "System.Net.NetworkInformation",
-        "System.Net.Ping",
-        "System.Net.Primitives",
-        "System.Net.Requests",
-        "System.Net.Security",
-        "System.Net.ServicePoint",
-        "System.Net.Sockets",
-        "System.Net.WebClient",
-        "System.Net.WebHeaderCollection",
-        "System.Net.WebProxy",
-        "System.Net.WebSockets",
-        "System.Net.WebSockets.Client",
-        "System.Numerics.Vectors",
-        "System.ObjectModel",
-        "System.Reflection",
-        "System.Reflection.DispatchProxy",
-        "System.Reflection.Emit",
-        "System.Reflection.Emit.ILGeneration",
-        "System.Reflection.Emit.Lightweight",
-        "System.Reflection.Extensions",
-        "System.Reflection.Metadata",
-        "System.Reflection.Primitives",
-        "System.Reflection.TypeExtensions",
-        "System.Resources.Reader",
-        "System.Resources.ResourceManager",
-        "System.Resources.Writer",
-        "System.Runtime",
-        "System.Runtime.CompilerServices.VisualC",
-        "System.Runtime.Extensions",
-        "System.Runtime.Handles",
-        "System.Runtime.InteropServices",
-        "System.Runtime.InteropServices.RuntimeInformation",
-        "System.Runtime.Loader",
-        "System.Runtime.Numerics",
-        "System.Runtime.Serialization.Formatters",
-        "System.Runtime.Serialization.Json",
-        "System.Runtime.Serialization.Primitives",
-        "System.Runtime.Serialization.Xml",
-        "System.Security.Claims",
-        "System.Security.Cryptography.Algorithms",
-        "System.Security.Cryptography.Cng",
-        "System.Security.Cryptography.Csp",
-        "System.Security.Cryptography.Encoding",
-        "System.Security.Cryptography.OpenSsl",
-        "System.Security.Cryptography.Primitives",
-        "System.Security.Cryptography.X509Certificates",
-        "System.Security.Principal",
-        "System.Security.Principal.Windows",
-        "System.Text.Encoding",
-        "System.Text.Encoding.CodePages",
-        "System.Text.Encoding.Extensions",
-        "System.Text.RegularExpressions",
-        "System.Threading",
-        "System.Threading.Overlapped",
-        "System.Threading.Tasks",
-        "System.Threading.Tasks.Dataflow",
-        "System.Threading.Tasks.Extensions",
-        "System.Threading.Tasks.Parallel",
-        "System.Threading.Thread",
-        "System.Threading.ThreadPool",
-        "System.Threading.Timer",
-        "System.Web.HttpUtility",
-        "System.Xml.ReaderWriter",
-        "System.Xml.XDocument",
-        "System.Xml.XmlDocument",
-        "System.Xml.XmlSerializer",
-        "System.Xml.XPath",
-        "System.Xml.XPath.XDocument",
-    ];
 
     private readonly IFileUtilityService fileUtilityService;
 
@@ -207,7 +40,47 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.NuGet];
 
-    public override int Version { get; } = 1;
+    public override int Version { get; } = 2;
+
+    private static string[] GetFrameworkReferences(LockFile lockFile, LockFileTarget target)
+    {
+        var frameworkInformation = lockFile.PackageSpec.TargetFrameworks.FirstOrDefault(x => x.FrameworkName.Equals(target.TargetFramework));
+
+        if (frameworkInformation == null)
+        {
+            return [];
+        }
+
+        // add directly referenced frameworks
+        var results = frameworkInformation.FrameworkReferences.Select(x => x.Name);
+
+        // add transitive framework references
+        results = results.Concat(target.Libraries.SelectMany(l => l.FrameworkReferences));
+
+        return results.Distinct().ToArray();
+    }
+
+    private static bool IsADevelopmentDependency(LockFileTargetLibrary library, LockFile lockFile)
+    {
+        // a placeholder item is an empty file that doesn't exist with name _._ meant to indicate an empty folder in a nuget package, but also used by NuGet when a package's assets are excluded.
+        static bool IsAPlaceholderItem(LockFileItem item) => Path.GetFileName(item.Path).Equals(PackagingCoreConstants.EmptyFolder, StringComparison.OrdinalIgnoreCase);
+
+        // All(IsAPlaceholderItem) checks if the collection is empty or all items are placeholders.
+        return library.RuntimeAssemblies.All(IsAPlaceholderItem) &&
+            library.RuntimeTargets.All(IsAPlaceholderItem) &&
+            library.ResourceAssemblies.All(IsAPlaceholderItem) &&
+            library.NativeLibraries.All(IsAPlaceholderItem) &&
+            library.ContentFiles.All(IsAPlaceholderItem) &&
+            library.Build.All(IsAPlaceholderItem) &&
+            library.BuildMultiTargeting.All(IsAPlaceholderItem) &&
+
+            // The SDK looks at the library for analyzers using the following hueristic:
+            // https://github.com/dotnet/sdk/blob/d7fe6e66d8f67dc93c5c294a75f42a2924889196/src/Tasks/Microsoft.NET.Build.Tasks/NuGetUtils.NuGet.cs#L43
+            (!lockFile.GetLibrary(library.Name, library.Version)?.Files
+                .Any(file => file.StartsWith("analyzers", StringComparison.Ordinal)
+                    && file.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+                    && !file.EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase)) ?? false);
+    }
 
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -222,7 +95,6 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
                 throw new FormatException("Lockfile did not contain a PackageSpec");
             }
 
-            var frameworkComponents = this.GetFrameworkComponents(lockFile);
             var explicitReferencedDependencies = this.GetTopLevelLibraries(lockFile)
                 .Select(x => this.GetLibraryComponentWithDependencyLookup(lockFile.Libraries, x.Name, x.Version, x.VersionRange))
                 .ToList();
@@ -235,12 +107,22 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
             var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(lockFile.PackageSpec.RestoreMetadata.ProjectPath);
             foreach (var target in lockFile.Targets)
             {
+                var frameworkReferences = GetFrameworkReferences(lockFile, target);
+                var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework, frameworkReferences, target);
+                bool IsFrameworkOrDevelopmentDependency(LockFileTargetLibrary library) =>
+                    frameworkPackages.Any(fp => fp.IsAFrameworkComponent(library.Name, library.Version)) ||
+                    IsADevelopmentDependency(library, lockFile);
+
                 // This call to GetTargetLibrary is not guarded, because if this can't be resolved then something is fundamentally broken (e.g. an explicit dependency reference not being in the list of libraries)
+                // issue: we treat top level dependencies for all targets as top level for each target, but some may not be top level for other targets, or may not even be present for other targets.
                 foreach (var library in explicitReferencedDependencies.Select(x => target.GetTargetLibrary(x.Name)).Where(x => x != null))
                 {
-                    this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, frameworkComponents);
+                    this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library, null, IsFrameworkOrDevelopmentDependency);
                 }
             }
+
+            // Register PackageDownload
+            this.RegisterPackageDownloads(singleFileComponentRecorder, lockFile);
         }
         catch (Exception e)
         {
@@ -251,24 +133,16 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         return Task.CompletedTask;
     }
 
-    protected override Task OnDetectionFinishedAsync()
-    {
-        this.Telemetry.Add(OmittedFrameworkComponentsTelemetryKey, JsonConvert.SerializeObject(this.frameworkComponentsThatWereOmmittedWithCount));
-
-        return Task.CompletedTask;
-    }
-
     private void NavigateAndRegister(
         LockFileTarget target,
         HashSet<string> explicitlyReferencedComponentIds,
         ISingleFileComponentRecorder singleFileComponentRecorder,
         LockFileTargetLibrary library,
         string parentComponentId,
-        HashSet<string> dotnetRuntimePackageNames,
+        Func<LockFileTargetLibrary, bool> isDevelopmentDependency,
         HashSet<string> visited = null)
     {
-        if (this.IsAFrameworkComponent(dotnetRuntimePackageNames, library.Name, library.Dependencies)
-            || library.Type == ProjectDependencyType)
+        if (library.Type == ProjectDependencyType)
         {
             return;
         }
@@ -276,7 +150,14 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         visited ??= [];
 
         var libraryComponent = new DetectedComponent(new NuGetComponent(library.Name, library.Version.ToNormalizedString()));
-        singleFileComponentRecorder.RegisterUsage(libraryComponent, explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id), parentComponentId, targetFramework: target.TargetFramework?.GetShortFolderName());
+
+        // Possibly adding target framework to single file recorder
+        singleFileComponentRecorder.RegisterUsage(
+            libraryComponent,
+            explicitlyReferencedComponentIds.Contains(libraryComponent.Component.Id),
+            parentComponentId,
+            isDevelopmentDependency: isDevelopmentDependency(library),
+            targetFramework: target.TargetFramework?.GetShortFolderName());
 
         foreach (var dependency in library.Dependencies)
         {
@@ -286,42 +167,43 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
             }
 
             var targetLibrary = target.GetTargetLibrary(dependency.Id);
-            if (targetLibrary == null)
-            {
-                // We have to exclude this case -- it looks like a bug in project.assets.json, but there are project.assets.json files that don't have a dependency library in the libraries set.
-            }
-            else
+
+            // There are project.assets.json files that don't have a dependency library in the libraries set.
+            if (targetLibrary != null)
             {
                 visited.Add(dependency.Id);
-                this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, dotnetRuntimePackageNames, visited);
+                this.NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, targetLibrary, libraryComponent.Component.Id, isDevelopmentDependency, visited);
             }
         }
     }
 
-    private bool IsAFrameworkComponent(HashSet<string> frameworkComponents, string libraryName, IList<PackageDependency> dependencies = null)
+    private void RegisterPackageDownloads(ISingleFileComponentRecorder singleFileComponentRecorder, LockFile lockFile)
     {
-        var isAFrameworkComponent = frameworkComponents.Contains(libraryName);
-
-        if (isAFrameworkComponent)
+        foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
         {
-            this.frameworkComponentsThatWereOmmittedWithCount.AddOrUpdate(libraryName, 1, (name, existing) => existing + 1);
-
-            if (dependencies != null)
+            foreach (var packageDownload in framework.DownloadDependencies)
             {
-                // Also track shallow children if this is a top level library so we have a rough count of how many things have been ommitted + root relationships
-                foreach (var item in dependencies)
+                if (packageDownload?.Name is null || packageDownload?.VersionRange?.MinVersion is null)
                 {
-                    this.frameworkComponentsThatWereOmmittedWithCount.AddOrUpdate(item.Id, 1, (name, existing) => existing + 1);
+                    continue;
                 }
+
+                var libraryComponent = new DetectedComponent(new NuGetComponent(packageDownload.Name, packageDownload.VersionRange.MinVersion.ToNormalizedString()));
+
+                // PackageDownload is always a development dependency since it's usage does not make it part of the application
+                singleFileComponentRecorder.RegisterUsage(
+                    libraryComponent,
+                    isExplicitReferencedDependency: true,
+                    parentComponentId: null,
+                    isDevelopmentDependency: true,
+                    targetFramework: framework.FrameworkName?.GetShortFolderName());
             }
         }
-
-        return isAFrameworkComponent;
     }
 
     private List<(string Name, Version Version, VersionRange VersionRange)> GetTopLevelLibraries(LockFile lockFile)
     {
-        // First, populate target frameworks -- This is the base level authoritative list of nuget packages a project has dependencies on.
+        // First, populate libraries from the TargetFrameworks section -- This is the base level authoritative list of nuget packages a project has dependencies on.
         var toBeFilled = new List<(string Name, Version Version, VersionRange VersionRange)>();
 
         foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
@@ -393,62 +275,5 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         }
 
         return matchingLibrary;
-    }
-
-    private HashSet<string> GetFrameworkComponents(LockFile lockFile)
-    {
-        var frameworkDependencies = new HashSet<string>();
-        foreach (var projectFileDependencyGroup in lockFile.ProjectFileDependencyGroups)
-        {
-            var topLevelLibraries = this.GetTopLevelLibraries(lockFile);
-            foreach (var (name, version, versionRange) in topLevelLibraries)
-            {
-                if (this.netCoreFrameworkNames.Contains(name))
-                {
-                    frameworkDependencies.Add(name);
-
-                    foreach (var target in lockFile.Targets)
-                    {
-                        var matchingLibrary = target.Libraries.FirstOrDefault(x => x.Name == name);
-                        var dependencyComponents = this.GetDependencyComponentIds(lockFile, target, matchingLibrary.Dependencies);
-                        frameworkDependencies.UnionWith(dependencyComponents);
-                    }
-                }
-            }
-        }
-
-        foreach (var netstandardDep in this.netStandardDependencies)
-        {
-            frameworkDependencies.Add(netstandardDep);
-        }
-
-        return frameworkDependencies;
-    }
-
-    private HashSet<string> GetDependencyComponentIds(LockFile lockFile, LockFileTarget target, IList<PackageDependency> dependencies, HashSet<string> visited = null)
-    {
-        visited ??= [];
-        var currentComponents = new HashSet<string>();
-        foreach (var dependency in dependencies)
-        {
-            if (visited.Contains(dependency.Id))
-            {
-                continue;
-            }
-
-            currentComponents.Add(dependency.Id);
-            var libraryToExpand = target.GetTargetLibrary(dependency.Id);
-            if (libraryToExpand == null)
-            {
-                // We have to exclude this case -- it looks like a bug in project.assets.json, but there are project.assets.json files that don't have a dependency library in the libraries set.
-            }
-            else
-            {
-                visited.Add(dependency.Id);
-                currentComponents.UnionWith(this.GetDependencyComponentIds(lockFile, target, libraryToExpand.Dependencies, visited));
-            }
-        }
-
-        return currentComponents;
     }
 }
