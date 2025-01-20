@@ -4,24 +4,24 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 
 /// <summary>
-/// Represents a SwiftPM component.
+/// Represents a Swift Package Manager component.
 /// </summary>
-public class SwiftPMResolvedFile
+public class SwiftResolvedFile
 {
     [JsonProperty("pins")]
-    public IList<SwiftPMDependency> Pins { get; set; }
+    public IList<SwiftDependency> Pins { get; set; }
 
     [JsonProperty("version")]
     public int Version { get; set; }
 
-    public class SwiftPMDependency
+    public class SwiftDependency
     {
         // The name of the package
         [JsonProperty("identity")]
         public string Identity { get; set; }
 
         // How the package is imported. Example: "remoteSourceControl"
-        // This is not an enum because the SwiftPM contract does not specify the possible values.
+        // This is not an enum because the Swift contract does not specify the possible values.
         [JsonProperty("kind")]
         public string Kind { get; set; }
 
@@ -31,9 +31,9 @@ public class SwiftPMResolvedFile
 
         // Data about the package version and commit hash.
         [JsonProperty("state")]
-        public SwiftPMState State { get; set; }
+        public SwiftState State { get; set; }
 
-        public class SwiftPMState
+        public class SwiftState
         {
             // The commit hash of the package.
             [JsonProperty("revision")]

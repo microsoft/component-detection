@@ -5,34 +5,34 @@ using System.Collections.Generic;
 using PackageUrl;
 
 /// <summary>
-/// Represents a SwiftPM component.
+/// Represents a Swift package manager component.
 /// </summary>
-public class SwiftPMComponent : TypedComponent
+public class SwiftComponent : TypedComponent
 {
     private readonly string packageUrl;
 
     private readonly string hash;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SwiftPMComponent"/> class.
+    /// Initializes a new instance of the <see cref="SwiftComponent"/> class.
     /// </summary>
     /// <param name="name">The name of the component.</param>
     /// <param name="version">The version of the component.</param>
     /// <param name="packageUrl">The package URL of the component.</param>
     /// <param name="hash">The hash of the component.</param>
-    public SwiftPMComponent(string name, string version, string packageUrl, string hash)
+    public SwiftComponent(string name, string version, string packageUrl, string hash)
     {
-        this.Name = this.ValidateRequiredInput(name, nameof(name), nameof(ComponentType.SwiftPM));
-        this.Version = this.ValidateRequiredInput(version, nameof(version), nameof(ComponentType.SwiftPM));
-        this.packageUrl = this.ValidateRequiredInput(packageUrl, nameof(packageUrl), nameof(ComponentType.SwiftPM));
-        this.hash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.SwiftPM));
+        this.Name = this.ValidateRequiredInput(name, nameof(name), nameof(ComponentType.Swift));
+        this.Version = this.ValidateRequiredInput(version, nameof(version), nameof(ComponentType.Swift));
+        this.packageUrl = this.ValidateRequiredInput(packageUrl, nameof(packageUrl), nameof(ComponentType.Swift));
+        this.hash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
     }
 
     public string Name { get; }
 
     public string Version { get; }
 
-    public override ComponentType Type => ComponentType.SwiftPM;
+    public override ComponentType Type => ComponentType.Swift;
 
     public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 

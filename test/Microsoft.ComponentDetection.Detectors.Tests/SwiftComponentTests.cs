@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Tests.SwiftPM;
+namespace Microsoft.ComponentDetection.Detectors.Tests.Swift;
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PackageUrl;
 
 [TestClass]
-public class SwiftPMComponentTests
+public class SwiftComponentTests
 {
     [TestMethod]
     public void Constructor_ShouldInitializeProperties()
@@ -18,39 +18,39 @@ public class SwiftPMComponentTests
         var packageUrl = "https://github.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftPMComponent(name, version, packageUrl, hash);
+        var component = new SwiftComponent(name, version, packageUrl, hash);
 
         component.Name.Should().Be(name);
         component.Version.Should().Be(version);
-        component.Type.Should().Be(ComponentType.SwiftPM);
+        component.Type.Should().Be(ComponentType.Swift);
         component.Id.Should().Be($"{name} {version} - {component.Type}");
     }
 
     [TestMethod]
     public void Constructor_ShouldThrowException_WhenNameIsNull()
     {
-        Action action = () => new SwiftPMComponent(null, "5.9.1", "https://github.com/Alamofire/Alamofire", "f455c2975872ccd2d9c81594c658af65716e9b9a");
+        Action action = () => new SwiftComponent(null, "5.9.1", "https://github.com/Alamofire/Alamofire", "f455c2975872ccd2d9c81594c658af65716e9b9a");
         action.Should().Throw<ArgumentException>().WithMessage("*name*");
     }
 
     [TestMethod]
     public void Constructor_ShouldThrowException_WhenVersionIsNull()
     {
-        Action action = () => new SwiftPMComponent("alamofire", null, "https://github.com/Alamofire/Alamofire", "f455c2975872ccd2d9c81594c658af65716e9b9a");
+        Action action = () => new SwiftComponent("alamofire", null, "https://github.com/Alamofire/Alamofire", "f455c2975872ccd2d9c81594c658af65716e9b9a");
         action.Should().Throw<ArgumentException>().WithMessage("*version*");
     }
 
     [TestMethod]
     public void Constructor_ShouldThrowException_WhenPackageUrlIsNull()
     {
-        Action action = () => new SwiftPMComponent("alamofire", "5.9.1", null, "f455c2975872ccd2d9c81594c658af65716e9b9a");
+        Action action = () => new SwiftComponent("alamofire", "5.9.1", null, "f455c2975872ccd2d9c81594c658af65716e9b9a");
         action.Should().Throw<ArgumentException>().WithMessage("*packageUrl*");
     }
 
     [TestMethod]
     public void Constructor_ShouldThrowException_WhenHashIsNull()
     {
-        Action action = () => new SwiftPMComponent("alamofire", "5.9.1", "https://github.com/Alamofire/Alamofire", null);
+        Action action = () => new SwiftComponent("alamofire", "5.9.1", "https://github.com/Alamofire/Alamofire", null);
         action.Should().Throw<ArgumentException>().WithMessage("*hash*");
     }
 
@@ -62,7 +62,7 @@ public class SwiftPMComponentTests
         var packageUrl = "https://github.com/Alamofire/Alamofire";
         var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
 
-        var component = new SwiftPMComponent(name, version, packageUrl, hash);
+        var component = new SwiftComponent(name, version, packageUrl, hash);
 
         var expectedPackageURL = new PackageURL(
             type: "swift",

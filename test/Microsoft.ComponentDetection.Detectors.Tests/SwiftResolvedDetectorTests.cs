@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.Tests.SwiftPM;
+namespace Microsoft.ComponentDetection.Detectors.Tests.Swift;
 
 using System;
 using System.Linq;
@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Microsoft.ComponentDetection.Detectors.SwiftPM;
+using Microsoft.ComponentDetection.Detectors.Swift;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
-public class SwiftPMResolvedDetectorTests : BaseDetectorTest<SwiftPMResolvedComponentDetector>
+public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponentDetector>
 {
     [TestMethod]
     public async Task Test_GivenDetectorWithValidFile_WhenScan_ThenScanIsSuccessfulAndComponentsAreRegistered()
@@ -47,7 +47,7 @@ public class SwiftPMResolvedDetectorTests : BaseDetectorTest<SwiftPMResolvedComp
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new SwiftPMComponent(
+            new SwiftComponent(
                 name: "alamofire",
                 version: "5.9.1",
                 packageUrl: "https://github.com/Alamofire/Alamofire",
@@ -81,7 +81,7 @@ public class SwiftPMResolvedDetectorTests : BaseDetectorTest<SwiftPMResolvedComp
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new SwiftPMComponent(
+            new SwiftComponent(
                 name: "alamofire",
                 version: "5.6.0",
                 packageUrl: "https://github.com/Alamofire/Alamofire",
@@ -146,7 +146,7 @@ public class SwiftPMResolvedDetectorTests : BaseDetectorTest<SwiftPMResolvedComp
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new SwiftPMComponent(
+            new SwiftComponent(
                 name: "alamofire",
                 version: "5.9.1",
                 packageUrl: "https://github.com/Alamofire/Alamofire",
@@ -412,7 +412,7 @@ public class SwiftPMResolvedDetectorTests : BaseDetectorTest<SwiftPMResolvedComp
         var typedComponents = detectedComponents.Select(c => c.Component).ToList();
 
         typedComponents.Should().ContainEquivalentOf(
-            new SwiftPMComponent(
+            new SwiftComponent(
                 name: "alamofire",
                 version: "f455c2975872ccd2d9c81594c658af65716e9b9a",
                 packageUrl: "https://github.com/Alamofire/Alamofire",

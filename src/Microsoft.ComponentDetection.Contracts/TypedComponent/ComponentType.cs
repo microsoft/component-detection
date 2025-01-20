@@ -58,5 +58,5 @@ public enum ComponentType : byte
     Conan = 17,
 
     [EnumMember]
-    SwiftPM = 18,
+    Swift = 18,
 }

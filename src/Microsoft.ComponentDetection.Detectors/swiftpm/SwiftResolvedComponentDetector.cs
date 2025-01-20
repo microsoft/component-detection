@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.SwiftPM;
+namespace Microsoft.ComponentDetection.Detectors.Swift;
 
 using System;
 using System.Collections.Generic;
@@ -12,27 +12,27 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 /// <summary>
-/// Detects SwiftPM components.
+/// Detects Swift Package Manager components.
 /// </summary>
-public class SwiftPMResolvedComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
-    public SwiftPMResolvedComponentDetector(
+    public SwiftResolvedComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger<SwiftPMResolvedComponentDetector> logger)
+        ILogger<SwiftResolvedComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.Logger = logger;
     }
 
-    public override string Id { get; } = "SwiftPM";
+    public override string Id { get; } = "Swift";
 
-    public override IEnumerable<string> Categories => [Enum.GetName(DetectorClass.SwiftPM)];
+    public override IEnumerable<string> Categories => [Enum.GetName(DetectorClass.Swift)];
 
     public override IList<string> SearchPatterns { get; } = ["Package.resolved"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.SwiftPM];
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Swift];
 
     public override int Version => 2;
 
@@ -47,7 +47,7 @@ public class SwiftPMResolvedComponentDetector : FileComponentDetector, IDefaultO
         }
         catch (Exception exception)
         {
-            this.Logger.LogError(exception, "SwiftPMComponentDetector: Error processing Package.resolved file: {Location}", processRequest.ComponentStream.Location);
+            this.Logger.LogError(exception, "SwiftComponentDetector: Error processing Package.resolved file: {Location}", processRequest.ComponentStream.Location);
         }
 
         return Task.CompletedTask;
@@ -60,23 +60,23 @@ public class SwiftPMResolvedComponentDetector : FileComponentDetector, IDefaultO
         foreach (var package in parsedResolvedFile.Pins)
         {
             // We are only interested in packages coming from remote sources such as git
-            // The Package Kind is not an enum because the SwiftPM contract does not specify the possible values.
+            // The Package Kind is not an enum because the Swift Package Manager contract does not specify the possible values.
             var targetSwiftPackageKind = "remoteSourceControl";
             if (package.Kind == targetSwiftPackageKind)
             {
                 // The version of the package is not always available.
                 var version = package.State.Version ?? package.State.Branch ?? package.State.Revision;
 
-                var detectedSwiftPMComponent = new SwiftPMComponent(
+                var detectedSwiftComponent = new SwiftComponent(
                     name: package.Identity,
                     version: version,
                     packageUrl: package.Location,
                     hash: package.State.Revision);
-                var newDetectedSwiftComponent = new DetectedComponent(component: detectedSwiftPMComponent, detector: this);
+                var newDetectedSwiftComponent = new DetectedComponent(component: detectedSwiftComponent, detector: this);
                 singleFileComponentRecorder.RegisterUsage(newDetectedSwiftComponent);
 
                 // We also register a Git component for the same package so that the git URL is registered.
-                // SwiftPM directly downloads the package from the git URL.
+                // Swift Package Manager directly downloads the package from the git URL.
                 var detectedGitComponent = new GitComponent(
                     repositoryUrl: new Uri(package.Location),
                     commitHash: package.State.Revision,
@@ -92,7 +92,7 @@ public class SwiftPMResolvedComponentDetector : FileComponentDetector, IDefaultO
     /// </summary>
     /// <param name="stream">The stream of the file to parse.</param>
     /// <returns>The parsed object.</returns>
-    private SwiftPMResolvedFile ReadAndParseResolvedFile(Stream stream)
+    private SwiftResolvedFile ReadAndParseResolvedFile(Stream stream)
     {
         string resolvedFile;
         using (var reader = new StreamReader(stream))
@@ -100,6 +100,6 @@ public class SwiftPMResolvedComponentDetector : FileComponentDetector, IDefaultO
             resolvedFile = reader.ReadToEnd();
         }
 
-        return JsonConvert.DeserializeObject<SwiftPMResolvedFile>(resolvedFile);
+        return JsonConvert.DeserializeObject<SwiftResolvedFile>(resolvedFile);
     }
 }
