@@ -78,9 +78,9 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
     {
         var authorName = GetRandomString();
         var authorEmail = GetRandomString();
-        var authroUrl = GetRandomString();
+        var authorUrl = GetRandomString();
         var (packageJsonName, packageJsonContents, packageJsonPath) =
-            NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName, authorEmail, authroUrl);
+            NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName, authorEmail, authorUrl);
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
@@ -97,9 +97,9 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
     public async Task TestNpmDetector_AuthorNameDetected_WhenEmailNotPresentAndUrlIsPresent_AuthorAsSingleStringAsync()
     {
         var authorName = GetRandomString();
-        var authroUrl = GetRandomString();
+        var authorUrl = GetRandomString();
         var (packageJsonName, packageJsonContents, packageJsonPath) =
-            NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName, null, authroUrl);
+            NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName, null, authorUrl);
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
@@ -116,10 +116,10 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
     public async Task TestNpmDetector_AuthorNull_WhenAuthorMalformed_AuthorAsSingleStringAsync()
     {
         var authorName = GetRandomString();
-        var authroUrl = GetRandomString();
+        var authorUrl = GetRandomString();
         var authorEmail = GetRandomString();
         var (packageJsonName, packageJsonContents, packageJsonPath) =
-            NpmTestUtilities.GetPackageJsonNoDependenciesMalformedAuthorAsSingleString(authorName, authorEmail, authroUrl);
+            NpmTestUtilities.GetPackageJsonNoDependenciesMalformedAuthorAsSingleString(authorName, authorEmail, authorUrl);
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
@@ -135,7 +135,6 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
     public async Task TestNpmDetector_AuthorNameDetected_WhenEmailNotPresentAndUrlNotPresent_AuthorAsSingleStringAsync()
     {
         var authorName = GetRandomString();
-        var authroUrl = GetRandomString();
         var (packageJsonName, packageJsonContents, packageJsonPath) =
             NpmTestUtilities.GetPackageJsonNoDependenciesForAuthorAndEmailAsSingleString(authorName);
 
@@ -206,6 +205,38 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         AssertDetectedComponentCount(detectedComponents, 1);
         AssertNpmComponent(detectedComponents);
         ((NpmComponent)detectedComponents.First().Component).Author.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_NodeEngineDoesNotCauseSkippedPackageAsync()
+    {
+        var componentName = GetRandomString();
+        var version = NewRandomVersion();
+        var (packageJsonName, packageJsonContents, packageJsonPath) =
+            NpmTestUtilities.GetPackageJsonNoDependenciesForNameAndVersionWithNodeEngine(componentName, version);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
+            .ExecuteDetectorAsync();
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_VSCodeEngineCausesSkippedPackageAsync()
+    {
+        var componentName = GetRandomString();
+        var version = NewRandomVersion();
+        var (packageJsonName, packageJsonContents, packageJsonPath) =
+            NpmTestUtilities.GetPackageJsonNoDependenciesForNameAndVersionWithVSCodeEngine(componentName, version);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
+            .ExecuteDetectorAsync();
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
     }
 
     private static void AssertDetectedComponentCount(IEnumerable<DetectedComponent> detectedComponents, int expectedCount)
