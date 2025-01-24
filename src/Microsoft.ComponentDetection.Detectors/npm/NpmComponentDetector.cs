@@ -91,7 +91,6 @@ public class NpmComponentDetector : FileComponentDetector
         if (enginesToken != null && enginesToken["vscode"] != null)
         {
             this.Logger.LogInformation("{NpmPackageName} found at path {NpmPackageLocation} represents a built-in VS Code extension. This package will not be registered.", name, filePath);
-            singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version}");
             return false;
         }
 
