@@ -142,6 +142,15 @@
   <data name="pip_report_single_pkg_invalid_pkg_version" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>pip_report_single_pkg_invalid_pkg_version.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="project_assets_1_1_console" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\project.assets_1_1_console.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
+  <data name="project_assets_1_1_web" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\project.assets_1_1_web.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
+  <data name="project_assets_2_1_web" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\project.assets_2_1_web.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
   <data name="project_assets_2_2" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\project_assets_2_2.json;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

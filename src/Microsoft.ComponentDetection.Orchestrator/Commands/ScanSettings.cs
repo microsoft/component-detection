@@ -53,6 +53,7 @@ public class ScanSettings : BaseSettings
     [CommandOption("--DetectorsFilter")]
     [Description(
         "A comma separated list with the identifiers of the specific detectors to be used. This is meant to be used for testing purposes only.")]
+    [TypeConverter(typeof(CommaDelimitedConverter))]
     public IEnumerable<string> DetectorsFilter { get; set; }
 
     [CommandOption("--ManifestFile")]

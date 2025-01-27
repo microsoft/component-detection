@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using global::NuGet.Frameworks;
+using global::NuGet.Packaging.Core;
+using global::NuGet.ProjectModel;
 using global::NuGet.Versioning;
 
 /// <summary>
@@ -73,7 +75,7 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
         }
     }
 
-    public static FrameworkPackages[] GetFrameworkPackages(NuGetFramework framework, string[] frameworkReferences)
+    public static FrameworkPackages[] GetFrameworkPackages(NuGetFramework framework, string[] frameworkReferences, LockFileTarget lockFileTarget)
     {
         var frameworkPackages = new List<FrameworkPackages>();
 
@@ -102,7 +104,62 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
             }
         }
 
+        frameworkPackages.AddRange(GetLegacyFrameworkPackagesFromPlatformPackages(framework, lockFileTarget));
+
         return frameworkPackages.ToArray();
+    }
+
+    private static IEnumerable<FrameworkPackages> GetLegacyFrameworkPackagesFromPlatformPackages(NuGetFramework framework, LockFileTarget lockFileTarget)
+    {
+        if (framework.Framework == FrameworkConstants.FrameworkIdentifiers.NetCoreApp && framework.Version.Major < 3)
+        {
+            // For .NETCore 1.x (all frameworks) and 2.x (ASP.NET Core) the $(MicrosoftNETPlatformLibrary) property specified the framework package of the project.
+            // This package and all its dependencies were excluded from copy to the output directory for framework deepndent apps.
+            // See https://github.com/dotnet/sdk/blob/b3d6acae421815e90c74ddb631e426290348651c/src/Tasks/Microsoft.NET.Build.Tasks/ResolvePackageAssets.cs#L1882-L1898
+            // We can't know from the assets file what the value of MicrosoftNETPlatformLibrary was, nor if an app was self-contained or not.
+            // To avoid false positives, and since these frameworks are no longer supported, we'll just assume that all platform packages are framework,
+            // and that the app is framework-dependent.
+            // This is consistent with the old behavior of the old NuGet Detector.
+            var lookup = lockFileTarget.Libraries.ToDictionary(l => l.Name, l => l, StringComparer.OrdinalIgnoreCase);
+            string[] platformPackageNames = [
+                FrameworkNames.NetCoreApp,           // Default platform package for .NET Core 1.x and 2.x    https://github.com/dotnet/sdk/blob/516dcf4a3bcf52ac3dce2452ea15ddd5cf057300/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.targets#L519
+                FrameworkNames.AspNetCoreApp,        // ASP.NET platform package for .NET Core 2.x            https://github.com/dotnet/aspnetcore/blob/ac66280fe9024bdd686354e342fcdfb3409597f7/src/Microsoft.AspNetCore.App/build/netcoreapp2.1/Microsoft.AspNetCore.App.targets#L10
+                "Microsoft.AspNetCore.All",          // Alternate ASP.NET platform package for .NET Core 2.x  https://github.com/dotnet/aspnetcore/blob/ac66280fe9024bdd686354e342fcdfb3409597f7/src/Microsoft.AspNetCore.All/build/netcoreapp2.1/Microsoft.AspNetCore.All.targets#L10
+
+                // ASP.NET did not have platform package / shared framework for .NET Core 1.x - it was app-local only
+            ];
+
+            foreach (var platformPackageName in platformPackageNames)
+            {
+                if (lookup.TryGetValue(platformPackageName, out var platformLibrary))
+                {
+                    var frameworkPackagesFromPlatformPackage = new FrameworkPackages(framework, platformPackageName);
+
+                    frameworkPackagesFromPlatformPackage.Packages.Add(platformLibrary.Name, platformLibrary.Version);
+
+                    CollectDependencies(platformLibrary.Dependencies);
+
+                    yield return frameworkPackagesFromPlatformPackage;
+
+                    // recursively include dependencies, so long as they were not upgraded by some other reference
+                    void CollectDependencies(IEnumerable<PackageDependency> dependencies)
+                    {
+                        foreach (var dependency in dependencies)
+                        {
+                            if (lookup.TryGetValue(dependency.Id, out var library) &&
+                                library.Version.Equals(dependency.VersionRange.MinVersion))
+                            {
+                                // if this is the first time we add the package, add its dependencies as well
+                                if (frameworkPackagesFromPlatformPackage.Packages.TryAdd(library.Name, library.Version))
+                                {
+                                    CollectDependencies(library.Dependencies);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static FrameworkPackages LoadFrameworkPackagesFromPack(NuGetFramework framework, string frameworkName)

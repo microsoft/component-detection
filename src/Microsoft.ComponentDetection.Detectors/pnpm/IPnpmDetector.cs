@@ -23,4 +23,6 @@ public static class PnpmConstants
     public const string PnpmFileDependencyPath = "file:";
 
     public const string PnpmLinkDependencyPath = "link:";
+    public const string PnpmHttpDependencyPath = "http:";
+    public const string PnpmHttpsDependencyPath = "https:";
 }

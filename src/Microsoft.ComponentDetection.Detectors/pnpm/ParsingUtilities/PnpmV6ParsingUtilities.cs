@@ -17,6 +17,12 @@ where T : PnpmYaml
 
         // Strip parenthesized suffices from package. These hold peed dep related information that is unneeded here.
         // An example of a dependency path with these: /webpack-cli@4.10.0(webpack-bundle-analyzer@4.10.1)(webpack-dev-server@4.6.0)(webpack@5.89.0)
+        var (normalizedPackageName, packageVersion) = this.ExtractNameAndVersionFromPnpmPackagePath(pnpmPackagePath);
+        return new DetectedComponent(new NpmComponent(normalizedPackageName, packageVersion));
+    }
+
+    public override (string FullPackageName, string PackageVersion) ExtractNameAndVersionFromPnpmPackagePath(string pnpmPackagePath)
+    {
         var fullPackageNameAndVersion = pnpmPackagePath.Split("(")[0];
 
         var packageNameParts = fullPackageNameAndVersion.Split("@");
@@ -37,6 +43,6 @@ where T : PnpmYaml
         // It is unclear if real packages could have a name starting with `/`, so avoid `TrimStart` that just in case.
         var normalizedPackageName = fullPackageName[1..];
 
-        return new DetectedComponent(new NpmComponent(normalizedPackageName, packageVersion));
+        return (normalizedPackageName, packageVersion);
     }
 }
