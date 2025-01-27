@@ -34,7 +34,7 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Swift];
 
-    public override int Version => 2;
+    public override int Version => 1;
 
     protected override Task OnFileFoundAsync(
         ProcessRequest processRequest,
