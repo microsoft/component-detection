@@ -16,6 +16,10 @@ using Newtonsoft.Json;
 /// </summary>
 public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
+    // We are only interested in packages coming from remote sources such as git
+    // The Package Kind is not an enum because the Swift Package Manager contract does not specify the possible values.
+    private const string TargetSwiftPackageKind = "remoteSourceControl";
+
     public SwiftResolvedComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -59,10 +63,7 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
 
         foreach (var package in parsedResolvedFile.Pins)
         {
-            // We are only interested in packages coming from remote sources such as git
-            // The Package Kind is not an enum because the Swift Package Manager contract does not specify the possible values.
-            var targetSwiftPackageKind = "remoteSourceControl";
-            if (package.Kind == targetSwiftPackageKind)
+            if (package.Kind == TargetSwiftPackageKind)
             {
                 // The version of the package is not always available.
                 var version = package.State.Version ?? package.State.Branch ?? package.State.Revision;
