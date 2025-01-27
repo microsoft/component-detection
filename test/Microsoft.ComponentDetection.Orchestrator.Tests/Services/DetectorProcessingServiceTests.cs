@@ -103,6 +103,38 @@ public class DetectorProcessingServiceTests
     }
 
     [TestMethod]
+    public async Task ProcessDetectorsAsync_WithSourceFileLocationSetReturnsDetectedComponentsAsync()
+    {
+        var defaultArgs = new ScanSettings
+        {
+            SourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SourceDirectory")),
+            DetectorArgs = new Dictionary<string, string>(),
+            SourceFileRoot = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "SourceDirectory", "SourceFileRoot")),
+        };
+
+        var componentDetectorMock1 = this.SetupFileDetectorMock("firstFileDetectorId", sourceDirectory: defaultArgs.SourceDirectory);
+        var componentDetectorMock2 = this.SetupFileDetectorMock("secondFileDetectorId", sourceDirectory: defaultArgs.SourceDirectory);
+
+        this.detectorsToUse =
+        [
+            componentDetectorMock1.Object, componentDetectorMock2.Object,
+        ];
+
+        var results = await this.serviceUnderTest.ProcessDetectorsAsync(defaultArgs, this.detectorsToUse, new DetectorRestrictions());
+
+        componentDetectorMock1.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && request.SourceFileRoot == defaultArgs.SourceFileRoot), It.IsAny<CancellationToken>()), Times.Once);
+        componentDetectorMock2.Verify(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == defaultArgs.SourceDirectory && request.SourceFileRoot == defaultArgs.SourceFileRoot), It.IsAny<CancellationToken>()), Times.Once);
+
+        this.ValidateExpectedComponents(results, this.detectorsToUse);
+        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).FirstOrDefault(x => x.Component?.Type == ComponentType.Npm).Component
+            .Should().Be(this.componentDictionary[componentDetectorMock1.Object.Id].Component);
+        this.GetDiscoveredComponentsFromDetectorProcessingResult(results).FirstOrDefault(x => x.Component?.Type == ComponentType.NuGet).Component
+            .Should().Be(this.componentDictionary[componentDetectorMock2.Object.Id].Component);
+
+        results.ResultCode.Should().Be(ProcessingResultCode.Success);
+    }
+
+    [TestMethod]
     public async Task ProcessDetectorsAsync_NullDetectedComponentsReturnIsCoalescedAsync()
     {
         var mockComponentDetector = new Mock<IComponentDetector>();
@@ -555,21 +587,21 @@ public class DetectorProcessingServiceTests
         this.experimentServiceMock.Verify(x => x.InitializeAsync(), Times.Once);
     }
 
-    private Mock<FileComponentDetector> SetupFileDetectorMock(string id)
+    private Mock<FileComponentDetector> SetupFileDetectorMock(string id, DirectoryInfo sourceDirectory = null)
     {
         var mockFileDetector = new Mock<FileComponentDetector>();
         mockFileDetector.SetupAllProperties();
         mockFileDetector.SetupGet(x => x.Id).Returns(id);
 
-        var sourceDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "Some", "Source", "Directory"));
+        sourceDirectory ??= DefaultArgs.SourceDirectory;
         this.componentDictionary.Should().ContainKey(id, $"MockDetector id:{id}, should be in mock dictionary");
 
         var expectedResult = this.ExpectedResultForDetector(id);
 
-        mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null), It.IsAny<CancellationToken>())).Returns(
+        mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == sourceDirectory && request.ComponentRecorder != null), It.IsAny<CancellationToken>())).Returns(
             (ScanRequest request, CancellationToken cancellationToken) => mockFileDetector.Object.ExecuteDetectorAsync(request, cancellationToken)).Verifiable();
 
-        mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == DefaultArgs.SourceDirectory && request.ComponentRecorder != null), It.IsAny<CancellationToken>())).ReturnsAsync(
+        mockFileDetector.Setup(x => x.ExecuteDetectorAsync(It.Is<ScanRequest>(request => request.SourceDirectory == sourceDirectory && request.ComponentRecorder != null), It.IsAny<CancellationToken>())).ReturnsAsync(
             (ScanRequest request, CancellationToken cancellationToken) =>
             {
                 this.FillComponentRecorder(request.ComponentRecorder, id);
