@@ -95,7 +95,8 @@ public class DetectorTestUtilityBuilder<T>
                 null,
                 new Dictionary<string, string>(),
                 null,
-                this.componentRecorder);
+                this.componentRecorder,
+                sourceFileRoot: new DirectoryInfo(Path.GetTempPath()));
         }
         else
         {

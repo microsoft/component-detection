@@ -99,7 +99,8 @@ public class DetectorProcessingService : IDetectorProcessingService
                                 settings.DockerImagesToScan,
                                 componentRecorder,
                                 settings.MaxDetectionThreads ?? DefaultMaxDetectionThreads,
-                                settings.CleanupCreatedFiles ?? true),
+                                settings.CleanupCreatedFiles ?? true,
+                                settings.SourceFileRoot),
                             cancellationToken),
                         isExperimentalDetector,
                         record);
