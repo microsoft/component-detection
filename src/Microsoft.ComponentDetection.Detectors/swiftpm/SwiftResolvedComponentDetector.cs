@@ -63,27 +63,34 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
 
         foreach (var package in parsedResolvedFile.Pins)
         {
-            if (package.Kind == TargetSwiftPackageKind)
+            try
             {
-                // The version of the package is not always available.
-                var version = package.State.Version ?? package.State.Branch ?? package.State.Revision;
+                if (package.Kind == TargetSwiftPackageKind)
+                {
+                    // The version of the package is not always available.
+                    var version = package.State.Version ?? package.State.Branch ?? package.State.Revision;
 
-                var detectedSwiftComponent = new SwiftComponent(
-                    name: package.Identity,
-                    version: version,
-                    packageUrl: package.Location,
-                    hash: package.State.Revision);
-                var newDetectedSwiftComponent = new DetectedComponent(component: detectedSwiftComponent, detector: this);
-                singleFileComponentRecorder.RegisterUsage(newDetectedSwiftComponent);
+                    var detectedSwiftComponent = new SwiftComponent(
+                        name: package.Identity,
+                        version: version,
+                        packageUrl: package.Location,
+                        hash: package.State.Revision);
+                    var newDetectedSwiftComponent = new DetectedComponent(component: detectedSwiftComponent, detector: this);
+                    singleFileComponentRecorder.RegisterUsage(newDetectedSwiftComponent);
 
-                // We also register a Git component for the same package so that the git URL is registered.
-                // Swift Package Manager directly downloads the package from the git URL.
-                var detectedGitComponent = new GitComponent(
-                    repositoryUrl: new Uri(package.Location),
-                    commitHash: package.State.Revision,
-                    tag: version);
-                var newDetectedGitComponent = new DetectedComponent(component: detectedGitComponent, detector: this);
-                singleFileComponentRecorder.RegisterUsage(newDetectedGitComponent);
+                    // We also register a Git component for the same package so that the git URL is registered.
+                    // Swift Package Manager directly downloads the package from the git URL.
+                    var detectedGitComponent = new GitComponent(
+                        repositoryUrl: new Uri(package.Location),
+                        commitHash: package.State.Revision,
+                        tag: version);
+                    var newDetectedGitComponent = new DetectedComponent(component: detectedGitComponent, detector: this);
+                    singleFileComponentRecorder.RegisterUsage(newDetectedGitComponent);
+                }
+            }
+            catch (Exception exception)
+            {
+                this.Logger.LogError(exception, "SwiftComponentDetector: Error processing package: {Package}", package.Identity);
             }
         }
     }
