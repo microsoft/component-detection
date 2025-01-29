@@ -111,8 +111,6 @@ public class FileComponentDetectorWithCleanupTests
         var fileComponentDetector = new TestFileComponentDetector(["*.pyc"], this.loggerMock.Object, fileUtilityService, directoryUtilityService);
         var createdFilePath = Path.Combine(this.testDirectory, "todelete.pyc");
 
-        // Add files/dirs to the mock file system
-
         // Act
         await fileComponentDetector.TestCleanupAsync(
             (process, args, token) =>
@@ -198,6 +196,11 @@ public class FileComponentDetectorWithCleanupTests
         fileUtilityService.Exists(this.existingFilePath).Should().BeTrue();
         directoryUtilityService.Exists(createdDirectory).Should().BeTrue();
         fileUtilityService.Exists(createdFilePath).Should().BeTrue();
+
+        // Assert we don't even try to read items
+        this.directoryUtilityServiceMock.Verify(
+            d => d.GetFilesAndDirectories(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<int>()),
+            Times.Never);
     }
 
     [TestMethod]
@@ -272,6 +275,40 @@ public class FileComponentDetectorWithCleanupTests
         var cleanupCreatedFiles = true;
         var fileComponentDetector = new TestFileComponentDetector([], this.loggerMock.Object, fileUtilityService, directoryUtilityService);
         var createdFilePath = Path.Combine(this.testDirectory, "todelete.pyc");
+
+        // Act
+        await fileComponentDetector.TestCleanupAsync(
+            (process, args, token) =>
+            {
+                // creates a single file
+                this.fileSystemMockFiles.Add(createdFilePath);
+                return Task.CompletedTask;
+            },
+            this.processRequest,
+            detectorArgs,
+            cleanupCreatedFiles,
+            cancellationToken).ConfigureAwait(false);
+
+        // Assert
+        directoryUtilityService.Exists(this.testDirectory).Should().BeTrue();
+        fileUtilityService.Exists(this.existingFilePath).Should().BeTrue();
+        fileUtilityService.Exists(createdFilePath).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task WithCleanupAsync_NoCleanup_WhenUnauthorized()
+    {
+        // Arrange
+        var fileUtilityService = this.fileUtilityServiceMock.Object;
+        var directoryUtilityService = this.directoryUtilityServiceMock.Object;
+        CancellationToken cancellationToken = default;
+        var detectorArgs = new Dictionary<string, string>();
+        var cleanupCreatedFiles = true;
+        var fileComponentDetector = new TestFileComponentDetector(["*.pyc"], this.loggerMock.Object, fileUtilityService, directoryUtilityService);
+        var createdFilePath = Path.Combine(this.testDirectory, "todelete.pyc");
+        this.directoryUtilityServiceMock
+            .Setup(d => d.GetFilesAndDirectories(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<int>()))
+            .Throws(new UnauthorizedAccessException("Unauthorized"));
 
         // Act
         await fileComponentDetector.TestCleanupAsync(

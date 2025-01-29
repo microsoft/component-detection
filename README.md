@@ -85,7 +85,7 @@ This is similar to Codespaces:
 1. Make sure you meet [the requirements](https://code.visualstudio.com/docs/remote/containers#_getting-started) and follow the installation steps for DevContainers in VS Code
 1. `git clone https://github.com/microsoft/component-detection`
 1. Open this repo in VS Code
-1. A notification should popup to reopen the workspace in the container. If it doesn't, open the [`Command Palette`](https://code.visualstudio.com/docs/getstarted/tips-and-tricks#_command-palette) and type `Remote-Containers: Reopen in Container`.
+1. A notification should popup to reopen the workspace in the container. If it doesn't, open the [`Command Palette`](https://code.visualstudio.com/docs/getstarted/tips-and-tricks#_command-palette) and type `Dev Containers: Reopen in Container`.
 
 ### Community Meetings
 
