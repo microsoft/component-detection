@@ -40,7 +40,7 @@ public class NpmComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
-    public override int Version { get; } = 2;
+    public override int Version { get; } = 3;
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -79,11 +79,18 @@ public class NpmComponentDetector : FileComponentDetector
         var name = packageJToken["name"].ToString();
         var version = packageJToken["version"].ToString();
         var authorToken = packageJToken["author"];
+        var enginesToken = packageJToken["engines"];
 
         if (!SemanticVersion.TryParse(version, out _))
         {
             this.Logger.LogWarning("Unable to parse version {NpmPackageVersion} for package {NpmPackageName} found at path {NpmPackageLocation}. This may indicate an invalid npm package component and it will not be registered.", version, name, filePath);
             singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version}");
+            return false;
+        }
+
+        if (enginesToken != null && enginesToken["vscode"] != null)
+        {
+            this.Logger.LogInformation("{NpmPackageName} found at path {NpmPackageLocation} represents a built-in VS Code extension. This package will not be registered.", name, filePath);
             return false;
         }
 
