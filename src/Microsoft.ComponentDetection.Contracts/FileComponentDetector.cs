@@ -139,11 +139,28 @@ public abstract class FileComponentDetector : IComponentDetector
         };
     }
 
+    /// <summary>
+    /// Auxliary method executed before the actual scanning of a given file takes place.
+    /// This method can be used to modify or create new ProcessRequests that later will
+    /// be used by the scanner to extract the components.
+    /// </summary>
+    /// <param name="processRequests">Process requests that triggered a given scanner.</param>
+    /// <param name="detectorArgs">Arguments used by the detector.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Returns the process requests that will be used by the scanner.</returns>
     protected virtual Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(processRequests);
     }
 
+    /// <summary>
+    /// This method called for each individual process request.
+    /// It is responsible for the actual scanning of the components.
+    /// </summary>
+    /// <param name="processRequest">Process request that contains information to execute the component scan.</param>
+    /// <param name="detectorArgs">Arguments for the detector.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected abstract Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default);
 
     protected virtual Task OnDetectionFinishedAsync()
