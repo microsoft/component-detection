@@ -75,7 +75,7 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
                         version: version,
                         packageUrl: package.Location,
                         hash: package.State.Revision);
-                    var newDetectedSwiftComponent = new DetectedComponent(component: detectedSwiftComponent, detector: this);
+                    var newDetectedSwiftComponent = new DetectedComponent(component: detectedSwiftComponent);
                     singleFileComponentRecorder.RegisterUsage(newDetectedSwiftComponent);
 
                     // We also register a Git component for the same package so that the git URL is registered.
@@ -84,7 +84,7 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
                         repositoryUrl: new Uri(package.Location),
                         commitHash: package.State.Revision,
                         tag: version);
-                    var newDetectedGitComponent = new DetectedComponent(component: detectedGitComponent, detector: this);
+                    var newDetectedGitComponent = new DetectedComponent(component: detectedGitComponent);
                     singleFileComponentRecorder.RegisterUsage(newDetectedGitComponent);
                 }
             }
