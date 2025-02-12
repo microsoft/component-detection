@@ -9,7 +9,7 @@ using PackageUrl;
 /// </summary>
 public class SwiftComponent : TypedComponent
 {
-    private readonly string packageUrl;
+    private readonly Uri packageUrl;
 
     private readonly string hash;
 
@@ -24,7 +24,8 @@ public class SwiftComponent : TypedComponent
     {
         this.Name = this.ValidateRequiredInput(name, nameof(name), nameof(ComponentType.Swift));
         this.Version = this.ValidateRequiredInput(version, nameof(version), nameof(ComponentType.Swift));
-        this.packageUrl = this.ValidateRequiredInput(packageUrl, nameof(packageUrl), nameof(ComponentType.Swift));
+        this.ValidateRequiredInput(packageUrl, nameof(packageUrl), nameof(ComponentType.Swift));
+        this.packageUrl = new Uri(packageUrl);
         this.hash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
     }
 
@@ -36,15 +37,31 @@ public class SwiftComponent : TypedComponent
 
     public override string Id => $"{this.Name} {this.Version} - {this.Type}";
 
-    // The type is swiftpm
+    // Example PackageURL -> pkg:swift/github.com/apple/swift-asn1
+    // type: swift
+    // namespace: github.com/apple
+    // name: swift-asn1
     public PackageURL PackageURL => new PackageURL(
         type: "swift",
-        @namespace: new Uri(this.packageUrl).Host,
+        @namespace: this.GetNamespaceFromPackageUrl(),
         name: this.Name,
-        version: this.hash, // Hash has priority over version when creating a PackageURL
+        version: this.Version,
         qualifiers: new SortedDictionary<string, string>
         {
-            { "repository_url", this.packageUrl },
+            { "repository_url", this.packageUrl.AbsoluteUri },
         },
         subpath: null);
+
+    private string GetNamespaceFromPackageUrl()
+    {
+        // In the case of github.com, the namespace should contain the user/organization
+        // See https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst#swift
+        if (this.packageUrl.Host.Contains("github.com"))
+        {
+            return this.packageUrl.Host + "/" + this.packageUrl.Segments[1].Trim('/');
+        }
+
+        // In the default case of a generic host, the namespace should be the just the host
+        return this.packageUrl.Host;
+    }
 }

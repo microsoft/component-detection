@@ -55,7 +55,14 @@ public class SwiftComponentTests
     }
 
     [TestMethod]
-    public void PackageURL_ShouldReturnCorrectPackageURL()
+    public void Constructor_ShouldThrowException_WhenPackageUrlIsInvalid()
+    {
+        Action action = () => new SwiftComponent("alamofire", "5.9.1", "invalid-url", "f455c2975872ccd2d9c81594c658af65716e9b9a");
+        action.Should().Throw<UriFormatException>();
+    }
+
+    [TestMethod]
+    public void PackageURL_ShouldReturnCorrectPackageURL_GithubHostname()
     {
         var name = "alamofire";
         var version = "5.9.1";
@@ -66,9 +73,33 @@ public class SwiftComponentTests
 
         var expectedPackageURL = new PackageURL(
             type: "swift",
-            @namespace: "github.com",
+            @namespace: "github.com/Alamofire",
             name: name,
-            version: hash,
+            version: version,
+            qualifiers: new SortedDictionary<string, string>
+            {
+                { "repository_url", packageUrl },
+            },
+            subpath: null);
+
+        component.PackageURL.Should().BeEquivalentTo(expectedPackageURL);
+    }
+
+    [TestMethod]
+    public void PackageURL_ShouldReturnCorrectPackageURL_OtherHostname()
+    {
+        var name = "alamofire";
+        var version = "5.9.1";
+        var packageUrl = "https://otherhostname.com/Alamofire/Alamofire";
+        var hash = "f455c2975872ccd2d9c81594c658af65716e9b9a";
+
+        var component = new SwiftComponent(name, version, packageUrl, hash);
+
+        var expectedPackageURL = new PackageURL(
+            type: "swift",
+            @namespace: "otherhostname.com",
+            name: name,
+            version: version,
             qualifiers: new SortedDictionary<string, string>
             {
                 { "repository_url", packageUrl },
