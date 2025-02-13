@@ -37,7 +37,7 @@ public class GoComponentDetector : FileComponentDetector
         this.envVarService = envVarService;
         this.Logger = logger;
         this.fileUtilityService = fileUtilityService;
-        this.goParserFactory = new GoParserFactory(logger, fileUtilityService, commandLineInvocationService);
+        this.goParserFactory = new GoParserFactory(fileUtilityService, commandLineInvocationService);
     }
 
     public GoComponentDetector(
@@ -147,7 +147,7 @@ public class GoComponentDetector : FileComponentDetector
         {
             if (!this.IsGoCliManuallyDisabled())
             {
-                wasGoCliScanSuccessful = await this.goParserFactory.CreateParser(GoParserType.GoCLI).ParseAsync(singleFileComponentRecorder, file, record);
+                wasGoCliScanSuccessful = await this.goParserFactory.CreateParser(GoParserType.GoCLI, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
             }
             else
             {
@@ -184,14 +184,14 @@ public class GoComponentDetector : FileComponentDetector
             {
                 this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
 
-                await this.goParserFactory.CreateParser(GoParserType.GoMod).ParseAsync(singleFileComponentRecorder, file, record);
+                await this.goParserFactory.CreateParser(GoParserType.GoMod, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
                 break;
             }
 
             case ".SUM":
             {
                 this.Logger.LogDebug("Found Go.sum: {Location}", file.Location);
-                await this.goParserFactory.CreateParser(GoParserType.GoSum).ParseAsync(singleFileComponentRecorder, file, record);
+                await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
                 break;
             }
 

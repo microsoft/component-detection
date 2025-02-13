@@ -34,7 +34,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
         this.Scanner = walkerFactory;
         this.commandLineInvocationService = commandLineInvocationService;
         this.Logger = logger;
-        this.goParserFactory = new GoParserFactory(logger, fileUtilityService, commandLineInvocationService);
+        this.goParserFactory = new GoParserFactory(fileUtilityService, commandLineInvocationService);
     }
 
     public Go117ComponentDetector(
@@ -117,7 +117,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
             case ".MOD":
             {
                 this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
-                await this.goParserFactory.CreateParser(GoParserType.GoMod).ParseAsync(singleFileComponentRecorder, file, record);
+                await this.goParserFactory.CreateParser(GoParserType.GoMod, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
 
                 if (await this.ShouldRunGoGraphAsync())
                 {
@@ -136,7 +136,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
             case ".SUM":
             {
                 this.Logger.LogDebug("Found Go.sum: {Location}", file.Location);
-                await this.goParserFactory.CreateParser(GoParserType.GoSum).ParseAsync(singleFileComponentRecorder, file, record);
+                await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
                 break;
             }
 

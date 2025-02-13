@@ -35,7 +35,7 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
         var mockGoParser = new Mock<IGoParser>();
         this.mockParserFactory = new Mock<IGoParserFactory>();
 
-        this.mockParserFactory.Setup(x => x.CreateParser(It.IsAny<GoParserType>())).Returns(mockGoParser.Object);
+        this.mockParserFactory.Setup(x => x.CreateParser(It.IsAny<GoParserType>(), It.IsAny<ILogger>())).Returns(mockGoParser.Object);
         this.envVarService = new Mock<IEnvironmentVariableService>();
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
         this.DetectorTestUtility.AddServiceMock(this.envVarService);
@@ -112,7 +112,7 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
     public async Task Go117ModDetector_GoModFileFound_GoModParserIsExecuted()
     {
         var goModParserMock = new Mock<IGoParser>();
-        this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoMod)).Returns(goModParserMock.Object);
+        this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoMod, It.IsAny<ILogger>())).Returns(goModParserMock.Object);
 
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, default, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
         .ReturnsAsync(new CommandLineExecutionResult
@@ -134,7 +134,7 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
     public async Task Go117ModDetector_GoSumFileFound_GoSumParserIsExecuted()
     {
         var goSumParserMock = new Mock<IGoParser>();
-        this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoSum)).Returns(goSumParserMock.Object);
+        this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>())).Returns(goSumParserMock.Object);
 
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, default, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
         .ReturnsAsync(new CommandLineExecutionResult
