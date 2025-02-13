@@ -21,6 +21,7 @@ public class GoComponentDetector : FileComponentDetector
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;
     private readonly IFileUtilityService fileUtilityService;
+    private readonly IGoParserFactory goParserFactory;
 
     public GoComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -36,6 +37,25 @@ public class GoComponentDetector : FileComponentDetector
         this.envVarService = envVarService;
         this.Logger = logger;
         this.fileUtilityService = fileUtilityService;
+        this.goParserFactory = new GoParserFactory(logger, fileUtilityService, commandLineInvocationService);
+    }
+
+    public GoComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        IEnvironmentVariableService envVarService,
+        ILogger<GoComponentDetector> logger,
+        IFileUtilityService fileUtilityService,
+        IGoParserFactory factory)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.commandLineInvocationService = commandLineInvocationService;
+        this.envVarService = envVarService;
+        this.Logger = logger;
+        this.fileUtilityService = fileUtilityService;
+        this.goParserFactory = factory;
     }
 
     public override string Id => "Go";
@@ -127,8 +147,7 @@ public class GoComponentDetector : FileComponentDetector
         {
             if (!this.IsGoCliManuallyDisabled())
             {
-                var gocliParser = new GoCLIParser(this.Logger, this.fileUtilityService, this.commandLineInvocationService);
-                wasGoCliScanSuccessful = await gocliParser.ParseAsync(singleFileComponentRecorder, file, record);
+                wasGoCliScanSuccessful = await this.goParserFactory.CreateParser(GoParserType.GoCLI).ParseAsync(singleFileComponentRecorder, file, record);
             }
             else
             {
@@ -165,16 +184,14 @@ public class GoComponentDetector : FileComponentDetector
             {
                 this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
 
-                var goModParser = new GoModParser(this.Logger);
-                await goModParser.ParseAsync(singleFileComponentRecorder, file, record);
+                await this.goParserFactory.CreateParser(GoParserType.GoMod).ParseAsync(singleFileComponentRecorder, file, record);
                 break;
             }
 
             case ".SUM":
             {
                 this.Logger.LogDebug("Found Go.sum: {Location}", file.Location);
-                var goSumParser = new GoSumParser(this.Logger);
-                await goSumParser.ParseAsync(singleFileComponentRecorder, file, record);
+                await this.goParserFactory.CreateParser(GoParserType.GoSum).ParseAsync(singleFileComponentRecorder, file, record);
                 break;
             }
 

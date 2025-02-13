@@ -20,8 +20,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
     private readonly HashSet<string> projectRoots = [];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
-    private readonly IEnvironmentVariableService envVarService;
-    private readonly IFileUtilityService fileUtilityService;
+    private readonly IGoParserFactory goParserFactory;
 
     public Go117ComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -34,9 +33,24 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.commandLineInvocationService = commandLineInvocationService;
-        this.envVarService = envVarService;
         this.Logger = logger;
-        this.fileUtilityService = fileUtilityService;
+        this.goParserFactory = new GoParserFactory(logger, fileUtilityService, commandLineInvocationService);
+    }
+
+    public Go117ComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        IEnvironmentVariableService envVarService,
+        ILogger<GoComponentDetector> logger,
+        IFileUtilityService fileUtilityService,
+        IGoParserFactory goParserFactory)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.commandLineInvocationService = commandLineInvocationService;
+        this.Logger = logger;
+        this.goParserFactory = goParserFactory;
     }
 
     public override string Id => "Go117";
@@ -78,7 +92,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
             }
             finally
             {
-                goModFile.Stream.Dispose();
+                goModFile?.Stream.Dispose();
             }
         });
 
@@ -103,8 +117,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
             case ".MOD":
             {
                 this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
-                var goModParser = new GoModParser(this.Logger);
-                await goModParser.ParseAsync(singleFileComponentRecorder, file, record);
+                await this.goParserFactory.CreateParser(GoParserType.GoMod).ParseAsync(singleFileComponentRecorder, file, record);
 
                 if (await this.ShouldRunGoGraphAsync())
                 {
@@ -123,8 +136,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
             case ".SUM":
             {
                 this.Logger.LogDebug("Found Go.sum: {Location}", file.Location);
-                var goSumParser = new GoSumParser(this.Logger);
-                await goSumParser.ParseAsync(singleFileComponentRecorder, file, record);
+                await this.goParserFactory.CreateParser(GoParserType.GoSum).ParseAsync(singleFileComponentRecorder, file, record);
                 break;
             }
 
@@ -148,8 +160,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
 
     private async Task<Version> GetGoVersionAsync()
     {
-        var processExecution = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, cancellationToken: default, new List<string> { "version" }.ToArray());
-
+        var processExecution = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, null, cancellationToken: default, new List<string> { "version" }.ToArray());
         if (processExecution.ExitCode != 0)
         {
             return null;
