@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using PackageUrl;
 
 /// <summary>
@@ -56,9 +57,12 @@ public class SwiftComponent : TypedComponent
     {
         // In the case of github.com, the namespace should contain the user/organization
         // See https://github.com/package-url/purl-spec/blob/master/PURL-TYPES.rst#swift
-        if (this.packageUrl.Host.Contains("github.com"))
+        var uppercaseHost = this.packageUrl.Host.ToUpperInvariant();
+        if (uppercaseHost.Contains("GITHUB.COM"))
         {
-            return this.packageUrl.Host + "/" + this.packageUrl.Segments[1].Trim('/');
+            // The first segment of the URL will contain the user or organization for GitHub
+            var firstSegment = this.packageUrl.Segments[1].Trim('/');
+            return $"{this.packageUrl.Host}/{firstSegment}";
         }
 
         // In the default case of a generic host, the namespace should be the just the host
