@@ -21,21 +21,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IGoParserFactory goParserFactory;
-
-    public Go117ComponentDetector(
-        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
-        ICommandLineInvocationService commandLineInvocationService,
-        IEnvironmentVariableService envVarService,
-        ILogger<GoComponentDetector> logger,
-        IFileUtilityService fileUtilityService)
-    {
-        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
-        this.Scanner = walkerFactory;
-        this.commandLineInvocationService = commandLineInvocationService;
-        this.Logger = logger;
-        this.goParserFactory = new GoParserFactory(fileUtilityService, commandLineInvocationService);
-    }
+    private readonly IEnvironmentVariableService envVarService;
 
     public Go117ComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -51,6 +37,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
         this.commandLineInvocationService = commandLineInvocationService;
         this.Logger = logger;
         this.goParserFactory = goParserFactory;
+        this.envVarService = envVarService;
     }
 
     public override string Id => "Go117";
@@ -61,7 +48,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Go];
 
-    public override int Version => 8;
+    public override int Version => 1;
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests,
@@ -147,8 +134,18 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
         }
     }
 
+    private bool IsGoCliManuallyDisabled()
+    {
+        return this.envVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
+    }
+
     private async Task<bool> ShouldRunGoGraphAsync()
     {
+        if (this.IsGoCliManuallyDisabled())
+        {
+            return false;
+        }
+
         var goVersion = await this.GetGoVersionAsync();
         if (goVersion == null)
         {

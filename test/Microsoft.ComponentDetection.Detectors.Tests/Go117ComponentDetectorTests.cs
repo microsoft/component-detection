@@ -37,7 +37,7 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
 
         this.mockParserFactory.Setup(x => x.CreateParser(It.IsAny<GoParserType>(), It.IsAny<ILogger>())).Returns(mockGoParser.Object);
         this.envVarService = new Mock<IEnvironmentVariableService>();
-        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
+        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
         this.DetectorTestUtility.AddServiceMock(this.envVarService);
         this.fileUtilityServiceMock = new Mock<IFileUtilityService>();
         this.DetectorTestUtility.AddServiceMock(this.fileUtilityServiceMock);
