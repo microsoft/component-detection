@@ -64,6 +64,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
+        services.AddSingleton<IExperimentConfiguration, Go117DetectorExperiment>();
 
         // Detectors
         // CocoaPods
@@ -80,6 +81,8 @@ public static class ServiceCollectionExtensions
 
         // Go
         services.AddSingleton<IComponentDetector, GoComponentDetector>();
+        services.AddSingleton<IComponentDetector, Go117ComponentDetector>();
+        services.AddSingleton<IGoParserFactory, GoParserFactory>();
 
         // Gradle
         services.AddSingleton<IComponentDetector, GradleComponentDetector>();
