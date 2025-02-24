@@ -19,6 +19,7 @@ using Microsoft.ComponentDetection.Detectors.Poetry;
 using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Spdx;
+using Microsoft.ComponentDetection.Detectors.Swift;
 using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
@@ -142,6 +143,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IYarnLockParser, YarnLockParser>();
         services.AddSingleton<IYarnLockFileFactory, YarnLockFileFactory>();
         services.AddSingleton<IComponentDetector, YarnLockComponentDetector>();
+
+        // Swift Package Manager
+        services.AddSingleton<IComponentDetector, SwiftResolvedComponentDetector>();
 
         return services;
     }
