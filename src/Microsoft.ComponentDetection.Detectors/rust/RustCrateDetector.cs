@@ -42,7 +42,7 @@ public class RustCrateDetector : FileComponentDetector
 
     public override int Version { get; } = 8;
 
-    public override IEnumerable<string> Categories => ["Rust"];
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Cargo)];
 
     private static bool ParseDependency(string dependency, out string packageName, out string version, out string source)
     {

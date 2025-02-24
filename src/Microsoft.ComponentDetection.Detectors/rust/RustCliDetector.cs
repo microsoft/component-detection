@@ -62,7 +62,7 @@ public class RustCliDetector : FileComponentDetector
     public override string Id => "RustCli";
 
     /// <inheritdoc />
-    public override IEnumerable<string> Categories { get; } = ["Rust"];
+    public override IEnumerable<string> Categories { get; } = [Enum.GetName(typeof(DetectorClass), DetectorClass.Cargo)];
 
     /// <inheritdoc />
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Cargo];
