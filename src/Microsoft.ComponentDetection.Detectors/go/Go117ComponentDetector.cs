@@ -157,21 +157,35 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
 
     private async Task<Version> GetGoVersionAsync()
     {
-        var processExecution = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, null, cancellationToken: default, new List<string> { "version" }.ToArray());
-        if (processExecution.ExitCode != 0)
+        try
         {
-            return null;
+            var isGoAvailable = await this.commandLineInvocationService.CanCommandBeLocatedAsync("go", null, null, new List<string> { "version" }.ToArray());
+            if (!isGoAvailable)
+            {
+                this.Logger.LogInformation("Go CLI was not found in the system");
+                return null;
+            }
+
+            var processExecution = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, null, cancellationToken: default, new List<string> { "version" }.ToArray());
+            if (processExecution.ExitCode != 0)
+            {
+                return null;
+            }
+
+            // Define the regular expression pattern to match the version number
+            var versionPattern = @"go version go(\d+\.\d+\.\d+)";
+            var match = Regex.Match(processExecution.StdOut, versionPattern);
+
+            if (match.Success)
+            {
+                // Extract the version number from the match
+                var versionStr = match.Groups[1].Value;
+                return new Version(versionStr);
+            }
         }
-
-        // Define the regular expression pattern to match the version number
-        var versionPattern = @"go version go(\d+\.\d+\.\d+)";
-        var match = Regex.Match(processExecution.StdOut, versionPattern);
-
-        if (match.Success)
+        catch (Exception e)
         {
-            // Extract the version number from the match
-            var versionStr = match.Groups[1].Value;
-            return new Version(versionStr);
+            this.Logger.LogWarning("Failed to get go version: {Exception}", e);
         }
 
         return null;
