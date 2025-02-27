@@ -120,7 +120,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
 
     private void AddDirectory(string path, string subDirectory = null)
     {
-        if (path is null)
+        if (string.IsNullOrEmpty(path))
         {
             return;
         }

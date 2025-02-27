@@ -166,7 +166,7 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
         }
         else if (projectDirectory.Equals(this.sourceDirectory, StringComparison.OrdinalIgnoreCase) ||
                  projectDirectory.Equals(this.sourceFileRootDirectory, StringComparison.OrdinalIgnoreCase) ||
-                 parentDirectory is null ||
+                 string.IsNullOrEmpty(parentDirectory) ||
                  projectDirectory.Equals(parentDirectory, StringComparison.OrdinalIgnoreCase))
         {
             // if we are at the source directory, source file root, or have reached a root directory, run `dotnet --version`
