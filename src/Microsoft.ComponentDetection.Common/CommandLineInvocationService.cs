@@ -60,7 +60,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
         CancellationToken cancellationToken = default,
         params string[] parameters)
     {
-        var isCommandLocatable = await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands);
+        var isCommandLocatable = await this.CanCommandBeLocatedAsync(command, additionalCandidateCommands, workingDirectory, parameters);
         if (!isCommandLocatable)
         {
             throw new InvalidOperationException(
