@@ -1,10 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
-using System.Text;
-
-#nullable enable
-
-using PackageUrl;
+using System;
 
 public class DotNetComponent : TypedComponent
 {
@@ -13,52 +9,37 @@ public class DotNetComponent : TypedComponent
         /* Reserved for deserialization */
     }
 
-    public DotNetComponent(string? sdkVersion, string? targetFramework = null, string? projectType = null)
+    public DotNetComponent(string sdkVersion, string targetFramework = null, string projectType = null)
     {
-        this.SdkVersion = sdkVersion;
-        this.TargetFramework = targetFramework;
-        this.ProjectType = projectType;  // application, library, or null
+        if (string.IsNullOrWhiteSpace(sdkVersion) && string.IsNullOrWhiteSpace(targetFramework))
+        {
+            throw new ArgumentNullException(nameof(sdkVersion), $"Either {nameof(sdkVersion)} or {nameof(targetFramework)} of component type {nameof(DotNetComponent)} must be specified.");
+        }
+
+        this.SdkVersion = string.IsNullOrWhiteSpace(sdkVersion) ? "unknown" : sdkVersion;
+        this.TargetFramework = string.IsNullOrWhiteSpace(targetFramework) ? "unknown" : targetFramework;
+        this.ProjectType = string.IsNullOrWhiteSpace(projectType) ? "unknown" : projectType;
     }
 
     /// <summary>
     /// SDK Version detected, could be null if no global.json exists and no dotnet is on the path.
     /// </summary>
-    public string? SdkVersion { get; set; }
+    public string SdkVersion { get; set; }
 
     /// <summary>
     /// Target framework for this instance.  Null in the case of global.json.
     /// </summary>
-    public string? TargetFramework { get; set; }
+    public string TargetFramework { get; set; }
 
     /// <summary>
     /// Project type: application, library.  Null in the case of global.json or if no project output could be discovered.
     /// </summary>
-    public string? ProjectType { get; set; }
+    public string ProjectType { get; set; }
 
     public override ComponentType Type => ComponentType.DotNet;
 
     /// <summary>
-    /// Provides an id like `dotnet {SdkVersion} - {TargetFramework} - {ProjectType}` where targetFramework and projectType are only present if not null.
+    /// Provides an id like `{SdkVersion} - {TargetFramework} - {ProjectType} - dotnet` where unspecified values are represented as 'unknown'.
     /// </summary>
-    public override string Id
-    {
-        get
-        {
-            var builder = new StringBuilder($"dotnet {this.SdkVersion ?? "unknown"}");
-            if (this.TargetFramework is not null)
-            {
-                builder.Append($" - {this.TargetFramework}");
-
-                if (this.ProjectType is not null)
-                {
-                    builder.Append($" - {this.ProjectType}");
-                }
-            }
-
-            return builder.ToString();
-        }
-    }
-
-    // TODO - do we need to add a type to prul https://github.com/package-url/purl-spec/blob/main/PURL-TYPES.rst
-    public override PackageURL PackageUrl => new PackageURL("generic", null, "dotnet-sdk", this.SdkVersion ?? "unknown", null, null);
+    public override string Id => $"{this.SdkVersion} {this.TargetFramework} {this.ProjectType} - {this.Type}";
 }

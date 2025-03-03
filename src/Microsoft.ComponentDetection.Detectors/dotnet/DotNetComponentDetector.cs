@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.DotNet;
 
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,7 +24,7 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
     private readonly IFileUtilityService fileUtilityService;
     private readonly IPathUtilityService pathUtilityService;
     private readonly LockFileFormat lockFileFormat = new();
-    private readonly Dictionary<string, string?> sdkVersionCache = [];
+    private readonly ConcurrentDictionary<string, string?> sdkVersionCache = [];
     private string? sourceDirectory;
     private string? sourceFileRootDirectory;
 
@@ -60,7 +61,15 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
         var workingDirectory = new DirectoryInfo(workingDirectoryPath);
 
         var process = await this.commandLineInvocationService.ExecuteCommandAsync("dotnet", ["dotnet.exe"], workingDirectory, cancellationToken, "--version").ConfigureAwait(false);
-        return process.ExitCode == 0 ? process.StdOut.Trim() : null;
+
+        if (process.ExitCode != 0)
+        {
+            // debug only - it could be that dotnet is not actually on the path and specified directly by the build scripts.
+            this.Logger.LogDebug("Failed to invoke 'dotnet --version'. Return: {Return} StdErr: {StdErr} StdOut: {StdOut}.", process.ExitCode, process.StdErr, process.StdOut);
+            return null;
+        }
+
+        return process.StdOut.Trim();
     }
 
     public override Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
@@ -76,11 +85,24 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
         var lockFile = this.lockFileFormat.Read(processRequest.ComponentStream.Stream, processRequest.ComponentStream.Location);
 
         var projectPath = lockFile.PackageSpec.RestoreMetadata.ProjectPath;
+
+        if (!this.fileUtilityService.Exists(projectPath))
+        {
+            // Could be the assets file was not actually from this build
+            this.Logger.LogWarning("Project path {ProjectPath} specified by {ProjectAssetsPath} does not exist.", projectPath, processRequest.ComponentStream.Location);
+        }
+
         var projectDirectory = this.pathUtilityService.GetParentDirectory(projectPath);
         var sdkVersion = await this.GetSdkVersionAsync(projectDirectory, cancellationToken);
 
         var projectName = lockFile.PackageSpec.RestoreMetadata.ProjectName;
         var projectOutputPath = lockFile.PackageSpec.RestoreMetadata.OutputPath;
+
+        if (!this.directoryUtilityService.Exists(projectOutputPath))
+        {
+            this.Logger.LogWarning("Project output path {ProjectOutputPath} specified by {ProjectAssetsPath} does not exist.", projectOutputPath, processRequest.ComponentStream.Location);
+        }
+
         var targetType = this.GetProjectType(projectOutputPath, projectName, cancellationToken);
 
         var componentReporter = this.ComponentRecorder.CreateSingleFileComponentRecorder(projectPath);
@@ -126,8 +148,9 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
             // despite the name `IsExe` this is actually based of the CoffHeader Characteristics
             return peReader.PEHeaders.IsExe;
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            this.Logger.LogWarning("Failed to open output assembly {AssemblyPath} error {Message}.", assemblyPath, e.Message);
             return false;
         }
     }
@@ -140,6 +163,12 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
     /// <returns>Sdk version found, or null if no version can be detected.</returns>
     private async Task<string?> GetSdkVersionAsync(string projectDirectory, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(projectDirectory))
+        {
+            // not expected
+            return null;
+        }
+
         // normalize since we need to use as a key
         projectDirectory = this.pathUtilityService.NormalizePath(projectDirectory);
         if (this.sdkVersionCache.TryGetValue(projectDirectory, out var sdkVersion))
@@ -152,17 +181,23 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
         if (this.fileUtilityService.Exists(globalJsonPath))
         {
-            var globalJson = await JsonDocument.ParseAsync(this.fileUtilityService.MakeFileStream(globalJsonPath), cancellationToken: cancellationToken);
-            if (globalJson.RootElement.TryGetProperty("sdk", out var sdk))
+            sdkVersion = await this.RunDotNetVersionAsync(projectDirectory, cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(sdkVersion))
             {
-                if (sdk.TryGetProperty("version", out var version))
+                var globalJson = await JsonDocument.ParseAsync(this.fileUtilityService.MakeFileStream(globalJsonPath), cancellationToken: cancellationToken);
+                if (globalJson.RootElement.TryGetProperty("sdk", out var sdk))
                 {
-                    sdkVersion = version.GetString();
-                    var globalJsonComponent = new DetectedComponent(new DotNetComponent(sdkVersion));
-                    var recorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(globalJsonPath);
-                    recorder.RegisterUsage(globalJsonComponent, isExplicitReferencedDependency: true);
+                    if (sdk.TryGetProperty("version", out var version))
+                    {
+                        sdkVersion = version.GetString();
+                    }
                 }
             }
+
+            var globalJsonComponent = new DetectedComponent(new DotNetComponent(sdkVersion));
+            var recorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(globalJsonPath);
+            recorder.RegisterUsage(globalJsonComponent, isExplicitReferencedDependency: true);
         }
         else if (projectDirectory.Equals(this.sourceDirectory, StringComparison.OrdinalIgnoreCase) ||
                  projectDirectory.Equals(this.sourceFileRootDirectory, StringComparison.OrdinalIgnoreCase) ||
