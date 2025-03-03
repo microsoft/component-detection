@@ -387,4 +387,75 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         discoveredComponents.Where(component => component.Component.Id == "1.2.3 net8.0 application - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "1.2.3 net48 application - DotNet").Should().ContainSingle();
     }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorInvalidOutputAssembly()
+    {
+        // dotnet from global.json will be 4.5.6
+        var globalJson = GlobalJson("4.5.6");
+        var globalJsonDir = Path.Combine(RootDir, "path");
+        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+        this.SetCommandResult(1, "4.5.6");
+
+        // set up a library project - under global.json
+        var libraryProjectName = "library";
+        var libraryProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{libraryProjectName}.csproj");
+        this.AddFile(libraryProjectPath, null);
+        var libraryOutputPath = Path.Combine(Path.GetDirectoryName(libraryProjectPath), "obj");
+        var libraryAssetsPath = Path.Combine(libraryOutputPath, "project.assets.json");
+        var libraryAssets = ProjectAssets("library", libraryOutputPath, libraryProjectPath, "net8.0", "net6.0", "netstandard2.0");
+
+        // empty 8KB stream
+        var libraryAssemblyStream = new MemoryStream() { Position = 8 * 1024 };
+        this.AddFile(Path.Combine(libraryOutputPath, "Release", "net8.0", "library.dll"), libraryAssemblyStream);
+        this.AddFile(Path.Combine(libraryOutputPath, "Release", "net6.0", "library.dll"), libraryAssemblyStream);
+        this.AddFile(Path.Combine(libraryOutputPath, "Release", "netstandard2.0", "library.dll"), libraryAssemblyStream);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(libraryAssetsPath, libraryAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(4);
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 unknown unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net6.0 unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 netstandard2.0 unknown - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorNoGlobalJsonSourceRoot()
+    {
+        // DetectorTestUtility runs under Path.GetTempPath()
+        var scanRoot = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        var projectPath = Path.Combine(scanRoot, "path", "to", "project");
+        var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
+        this.AddFile(projectPath, null);
+        this.SetCommandResult((c, d) =>
+        {
+            d.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Should().BeEquivalentTo(scanRoot);
+            return new CommandLineExecutionResult()
+            {
+                ExitCode = 0,
+                StdOut = "0.0.0",
+            };
+        });
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("project.assets.json", projectAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "0.0.0 net8.0 unknown - DotNet").Should().ContainSingle();
+    }
 }

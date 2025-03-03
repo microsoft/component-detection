@@ -74,8 +74,8 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
-        this.sourceDirectory = this.pathUtilityService.NormalizePath(request.SourceDirectory.FullName);
-        this.sourceFileRootDirectory = this.pathUtilityService.NormalizePath(request.SourceFileRoot?.FullName);
+        this.sourceDirectory = this.pathUtilityService.NormalizePath(request.SourceDirectory.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        this.sourceFileRootDirectory = this.pathUtilityService.NormalizePath(request.SourceFileRoot?.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
 
         return base.ExecuteDetectorAsync(request, cancellationToken);
     }
@@ -125,13 +125,13 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
                      .Concat(this.directoryUtilityService.EnumerateFiles(projectOutputPath, namePattern, SearchOption.AllDirectories));
             foreach (var candidate in candidates)
             {
-                if (this.IsApplication(candidate))
+                try
                 {
-                    return "application";
+                    return this.IsApplication(candidate) ? "application" : "library";
                 }
-                else
+                catch (Exception e)
                 {
-                    return "library";
+                    this.Logger.LogWarning("Failed to open output assembly {AssemblyPath} error {Message}.", candidate, e.Message);
                 }
             }
         }
@@ -141,18 +141,10 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
     private bool IsApplication(string assemblyPath)
     {
-        try
-        {
-            using var peReader = new PEReader(this.fileUtilityService.MakeFileStream(assemblyPath));
+        using var peReader = new PEReader(this.fileUtilityService.MakeFileStream(assemblyPath));
 
-            // despite the name `IsExe` this is actually based of the CoffHeader Characteristics
-            return peReader.PEHeaders.IsExe;
-        }
-        catch (Exception e)
-        {
-            this.Logger.LogWarning("Failed to open output assembly {AssemblyPath} error {Message}.", assemblyPath, e.Message);
-            return false;
-        }
+        // despite the name `IsExe` this is actually based of the CoffHeader Characteristics
+        return peReader.PEHeaders.IsExe;
     }
 
     /// <summary>
