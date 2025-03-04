@@ -56,7 +56,7 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IEnumerable<string> Categories => ["DotNet"];
 
-    private string? NormalizeDirectory(string? path) => this.pathUtilityService.NormalizePath(path)?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    private string? NormalizeDirectory(string? path) => string.IsNullOrEmpty(path) ? path : Path.TrimEndingDirectorySeparator(this.pathUtilityService.NormalizePath(path));
 
     private async Task<string?> RunDotNetVersionAsync(string workingDirectoryPath, CancellationToken cancellationToken)
     {

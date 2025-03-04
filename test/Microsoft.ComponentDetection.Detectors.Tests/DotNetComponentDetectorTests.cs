@@ -26,7 +26,7 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDetector>
 {
-    private static readonly string RootDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:" : @"\";
+    private static readonly string RootDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:" : @"/";
 
     private readonly Mock<ILogger<DotNetComponentDetector>> mockLogger = new();
 
@@ -101,7 +101,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
 
                 if (fileName.EndsWith(Path.DirectorySeparatorChar))
                 {
-                    foreach (var subFile in this.EnumerateFilesRecursive(filePath.TrimEnd(Path.DirectorySeparatorChar)))
+                    foreach (var subFile in this.EnumerateFilesRecursive(Path.TrimEndingDirectorySeparator(filePath)))
                     {
                         yield return subFile;
                     }
@@ -343,7 +343,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.SetCommandResult((c, d) => new CommandLineExecutionResult()
         {
             ExitCode = 0,
-            StdOut = d.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) == globalJsonDir ? "4.5.6" : "1.2.3",
+            StdOut = d.FullName == globalJsonDir ? "4.5.6" : "1.2.3",
         });
 
         // set up a library project - under global.json
@@ -431,14 +431,14 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
     public async Task TestDotNetDetectorNoGlobalJsonSourceRoot()
     {
         // DetectorTestUtility runs under Path.GetTempPath()
-        var scanRoot = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var scanRoot = Path.TrimEndingDirectorySeparator(Path.GetTempPath());
 
         var projectPath = Path.Combine(scanRoot, "path", "to", "project");
         var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
         this.AddFile(projectPath, null);
         this.SetCommandResult((c, d) =>
         {
-            d.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Should().BeEquivalentTo(scanRoot);
+            d.FullName.Should().BeEquivalentTo(scanRoot);
             return new CommandLineExecutionResult()
             {
                 ExitCode = 0,
