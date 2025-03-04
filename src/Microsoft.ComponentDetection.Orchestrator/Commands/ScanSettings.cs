@@ -14,7 +14,7 @@ using Spectre.Console.Cli;
 public class ScanSettings : BaseSettings
 {
     [CommandOption("--DirectoryExclusionList")]
-    [Description("Filters out specific directories following a minimatch pattern.")]
+    [Description("Filters out specific directories following semi-colon separated glob patterns.")]
     [TypeConverter(typeof(SemicolonDelimitedConverter))]
     public IEnumerable<string> DirectoryExclusionList { get; set; }
 
