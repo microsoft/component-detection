@@ -6,6 +6,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Conan;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
+using Microsoft.ComponentDetection.Detectors.DotNet;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
 using Microsoft.ComponentDetection.Detectors.Ivy;
@@ -65,6 +66,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, Go117DetectorExperiment>();
+        services.AddSingleton<IExperimentConfiguration, DotNetDetectorExperiment>();
 
         // Detectors
         // CocoaPods
@@ -78,6 +80,9 @@ public static class ServiceCollectionExtensions
 
         // Dockerfile
         services.AddSingleton<IComponentDetector, DockerfileComponentDetector>();
+
+        // DotNet
+        services.AddSingleton<IComponentDetector, DotNetComponentDetector>();
 
         // Go
         services.AddSingleton<IComponentDetector, GoComponentDetector>();
