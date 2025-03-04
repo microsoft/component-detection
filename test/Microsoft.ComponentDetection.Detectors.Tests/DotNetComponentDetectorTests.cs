@@ -343,7 +343,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.SetCommandResult((c, d) => new CommandLineExecutionResult()
         {
             ExitCode = 0,
-            StdOut = d.FullName == globalJsonDir ? "4.5.6" : "1.2.3",
+            StdOut = d.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) == globalJsonDir ? "4.5.6" : "1.2.3",
         });
 
         // set up a library project - under global.json

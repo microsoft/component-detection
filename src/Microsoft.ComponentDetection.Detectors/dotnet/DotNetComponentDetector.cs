@@ -56,6 +56,8 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IEnumerable<string> Categories => ["DotNet"];
 
+    private string? NormalizeDirectory(string? path) => this.pathUtilityService.NormalizePath(path)?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
     private async Task<string?> RunDotNetVersionAsync(string workingDirectoryPath, CancellationToken cancellationToken)
     {
         var workingDirectory = new DirectoryInfo(workingDirectoryPath);
@@ -74,8 +76,8 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
-        this.sourceDirectory = this.pathUtilityService.NormalizePath(request.SourceDirectory.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        this.sourceFileRootDirectory = this.pathUtilityService.NormalizePath(request.SourceFileRoot?.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        this.sourceDirectory = this.NormalizeDirectory(request.SourceDirectory.FullName);
+        this.sourceFileRootDirectory = this.NormalizeDirectory(request.SourceFileRoot?.FullName);
 
         return base.ExecuteDetectorAsync(request, cancellationToken);
     }
@@ -153,16 +155,17 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
     /// <param name="projectDirectory">Directory to start the search.</param>
     /// <param name="cancellationToken">Cancellation token to halt the search.</param>
     /// <returns>Sdk version found, or null if no version can be detected.</returns>
-    private async Task<string?> GetSdkVersionAsync(string projectDirectory, CancellationToken cancellationToken)
+    private async Task<string?> GetSdkVersionAsync(string? projectDirectory, CancellationToken cancellationToken)
     {
+        // normalize since we need to use as a key
+        projectDirectory = this.NormalizeDirectory(projectDirectory);
+
         if (string.IsNullOrWhiteSpace(projectDirectory))
         {
             // not expected
             return null;
         }
 
-        // normalize since we need to use as a key
-        projectDirectory = this.pathUtilityService.NormalizePath(projectDirectory);
         if (this.sdkVersionCache.TryGetValue(projectDirectory, out var sdkVersion))
         {
             return sdkVersion;
