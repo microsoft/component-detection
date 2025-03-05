@@ -59,4 +59,7 @@ public enum ComponentType : byte
 
     [EnumMember]
     Swift = 18,
+
+    [EnumMember]
+    DotNet = 19,
 }
