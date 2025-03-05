@@ -4,6 +4,8 @@ using System;
 
 public class DotNetComponent : TypedComponent
 {
+    private const string UnknownValue = "unknown";
+
     private DotNetComponent()
     {
         /* Reserved for deserialization */
@@ -16,9 +18,9 @@ public class DotNetComponent : TypedComponent
             throw new ArgumentNullException(nameof(sdkVersion), $"Either {nameof(sdkVersion)} or {nameof(targetFramework)} of component type {nameof(DotNetComponent)} must be specified.");
         }
 
-        this.SdkVersion = string.IsNullOrWhiteSpace(sdkVersion) ? "unknown" : sdkVersion;
-        this.TargetFramework = string.IsNullOrWhiteSpace(targetFramework) ? "unknown" : targetFramework;
-        this.ProjectType = string.IsNullOrWhiteSpace(projectType) ? "unknown" : projectType;
+        this.SdkVersion = string.IsNullOrWhiteSpace(sdkVersion) ? UnknownValue : sdkVersion;
+        this.TargetFramework = string.IsNullOrWhiteSpace(targetFramework) ? UnknownValue : targetFramework;
+        this.ProjectType = string.IsNullOrWhiteSpace(projectType) ? UnknownValue : projectType;
     }
 
     /// <summary>
