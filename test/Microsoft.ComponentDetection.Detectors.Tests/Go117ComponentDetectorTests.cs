@@ -51,6 +51,9 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
     {
         var goMod = string.Empty;
 
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, null, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
+        .ReturnsAsync(true);
+
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, default, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
         .ReturnsAsync(new CommandLineExecutionResult
         {
@@ -85,6 +88,9 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
     {
         var goMod = string.Empty;
 
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, null, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
+        .ReturnsAsync(true);
+
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, default, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
         .ReturnsAsync(new CommandLineExecutionResult
         {
@@ -114,6 +120,9 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
         var goModParserMock = new Mock<IGoParser>();
         this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoMod, It.IsAny<ILogger>())).Returns(goModParserMock.Object);
 
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, null, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
+        .ReturnsAsync(true);
+
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, default, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
         .ReturnsAsync(new CommandLineExecutionResult
         {
@@ -136,6 +145,9 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
         var goSumParserMock = new Mock<IGoParser>();
         this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>())).Returns(goSumParserMock.Object);
 
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, null, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
+        .ReturnsAsync(true);
+
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, default, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
         .ReturnsAsync(new CommandLineExecutionResult
         {
@@ -150,5 +162,26 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         goSumParserMock.Verify(parser => parser.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Go117ModDetector_ExecutingGoVersionFails_DetectorDoesNotFail()
+    {
+        var goModParserMock = new Mock<IGoParser>();
+        this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoMod, It.IsAny<ILogger>())).Returns(goModParserMock.Object);
+
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, null, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
+        .ReturnsAsync(true);
+
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, default, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
+        .Throws(new InvalidOperationException("Failed to execute go version"));
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.mod", string.Empty)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        goModParserMock.Verify(parser => parser.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()), Times.Once);
     }
 }
