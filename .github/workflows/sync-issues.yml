@@ -16,7 +16,7 @@ jobs:
     permissions:
       issues: write
     steps:
-      - uses: danhellem/github-actions-issue-to-work-item@e077ff031c704672afb932c8718370df12b90f08 # v2.3
+      - uses: danhellem/github-actions-issue-to-work-item@45eb3b46e684f2acd2954f02ef70350c835ee4bb # v2.4
         env:
           ado_token: "${{ secrets.ADO_ISSUE_SYNC_TOKEN }}" # Work items write permissions
           github_token: "${{ secrets.GITHUB_TOKEN }}"
