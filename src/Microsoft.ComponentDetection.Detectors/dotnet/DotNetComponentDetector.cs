@@ -62,16 +62,25 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
     {
         var workingDirectory = new DirectoryInfo(workingDirectoryPath);
 
-        var process = await this.commandLineInvocationService.ExecuteCommandAsync("dotnet", ["dotnet.exe"], workingDirectory, cancellationToken, "--version").ConfigureAwait(false);
+        try
+        {
+            var process = await this.commandLineInvocationService.ExecuteCommandAsync("dotnet", ["dotnet.exe"], workingDirectory, cancellationToken, "--version").ConfigureAwait(false);
 
-        if (process.ExitCode != 0)
+            if (process.ExitCode != 0)
+            {
+                // debug only - it could be that dotnet is not actually on the path and specified directly by the build scripts.
+                this.Logger.LogDebug("Failed to invoke 'dotnet --version'. Return: {Return} StdErr: {StdErr} StdOut: {StdOut}.", process.ExitCode, process.StdErr, process.StdOut);
+                return null;
+            }
+
+            return process.StdOut.Trim();
+        }
+        catch (InvalidOperationException ioe)
         {
             // debug only - it could be that dotnet is not actually on the path and specified directly by the build scripts.
-            this.Logger.LogDebug("Failed to invoke 'dotnet --version'. Return: {Return} StdErr: {StdErr} StdOut: {StdOut}.", process.ExitCode, process.StdErr, process.StdOut);
+            this.Logger.LogDebug("Failed to invoke 'dotnet --version'. {Message}", ioe.Message);
             return null;
         }
-
-        return process.StdOut.Trim();
     }
 
     public override Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
@@ -120,11 +129,11 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
     {
         if (this.directoryUtilityService.Exists(projectOutputPath))
         {
-            var namePattern = (projectName ?? "*") + ".dll";
+            var namePattern = projectName ?? "*";
 
             // look for the compiled output, first as dll then as exe.
-            var candidates = this.directoryUtilityService.EnumerateFiles(projectOutputPath, namePattern, SearchOption.AllDirectories)
-                     .Concat(this.directoryUtilityService.EnumerateFiles(projectOutputPath, namePattern, SearchOption.AllDirectories));
+            var candidates = this.directoryUtilityService.EnumerateFiles(projectOutputPath, namePattern + ".dll", SearchOption.AllDirectories)
+                     .Concat(this.directoryUtilityService.EnumerateFiles(projectOutputPath, namePattern + ".exe", SearchOption.AllDirectories));
             foreach (var candidate in candidates)
             {
                 try

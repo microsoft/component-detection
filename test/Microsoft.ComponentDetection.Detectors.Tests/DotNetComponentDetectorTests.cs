@@ -8,6 +8,7 @@ using System.Reactive.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -62,7 +63,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.mockDirectoryUtilityService.Setup(x => x.Exists(It.IsAny<string>())).Returns((string p) => this.DirectoryExists(p));
 
         // ignore pattern and search option since we don't really need them for tests
-        this.mockDirectoryUtilityService.Setup(x => x.EnumerateFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>())).Returns((string d, string p, SearchOption s) => this.EnumerateFilesRecursive(d));
+        this.mockDirectoryUtilityService.Setup(x => x.EnumerateFiles(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SearchOption>())).Returns((string d, string p, SearchOption s) => this.EnumerateFilesRecursive(d, p));
 
         this.mockPathUtilityService.Setup(x => x.NormalizePath(It.IsAny<string>())).Returns((string p) => p);  // don't do normalization
         this.mockPathUtilityService.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns((string p) => Path.GetDirectoryName(p));
@@ -91,24 +92,30 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
 
     private bool DirectoryExists(string directory) => this.files.ContainsKey(directory);
 
-    private IEnumerable<string> EnumerateFilesRecursive(string directory)
+    private IEnumerable<string> EnumerateFilesRecursive(string directory, string pattern)
     {
         if (this.files.TryGetValue(directory, out var fileNames))
         {
+            // a basic approximation of globbing
+            var patternRegex = new Regex(pattern.Replace(".", "\\.").Replace("*", ".*"));
+
             foreach (var fileName in fileNames.Keys)
             {
                 var filePath = Path.Combine(directory, fileName);
 
                 if (fileName.EndsWith(Path.DirectorySeparatorChar))
                 {
-                    foreach (var subFile in this.EnumerateFilesRecursive(Path.TrimEndingDirectorySeparator(filePath)))
+                    foreach (var subFile in this.EnumerateFilesRecursive(Path.TrimEndingDirectorySeparator(filePath), pattern))
                     {
                         yield return subFile;
                     }
                 }
                 else
                 {
-                    yield return filePath;
+                    if (patternRegex.IsMatch(fileName))
+                    {
+                        yield return filePath;
+                    }
                 }
             }
         }
@@ -268,6 +275,54 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
     }
 
     [TestMethod]
+    public async Task TestDotNetDetectorGlobalJsonDotNetVersionFails_ReturnsSDKVersion()
+    {
+        var projectPath = Path.Combine(RootDir, "path", "to", "project");
+        var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
+        var globalJson = GlobalJson("8.0.100");
+        this.AddFile(projectPath, null);
+        this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
+        this.SetCommandResult(-1);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("project.assets.json", projectAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "8.0.100 unknown unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "8.0.100 net8.0 unknown - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorGlobalJsonDotNetVersionThrows_ReturnsSDKVersion()
+    {
+        var projectPath = Path.Combine(RootDir, "path", "to", "project");
+        var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
+        var globalJson = GlobalJson("8.0.100");
+        this.AddFile(projectPath, null);
+        this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
+        this.SetCommandResult((c, d) => throw new InvalidOperationException());
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("project.assets.json", projectAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "8.0.100 unknown unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "8.0.100 net8.0 unknown - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
     public async Task TestDotNetDetectorNoGlobalJson_ReturnsDotNetVersion()
     {
         var projectPath = Path.Combine(RootDir, "path", "to", "project");
@@ -386,6 +441,40 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 netstandard2.0 library - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "1.2.3 net8.0 application - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "1.2.3 net48 application - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorExe()
+    {
+        // dotnet from global.json will be 4.5.6
+        var globalJson = GlobalJson("4.5.6");
+        var globalJsonDir = Path.Combine(RootDir, "path");
+        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+
+        this.SetCommandResult(0, "4.5.6");
+
+        // set up an application - not under global.json
+        var applicationProjectName = "application";
+        var applicationProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{applicationProjectName}.csproj");
+        this.AddFile(applicationProjectPath, null);
+        var applicationOutputPath = Path.Combine(Path.GetDirectoryName(applicationProjectPath), "obj");
+        var applicationAssetsPath = Path.Combine(applicationOutputPath, "project.assets.json");
+        var applicationAssets = ProjectAssets("application", applicationOutputPath, applicationProjectPath, "net4.8");
+        var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
+        this.AddFile(Path.Combine(applicationOutputPath, "Release", "net4.8", "application.exe"), applicationAssemblyStream);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(applicationAssetsPath, applicationAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 unknown unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net48 application - DotNet").Should().ContainSingle();
     }
 
     [TestMethod]
