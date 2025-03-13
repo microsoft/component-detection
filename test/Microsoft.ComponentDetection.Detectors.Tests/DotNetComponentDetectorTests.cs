@@ -547,4 +547,52 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         var discoveredComponents = detectedComponents.ToArray();
         discoveredComponents.Where(component => component.Component.Id == "0.0.0 net8.0 unknown - DotNet").Should().ContainSingle();
     }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorRebasePaths()
+    {
+        // DetectorTestUtility runs under Path.GetTempPath()
+        var scanRoot = Path.TrimEndingDirectorySeparator(Path.GetTempPath());
+
+        // dotnet from global.json will be 4.5.6
+        var globalJson = GlobalJson("4.5.6");
+        var globalJsonDir = Path.Combine(scanRoot, "path");
+        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+
+        // make sure we find global.json and read it
+        this.SetCommandResult(-1);
+
+        // set up a library project - under global.json
+        var libraryProjectName = "library";
+
+        var libraryProjectPath = Path.Combine(scanRoot, "path", "to", "project", $"{libraryProjectName}.csproj");
+        var libraryBuildProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{libraryProjectName}.csproj");
+        this.AddFile(libraryProjectPath, null);
+
+        var libraryOutputPath = Path.Combine(Path.GetDirectoryName(libraryProjectPath), "obj");
+        var libraryBuildOutputPath = Path.Combine(Path.GetDirectoryName(libraryBuildProjectPath), "obj");
+        var libraryAssetsPath = Path.Combine(libraryOutputPath, "project.assets.json");
+
+        // use "build" paths to simulate an Assets file that has a different root.  Here the build assets have RootDir, but the scanned filesystem has scanRoot.
+        var libraryAssets = ProjectAssets("library", libraryBuildOutputPath, libraryBuildProjectPath, "net8.0", "net6.0", "netstandard2.0");
+        var libraryAssemblyStream = File.OpenRead(typeof(DotNetComponent).Assembly.Location);
+        this.AddFile(Path.Combine(libraryOutputPath, "Release", "net8.0", "library.dll"), libraryAssemblyStream);
+        this.AddFile(Path.Combine(libraryOutputPath, "Release", "net6.0", "library.dll"), libraryAssemblyStream);
+        this.AddFile(Path.Combine(libraryOutputPath, "Release", "netstandard2.0", "library.dll"), libraryAssemblyStream);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(libraryAssetsPath, libraryAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(4);
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 unknown unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 library - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net6.0 library - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 netstandard2.0 library - DotNet").Should().ContainSingle();
+    }
 }

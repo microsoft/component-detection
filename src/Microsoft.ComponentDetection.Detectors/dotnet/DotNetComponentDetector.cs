@@ -58,6 +58,44 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
     private string? NormalizeDirectory(string? path) => string.IsNullOrEmpty(path) ? path : Path.TrimEndingDirectorySeparator(this.pathUtilityService.NormalizePath(path));
 
+    /// <summary>
+    /// Given a path relative to sourceDirectory, and the same path in another filesystem,
+    /// determine what path could be replaced with root.
+    /// </summary>
+    /// <param name="rootBasedPath">Some path under root, including the root path.</param>
+    /// <param name="rebasePath">Path to the same file as <paramref name="rootBasedPath"/> but in a different root.</param>
+    /// <returns>Portion of <paramref name="rebasePath"/> that corresponds to root, or null if it can not be rebased.</returns>
+    private string? GetRootRebasePath(string rootBasedPath, string? rebasePath)
+    {
+        if (string.IsNullOrEmpty(rebasePath) || string.IsNullOrEmpty(this.sourceDirectory) || string.IsNullOrEmpty(rootBasedPath))
+        {
+            return null;
+        }
+
+        // sourceDirectory is normalized, normalize others
+        rootBasedPath = this.pathUtilityService.NormalizePath(rootBasedPath);
+        rebasePath = this.pathUtilityService.NormalizePath(rebasePath);
+
+        // nothing to do if the paths are the same
+        if (rebasePath.Equals(rootBasedPath, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        // find the relative path under root.
+        var rootRelativePath = this.pathUtilityService.NormalizePath(Path.GetRelativePath(this.sourceDirectory!, rootBasedPath));
+
+        // if the rebase path has the same relative portion, then we have a replacement.
+        if (rebasePath.EndsWith(rootRelativePath))
+        {
+            return rebasePath[..^rootRelativePath.Length];
+        }
+
+        // The path didn't have a common relative path, it might have been copied from a completely different location since it was built.
+        // We cannot rebase the paths.
+        return null;
+    }
+
     private async Task<string?> RunDotNetVersionAsync(string workingDirectoryPath, CancellationToken cancellationToken)
     {
         var workingDirectory = new DirectoryInfo(workingDirectoryPath);
@@ -95,7 +133,20 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
     {
         var lockFile = this.lockFileFormat.Read(processRequest.ComponentStream.Stream, processRequest.ComponentStream.Location);
 
+        var projectAssetsDirectory = this.pathUtilityService.GetParentDirectory(processRequest.ComponentStream.Location);
         var projectPath = lockFile.PackageSpec.RestoreMetadata.ProjectPath;
+        var projectOutputPath = lockFile.PackageSpec.RestoreMetadata.OutputPath;
+
+        // The output path should match the location that the assets file, if it doesn't we could be analyzing paths
+        // on a different filesystem root than they were created.
+        // Attempt to rebase paths based on the difference between this file's location and the output path.
+        var rebasePath = this.GetRootRebasePath(projectAssetsDirectory, projectOutputPath);
+
+        if (rebasePath is not null)
+        {
+            projectPath = Path.Combine(this.sourceDirectory!, Path.GetRelativePath(rebasePath, projectPath));
+            projectOutputPath = Path.Combine(this.sourceDirectory!, Path.GetRelativePath(rebasePath, projectOutputPath));
+        }
 
         if (!this.fileUtilityService.Exists(projectPath))
         {
@@ -107,11 +158,13 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
         var sdkVersion = await this.GetSdkVersionAsync(projectDirectory, cancellationToken);
 
         var projectName = lockFile.PackageSpec.RestoreMetadata.ProjectName;
-        var projectOutputPath = lockFile.PackageSpec.RestoreMetadata.OutputPath;
 
         if (!this.directoryUtilityService.Exists(projectOutputPath))
         {
             this.Logger.LogWarning("Project output path {ProjectOutputPath} specified by {ProjectAssetsPath} does not exist.", projectOutputPath, processRequest.ComponentStream.Location);
+
+            // default to use the location of the assets file.
+            projectOutputPath = projectAssetsDirectory;
         }
 
         var targetType = this.GetProjectType(projectOutputPath, projectName, cancellationToken);
