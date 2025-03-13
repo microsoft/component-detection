@@ -73,11 +73,12 @@ public class Pnpm9Detector : IPnpmDetector
         {
             var pnpmDependencyPath = this.pnpmParsingUtilities.ReconstructPnpmDependencyPath(name, dep.Version);
             var (component, package) = components[pnpmDependencyPath];
+            var (_, packageVersion) = this.pnpmParsingUtilities.ExtractNameAndVersionFromPnpmPackagePath(pnpmDependencyPath);
 
             // Lockfile v9 apparently removed the tagging of dev dependencies in the lockfile, so we revert to using the dependency tree to establish dev dependency state.
             // At this point, the root dependencies are marked according to which dependency group they are declared in the lockfile itself.
             // Ignore "file:" and "link:" as these are local packages.
-            var isFileOrLink = this.IsFileOrLink(dep.Version);
+            var isFileOrLink = this.IsFileOrLink(packageVersion);
             if (!isFileOrLink)
             {
                 singleFileComponentRecorder.RegisterUsage(component, isExplicitReferencedDependency: true, isDevelopmentDependency: isDevelopmentDependency);
@@ -102,7 +103,7 @@ public class Pnpm9Detector : IPnpmDetector
         foreach (var (name, version) in dependencies ?? Enumerable.Empty<KeyValuePair<string, string>>())
         {
             // Ignore "file:" and "link:" as these are local packages.
-            if (version.StartsWith(PnpmConstants.PnpmLinkDependencyPath) || version.StartsWith(PnpmConstants.PnpmFileDependencyPath))
+            if (this.IsFileOrLink(version))
             {
                 continue;
             }
