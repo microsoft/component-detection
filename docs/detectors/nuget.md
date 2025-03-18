@@ -40,6 +40,6 @@ The `NuGetPackagesConfig` detector raises NuGet components referenced by project
 
 - Any components that are only found in `*.nuspec` or `*.nupkg` files will not be detected with the latest NuGet Detector approach, because the NuGet detector that scans `*.nuspec` or `*.nupkg` files overreports. This is due to of NuGet's [restore behaviour][8] which downloads all possible dependencies before [resolving the final dependency graph][9].
 
-[5]: https://learn.microsoft.com/en-us/nuget/consume-packages/package-restore#package-restore-behavior
-[6]: https://learn.microsoft.com/en-us/nuget/concepts/dependency-resolution
+[8]: https://learn.microsoft.com/en-us/nuget/consume-packages/package-restore#package-restore-behavior
+[9]: https://learn.microsoft.com/en-us/nuget/concepts/dependency-resolution
 
