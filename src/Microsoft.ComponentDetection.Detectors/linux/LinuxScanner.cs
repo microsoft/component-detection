@@ -104,7 +104,42 @@ public class LinuxScanner : ILinuxScanner
         try
         {
             var syftOutput = JsonConvert.DeserializeObject<SyftOutput>(stdout);
-            var linuxComponentsWithLayers = syftOutput.Artifacts
+
+            // This workaround ignores some packages that originate from the mariner 2.0 image that
+            // have not been properly tagged with the release and epoch fields in their versions. This
+            // was fixed for azurelinux 3.0 with https://github.com/microsoft/azurelinux/pull/10405, but
+            // 2.0 no longer recieves non-security updates and will be deprecated in July 2025.
+            // This became a problem after the Syft update https://github.com/anchore/syft/pull/3008 which
+            // allowed for Syft to respect the package type that is listed in the ELF notes file. Since
+            // mariner 2.0 lists the packages as RPMs, Syft categorizes them as such.
+            var validArtifacts = syftOutput.Artifacts.ToList();
+            if (syftOutput.Distro.Id == "mariner" && syftOutput.Distro.VersionId == "2.0")
+            {
+                var elfVersionsWithoutRelease = validArtifacts
+                    .Where(artifact =>
+                        artifact.FoundBy == "elf-binary-package-cataloger" // a number of detectors execute with Syft, this one can container invalid results
+                        && !artifact.Version.Contains('-', StringComparison.OrdinalIgnoreCase)) // dash character indicates that the release version was properly appended to the version, so allow these
+                    .ToList();
+
+                // Confirms that the package version was detected elsewhere in the image before removing,
+                // such as the rpmmanifest
+                var elfVersionsRemoved = new List<string>();
+                foreach (var elfArtifact in elfVersionsWithoutRelease)
+                {
+                    if (validArtifacts.Any(artifact =>
+                        artifact.Name == elfArtifact.Name
+                        && artifact.Version.StartsWith(elfArtifact.Version)
+                        && artifact.FoundBy != "elf-binary-package-cataloger"))
+                    {
+                        elfVersionsRemoved.Add(elfArtifact.Name + " " + elfArtifact.Version);
+                        validArtifacts.Remove(elfArtifact);
+                    }
+                }
+
+                syftTelemetryRecord.Mariner2ComponentsRemoved = [.. elfVersionsRemoved];
+            }
+
+            var linuxComponentsWithLayers = validArtifacts
                 .DistinctBy(artifact => (artifact.Name, artifact.Version))
                 .Where(artifact => AllowedArtifactTypes.Contains(artifact.Type))
                 .Select(artifact =>

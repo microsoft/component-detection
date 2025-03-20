@@ -7,4 +7,6 @@ public class LinuxScannerSyftTelemetryRecord : BaseDetectionTelemetryRecord
     public string LinuxComponents { get; set; }
 
     public string Exception { get; set; }
+
+    public string[] Mariner2ComponentsRemoved { get; set; }
 }
