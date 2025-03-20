@@ -18,6 +18,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     private const string ManifestRelativePath = "ScanManifest_{timestamp}.json";
     private readonly IFileWritingService fileWritingService;
     private readonly IScanExecutionService scanExecutionService;
+    private readonly IComponentDetectionConfigFileService componentDetectionConfigFileService;
     private readonly ILogger<ScanCommand> logger;
 
     /// <summary>
@@ -25,14 +26,17 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     /// </summary>
     /// <param name="fileWritingService">The file writing service.</param>
     /// <param name="scanExecutionService">The scan execution service.</param>
+    /// <param name="componentDetectionConfigFileService">The component detection config file service.</param>
     /// <param name="logger">The logger.</param>
     public ScanCommand(
         IFileWritingService fileWritingService,
         IScanExecutionService scanExecutionService,
+        IComponentDetectionConfigFileService componentDetectionConfigFileService,
         ILogger<ScanCommand> logger)
     {
         this.fileWritingService = fileWritingService;
         this.scanExecutionService = scanExecutionService;
+        this.componentDetectionConfigFileService = componentDetectionConfigFileService;
         this.logger = logger;
     }
 
@@ -40,6 +44,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     public override async Task<int> ExecuteAsync(CommandContext context, ScanSettings settings)
     {
         this.fileWritingService.Init(settings.Output);
+        await this.componentDetectionConfigFileService.InitAsync(settings.ComponentDetectionConfigFile, settings.SourceDirectory.FullName);
         var result = await this.scanExecutionService.ExecuteScanAsync(settings);
         this.WriteComponentManifest(settings, result);
         return 0;
