@@ -115,14 +115,27 @@ public class LinuxScanner : ILinuxScanner
             var validArtifacts = syftOutput.Artifacts.ToList();
             if (syftOutput.Distro.Id == "mariner" && syftOutput.Distro.VersionId == "2.0")
             {
-                validArtifacts = validArtifacts
+                var elfVersionsWithoutRelease = validArtifacts
                     .Where(artifact =>
-                        artifact.FoundBy != "elf-binary-package-cataloger" // a number of detectors execute with Syft, this one can container invalid results
-                        || artifact.Version.Contains('-', StringComparison.OrdinalIgnoreCase)) // dash character indicates that the release version was properly appended to the version, so allow these
+                        artifact.FoundBy == "elf-binary-package-cataloger" // a number of detectors execute with Syft, this one can container invalid results
+                        && !artifact.Version.Contains('-', StringComparison.OrdinalIgnoreCase)) // dash character indicates that the release version was properly appended to the version, so allow these
                     .ToList();
-            }
 
-            syftTelemetryRecord.Mariner2ComponentsRemoved = syftOutput.Artifacts.Length - validArtifacts.Count;
+                var elfVersionsRemoved = new List<string>();
+                foreach (var elfArtifact in elfVersionsWithoutRelease)
+                {
+                    if (validArtifacts.Any(artifact =>
+                        artifact.Name == elfArtifact.Name
+                        && artifact.Version.StartsWith(elfArtifact.Version)
+                        && artifact.FoundBy != "elf-binary-package-cataloger"))
+                    {
+                        elfVersionsRemoved.Add(elfArtifact.Name + " " + elfArtifact.Version);
+                        validArtifacts.Remove(elfArtifact);
+                    }
+                }
+
+                syftTelemetryRecord.Mariner2ComponentsRemoved = [.. elfVersionsRemoved];
+            }
 
             var linuxComponentsWithLayers = validArtifacts
                 .DistinctBy(artifact => (artifact.Name, artifact.Version))
