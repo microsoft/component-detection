@@ -4,6 +4,7 @@ namespace Microsoft.ComponentDetection.Detectors.DotNet;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection.PortableExecutable;
@@ -56,39 +57,42 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IEnumerable<string> Categories => ["DotNet"];
 
+    [return: NotNullIfNotNull(nameof(path))]
     private string? NormalizeDirectory(string? path) => string.IsNullOrEmpty(path) ? path : Path.TrimEndingDirectorySeparator(this.pathUtilityService.NormalizePath(path));
 
     /// <summary>
-    /// Given a path relative to sourceDirectory, and the same path in another filesystem,
-    /// determine what path could be replaced with root.
+    /// Given a path under sourceDirectory, and the same path in another filesystem,
+    /// determine what path could be replaced with sourceDirectory.
     /// </summary>
-    /// <param name="rootBasedPath">Some path under root, including the root path.</param>
-    /// <param name="rebasePath">Path to the same file as <paramref name="rootBasedPath"/> but in a different root.</param>
+    /// <param name="sourceDirectoryBasedPath">Some directory path under sourceDirectory, including sourceDirectory.</param>
+    /// <param name="rebasePath">Path to the same directory as <paramref name="sourceDirectoryBasedPath"/> but in a different root.</param>
     /// <returns>Portion of <paramref name="rebasePath"/> that corresponds to root, or null if it can not be rebased.</returns>
-    private string? GetRootRebasePath(string rootBasedPath, string? rebasePath)
+    private string? GetRootRebasePath(string sourceDirectoryBasedPath, string? rebasePath)
     {
-        if (string.IsNullOrEmpty(rebasePath) || string.IsNullOrEmpty(this.sourceDirectory) || string.IsNullOrEmpty(rootBasedPath))
+        if (string.IsNullOrEmpty(rebasePath) || string.IsNullOrEmpty(this.sourceDirectory) || string.IsNullOrEmpty(sourceDirectoryBasedPath))
         {
             return null;
         }
 
         // sourceDirectory is normalized, normalize others
-        rootBasedPath = this.pathUtilityService.NormalizePath(rootBasedPath);
-        rebasePath = this.pathUtilityService.NormalizePath(rebasePath);
+        sourceDirectoryBasedPath = this.NormalizeDirectory(sourceDirectoryBasedPath);
+        rebasePath = this.NormalizeDirectory(rebasePath);
 
         // nothing to do if the paths are the same
-        if (rebasePath.Equals(rootBasedPath, StringComparison.Ordinal))
+        if (rebasePath.Equals(sourceDirectoryBasedPath, StringComparison.Ordinal))
         {
             return null;
         }
 
-        // find the relative path under root.
-        var rootRelativePath = this.pathUtilityService.NormalizePath(Path.GetRelativePath(this.sourceDirectory!, rootBasedPath));
+        // find the relative path under sourceDirectory.
+        var sourceDirectoryRelativePath = this.NormalizeDirectory(Path.GetRelativePath(this.sourceDirectory!, sourceDirectoryBasedPath));
+
+        this.Logger.LogDebug("Attempting to rebase {RebasePath} to {SourceDirectoryBasedPath} using relative {SourceDirectoryRelativePath}", rebasePath, sourceDirectoryBasedPath, sourceDirectoryRelativePath);
 
         // if the rebase path has the same relative portion, then we have a replacement.
-        if (rebasePath.EndsWith(rootRelativePath))
+        if (rebasePath.EndsWith(sourceDirectoryRelativePath))
         {
-            return rebasePath[..^rootRelativePath.Length];
+            return rebasePath[..^sourceDirectoryRelativePath.Length];
         }
 
         // The path didn't have a common relative path, it might have been copied from a completely different location since it was built.

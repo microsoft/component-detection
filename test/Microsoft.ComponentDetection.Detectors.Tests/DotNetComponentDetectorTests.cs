@@ -185,6 +185,12 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         LockFile lockFile = new();
         using var textWriter = new StringWriter();
 
+        // assets file always includes a trailing separator
+        if (!Path.EndsInDirectorySeparator(outputPath))
+        {
+            outputPath += Path.DirectorySeparatorChar;
+        }
+
         lockFile.Targets = targetFrameworks.Select(tfm => new LockFileTarget() { TargetFramework = NuGetFramework.Parse(tfm) }).ToList();
         lockFile.PackageSpec = new()
         {
