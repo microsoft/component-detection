@@ -121,6 +121,8 @@ public class LinuxScanner : ILinuxScanner
                         && !artifact.Version.Contains('-', StringComparison.OrdinalIgnoreCase)) // dash character indicates that the release version was properly appended to the version, so allow these
                     .ToList();
 
+                // Confirms that the package version was detected elsewhere in the image before removing,
+                // such as the rpmmanifest
                 var elfVersionsRemoved = new List<string>();
                 foreach (var elfArtifact in elfVersionsWithoutRelease)
                 {
