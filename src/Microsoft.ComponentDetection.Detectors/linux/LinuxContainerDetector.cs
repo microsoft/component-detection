@@ -35,7 +35,7 @@ public class LinuxContainerDetector : IComponentDetector
 
     public IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Linux];
 
-    public int Version => 5;
+    public int Version => 6;
 
     public bool NeedsAutomaticRootDependencyCalculation => false;
 
