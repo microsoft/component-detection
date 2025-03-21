@@ -121,22 +121,14 @@ public class LinuxScanner : ILinuxScanner
                         && !artifact.Version.Contains('-', StringComparison.OrdinalIgnoreCase)) // dash character indicates that the release version was properly appended to the version, so allow these
                     .ToList();
 
-                // Confirms that the package version was detected elsewhere in the image before removing,
-                // such as the rpmmanifest
                 var elfVersionsRemoved = new List<string>();
                 foreach (var elfArtifact in elfVersionsWithoutRelease)
                 {
-                    if (validArtifacts.Any(artifact =>
-                        artifact.Name == elfArtifact.Name
-                        && artifact.Version.StartsWith(elfArtifact.Version)
-                        && artifact.FoundBy != "elf-binary-package-cataloger"))
-                    {
-                        elfVersionsRemoved.Add(elfArtifact.Name + " " + elfArtifact.Version);
-                        validArtifacts.Remove(elfArtifact);
-                    }
+                    elfVersionsRemoved.Add(elfArtifact.Name + " " + elfArtifact.Version);
+                    validArtifacts.Remove(elfArtifact);
                 }
 
-                syftTelemetryRecord.Mariner2ComponentsRemoved = [.. elfVersionsRemoved];
+                syftTelemetryRecord.Mariner2ComponentsRemoved = JsonConvert.SerializeObject(elfVersionsRemoved);
             }
 
             var linuxComponentsWithLayers = validArtifacts

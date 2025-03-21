@@ -169,7 +169,7 @@ public class LinuxScannerTests
                 ]
             }";
 
-    private const string SyftOutputKeepNonduplicatedMarinerPackages = @"{
+    private const string SyftOutputRemoveNonduplicatedMarinerPackages = @"{
                 ""distro"": {
                     ""prettyName"": ""CBL-Mariner/Linux"",
                     ""name"": ""Common Base Linux Mariner"",
@@ -280,7 +280,7 @@ public class LinuxScannerTests
     }
 
     [TestMethod]
-    [DataRow(SyftOutputKeepNonduplicatedMarinerPackages)]
+    [DataRow(SyftOutputRemoveNonduplicatedMarinerPackages)]
     public async Task TestLinuxScanner_SyftOutputKeepNonduplicatedMarinerPackages_Async(string syftOutput)
     {
         this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
@@ -288,13 +288,6 @@ public class LinuxScannerTests
 
         var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6" }], 0)).First().LinuxComponents;
 
-        result.Should().ContainSingle();
-        var package = result.First();
-        package.Name.Should().Be("busybox");
-        package.Version.Should().Be("1.35.0");
-        package.Release.Should().Be("2.0");
-        package.Distribution.Should().Be("mariner");
-        package.Author.Should().Be(null);
-        package.License.Should().Be(null);
+        result.Should().BeEmpty();
     }
 }
