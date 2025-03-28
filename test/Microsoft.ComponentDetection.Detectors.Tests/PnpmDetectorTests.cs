@@ -803,6 +803,10 @@ importers:
       SampleLinkDependency:
         specifier: workspace:*
         version: link:SampleLinkDependency
+    devDependencies:
+      sampleDevDependency:
+        specifier: ^4.4.4
+        version: 4.4.4
 packages:
   sampleDependency@1.1.1:
     resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
@@ -812,7 +816,12 @@ packages:
   sampleIndirectDependency@3.3.3:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
-
+  sampleDevDependency@4.4.4:
+    resolution: {integrity: sha512-n4ZT37wG78iz03xPRKJrHTdZbe3IicyucEtdRsV5yglwc3GyUfbAfpSeD0FJ41NbUNSt5wbhqfp1fS+BgnvDFQ==}
+  sampleIndirectDevDependency@5.5.5:
+    resolution: {integrity: sha512-R3pbpkcIqv2Pm3dUwgjclDRVmWpTJW2DcMzcIhEXEx1oh/CEMObMm3KLmRJOdvhM7o4uQBnwr8pzRK2sJWIqfg==}
+    engines: {node: '>=0.4.0'}
+  
 snapshots:
   sampleDependency@1.1.1:
     dependencies:
@@ -822,6 +831,10 @@ snapshots:
   sampleIndirectDependency2@2.2.2: {}
   sampleIndirectDependency@3.3.3: {}
   sampleFileDependency@file:../test': {}
+  sampleDevDependency@4.4.4:
+    dependencies:
+      sampleIndirectDevDependency: 5.5.5
+  sampleIndirectDevDependency@5.5.5: {}
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -831,25 +844,40 @@ snapshots:
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().HaveCount(3);
+        detectedComponents.Should().HaveCount(5);
         var npmComponents = detectedComponents.Select(x => new { Component = x.Component as NpmComponent, DetectedComponent = x });
         npmComponents.Should().Contain(x => x.Component.Name == "sampleDependency" && x.Component.Version == "1.1.1");
         npmComponents.Should().Contain(x => x.Component.Name == "sampleIndirectDependency2" && x.Component.Version == "2.2.2");
         npmComponents.Should().Contain(x => x.Component.Name == "sampleIndirectDependency" && x.Component.Version == "3.3.3");
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleDevDependency" && x.Component.Version == "4.4.4");
+        npmComponents.Should().Contain(x => x.Component.Name == "sampleIndirectDevDependency" && x.Component.Version == "5.5.5");
 
         var noDevDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleDependency");
         var indirectDependencyComponent2 = npmComponents.First(x => x.Component.Name == "sampleIndirectDependency2");
         var indirectDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleIndirectDependency");
+        var devDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleDevDependency");
+        var indirectDevDependencyComponent = npmComponents.First(x => x.Component.Name == "sampleIndirectDevDependency");
 
         componentRecorder.GetEffectiveDevDependencyValue(noDevDependencyComponent.Component.Id).Should().BeFalse();
         componentRecorder.GetEffectiveDevDependencyValue(indirectDependencyComponent2.Component.Id).Should().BeFalse();
         componentRecorder.GetEffectiveDevDependencyValue(indirectDependencyComponent.Component.Id).Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue(devDependencyComponent.Component.Id).Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue(indirectDevDependencyComponent.Component.Id).Should().BeTrue();
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             indirectDependencyComponent.Component.Id,
             parentComponent => parentComponent.Name == "sampleDependency");
         componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
             indirectDependencyComponent2.Component.Id,
             parentComponent => parentComponent.Name == "sampleDependency");
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            indirectDevDependencyComponent.Component.Id,
+            parentComponent => parentComponent.Name == "sampleDevDependency");
+
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+        var allExplicitlyReferenced = dependencyGraph.GetAllExplicitlyReferencedComponents();
+        allExplicitlyReferenced.Should().HaveCount(2);
+        allExplicitlyReferenced.Should().Contain(noDevDependencyComponent.Component.Id);
+        allExplicitlyReferenced.Should().Contain(devDependencyComponent.Component.Id);
     }
 
     [TestMethod]
