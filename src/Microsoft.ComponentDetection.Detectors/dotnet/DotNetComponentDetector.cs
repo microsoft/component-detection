@@ -26,6 +26,7 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
     private readonly IPathUtilityService pathUtilityService;
     private readonly LockFileFormat lockFileFormat = new();
     private readonly ConcurrentDictionary<string, string?> sdkVersionCache = [];
+    private readonly JsonDocumentOptions jsonDocumentOptions = new() { CommentHandling = JsonCommentHandling.Skip };
     private string? sourceDirectory;
     private string? sourceFileRootDirectory;
 
@@ -137,6 +138,12 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
     {
         var lockFile = this.lockFileFormat.Read(processRequest.ComponentStream.Stream, processRequest.ComponentStream.Location);
 
+        if (lockFile.PackageSpec is null)
+        {
+            this.Logger.LogWarning("Lock file {LockFilePath} does not contain a PackageSpec.", processRequest.ComponentStream.Location);
+            return;
+        }
+
         var projectAssetsDirectory = this.pathUtilityService.GetParentDirectory(processRequest.ComponentStream.Location);
         var projectPath = lockFile.PackageSpec.RestoreMetadata.ProjectPath;
         var projectOutputPath = lockFile.PackageSpec.RestoreMetadata.OutputPath;
@@ -184,23 +191,30 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
     private string? GetProjectType(string projectOutputPath, string projectName, CancellationToken cancellationToken)
     {
-        if (this.directoryUtilityService.Exists(projectOutputPath))
+        if (this.directoryUtilityService.Exists(projectOutputPath) &&
+            projectName is not null &&
+            projectName.IndexOfAny(Path.GetInvalidFileNameChars()) == -1)
         {
-            var namePattern = projectName ?? "*";
-
-            // look for the compiled output, first as dll then as exe.
-            var candidates = this.directoryUtilityService.EnumerateFiles(projectOutputPath, namePattern + ".dll", SearchOption.AllDirectories)
-                     .Concat(this.directoryUtilityService.EnumerateFiles(projectOutputPath, namePattern + ".exe", SearchOption.AllDirectories));
-            foreach (var candidate in candidates)
+            try
             {
-                try
+                // look for the compiled output, first as dll then as exe.
+                var candidates = this.directoryUtilityService.EnumerateFiles(projectOutputPath, projectName + ".dll", SearchOption.AllDirectories)
+                        .Concat(this.directoryUtilityService.EnumerateFiles(projectOutputPath, projectName + ".exe", SearchOption.AllDirectories));
+                foreach (var candidate in candidates)
                 {
-                    return this.IsApplication(candidate) ? "application" : "library";
+                    try
+                    {
+                        return this.IsApplication(candidate) ? "application" : "library";
+                    }
+                    catch (Exception e)
+                    {
+                        this.Logger.LogWarning("Failed to open output assembly {AssemblyPath} error {Message}.", candidate, e.Message);
+                    }
                 }
-                catch (Exception e)
-                {
-                    this.Logger.LogWarning("Failed to open output assembly {AssemblyPath} error {Message}.", candidate, e.Message);
-                }
+            }
+            catch (IOException e)
+            {
+                this.Logger.LogWarning("Failed to enumerate output directory {OutputPath} error {Message}.", projectOutputPath, e.Message);
             }
         }
 
@@ -246,7 +260,7 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
 
             if (string.IsNullOrWhiteSpace(sdkVersion))
             {
-                var globalJson = await JsonDocument.ParseAsync(this.fileUtilityService.MakeFileStream(globalJsonPath), cancellationToken: cancellationToken);
+                var globalJson = await JsonDocument.ParseAsync(this.fileUtilityService.MakeFileStream(globalJsonPath), cancellationToken: cancellationToken, options: this.jsonDocumentOptions).ConfigureAwait(false);
                 if (globalJson.RootElement.TryGetProperty("sdk", out var sdk))
                 {
                     if (sdk.TryGetProperty("version", out var version))
@@ -256,14 +270,21 @@ public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetec
                 }
             }
 
-            var globalJsonComponent = new DetectedComponent(new DotNetComponent(sdkVersion));
-            var recorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(globalJsonPath);
-            recorder.RegisterUsage(globalJsonComponent, isExplicitReferencedDependency: true);
+            if (!string.IsNullOrWhiteSpace(sdkVersion))
+            {
+                var globalJsonComponent = new DetectedComponent(new DotNetComponent(sdkVersion));
+                var recorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(globalJsonPath);
+                recorder.RegisterUsage(globalJsonComponent, isExplicitReferencedDependency: true);
+                return sdkVersion;
+            }
+
+            // global.json may be malformed, or the sdk version may not be specified.
         }
-        else if (projectDirectory.Equals(this.sourceDirectory, StringComparison.OrdinalIgnoreCase) ||
-                 projectDirectory.Equals(this.sourceFileRootDirectory, StringComparison.OrdinalIgnoreCase) ||
-                 string.IsNullOrEmpty(parentDirectory) ||
-                 projectDirectory.Equals(parentDirectory, StringComparison.OrdinalIgnoreCase))
+
+        if (projectDirectory.Equals(this.sourceDirectory, StringComparison.OrdinalIgnoreCase) ||
+            projectDirectory.Equals(this.sourceFileRootDirectory, StringComparison.OrdinalIgnoreCase) ||
+            string.IsNullOrEmpty(parentDirectory) ||
+            projectDirectory.Equals(parentDirectory, StringComparison.OrdinalIgnoreCase))
         {
             // if we are at the source directory, source file root, or have reached a root directory, run `dotnet --version`
             // this could fail if dotnet is not on the path, or if the global.json is malformed
