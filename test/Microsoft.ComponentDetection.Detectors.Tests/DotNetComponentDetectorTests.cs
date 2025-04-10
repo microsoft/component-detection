@@ -223,6 +223,19 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         return stream;
     }
 
+    private static Stream StreamFromString(string content)
+    {
+        var stream = new MemoryStream();
+        using (var writer = new StreamWriter(stream, leaveOpen: true))
+        {
+            writer.Write(content);
+            writer.Flush();
+            stream.Position = 0;
+        }
+
+        return stream;
+    }
+
     [TestMethod]
     public async Task TestDotNetDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
@@ -254,6 +267,70 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         var discoveredComponents = detectedComponents.ToArray();
         discoveredComponents.Where(component => component.Component.Id == "42.0.800 unknown unknown - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "42.0.800 net8.0 unknown - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorGlobalJsonWithComments_ReturnsSDKVersion()
+    {
+        var projectPath = Path.Combine(RootDir, "path", "to", "project");
+        var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
+
+        var globalJson = StreamFromString("""
+        // comment
+        {
+            // comment
+            "sdk": {
+                // comment
+                "version": "8.2.100"
+            }
+        }
+        """);
+        this.AddFile(projectPath, null);
+        this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
+        this.SetCommandResult(-1);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("project.assets.json", projectAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "8.2.100 unknown unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "8.2.100 net8.0 unknown - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorGlobalJsonWithoutVersion()
+    {
+        var projectPath = Path.Combine(RootDir, "path", "to", "project");
+        var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
+        var globalJson = StreamFromString("""
+        {
+            "msbuild-sdks": {
+                "Microsoft.Build.NoTargets": "3.5.0",
+                "Microsoft.DotNet.Arcade.Sdk": "10.0.0-beta.25206.1"
+            }
+        }
+        """);
+        this.AddFile(projectPath, null);
+        this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
+        this.SetCommandResult(-1);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("project.assets.json", projectAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "unknown net8.0 unknown - DotNet").Should().ContainSingle();
     }
 
     [TestMethod]
@@ -355,6 +432,29 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         var projectPath = Path.Combine(RootDir, "path", "to", "project");
         var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
         this.AddFile(projectPath, null);
+        this.SetCommandResult(-1);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("project.assets.json", projectAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "unknown net8.0 unknown - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorInvalidProjectName_ReturnsUnknownVersion()
+    {
+        var projectPath = Path.Combine(RootDir, "path", "to", "project");
+        var outputPath = Path.Combine(projectPath, "obj");
+        var projectAssets = ProjectAssets("/foo/bar/projectName", outputPath, projectPath, "net8.0");
+        this.AddFile(projectPath, null);
+        this.AddDirectory(outputPath);
         this.SetCommandResult(-1);
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
