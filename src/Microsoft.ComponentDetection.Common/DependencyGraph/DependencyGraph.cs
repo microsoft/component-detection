@@ -97,7 +97,7 @@ internal class DependencyGraph : IDependencyGraph
 
     public HashSet<string> GetAdditionalRelatedFiles()
     {
-        return this.AdditionalRelatedFiles.Keys.ToImmutableHashSet().ToHashSet();
+        return this.AdditionalRelatedFiles.Keys.ToHashSet();
     }
 
     public bool HasComponents()

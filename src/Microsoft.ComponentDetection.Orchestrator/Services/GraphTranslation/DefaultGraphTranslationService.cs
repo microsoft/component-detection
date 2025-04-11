@@ -13,7 +13,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class DefaultGraphTranslationService : IGraphTranslationService
 {
@@ -101,12 +100,15 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                 foreach (var component in detectedComponents)
                 {
                     // clone custom locations and make them relative to root.
-                    var declaredRawFilePaths = component.FilePaths ?? [];
-                    var componentCustomLocations = JsonConvert.DeserializeObject<HashSet<string>>(JsonConvert.SerializeObject(declaredRawFilePaths));
+                    var componentCustomLocations = component.FilePaths ?? [];
 
                     if (updateLocations)
                     {
-                        component.FilePaths?.Clear();
+                        if (component.FilePaths != null)
+                        {
+                            componentCustomLocations = [.. component.FilePaths];
+                            component.FilePaths?.Clear();
+                        }
                     }
 
                     // Information about each component is relative to all of the graphs it is present in, so we take all graphs containing a given component and apply the graph data.
@@ -261,7 +263,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
         // Make relative Uri needs a trailing separator to ensure that we turn "directory we are scanning" into "/"
         var rootDirectoryFullName = rootDirectory.FullName;
-        if (!rootDirectory.FullName.EndsWith(Path.DirectorySeparatorChar.ToString()) && !rootDirectory.FullName.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+        if (!rootDirectory.FullName.EndsWith(Path.DirectorySeparatorChar) && !rootDirectory.FullName.EndsWith(Path.AltDirectorySeparatorChar))
         {
             rootDirectoryFullName += Path.DirectorySeparatorChar;
         }
