@@ -52,11 +52,11 @@ public class YarnLockComponentDetector : FileComponentDetector
         var skippedFolder = this.SkippedFolders.FirstOrDefault(folder => file.Location.Contains(folder));
         if (!string.IsNullOrEmpty(skippedFolder))
         {
-            // this.Logger.LogInformation("Yarn.Lock file {YarnLockLocation} was found in a {SkippedFolder} folder and will be skipped.", file.Location, skippedFolder);
+            this.Logger.LogInformation("Yarn.Lock file {YarnLockLocation} was found in a {SkippedFolder} folder and will be skipped.", file.Location, skippedFolder);
             return;
         }
 
-        /* this.Logger.LogInformation("Processing file {YarnLockLocation}", file.Location); */
+        this.Logger.LogInformation("Processing file {YarnLockLocation}", file.Location);
 
         try
         {
@@ -85,11 +85,10 @@ public class YarnLockComponentDetector : FileComponentDetector
             {
                 var key = $"{entry.Name}@{satisfiedVersion}";
                 var addSuccessful = yarnPackages.TryAdd(key, entry);
-
-                // if (!addSuccessful)
-                // {
-                //     this.Logger.LogWarning("Found duplicate entry {Key} in {Location}", key, location);
-                // }
+                if (!addSuccessful)
+                {
+                    this.Logger.LogWarning("Found duplicate entry {Key} in {Location}", key, location);
+                }
             }
         }
 
@@ -175,11 +174,10 @@ public class YarnLockComponentDetector : FileComponentDetector
                         queue.Enqueue((subDependency, currentEntry));
                     }
                 }
-
-                // else
-                // {
-                //     this.Logger.LogInformation("Failed to find resolved dependency for {YarnDependency}", newDependency.LookupKey);
-                // }
+                else
+                {
+                    this.Logger.LogInformation("Failed to find resolved dependency for {YarnDependency}", newDependency.LookupKey);
+                }
             }
         }
     }
@@ -213,7 +211,7 @@ public class YarnLockComponentDetector : FileComponentDetector
 
         if (pkgJsonCount != 1)
         {
-            // this.Logger.LogWarning("No package.json was found for file at {Location}. It will not be registered.", location);
+            this.Logger.LogWarning("No package.json was found for file at {Location}. It will not be registered.", location);
             return false;
         }
 
@@ -233,7 +231,7 @@ public class YarnLockComponentDetector : FileComponentDetector
                 var entryKey = $"{name}@npm:{version.Key}";
                 if (!yarnEntries.ContainsKey(entryKey))
                 {
-                    // this.Logger.LogWarning("A package was requested in the package.json file that was a peer of {Location} but was not contained in the lockfile. {Name} - {VersionKey}", location, name, version.Key);
+                    this.Logger.LogWarning("A package was requested in the package.json file that was a peer of {Location} but was not contained in the lockfile. {Name} - {VersionKey}", location, name, version.Key);
                     singleFileComponentRecorder.RegisterPackageParseFailure($"{name} - {version.Key}");
                     continue;
                 }
@@ -275,7 +273,7 @@ public class YarnLockComponentDetector : FileComponentDetector
 
             foreach (var stream in componentStreams)
             {
-                // this.Logger.LogInformation("{ComponentLocation} found for workspace {WorkspacePattern}", stream.Location, workspacePattern);
+                this.Logger.LogInformation("{ComponentLocation} found for workspace {WorkspacePattern}", stream.Location, workspacePattern);
                 var combinedDependencies = NpmComponentUtilities.TryGetAllPackageJsonDependencies(stream.Stream, out _);
 
                 foreach (var dependency in combinedDependencies)
