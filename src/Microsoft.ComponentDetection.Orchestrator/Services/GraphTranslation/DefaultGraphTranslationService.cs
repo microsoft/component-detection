@@ -274,7 +274,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         {
             if (!Uri.TryCreate(path, UriKind.Absolute, out var uriPath))
             {
-                // logger.LogDebug("The path: {Path} is not a valid absolute path", path);
+                logger.LogDebug("The path: {Path} is not a valid absolute path", path);
                 continue;
             }
 
@@ -285,21 +285,6 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             }
 
             relativePathSet.Add(relativePath);
-
-            // try
-            // {
-            //     var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
-            //     if (!relativePath.StartsWith('/'))
-            //     {
-            //         relativePath = "/" + relativePath;
-            //     }
-            //
-            //     relativePathSet.Add(relativePath);
-            // }
-            // catch (UriFormatException e)
-            // {
-            //     logger.LogDebug(e, "The path: {Path} could not be resolved relative to the root {RootUri}", path, rootUri);
-            // }
         }
 
         return relativePathSet;

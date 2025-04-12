@@ -64,13 +64,13 @@ public class YarnLockParser : IYarnLockParser
 
             if (string.IsNullOrWhiteSpace(yarnEntry.Name))
             {
-                logger.LogWarning("Failed to read a name for block {BlockTitle}. The entry will be skipped.", block.Title);
+                // logger.LogWarning("Failed to read a name for block {BlockTitle}. The entry will be skipped.", block.Title);
                 continue;
             }
 
             if (!block.Values.TryGetValue(VersionString, out var version))
             {
-                logger.LogWarning("Failed to read a version for {YarnEntryName}. The entry will be skipped.", yarnEntry.Name);
+                // logger.LogWarning("Failed to read a version for {YarnEntryName}. The entry will be skipped.", yarnEntry.Name);
                 singleFileComponentRecorder.RegisterPackageParseFailure(yarnEntry.Name);
                 continue;
             }
@@ -138,7 +138,7 @@ public class YarnLockParser : IYarnLockParser
             var versionValue = block.Values.FirstOrDefault(x => string.Equals(x.Key, VersionString, StringComparison.OrdinalIgnoreCase));
             if (default(KeyValuePair<string, string>).Equals(versionValue))
             {
-                this.logger.LogWarning("Block without version detected");
+                // this.logger.LogWarning("Block without version detected");
                 return blockTitleMember;
             }
 
