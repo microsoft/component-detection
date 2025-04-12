@@ -272,20 +272,34 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         var relativePathSet = new HashSet<string>();
         foreach (var path in filePaths)
         {
-            try
+            if (!Uri.TryCreate(path, UriKind.Absolute, out var uriPath))
             {
-                var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
-                if (!relativePath.StartsWith('/'))
-                {
-                    relativePath = "/" + relativePath;
-                }
+                // logger.LogDebug("The path: {Path} is not a valid absolute path", path);
+                continue;
+            }
 
-                relativePathSet.Add(relativePath);
-            }
-            catch (UriFormatException e)
+            var relativePath = rootUri.MakeRelativeUri(uriPath).ToString();
+            if (!relativePath.StartsWith('/'))
             {
-                logger.LogDebug(e, "The path: {Path} could not be resolved relative to the root {RootUri}", path, rootUri);
+                relativePath = "/" + relativePath;
             }
+
+            relativePathSet.Add(relativePath);
+
+            // try
+            // {
+            //     var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
+            //     if (!relativePath.StartsWith('/'))
+            //     {
+            //         relativePath = "/" + relativePath;
+            //     }
+            //
+            //     relativePathSet.Add(relativePath);
+            // }
+            // catch (UriFormatException e)
+            // {
+            //     logger.LogDebug(e, "The path: {Path} could not be resolved relative to the root {RootUri}", path, rootUri);
+            // }
         }
 
         return relativePathSet;
