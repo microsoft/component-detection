@@ -149,7 +149,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                             }
                         }
                     }
-                };
+                }
 
                 return detectedComponents;
             }).ToList();
