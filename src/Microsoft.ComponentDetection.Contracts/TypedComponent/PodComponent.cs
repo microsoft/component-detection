@@ -25,7 +25,7 @@ public class PodComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Pod;
 
-    public override string Id => $"{this.Name} {this.Version} - {this.Type}";
+    public override string Id => this.CacheId ??= $"{this.Name} {this.Version} - {this.Type}";
 
     public override PackageURL PackageUrl
     {

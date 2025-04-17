@@ -36,7 +36,7 @@ public class LinuxComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Linux;
 
-    public override string Id => $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
+    public override string Id => this.CacheId ??= $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
 
     public override PackageURL PackageUrl
     {

@@ -30,6 +30,10 @@ public abstract class TypedComponent
     [JsonIgnore]
     internal string DebuggerDisplay => $"{this.Id}";
 
+    [field: JsonIgnore]
+    [JsonIgnore]
+    protected string CacheId { get; set; }
+
     protected string ValidateRequiredInput(string input, string fieldName, string componentType)
     {
         return string.IsNullOrWhiteSpace(input)

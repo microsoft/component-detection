@@ -36,5 +36,5 @@ public class DockerReferenceComponent : TypedComponent
         }
     }
 
-    public override string Id => $"{this.Repository} {this.Tag} {this.Digest}";
+    public override string Id => this.CacheId ??= $"{this.Repository} {this.Tag} {this.Digest}";
 }
