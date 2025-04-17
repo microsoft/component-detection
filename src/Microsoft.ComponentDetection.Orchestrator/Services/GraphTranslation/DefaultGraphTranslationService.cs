@@ -97,14 +97,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
                 // Note that it looks like we are building up detected components functionally, but they are not immutable -- the code is just written
                 //  to look like a pipeline.
-                Parallel.ForEach(detectedComponents, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 }, component =>
-
-                // {
-                //     // We need to make sure that we are not adding the same component multiple times. This is a problem when we have multiple detectors that can detect the same component.
-                //     // We need to make sure that we are not adding the same component multiple times. This is a problem when we have multiple detectors that can detect the same component.
-                //     x.DetectedBy = detector;
-                // });
-                // foreach (var component in detectedComponents)
+                foreach (var component in detectedComponents)
                 {
                     // clone custom locations and make them relative to root.
                     var componentCustomLocations = component.FilePaths ?? [];
@@ -156,7 +149,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                             }
                         }
                     }
-                });
+                };
 
                 return detectedComponents;
             }).ToList();
