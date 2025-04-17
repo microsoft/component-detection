@@ -86,7 +86,6 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
     private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector Detector, ComponentRecorder Recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory, bool updateLocations)
     {
-        var dependencyGraphsAdditionalRelatedFiles = new Dictionary<(string, IDependencyGraph), HashSet<string>>();
         return recorderDetectorPairs
             .Where(recorderDetectorPair => recorderDetectorPair.Recorder != null)
             .SelectMany(recorderDetectorPair =>
@@ -98,7 +97,14 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
                 // Note that it looks like we are building up detected components functionally, but they are not immutable -- the code is just written
                 //  to look like a pipeline.
-                foreach (var component in detectedComponents)
+                Parallel.ForEach(detectedComponents, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 }, component =>
+
+                // {
+                //     // We need to make sure that we are not adding the same component multiple times. This is a problem when we have multiple detectors that can detect the same component.
+                //     // We need to make sure that we are not adding the same component multiple times. This is a problem when we have multiple detectors that can detect the same component.
+                //     x.DetectedBy = detector;
+                // });
+                // foreach (var component in detectedComponents)
                 {
                     // clone custom locations and make them relative to root.
                     var componentCustomLocations = component.FilePaths ?? [];
@@ -131,23 +137,17 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         // Updating the locations of the component will propogate to the final depenendcy graph and cause the graph to be incorrect.
                         if (updateLocations)
                         {
-                            if (!dependencyGraphsAdditionalRelatedFiles.TryGetValue((location, dependencyGraph), out var locations))
-                            {
-                                locations = dependencyGraph.GetAdditionalRelatedFiles();
-                                locations.Add(location);
-                                dependencyGraphsAdditionalRelatedFiles[(location, dependencyGraph)] = locations;
-                            }
-
                             // Return in a format that allows us to add the additional files for the components
-                            // var locations = dependencyGraph.GetAdditionalRelatedFiles();
+                            var locations = dependencyGraph.GetAdditionalRelatedFiles();
 
                             // graph authoritatively stores the location of the component
-                            // locations.Add(location);
+                            locations.Add(location);
 
-                            // foreach (var customLocation in componentCustomLocations)
-                            // {
-                            //     locations.Add(customLocation);
-                            // }
+                            foreach (var customLocation in componentCustomLocations)
+                            {
+                                locations.Add(customLocation);
+                            }
+
                             var relativePaths = this.MakeFilePathsRelative(this.logger, rootDirectory, locations.Union(componentCustomLocations));
 
                             foreach (var additionalRelatedFile in relativePaths ?? Enumerable.Empty<string>())
@@ -156,7 +156,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                             }
                         }
                     }
-                }
+                });
 
                 return detectedComponents;
             }).ToList();
