@@ -86,6 +86,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
     private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector Detector, ComponentRecorder Recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory, bool updateLocations)
     {
+        var dependencyGraphsAdditionalRelatedFiles = new Dictionary<(string, IDependencyGraph), HashSet<string>>();
         return recorderDetectorPairs
             .Where(recorderDetectorPair => recorderDetectorPair.Recorder != null)
             .SelectMany(recorderDetectorPair =>
@@ -126,22 +127,28 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
                         component.DetectedBy = detector;
 
-                        // Return in a format that allows us to add the additional files for the components
-                        var locations = dependencyGraph.GetAdditionalRelatedFiles();
-
                         // Experiments uses this service to build the dependency graph for analysis. In this case, we do not want to update the locations of the component.
                         // Updating the locations of the component will propogate to the final depenendcy graph and cause the graph to be incorrect.
                         if (updateLocations)
                         {
-                            // graph authoritatively stores the location of the component
-                            locations.Add(location);
-
-                            foreach (var customLocation in componentCustomLocations)
+                            if (!dependencyGraphsAdditionalRelatedFiles.TryGetValue((location, dependencyGraph), out var locations))
                             {
-                                locations.Add(customLocation);
+                                locations = dependencyGraph.GetAdditionalRelatedFiles();
+                                locations.Add(location);
+                                dependencyGraphsAdditionalRelatedFiles[(location, dependencyGraph)] = locations;
                             }
 
-                            var relativePaths = this.MakeFilePathsRelative(this.logger, rootDirectory, locations);
+                            // Return in a format that allows us to add the additional files for the components
+                            // var locations = dependencyGraph.GetAdditionalRelatedFiles();
+
+                            // graph authoritatively stores the location of the component
+                            // locations.Add(location);
+
+                            // foreach (var customLocation in componentCustomLocations)
+                            // {
+                            //     locations.Add(customLocation);
+                            // }
+                            var relativePaths = this.MakeFilePathsRelative(this.logger, rootDirectory, locations.Union(componentCustomLocations));
 
                             foreach (var additionalRelatedFile in relativePaths ?? Enumerable.Empty<string>())
                             {
@@ -254,7 +261,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         }
     }
 
-    private HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, HashSet<string> filePaths)
+    private HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, IEnumerable<string> filePaths)
     {
         if (rootDirectory == null)
         {
