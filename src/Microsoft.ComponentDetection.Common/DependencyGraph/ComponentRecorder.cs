@@ -180,16 +180,15 @@ public class ComponentRecorder : IComponentRecorder
 #endif
 
             var componentId = detectedComponent.Component.Id;
-            DetectedComponent storedComponent = null;
+            var storedComponent = this.detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
+
+            if (!string.IsNullOrWhiteSpace(targetFramework))
+            {
+                storedComponent.TargetFrameworks.Add(targetFramework.Trim());
+            }
+
             lock (this.registerUsageLock)
             {
-                storedComponent = this.detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
-
-                if (!string.IsNullOrWhiteSpace(targetFramework))
-                {
-                    storedComponent.TargetFrameworks.Add(targetFramework.Trim());
-                }
-
                 this.AddComponentToGraph(this.ManifestFileLocation, detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, dependencyScope);
             }
         }

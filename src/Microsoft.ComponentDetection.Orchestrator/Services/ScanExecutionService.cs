@@ -3,7 +3,6 @@ namespace Microsoft.ComponentDetection.Orchestrator.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -45,14 +44,8 @@ public class ScanExecutionService : IScanExecutionService
 
         this.logger.LogDebug("Finished applying restrictions to detectors.");
 
-        var stopwatch = Stopwatch.StartNew();
-        this.logger.LogInformation("Starting detector processing.");
         var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(settings, detectorsWithAppliedRestrictions, detectorRestrictions);
-        this.logger.LogInformation("Finished detector processing in {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
-        stopwatch.Restart();
-        this.logger.LogInformation("Starting generate scan result.");
         var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, settings);
-        this.logger.LogInformation("Finished generating scan result in {ElapsedMilliseconds}ms", stopwatch.ElapsedMilliseconds);
 
         scanResult.DetectorsInScan = detectorsWithAppliedRestrictions.Select(ConvertToContract).ToList();
         scanResult.DetectorsNotInScan = detectorRestrictions.DisabledDetectors.Select(ConvertToContract).ToList();
