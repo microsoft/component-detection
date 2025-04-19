@@ -141,7 +141,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                                 locations.Add(customLocation);
                             }
 
-                            var relativePaths = this.MakeFilePathsRelative(this.logger, rootDirectory, locations.Union(componentCustomLocations));
+                            var relativePaths = this.MakeFilePathsRelative(this.logger, rootDirectory, locations);
 
                             foreach (var additionalRelatedFile in relativePaths ?? Enumerable.Empty<string>())
                             {
@@ -254,7 +254,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         }
     }
 
-    private HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, IEnumerable<string> filePaths)
+    private HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, HashSet<string> filePaths)
     {
         if (rootDirectory == null)
         {
