@@ -35,7 +35,7 @@ public class SwiftComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Swift;
 
-    public override string Id => $"{this.Name} {this.Version} - {this.Type}";
+    public override string Id => this.CacheId ??= $"{this.Name} {this.Version} - {this.Type}";
 
     // Example PackageURL -> pkg:swift/github.com/apple/swift-asn1
     // type: swift

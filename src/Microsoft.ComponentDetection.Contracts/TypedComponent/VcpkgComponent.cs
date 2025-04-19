@@ -42,6 +42,11 @@ public class VcpkgComponent : TypedComponent
     {
         get
         {
+            if (this.CacheId != null)
+            {
+                return this.CacheId;
+            }
+
             var componentLocationPrefix = string.Empty;
             if (!string.IsNullOrWhiteSpace(this.DownloadLocation) && !this.DownloadLocation.Trim().Equals("NONE", System.StringComparison.InvariantCultureIgnoreCase))
             {
@@ -54,7 +59,7 @@ public class VcpkgComponent : TypedComponent
                 componentPortVersionSuffix = $"#{this.PortVersion} ";
             }
 
-            return $"{componentLocationPrefix}{this.Name} {this.Version}{componentPortVersionSuffix}- {this.Type}";
+            return this.CacheId = $"{componentLocationPrefix}{this.Name} {this.Version}{componentPortVersionSuffix}- {this.Type}";
         }
     }
 

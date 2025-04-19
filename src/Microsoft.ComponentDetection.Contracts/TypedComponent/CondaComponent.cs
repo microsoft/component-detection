@@ -37,5 +37,5 @@ public class CondaComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Conda;
 
-    public override string Id => $"{this.Name} {this.Version} {this.Build} {this.Channel} {this.Subdir} {this.Namespace} {this.Url} {this.MD5} - {this.Type}";
+    public override string Id => this.CacheId ??= $"{this.Name} {this.Version} {this.Build} {this.Channel} {this.Subdir} {this.Namespace} {this.Url} {this.MD5} - {this.Type}";
 }

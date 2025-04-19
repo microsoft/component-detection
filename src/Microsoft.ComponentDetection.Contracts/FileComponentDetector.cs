@@ -1,8 +1,10 @@
 namespace Microsoft.ComponentDetection.Contracts;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,7 +58,7 @@ public abstract class FileComponentDetector : IComponentDetector
 
     public virtual bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
 
-    protected Dictionary<string, string> Telemetry { get; set; } = [];
+    protected ConcurrentDictionary<string, string> Telemetry { get; set; } = [];
 
     /// <summary>
     /// List of any any additional properties as key-value pairs that we would like to capture for the detector.
@@ -135,7 +137,7 @@ public abstract class FileComponentDetector : IComponentDetector
         return new IndividualDetectorScanResult
         {
             ResultCode = ProcessingResultCode.Success,
-            AdditionalTelemetryDetails = this.Telemetry,
+            AdditionalTelemetryDetails = this.Telemetry.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
         };
     }
 
