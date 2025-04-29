@@ -94,13 +94,7 @@ public class ComponentRecorder : IComponentRecorder
 
     internal DependencyGraph GetDependencyGraphForLocation(string location)
     {
-        if (this.singleFileRecorders.TryGetValue(location, out var singleFileRecorder))
-        {
-            return singleFileRecorder.DependencyGraph;
-        }
-
-        // TODO: Should we throw an exception here instead of returning null?
-        return null;
+        return this.singleFileRecorders[location].DependencyGraph;
     }
 
     public sealed class SingleFileComponentRecorder : ISingleFileComponentRecorder

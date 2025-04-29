@@ -21,8 +21,6 @@ public class SpdxComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Spdx;
 
-    public override string Id => this.CacheId ??= $"{this.Name} {this.SpdxVersion} - {this.Checksum}";
-
     public string RootElementId { get; set; }
 
     public string Name { get; set; }
@@ -34,4 +32,6 @@ public class SpdxComponent : TypedComponent
     public string Checksum { get; set; }
 
     public string Path { get; set; }
+
+    protected override string ComputeId() => $"{this.Name} {this.SpdxVersion} - {this.Checksum}";
 }
