@@ -17,7 +17,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class DotNetComponentDetector : FileComponentDetector, IExperimentalDetector
+public class DotNetComponentDetector : FileComponentDetector
 {
     private const string GlobalJsonFileName = "global.json";
     private readonly ICommandLineInvocationService commandLineInvocationService;
