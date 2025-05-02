@@ -33,6 +33,7 @@ public class ComponentRecorder : IComponentRecorder
         return this.singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).FirstOrDefault(x => x != null);
     }
 
+    // TODO: INVESTIGATE SUBSTRATE
     public IEnumerable<DetectedComponent> GetDetectedComponents()
     {
         IEnumerable<DetectedComponent> detectedComponents;

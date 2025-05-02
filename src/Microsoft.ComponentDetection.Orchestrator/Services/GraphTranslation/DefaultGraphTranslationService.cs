@@ -21,6 +21,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
     public DefaultGraphTranslationService(ILogger<DefaultGraphTranslationService> logger) => this.logger = logger;
 
+    // TODO: INVESTIGATE SUBSTRATE
     public ScanResult GenerateScanResultFromProcessingResult(
         DetectorProcessingResult detectorProcessingResult,
         ScanSettings settings,
@@ -91,6 +92,11 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             .Where(recorderDetectorPair => recorderDetectorPair.Recorder != null)
             .SelectMany(recorderDetectorPair =>
             {
+                using var record = new DependencyGraphRecord()
+                {
+                    DetectorId = recorderDetectorPair.Detector.Id,
+                };
+
                 var detector = recorderDetectorPair.Detector;
                 var componentRecorder = recorderDetectorPair.Recorder;
                 var detectedComponents = componentRecorder.GetDetectedComponents();
@@ -98,8 +104,16 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
                 // Note that it looks like we are building up detected components functionally, but they are not immutable -- the code is just written
                 //  to look like a pipeline.
+                var count = 0;
                 foreach (var component in detectedComponents)
                 {
+                    using var innerRecord = new DependencyGraphInnerRecord()
+                    {
+                        DetectorId = recorderDetectorPair.Detector.Id,
+                        ComponentId = component.Component.Id,
+                        Count = count++,
+                    };
+
                     // clone custom locations and make them relative to root.
                     var declaredRawFilePaths = component.FilePaths ?? [];
                     var componentCustomLocations = JsonConvert.DeserializeObject<HashSet<string>>(JsonConvert.SerializeObject(declaredRawFilePaths));
@@ -109,8 +123,10 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         component.FilePaths?.Clear();
                     }
 
+                    var relevantDependencyGraphs = dependencyGraphsByLocation.Where(x => x.Value.Contains(component.Component.Id));
+
                     // Information about each component is relative to all of the graphs it is present in, so we take all graphs containing a given component and apply the graph data.
-                    foreach (var graphKvp in dependencyGraphsByLocation.Where(x => x.Value.Contains(component.Component.Id)))
+                    foreach (var graphKvp in relevantDependencyGraphs)
                     {
                         var location = graphKvp.Key;
                         var dependencyGraph = graphKvp.Value;
