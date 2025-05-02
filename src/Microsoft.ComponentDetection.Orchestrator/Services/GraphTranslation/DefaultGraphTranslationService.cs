@@ -127,6 +127,9 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
                     var relevantDependencyGraphs = dependencyGraphsByLocation.Where(x => x.Value.Contains(component.Component.Id));
 
+                    var totalTimeToAddRoots = TimeSpan.Zero;
+                    var totalTimeToAddAncestors = TimeSpan.Zero;
+
                     // Information about each component is relative to all of the graphs it is present in, so we take all graphs containing a given component and apply the graph data.
                     foreach (var graphKvp in relevantDependencyGraphs)
                     {
@@ -134,10 +137,17 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         var dependencyGraph = graphKvp.Value;
 
                         // Calculate roots of the component
+                        var startTime = DateTime.UtcNow;
                         this.AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        var endTime = DateTime.UtcNow;
+                        totalTimeToAddRoots += endTime - startTime;
 
                         // Calculate Ancestors of the component
+                        var startTime2 = DateTime.UtcNow;
                         this.AddAncestorsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        var endTime2 = DateTime.UtcNow;
+                        totalTimeToAddAncestors += endTime2 - startTime2;
+
                         component.DevelopmentDependency = this.MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
                         component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
                         component.DetectedBy = detector;
@@ -165,6 +175,9 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                             }
                         }
                     }
+
+                    innerRecord.TimeToAddRoots = totalTimeToAddRoots;
+                    innerRecord.TimeToAddAncestors = totalTimeToAddAncestors;
                 }
 
                 return detectedComponents;

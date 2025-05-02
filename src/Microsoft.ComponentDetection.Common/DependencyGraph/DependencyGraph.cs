@@ -20,9 +20,15 @@ internal class DependencyGraph : IDependencyGraph
 
     private readonly bool enableManualTrackingOfExplicitReferences;
 
+    private readonly ConcurrentDictionary<string, ISet<string>> rootsCache;
+
+    private readonly ConcurrentDictionary<string, IDictionary<string, int>> ancestorsCache;
+
     public DependencyGraph(bool enableManualTrackingOfExplicitReferences)
     {
         this.componentNodes = new ConcurrentDictionary<string, ComponentRefNode>();
+        this.rootsCache = new ConcurrentDictionary<string, ISet<string>>();
+        this.ancestorsCache = new ConcurrentDictionary<string, IDictionary<string, int>>();
         this.enableManualTrackingOfExplicitReferences = enableManualTrackingOfExplicitReferences;
     }
 
@@ -80,11 +86,7 @@ internal class DependencyGraph : IDependencyGraph
             throw new ArgumentException(string.Format(null, MissingNodeFormat, componentId), paramName: nameof(componentId));
         }
 
-        IList<string> explicitReferencedDependencyIds = [];
-
-        this.GetExplicitReferencedDependencies(componentRef, explicitReferencedDependencyIds, new HashSet<string>());
-
-        return explicitReferencedDependencyIds;
+        return this.GetExplicitReferencedDependencies(componentRef, new HashSet<string>()).ToList();
     }
 
     /// <summary>
@@ -156,22 +158,33 @@ internal class DependencyGraph : IDependencyGraph
         return this.IsExplicitReferencedDependency(this.componentNodes[componentId]);
     }
 
-    private void GetExplicitReferencedDependencies(ComponentRefNode component, IList<string> explicitReferencedDependencyIds, ISet<string> visited)
+    private IEnumerable<string> GetExplicitReferencedDependencies(ComponentRefNode component, ISet<string> visited)
     {
+        if (this.rootsCache.TryGetValue(component.Id, out var cachedExplicitReferencedDependencyIds))
+        {
+            return cachedExplicitReferencedDependencyIds;
+        }
+
         if (this.IsExplicitReferencedDependency(component))
         {
-            explicitReferencedDependencyIds.Add(component.Id);
+            var explicitReferencedDependencyIdsSet = new HashSet<string>() { component.Id };
+            this.rootsCache.TryAdd(component.Id, explicitReferencedDependencyIdsSet);
+            return explicitReferencedDependencyIdsSet;
         }
 
         visited.Add(component.Id);
 
+        IEnumerable<string> explicitReferencedDependencyIds = [];
         foreach (var parentId in component.DependedOnByIds)
         {
             if (!visited.Contains(parentId))
             {
-                this.GetExplicitReferencedDependencies(this.componentNodes[parentId], explicitReferencedDependencyIds, visited);
+                explicitReferencedDependencyIds = explicitReferencedDependencyIds.Concat(this.GetExplicitReferencedDependencies(this.componentNodes[parentId], visited));
             }
         }
+
+        this.rootsCache.TryAdd(component.Id, explicitReferencedDependencyIds.ToHashSet());
+        return explicitReferencedDependencyIds;
     }
 
     private bool IsExplicitReferencedDependency(ComponentRefNode component)
@@ -198,6 +211,11 @@ internal class DependencyGraph : IDependencyGraph
 
     private void GetAncestorsRecursive(ComponentRefNode componentRef, IDictionary<string, int> ancestors, int depth)
     {
+        if (this.ancestorsCache.TryGetValue(componentRef.Id, out var cachedAncestors))
+        {
+            return;
+        }
+
         foreach (var parentId in componentRef.DependedOnByIds)
         {
             if (ancestors.ContainsKey(parentId))
@@ -208,6 +226,8 @@ internal class DependencyGraph : IDependencyGraph
             ancestors.Add(parentId, depth);
             this.GetAncestorsRecursive(this.componentNodes[parentId], ancestors, depth + 1);
         }
+
+        this.ancestorsCache.TryAdd(componentRef.Id, ancestors);
     }
 
     internal class ComponentRefNode
