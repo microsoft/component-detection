@@ -43,5 +43,6 @@ public class DotNetComponent : TypedComponent
     /// <summary>
     /// Provides an id like `{SdkVersion} - {TargetFramework} - {ProjectType} - dotnet` where unspecified values are represented as 'unknown'.
     /// </summary>
-    public override string Id => $"{this.SdkVersion} {this.TargetFramework} {this.ProjectType} - {this.Type}";
+    /// <returns>Id of the component.</returns>
+    protected override string ComputeId() => $"{this.SdkVersion} {this.TargetFramework} {this.ProjectType} - {this.Type}";
 }

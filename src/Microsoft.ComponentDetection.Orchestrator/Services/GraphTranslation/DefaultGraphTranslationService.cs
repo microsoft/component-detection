@@ -13,7 +13,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class DefaultGraphTranslationService : IGraphTranslationService
 {
@@ -115,12 +114,15 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                     };
 
                     // clone custom locations and make them relative to root.
-                    var declaredRawFilePaths = component.FilePaths ?? [];
-                    var componentCustomLocations = JsonConvert.DeserializeObject<HashSet<string>>(JsonConvert.SerializeObject(declaredRawFilePaths));
+                    var componentCustomLocations = component.FilePaths ?? [];
 
                     if (updateLocations)
                     {
-                        component.FilePaths?.Clear();
+                        if (component.FilePaths != null)
+                        {
+                            componentCustomLocations = [.. component.FilePaths];
+                            component.FilePaths?.Clear();
+                        }
                     }
 
                     var relevantDependencyGraphs = dependencyGraphsByLocation.Where(x => x.Value.Contains(component.Component.Id));
@@ -140,13 +142,13 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
                         component.DetectedBy = detector;
 
-                        // Return in a format that allows us to add the additional files for the components
-                        var locations = dependencyGraph.GetAdditionalRelatedFiles();
-
                         // Experiments uses this service to build the dependency graph for analysis. In this case, we do not want to update the locations of the component.
                         // Updating the locations of the component will propogate to the final depenendcy graph and cause the graph to be incorrect.
                         if (updateLocations)
                         {
+                            // Return in a format that allows us to add the additional files for the components
+                            var locations = dependencyGraph.GetAdditionalRelatedFiles();
+
                             // graph authoritatively stores the location of the component
                             locations.Add(location);
 
@@ -277,7 +279,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
         // Make relative Uri needs a trailing separator to ensure that we turn "directory we are scanning" into "/"
         var rootDirectoryFullName = rootDirectory.FullName;
-        if (!rootDirectory.FullName.EndsWith(Path.DirectorySeparatorChar.ToString()) && !rootDirectory.FullName.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+        if (!rootDirectory.FullName.EndsWith(Path.DirectorySeparatorChar) && !rootDirectory.FullName.EndsWith(Path.AltDirectorySeparatorChar))
         {
             rootDirectoryFullName += Path.DirectorySeparatorChar;
         }
@@ -286,20 +288,19 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         var relativePathSet = new HashSet<string>();
         foreach (var path in filePaths)
         {
-            try
+            if (!Uri.TryCreate(path, UriKind.Absolute, out var uriPath))
             {
-                var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
-                if (!relativePath.StartsWith('/'))
-                {
-                    relativePath = "/" + relativePath;
-                }
+                logger.LogDebug("The path: {Path} is not a valid absolute path and so could not be resolved relative to the root {RootUri}", path, rootUri);
+                continue;
+            }
 
-                relativePathSet.Add(relativePath);
-            }
-            catch (UriFormatException e)
+            var relativePath = rootUri.MakeRelativeUri(uriPath).ToString();
+            if (!relativePath.StartsWith('/'))
             {
-                logger.LogDebug(e, "The path: {Path} could not be resolved relative to the root {RootUri}", path, rootUri);
+                relativePath = "/" + relativePath;
             }
+
+            relativePathSet.Add(relativePath);
         }
 
         return relativePathSet;

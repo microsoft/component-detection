@@ -38,26 +38,6 @@ public class VcpkgComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Vcpkg;
 
-    public override string Id
-    {
-        get
-        {
-            var componentLocationPrefix = string.Empty;
-            if (!string.IsNullOrWhiteSpace(this.DownloadLocation) && !this.DownloadLocation.Trim().Equals("NONE", System.StringComparison.InvariantCultureIgnoreCase))
-            {
-                componentLocationPrefix = $"{this.DownloadLocation} : ";
-            }
-
-            var componentPortVersionSuffix = " ";
-            if (this.PortVersion > 0)
-            {
-                componentPortVersionSuffix = $"#{this.PortVersion} ";
-            }
-
-            return $"{componentLocationPrefix}{this.Name} {this.Version}{componentPortVersionSuffix}- {this.Type}";
-        }
-    }
-
     public override PackageURL PackageUrl
     {
         get
@@ -75,5 +55,22 @@ public class VcpkgComponent : TypedComponent
                 return new PackageURL($"pkg:vcpkg/{this.Name}");
             }
         }
+    }
+
+    protected override string ComputeId()
+    {
+        var componentLocationPrefix = string.Empty;
+        if (!string.IsNullOrWhiteSpace(this.DownloadLocation) && !this.DownloadLocation.Trim().Equals("NONE", System.StringComparison.InvariantCultureIgnoreCase))
+        {
+            componentLocationPrefix = $"{this.DownloadLocation} : ";
+        }
+
+        var componentPortVersionSuffix = " ";
+        if (this.PortVersion > 0)
+        {
+            componentPortVersionSuffix = $"#{this.PortVersion} ";
+        }
+
+        return $"{componentLocationPrefix}{this.Name} {this.Version}{componentPortVersionSuffix}- {this.Type}";
     }
 }
