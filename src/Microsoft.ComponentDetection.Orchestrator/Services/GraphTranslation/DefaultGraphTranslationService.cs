@@ -20,7 +20,6 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
     public DefaultGraphTranslationService(ILogger<DefaultGraphTranslationService> logger) => this.logger = logger;
 
-    // TODO: INVESTIGATE SUBSTRATE
     public ScanResult GenerateScanResultFromProcessingResult(
         DetectorProcessingResult detectorProcessingResult,
         ScanSettings settings,
@@ -85,6 +84,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         });
     }
 
+    // TODO: INVESTIGATE PERF
     private IEnumerable<DetectedComponent> GatherSetOfDetectedComponentsUnmerged(IEnumerable<(IComponentDetector Detector, ComponentRecorder Recorder)> recorderDetectorPairs, DirectoryInfo rootDirectory, bool updateLocations)
     {
         return recorderDetectorPairs

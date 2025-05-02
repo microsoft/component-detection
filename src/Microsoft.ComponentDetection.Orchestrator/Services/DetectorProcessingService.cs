@@ -62,7 +62,6 @@ public class DetectorProcessingService : IDetectorProcessingService
         await this.experimentService.InitializeAsync();
         this.experimentService.RemoveUnwantedExperimentsbyDetectors(detectorRestrictions.DisabledDetectors);
 
-        // TODO: INVESTIGATE SUBSTRATE
         IEnumerable<Task<(IndividualDetectorScanResult, ComponentRecorder, IComponentDetector)>> scanTasks = detectors
             .Select(async detector =>
             {
