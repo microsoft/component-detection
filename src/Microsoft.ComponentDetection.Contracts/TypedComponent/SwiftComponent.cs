@@ -35,8 +35,6 @@ public class SwiftComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Swift;
 
-    public override string Id => $"{this.Name} {this.Version} - {this.Type}";
-
     // Example PackageURL -> pkg:swift/github.com/apple/swift-asn1
     // type: swift
     // namespace: github.com/apple
@@ -51,6 +49,8 @@ public class SwiftComponent : TypedComponent
             { "repository_url", this.packageUrl.AbsoluteUri },
         },
         subpath: null);
+
+    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
 
     private string GetNamespaceFromPackageUrl()
     {

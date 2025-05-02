@@ -36,13 +36,16 @@ public class YarnLockComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
-    public override int Version => 8;
+    public override int Version => 9;
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Npm)];
 
     /// <inheritdoc />
     /// <remarks>"Package" is a more common substring, enclose it with \ to verify it is a folder.</remarks>
     protected override IList<string> SkippedFolders => ["node_modules", "pnpm-store", "\\package\\"];
+
+    /// <inheritdoc />
+    protected override bool EnableParallelism { get; set; } = true;
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -243,9 +246,9 @@ public class YarnLockComponentDetector : FileComponentDetector
                 yarnRoots.Add(entry);
 
                 var locationMapDictonaryKey = this.GetLocationMapKey(name, version.Key);
-                if (workspaceDependencyVsLocationMap.ContainsKey(locationMapDictonaryKey))
+                if (workspaceDependencyVsLocationMap.TryGetValue(locationMapDictonaryKey, out location))
                 {
-                    entry.Location = workspaceDependencyVsLocationMap[locationMapDictonaryKey];
+                    entry.Location = location;
                 }
             }
         }
@@ -324,10 +327,7 @@ public class YarnLockComponentDetector : FileComponentDetector
     private void AddLocationInfoToWorkspaceDependency(IDictionary<string, string> workspaceDependencyVsLocationMap, string streamLocation, string dependencyName, string dependencyVersion)
     {
         var locationMapDictionaryKey = this.GetLocationMapKey(dependencyName, dependencyVersion);
-        if (!workspaceDependencyVsLocationMap.ContainsKey(locationMapDictionaryKey))
-        {
-            workspaceDependencyVsLocationMap[locationMapDictionaryKey] = streamLocation;
-        }
+        workspaceDependencyVsLocationMap.TryAdd(locationMapDictionaryKey, streamLocation);
     }
 
     private string GetLocationMapKey(string dependencyName, string dependencyVersion)

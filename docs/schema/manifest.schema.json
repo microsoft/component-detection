@@ -118,7 +118,8 @@
               "Spdx",
               "Vcpkg",
               "DockerReference",
-              "DotNet"
+              "DotNet",
+              "Conan"
             ]
           }
         }
@@ -345,7 +346,8 @@
             "Spdx",
             "Vcpkg",
             "DockerReference",
-            "DotNet"
+            "DotNet",
+            "Conan"
           ]
         },
         "id": {

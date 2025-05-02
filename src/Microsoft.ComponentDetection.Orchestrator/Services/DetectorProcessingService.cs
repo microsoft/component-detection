@@ -117,8 +117,8 @@ public class DetectorProcessingService : IDetectorProcessingService
                     record.DetectorId = detector.Id;
                     record.DetectedComponentCount = detectedComponents.Count();
                     var dependencyGraphs = componentRecorder.GetDependencyGraphsByLocation().Values;
-                    record.ExplicitlyReferencedComponentCount = dependencyGraphs.Select(dependencyGraph => dependencyGraph.GetAllExplicitlyReferencedComponents())
-                        .SelectMany(x => x)
+                    record.ExplicitlyReferencedComponentCount = dependencyGraphs
+                        .SelectMany(dependencyGraph => dependencyGraph.GetAllExplicitlyReferencedComponents())
                         .Distinct()
                         .Count();
 

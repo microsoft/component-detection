@@ -36,7 +36,7 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
 
     public override ComponentType Type => ComponentType.Go;
 
-    public override string Id => $"{this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
 
     public override bool Equals(object obj)
     {
