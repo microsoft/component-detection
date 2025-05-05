@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Npm;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -88,10 +89,38 @@ public class NpmComponentDetector : FileComponentDetector
             return false;
         }
 
-        if (enginesToken != null && enginesToken["vscode"] != null)
+        if (enginesToken != null)
         {
-            this.Logger.LogInformation("{NpmPackageName} found at path {NpmPackageLocation} represents a built-in VS Code extension. This package will not be registered.", name, filePath);
-            return false;
+            var containsVsCodeEngine = false;
+            if (enginesToken.Type == JTokenType.Array)
+            {
+                var engineStrings = enginesToken
+                    .Children()
+                    .Where(t => t.Type == JTokenType.String)
+                    .Select(t => t.ToString())
+                    .ToArray();
+                if (engineStrings.Any(e => e.Contains("vscode")))
+                {
+                    containsVsCodeEngine = true;
+                }
+            }
+            else if (enginesToken.Type == JTokenType.Object)
+            {
+                if (enginesToken["vscode"] != null)
+                {
+                    containsVsCodeEngine = true;
+                }
+            }
+            else
+            {
+                throw new NotImplementedException($"Unsupported engines token type {enginesToken}");
+            }
+
+            if (containsVsCodeEngine)
+            {
+                this.Logger.LogInformation("{NpmPackageName} found at path {NpmPackageLocation} represents a built-in VS Code extension. This package will not be registered.", name, filePath);
+                return false;
+            }
         }
 
         var npmComponent = new NpmComponent(name, version, author: this.GetAuthor(authorToken, name, filePath));
