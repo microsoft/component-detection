@@ -143,6 +143,19 @@ public static class NpmTestUtilities
         return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
     }
 
+    public static (string PackageJsonName, string PackageJsonContents, string PackageJsonPath) GetPackageJsonNoDependenciesForNameAndVersionWithEngiesAsArray(string packageName, string packageVersion, string engineText)
+    {
+        var packagejson = @"{{
+                ""name"": ""{0}"",
+                ""version"": ""{1}"",
+                ""engines"": [
+                    ""{2}""
+                ]
+            }}";
+        var packageJsonTemplate = string.Format(packagejson, packageName, packageVersion, engineText);
+        return ("package.json", packageJsonTemplate, Path.Combine(Path.GetTempPath(), "package.json"));
+    }
+
     public static (string PackageJsonName, string PackageJsonContents, string PackageJsonPath) GetPackageJsonNoDependenciesForAuthorAndEmailInJsonFormat(
         string authorName, string authorEmail = null)
     {
