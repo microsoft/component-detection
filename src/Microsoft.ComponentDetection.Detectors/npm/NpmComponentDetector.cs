@@ -111,10 +111,6 @@ public class NpmComponentDetector : FileComponentDetector
                     containsVsCodeEngine = true;
                 }
             }
-            else
-            {
-                throw new NotImplementedException($"Unsupported engines token type {enginesToken}");
-            }
 
             if (containsVsCodeEngine)
             {
