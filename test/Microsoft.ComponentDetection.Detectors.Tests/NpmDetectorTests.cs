@@ -270,7 +270,7 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
             .ExecuteDetectorAsync();
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().HaveCount(1);
+        detectedComponents.Should().ContainSingle();
         detectedComponents.Single().Component.Type.Should().Be(ComponentType.Npm);
         var detectedNpmComponent = (NpmComponent)detectedComponents.Single().Component;
         detectedNpmComponent.Name.Should().Be(packageName);
