@@ -89,9 +89,9 @@ public class NpmComponentDetector : FileComponentDetector
             return false;
         }
 
+        var containsVsCodeEngine = false;
         if (enginesToken != null)
         {
-            var containsVsCodeEngine = false;
             if (enginesToken.Type == JTokenType.Array)
             {
                 var engineStrings = enginesToken
@@ -111,12 +111,12 @@ public class NpmComponentDetector : FileComponentDetector
                     containsVsCodeEngine = true;
                 }
             }
+        }
 
-            if (containsVsCodeEngine)
-            {
-                this.Logger.LogInformation("{NpmPackageName} found at path {NpmPackageLocation} represents a built-in VS Code extension. This package will not be registered.", name, filePath);
-                return false;
-            }
+        if (containsVsCodeEngine)
+        {
+            this.Logger.LogInformation("{NpmPackageName} found at path {NpmPackageLocation} represents a built-in VS Code extension. This package will not be registered.", name, filePath);
+            return false;
         }
 
         var npmComponent = new NpmComponent(name, version, author: this.GetAuthor(authorToken, name, filePath));
