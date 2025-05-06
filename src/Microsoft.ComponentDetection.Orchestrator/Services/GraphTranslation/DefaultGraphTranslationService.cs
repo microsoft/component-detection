@@ -100,6 +100,11 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                 var detectedComponents = componentRecorder.GetDetectedComponents();
                 var dependencyGraphsByLocation = componentRecorder.GetDependencyGraphsByLocation();
 
+                foreach (var graph in dependencyGraphsByLocation.Values)
+                {
+                    graph.FillTypedComponents(componentRecorder.GetComponent);
+                }
+
                 var totalTimeToAddRoots = TimeSpan.Zero;
                 var totalTimeToAddAncestors = TimeSpan.Zero;
 

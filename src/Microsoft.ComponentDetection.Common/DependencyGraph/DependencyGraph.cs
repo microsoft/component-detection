@@ -21,8 +21,6 @@ internal class DependencyGraph : IDependencyGraph
 
     private readonly ConcurrentDictionary<string, ComponentRefNode> componentNodes;
 
-    private Type currentComponentType;
-
     public DependencyGraph(bool enableManualTrackingOfExplicitReferences)
     {
         this.componentNodes = new ConcurrentDictionary<string, ComponentRefNode>();
@@ -147,11 +145,6 @@ internal class DependencyGraph : IDependencyGraph
     public HashSet<TypedComponent> GetAncestorsAsTypedComponents(string componentId, Func<string, TypedComponent> toTypedComponent)
     {
         ArgumentNullException.ThrowIfNull(componentId);
-        if (this.ShouldFillTypedComponents(toTypedComponent))
-        {
-            this.FillTypedComponents(toTypedComponent);
-        }
-
         var ancestorSet = new HashSet<TypedComponent>(new ComponentComparer());
         var ancestors = this.GetAncestors(componentId);
         foreach (var ancestor in ancestors)
@@ -167,11 +160,6 @@ internal class DependencyGraph : IDependencyGraph
     public HashSet<TypedComponent> GetRootsAsTypedComponents(string componentId, Func<string, TypedComponent> toTypedComponent)
     {
         ArgumentNullException.ThrowIfNull(componentId);
-        if (this.ShouldFillTypedComponents(toTypedComponent))
-        {
-            this.FillTypedComponents(toTypedComponent);
-        }
-
         var rootSet = new HashSet<TypedComponent>(new ComponentComparer());
         var roots = this.GetExplicitReferencedDependencyIds(componentId);
         foreach (var root in roots)
@@ -184,20 +172,12 @@ internal class DependencyGraph : IDependencyGraph
         return rootSet;
     }
 
-    public bool ShouldFillTypedComponents(Func<string, TypedComponent> toTypedComponent)
-    {
-        ArgumentNullException.ThrowIfNull(toTypedComponent);
-        return toTypedComponent.Method?.ReturnType?.GetType() != this.currentComponentType?.GetType();
-    }
-
-    private void FillTypedComponents(Func<string, TypedComponent> toTypedComponent)
+    public void FillTypedComponents(Func<string, TypedComponent> toTypedComponent)
     {
         foreach (var componentId in this.componentNodes.Values)
         {
             componentId.TypedComponent = toTypedComponent(componentId.Id);
         }
-
-        this.currentComponentType = toTypedComponent.Method.ReturnType.GetType();
     }
 
     IEnumerable<string> IDependencyGraph.GetDependenciesForComponent(string componentId)

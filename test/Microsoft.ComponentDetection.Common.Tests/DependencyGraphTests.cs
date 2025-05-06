@@ -445,13 +445,19 @@ public class DependencyGraphTests
         ancestors.Should().BeEmpty();
     }
 
-    private IEnumerable<string> GetExplicitReferencedDependencyIds(string componentId, bool shouldUseTypedComponents) =>
-        shouldUseTypedComponents
+    private IEnumerable<string> GetExplicitReferencedDependencyIds(string componentId, bool shouldUseTypedComponents)
+    {
+        this.dependencyGraph.FillTypedComponents(id => new NuGetComponent(id, "1.0.0"));
+        return shouldUseTypedComponents
             ? this.dependencyGraph.GetRootsAsTypedComponents(componentId, id => new NuGetComponent(id, "1.0.0")).Select(x => ((NuGetComponent)x).Name)
             : this.dependencyGraph.GetExplicitReferencedDependencyIds(componentId);
+    }
 
-    private ICollection<string> GetAncestors(string componentId, bool shouldUseTypedComponents) =>
-        shouldUseTypedComponents
+    private ICollection<string> GetAncestors(string componentId, bool shouldUseTypedComponents)
+    {
+        this.dependencyGraph.FillTypedComponents(id => new NuGetComponent(id, "1.0.0"));
+        return shouldUseTypedComponents
             ? this.dependencyGraph.GetAncestorsAsTypedComponents(componentId, id => new NuGetComponent(id, "1.0.0")).Select(x => ((NuGetComponent)x).Name).ToList()
             : this.dependencyGraph.GetAncestors(componentId);
+    }
 }
