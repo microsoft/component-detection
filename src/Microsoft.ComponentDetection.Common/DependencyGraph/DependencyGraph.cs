@@ -146,7 +146,9 @@ internal class DependencyGraph : IDependencyGraph
     {
         ArgumentNullException.ThrowIfNull(componentId);
         return this.GetAncestors(componentId)
-            .Select(a => this.componentNodes[a].TypedComponent ?? toTypedComponent(a))
+            .Select(a => this.componentNodes.TryGetValue(a, out var component) ? component : null)
+            .Where(a => a != null)
+            .Select(a => a.TypedComponent ?? toTypedComponent(a.Id))
             .ToHashSet(new ComponentComparer());
     }
 
@@ -154,7 +156,9 @@ internal class DependencyGraph : IDependencyGraph
     {
         ArgumentNullException.ThrowIfNull(componentId);
         return this.GetExplicitReferencedDependencyIds(componentId)
-            .Select(r => this.componentNodes[r].TypedComponent ?? toTypedComponent(r))
+            .Select(r => this.componentNodes.TryGetValue(r, out var component) ? component : null)
+            .Where(r => r != null)
+            .Select(r => r.TypedComponent ?? toTypedComponent(r.Id))
             .ToHashSet(new ComponentComparer());
     }
 
