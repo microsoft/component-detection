@@ -1,2 +1,0 @@
-[pytest11]
-py_result_report = pytest_pyresultreport.plugin
