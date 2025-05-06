@@ -128,6 +128,7 @@ public interface IDependencyGraph
 
     /// <summary>
     /// Gets the component IDs of all explicitly referenced components, and converts them to a set of typed components.
+    /// WARNING: Using this method without calling <see cref="FillTypedComponents"/> first will result in a performance hit.
     /// </summary>
     /// <param name="componentId">The component to find all roots for.</param>
     /// <param name="toTypedComponent">Function that converts the component id to the typed component object.</param>
@@ -136,6 +137,7 @@ public interface IDependencyGraph
 
     /// <summary>
     /// Gets the component IDs of all ancestors for a given component id, and converts them to a set of typed components.
+    /// WARNING: Using this method without calling <see cref="FillTypedComponents"/> first will result in a performance hit.
     /// </summary>
     /// <param name="componentId">The component to find all roots for.</param>
     /// <param name="toTypedComponent">Function that converts the component id to the typed component object.</param>
@@ -144,7 +146,7 @@ public interface IDependencyGraph
 
     /// <summary>
     /// This operation pre-fills all nodes with the specified typed component, which improves performance for subsequent runs
-    /// of <see cref="GetRootsAsTypedComponents(string, Func{string, TypedComponent.TypedComponent})"/> and <see cref="GetAncestorsAsTypedComponents(string, Func{string, TypedComponent.TypedComponent})"/>.
+    /// of <see cref="GetRootsAsTypedComponents"/> and <see cref="GetAncestorsAsTypedComponents"/>.
     /// </summary>
     public void FillTypedComponents(Func<string, TypedComponent.TypedComponent> toTypedComponent);
 }
