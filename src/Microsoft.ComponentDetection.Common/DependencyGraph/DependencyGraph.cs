@@ -152,9 +152,16 @@ internal class DependencyGraph : IDependencyGraph
             this.FillTypedComponents(toTypedComponent);
         }
 
-        return this.GetAncestors(componentId)
-            .Select(c => this.componentNodes[c].TypedComponent)
-            .ToHashSet(new ComponentComparer());
+        var ancestorSet = new HashSet<TypedComponent>(new ComponentComparer());
+        var ancestors = this.GetAncestors(componentId);
+        foreach (var ancestor in ancestors)
+        {
+            var component = this.componentNodes[ancestor];
+            component.TypedComponent ??= toTypedComponent(ancestor);
+            ancestorSet.Add(component.TypedComponent);
+        }
+
+        return ancestorSet;
     }
 
     public HashSet<TypedComponent> GetRootsAsTypedComponents(string componentId, Func<string, TypedComponent> toTypedComponent)
@@ -165,9 +172,16 @@ internal class DependencyGraph : IDependencyGraph
             this.FillTypedComponents(toTypedComponent);
         }
 
-        return this.GetExplicitReferencedDependencyIds(componentId)
-            .Select(c => this.componentNodes[c].TypedComponent)
-            .ToHashSet(new ComponentComparer());
+        var rootSet = new HashSet<TypedComponent>(new ComponentComparer());
+        var roots = this.GetExplicitReferencedDependencyIds(componentId);
+        foreach (var root in roots)
+        {
+            var component = this.componentNodes[root];
+            component.TypedComponent ??= toTypedComponent(root);
+            rootSet.Add(component.TypedComponent);
+        }
+
+        return rootSet;
     }
 
     public bool ShouldFillTypedComponents(Func<string, TypedComponent> toTypedComponent)
