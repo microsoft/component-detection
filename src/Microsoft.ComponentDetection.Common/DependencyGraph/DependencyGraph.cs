@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 [assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Common.Tests")]
 
@@ -141,6 +142,34 @@ internal class DependencyGraph : IDependencyGraph
             .ToList();
     }
 
+    public HashSet<TypedComponent> GetAncestorsAsTypedComponents(string componentId, Func<string, TypedComponent> toTypedComponent)
+    {
+        ArgumentNullException.ThrowIfNull(componentId);
+        return this.GetAncestors(componentId)
+            .Select(a => this.componentNodes.TryGetValue(a, out var component) ? component : null)
+            .Where(a => a != null)
+            .Select(a => a.TypedComponent ?? toTypedComponent(a.Id))
+            .ToHashSet(new ComponentComparer());
+    }
+
+    public HashSet<TypedComponent> GetRootsAsTypedComponents(string componentId, Func<string, TypedComponent> toTypedComponent)
+    {
+        ArgumentNullException.ThrowIfNull(componentId);
+        return this.GetExplicitReferencedDependencyIds(componentId)
+            .Select(r => this.componentNodes.TryGetValue(r, out var component) ? component : null)
+            .Where(r => r != null)
+            .Select(r => r.TypedComponent ?? toTypedComponent(r.Id))
+            .ToHashSet(new ComponentComparer());
+    }
+
+    public void FillTypedComponents(Func<string, TypedComponent> toTypedComponent)
+    {
+        foreach (var componentId in this.componentNodes.Values)
+        {
+            componentId.TypedComponent = toTypedComponent(componentId.Id);
+        }
+    }
+
     IEnumerable<string> IDependencyGraph.GetDependenciesForComponent(string componentId)
     {
         return this.GetDependenciesForComponent(componentId).ToImmutableList();
@@ -229,5 +258,7 @@ internal class DependencyGraph : IDependencyGraph
         internal bool? IsDevelopmentDependency { get; set; }
 
         internal DependencyScope? DependencyScope { get; set; }
+
+        internal TypedComponent TypedComponent { get; set; }
     }
 }
