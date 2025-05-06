@@ -1,6 +1,8 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
@@ -143,7 +145,7 @@ public class DependencyGraphTests
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public void GetExplicitReferencedDependencyIds_ComponentsWereAddedWithoutSpecifyingRoot_RootsAreEmpty(bool shouldPreFillRoots)
+    public void GetExplicitReferencedDependencyIds_ComponentsWereAddedWithoutSpecifyingRoot_RootsAreEmpty(bool shouldUseTypedComponents)
     {
         var componentA = new DependencyGraph.ComponentRefNode { Id = "componentA" };
         var componentB = new DependencyGraph.ComponentRefNode { Id = "componentB" };
@@ -151,22 +153,22 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentA);
         this.dependencyGraph.AddComponent(componentB, componentA.Id);
 
-        var rootsForComponentA = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+        var rootsForComponentA = this.GetExplicitReferencedDependencyIds(componentA.Id, shouldUseTypedComponents);
         rootsForComponentA.Should().BeEmpty();
 
-        var rootsForComponentB = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+        var rootsForComponentB = this.GetExplicitReferencedDependencyIds(componentB.Id, shouldUseTypedComponents);
         rootsForComponentB.Should().BeEmpty();
     }
 
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public void GetExplicitReferencedDependencyIds_ComponentIsRoot_ARootIsRootOfItSelf(bool shouldPreFillRoots)
+    public void GetExplicitReferencedDependencyIds_ComponentIsRoot_ARootIsRootOfItSelf(bool shouldUseTypedComponents)
     {
         var componentA = new DependencyGraph.ComponentRefNode { Id = "componentA", IsExplicitReferencedDependency = true };
         this.dependencyGraph.AddComponent(componentA);
 
-        var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+        var aRoots = this.GetExplicitReferencedDependencyIds(componentA.Id, shouldUseTypedComponents);
         aRoots.Should().ContainSingle();
         aRoots.Should().Contain(componentA.Id);
     }
@@ -174,7 +176,7 @@ public class DependencyGraphTests
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public void GetExplicitReferencedDependencyIds_RootHasParent_ReturnItselfAndItsParents(bool shouldPreFillRoots)
+    public void GetExplicitReferencedDependencyIds_RootHasParent_ReturnItselfAndItsParents(bool shouldUseTypedComponents)
     {
         var componentA = new DependencyGraph.ComponentRefNode { Id = "componentA", IsExplicitReferencedDependency = true };
         var componentB = new DependencyGraph.ComponentRefNode { Id = "componentB", IsExplicitReferencedDependency = true };
@@ -184,16 +186,16 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentB, componentA.Id);
         this.dependencyGraph.AddComponent(componentC, componentB.Id);
 
-        var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+        var aRoots = this.GetExplicitReferencedDependencyIds(componentA.Id, shouldUseTypedComponents);
         aRoots.Should().ContainSingle();
         aRoots.Should().Contain(componentA.Id);
 
-        var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+        var bRoots = this.GetExplicitReferencedDependencyIds(componentB.Id, shouldUseTypedComponents);
         bRoots.Should().HaveCount(2);
         bRoots.Should().Contain(componentA.Id);
         bRoots.Should().Contain(componentB.Id);
 
-        var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
+        var cRoots = this.GetExplicitReferencedDependencyIds(componentC.Id, shouldUseTypedComponents);
         cRoots.Should().HaveCount(3);
         cRoots.Should().Contain(componentA.Id);
         cRoots.Should().Contain(componentB.Id);
@@ -203,7 +205,7 @@ public class DependencyGraphTests
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public void GetExplicitReferencedDependencyIds_InsertionOrderNotAffectedRoots(bool shouldPreFillRoots)
+    public void GetExplicitReferencedDependencyIds_InsertionOrderNotAffectedRoots(bool shouldUseTypedComponents)
     {
         var componentA = new DependencyGraph.ComponentRefNode { Id = "componentA", IsExplicitReferencedDependency = true };
         var componentB = new DependencyGraph.ComponentRefNode { Id = "componentB" };
@@ -217,18 +219,18 @@ public class DependencyGraphTests
         componentB = new DependencyGraph.ComponentRefNode { Id = "componentB", IsExplicitReferencedDependency = true };
         this.dependencyGraph.AddComponent(componentB);
 
-        var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+        var aRoots = this.GetExplicitReferencedDependencyIds(componentA.Id, shouldUseTypedComponents);
         aRoots.Should().HaveCount(2);
         aRoots.Should().Contain(componentA.Id);
         aRoots.Should().Contain(componentC.Id);
 
-        var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+        var bRoots = this.GetExplicitReferencedDependencyIds(componentB.Id, shouldUseTypedComponents);
         bRoots.Should().HaveCount(3);
         bRoots.Should().Contain(componentA.Id);
         bRoots.Should().Contain(componentB.Id);
         bRoots.Should().Contain(componentC.Id);
 
-        var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
+        var cRoots = this.GetExplicitReferencedDependencyIds(componentC.Id, shouldUseTypedComponents);
         cRoots.Should().ContainSingle();
         cRoots.Should().Contain(componentC.Id);
     }
@@ -236,7 +238,7 @@ public class DependencyGraphTests
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public void GetExplicitReferencedDependencyIds_UseManualSelectionTurnedOff_ComponentsWithNoParentsAreSelectedAsExplicitReferencedDependencies(bool shouldPreFillRoots)
+    public void GetExplicitReferencedDependencyIds_UseManualSelectionTurnedOff_ComponentsWithNoParentsAreSelectedAsExplicitReferencedDependencies(bool shouldUseTypedComponents)
     {
         this.dependencyGraph = new DependencyGraph(false);
         var componentA = new DependencyGraph.ComponentRefNode { Id = "componentA" };
@@ -248,17 +250,17 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentC);
         this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
-        var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+        var aRoots = this.GetExplicitReferencedDependencyIds(componentA.Id, shouldUseTypedComponents);
         aRoots.Should().ContainSingle();
         aRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentA.Id).Should().BeFalse();
 
-        var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+        var bRoots = this.GetExplicitReferencedDependencyIds(componentB.Id, shouldUseTypedComponents);
         bRoots.Should().ContainSingle();
         bRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentB.Id).Should().BeFalse();
 
-        var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
+        var cRoots = this.GetExplicitReferencedDependencyIds(componentC.Id, shouldUseTypedComponents);
         cRoots.Should().ContainSingle();
         cRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentC.Id).Should().BeTrue();
@@ -267,7 +269,7 @@ public class DependencyGraphTests
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public void GetExplicitReferencedDependencyIds_UseManualSelectionTurnedOff_PropertyIsExplicitReferencedDependencyIsIgnored(bool shouldPreFillRoots)
+    public void GetExplicitReferencedDependencyIds_UseManualSelectionTurnedOff_PropertyIsExplicitReferencedDependencyIsIgnored(bool shouldUseTypedComponents)
     {
         this.dependencyGraph = new DependencyGraph(false);
         var componentA = new DependencyGraph.ComponentRefNode { Id = "componentA", IsExplicitReferencedDependency = true };
@@ -279,17 +281,17 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentC);
         this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
-        var aRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentA.Id);
+        var aRoots = this.GetExplicitReferencedDependencyIds(componentA.Id, shouldUseTypedComponents);
         aRoots.Should().ContainSingle();
         aRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentA.Id).Should().BeFalse();
 
-        var bRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentB.Id);
+        var bRoots = this.GetExplicitReferencedDependencyIds(componentB.Id, shouldUseTypedComponents);
         bRoots.Should().ContainSingle();
         bRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentB.Id).Should().BeFalse();
 
-        var cRoots = this.dependencyGraph.GetExplicitReferencedDependencyIds(componentC.Id);
+        var cRoots = this.GetExplicitReferencedDependencyIds(componentC.Id, shouldUseTypedComponents);
         cRoots.Should().ContainSingle();
         cRoots.Should().Contain(componentC.Id);
         ((IDependencyGraph)this.dependencyGraph).IsComponentExplicitlyReferenced(componentC.Id).Should().BeTrue();
@@ -368,7 +370,9 @@ public class DependencyGraphTests
     }
 
     [TestMethod]
-    public void GetAncestors_ReturnsAsExpected()
+    [DataRow(true)]
+    [DataRow(false)]
+    public void GetAncestors_ReturnsAsExpected(bool shouldUseTypedComponents)
     {
         var componentA = new DependencyGraph.ComponentRefNode { Id = "componentA" };
         var componentB = new DependencyGraph.ComponentRefNode { Id = "componentB" };
@@ -378,30 +382,34 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentB, componentA.Id);
         this.dependencyGraph.AddComponent(componentC, componentB.Id);
 
-        var ancestors = this.dependencyGraph.GetAncestors(componentC.Id);
+        var ancestors = this.GetAncestors(componentC.Id, shouldUseTypedComponents);
         ancestors.Should().HaveCount(2);
         ancestors.Should().Contain(componentA.Id);
         ancestors.Should().Contain(componentB.Id);
 
-        ancestors = this.dependencyGraph.GetAncestors(componentB.Id);
+        ancestors = this.GetAncestors(componentB.Id, shouldUseTypedComponents);
         ancestors.Should().ContainSingle();
         ancestors.Should().Contain(componentA.Id);
 
-        ancestors = this.dependencyGraph.GetAncestors(componentA.Id);
+        ancestors = this.GetAncestors(componentA.Id, shouldUseTypedComponents);
         ancestors.Should().BeEmpty();
 
-        ancestors = this.dependencyGraph.GetAncestors("test");
+        ancestors = this.GetAncestors("test", shouldUseTypedComponents);
         ancestors.Should().BeEmpty();
     }
 
     [TestMethod]
-    public void GetAncestors_Null_ThrowsException()
+    [DataRow(true)]
+    [DataRow(false)]
+    public void GetAncestors_Null_ThrowsException(bool shouldUseTypedComponents)
     {
-        this.dependencyGraph.Invoking(d => d.GetAncestors(null)).Should().Throw<ArgumentNullException>();
+        this.Invoking(d => d.GetAncestors(null, shouldUseTypedComponents)).Should().Throw<ArgumentNullException>();
     }
 
     [TestMethod]
-    public void GetAncestors_Cyclic_ReturnsAsExpected()
+    [DataRow(true)]
+    [DataRow(false)]
+    public void GetAncestors_Cyclic_ReturnsAsExpected(bool shouldUseTypedComponents)
     {
         var root = new DependencyGraph.ComponentRefNode { Id = "root" };
         var componentA = new DependencyGraph.ComponentRefNode { Id = "componentA" };
@@ -415,25 +423,35 @@ public class DependencyGraphTests
         this.dependencyGraph.AddComponent(componentC, componentB.Id);
         this.dependencyGraph.AddComponent(componentA, componentC.Id);
 
-        var ancestors = this.dependencyGraph.GetAncestors(componentC.Id);
+        var ancestors = this.GetAncestors(componentC.Id, shouldUseTypedComponents);
         ancestors.Should().HaveCount(3);
         ancestors.Should().Contain(root.Id);
         ancestors.Should().Contain(componentA.Id);
         ancestors.Should().Contain(componentB.Id);
 
-        ancestors = this.dependencyGraph.GetAncestors(componentA.Id);
+        ancestors = this.GetAncestors(componentA.Id, shouldUseTypedComponents);
         ancestors.Should().HaveCount(3);
         ancestors.Should().Contain(root.Id);
         ancestors.Should().Contain(componentB.Id);
         ancestors.Should().Contain(componentC.Id);
 
-        ancestors = this.dependencyGraph.GetAncestors(componentB.Id);
+        ancestors = this.GetAncestors(componentB.Id, shouldUseTypedComponents);
         ancestors.Should().HaveCount(3);
         ancestors.Should().Contain(root.Id);
         ancestors.Should().Contain(componentC.Id);
         ancestors.Should().Contain(componentA.Id);
 
-        ancestors = this.dependencyGraph.GetAncestors(root.Id);
+        ancestors = this.GetAncestors(root.Id, shouldUseTypedComponents);
         ancestors.Should().BeEmpty();
     }
+
+    private IEnumerable<string> GetExplicitReferencedDependencyIds(string componentId, bool shouldUseTypedComponents) =>
+        shouldUseTypedComponents
+            ? this.dependencyGraph.GetRootsAsTypedComponents(componentId, id => new NuGetComponent(id, "1.0.0")).Select(x => ((NuGetComponent)x).Name)
+            : this.dependencyGraph.GetExplicitReferencedDependencyIds(componentId);
+
+    private ICollection<string> GetAncestors(string componentId, bool shouldUseTypedComponents) =>
+        shouldUseTypedComponents
+            ? this.dependencyGraph.GetAncestorsAsTypedComponents(componentId, id => new NuGetComponent(id, "1.0.0")).Select(x => ((NuGetComponent)x).Name).ToList()
+            : this.dependencyGraph.GetAncestors(componentId);
 }
