@@ -17,9 +17,9 @@ internal class DependencyGraph : IDependencyGraph
 {
     private static readonly CompositeFormat MissingNodeFormat = CompositeFormat.Parse(Resources.MissingNodeInDependencyGraph);
 
-    private readonly bool enableManualTrackingOfExplicitReferences;
-
     private readonly ConcurrentDictionary<string, ComponentRefNode> componentNodes;
+
+    private readonly bool enableManualTrackingOfExplicitReferences;
 
     public DependencyGraph(bool enableManualTrackingOfExplicitReferences)
     {

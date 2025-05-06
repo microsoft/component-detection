@@ -124,10 +124,8 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         }
                     }
 
-                    var relevantDependencyGraphs = dependencyGraphsByLocation.Where(x => x.Value.Contains(component.Component.Id));
-
                     // Information about each component is relative to all of the graphs it is present in, so we take all graphs containing a given component and apply the graph data.
-                    foreach (var graphKvp in relevantDependencyGraphs)
+                    foreach (var graphKvp in dependencyGraphsByLocation.Where(x => x.Value.Contains(component.Component.Id)))
                     {
                         var location = graphKvp.Key;
                         var dependencyGraph = graphKvp.Value;
