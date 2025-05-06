@@ -239,6 +239,44 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
         detectedComponents.Should().BeEmpty();
     }
 
+    [TestMethod]
+    public async Task TestNpmDetector_EnginesAsArray_VSCodeEngine()
+    {
+        var packageName = GetRandomString();
+        var packageVersion = NewRandomVersion();
+        var engineText = "vscode >= 6.0";
+        var (packageJsonName, packageJsonContents, packageJsonPath) =
+            NpmTestUtilities.GetPackageJsonNoDependenciesForNameAndVersionWithEngiesAsArray(packageName, packageVersion, engineText);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
+            .ExecuteDetectorAsync();
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_EnginesAsArray_NodeEngine()
+    {
+        var packageName = GetRandomString();
+        var packageVersion = NewRandomVersion();
+        var engineText = "node >= 6.0";
+        var (packageJsonName, packageJsonContents, packageJsonPath) =
+            NpmTestUtilities.GetPackageJsonNoDependenciesForNameAndVersionWithEngiesAsArray(packageName, packageVersion, engineText);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
+            .ExecuteDetectorAsync();
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+        detectedComponents.Single().Component.Type.Should().Be(ComponentType.Npm);
+        var detectedNpmComponent = (NpmComponent)detectedComponents.Single().Component;
+        detectedNpmComponent.Name.Should().Be(packageName);
+        detectedNpmComponent.Version.Should().Be(packageVersion);
+    }
+
     private static void AssertDetectedComponentCount(IEnumerable<DetectedComponent> detectedComponents, int expectedCount)
     {
         detectedComponents.Should().HaveCount(expectedCount);
