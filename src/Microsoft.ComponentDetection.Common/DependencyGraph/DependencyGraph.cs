@@ -145,31 +145,17 @@ internal class DependencyGraph : IDependencyGraph
     public HashSet<TypedComponent> GetAncestorsAsTypedComponents(string componentId, Func<string, TypedComponent> toTypedComponent)
     {
         ArgumentNullException.ThrowIfNull(componentId);
-        var ancestorSet = new HashSet<TypedComponent>(new ComponentComparer());
-        var ancestors = this.GetAncestors(componentId);
-        foreach (var ancestor in ancestors)
-        {
-            var component = this.componentNodes[ancestor];
-            component.TypedComponent ??= toTypedComponent(ancestor);
-            ancestorSet.Add(component.TypedComponent);
-        }
-
-        return ancestorSet;
+        return this.GetAncestors(componentId)
+            .Select(a => this.componentNodes[a].TypedComponent ?? toTypedComponent(a))
+            .ToHashSet(new ComponentComparer());
     }
 
     public HashSet<TypedComponent> GetRootsAsTypedComponents(string componentId, Func<string, TypedComponent> toTypedComponent)
     {
         ArgumentNullException.ThrowIfNull(componentId);
-        var rootSet = new HashSet<TypedComponent>(new ComponentComparer());
-        var roots = this.GetExplicitReferencedDependencyIds(componentId);
-        foreach (var root in roots)
-        {
-            var component = this.componentNodes[root];
-            component.TypedComponent ??= toTypedComponent(root);
-            rootSet.Add(component.TypedComponent);
-        }
-
-        return rootSet;
+        return this.GetExplicitReferencedDependencyIds(componentId)
+            .Select(r => this.componentNodes[r].TypedComponent ?? toTypedComponent(r))
+            .ToHashSet(new ComponentComparer());
     }
 
     public void FillTypedComponents(Func<string, TypedComponent> toTypedComponent)
