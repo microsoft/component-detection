@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts;
 
+using System;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
@@ -124,4 +125,10 @@ public interface IDependencyGraph
     /// <param name="componentId">The component id to look up ancestors for.</param>
     /// <returns>The componentIds that are ancestors for a given componentId.</returns>
     ICollection<string> GetAncestors(string componentId);
+
+    public HashSet<TypedComponent.TypedComponent> GetRootsAsTypedComponents(string componentId, Func<string, TypedComponent.TypedComponent> toTypedComponent);
+
+    public HashSet<TypedComponent.TypedComponent> GetAncestorsAsTypedComponents(string componentId, Func<string, TypedComponent.TypedComponent> toTypedComponent);
+
+    public bool ShouldFillTypedComponents(Func<string, TypedComponent.TypedComponent> toTypedComponent);
 }
