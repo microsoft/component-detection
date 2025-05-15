@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Contracts;
 
+using System;
 using System.Collections.Generic;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
@@ -124,4 +125,28 @@ public interface IDependencyGraph
     /// <param name="componentId">The component id to look up ancestors for.</param>
     /// <returns>The componentIds that are ancestors for a given componentId.</returns>
     ICollection<string> GetAncestors(string componentId);
+
+    /// <summary>
+    /// Gets the component IDs of all explicitly referenced components, and converts them to a set of typed components.
+    /// WARNING: Using this method without calling <see cref="FillTypedComponents"/> first will result in a performance hit.
+    /// </summary>
+    /// <param name="componentId">The component to find all roots for.</param>
+    /// <param name="toTypedComponent">Function that converts the component id to the typed component object.</param>
+    /// <returns>Set of TypedComponents containing the roots.</returns>
+    public HashSet<TypedComponent.TypedComponent> GetRootsAsTypedComponents(string componentId, Func<string, TypedComponent.TypedComponent> toTypedComponent);
+
+    /// <summary>
+    /// Gets the component IDs of all ancestors for a given component id, and converts them to a set of typed components.
+    /// WARNING: Using this method without calling <see cref="FillTypedComponents"/> first will result in a performance hit.
+    /// </summary>
+    /// <param name="componentId">The component to find all roots for.</param>
+    /// <param name="toTypedComponent">Function that converts the component id to the typed component object.</param>
+    /// <returns>Set of TypedComponents containing the ancestors.</returns>
+    public HashSet<TypedComponent.TypedComponent> GetAncestorsAsTypedComponents(string componentId, Func<string, TypedComponent.TypedComponent> toTypedComponent);
+
+    /// <summary>
+    /// This operation pre-fills all nodes with the specified typed component, which improves performance for subsequent runs
+    /// of <see cref="GetRootsAsTypedComponents"/> and <see cref="GetAncestorsAsTypedComponents"/>.
+    /// </summary>
+    public void FillTypedComponents(Func<string, TypedComponent.TypedComponent> toTypedComponent);
 }

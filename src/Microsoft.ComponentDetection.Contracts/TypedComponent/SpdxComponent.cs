@@ -33,5 +33,5 @@ public class SpdxComponent : TypedComponent
 
     public string Path { get; set; }
 
-    public override string Id => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
+    protected override string ComputeId() => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
 }

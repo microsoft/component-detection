@@ -25,8 +25,6 @@ public class PodComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Pod;
 
-    public override string Id => $"{this.Name} {this.Version} - {this.Type}";
-
     public override PackageURL PackageUrl
     {
         get
@@ -40,4 +38,6 @@ public class PodComponent : TypedComponent
             return new PackageURL("cocoapods", null, this.Name, this.Version, qualifiers, null);
         }
     }
+
+    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
 }

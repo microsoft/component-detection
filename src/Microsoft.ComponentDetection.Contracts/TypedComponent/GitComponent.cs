@@ -26,5 +26,5 @@ public class GitComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Git;
 
-    public override string Id => $"{this.RepositoryUrl} : {this.CommitHash} - {this.Type}";
+    protected override string ComputeId() => $"{this.RepositoryUrl} : {this.CommitHash} - {this.Type}";
 }

@@ -68,7 +68,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, RustSbomVsCliExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustSbomVsCrateExperiment>();
         services.AddSingleton<IExperimentConfiguration, Go117DetectorExperiment>();
-        services.AddSingleton<IExperimentConfiguration, DotNetDetectorExperiment>();
 
         // Detectors
         // CocoaPods
