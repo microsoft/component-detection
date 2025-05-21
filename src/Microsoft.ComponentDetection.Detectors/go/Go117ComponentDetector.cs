@@ -143,6 +143,10 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
                     this.Logger.LogDebug("Go CLI scan when considering {GoSumLocation} was not successful. Falling back to scanning go.sum", file.Location);
                     await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
                 }
+                else
+                {
+                    this.projectRoots.Add(projectRootDirectory.FullName);
+                }
 
                 break;
             }
