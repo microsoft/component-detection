@@ -139,29 +139,57 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
         goModParserMock.Verify(parser => parser.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()), Times.Once);
     }
 
-    [TestMethod]
-    public async Task Go117ModDetector_GoSumFileFound_GoSumParserIsExecuted()
+    /// <summary>
+    /// Verifies that if Go CLI is enabled/available and succeeds, go.sum file is not parsed and vice-versa.
+    /// </summary>
+    /// <returns>Task.</returns>
+    [DataTestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task Go117Detector_GoSum_GoSumParserExecuted(bool goCliSucceeds)
     {
+        var nInvocationsOfSumParser = goCliSucceeds ? 0 : 1;
         var goSumParserMock = new Mock<IGoParser>();
+        var goCliParserMock = new Mock<IGoParser>();
         this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>())).Returns(goSumParserMock.Object);
+        this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoCLI, It.IsAny<ILogger>())).Returns(goCliParserMock.Object);
 
-        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, null, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
-        .ReturnsAsync(true);
+        // Setup go cli parser to succeed/fail
+        goCliParserMock.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>())).ReturnsAsync(goCliSucceeds);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, default, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
-        .ReturnsAsync(new CommandLineExecutionResult
-        {
-            ExitCode = 0,
-            StdOut = "go version go1.10.6 windows/amd64",
-        });
+        // Setup go sum parser to succeed
+        goSumParserMock.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>())).ReturnsAsync(true);
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("go.sum", string.Empty)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        this.mockParserFactory.Verify(clm => clm.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>()), nInvocationsOfSumParser == 0 ? Times.Never : Times.Once);
+    }
 
-        goSumParserMock.Verify(parser => parser.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()), Times.Once);
+    /// <summary>
+    /// Verifies that if Go CLI is disabled, go.sum is parsed.
+    /// </summary>
+    /// <returns>Task.</returns>
+    [TestMethod]
+    public async Task Go117Detector_GoSum_GoSumParserExecutedIfCliDisabled()
+    {
+        var goSumParserMock = new Mock<IGoParser>();
+        this.mockParserFactory.Setup(x => x.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>())).Returns(goSumParserMock.Object);
+
+        // Setup environment variable to disable CLI scan
+        this.envVarService.Setup(s => s.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
+
+        // Setup go sum parser to succed
+        goSumParserMock.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>())).ReturnsAsync(true);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("go.sum", string.Empty)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        this.mockParserFactory.Verify(clm => clm.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>()), Times.Once);
     }
 
     [TestMethod]

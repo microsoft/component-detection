@@ -48,7 +48,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Go];
 
-    public override int Version => 1;
+    public override int Version => 2;
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests,
@@ -75,7 +75,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
                     return true;
                 }
 
-                return GoDetectorUtils.ShouldRemoveGoSumFromDetection(goSumFilePath: processRequest.ComponentStream.Location, goModFile, this.Logger);
+                return GoDetectorUtils.ShouldIncludeGoSumFromDetection(goSumFilePath: processRequest.ComponentStream.Location, goModFile, this.Logger);
             }
             finally
             {
@@ -97,7 +97,11 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
             return;
         }
 
-        var record = new GoGraphTelemetryRecord();
+        using var record = new GoGraphTelemetryRecord();
+        var wasGoCliDisabled = this.IsGoCliManuallyDisabled();
+        record.WasGoCliDisabled = wasGoCliDisabled;
+        record.WasGoFallbackStrategyUsed = false;
+
         var fileExtension = Path.GetExtension(file.Location).ToUpperInvariant();
         switch (fileExtension)
         {
@@ -123,7 +127,29 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
             case ".SUM":
             {
                 this.Logger.LogDebug("Found Go.sum: {Location}", file.Location);
-                await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+
+                // check if we can use Go CLI instead
+                var wasGoCliScanSuccessful = false;
+                if (!wasGoCliDisabled)
+                {
+                    wasGoCliScanSuccessful = await this.goParserFactory.CreateParser(GoParserType.GoCLI, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+                }
+
+                this.Logger.LogDebug("Status of Go CLI scan when considering {GoSumLocation}: {Status}", file.Location, wasGoCliScanSuccessful);
+
+                // If Go CLI scan was not successful/disabled, scan go.sum because this go.sum was recorded due to go.mod
+                // containing go < 1.17. So go.mod is incomplete. We need to parse go.sum to make list of dependencies complete
+                if (!wasGoCliScanSuccessful)
+                {
+                    record.WasGoFallbackStrategyUsed = true;
+                    this.Logger.LogDebug("Go CLI scan when considering {GoSumLocation} was not successful. Falling back to scanning go.sum", file.Location);
+                    await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+                }
+                else
+                {
+                    this.projectRoots.Add(projectRootDirectory.FullName);
+                }
+
                 break;
             }
 
