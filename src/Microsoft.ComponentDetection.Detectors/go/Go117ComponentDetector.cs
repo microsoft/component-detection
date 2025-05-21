@@ -98,7 +98,8 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
         }
 
         using var record = new GoGraphTelemetryRecord();
-        record.WasGoCliDisabled = false;
+        var wasGoCliDisabled = this.IsGoCliManuallyDisabled();
+        record.WasGoCliDisabled = wasGoCliDisabled;
         record.WasGoFallbackStrategyUsed = false;
 
         var fileExtension = Path.GetExtension(file.Location).ToUpperInvariant();
@@ -129,7 +130,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
 
                 // check if we can use Go CLI instead
                 var wasGoCliScanSuccessful = false;
-                if (!this.IsGoCliManuallyDisabled())
+                if (!wasGoCliDisabled)
                 {
                     wasGoCliScanSuccessful = await this.goParserFactory.CreateParser(GoParserType.GoCLI, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
                 }
@@ -140,6 +141,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
                 // containing go < 1.17. So go.mod is incomplete. We need to parse go.sum to make list of dependencies complete
                 if (!wasGoCliScanSuccessful)
                 {
+                    record.WasGoFallbackStrategyUsed = true;
                     this.Logger.LogDebug("Go CLI scan when considering {GoSumLocation} was not successful. Falling back to scanning go.sum", file.Location);
                     await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
                 }
