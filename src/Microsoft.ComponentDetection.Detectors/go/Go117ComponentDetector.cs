@@ -75,7 +75,7 @@ public class Go117ComponentDetector : FileComponentDetector, IExperimentalDetect
                     return true;
                 }
 
-                return GoDetectorUtils.ShouldRemoveGoSumFromDetection(goSumFilePath: processRequest.ComponentStream.Location, goModFile, this.Logger);
+                return GoDetectorUtils.ShouldIncludeGoSumFromDetection(goSumFilePath: processRequest.ComponentStream.Location, goModFile, this.Logger);
             }
             finally
             {
