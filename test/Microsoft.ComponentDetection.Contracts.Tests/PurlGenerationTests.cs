@@ -109,4 +109,16 @@ public class PurlGenerationTests
 
         packageOne.PackageUrl.ToString().Should().Be("pkg:cocoapods/afnetworking@4.0.1?repository_url=https://custom_repo.example.com/path/to/repo/specs.git");
     }
+
+    [TestMethod]
+    public void CargoShouldSupportPurl()
+    {
+        // https://github.com/package-url/purl-spec/blob/main/PURL-TYPES.rst#cargo
+        var packageOne = new CargoComponent("rand", "0.7.2");
+        var packageTwo = new CargoComponent("rand", "0.7.3", "RodneyRichardson", "MIT", "https://custom_repo.example.com/path/to/repo/specs.git");
+
+        packageOne.PackageUrl.Type.Should().Be("cargo");
+        packageOne.PackageUrl.ToString().Should().Be("pkg:cargo/rand@0.7.2");
+        packageTwo.PackageUrl.ToString().Should().Be("pkg:cargo/rand@0.7.3");
+    }
 }
