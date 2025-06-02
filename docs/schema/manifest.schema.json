@@ -117,7 +117,9 @@
               "Conda",
               "Spdx",
               "Vcpkg",
-              "DockerReference"
+              "DockerReference",
+              "DotNet",
+              "Conan"
             ]
           }
         }
@@ -343,7 +345,9 @@
             "Conda",
             "Spdx",
             "Vcpkg",
-            "DockerReference"
+            "DockerReference",
+            "DotNet",
+            "Conan"
           ]
         },
         "id": {

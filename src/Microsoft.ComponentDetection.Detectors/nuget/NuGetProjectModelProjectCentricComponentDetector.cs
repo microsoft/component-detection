@@ -92,7 +92,8 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
             if (lockFile.PackageSpec == null)
             {
-                throw new FormatException("Lockfile did not contain a PackageSpec");
+                this.Logger.LogWarning("Lock file {LockFilePath} does not contain a PackageSpec.", processRequest.ComponentStream.Location);
+                return Task.CompletedTask;
             }
 
             var explicitReferencedDependencies = this.GetTopLevelLibraries(lockFile)

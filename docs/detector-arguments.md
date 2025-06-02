@@ -6,8 +6,8 @@ dotnet run --project "src\Microsoft.ComponentDetection\Microsoft.ComponentDetect
 
 ```
 
-  --DirectoryExclusionList    Filters out specific directories following a
-                              minimatch pattern.
+  --DirectoryExclusionList    Filters out specific directories following semi-colon
+                              separated glob patterns.
 
   --IgnoreDirectories         Filters out specific directories, providing
                               individual directory paths separated by semicolon.

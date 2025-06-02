@@ -27,5 +27,5 @@ public class OtherComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Other;
 
-    public override string Id => $"{this.Name} {this.Version} {this.DownloadUrl} - {this.Type}";
+    protected override string ComputeId() => $"{this.Name} {this.Version} {this.DownloadUrl} - {this.Type}";
 }

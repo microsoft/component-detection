@@ -15,7 +15,7 @@ public static class GoDetectorUtils
     /// <param name="adjacentGoModFile">Component stream representing the adjacent go.mod file.</param>
     /// <param name="logger">The logger to use for logging messages.</param>
     /// <returns>True if the adjacent go.mod file is present and has a go version >= 1.17.</returns>
-    public static bool ShouldRemoveGoSumFromDetection(string goSumFilePath, ComponentStream adjacentGoModFile, ILogger logger)
+    public static bool ShouldIncludeGoSumFromDetection(string goSumFilePath, ComponentStream adjacentGoModFile, ILogger logger)
     {
         using var reader = new StreamReader(adjacentGoModFile.Stream);
         var goModFileContents = reader.ReadToEnd();

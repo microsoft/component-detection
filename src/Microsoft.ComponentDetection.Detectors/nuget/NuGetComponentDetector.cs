@@ -254,6 +254,11 @@ public class NuGetComponentDetector : FileComponentDetector
     /// <returns>True if path is valid, otherwise it retuns false. </returns>
     private bool IsValidPath(string potentialPath)
     {
+        if (potentialPath == null)
+        {
+            return false;
+        }
+
         FileInfo fileInfo = null;
 
         try
@@ -261,11 +266,6 @@ public class NuGetComponentDetector : FileComponentDetector
             fileInfo = new FileInfo(potentialPath);
         }
         catch
-        {
-            return false;
-        }
-
-        if (potentialPath == null)
         {
             return false;
         }

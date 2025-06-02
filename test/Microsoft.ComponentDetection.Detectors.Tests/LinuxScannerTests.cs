@@ -95,6 +95,116 @@ public class LinuxScannerTests
                 ]
             }";
 
+    private const string SyftOutputIgnoreInvalidMarinerPackages = @"{
+                ""distro"": {
+                    ""prettyName"": ""CBL-Mariner/Linux"",
+                    ""name"": ""Common Base Linux Mariner"",
+                    ""id"": ""mariner"",
+                    ""version"": ""2.0.20250304"",
+                    ""versionID"": ""2.0"",
+                },
+                ""artifacts"": [
+                    {
+                        ""id"": ""4af20256df269904"",
+                        ""name"": ""busybox"",
+                        ""version"": ""1.35.0"",
+                        ""type"": ""rpm"",
+                        ""foundBy"": ""elf-binary-package-cataloger"",
+                        ""locations"": [
+                            {
+                                ""path"": ""/usr/sbin/busybox"",
+                                ""layerID"": ""sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6"",
+                                ""accessPath"": ""/usr/sbin/busybox"",
+                                ""annotations"": { ""evidence"": ""primary"" }
+                            }
+                        ],
+                        ""cpes"": [
+                            {
+                                ""cpe"": ""cpe:2.3:a:busybox:busybox:1.35.0:*:*:*:*:*:*:*"",
+                                ""source"": ""syft-generated""
+                            }
+                        ],
+                        ""purl"": ""pkg:rpm/mariner/busybox@1.35.0?distro=mariner-2.0"",
+                        ""metadataType"": ""elf-binary-package-note-json-payload"",
+                        ""metadata"": { ""type"": ""rpm"", ""os"": ""mariner"", ""osVersion"": ""2.0"" }
+                    },
+                    {
+                        ""id"": ""45849b2d67d236b0"",
+                        ""name"": ""busybox"",
+                        ""version"": ""1.35.0-13.cm2"",
+                        ""type"": ""rpm"",
+                        ""foundBy"": ""rpm-db-cataloger"",
+                        ""locations"": [
+                            {
+                                ""path"": ""/var/lib/rpmmanifest/container-manifest-2"",
+                                ""layerID"": ""sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6"",
+                                ""accessPath"": ""/var/lib/rpmmanifest/container-manifest-2"",
+                                ""annotations"": { ""evidence"": ""primary"" }
+                            }
+                        ],
+                        ""cpes"": [
+                            {
+                                ""cpe"": ""cpe:2.3:a:microsoftcorporation:busybox:1.35.0-13.cm2:*:*:*:*:*:*:*"",
+                                ""source"": ""syft-generated""
+                            },
+                            {
+                                ""cpe"": ""cpe:2.3:a:busybox:busybox:1.35.0-13.cm2:*:*:*:*:*:*:*"",
+                                ""source"": ""syft-generated""
+                            }
+                        ],
+                        ""purl"": ""pkg:rpm/busybox@1.35.0-13.cm2?arch=x86_64&upstream=busybox-1.35.0-13.cm2.src.rpm"",
+                        ""metadataType"": ""rpm-db-entry"",
+                        ""metadata"": {
+                            ""name"": ""busybox"",
+                            ""version"": ""1.35.0"",
+                            ""epoch"": null,
+                            ""architecture"": ""x86_64"",
+                            ""release"": ""13.cm2"",
+                            ""sourceRpm"": ""busybox-1.35.0-13.cm2.src.rpm"",
+                            ""size"": 3512551,
+                            ""vendor"": ""Microsoft Corporation"",
+                            ""files"": null
+                        }
+                    },
+                ]
+            }";
+
+    private const string SyftOutputRemoveNonduplicatedMarinerPackages = @"{
+                ""distro"": {
+                    ""prettyName"": ""CBL-Mariner/Linux"",
+                    ""name"": ""Common Base Linux Mariner"",
+                    ""id"": ""mariner"",
+                    ""version"": ""2.0.20250304"",
+                    ""versionID"": ""2.0"",
+                },
+                ""artifacts"": [
+                    {
+                        ""id"": ""4af20256df269904"",
+                        ""name"": ""busybox"",
+                        ""version"": ""1.35.0"",
+                        ""type"": ""rpm"",
+                        ""foundBy"": ""elf-binary-package-cataloger"",
+                        ""locations"": [
+                            {
+                                ""path"": ""/usr/sbin/busybox"",
+                                ""layerID"": ""sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6"",
+                                ""accessPath"": ""/usr/sbin/busybox"",
+                                ""annotations"": { ""evidence"": ""primary"" }
+                            }
+                        ],
+                        ""cpes"": [
+                            {
+                                ""cpe"": ""cpe:2.3:a:busybox:busybox:1.35.0:*:*:*:*:*:*:*"",
+                                ""source"": ""syft-generated""
+                            }
+                        ],
+                        ""purl"": ""pkg:rpm/mariner/busybox@1.35.0?distro=mariner-2.0"",
+                        ""metadataType"": ""elf-binary-package-note-json-payload"",
+                        ""metadata"": { ""type"": ""rpm"", ""os"": ""mariner"", ""osVersion"": ""2.0"" }
+                    },
+                ]
+            }";
+
     private readonly LinuxScanner linuxScanner;
     private readonly Mock<IDockerService> mockDockerService;
     private readonly Mock<ILogger<LinuxScanner>> mockLogger;
@@ -148,5 +258,36 @@ public class LinuxScannerTests
         package.Distribution.Should().Be("test-distribution");
         package.Author.Should().Be(null);
         package.License.Should().Be(null);
+    }
+
+    [TestMethod]
+    [DataRow(SyftOutputIgnoreInvalidMarinerPackages)]
+    public async Task TestLinuxScanner_SyftOutputIgnoreInvalidMarinerPackages_Async(string syftOutput)
+    {
+        this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((syftOutput, string.Empty));
+
+        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6" }], 0)).First().LinuxComponents;
+
+        result.Should().ContainSingle();
+        var package = result.First();
+        package.Name.Should().Be("busybox");
+        package.Version.Should().Be("1.35.0-13.cm2");
+        package.Release.Should().Be("2.0");
+        package.Distribution.Should().Be("mariner");
+        package.Author.Should().Be(null);
+        package.License.Should().Be(null);
+    }
+
+    [TestMethod]
+    [DataRow(SyftOutputRemoveNonduplicatedMarinerPackages)]
+    public async Task TestLinuxScanner_SyftOutputKeepNonduplicatedMarinerPackages_Async(string syftOutput)
+    {
+        this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((syftOutput, string.Empty));
+
+        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6" }], 0)).First().LinuxComponents;
+
+        result.Should().BeEmpty();
     }
 }

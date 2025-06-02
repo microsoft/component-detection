@@ -42,7 +42,8 @@ function main()
     dotnet run scan --SourceDirectory $verificationTestRepo --Output $output `
                     --DockerImagesToScan $dockerImagesToScan `
                     --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff `
-                    --MaxDetectionThreads 5 --DebugTelemetry
+                    --MaxDetectionThreads 5 --DebugTelemetry `
+                    --DirectoryExclusionList "**/pip/parallel/**;**/pip/roots/**;**/pip/pre-generated/**"
 
     Set-Location $CDRelease
     dotnet restore
@@ -50,11 +51,17 @@ function main()
     dotnet run scan --SourceDirectory $verificationTestRepo --Output $releaseOutput `
                     --DockerImagesToScan $dockerImagesToScan `
                     --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff,CondaLock=EnableIfDefaultOff,ConanLock=EnableIfDefaultOff `
-                    --MaxDetectionThreads 5 --DebugTelemetry
+                    --MaxDetectionThreads 5 --DebugTelemetry `
+                    --DirectoryExclusionList "**/pip/parallel/**;**/pip/roots/**;**/pip/pre-generated/**"
 
     $env:GITHUB_OLD_ARTIFACTS_DIR = $releaseOutput
     $env:GITHUB_NEW_ARTIFACTS_DIR = $output
     $env:ALLOWED_TIME_DRIFT_RATIO = "0.75"
+
+    if ([string]::IsNullOrEmpty($env:GITHUB_WORKSPACE)) {
+        $env:GITHUB_WORKSPACE = $repoPath
+        Write-Host "Setting GITHUB_WORKSPACE environment variable to $repoPath"
+    }
 
     Write-Progress "Executing verification tests....."
     Set-Location ((Get-Item  $repoPath).FullName + "\test\Microsoft.ComponentDetection.VerificationTests\")

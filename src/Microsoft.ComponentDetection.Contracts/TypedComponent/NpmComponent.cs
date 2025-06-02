@@ -28,7 +28,7 @@ public class NpmComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Npm;
 
-    public override string Id => $"{this.Name} {this.Version} - {this.Type}";
-
     public override PackageURL PackageUrl => new PackageURL("npm", null, this.Name, this.Version, null, null);
+
+    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
 }
