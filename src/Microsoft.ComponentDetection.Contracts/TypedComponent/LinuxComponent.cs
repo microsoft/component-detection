@@ -36,8 +36,6 @@ public class LinuxComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Linux;
 
-    public override string Id => $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
-
     public override PackageURL PackageUrl
     {
         get
@@ -61,6 +59,8 @@ public class LinuxComponent : TypedComponent
             return null;
         }
     }
+
+    protected override string ComputeId() => $"{this.Distribution} {this.Release} {this.Name} {this.Version} - {this.Type}";
 
     private bool IsUbuntu()
     {

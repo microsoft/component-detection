@@ -13,7 +13,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class DefaultGraphTranslationService : IGraphTranslationService
 {
@@ -91,22 +90,38 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             .Where(recorderDetectorPair => recorderDetectorPair.Recorder != null)
             .SelectMany(recorderDetectorPair =>
             {
+                using var record = new DependencyGraphTranslationRecord()
+                {
+                    DetectorId = recorderDetectorPair.Detector.Id,
+                };
+
                 var detector = recorderDetectorPair.Detector;
                 var componentRecorder = recorderDetectorPair.Recorder;
                 var detectedComponents = componentRecorder.GetDetectedComponents();
                 var dependencyGraphsByLocation = componentRecorder.GetDependencyGraphsByLocation();
+
+                foreach (var graph in dependencyGraphsByLocation.Values)
+                {
+                    graph.FillTypedComponents(componentRecorder.GetComponent);
+                }
+
+                var totalTimeToAddRoots = TimeSpan.Zero;
+                var totalTimeToAddAncestors = TimeSpan.Zero;
 
                 // Note that it looks like we are building up detected components functionally, but they are not immutable -- the code is just written
                 //  to look like a pipeline.
                 foreach (var component in detectedComponents)
                 {
                     // clone custom locations and make them relative to root.
-                    var declaredRawFilePaths = component.FilePaths ?? [];
-                    var componentCustomLocations = JsonConvert.DeserializeObject<HashSet<string>>(JsonConvert.SerializeObject(declaredRawFilePaths));
+                    var componentCustomLocations = component.FilePaths ?? [];
 
                     if (updateLocations)
                     {
-                        component.FilePaths?.Clear();
+                        if (component.FilePaths != null)
+                        {
+                            componentCustomLocations = [.. component.FilePaths];
+                            component.FilePaths?.Clear();
+                        }
                     }
 
                     // Information about each component is relative to all of the graphs it is present in, so we take all graphs containing a given component and apply the graph data.
@@ -116,21 +131,28 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         var dependencyGraph = graphKvp.Value;
 
                         // Calculate roots of the component
+                        var rootStartTime = DateTime.UtcNow;
                         this.AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        var rootEndTime = DateTime.UtcNow;
+                        totalTimeToAddRoots += rootEndTime - rootStartTime;
 
                         // Calculate Ancestors of the component
+                        var ancestorStartTime = DateTime.UtcNow;
                         this.AddAncestorsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        var ancestorEndTime = DateTime.UtcNow;
+                        totalTimeToAddAncestors += ancestorEndTime - ancestorStartTime;
+
                         component.DevelopmentDependency = this.MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
                         component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
                         component.DetectedBy = detector;
-
-                        // Return in a format that allows us to add the additional files for the components
-                        var locations = dependencyGraph.GetAdditionalRelatedFiles();
 
                         // Experiments uses this service to build the dependency graph for analysis. In this case, we do not want to update the locations of the component.
                         // Updating the locations of the component will propogate to the final depenendcy graph and cause the graph to be incorrect.
                         if (updateLocations)
                         {
+                            // Return in a format that allows us to add the additional files for the components
+                            var locations = dependencyGraph.GetAdditionalRelatedFiles();
+
                             // graph authoritatively stores the location of the component
                             locations.Add(location);
 
@@ -148,6 +170,9 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                         }
                     }
                 }
+
+                record.TimeToAddRoots = totalTimeToAddRoots;
+                record.TimeToAddAncestors = totalTimeToAddAncestors;
 
                 return detectedComponents;
             }).ToList();
@@ -221,35 +246,23 @@ public class DefaultGraphTranslationService : IGraphTranslationService
     private void AddRootsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
     {
         detectedComponent.DependencyRoots ??= new HashSet<TypedComponent>(new ComponentComparer());
-
         if (dependencyGraph == null)
         {
             return;
         }
 
-        var roots = dependencyGraph.GetExplicitReferencedDependencyIds(detectedComponent.Component.Id);
-
-        foreach (var rootId in roots)
-        {
-            detectedComponent.DependencyRoots.Add(componentRecorder.GetComponent(rootId));
-        }
+        detectedComponent.DependencyRoots.UnionWith(dependencyGraph.GetRootsAsTypedComponents(detectedComponent.Component.Id, componentRecorder.GetComponent));
     }
 
     private void AddAncestorsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
     {
         detectedComponent.AncestralDependencyRoots ??= new HashSet<TypedComponent>(new ComponentComparer());
-
         if (dependencyGraph == null)
         {
             return;
         }
 
-        var roots = dependencyGraph.GetAncestors(detectedComponent.Component.Id);
-
-        foreach (var rootId in roots)
-        {
-            detectedComponent.AncestralDependencyRoots.Add(componentRecorder.GetComponent(rootId));
-        }
+        detectedComponent.AncestralDependencyRoots.UnionWith(dependencyGraph.GetAncestorsAsTypedComponents(detectedComponent.Component.Id, componentRecorder.GetComponent));
     }
 
     private HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, HashSet<string> filePaths)
@@ -261,7 +274,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
         // Make relative Uri needs a trailing separator to ensure that we turn "directory we are scanning" into "/"
         var rootDirectoryFullName = rootDirectory.FullName;
-        if (!rootDirectory.FullName.EndsWith(Path.DirectorySeparatorChar.ToString()) && !rootDirectory.FullName.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+        if (!rootDirectory.FullName.EndsWith(Path.DirectorySeparatorChar) && !rootDirectory.FullName.EndsWith(Path.AltDirectorySeparatorChar))
         {
             rootDirectoryFullName += Path.DirectorySeparatorChar;
         }
@@ -270,20 +283,19 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         var relativePathSet = new HashSet<string>();
         foreach (var path in filePaths)
         {
-            try
+            if (!Uri.TryCreate(path, UriKind.Absolute, out var uriPath))
             {
-                var relativePath = rootUri.MakeRelativeUri(new Uri(path)).ToString();
-                if (!relativePath.StartsWith('/'))
-                {
-                    relativePath = "/" + relativePath;
-                }
+                logger.LogDebug("The path: {Path} is not a valid absolute path and so could not be resolved relative to the root {RootUri}", path, rootUri);
+                continue;
+            }
 
-                relativePathSet.Add(relativePath);
-            }
-            catch (UriFormatException e)
+            var relativePath = rootUri.MakeRelativeUri(uriPath).ToString();
+            if (!relativePath.StartsWith('/'))
             {
-                logger.LogDebug(e, "The path: {Path} could not be resolved relative to the root {RootUri}", path, rootUri);
+                relativePath = "/" + relativePath;
             }
+
+            relativePathSet.Add(relativePath);
         }
 
         return relativePathSet;

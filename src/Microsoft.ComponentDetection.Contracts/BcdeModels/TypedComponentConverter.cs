@@ -27,6 +27,7 @@ public class TypedComponentConverter : JsonConverter
         { ComponentType.DockerReference, typeof(DockerReferenceComponent) },
         { ComponentType.Vcpkg, typeof(VcpkgComponent) },
         { ComponentType.Spdx, typeof(SpdxComponent) },
+        { ComponentType.DotNet, typeof(DotNetComponent) },
     };
 
     public override bool CanWrite

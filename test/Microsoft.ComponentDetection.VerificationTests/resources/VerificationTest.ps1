@@ -58,6 +58,11 @@ function main()
     $env:GITHUB_NEW_ARTIFACTS_DIR = $output
     $env:ALLOWED_TIME_DRIFT_RATIO = "0.75"
 
+    if ([string]::IsNullOrEmpty($env:GITHUB_WORKSPACE)) {
+        $env:GITHUB_WORKSPACE = $repoPath
+        Write-Host "Setting GITHUB_WORKSPACE environment variable to $repoPath"
+    }
+
     Write-Progress "Executing verification tests....."
     Set-Location ((Get-Item  $repoPath).FullName + "\test\Microsoft.ComponentDetection.VerificationTests\")
     dotnet restore  

@@ -12,11 +12,12 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 namespace Microsoft.ComponentDetection.Common.DependencyGraph;
 
+using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
 
 public class ComponentRecorder : IComponentRecorder
 {
-    private readonly ConcurrentBag<SingleFileComponentRecorder> singleFileRecorders = [];
+    private readonly ConcurrentDictionary<string, SingleFileComponentRecorder> singleFileRecorders = [];
 
     private readonly bool enableManualTrackingOfExplicitReferences;
 
@@ -30,7 +31,7 @@ public class ComponentRecorder : IComponentRecorder
 
     public TypedComponent GetComponent(string componentId)
     {
-        return this.singleFileRecorders.Select(x => x.GetComponent(componentId)?.Component).FirstOrDefault(x => x != null);
+        return this.singleFileRecorders.Values.Select(x => x.GetComponent(componentId)?.Component).FirstOrDefault(x => x != null);
     }
 
     public IEnumerable<DetectedComponent> GetDetectedComponents()
@@ -41,25 +42,21 @@ public class ComponentRecorder : IComponentRecorder
             return [];
         }
 
-        detectedComponents = this.singleFileRecorders
-            .Select(singleFileRecorder => singleFileRecorder.GetDetectedComponents().Values)
-            .SelectMany(x => x)
+        detectedComponents = this.singleFileRecorders.Values
+            .SelectMany(singleFileRecorder => singleFileRecorder.GetDetectedComponents().Values)
             .GroupBy(x => x.Component.Id)
             .Select(grouping =>
             {
                 // We pick a winner here -- any stateful props could get lost at this point. Only stateful prop still outstanding is ContainerDetails.
                 var winningDetectedComponent = grouping.First();
-                foreach (var component in grouping)
+                foreach (var component in grouping.Skip(1))
                 {
-                    foreach (var containerDetailId in component.ContainerDetailIds)
-                    {
-                        winningDetectedComponent.ContainerDetailIds.Add(containerDetailId);
-                    }
+                    winningDetectedComponent.ContainerDetailIds.UnionWith(component.ContainerDetailIds);
                 }
 
                 return winningDetectedComponent;
             })
-            .ToImmutableList();
+            .ToArray();
 
         return detectedComponents;
     }
@@ -71,11 +68,10 @@ public class ComponentRecorder : IComponentRecorder
             return [];
         }
 
-        return this.singleFileRecorders
-            .Select(x => x.GetSkippedComponents().Keys)
-            .SelectMany(x => x)
+        return this.singleFileRecorders.Values
+            .SelectMany(x => x.GetSkippedComponents().Keys)
             .Distinct()
-            .ToImmutableList();
+            .ToArray();
     }
 
     public ISingleFileComponentRecorder CreateSingleFileComponentRecorder(string location)
@@ -85,25 +81,20 @@ public class ComponentRecorder : IComponentRecorder
             throw new ArgumentNullException(nameof(location));
         }
 
-        var matching = this.singleFileRecorders.FirstOrDefault(x => x.ManifestFileLocation == location);
-        if (matching == null)
-        {
-            matching = new SingleFileComponentRecorder(location, this, this.enableManualTrackingOfExplicitReferences, this.logger);
-            this.singleFileRecorders.Add(matching);
-        }
-
-        return matching;
+        return this.singleFileRecorders.GetOrAdd(location, loc => new SingleFileComponentRecorder(loc, this, this.enableManualTrackingOfExplicitReferences, this.logger));
     }
 
     public IReadOnlyDictionary<string, IDependencyGraph> GetDependencyGraphsByLocation()
     {
-        return this.singleFileRecorders.Where(x => x.DependencyGraph.HasComponents())
-            .ToImmutableDictionary(x => x.ManifestFileLocation, x => x.DependencyGraph as IDependencyGraph);
+        return new ReadOnlyDictionary<string, IDependencyGraph>(
+            this.singleFileRecorders.Values
+                .Where(x => x.DependencyGraph.HasComponents())
+                .ToDictionary(x => x.ManifestFileLocation, x => x.DependencyGraph as IDependencyGraph));
     }
 
     internal DependencyGraph GetDependencyGraphForLocation(string location)
     {
-        return this.singleFileRecorders.Single(x => x.ManifestFileLocation == location).DependencyGraph;
+        return this.singleFileRecorders[location].DependencyGraph;
     }
 
     public sealed class SingleFileComponentRecorder : ISingleFileComponentRecorder
@@ -183,16 +174,15 @@ public class ComponentRecorder : IComponentRecorder
 #endif
 
             var componentId = detectedComponent.Component.Id;
-            DetectedComponent storedComponent = null;
+            var storedComponent = this.detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
+
+            if (!string.IsNullOrWhiteSpace(targetFramework))
+            {
+                storedComponent.TargetFrameworks.Add(targetFramework.Trim());
+            }
+
             lock (this.registerUsageLock)
             {
-                storedComponent = this.detectedComponentsInternal.GetOrAdd(componentId, detectedComponent);
-
-                if (!string.IsNullOrWhiteSpace(targetFramework))
-                {
-                    storedComponent.TargetFrameworks.Add(targetFramework.Trim());
-                }
-
                 this.AddComponentToGraph(this.ManifestFileLocation, detectedComponent, isExplicitReferencedDependency, parentComponentId, isDevelopmentDependency, dependencyScope);
             }
         }

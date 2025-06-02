@@ -43,7 +43,7 @@ public static class NpmComponentUtilities
     {
         var name = GetModuleName(currentDependency.Name);
 
-        var version = currentDependency.Value["version"].ToString();
+        var version = currentDependency.Value["version"]?.ToString();
         var hash = currentDependency.Value["integrity"]?.ToString(); // https://docs.npmjs.com/configuring-npm/package-lock-json.html#integrity
 
         if (!IsPackageNameValid(name))

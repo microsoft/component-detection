@@ -22,5 +22,5 @@ public class DockerImageComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.DockerImage;
 
-    public override string Id => $"{this.Name} {this.Tag} {this.Digest}";
+    protected override string ComputeId() => $"{this.Name} {this.Tag} {this.Digest}";
 }

@@ -14,6 +14,9 @@ using PackageUrl;
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 public abstract class TypedComponent
 {
+    [JsonIgnore]
+    private string id;
+
     internal TypedComponent()
     {
         // Reserved for deserialization.
@@ -23,7 +26,8 @@ public abstract class TypedComponent
     [JsonConverter(typeof(StringEnumConverter))]
     public abstract ComponentType Type { get; }
 
-    public abstract string Id { get; }
+    /// <summary>Gets the id of the component.</summary>
+    public string Id => this.id ??= this.ComputeId();
 
     public virtual PackageURL PackageUrl { get; }
 
@@ -47,4 +51,6 @@ public abstract class TypedComponent
     {
         return $"Property {propertyName} of component type {componentType} is required";
     }
+
+    protected abstract string ComputeId();
 }
