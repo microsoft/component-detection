@@ -217,7 +217,7 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
     [TestMethod]
     public async Task Go117ModDetector_VerifyLocalReferencesIgnored()
     {
-        var goModFilePath = ".\\TestFiles\\go_WithLocalReferences.mod"; // Replace with your actual file path
+        var goModFilePath = "./TestFiles/go_WithLocalReferences.mod"; // Replace with your actual file path
         var fileStream = new FileStream(goModFilePath, FileMode.Open, FileAccess.Read);
 
         var goModParser = new GoModParser(this.mockLogger.Object);
