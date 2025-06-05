@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
@@ -211,5 +212,46 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         goModParserMock.Verify(parser => parser.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Go117ModDetector_VerifyLocalReferencesIgnored()
+    {
+        var goModFilePath = ".\\TestFiles\\go_WithLocalReferences.mod"; // Replace with your actual file path
+        var fileStream = new FileStream(goModFilePath, FileMode.Open, FileAccess.Read);
+
+        var goModParser = new GoModParser(this.mockLogger.Object);
+        var mockSingleFileComponentRecorder = new Mock<ISingleFileComponentRecorder>();
+
+        var capturedComponents = new List<DetectedComponent>();
+        var expectedComponentIds = new List<string>()
+        {
+            "github.com/grafana/grafana-app-sdk v0.23.1 - Go",
+            "k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f - Go",
+        };
+
+        mockSingleFileComponentRecorder
+        .Setup(m => m.RegisterUsage(
+            It.IsAny<DetectedComponent>(),
+            It.IsAny<bool>(),
+            It.IsAny<string>(),
+            It.IsAny<bool?>(),
+            It.IsAny<DependencyScope?>(),
+            It.IsAny<string>()))
+        .Callback<DetectedComponent, bool, string, bool?, DependencyScope?, string>((comp, _, _, _, _, _) =>
+        {
+            capturedComponents.Add(comp);
+        });
+
+        var mockComponentStream = new Mock<IComponentStream>();
+        mockComponentStream.Setup(mcs => mcs.Stream).Returns(fileStream);
+        mockComponentStream.Setup(mcs => mcs.Location).Returns("Location");
+
+        var result = await goModParser.ParseAsync(mockSingleFileComponentRecorder.Object, mockComponentStream.Object, new GoGraphTelemetryRecord());
+        result.Should().BeTrue();
+        capturedComponents
+        .Select(c => c.Component.Id)
+        .Should()
+        .BeEquivalentTo(expectedComponentIds);
     }
 }
