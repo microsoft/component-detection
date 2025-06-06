@@ -2,7 +2,6 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -10,8 +9,6 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
     using Microsoft.ComponentDetection.Contracts.Internal;
     using Microsoft.ComponentDetection.Contracts.TypedComponent;
     using Microsoft.Extensions.Logging;
-    using Tomlyn;
-    using Tomlyn.Model;
 
     public class UvLockComponentDetector : FileComponentDetector
     {
@@ -35,85 +32,38 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 
         public override IEnumerable<string> Categories => ["Python"];
 
-        protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
+        protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             var file = processRequest.ComponentStream;
 
             try
             {
-                using var reader = new StreamReader(file.Stream);
-                var toml = await reader.ReadToEndAsync(cancellationToken);
-                var model = Toml.ToModel(toml);
+                // Parse the file stream into a UvLock model
+                file.Stream.Position = 0; // Ensure stream is at the beginning
+                var uvLock = UvLock.Parse(file.Stream);
 
+                // Determine explicit roots from the TOML (optional, not implemented in UvLock yet)
+                // For now, mark all as explicit if no explicit roots are defined
                 var explicitNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                if (model is TomlTable table)
+
+                // Register all packages and their dependencies
+                var componentIdSet = new HashSet<string>(uvLock.Packages.Select(x => new PipComponent(x.Name, x.Version).Id));
+                foreach (var pkg in uvLock.Packages)
                 {
-                    // Parse [package.metadata].requires-dist for explicit roots
-                    if (table.TryGetValue("package.metadata", out var metadataObj) && metadataObj is TomlTable metadataTable)
+                    var pipComponent = new PipComponent(pkg.Name, pkg.Version);
+                    var detectedComponent = new DetectedComponent(pipComponent);
+                    var isExplicit = explicitNames.Count == 0 || explicitNames.Contains(pkg.Name);
+                    singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency: isExplicit);
+
+                    foreach (var dep in pkg.Dependencies)
                     {
-                        if (metadataTable.TryGetValue("requires-dist", out var requiresDistObj) && requiresDistObj is TomlTableArray requiresDistArr)
+                        // Only register edge if dependency is in the lock file
+                        var depPkg = uvLock.Packages.FirstOrDefault(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase));
+                        if (depPkg != null)
                         {
-                            foreach (var req in requiresDistArr)
-                            {
-                                if (req is TomlTable reqTable && reqTable.TryGetValue("name", out var nameObj) && nameObj is string nameStr && !string.IsNullOrEmpty(nameStr))
-                                {
-                                    explicitNames.Add(nameStr);
-                                }
-                            }
-                        }
-                    }
-
-                    // Parse all packages and their dependencies
-                    var packagesList = new List<(PipComponent Component, List<string> Dependencies)>();
-                    if (table.TryGetValue("package", out var packagesObj) && packagesObj is TomlTableArray packages)
-                    {
-                        foreach (var pkg in packages)
-                        {
-                            var name = pkg?["name"]?.ToString();
-                            var version = pkg?["version"]?.ToString();
-                            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(version))
-                            {
-                                continue;
-                            }
-
-                            var pipComponent = new PipComponent(name, version);
-                            var dependencies = new List<string>();
-                            if (pkg.TryGetValue("dependencies", out var depsObj) && depsObj is TomlTable depsTable)
-                            {
-                                foreach (var depKey in depsTable.Keys)
-                                {
-                                    var depName = depKey;
-                                    var depVersion = depsTable[depKey]?.ToString();
-                                    if (!string.IsNullOrEmpty(depName) && !string.IsNullOrEmpty(depVersion))
-                                    {
-                                        dependencies.Add($"{depName} {depVersion} - pip");
-                                    }
-                                }
-                            }
-
-                            packagesList.Add((pipComponent, dependencies));
-                        }
-                    }
-
-                    // The test expects the key to be the file name, but the recorder uses the file path. We need to update the test to match the actual behavior.
-                    var componentIdSet = new HashSet<string>(packagesList.Select(x => x.Component.Id));
-
-                    foreach (var (component, dependencies) in packagesList)
-                    {
-                        var detectedComponent = new DetectedComponent(component);
-
-                        // Mark as explicit if there are no dependencies and no explicit roots are defined, or if in explicitNames
-                        var isExplicit = explicitNames.Count == 0 || explicitNames.Contains(component.Name);
-                        singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency: isExplicit);
-
-                        // Register dependencies as edges
-                        foreach (var depId in dependencies)
-                        {
-                            if (componentIdSet.Contains(depId))
-                            {
-                                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(new PipComponent(depId.Split(' ')[0], depId.Split(' ')[1])), isExplicitReferencedDependency: false, parentComponentId: component.Id);
-                            }
+                            var depComponentWithVersion = new PipComponent(depPkg.Name, depPkg.Version);
+                            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponentWithVersion), isExplicitReferencedDependency: false, parentComponentId: pipComponent.Id);
                         }
                     }
                 }
@@ -122,6 +72,8 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
             {
                 this.Logger.LogError(ex, "Failed to parse uv.lock file {File}", file.Location);
             }
+
+            return Task.CompletedTask;
         }
     }
 }
