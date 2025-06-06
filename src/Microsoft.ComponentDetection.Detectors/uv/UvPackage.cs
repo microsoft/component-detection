@@ -9,5 +9,11 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
         public string Version { get; set; }
 
         public List<UvDependency> Dependencies { get; set; } = [];
+
+        // Metadata dependencies (requires-dist)
+        public List<UvDependency> MetadataRequiresDist { get; set; } = [];
+
+        // Metadata dev dependencies (requires-dev)
+        public List<UvDependency> MetadataRequiresDev { get; set; } = [];
     }
 }
