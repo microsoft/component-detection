@@ -28,7 +28,7 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 
         public override IList<string> SearchPatterns { get; } = ["uv.lock"];
 
-        public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Uv];
+        public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Pip];
 
         public override int Version => 1;
 
@@ -68,8 +68,8 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                                 continue;
                             }
 
-                            var uvComponent = new UvComponent(name, version);
-                            var detectedComponent = new DetectedComponent(uvComponent);
+                            var pipComponent = new PipComponent(name, version);
+                            var detectedComponent = new DetectedComponent(pipComponent);
                             singleFileComponentRecorder.RegisterUsage(detectedComponent);
                         }
                     }
