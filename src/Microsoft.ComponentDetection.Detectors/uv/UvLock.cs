@@ -10,6 +10,12 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
         // a list of packages with their dependencies
         public List<UvPackage> Packages { get; set; } = [];
 
+        // Metadata dependencies (requires-dist)
+        public List<UvDependency> MetadataRequiresDist { get; set; } = [];
+
+        // Metadata dev dependencies (requires-dev)
+        public List<UvDependency> MetadataRequiresDev { get; set; } = [];
+
         // static method to parse the TOML stream into a UvLock model
         public static UvLock Parse(Stream tomlStream)
         {
@@ -19,38 +25,73 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 
             var uvLock = new UvLock();
 
-            // add packages from the TOML model
-            if (model is TomlTable table && table.TryGetValue("package", out var packagesObj) && packagesObj is TomlTableArray packages)
+            if (model is TomlTable table)
             {
-                foreach (var pkg in packages)
+                // add packages from the TOML model
+                if (table.TryGetValue("package", out var packagesObj) && packagesObj is TomlTableArray packages)
                 {
-                    if (pkg is TomlTable pkgTable && pkgTable.TryGetValue("name", out var nameObj) && nameObj is string name && pkgTable.TryGetValue("version", out var versionObj) && versionObj is string version)
+                    foreach (var pkg in packages)
                     {
-                        var uvPackage = new UvPackage
+                        if (pkg is TomlTable pkgTable && pkgTable.TryGetValue("name", out var nameObj) && nameObj is string name && pkgTable.TryGetValue("version", out var versionObj) && versionObj is string version)
                         {
-                            Name = name,
-                            Version = version,
-                            Dependencies = [],
-                        };
-
-                        // Parse dependencies if present
-                        if (pkgTable.TryGetValue("dependencies", out var depsObj) && depsObj is TomlTableArray depsArray)
-                        {
-                            foreach (var dep in depsArray)
+                            var uvPackage = new UvPackage
                             {
-                                if (dep is TomlTable depTable && depTable.TryGetValue("name", out var depNameObj) && depNameObj is string depName)
+                                Name = name,
+                                Version = version,
+                                Dependencies = [],
+                            };
+
+                            // Parse dependencies if present
+                            if (pkgTable.TryGetValue("dependencies", out var depsObj) && depsObj is TomlTableArray depsArray)
+                            {
+                                foreach (var dep in depsArray)
                                 {
-                                    var depSpec = depTable.TryGetValue("specifier", out var specObj) && specObj is string spec ? spec : null;
-                                    uvPackage.Dependencies.Add(new UvDependency
+                                    if (dep is TomlTable depTable && depTable.TryGetValue("name", out var depNameObj) && depNameObj is string depName)
                                     {
-                                        Name = depName,
-                                        Specifier = depSpec,
-                                    });
+                                        var depSpec = depTable.TryGetValue("specifier", out var specObj) && specObj is string spec ? spec : null;
+                                        uvPackage.Dependencies.Add(new UvDependency
+                                        {
+                                            Name = depName,
+                                            Specifier = depSpec,
+                                        });
+                                    }
                                 }
                             }
-                        }
 
-                        uvLock.Packages.Add(uvPackage);
+                            uvLock.Packages.Add(uvPackage);
+                        }
+                    }
+                }
+
+                // Parse [package.metadata].requires-dist
+                if (table.TryGetValue("package.metadata", out var metadataObj) && metadataObj is TomlTable metadataTable)
+                {
+                    if (metadataTable.TryGetValue("requires-dist", out var requiresDistObj) && requiresDistObj is TomlTableArray requiresDistArr)
+                    {
+                        foreach (var req in requiresDistArr)
+                        {
+                            if (req is TomlTable reqTable && reqTable.TryGetValue("name", out var nameObj) && nameObj is string name)
+                            {
+                                var spec = reqTable.TryGetValue("specifier", out var specObj) && specObj is string s ? s : null;
+                                uvLock.MetadataRequiresDist.Add(new UvDependency { Name = name, Specifier = spec });
+                            }
+                        }
+                    }
+                }
+
+                // Parse [package.metadata.requires-dev].dev
+                if (table.TryGetValue("package.metadata.requires-dev", out var requiresDevObj) && requiresDevObj is TomlTable requiresDevTable)
+                {
+                    if (requiresDevTable.TryGetValue("dev", out var devObj) && devObj is TomlTableArray devArr)
+                    {
+                        foreach (var req in devArr)
+                        {
+                            if (req is TomlTable reqTable && reqTable.TryGetValue("name", out var nameObj) && nameObj is string name)
+                            {
+                                var spec = reqTable.TryGetValue("specifier", out var specObj) && specObj is string s ? s : null;
+                                uvLock.MetadataRequiresDev.Add(new UvDependency { Name = name, Specifier = spec });
+                            }
+                        }
                     }
                 }
             }
