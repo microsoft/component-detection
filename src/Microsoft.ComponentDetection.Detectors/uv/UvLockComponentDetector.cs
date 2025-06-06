@@ -14,6 +14,16 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 
     public class UvLockComponentDetector : FileComponentDetector
     {
+        public UvLockComponentDetector(
+            IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+            IObservableDirectoryWalkerFactory walkerFactory,
+            ILogger<UvLockComponentDetector> logger)
+        {
+            this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+            this.Scanner = walkerFactory;
+            this.Logger = logger;
+        }
+
         public override string Id => "UvLock";
 
         public override IList<string> SearchPatterns { get; } = ["uv.lock"];
