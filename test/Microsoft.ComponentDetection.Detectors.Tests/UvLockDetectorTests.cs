@@ -49,7 +49,7 @@ public class UvLockDetectorTests : BaseDetectorTest<UvLockComponentDetector>
     }
 
     [TestMethod]
-    public async Task TestUvLockDetectorWithMultiplePackages_FindsAllComponentsAsync()
+    public async Task TestUvLockDetectorWithMultiplePackages_FindsAllComponentsAndGraphAsync()
     {
         var uvLock = @"
 [[package]]
@@ -68,6 +68,18 @@ version = '4.5.6'
         detectedComponents.Should().HaveCount(2);
         detectedComponents.Select(x => ((PipComponent)x.Component).Name).Should().BeEquivalentTo(["foo", "bar"]);
         detectedComponents.Select(x => ((PipComponent)x.Component).Version).Should().BeEquivalentTo(["1.2.3", "4.5.6"]);
+
+        // Validate dependency graph structure: both are roots, no dependencies
+        var graphs = componentRecorder.GetDependencyGraphsByLocation();
+        graphs.Should().ContainKey("uv.lock");
+        var graph = graphs["uv.lock"];
+        var fooId = new PipComponent("foo", "1.2.3").Id;
+        var barId = new PipComponent("bar", "4.5.6").Id;
+        graph.GetComponents().Should().BeEquivalentTo([fooId, barId]);
+        graph.GetDependenciesForComponent(fooId).Should().BeEmpty();
+        graph.GetDependenciesForComponent(barId).Should().BeEmpty();
+        graph.IsComponentExplicitlyReferenced(fooId).Should().BeTrue();
+        graph.IsComponentExplicitlyReferenced(barId).Should().BeTrue();
     }
 
     [TestMethod]
@@ -89,7 +101,7 @@ version = '4.5.6'
     }
 
     [TestMethod]
-    public async Task TestUvLockDetectorWithMultipleLockFiles_FindsAllComponentsAsync()
+    public async Task TestUvLockDetectorWithMultipleLockFiles_FindsAllComponentsAndGraphAsync()
     {
         var uvLock1 = @"
 [[package]]
@@ -110,5 +122,16 @@ version = '4.5.6'
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().HaveCount(2);
         detectedComponents.Select(x => ((PipComponent)x.Component).Name).Should().BeEquivalentTo(["foo", "bar"]);
+
+        // Validate both graphs
+        var graphs = componentRecorder.GetDependencyGraphsByLocation();
+        graphs.Should().ContainKey("uv.lock");
+        graphs.Should().ContainKey("uv2.lock");
+        var fooId = new PipComponent("foo", "1.2.3").Id;
+        var barId = new PipComponent("bar", "4.5.6").Id;
+        graphs["uv.lock"].GetComponents().Should().Contain(fooId);
+        graphs["uv2.lock"].GetComponents().Should().Contain(barId);
+        graphs["uv.lock"].IsComponentExplicitlyReferenced(fooId).Should().BeTrue();
+        graphs["uv2.lock"].IsComponentExplicitlyReferenced(barId).Should().BeTrue();
     }
 }

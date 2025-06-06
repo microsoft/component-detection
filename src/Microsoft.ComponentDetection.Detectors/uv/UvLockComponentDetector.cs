@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.ComponentDetection.Contracts;
@@ -47,16 +48,8 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 
                 if (model is TomlTable table)
                 {
-                    // Optionally, log or use top-level metadata
-                    var topLevelMetadata = new Dictionary<string, object>();
-                    foreach (var key in table.Keys)
-                    {
-                        if (key != "package")
-                        {
-                            topLevelMetadata[key] = table[key];
-                        }
-                    }
-
+                    // Parse all packages and their dependencies
+                    var packagesList = new List<(PipComponent Component, List<string> Dependencies)>();
                     if (table.TryGetValue("package", out var packagesObj) && packagesObj is TomlTableArray packages)
                     {
                         foreach (var pkg in packages)
@@ -69,8 +62,45 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                             }
 
                             var pipComponent = new PipComponent(name, version);
-                            var detectedComponent = new DetectedComponent(pipComponent);
-                            singleFileComponentRecorder.RegisterUsage(detectedComponent);
+                            var dependencies = new List<string>();
+                            if (pkg.TryGetValue("dependencies", out var depsObj) && depsObj is TomlTable depsTable)
+                            {
+                                foreach (var depKey in depsTable.Keys)
+                                {
+                                    var depName = depKey;
+                                    var depVersion = depsTable[depKey]?.ToString();
+                                    if (!string.IsNullOrEmpty(depName) && !string.IsNullOrEmpty(depVersion))
+                                    {
+                                        dependencies.Add($"{depName} {depVersion} - pip");
+                                    }
+                                }
+                            }
+
+                            packagesList.Add((pipComponent, dependencies));
+                        }
+                    }
+
+                    // Register all components and their dependencies in the graph
+                    var componentIdSet = new HashSet<string>(packagesList.Select(x => x.Component.Id));
+                    foreach (var (component, dependencies) in packagesList)
+                    {
+                        var detectedComponent = new DetectedComponent(component);
+                        if (dependencies.Count == 0)
+                        {
+                            singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency: true);
+                        }
+                        else
+                        {
+                            singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency: true);
+                            foreach (var depId in dependencies)
+                            {
+                                // Only add edges to components that exist in the lock file
+                                if (componentIdSet.Contains(depId))
+                                {
+                                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(component), isExplicitReferencedDependency: true, parentComponentId: component.Id);
+                                    singleFileComponentRecorder.RegisterUsage(new DetectedComponent(new PipComponent(depId.Split(' ')[0], depId.Split(' ')[1])), isExplicitReferencedDependency: false, parentComponentId: component.Id);
+                                }
+                            }
                         }
                     }
                 }
