@@ -113,7 +113,6 @@ public class GoModParser : IGoParser
                 return;
             }
 
-            this.logger.LogError("Registering {GoComponent} from {Location}", goComponent.Name, file.Location);
             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(goComponent));
         }
         else
