@@ -302,7 +302,7 @@ public class SimplePipComponentDetectorTests : BaseDetectorTest<SimplePipCompone
 
     private void CheckChild(IComponentRecorder recorder, string childId, string[] parentIds)
     {
-        recorder.AssertAllExplicitlyReferencedComponents<PipComponent>(
+        recorder.AssertAllExplicitlyReferencedComponents(
             childId,
             parentIds.Select(parentId => new Func<PipComponent, bool>(x => x.Id == parentId)).ToArray());
     }
