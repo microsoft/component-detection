@@ -4,16 +4,13 @@ using System.Collections.Generic;
 
 public class UvComponent : TypedComponent
 {
-    public UvComponent()
-    {
-        this.Metadata = new Dictionary<string, object>();
-    }
+    public UvComponent() => this.Metadata = [];
 
     public UvComponent(string name, string version, Dictionary<string, object> metadata = null)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Pip));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Pip));
-        this.Metadata = metadata ?? new Dictionary<string, object>();
+        this.Metadata = metadata ?? [];
     }
 
     public string Name { get; set; }
