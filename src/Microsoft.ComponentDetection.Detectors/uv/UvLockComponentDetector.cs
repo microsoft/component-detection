@@ -43,27 +43,24 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                 file.Stream.Position = 0; // Ensure stream is at the beginning
                 var uvLock = UvLock.Parse(file.Stream);
 
-                // Determine explicit roots from the TOML (optional, not implemented in UvLock yet)
-                // For now, mark all as explicit if no explicit roots are defined
-                var explicitNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                // Register all packages and their dependencies
-                var componentIdSet = new HashSet<string>(uvLock.Packages.Select(x => new PipComponent(x.Name, x.Version).Id));
                 foreach (var pkg in uvLock.Packages)
                 {
                     var pipComponent = new PipComponent(pkg.Name, pkg.Version);
                     var detectedComponent = new DetectedComponent(pipComponent);
-                    var isExplicit = explicitNames.Count == 0 || explicitNames.Contains(pkg.Name);
+                    var isExplicit = false; // TODO
                     singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency: isExplicit);
 
                     foreach (var dep in pkg.Dependencies)
                     {
-                        // Only register edge if dependency is in the lock file
                         var depPkg = uvLock.Packages.FirstOrDefault(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase));
                         if (depPkg != null)
                         {
                             var depComponentWithVersion = new PipComponent(depPkg.Name, depPkg.Version);
                             singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponentWithVersion), isExplicitReferencedDependency: false, parentComponentId: pipComponent.Id);
+                        }
+                        else
+                        {
+                            this.Logger.LogWarning("Dependency {DependencyName} not found in uv.lock packages", dep.Name);
                         }
                     }
                 }

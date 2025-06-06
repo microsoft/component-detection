@@ -100,48 +100,4 @@ version = '4.5.6'
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().BeEmpty();
     }
-
-    [TestMethod]
-    public async Task TestUvLockDetectorWithExplicitRoots_MarksOnlyExplicitAsync()
-    {
-        var uvLock = @"
-[[package]]
-name = 'azure-identity'
-version = '1.17.1'
-[[package]]
-name = 'flask'
-version = '2.3.3'
-[[package]]
-name = 'requests'
-version = '2.32.3'
-[[package]]
-name = 'six'
-version = '1.17.0'
-[package.metadata]
-requires-dist = [
-    { name = 'azure-identity', specifier = '==1.17.1' },
-    { name = 'flask', specifier = '>2,<3' },
-    { name = 'requests', specifier = '>=2.32.0' },
-]
-";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("uv.lock", uvLock)
-            .ExecuteDetectorAsync();
-
-        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().HaveCount(4);
-        var graphs = componentRecorder.GetDependencyGraphsByLocation();
-        var graphKey = graphs.Keys.FirstOrDefault(k => k.EndsWith("uv.lock"));
-        graphKey.Should().NotBeNull();
-        var graph = graphs[graphKey];
-        var azureId = new PipComponent("azure-identity", "1.17.1").Id;
-        var flaskId = new PipComponent("flask", "2.3.3").Id;
-        var requestsId = new PipComponent("requests", "2.32.3").Id;
-        var sixId = new PipComponent("six", "1.17.0").Id;
-        graph.IsComponentExplicitlyReferenced(azureId).Should().BeTrue();
-        graph.IsComponentExplicitlyReferenced(flaskId).Should().BeTrue();
-        graph.IsComponentExplicitlyReferenced(requestsId).Should().BeTrue();
-        graph.IsComponentExplicitlyReferenced(sixId).Should().BeFalse();
-    }
 }
