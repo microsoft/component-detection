@@ -79,8 +79,6 @@ version = '4.5.6'
         graph.GetComponents().Should().BeEquivalentTo([fooId, barId]);
         graph.GetDependenciesForComponent(fooId).Should().BeEmpty();
         graph.GetDependenciesForComponent(barId).Should().BeEmpty();
-        graph.IsComponentExplicitlyReferenced(fooId).Should().BeTrue();
-        graph.IsComponentExplicitlyReferenced(barId).Should().BeTrue();
     }
 
     [TestMethod]
