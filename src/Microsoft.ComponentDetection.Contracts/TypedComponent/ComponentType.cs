@@ -62,4 +62,7 @@ public enum ComponentType : byte
 
     [EnumMember]
     DotNet = 19,
+
+    [EnumMember]
+    Uv = 20,
 }
