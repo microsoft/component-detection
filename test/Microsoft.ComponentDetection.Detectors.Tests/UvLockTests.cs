@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -76,5 +77,90 @@ version = '2.0.0'
         uvLock.Packages.Should().HaveCount(2);
         uvLock.Packages.First().Name.Should().Be("foo");
         uvLock.Packages.First().Dependencies.Should().ContainSingle(d => d.Name == "bar" && d.Specifier == ">=2.0.0");
+    }
+
+    [TestMethod]
+    public void Parse_EmptyStream_ReturnsNoPackages()
+    {
+        using var ms = new MemoryStream([]);
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void Parse_TomlNotATable_ThrowsException()
+    {
+        var toml = "42";
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        FluentActions.Invoking(() => UvLock.Parse(ms))
+            .Should().Throw<Exception>();
+    }
+
+    [TestMethod]
+    public void Parse_NoPackageKey_ReturnsNoPackages()
+    {
+        var toml = "[metadata]\nversion = '1'";
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void Parse_PackageKeyNotArray_ReturnsNoPackages()
+    {
+        var toml = "package = 42";
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void Parse_PackageMissingNameOrVersion_IgnoresPackage()
+    {
+        var toml = @"
+[[package]]
+version = '1.2.3'
+[[package]]
+name = 'foo'
+";
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void Parse_PackageWithMalformedDependencies_IgnoresMalformed()
+    {
+        var toml = @"
+[[package]]
+name = 'foo'
+version = '1.2.3'
+dependencies = [42, { name = 'bar' }]
+";
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().ContainSingle();
+        var pkg = uvLock.Packages.First();
+        pkg.Dependencies.Should().ContainSingle(d => d.Name == "bar");
+    }
+
+    [TestMethod]
+    public void Parse_PackageWithMalformedMetadata_IgnoresMalformed()
+    {
+        var toml = @"
+[[package]]
+name = 'foo'
+version = '1.2.3'
+[package.metadata]
+requires-dist = [42, { name = 'bar' }]
+[package.metadata.requires-dev]
+dev = [42, { name = 'baz' }]
+";
+        using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+        var uvLock = UvLock.Parse(ms);
+        uvLock.Packages.Should().ContainSingle();
+        var pkg = uvLock.Packages.First();
+        pkg.MetadataRequiresDist.Should().ContainSingle(d => d.Name == "bar");
+        pkg.MetadataRequiresDev.Should().ContainSingle(d => d.Name == "baz");
     }
 }
