@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -7,7 +8,9 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Uv;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -82,6 +85,71 @@ version = '4.5.6'
     }
 
     [TestMethod]
+    public async Task TestUvLockDetectorWithDependencies_RegistersDependenciesAsync()
+    {
+        var uvLock = @"
+[[package]]
+name = 'foo'
+version = '1.2.3'
+dependencies = [{ name = 'bar' }]
+[[package]]
+name = 'bar'
+version = '4.5.6'
+";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+
+        var fooId = new PipComponent("foo", "1.2.3").Id;
+        var barId = new PipComponent("bar", "4.5.6").Id;
+
+        var graphs = componentRecorder.GetDependencyGraphsByLocation();
+        var graphKey = graphs.Keys.FirstOrDefault(k => k.EndsWith("uv.lock"));
+        var graph = graphs[graphKey];
+
+        graph.GetComponents().Should().BeEquivalentTo([fooId, barId]);
+        graph.GetDependenciesForComponent(fooId).Should().BeEquivalentTo([barId]);
+        graph.GetDependenciesForComponent(barId).Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestUvLockDetectorWithMissingDependency_LogsWarningAsync()
+    {
+        var loggerMock = new Mock<ILogger<UvLockComponentDetector>>();
+        this.DetectorTestUtility.AddServiceMock(loggerMock);
+
+        var uvLock = @"
+[[package]]
+name = 'foo'
+version = '1.2.3'
+dependencies = [{ name = 'baz' }]
+[[package]]
+name = 'bar'
+version = '4.5.6'
+";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .AddServiceMock(loggerMock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Should log a warning for missing dependency 'baz'
+        loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Dependency baz not found")),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.AtLeastOnce());
+    }
+
+    [TestMethod]
     public async Task TestUvLockDetectorWithMalformedPackage_IgnoresInvalidAsync()
     {
         var uvLock = @"
@@ -97,5 +165,30 @@ version = '4.5.6'
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestUvLockDetectorWithInvalidFile_LogsErrorAsync()
+    {
+        var loggerMock = new Mock<ILogger<UvLockComponentDetector>>();
+        this.DetectorTestUtility.AddServiceMock(loggerMock);
+
+        var invalidUvLock = "not a valid toml file";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("uv.lock", invalidUvLock)
+            .AddServiceMock(loggerMock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Should log an error for parse failure
+        loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to parse uv.lock file")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.AtLeastOnce());
     }
 }
