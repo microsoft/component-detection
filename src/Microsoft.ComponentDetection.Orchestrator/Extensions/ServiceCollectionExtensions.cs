@@ -155,7 +155,7 @@ public static class ServiceCollectionExtensions
         // Swift Package Manager
         services.AddSingleton<IComponentDetector, SwiftResolvedComponentDetector>();
 
-        // Uv
+        // uv
         services.AddSingleton<IComponentDetector, UvLockComponentDetector>();
 
         return services;
