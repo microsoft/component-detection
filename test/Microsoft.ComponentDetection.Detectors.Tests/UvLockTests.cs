@@ -206,6 +206,13 @@ dev = [42, { name = 'baz' }]
         }
 
         [TestMethod]
+        public void ParsePackage_NullOrNonTable_ReturnsNull()
+        {
+            UvLock.ParsePackage(null).Should().BeNull();
+            UvLock.ParsePackage(42).Should().BeNull();
+        }
+
+        [TestMethod]
         public void ParseDependenciesArray_ParsesValidDepsAndSkipsMalformed()
         {
             var arr = new TomlArray { 42, new TomlTable { ["name"] = "bar", ["specifier"] = "==1.2.3" }, new TomlTable { ["name"] = "baz" } };
@@ -213,6 +220,14 @@ dev = [42, { name = 'baz' }]
             result.Should().Contain(d => d.Name == "bar" && d.Specifier == "==1.2.3");
             result.Should().Contain(d => d.Name == "baz" && d.Specifier == null);
             result.Should().HaveCount(2);
+        }
+
+        [TestMethod]
+        public void ParseDependenciesArray_NullOrNoValidDeps_ReturnsEmpty()
+        {
+            UvLock.ParseDependenciesArray(null).Should().BeEmpty();
+            var arr = new TomlArray { 42, "foo", 3.14 };
+            UvLock.ParseDependenciesArray(arr).Should().BeEmpty();
         }
 
         [TestMethod]
@@ -227,6 +242,17 @@ dev = [42, { name = 'baz' }]
             UvLock.ParseMetadata(metadata, pkg);
             pkg.MetadataRequiresDist.Should().ContainSingle(d => d.Name == "bar" && d.Specifier == ">=2.0.0");
             pkg.MetadataRequiresDev.Should().ContainSingle(d => d.Name == "baz" && d.Specifier == null);
+        }
+
+        [TestMethod]
+        public void ParseMetadata_NullOrNoRelevantKeys_DoesNothing()
+        {
+            var pkg = new UvPackage { Name = "foo", Version = "1.0.0" };
+            UvLock.ParseMetadata(null, pkg); // Should not throw
+            var emptyTable = new TomlTable();
+            UvLock.ParseMetadata(emptyTable, pkg); // Should not throw or set anything
+            pkg.MetadataRequiresDist.Should().BeEmpty();
+            pkg.MetadataRequiresDev.Should().BeEmpty();
         }
     }
 }
