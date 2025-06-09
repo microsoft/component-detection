@@ -945,7 +945,7 @@ replace github v1.5.0 => github v1.18
     }
 
     [TestMethod]
-    public async Task Go117ModDetector_VerifyLocalReferencesIgnored()
+    public async Task GoModDetector_VerifyLocalReferencesIgnored()
     {
         var goModFilePath = "./TestFiles/go_WithLocalReferences.mod"; // Replace with your actual file path
         var fileStream = new FileStream(goModFilePath, FileMode.Open, FileAccess.Read);
