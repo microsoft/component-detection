@@ -1,12 +1,13 @@
+#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Uv
 {
     using System.Collections.Generic;
 
     public class UvPackage
     {
-        public string Name { get; set; }
+        public required string Name { get; init; }
 
-        public string Version { get; set; }
+        public required string Version { get; init; }
 
         public List<UvDependency> Dependencies { get; set; } = [];
 

@@ -1,9 +1,10 @@
+#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Uv
 {
     public class UvDependency
     {
-        public string Name { get; set; }
+        public required string Name { get; init; }
 
-        public string Specifier { get; set; }
+        public string? Specifier { get; set; }
     }
 }

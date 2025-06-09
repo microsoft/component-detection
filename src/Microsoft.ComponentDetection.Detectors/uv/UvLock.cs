@@ -1,3 +1,4 @@
+#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Uv
 {
     using System;
@@ -23,7 +24,7 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
             };
         }
 
-        internal static List<UvPackage> ParsePackagesFromModel(object model)
+        internal static List<UvPackage> ParsePackagesFromModel(object? model)
         {
             if (model is not TomlTable table)
             {
@@ -39,7 +40,7 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
             foreach (var pkg in packages)
             {
                 var parsed = ParsePackage(pkg);
-                if (parsed != null)
+                if (parsed is not null)
                 {
                     result.Add(parsed);
                 }
@@ -48,69 +49,73 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
             return result;
         }
 
-        internal static UvPackage ParsePackage(object pkg)
+        internal static UvPackage? ParsePackage(object? pkg)
         {
             if (pkg is not TomlTable pkgTable)
             {
                 return null;
             }
 
-            if (!pkgTable.TryGetValue("name", out var nameObj) || nameObj is not string name)
+            if (pkgTable.TryGetValue("name", out var nameObj) && nameObj is string name &&
+                pkgTable.TryGetValue("version", out var versionObj) && versionObj is string version)
             {
-                return null;
+                var uvPackage = new UvPackage
+                {
+                    Name = name,
+                    Version = version,
+                    Dependencies = [],
+                    MetadataRequiresDist = [],
+                    MetadataRequiresDev = [],
+                };
+
+                if (pkgTable.TryGetValue("dependencies", out var depsObj) && depsObj is TomlArray depsArray)
+                {
+                    uvPackage.Dependencies = ParseDependenciesArray(depsArray);
+                }
+
+                if (pkgTable.TryGetValue("metadata", out var metadataObj) && metadataObj is TomlTable metadataTable)
+                {
+                    ParseMetadata(metadataTable, uvPackage);
+                }
+
+                return uvPackage;
             }
 
-            if (!pkgTable.TryGetValue("version", out var versionObj) || versionObj is not string version)
-            {
-                return null;
-            }
-
-            var uvPackage = new UvPackage
-            {
-                Name = name,
-                Version = version,
-                Dependencies = [],
-                MetadataRequiresDist = [],
-                MetadataRequiresDev = [],
-            };
-
-            if (pkgTable.TryGetValue("dependencies", out var depsObj) && depsObj is TomlArray depsArray)
-            {
-                uvPackage.Dependencies = ParseDependenciesArray(depsArray);
-            }
-
-            if (pkgTable.TryGetValue("metadata", out var metadataObj) && metadataObj is TomlTable metadataTable)
-            {
-                ParseMetadata(metadataTable, uvPackage);
-            }
-
-            return uvPackage;
+            return null;
         }
 
-        internal static List<UvDependency> ParseDependenciesArray(TomlArray depsArray)
+        internal static List<UvDependency> ParseDependenciesArray(TomlArray? depsArray)
         {
             var deps = new List<UvDependency>();
+            if (depsArray is null)
+            {
+                return deps;
+            }
+
             foreach (var dep in depsArray)
             {
-                if (dep is TomlTable depTable)
+                if (dep is TomlTable depTable &&
+                    depTable.TryGetValue("name", out var depNameObj) && depNameObj is string depName)
                 {
-                    if (depTable.TryGetValue("name", out var depNameObj) && depNameObj is string depName)
+                    var depSpec = depTable.TryGetValue("specifier", out var specObj) && specObj is string s ? s : null;
+                    deps.Add(new UvDependency
                     {
-                        var depSpec = depTable.TryGetValue("specifier", out var specObj) && specObj is string s ? s : null;
-                        deps.Add(new UvDependency
-                        {
-                            Name = depName,
-                            Specifier = depSpec,
-                        });
-                    }
+                        Name = depName,
+                        Specifier = depSpec,
+                    });
                 }
             }
 
             return deps;
         }
 
-        internal static void ParseMetadata(TomlTable metadataTable, UvPackage uvPackage)
+        internal static void ParseMetadata(TomlTable? metadataTable, UvPackage uvPackage)
         {
+            if (metadataTable is null)
+            {
+                return;
+            }
+
             if (metadataTable.TryGetValue("requires-dist", out var requiresDistObj) && requiresDistObj is TomlArray requiresDistArr)
             {
                 uvPackage.MetadataRequiresDist = ParseDependenciesArray(requiresDistArr);
