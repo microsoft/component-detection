@@ -589,6 +589,9 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
     [TestMethod]
     public async Task TestGoDetector_GoGraphReplaceWithRelativePathAsync()
     {
+        var localPath = OperatingSystem.IsWindows()
+    ? "C:/test/module/"
+    : "/home/test/module/";
         var goMod = @"module example.com/project
 
 go 1.11
@@ -600,9 +603,10 @@ require (
     a v1.5.0            // indirect
 )
 
-replace a v1.5.0 => C:/test/module/
+replace a v1.5.0 => {LOCAL_MODULE_PATH}
 ";
 
+        goMod = goMod.Replace("{LOCAL_MODULE_PATH", localPath);
         var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 a@v1.5.0";
         string[] cmdParams = [];
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
