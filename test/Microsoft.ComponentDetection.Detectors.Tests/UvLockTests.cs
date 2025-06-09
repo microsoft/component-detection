@@ -300,5 +300,27 @@ dev = [42, { name = 'baz' }]
             pkg.MetadataRequiresDist.Should().BeEmpty();
             pkg.MetadataRequiresDev.Should().ContainSingle(d => d.Name == "baz");
         }
+
+        [TestMethod]
+        public void ParseMetadata_RequiresDevTableWithoutDevArray_DoesNotThrowOrSet()
+        {
+            var pkg = new UvPackage { Name = "foo", Version = "1.0.0" };
+
+            // requires-dev exists but no "dev" key
+            var metadata = new TomlTable
+            {
+                ["requires-dev"] = new TomlTable { ["notdev"] = 42 },
+            };
+            UvLock.ParseMetadata(metadata, pkg);
+            pkg.MetadataRequiresDev.Should().BeEmpty();
+
+            // requires-dev exists, "dev" is not a TomlArray
+            metadata = new TomlTable
+            {
+                ["requires-dev"] = new TomlTable { ["dev"] = 42 },
+            };
+            UvLock.ParseMetadata(metadata, pkg);
+            pkg.MetadataRequiresDev.Should().BeEmpty();
+        }
     }
 }
