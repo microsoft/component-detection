@@ -213,6 +213,18 @@ dev = [42, { name = 'baz' }]
         }
 
         [TestMethod]
+        public void ParsePackage_BranchCoverage_AllPaths()
+        {
+            // Path: pkg is TomlTable, but missing name
+            var pkgMissingName = new TomlTable { ["version"] = "1.0.0" };
+            UvLock.ParsePackage(pkgMissingName).Should().BeNull();
+
+            // Path: pkg is TomlTable, but missing version
+            var pkgMissingVersion = new TomlTable { ["name"] = "foo" };
+            UvLock.ParsePackage(pkgMissingVersion).Should().BeNull();
+        }
+
+        [TestMethod]
         public void ParseDependenciesArray_ParsesValidDepsAndSkipsMalformed()
         {
             var arr = new TomlArray { 42, new TomlTable { ["name"] = "bar", ["specifier"] = "==1.2.3" }, new TomlTable { ["name"] = "baz" } };
@@ -227,6 +239,14 @@ dev = [42, { name = 'baz' }]
         {
             UvLock.ParseDependenciesArray(null).Should().BeEmpty();
             var arr = new TomlArray { 42, "foo", 3.14 };
+            UvLock.ParseDependenciesArray(arr).Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void ParseDependenciesArray_BranchCoverage_AllPaths()
+        {
+            // Path: dep is TomlTable but missing name
+            var arr = new TomlArray { new TomlTable { ["specifier"] = "==1.2.3" } };
             UvLock.ParseDependenciesArray(arr).Should().BeEmpty();
         }
 
@@ -253,6 +273,32 @@ dev = [42, { name = 'baz' }]
             UvLock.ParseMetadata(emptyTable, pkg); // Should not throw or set anything
             pkg.MetadataRequiresDist.Should().BeEmpty();
             pkg.MetadataRequiresDev.Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void ParseMetadata_BranchCoverage_RequiresDistOnly()
+        {
+            var pkg = new UvPackage { Name = "foo", Version = "1.0.0" };
+            var metadata = new TomlTable
+            {
+                ["requires-dist"] = new TomlArray { new TomlTable { ["name"] = "bar" } },
+            };
+            UvLock.ParseMetadata(metadata, pkg);
+            pkg.MetadataRequiresDist.Should().ContainSingle(d => d.Name == "bar");
+            pkg.MetadataRequiresDev.Should().BeEmpty();
+        }
+
+        [TestMethod]
+        public void ParseMetadata_BranchCoverage_RequiresDevOnly()
+        {
+            var pkg = new UvPackage { Name = "foo", Version = "1.0.0" };
+            var metadata = new TomlTable
+            {
+                ["requires-dev"] = new TomlTable { ["dev"] = new TomlArray { new TomlTable { ["name"] = "baz" } } },
+            };
+            UvLock.ParseMetadata(metadata, pkg);
+            pkg.MetadataRequiresDist.Should().BeEmpty();
+            pkg.MetadataRequiresDev.Should().ContainSingle(d => d.Name == "baz");
         }
     }
 }
