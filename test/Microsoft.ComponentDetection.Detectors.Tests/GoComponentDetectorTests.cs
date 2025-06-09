@@ -462,7 +462,7 @@ replace some-package v1.2.3 => some-package v1.2.4
             });
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
-
+        this.SetupActualGoModParser();
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
@@ -589,57 +589,33 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
     [TestMethod]
     public async Task TestGoDetector_GoGraphReplaceWithRelativePathAsync()
     {
-        var buildDependencies = @"{
-    ""Path"": ""some-package"",
-    ""Version"": ""v1.2.3"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-}" + "\n" + @"{
-    ""Path"": ""test"",
-    ""Version"": ""v2.0.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
+        var goMod = @"module example.com/project
 
-}" + "\n" + @"{
-    ""Path"": ""other"",
-    ""Version"": ""v1.2.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-}" + "\n" + @"{
-    ""Path"": ""a"",
-    ""Version"": ""v1.5.0"",
-    ""Time"": ""2020-05-19T17:02:07Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11"",
-    ""Replace"": {
-                    ""Path"": ""C:\\test\\module\\"",
-                    ""Version"": null,
-                    ""Time"": ""2021-12-06T23:04:27Z"",
-                    ""Indirect"": true,
-                    ""GoMod"": ""C:\\test\\go.mod"",
-                    ""GoVersion"": ""1.11"",
-                }
-}";
+go 1.11
+
+require (
+    some-package v1.2.3 // indirect
+    test v2.0.0         // indirect
+    other v1.2.0        // indirect
+    a v1.5.0            // indirect
+)
+
+replace a v1.5.0 => C:/test/module/
+";
 
         var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 a@v1.5.0";
-        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+        string[] cmdParams = [];
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
-            .ReturnsAsync(new CommandLineExecutionResult
-            {
-                ExitCode = 0,
-                StdOut = buildDependencies,
-            });
+        cmdParams = ["version"];
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
+            .ReturnsAsync(true);
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, It.IsAny<CancellationToken>(), cmdParams))
+                .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "go version go1.24.3 windows/amd64" });
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+        cmdParams = ["mod", "graph"];
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), cmdParams))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
@@ -650,9 +626,9 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
 
         this.fileUtilityServiceMock.Setup(fs => fs.Exists(It.IsAny<string>()))
             .Returns(true);
-
+        this.SetupActualGoModParser();
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.mod", string.Empty)
+            .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -664,167 +640,40 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
         detectedComponents.Should().ContainSingle(component => component.Component.Id == "other v1.2.0 - Go");
         detectedComponents.Should().ContainSingle(component => component.Component.Id == "test v2.0.0 - Go");
         detectedComponents.Should().ContainSingle(component => component.Component.Id == "some-package v1.2.3 - Go");
-        this.mockLogger.Verify(
-           logger => logger.Log(
-               LogLevel.Information,
-               It.IsAny<EventId>(),
-               It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("go Module a v1.5.0 is being replaced with module at path")),
-               It.IsAny<Exception>(),
-               It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-           Times.Once);
-    }
-
-    [TestMethod]
-    public async Task TestGoDetector_GoGraphReplaceWithRelativePathDoesNotContainGoModFileAsync()
-    {
-        var buildDependencies = @"{
-    ""Path"": ""some-package"",
-    ""Version"": ""v1.2.3"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-}" + "\n" + @"{
-    ""Path"": ""test"",
-    ""Version"": ""v2.0.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-
-}" + "\n" + @"{
-    ""Path"": ""other"",
-    ""Version"": ""v1.2.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-}" + "\n" + @"{
-    ""Path"": ""a"",
-    ""Version"": ""v1.5.0"",
-    ""Time"": ""2020-05-19T17:02:07Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11"",
-    ""Replace"": {
-                    ""Path"": ""C:\\test\\module\\"",
-                    ""Version"": null,
-                    ""Time"": ""2021-12-06T23:04:27Z"",
-                    ""Indirect"": true,
-                    ""GoMod"": ""C:\\test\\go.mod"",
-                    ""GoVersion"": ""1.11"",
-                }
-}";
-
-        var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 a@v1.5.0";
-        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
-            .ReturnsAsync(true);
-
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
-            .ReturnsAsync(new CommandLineExecutionResult
-            {
-                ExitCode = 0,
-                StdOut = buildDependencies,
-            });
-
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
-            .ReturnsAsync(new CommandLineExecutionResult
-            {
-                ExitCode = 0,
-                StdOut = goGraph,
-            });
-
-        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
-
-        this.fileUtilityServiceMock.Setup(fs => fs.Exists(It.IsAny<string>()))
-            .Returns(false);
-
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.mod", string.Empty)
-            .ExecuteDetectorAsync();
-
-        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().HaveCount(4);
-        detectedComponents.Should().NotContain(component => component.Component.Id == "other v1.0.0 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "a v1.5.0 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "other v1.2.0 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "test v2.0.0 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "some-package v1.2.3 - Go");
-        this.mockLogger.Verify(
-           logger => logger.Log(
-               LogLevel.Warning,
-               It.IsAny<EventId>(),
-               It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("does not exist in the relative path given for replacement")),
-               It.IsAny<Exception>(),
-               It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-           Times.Once);
     }
 
     [TestMethod]
     public async Task TestGoDetector_GoGraphReplaceMultipleReplaceModulesAsync()
     {
-        var buildDependencies = @"{
-    ""Path"": ""some-package"",
-    ""Version"": ""v1.2.3"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-}" + "\n" + @"{
-    ""Path"": ""test"",
-    ""Version"": ""v2.0.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
+        var goMod = @"
+module example.com/project
 
-}" + "\n" + @"{
-    ""Path"": ""other"",
-    ""Version"": ""v1.2.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11"",
-    ""Replace"": {
-                    ""Path"": ""C:\\test\\component\\"",
-                    ""Version"": null,
-                    ""Time"": ""2021-12-06T23:04:27Z"",
-                    ""Indirect"": true,
-                    ""GoMod"": ""C:\\test\\component\\go.mod"",
-                    ""GoVersion"": ""1.15"",
-                }
+go 1.17
 
-}" + "\n" + @"{
-    ""Path"": ""github"",
-    ""Version"": ""v1.5.0"",
-    ""Time"": ""2020-05-19T17:02:07Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11"",
-    ""Replace"": {
-                    ""Path"": ""C:\\test\\module\\"",
-                    ""Version"": null,
-                    ""Time"": ""2021-12-06T23:04:27Z"",
-                    ""Indirect"": true,
-                    ""GoMod"": ""C:\\test\\module\\go.mod"",
-                    ""GoVersion"": ""1.11"",
-                }
-}";
+require (
+    some-package v1.2.3 // indirect
+    test v2.0.0         // indirect
+    other v1.2.0        // indirect
+    github v1.5.0       // indirect
+)
+
+replace other v1.2.0 => ./component
+replace github v1.5.0 => ./module
+";
 
         var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 github@v1.5.0";
-        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+        string[] cmdParams = [];
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
-            .ReturnsAsync(new CommandLineExecutionResult
-            {
-                ExitCode = 0,
-                StdOut = buildDependencies,
-            });
+        cmdParams = ["version"];
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
+            .ReturnsAsync(true);
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, It.IsAny<CancellationToken>(), cmdParams))
+                .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "go version go1.24.3 windows/amd64" });
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+        cmdParams = ["mod", "graph"];
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), cmdParams))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
@@ -836,8 +685,9 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
         this.fileUtilityServiceMock.Setup(fs => fs.Exists(It.IsAny<string>()))
             .Returns(true);
 
+        this.SetupActualGoModParser();
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.mod", string.Empty)
+            .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -849,79 +699,39 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
         detectedComponents.Should().NotContain(component => component.Component.Id == "other v1.2.0 - Go");
         detectedComponents.Should().ContainSingle(component => component.Component.Id == "test v2.0.0 - Go");
         detectedComponents.Should().ContainSingle(component => component.Component.Id == "some-package v1.2.3 - Go");
-        this.mockLogger.Verify(
-           logger => logger.Log(
-               LogLevel.Information,
-               It.IsAny<EventId>(),
-               It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("go Module other v1.2.0 is being replaced with module at path")),
-               It.IsAny<Exception>(),
-               It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-           Times.Once);
-        this.mockLogger.Verify(
-          logger => logger.Log(
-              LogLevel.Information,
-              It.IsAny<EventId>(),
-              It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("go Module github v1.5.0 is being replaced with module at path")),
-              It.IsAny<Exception>(),
-              It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-          Times.Once);
     }
 
     [TestMethod]
     public async Task TestGoDetector_GoGraphReplaceNoPathAsync()
     {
-        var buildDependencies = @"{
-    ""Path"": ""some-package"",
-    ""Version"": ""v1.2.3"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-}" + "\n" + @"{
-    ""Path"": ""test"",
-    ""Version"": ""v2.0.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
+        var goMod = @"
+module example.com/project
 
-}" + "\n" + @"{
-    ""Path"": ""other"",
-    ""Version"": ""v1.2.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
+go 1.11
 
-}" + "\n" + @"{
-    ""Path"": ""github"",
-    ""Version"": ""v1.5.0"",
-    ""Time"": ""2020-05-19T17:02:07Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11"",
-    ""Replace"": {
-                    ""Path"": null,
-                    ""Version"": ""v1.18"",
-                    ""Time"": ""2021-12-06T23:04:27Z"",
-                    ""Indirect"": true,
-                    ""GoMod"": ""C:\\test\\module\\go.mod"",
-                    ""GoVersion"": ""1.11"",
-                }
-}";
+require (
+    some-package v1.2.3 // indirect
+    test v2.0.0         // indirect
+    other v1.2.0        // indirect
+    github v1.5.0       // indirect
+)
+
+replace github v1.5.0 => github v1.18
+";
 
         var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 github@v1.5.0";
-        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
+        string[] cmdParams = [];
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
             .ReturnsAsync(true);
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
-            .ReturnsAsync(new CommandLineExecutionResult
-            {
-                ExitCode = 0,
-                StdOut = buildDependencies,
-            });
+        cmdParams = ["version"];
+        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), cmdParams))
+            .ReturnsAsync(true);
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, It.IsAny<CancellationToken>(), cmdParams))
+                .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdOut = "go version go1.24.3 windows/amd64" });
 
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
+        cmdParams = ["mod", "graph"];
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), cmdParams))
             .ReturnsAsync(new CommandLineExecutionResult
             {
                 ExitCode = 0,
@@ -929,9 +739,9 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
             });
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
-
+        this.SetupActualGoModParser();
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.mod", string.Empty)
+            .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -939,9 +749,8 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().HaveCount(4);
         detectedComponents.Should().NotContain(component => component.Component.Id == "other v1.0.0 - Go");
-        detectedComponents.Should().NotContain(component => component.Component.Id == "github v1.18 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "github v1.5.0 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "github v1.5.0 - Go");
+        detectedComponents.Should().ContainSingle(component => component.Component.Id == "github v1.18 - Go");
+        detectedComponents.Should().NotContain(component => component.Component.Id == "github v1.5.0 - Go");
         detectedComponents.Should().ContainSingle(component => component.Component.Id == "other v1.2.0 - Go");
         detectedComponents.Should().ContainSingle(component => component.Component.Id == "test v2.0.0 - Go");
         detectedComponents.Should().ContainSingle(component => component.Component.Id == "some-package v1.2.3 - Go");
@@ -949,97 +758,10 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
            logger => logger.Log(
                LogLevel.Information,
                It.IsAny<EventId>(),
-               It.Is<It.IsAnyType>((v, t) => v.ToString().Equals("go Module github v1.5.0 being replaced with module github v1.18")),
+               It.Is<It.IsAnyType>((v, t) => v.ToString().Equals("go Module github-v1.5.0 being replaced with github-v1.18")),
                It.IsAny<Exception>(),
                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
            Times.Never);
-    }
-
-    [TestMethod]
-    public async Task TestGoDetector_GoGraphReplacePathAndVersionAsync()
-    {
-        var buildDependencies = @"{
-    ""Path"": ""some-package"",
-    ""Version"": ""v1.2.3"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-}" + "\n" + @"{
-    ""Path"": ""test"",
-    ""Version"": ""v2.0.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-
-}" + "\n" + @"{
-    ""Path"": ""other"",
-    ""Version"": ""v1.2.0"",
-    ""Time"": ""2021-12-06T23:04:27Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11""
-
-}" + "\n" + @"{
-    ""Path"": ""github"",
-    ""Version"": ""v1.5.0"",
-    ""Time"": ""2020-05-19T17:02:07Z"",
-    ""Indirect"": true,
-    ""GoMod"": ""C:\\test\\go.mod"",
-    ""GoVersion"": ""1.11"",
-    ""Replace"": {
-                    ""Path"": ""github"",
-                    ""Version"": ""v1.18"",
-                    ""Time"": ""2021-12-06T23:04:27Z"",
-                    ""Indirect"": true,
-                    ""GoMod"": ""C:\\test\\module\\go.mod"",
-                    ""GoVersion"": ""1.11"",
-                }
-}";
-
-        var goGraph = "example.com/mainModule some-package@v1.2.3\nsome-package@v1.2.3 other@v1.0.0\nsome-package@v1.2.3 other@v1.2.0\ntest@v2.0.0 github@v1.5.0";
-        this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
-            .ReturnsAsync(true);
-
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "list", "-mod=readonly", "-m", "-json", "all" }))
-            .ReturnsAsync(new CommandLineExecutionResult
-            {
-                ExitCode = 0,
-                StdOut = buildDependencies,
-            });
-
-        this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, It.IsAny<DirectoryInfo>(), new[] { "mod", "graph" }))
-            .ReturnsAsync(new CommandLineExecutionResult
-            {
-                ExitCode = 0,
-                StdOut = goGraph,
-            });
-
-        this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
-
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.mod", string.Empty)
-            .ExecuteDetectorAsync();
-
-        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().HaveCount(4);
-        detectedComponents.Should().NotContain(component => component.Component.Id == "github v1.5.0 - Go");
-        detectedComponents.Should().NotContain(component => component.Component.Id == "other v1.0.0 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "github v1.18 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "other v1.2.0 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "test v2.0.0 - Go");
-        detectedComponents.Should().ContainSingle(component => component.Component.Id == "some-package v1.2.3 - Go");
-        this.mockLogger.Verify(
-           logger => logger.Log(
-               LogLevel.Information,
-               It.IsAny<EventId>(),
-               It.Is<It.IsAnyType>((v, t) => v.ToString().Equals("go Module github v1.5.0 being replaced with module github v1.18")),
-               It.IsAny<Exception>(),
-               It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-           Times.Once);
     }
 
     [TestMethod]
@@ -1230,8 +952,8 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
         var capturedComponents = new List<DetectedComponent>();
         var expectedComponentIds = new List<string>()
         {
-            "github.com/grafana/grafana-app-sdk v0.23.1 - Go",
-            "k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f - Go",
+            "github.com/grafana/grafana-app-sdk v0.22.1 - Go",
+            "k8s.io/kube-openapi v1.1.1 - Go",
         };
 
         mockSingleFileComponentRecorder

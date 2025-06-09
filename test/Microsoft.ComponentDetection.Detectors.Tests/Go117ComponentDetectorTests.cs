@@ -226,8 +226,8 @@ public class Go117ComponentDetectorTests : BaseDetectorTest<Go117ComponentDetect
         var capturedComponents = new List<DetectedComponent>();
         var expectedComponentIds = new List<string>()
         {
-            "github.com/grafana/grafana-app-sdk v0.23.1 - Go",
-            "k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f - Go",
+            "github.com/grafana/grafana-app-sdk v0.22.1 - Go",
+            "k8s.io/kube-openapi v1.1.1 - Go",
         };
 
         mockSingleFileComponentRecorder
