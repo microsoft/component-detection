@@ -6,13 +6,13 @@ Go detection runs when one of the following files is found in the project:
 
 -   `go.mod` or `go.sum`
 
-## Default Detection strategy
+## Detection strategy
 
-### go.mod
+### go.mod parsing
 - All go.mod are parsed to detect dependencies. This parsing doesn't depend on presence of `go cli`.
 
-### go cli (go list) or go.sum Parsing
-- If a `go.sum` file is found, detector first checks if go version in the adjacent `go.mod` >= `1.17`. If it is `>= 1.17`, the file is skipped. If it is `< 1.17`, the detector proceeds as follows. Read [Go Module Changes in Go 1.17](#go-module-changes-in-go-117) to understand why `1.17` is relevant.
+### go cli (go list) or go.sum parsing
+- If a `go.sum` file is found, detector first checks if go version in the adjacent `go.mod` ≥`1.17`. If it is `≥1.17`, the file is skipped. If it is `< 1.17`, the detector proceeds as follows. Read [Go Module Changes in Go 1.17](#go-module-changes-in-go-117) to understand why `1.17` is relevant.
 - If `go cli` is found and not [disabled](#environment-variables), `go list` command is preferred over parsing `go.sum` file since `go.sum` files contains history of dependencies and including these dependencies can lead to [over-reporting](#known-limitations).
 - If `go list` was not used or did not run successfully, detector falls back to parsing `go.sum` manually.
 
@@ -22,22 +22,24 @@ on the build agent. To generate the graph, the command
 [go mod graph][2] is executed. This only adds edges between the components
 that were already registered.
 
-## Fallback Detection strategy
+## Default Detection Strategy
 
-The fallback strategy refers to detector parsing `go.sum` manually.
-TThis strategy is known to overreport (see the
-[known limitations](#known-limitations)). Read through the
-[troubleshooting section](#troubleshooting-failures-to-run-the-default-go-detection-strategy)
-for tips on how to ensure that the newer, more accurate default
-detection strategy runs successfully.
+The Go detector’s default behavior is optimized to reduce over-reporting by leveraging improvements introduced in Go 1.17.
 
-To force the fallback detection strategy, set the environment
-variable: `DisableGoCliScan=true`
+- When a go.mod file declares a Go version ≥ 1.17, the detector analyzes only the go.mod file to determine dependencies.
+- If the go.mod file specifies a Go version < 1.17, the detector uses a fallback strategy to ensure coverage.
+Read more about this in the [Fallback Detection Strategy](#fallback-detection-strategy)
+
+## Fallback Detection Strategy
+
+The fallback detection strategy is used when the default strategy (based on `go.mod` files with `Go 1.17` or later) cannot be applied. 
+In this mode, the detector uses `Go CLI` or manually parses `go.sum` to resolve dependencies. This strategy is known to overreport (see the [known limitations](#known-limitations)). Read through the [troubleshooting-section](#troubleshooting-failures-to-run-the-default-go-detection-strategy) for tips on how to ensure that the newer, more accurate default detection strategy runs successfully.
+
+To force the fallback detection strategy, set the environment variable: `DisableGoCliScan=true`
 
 ### `go.mod` before go 1.17
 
-Go detection is performed by parsing any `go.mod` or `go.sum` found
-under the scan directory.
+Go detection is performed by parsing any `go.mod` files, and either invoking the `Go CLI` or manually parsing `go.sum` files found under the scan directory.
 
 Only root dependency information is generated in the fallback detection
 strategy. The full graph is not detected.
@@ -263,7 +265,7 @@ file now includes information about both direct and transitive
 dependencies. This improvement enhances the clarity and completeness
 of dependency information within the `go.mod` file.
 
-The completeness of `go.mod` file in `>= 1.17` allows the detector to skip `go.sum` files entirely. 
+The completeness of `go.mod` file in `≥1.17` allows the detector to skip `go.sum` files entirely. 
 
 #### Relevance of the Go Version Check
 
