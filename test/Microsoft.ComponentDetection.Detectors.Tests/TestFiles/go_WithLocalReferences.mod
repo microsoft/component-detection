@@ -1,4 +1,4 @@
-module github.com/Go117Tests
+module github.com/GoTests
 
 go 1.23.5
 

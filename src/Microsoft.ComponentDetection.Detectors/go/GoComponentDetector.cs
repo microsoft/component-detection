@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
@@ -19,26 +20,8 @@ public class GoComponentDetector : FileComponentDetector
     private readonly HashSet<string> projectRoots = [];
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
-    private readonly IEnvironmentVariableService envVarService;
-    private readonly IFileUtilityService fileUtilityService;
     private readonly IGoParserFactory goParserFactory;
-
-    public GoComponentDetector(
-        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
-        IObservableDirectoryWalkerFactory walkerFactory,
-        ICommandLineInvocationService commandLineInvocationService,
-        IEnvironmentVariableService envVarService,
-        ILogger<GoComponentDetector> logger,
-        IFileUtilityService fileUtilityService)
-    {
-        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
-        this.Scanner = walkerFactory;
-        this.commandLineInvocationService = commandLineInvocationService;
-        this.envVarService = envVarService;
-        this.Logger = logger;
-        this.fileUtilityService = fileUtilityService;
-        this.goParserFactory = new GoParserFactory(fileUtilityService, commandLineInvocationService);
-    }
+    private readonly IEnvironmentVariableService envVarService;
 
     public GoComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
@@ -47,15 +30,14 @@ public class GoComponentDetector : FileComponentDetector
         IEnvironmentVariableService envVarService,
         ILogger<GoComponentDetector> logger,
         IFileUtilityService fileUtilityService,
-        IGoParserFactory factory)
+        IGoParserFactory goParserFactory)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.commandLineInvocationService = commandLineInvocationService;
-        this.envVarService = envVarService;
         this.Logger = logger;
-        this.fileUtilityService = fileUtilityService;
-        this.goParserFactory = factory;
+        this.goParserFactory = goParserFactory;
+        this.envVarService = envVarService;
     }
 
     public override string Id => "Go";
@@ -66,14 +48,13 @@ public class GoComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Go];
 
-    public override int Version => 8;
+    public override int Version => 9;
 
     protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests,
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
-        // Filter out any go.sum process requests if the adjacent go.mod file is present and has a go version >= 1.17
         var goModProcessRequests = processRequests.Where(processRequest =>
         {
             if (Path.GetFileName(processRequest.ComponentStream.Location) != "go.sum")
@@ -105,6 +86,150 @@ public class GoComponentDetector : FileComponentDetector
         return Task.FromResult(goModProcessRequests);
     }
 
+    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
+    {
+        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+        var file = processRequest.ComponentStream;
+
+        var projectRootDirectory = Directory.GetParent(file.Location);
+        if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
+        {
+            return;
+        }
+
+        using var record = new GoGraphTelemetryRecord();
+        var wasGoCliDisabled = this.IsGoCliManuallyDisabled();
+        record.WasGoCliDisabled = wasGoCliDisabled;
+        record.WasGoFallbackStrategyUsed = false;
+
+        var fileExtension = Path.GetExtension(file.Location).ToUpperInvariant();
+        switch (fileExtension)
+        {
+            case ".MOD":
+            {
+                this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
+                await this.goParserFactory.CreateParser(GoParserType.GoMod, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+
+                if (await this.ShouldRunGoGraphAsync())
+                {
+                    await GoDependencyGraphUtility.GenerateAndPopulateDependencyGraphAsync(
+                        this.commandLineInvocationService,
+                        this.Logger,
+                        singleFileComponentRecorder,
+                        projectRootDirectory.FullName,
+                        record,
+                        cancellationToken);
+                }
+
+                break;
+            }
+
+            case ".SUM":
+            {
+                this.Logger.LogDebug("Found Go.sum: {Location}", file.Location);
+
+                // check if we can use Go CLI instead
+                var wasGoCliScanSuccessful = false;
+
+                try
+                {
+                    if (!wasGoCliDisabled)
+                    {
+                        wasGoCliScanSuccessful = await this.goParserFactory.CreateParser(GoParserType.GoCLI, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+                    }
+                    else
+                    {
+                        this.Logger.LogInformation("Go cli scan was manually disabled, fallback strategy performed.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.Logger.LogError(ex, "Failed to detect components using go cli. Location: {Location}", file.Location);
+                    record.ExceptionMessage = ex.Message;
+                }
+
+                this.Logger.LogDebug("Status of Go CLI scan when considering {GoSumLocation}: {Status}", file.Location, wasGoCliScanSuccessful);
+
+                // If Go CLI scan was not successful/disabled, scan go.sum because this go.sum was recorded due to go.mod
+                // containing go < 1.17. So go.mod is incomplete. We need to parse go.sum to make list of dependencies complete
+                if (!wasGoCliScanSuccessful)
+                {
+                    record.WasGoFallbackStrategyUsed = true;
+                    this.Logger.LogDebug("Go CLI scan when considering {GoSumLocation} was not successful. Falling back to scanning go.sum", file.Location);
+                    await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+                }
+                else
+                {
+                    this.projectRoots.Add(projectRootDirectory.FullName);
+                }
+
+                break;
+            }
+
+            default:
+            {
+                throw new InvalidOperationException("Unexpected file type detected in go detector");
+            }
+        }
+    }
+
+    private bool IsGoCliManuallyDisabled()
+    {
+        return this.envVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
+    }
+
+    private async Task<bool> ShouldRunGoGraphAsync()
+    {
+        if (this.IsGoCliManuallyDisabled())
+        {
+            return false;
+        }
+
+        var goVersion = await this.GetGoVersionAsync();
+        if (goVersion == null)
+        {
+            return false;
+        }
+
+        return goVersion >= new Version(1, 11);
+    }
+
+    private async Task<Version> GetGoVersionAsync()
+    {
+        try
+        {
+            var isGoAvailable = await this.commandLineInvocationService.CanCommandBeLocatedAsync("go", null, null, new List<string> { "version" }.ToArray());
+            if (!isGoAvailable)
+            {
+                this.Logger.LogInformation("Go CLI was not found in the system");
+                return null;
+            }
+
+            var processExecution = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, null, cancellationToken: default, new List<string> { "version" }.ToArray());
+            if (processExecution.ExitCode != 0)
+            {
+                return null;
+            }
+
+            // Define the regular expression pattern to match the version number
+            var versionPattern = @"go version go(\d+\.\d+\.\d+)";
+            var match = Regex.Match(processExecution.StdOut, versionPattern);
+
+            if (match.Success)
+            {
+                // Extract the version number from the match
+                var versionStr = match.Groups[1].Value;
+                return new Version(versionStr);
+            }
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogWarning("Failed to get go version: {Exception}", e);
+        }
+
+        return null;
+    }
+
     private IEnumerable<ComponentStream> FindAdjacentGoModComponentStreams(ProcessRequest processRequest) =>
         this.ComponentStreamEnumerableFactory.GetComponentStreams(
                 new FileInfo(processRequest.ComponentStream.Location).Directory,
@@ -126,84 +251,4 @@ public class GoComponentDetector : FileComponentDetector
                     Pattern = x.Pattern,
                 };
             });
-
-    protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
-    {
-        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-        var file = processRequest.ComponentStream;
-
-        var projectRootDirectory = Directory.GetParent(file.Location);
-        if (this.projectRoots.Any(path => projectRootDirectory.FullName.StartsWith(path)))
-        {
-            return;
-        }
-
-        using var record = new GoGraphTelemetryRecord();
-        record.WasGoCliDisabled = false;
-        record.WasGoFallbackStrategyUsed = false;
-
-        var wasGoCliScanSuccessful = false;
-        try
-        {
-            if (!this.IsGoCliManuallyDisabled())
-            {
-                wasGoCliScanSuccessful = await this.goParserFactory.CreateParser(GoParserType.GoCLI, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
-            }
-            else
-            {
-                record.WasGoCliDisabled = true;
-                this.Logger.LogInformation("Go cli scan was manually disabled, fallback strategy performed." +
-                                           " More info: https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy");
-            }
-        }
-        catch (Exception ex)
-        {
-            this.Logger.LogError(ex, "Failed to detect components using go cli. Location: {Location}", file.Location);
-            record.ExceptionMessage = ex.Message;
-        }
-        finally
-        {
-            if (wasGoCliScanSuccessful)
-            {
-                this.projectRoots.Add(projectRootDirectory.FullName);
-            }
-            else
-            {
-                record.WasGoFallbackStrategyUsed = true;
-                await this.ParseGoFileAsync(file, singleFileComponentRecorder, record);
-            }
-        }
-    }
-
-    private async Task ParseGoFileAsync(IComponentStream file, ISingleFileComponentRecorder singleFileComponentRecorder, GoGraphTelemetryRecord record)
-    {
-        var fileExtension = Path.GetExtension(file.Location).ToUpperInvariant();
-        switch (fileExtension)
-        {
-            case ".MOD":
-            {
-                this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
-
-                await this.goParserFactory.CreateParser(GoParserType.GoMod, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
-                break;
-            }
-
-            case ".SUM":
-            {
-                this.Logger.LogDebug("Found Go.sum: {Location}", file.Location);
-                await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
-                break;
-            }
-
-            default:
-            {
-                throw new InvalidOperationException("Unexpected file type detected in go detector");
-            }
-        }
-    }
-
-    private bool IsGoCliManuallyDisabled()
-    {
-        return this.envVarService.IsEnvironmentVariableValueTrue("DisableGoCliScan");
-    }
 }

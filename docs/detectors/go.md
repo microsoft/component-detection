@@ -8,22 +8,24 @@ Go detection runs when one of the following files is found in the project:
 
 ## Default Detection strategy
 
-Default Go detection depends on the following to successfully run:
+### go.mod
+- All go.mod are parsed to detect dependencies. This parsing doesn't depend on presence of `go cli`.
 
--   Go v1.11+.
+### go cli (go list) or go.sum Parsing
+- If a `go.sum` file is found, detector first checks if go version in the adjacent `go.mod` >= `1.17`. If it is `>= 1.17`, the file is skipped. If it is `< 1.17`, the detector proceeds as follows. Read [Go Module Changes in Go 1.17](#go-module-changes-in-go-117) to understand why `1.17` is relevant.
+- If `go cli` is found and not [disabled](#environment-variables), `go list` command is preferred over parsing `go.sum` file since `go.sum` files contains history of dependencies and including these dependencies can lead to [over-reporting](#known-limitations).
+- If `go list` was not used or did not run successfully, detector falls back to parsing `go.sum` manually.
 
+### Dependency graph generation
 Full dependency graph generation is supported if Go v1.11+ is present
-on the build agent. If no Go v1.11+ is present, fallback detection
-strategy is performed.
-
-Go detection is performed by parsing output from executing
-[go list -mod=readonly -m -json all][1]. To generate the graph, the command
+on the build agent. To generate the graph, the command
 [go mod graph][2] is executed. This only adds edges between the components
-that were already registered by `go list`.
+that were already registered.
 
 ## Fallback Detection strategy
 
-The fallback detections trategy is known to overreport (see the
+The fallback strategy refers to detector parsing `go.sum` manually.
+TThis strategy is known to overreport (see the
 [known limitations](#known-limitations)). Read through the
 [troubleshooting section](#troubleshooting-failures-to-run-the-default-go-detection-strategy)
 for tips on how to ensure that the newer, more accurate default
@@ -249,55 +251,6 @@ of the package contents.
    making it possible to recreate the same build environment
    consistently.
 
-### Detection Strategy
-
-The Go Component Detector follows a strategy that involves the
-following key steps:
-
-1. **File Discovery**: The detector searches for go.mod and go.sum files
-   within the project directory.
-
-2. **Filtering go.sum Files**: The detector filters out go.sum files when
-   there is no adjacent go.mod file or when the go.mod file specifies
-   a Go version lower than 1.17. This filtering reduces the risk of
-   over-reporting components. More on this later.
-
-3. **Go CLI Scanning (Optional)**: If the Go CLI (go) is available and not
-   manually disabled, the detector attempts to use it to scan the
-   project for dependencies and build a dependency graph. This step can
-   significantly improve detection speed.
-
-4. **Fallback Detection**: If Go CLI scanning is not possible or not
-   successful, the detector falls back to parsing go.mod and go.sum
-   files directly to identify components.
-
-5. **Parsing go.mod File**: The detector parses the go.mod file to
-   identify direct and transitive dependencies, recording their names
-   and versions.
-
-6. **Parsing go.sum File**: The detector parses the go.sum file, recording
-   information about dependencies, including their names, versions,
-   and hashes.
-
-7. **Dependency Graph Construction**: If Go CLI scanning was successful,
-   the detector constructs a dependency graph based on the information
-   gathered. This graph helps identify relationships between components.
-
-8. **Recording Components**: Throughout the detection process, the
-   detector records identified components and their relationships.
-
-9. **Environment Variable Check**: The detector checks for an environment
-   variable (DisableGoCliScan) to determine whether Go CLI scanning
-   should be disabled.
-
-The logic for checking if the Go version present in the `go.mod` file
-is greater than or equal to 1.17 is relevant because it determines
-whether the `go.sum` file should be processed for detection.
-
-This check is essential because Go introduced significant changes in
-how it handles dependencies and the `go.sum` file in Go version 1.17,
-which have implications for dependency scanning.
-
 ### Go Module Changes in Go 1.17
 
 Prior to Go 1.17, the `go.mod` file primarily contained information
@@ -309,6 +262,8 @@ In Go 1.17 and later, Go introduced an important change: the `go.mod`
 file now includes information about both direct and transitive
 dependencies. This improvement enhances the clarity and completeness
 of dependency information within the `go.mod` file.
+
+The completeness of `go.mod` file in `>= 1.17` allows the detector to skip `go.sum` files entirely. 
 
 #### Relevance of the Go Version Check
 
