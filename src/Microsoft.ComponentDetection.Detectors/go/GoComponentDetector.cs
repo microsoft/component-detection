@@ -50,12 +50,12 @@ public class GoComponentDetector : FileComponentDetector
 
     public override int Version => 9;
 
-    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+    protected async override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests,
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
-        var goModProcessRequests = processRequests.Where(processRequest =>
+        var filteredGoProcessRequests = await processRequests.Where(processRequest =>
         {
             if (Path.GetFileName(processRequest.ComponentStream.Location) != "go.sum")
             {
@@ -81,9 +81,15 @@ public class GoComponentDetector : FileComponentDetector
             {
                 goModFile?.Stream.Dispose();
             }
-        });
+        }).ToList(); // Materialize the filtered items for sorting
 
-        return Task.FromResult(goModProcessRequests);
+        // Sort by depth: shallow files (fewer directory segments) come first
+        var sortedGoProcessRequests = filteredGoProcessRequests
+            .OrderBy(pr => pr.ComponentStream.Location.Count(c => c == Path.DirectorySeparatorChar))
+            .ThenBy(pr => Path.GetFileName(pr.ComponentStream.Location))
+            .ToList();
+
+        return sortedGoProcessRequests.ToObservable();
     }
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
@@ -108,7 +114,20 @@ public class GoComponentDetector : FileComponentDetector
             case ".MOD":
             {
                 this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
-                await this.goParserFactory.CreateParser(GoParserType.GoMod, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+                var wasModParsedSuccessfully = await this.goParserFactory.CreateParser(GoParserType.GoMod, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+
+                // Check if go.mod was parsed successfully and Go version is >= 1.17 in go.mod
+                if (wasModParsedSuccessfully &&
+                    !string.IsNullOrEmpty(record.GoModVersion) &&
+                    System.Version.TryParse(record.GoModVersion, out var goVersion) &&
+                    goVersion >= new Version(1, 17))
+                {
+                    this.projectRoots.Add(projectRootDirectory.FullName);
+                }
+                else
+                {
+                    this.Logger.LogWarning("Not adding {Root} to processed roots: {ParseSuccess} {GoModVersion}", projectRootDirectory.FullName, wasModParsedSuccessfully, record.GoModVersion);
+                }
 
                 if (await this.ShouldRunGoGraphAsync())
                 {
