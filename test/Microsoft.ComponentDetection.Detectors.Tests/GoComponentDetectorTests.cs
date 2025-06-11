@@ -1060,11 +1060,11 @@ replace github v1.5.0 => github v1.18
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         processedFiles.Should().HaveCount(5);
         processedFiles.Should().ContainInOrder(
-            @"C:\root\go.mod",
-            @"C:\root\a\go.mod",
-            @"C:\root\b\go.mod",
-            @"C:\root\a\a\go.mod",
-            @"C:\root\a\b\go.mod");
+            Path.Combine(root, "go.mod"),
+            Path.Combine(root, "a", "go.mod"),
+            Path.Combine(root, "b", "go.mod"),
+            Path.Combine(root, "a", "a", "go.mod"),
+            Path.Combine(root, "a", "b", "go.mod"));
     }
 
     /// <summary>
