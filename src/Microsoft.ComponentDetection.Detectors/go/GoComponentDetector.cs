@@ -86,7 +86,7 @@ public class GoComponentDetector : FileComponentDetector
         // Sort by depth: shallow files (fewer directory segments) come first
         var sortedGoProcessRequests = filteredGoProcessRequests
             .OrderBy(pr => pr.ComponentStream.Location.Count(c => c == Path.DirectorySeparatorChar))
-            .ThenBy(pr => Path.GetFileName(pr.ComponentStream.Location))
+            .ThenBy(pr => pr.ComponentStream.Location)
             .ToList();
 
         return sortedGoProcessRequests.ToObservable();
