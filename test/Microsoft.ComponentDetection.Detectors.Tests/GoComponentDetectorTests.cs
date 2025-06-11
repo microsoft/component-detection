@@ -1003,19 +1003,20 @@ replace github v1.5.0 => github v1.18
                 record.GoModVersion = "1.18";
             });
 
+        var root = Path.Combine("C:", "root");
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\a\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\b\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\d\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\a\go.mod")
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "d", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "a", "go.mod"))
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         processedFiles.Should().ContainSingle();
-        processedFiles.Should().OnlyContain(p => p == $@"C:\root\go.mod");
+        processedFiles.Should().OnlyContain(p => p == Path.Combine(root, "go.mod"));
     }
 
     /// <summary>
@@ -1025,6 +1026,7 @@ replace github v1.5.0 => github v1.18
     [TestMethod]
     public async Task GoDetector_GoMod_VerifyNestedRootsUnderLT117AreNotSkipped()
     {
+        var root = Path.Combine("C:", "root");
         var processedFiles = new List<string>();
         this.SetupMockGoModParser();
         this.mockGoModParser
@@ -1033,23 +1035,26 @@ replace github v1.5.0 => github v1.18
             .Callback<ISingleFileComponentRecorder, IComponentStream, GoGraphTelemetryRecord>((_, file, record) =>
             {
                 processedFiles.Add(file.Location);
-
+                var rootMod = Path.Combine(root, "go.mod");
+                var aMod = Path.Combine(root, "a", "go.mod");
+                var bMod = Path.Combine(root, "b", "go.mod");
                 record.GoModVersion = file.Location switch
                 {
-                    @"C:\root\go.mod" => "1.16",
-                    @"C:\root\a\go.mod" => "1.16",
-                    @"C:\root\b\go.mod" => "1.17",
+                    var loc when loc == rootMod => "1.16",
+                    var loc when loc == aMod => "1.16",
+                    var loc when loc == bMod => "1.17",
                     _ => null,
                 };
             });
+
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\a\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\b\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\d\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\a\go.mod")
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "d", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "a", "go.mod"))
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -1070,6 +1075,7 @@ replace github v1.5.0 => github v1.18
     public async Task GoDetector_GoMod_VerifyNestedRootsAreNotSkippedIfParentParseFails()
     {
         var processedFiles = new List<string>();
+        var root = Path.Combine("C:", "root");
         this.SetupMockGoModParser();
 
         this.mockGoModParser
@@ -1077,14 +1083,16 @@ replace github v1.5.0 => github v1.18
             .ReturnsAsync((ISingleFileComponentRecorder recorder, IComponentStream file, GoGraphTelemetryRecord record) =>
             {
                 processedFiles.Add(file.Location);
+                var aMod = Path.Combine(root, "a", "go.mod");
+                var bMod = Path.Combine(root, "b", "go.mod");
                 record.GoModVersion = file.Location switch
                 {
-                    @"C:\root\b\go.mod" => "1.18",
+                    var loc when loc == bMod => "1.18",
                     _ => "1.16",
                 };
 
                 // Simulate parse failure only for C:\root\a\go.mod
-                if (file.Location == @"C:\root\a\go.mod")
+                if (file.Location == aMod)
                 {
                     return false;
                 }
@@ -1093,23 +1101,23 @@ replace github v1.5.0 => github v1.18
             });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\a\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\b\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\d\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\a\go.mod")
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "d", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "a", "go.mod"))
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         processedFiles.Should().HaveCount(5);
         processedFiles.Should().ContainInOrder(
-            @"C:\root\go.mod",
-            @"C:\root\a\go.mod",
-            @"C:\root\b\go.mod",
-            @"C:\root\a\a\go.mod",
-            @"C:\root\a\b\go.mod");
+            Path.Combine(root, "go.mod"),
+            Path.Combine(root, "a", "go.mod"),
+            Path.Combine(root, "b", "go.mod"),
+            Path.Combine(root, "a", "a", "go.mod"),
+            Path.Combine(root, "a", "b", "go.mod"));
     }
 
     /// <summary>
@@ -1121,6 +1129,7 @@ replace github v1.5.0 => github v1.18
     public async Task GoDetector_GoSum_VerifyNestedRootsUnderGoSum_AreSkipped()
     {
         var processedFiles = new List<string>();
+        var root = Path.Combine("C:", "root");
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
         this.SetupMockGoCLIParser();
         this.mockGoCliParser
@@ -1132,24 +1141,25 @@ replace github v1.5.0 => github v1.18
             });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\a\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\b\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\go.mod")
-            .WithFile("go.sum", string.Empty, fileLocation: @"C:\root\go.sum")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\d\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\a\go.mod")
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "go.mod"))
+            .WithFile("go.sum", string.Empty, fileLocation: Path.Combine(root, "go.sum"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "d", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "a", "go.mod"))
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         processedFiles.Should().ContainSingle();
-        processedFiles.Should().OnlyContain(p => p == $@"C:\root\go.sum");
+        processedFiles.Should().OnlyContain(p => p == Path.Combine(root, "go.sum"));
     }
 
     [TestMethod]
     public async Task GoDetector_GoSum_VerifyNestedRootsAreNotSkippedIfParentParseFails()
     {
         var processedFiles = new List<string>();
+        var root = Path.Combine("C:", "root");
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
         this.SetupMockGoModParser();
         this.SetupMockGoCLIParser();
@@ -1160,9 +1170,10 @@ replace github v1.5.0 => github v1.18
             .ReturnsAsync((ISingleFileComponentRecorder recorder, IComponentStream file, GoGraphTelemetryRecord record) =>
             {
                 processedFiles.Add(file.Location);
+                var bMod = Path.Combine(root, "b", "go.mod");
                 record.GoModVersion = file.Location switch
                 {
-                    @"C:\root\b\go.mod" => "1.18",
+                    var loc when loc == bMod => "1.18",
                     _ => "1.16",
                 };
 
@@ -1174,26 +1185,26 @@ replace github v1.5.0 => github v1.18
             .ReturnsAsync((ISingleFileComponentRecorder recorder, IComponentStream file, GoGraphTelemetryRecord record) =>
             {
                 processedFiles.Add(file.Location);
-                return file.Location != @"C:\root\a\go.sum";
+                return file.Location != Path.Combine(root, "a", "go.sum");
             });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("go.sum", string.Empty, fileLocation: @"C:\root\a\go.sum")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\a\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\a\b\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\d\go.mod")
-            .WithFile("go.mod", string.Empty, fileLocation: @"C:\root\b\a\go.mod")
+            .WithFile("go.sum", string.Empty, fileLocation: Path.Combine(root, "a", "go.sum"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "d", "go.mod"))
+            .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "b", "a", "go.mod"))
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         processedFiles.Should().HaveCount(5);
         processedFiles.Should().ContainInOrder(
-            @"C:\root\go.mod",
-            @"C:\root\a\go.sum",
-            @"C:\root\b\go.mod",
-            @"C:\root\a\a\go.mod",
-            @"C:\root\a\b\go.mod");
+            Path.Combine(root, "go.mod"),
+            Path.Combine(root, "a", "go.sum"),
+            Path.Combine(root, "b", "go.mod"),
+            Path.Combine(root, "a", "a", "go.mod"),
+            Path.Combine(root, "a", "b", "go.mod"));
     }
 }
