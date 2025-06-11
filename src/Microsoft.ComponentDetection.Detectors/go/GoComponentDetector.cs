@@ -126,7 +126,7 @@ public class GoComponentDetector : FileComponentDetector
                 }
                 else
                 {
-                    this.Logger.LogWarning("Not adding {Root} to processed roots: {ParseSuccess} {GoModVersion}", projectRootDirectory.FullName, wasModParsedSuccessfully, record.GoModVersion);
+                    this.Logger.LogDebug("Not adding {Root} to processed roots: {ParseSuccess} {GoModVersion}", projectRootDirectory.FullName, wasModParsedSuccessfully, record.GoModVersion);
                 }
 
                 if (await this.ShouldRunGoGraphAsync())
