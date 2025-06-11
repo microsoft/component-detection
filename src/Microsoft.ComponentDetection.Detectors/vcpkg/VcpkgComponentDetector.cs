@@ -1,9 +1,11 @@
 namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -16,6 +18,7 @@ using Newtonsoft.Json;
 public class VcpkgComponentDetector : FileComponentDetector
 {
     private readonly HashSet<string> projectRoots = [];
+    private readonly ConcurrentDictionary<string, ManifestInfo> manifestMappings = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;
@@ -38,7 +41,7 @@ public class VcpkgComponentDetector : FileComponentDetector
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Vcpkg)];
 
-    public override IList<string> SearchPatterns { get; } = ["vcpkg.spdx.json"];
+    public override IList<string> SearchPatterns { get; } = ["vcpkg.spdx.json", "manifest-info.json"];
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Vcpkg];
 
@@ -57,7 +60,44 @@ public class VcpkgComponentDetector : FileComponentDetector
             return;
         }
 
-        await this.ParseSpdxFileAsync(singleFileComponentRecorder, file);
+        await this.ParseSpdxFileAsync(this.GetManifestComponentRecorder(singleFileComponentRecorder), file);
+    }
+
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
+    {
+        var filteredProcessRequests = new List<ProcessRequest>();
+
+        await processRequests.ForEachAsync(async pr =>
+        {
+            var fileLocation = pr.ComponentStream.Location;
+            var fileName = Path.GetFileName(fileLocation);
+
+            if (fileName.Equals("manifest-info.json", StringComparison.OrdinalIgnoreCase))
+            {
+                this.Logger.LogDebug("Discovered VCPKG package manifest file at: {Location}", pr.ComponentStream.Location);
+
+                using (var reader = new StreamReader(pr.ComponentStream.Stream))
+                {
+                    var contents = await reader.ReadToEndAsync().ConfigureAwait(false);
+                    var manifestData = JsonConvert.DeserializeObject<ManifestInfo>(contents);
+
+                    if (manifestData == null || string.IsNullOrWhiteSpace(manifestData.ManifestPath))
+                    {
+                        this.Logger.LogWarning("Failed to deserialize manifest-info.json or missing ManifestPath at {Path}", pr.ComponentStream.Location);
+                    }
+                    else
+                    {
+                        this.manifestMappings.TryAdd(fileLocation, manifestData);
+                    }
+                }
+            }
+            else
+            {
+                filteredProcessRequests.Add(pr);
+            }
+        }).ConfigureAwait(false);
+
+        return filteredProcessRequests.ToObservable();
     }
 
     private async Task ParseSpdxFileAsync(
@@ -122,5 +162,68 @@ public class VcpkgComponentDetector : FileComponentDetector
                 singleFileComponentRecorder.RegisterPackageParseFailure(item.Name);
             }
         }
+    }
+
+    /// <summary>
+    /// Attempts to resolve and return a manifest component recorder for the given recorder.
+    /// Returns the matching manifest component recorder if found; otherwise, returns the original recorder.
+    /// </summary>
+    private ISingleFileComponentRecorder GetManifestComponentRecorder(ISingleFileComponentRecorder singleFileComponentRecorder)
+    {
+        try
+        {
+            const string vcpkgInstalled = "vcpkg_installed";
+            var manifestFileLocation = singleFileComponentRecorder.ManifestFileLocation;
+
+            var vcpkgInstalledIndex = manifestFileLocation.IndexOf(vcpkgInstalled, StringComparison.OrdinalIgnoreCase);
+            if (vcpkgInstalledIndex < 0)
+            {
+                this.Logger.LogWarning(
+                    "Could not find '{VcpkgInstalled}' in ManifestFileLocation: '{ManifestFileLocation}'. Returning original recorder.",
+                    vcpkgInstalled,
+                    manifestFileLocation);
+
+                return singleFileComponentRecorder;
+            }
+
+            var vcpkgInstalledDir = manifestFileLocation[..(vcpkgInstalledIndex + vcpkgInstalled.Length)];
+
+            var preferredManifest = Path.Combine(vcpkgInstalledDir, "vcpkg", "manifest-info.json");
+            var fallbackManifest = Path.Combine(vcpkgInstalledDir, "manifest-info.json");
+
+            // Try preferred location first
+            if (this.manifestMappings.TryGetValue(preferredManifest, out var manifestData) && manifestData != null)
+            {
+                return this.ComponentRecorder.CreateSingleFileComponentRecorder(manifestData.ManifestPath);
+            }
+            else if (this.manifestMappings.TryGetValue(fallbackManifest, out manifestData) && manifestData != null)
+            {
+                // Use the fallback location.
+                this.Logger.LogWarning(
+                    "Preferred manifest at '{PreferredManifest}' was not found or invalid. Using fallback manifest at '{FallbackManifest}'.",
+                    preferredManifest,
+                    fallbackManifest);
+
+                return this.ComponentRecorder.CreateSingleFileComponentRecorder(manifestData.ManifestPath);
+            }
+            else
+            {
+                this.Logger.LogWarning(
+                    "No valid manifest-info.json found at either '{PreferredManifest}' or '{FallbackManifest}' for base location '{VcpkgInstalledDir}'. Returning original recorder.",
+                    preferredManifest,
+                    fallbackManifest,
+                    vcpkgInstalledDir);
+            }
+        }
+        catch (Exception ex)
+        {
+            this.Logger.LogWarning(
+                ex,
+                "An exception occurred while resolving manifest component recorder for '{ManifestFileLocation}'. Returning original recorder.",
+                singleFileComponentRecorder.ManifestFileLocation);
+        }
+
+        // Always return the original recorder if no manifest is found or on error
+        return singleFileComponentRecorder;
     }
 }
