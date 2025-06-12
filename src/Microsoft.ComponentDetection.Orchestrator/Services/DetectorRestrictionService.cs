@@ -20,26 +20,33 @@ public class DetectorRestrictionService : IDetectorRestrictionService
     {
         // Get a list of our default off detectors beforehand so that they can always be considered
         var defaultOffDetectors = detectors.Where(x => x is IDefaultOffComponentDetector).ToList();
-        detectors = detectors.Where(x => !(x is IDefaultOffComponentDetector)).ToList();
+        var nonDefaultOffDetectors = detectors.Where(x => !(x is IDefaultOffComponentDetector)).ToList();
 
         // If someone specifies an "allow list", use it, otherwise assume everything is allowed
         if (restrictions.AllowedDetectorIds != null && restrictions.AllowedDetectorIds.Any())
         {
-            var allowedIds = restrictions.AllowedDetectorIds;
+            var allowedIds = restrictions.AllowedDetectorIds.ToList();
 
             // If we have retired detectors in the arg specified list and don't have the new detector, add the new detector
             if (allowedIds.Any(a => this.oldDetectorIds.Contains(a, StringComparer.OrdinalIgnoreCase)) && !allowedIds.Contains(this.newDetectorId, StringComparer.OrdinalIgnoreCase))
             {
                 allowedIds = allowedIds.Concat([
                     this.newDetectorId,
-                ]);
+                ]).ToList();
             }
 
-            detectors = detectors.Where(d => allowedIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase)).ToList();
+            // Always include explicitly enabled default-off detectors if they are in the filter
+            var explicitlyEnabledDefaultOff = defaultOffDetectors
+                .Where(d => allowedIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase) ||
+                            (restrictions.ExplicitlyEnabledDetectorIds != null && restrictions.ExplicitlyEnabledDetectorIds.Contains(d.Id)))
+                .ToList();
+
+            var filtered = nonDefaultOffDetectors.Where(d => allowedIds.Contains(d.Id, StringComparer.OrdinalIgnoreCase)).ToList();
+            filtered.AddRange(explicitlyEnabledDefaultOff);
 
             foreach (var id in allowedIds)
             {
-                if (!detectors.Select(d => d.Id).Contains(id, StringComparer.OrdinalIgnoreCase))
+                if (!filtered.Select(d => d.Id).Contains(id, StringComparer.OrdinalIgnoreCase))
                 {
                     if (!this.oldDetectorIds.Contains(id, StringComparer.OrdinalIgnoreCase))
                     {
@@ -50,6 +57,20 @@ public class DetectorRestrictionService : IDetectorRestrictionService
                         this.logger.LogWarning("The detector '{OldId}' has been phased out, we will run the '{NewId}' detector which replaced its functionality.", id, this.newDetectorId);
                     }
                 }
+            }
+
+            detectors = filtered;
+        }
+        else
+        {
+            // If no filter, only add default-off detectors if explicitly enabled
+            if (restrictions.ExplicitlyEnabledDetectorIds != null && restrictions.ExplicitlyEnabledDetectorIds.Any())
+            {
+                detectors = nonDefaultOffDetectors.Union(defaultOffDetectors.Where(x => restrictions.ExplicitlyEnabledDetectorIds.Contains(x.Id))).ToList();
+            }
+            else
+            {
+                detectors = nonDefaultOffDetectors;
             }
         }
 
@@ -73,11 +94,6 @@ public class DetectorRestrictionService : IDetectorRestrictionService
             {
                 throw new InvalidDetectorCategoriesException($"Categories {string.Join(",", detectorCategories)} did not match any available detectors.");
             }
-        }
-
-        if (restrictions.ExplicitlyEnabledDetectorIds != null && restrictions.ExplicitlyEnabledDetectorIds.Any())
-        {
-            detectors = detectors.Union(defaultOffDetectors.Where(x => restrictions.ExplicitlyEnabledDetectorIds.Contains(x.Id))).ToList();
         }
 
         return detectors;

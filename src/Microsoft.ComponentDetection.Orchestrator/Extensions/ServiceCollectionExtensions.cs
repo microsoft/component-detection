@@ -21,6 +21,7 @@ using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Spdx;
 using Microsoft.ComponentDetection.Detectors.Swift;
+using Microsoft.ComponentDetection.Detectors.Uv;
 using Microsoft.ComponentDetection.Detectors.Vcpkg;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
@@ -67,6 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, RustCliDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustSbomVsCliExperiment>();
         services.AddSingleton<IExperimentConfiguration, RustSbomVsCrateExperiment>();
+        services.AddSingleton<IExperimentConfiguration, UvLockDetectorExperiment>();
 
         // Detectors
         // CocoaPods
@@ -151,6 +153,9 @@ public static class ServiceCollectionExtensions
 
         // Swift Package Manager
         services.AddSingleton<IComponentDetector, SwiftResolvedComponentDetector>();
+
+        // uv
+        services.AddSingleton<IComponentDetector, UvLockComponentDetector>();
 
         return services;
     }
