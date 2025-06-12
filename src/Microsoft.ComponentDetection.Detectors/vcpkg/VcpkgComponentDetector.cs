@@ -83,7 +83,7 @@ public class VcpkgComponentDetector : FileComponentDetector
 
                     if (manifestData == null || string.IsNullOrWhiteSpace(manifestData.ManifestPath))
                     {
-                        this.Logger.LogWarning("Failed to deserialize manifest-info.json or missing ManifestPath at {Path}", pr.ComponentStream.Location);
+                        this.Logger.LogDebug("Failed to deserialize manifest-info.json or missing ManifestPath at {Path}", pr.ComponentStream.Location);
                     }
                     else
                     {
@@ -178,7 +178,7 @@ public class VcpkgComponentDetector : FileComponentDetector
             var vcpkgInstalledIndex = manifestFileLocation.IndexOf(vcpkgInstalled, StringComparison.OrdinalIgnoreCase);
             if (vcpkgInstalledIndex < 0)
             {
-                this.Logger.LogWarning(
+                this.Logger.LogDebug(
                     "Could not find '{VcpkgInstalled}' in ManifestFileLocation: '{ManifestFileLocation}'. Returning original recorder.",
                     vcpkgInstalled,
                     manifestFileLocation);
@@ -199,7 +199,7 @@ public class VcpkgComponentDetector : FileComponentDetector
             else if (this.manifestMappings.TryGetValue(fallbackManifest, out manifestData) && manifestData != null)
             {
                 // Use the fallback location.
-                this.Logger.LogWarning(
+                this.Logger.LogDebug(
                     "Preferred manifest at '{PreferredManifest}' was not found or invalid. Using fallback manifest at '{FallbackManifest}'.",
                     preferredManifest,
                     fallbackManifest);
@@ -208,7 +208,7 @@ public class VcpkgComponentDetector : FileComponentDetector
             }
             else
             {
-                this.Logger.LogWarning(
+                this.Logger.LogDebug(
                     "No valid manifest-info.json found at either '{PreferredManifest}' or '{FallbackManifest}' for base location '{VcpkgInstalledDir}'. Returning original recorder.",
                     preferredManifest,
                     fallbackManifest,
