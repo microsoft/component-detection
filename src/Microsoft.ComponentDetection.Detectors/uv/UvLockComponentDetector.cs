@@ -32,6 +32,11 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 
         public override IEnumerable<string> Categories => ["Python"];
 
+        internal static bool IsRootPackage(UvPackage pck)
+        {
+            return pck.Source?.Virtual != null;
+        }
+
         protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
         {
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
@@ -43,30 +48,33 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                 file.Stream.Position = 0; // Ensure stream is at the beginning
                 var uvLock = UvLock.Parse(file.Stream);
 
+                var rootPackage = uvLock.Packages.FirstOrDefault(IsRootPackage);
+
+                // Add requires-dist as explicitly referenced component ids and dependencies
+                foreach (var dep in rootPackage.MetadataRequiresDist)
+                {
+                    var depComponent = new PipComponent(dep.Name, dep.Specifier);
+                    var detectedDep = new DetectedComponent(depComponent);
+                    singleFileComponentRecorder.RegisterUsage(detectedDep, isExplicitReferencedDependency: true, isDevelopmentDependency: false);
+                }
+
+                var devPackages = new HashSet<string>();
+                foreach (var devDep in rootPackage.MetadataRequiresDev)
+                {
+                    devPackages.Add(devDep.Name);
+                }
+
                 foreach (var pkg in uvLock.Packages)
                 {
-                    // Handle virtual source
-                    if (pkg.Source?.Virtual != null)
+                    if (IsRootPackage(pkg))
                     {
-                        if (pkg.Source.Virtual == ".")
-                        {
-                            // Add requires-dist as explicitly referenced component ids and dependencies
-                            foreach (var dep in pkg.MetadataRequiresDist)
-                            {
-                                var depComponent = new PipComponent(dep.Name, dep.Specifier);
-                                var detectedDep = new DetectedComponent(depComponent);
-                                singleFileComponentRecorder.RegisterUsage(detectedDep, isExplicitReferencedDependency: true, isDevelopmentDependency: false);
-                            }
-                        }
-
-                        // Skip all virtual packages (including ".") for the graph
                         continue;
                     }
 
                     var pipComponent = new PipComponent(pkg.Name, pkg.Version);
+                    var isDevelopmentDependency = devPackages.Contains(pkg.Name);
                     var detectedComponent = new DetectedComponent(pipComponent);
-                    var isExplicit = false; // TODO
-                    singleFileComponentRecorder.RegisterUsage(detectedComponent, isExplicitReferencedDependency: isExplicit);
+                    singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: isDevelopmentDependency);
 
                     foreach (var dep in pkg.Dependencies)
                     {
