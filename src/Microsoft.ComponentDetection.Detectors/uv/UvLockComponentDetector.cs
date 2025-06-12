@@ -50,12 +50,10 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 
                 var rootPackage = uvLock.Packages.FirstOrDefault(IsRootPackage);
 
-                // Add requires-dist as explicitly referenced component ids and dependencies
+                var explicitPackages = new HashSet<string>();
                 foreach (var dep in rootPackage.MetadataRequiresDist)
                 {
-                    var depComponent = new PipComponent(dep.Name, dep.Specifier);
-                    var detectedDep = new DetectedComponent(depComponent);
-                    singleFileComponentRecorder.RegisterUsage(detectedDep, isExplicitReferencedDependency: true, isDevelopmentDependency: false);
+                    explicitPackages.Add(dep.Name);
                 }
 
                 var devPackages = new HashSet<string>();
@@ -72,9 +70,10 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                     }
 
                     var pipComponent = new PipComponent(pkg.Name, pkg.Version);
-                    var isDevelopmentDependency = devPackages.Contains(pkg.Name);
+                    var isExplicit = explicitPackages.Contains(pkg.Name);
+                    var isDev = devPackages.Contains(pkg.Name);
                     var detectedComponent = new DetectedComponent(pipComponent);
-                    singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: isDevelopmentDependency);
+                    singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: isDev, isExplicitReferencedDependency: isExplicit);
 
                     foreach (var dep in pkg.Dependencies)
                     {
@@ -82,7 +81,7 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                         if (depPkg != null)
                         {
                             var depComponentWithVersion = new PipComponent(depPkg.Name, depPkg.Version);
-                            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponentWithVersion), isExplicitReferencedDependency: false, parentComponentId: pipComponent.Id);
+                            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponentWithVersion), parentComponentId: pipComponent.Id);
                         }
                         else
                         {

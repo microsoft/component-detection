@@ -218,4 +218,48 @@ requires-dist = [
         var barId = detected.First(d => d.Component.Id.StartsWith("bar")).Component.Id;
         graph.IsComponentExplicitlyReferenced(barId).Should().BeTrue();
     }
+
+    [TestMethod]
+    public async Task TestUvLockDetector_DevelopmentAndNonDevelopmentDependencies()
+    {
+        var uvLock = @"[[package]]
+name = 'foo'
+version = '1.2.3'
+[package.metadata]
+requires-dist = [
+    { name = 'bar', specifier = '>=2.0.0' },
+    { name = 'baz', specifier = '>=3.0.0' }
+]
+[package.metadata.requires-dev]
+dev = [
+    { name = 'devonly', specifier = '>=4.0.0' }
+]
+[[package]]
+name = 'bar'
+version = '2.0.0'
+[[package]]
+name = 'baz'
+version = '3.0.0'
+[[package]]
+name = 'devonly'
+version = '4.0.0'
+";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detected = componentRecorder.GetDetectedComponents().ToList();
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        var fooId = detected.First(d => d.Component.Id.StartsWith("foo ")).Component.Id;
+        var barId = detected.First(d => d.Component.Id.StartsWith("bar ")).Component.Id;
+        var bazId = detected.First(d => d.Component.Id.StartsWith("baz ")).Component.Id;
+        var devonlyId = detected.First(d => d.Component.Id.StartsWith("devonly ")).Component.Id;
+
+        // bar and baz are non-dev dependencies, devonly is a dev dependency
+        graph.IsDevelopmentDependency(barId).Should().BeFalse();
+        graph.IsDevelopmentDependency(bazId).Should().BeFalse();
+        graph.IsDevelopmentDependency(devonlyId).Should().BeTrue();
+    }
 }
