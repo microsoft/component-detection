@@ -191,4 +191,31 @@ version = '4.5.6'
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()),
             Times.AtLeastOnce());
     }
+
+    [TestMethod]
+    public async Task TestUvLockDetector_ExplicitDependencies_AreMarkedExplicit()
+    {
+        var uvLock = """
+[[package]]
+name = 'foo'
+version = '1.2.3'
+source = { virtual = '.' }
+
+[package.metadata]
+requires-dist = [
+    { name = "bar", specifier = ">=3.9.1" },
+]
+""";
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("uv.lock", uvLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detected = componentRecorder.GetDetectedComponents().ToList();
+        var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        detected.Should().ContainSingle();
+        var barId = detected.First(d => d.Component.Id.StartsWith("bar")).Component.Id;
+        graph.IsComponentExplicitlyReferenced(barId).Should().BeTrue();
+    }
 }
