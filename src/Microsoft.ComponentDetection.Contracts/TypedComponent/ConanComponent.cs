@@ -29,7 +29,7 @@ public class ConanComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Conan;
 
-    public override PackageURL PackageUrl => new PackageURL("conan", string.Empty, this.Name, this.Version, null, string.Empty);
+    public override PackageURL PackageUrl => new PackageURL("conan", null, this.Name, this.Version, null, null);
 
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
 }
