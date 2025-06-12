@@ -16,5 +16,8 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 
         // Metadata dev dependencies (requires-dev)
         public List<UvDependency> MetadataRequiresDev { get; set; } = [];
+
+        // Source property for uv.lock
+        public UvSource? Source { get; set; }
     }
 }

@@ -322,5 +322,74 @@ dev = [42, { name = 'baz' }]
             UvLock.ParseMetadata(metadata, pkg);
             pkg.MetadataRequiresDev.Should().BeEmpty();
         }
+
+        [TestMethod]
+        public void ParsePackage_ParsesSourceRegistryAndVirtual()
+        {
+            var toml = """
+[[package]]
+name = 'foo'
+version = '1.0.0'
+source = { registry = 'https://example.com/', virtual = '.' }
+""";
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+            var uvLock = UvLock.Parse(ms);
+            uvLock.Packages.Should().ContainSingle();
+            var pkg = uvLock.Packages.First();
+            pkg.Source.Should().NotBeNull();
+            pkg.Source!.Registry.Should().Be("https://example.com/");
+            pkg.Source.Virtual.Should().Be(".");
+        }
+
+        [TestMethod]
+        public void ParsePackage_ParsesSource_RegistryOnly()
+        {
+            var toml = """
+[[package]]
+name = 'foo'
+version = '1.0.0'
+source = { registry = 'https://example.com/' }
+""";
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+            var uvLock = UvLock.Parse(ms);
+            uvLock.Packages.Should().ContainSingle();
+            var pkg = uvLock.Packages.First();
+            pkg.Source.Should().NotBeNull();
+            pkg.Source!.Registry.Should().Be("https://example.com/");
+            pkg.Source.Virtual.Should().BeNull();
+        }
+
+        [TestMethod]
+        public void ParsePackage_ParsesSource_VirtualOnly()
+        {
+            var toml = """
+[[package]]
+name = 'foo'
+version = '1.0.0'
+source = { virtual = '.' }
+""";
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+            var uvLock = UvLock.Parse(ms);
+            uvLock.Packages.Should().ContainSingle();
+            var pkg = uvLock.Packages.First();
+            pkg.Source.Should().NotBeNull();
+            pkg.Source!.Registry.Should().BeNull();
+            pkg.Source.Virtual.Should().Be(".");
+        }
+
+        [TestMethod]
+        public void ParsePackage_ParsesSource_Missing()
+        {
+            var toml = """
+[[package]]
+name = 'foo'
+version = '1.0.0'
+""";
+            using var ms = new MemoryStream(Encoding.UTF8.GetBytes(toml));
+            var uvLock = UvLock.Parse(ms);
+            uvLock.Packages.Should().ContainSingle();
+            var pkg = uvLock.Packages.First();
+            pkg.Source.Should().BeNull();
+        }
     }
 }

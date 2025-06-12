@@ -78,6 +78,17 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                     ParseMetadata(metadataTable, uvPackage);
                 }
 
+                // Parse source
+                if (pkgTable.TryGetValue("source", out var sourceObj) && sourceObj is TomlTable sourceTable)
+                {
+                    var source = new UvSource
+                    {
+                        Registry = sourceTable.TryGetValue("registry", out var regObj) && regObj is string reg ? reg : null,
+                        Virtual = sourceTable.TryGetValue("virtual", out var virtObj) && virtObj is string virt ? virt : null,
+                    };
+                    uvPackage.Source = source;
+                }
+
                 return uvPackage;
             }
 
