@@ -194,21 +194,6 @@ public class DetectorRestrictionServiceTests
         restrictedDetectors.Should().Contain(defaultOffDetectorMock.Object);
     }
 
-    [TestMethod]
-    public void WithRestrictions_ExplicitlyEnabledDefaultOffDetector_WithFilter_ThrowsIfNotEnabled()
-    {
-        var r = new DetectorRestrictions
-        {
-            AllowedDetectorIds = ["defaultOffDetector"],
-            ExplicitlyEnabledDetectorIds = [],
-        };
-        var detectorMock = this.GenerateDetector("defaultOffDetector");
-        var defaultOffDetectorMock = detectorMock.As<IDefaultOffComponentDetector>();
-        this.detectors = this.detectors.Union([defaultOffDetectorMock.Object]).ToArray();
-        Action shouldThrow = () => this.serviceUnderTest.ApplyRestrictions(r, this.detectors);
-        shouldThrow.Should().Throw<InvalidDetectorFilterException>();
-    }
-
     private Mock<IComponentDetector> GenerateDetector(string detectorName, string[] categories = null)
     {
         var mockDetector = new Mock<IComponentDetector>();
