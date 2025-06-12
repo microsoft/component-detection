@@ -45,6 +45,24 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
 
                 foreach (var pkg in uvLock.Packages)
                 {
+                    // Handle virtual source
+                    if (pkg.Source?.Virtual != null)
+                    {
+                        if (pkg.Source.Virtual == ".")
+                        {
+                            // Add requires-dist as explicitly referenced component ids and dependencies
+                            foreach (var dep in pkg.MetadataRequiresDist)
+                            {
+                                var depComponent = new PipComponent(dep.Name, dep.Specifier);
+                                var detectedDep = new DetectedComponent(depComponent);
+                                singleFileComponentRecorder.RegisterUsage(detectedDep, isExplicitReferencedDependency: true, isDevelopmentDependency: false);
+                            }
+                        }
+
+                        // Skip all virtual packages (including ".") for the graph
+                        continue;
+                    }
+
                     var pipComponent = new PipComponent(pkg.Name, pkg.Version);
                     var detectedComponent = new DetectedComponent(pipComponent);
                     var isExplicit = false; // TODO
