@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Uv;
 
 /// <summary>
@@ -12,7 +13,7 @@ public class UvLockDetectorExperiment : IExperimentConfiguration
     public string Name => "UvLockDetectorExperiment";
 
     /// <inheritdoc />
-    public bool IsInControlGroup(IComponentDetector componentDetector) => false;
+    public bool IsInControlGroup(IComponentDetector componentDetector) => componentDetector is PipComponentDetector;
 
     /// <inheritdoc />
     public bool IsInExperimentGroup(IComponentDetector componentDetector) => componentDetector is UvLockComponentDetector;
