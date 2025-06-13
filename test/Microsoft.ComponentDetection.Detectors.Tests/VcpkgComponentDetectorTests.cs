@@ -3,7 +3,6 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
@@ -210,7 +209,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     ]
 }";
         var manifestFile = $@"{{
-    ""manifest-path"": {JsonSerializer.Serialize(t_pathToVcpkg)}
+    ""manifest-path"": ""{t_pathToVcpkg.Replace("\\", "\\\\")}""
 }}";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
