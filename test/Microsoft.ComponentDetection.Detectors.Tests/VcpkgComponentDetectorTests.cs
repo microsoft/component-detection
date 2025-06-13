@@ -221,9 +221,13 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         var singleFileComponent = detectedComponents.FirstOrDefault();
         singleFileComponent.Should().NotBeNull();
 
-        var sanitizedPathToVcpkg = pathToVcpkg.StartsWith("/tmp/")
-            ? pathToVcpkg[5..] : pathToVcpkg;
+        // When run in github the actual path may include a "/tmp/" prefix.
+        // To account for this, we dynamically add the prefix to the expected path if the actual path starts with "/tmp/".
+        if (singleFileComponent.Key.StartsWith("/tmp/"))
+        {
+            pathToVcpkg = "/tmp/" + pathToVcpkg;
+        }
 
-        singleFileComponent.Key.Should().Be(sanitizedPathToVcpkg);
+        singleFileComponent.Key.Should().Be(pathToVcpkg);
     }
 }
