@@ -177,4 +177,49 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         var components = detectedComponents.ToList();
         components.Should().BeEmpty();
     }
+
+    [TestMethod]
+    [DataTestMethod]
+    [DataRow("\\vcpkg_installed\\manifest-info.json", "path\\to\\vcpkg.json")]
+    [DataRow("\\vcpkg_installed\\vcpkg\\manifest-info.json", "path\\to\\vcpkg.json")]
+    [DataRow("\\bad_location\\manifest-info.json", "\\vcpkg_installed\\packageLocation\\vcpkg.spdx.json")]
+    public async Task TestVcpkgManifestFileAsync(string manifestPath, string pathToVcpkg)
+    {
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84"",
+    ""name"": ""nlohmann-json:x64-linux@3.10.4 69dcfc6886529ad2d210f71f132d743672a7e65d2c39f53456f17fc5fc08b278"",
+    ""packages"": [
+        {
+            ""name"": ""nlohmann-json"",
+            ""SPDXID"": ""SPDXRef-port"",
+            ""versionInfo"": ""3.10.4#5"",
+            ""downloadLocation"": ""git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"",
+            ""homepage"": ""https://github.com/nlohmann/json"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""description"": ""JSON for Modern C++"",
+            ""comment"": ""This is the port (recipe) consumed by vcpkg.""
+        }
+    ]
+}";
+        var manifestFile = @"{
+    ""manifest-path"": ""path\\to\\vcpkg.json""
+}";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("\\vcpkg_installed\\packageLocation\\vcpkg.spdx.json", spdxFile)
+            .WithFile(manifestPath, manifestFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDependencyGraphsByLocation();
+
+        var singleFileComponent = detectedComponents.FirstOrDefault();
+        singleFileComponent.Should().NotBeNull();
+        singleFileComponent.Key.Should().Be(pathToVcpkg);
+    }
 }
