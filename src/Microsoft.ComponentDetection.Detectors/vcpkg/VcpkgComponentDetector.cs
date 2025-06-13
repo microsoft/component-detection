@@ -206,14 +206,12 @@ public class VcpkgComponentDetector : FileComponentDetector
 
                 return this.ComponentRecorder.CreateSingleFileComponentRecorder(manifestData.ManifestPath);
             }
-            else
-            {
-                this.Logger.LogDebug(
-                    "No valid manifest-info.json found at either '{PreferredManifest}' or '{FallbackManifest}' for base location '{VcpkgInstalledDir}'. Returning original recorder.",
-                    preferredManifest,
-                    fallbackManifest,
-                    vcpkgInstalledDir);
-            }
+
+            this.Logger.LogDebug(
+                "No valid manifest-info.json found at either '{PreferredManifest}' or '{FallbackManifest}' for base location '{VcpkgInstalledDir}'. Returning original recorder.",
+                preferredManifest,
+                fallbackManifest,
+                vcpkgInstalledDir);
         }
         catch (Exception ex)
         {
