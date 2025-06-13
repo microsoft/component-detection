@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
@@ -180,11 +181,14 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
 
     [TestMethod]
     [DataTestMethod]
-    [DataRow("\\vcpkg_installed\\manifest-info.json", "path\\to\\vcpkg.json")]
-    [DataRow("\\vcpkg_installed\\vcpkg\\manifest-info.json", "path\\to\\vcpkg.json")]
-    [DataRow("\\bad_location\\manifest-info.json", "\\vcpkg_installed\\packageLocation\\vcpkg.spdx.json")]
+    [DataRow("vcpkg_installed\\manifest-info.json", "path\\to\\vcpkg.json")]
+    [DataRow("vcpkg_installed\\vcpkg\\manifest-info.json", "path\\to\\vcpkg.json")]
+    [DataRow("bad_location\\manifest-info.json", "vcpkg_installed\\packageLocation\\vcpkg.spdx.json")]
     public async Task TestVcpkgManifestFileAsync(string manifestPath, string pathToVcpkg)
     {
+        var t_pathToVcpkg = Path.GetFullPath(pathToVcpkg);
+        var t_manifestPath = Path.GetFullPath(manifestPath);
+
         var spdxFile = @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
     ""documentNamespace"":
@@ -205,13 +209,13 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         }
     ]
 }";
-        var manifestFile = @"{
-    ""manifest-path"": ""path\\to\\vcpkg.json""
-}";
+        var manifestFile = $@"{{
+    ""manifest-path"": {JsonSerializer.Serialize(t_pathToVcpkg)}
+}}";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile("\\vcpkg_installed\\packageLocation\\vcpkg.spdx.json", spdxFile)
-            .WithFile(manifestPath, manifestFile)
+            .WithFile(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json"), spdxFile)
+            .WithFile(t_manifestPath, manifestFile)
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -221,13 +225,6 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         var singleFileComponent = detectedComponents.FirstOrDefault();
         singleFileComponent.Should().NotBeNull();
 
-        // When run in github the actual path may include a "/tmp/" prefix.
-        // To account for this, we dynamically add the prefix to the expected path if the actual path starts with "/tmp/".
-        if (singleFileComponent.Key.StartsWith("/tmp/"))
-        {
-            pathToVcpkg = "/tmp/" + pathToVcpkg;
-        }
-
-        singleFileComponent.Key.Should().Be(pathToVcpkg);
+        singleFileComponent.Key.Should().Be(t_pathToVcpkg);
     }
 }
