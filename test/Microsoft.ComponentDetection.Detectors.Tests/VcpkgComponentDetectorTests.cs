@@ -220,6 +220,10 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
 
         var singleFileComponent = detectedComponents.FirstOrDefault();
         singleFileComponent.Should().NotBeNull();
-        singleFileComponent.Key.Should().Be(pathToVcpkg);
+
+        var sanitizedPathToVcpkg = pathToVcpkg.StartsWith("/tmp/")
+            ? pathToVcpkg[5..] : pathToVcpkg;
+
+        singleFileComponent.Key.Should().Be(sanitizedPathToVcpkg);
     }
 }
