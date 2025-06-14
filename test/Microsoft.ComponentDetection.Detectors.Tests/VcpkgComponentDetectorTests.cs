@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -185,8 +186,8 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     [DataRow("bad_location\\manifest-info.json", "vcpkg_installed\\packageLocation\\vcpkg.spdx.json")]
     public async Task TestVcpkgManifestFileAsync(string manifestPath, string pathToVcpkg)
     {
-        var t_pathToVcpkg = Path.GetFullPath(pathToVcpkg);
-        var t_manifestPath = Path.GetFullPath(manifestPath);
+        var t_pathToVcpkg = CrossPlatformPath(Path.GetFullPath(pathToVcpkg));
+        var t_manifestPath = CrossPlatformPath(Path.GetFullPath(manifestPath));
 
         var spdxFile = @"{
     ""SPDXID"": ""SPDXRef - DOCUMENT"",
@@ -213,7 +214,7 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
 }}";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json"), spdxFile)
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
             .WithFile(t_manifestPath, manifestFile)
             .ExecuteDetectorAsync();
 
@@ -224,6 +225,13 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         var singleFileComponent = detectedComponents.FirstOrDefault();
         singleFileComponent.Should().NotBeNull();
 
-        singleFileComponent.Key.Should().Be(t_pathToVcpkg);
+        var expectedResult = singleFileComponent.Key.Replace("/tmp/", string.Empty);
+        expectedResult.Should().Be(t_pathToVcpkg);
+    }
+
+    private static string CrossPlatformPath(string relPath)
+    {
+        var segments = relPath.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
+        return Path.Combine(segments);
     }
 }
