@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -176,5 +177,61 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
         var detectedComponents = componentRecorder.GetDetectedComponents();
         var components = detectedComponents.ToList();
         components.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    [DataTestMethod]
+    [DataRow("vcpkg_installed\\manifest-info.json", "vcpkg.json")]
+    [DataRow("vcpkg_installed\\vcpkg\\manifest-info.json", "vcpkg.json")]
+    [DataRow("bad_location\\manifest-info.json", "vcpkg_installed\\packageLocation\\vcpkg.spdx.json")]
+    public async Task TestVcpkgManifestFileAsync(string manifestPath, string pathToVcpkg)
+    {
+        var t_pathToVcpkg = CrossPlatformPath(Path.GetFullPath(pathToVcpkg));
+        var t_manifestPath = CrossPlatformPath(Path.GetFullPath(manifestPath));
+
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84"",
+    ""name"": ""nlohmann-json:x64-linux@3.10.4 69dcfc6886529ad2d210f71f132d743672a7e65d2c39f53456f17fc5fc08b278"",
+    ""packages"": [
+        {
+            ""name"": ""nlohmann-json"",
+            ""SPDXID"": ""SPDXRef-port"",
+            ""versionInfo"": ""3.10.4#5"",
+            ""downloadLocation"": ""git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"",
+            ""homepage"": ""https://github.com/nlohmann/json"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""description"": ""JSON for Modern C++"",
+            ""comment"": ""This is the port (recipe) consumed by vcpkg.""
+        }
+    ]
+}";
+        var manifestFile = $@"{{
+    ""manifest-path"": ""{t_pathToVcpkg.Replace("\\", "\\\\")}""
+}}";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
+            .WithFile(t_manifestPath, manifestFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDependencyGraphsByLocation();
+
+        var singleFileComponent = detectedComponents.FirstOrDefault();
+        singleFileComponent.Should().NotBeNull();
+
+        var expectedResult = singleFileComponent.Key.Replace("/tmp/", string.Empty);
+        expectedResult.Should().Be(t_pathToVcpkg);
+    }
+
+    private static string CrossPlatformPath(string relPath)
+    {
+        var segments = relPath.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
+        return Path.Combine(segments);
     }
 }
