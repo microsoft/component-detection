@@ -1,3 +1,5 @@
+#nullable enable
+
 namespace Microsoft.ComponentDetection.Detectors.Uv
 {
     using System;
@@ -49,7 +51,6 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                 var uvLock = UvLock.Parse(file.Stream);
 
                 var rootPackage = uvLock.Packages.FirstOrDefault(IsRootPackage);
-
                 var explicitPackages = new HashSet<string>();
                 var devPackages = new HashSet<string>();
 
@@ -79,20 +80,17 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                     var detectedComponent = new DetectedComponent(pipComponent);
                     singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: isDev, isExplicitReferencedDependency: isExplicit);
 
-                    if (pkg.Dependencies != null)
+                    foreach (var dep in pkg.Dependencies)
                     {
-                        foreach (var dep in pkg.Dependencies)
+                        var depPkg = uvLock.Packages.FirstOrDefault(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase));
+                        if (depPkg != null)
                         {
-                            var depPkg = uvLock.Packages.FirstOrDefault(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase));
-                            if (depPkg != null)
-                            {
-                                var depComponentWithVersion = new PipComponent(depPkg.Name, depPkg.Version);
-                                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponentWithVersion), parentComponentId: pipComponent.Id);
-                            }
-                            else
-                            {
-                                this.Logger.LogWarning("Dependency {DependencyName} not found in uv.lock packages", dep.Name);
-                            }
+                            var depComponentWithVersion = new PipComponent(depPkg.Name, depPkg.Version);
+                            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponentWithVersion), parentComponentId: pipComponent.Id);
+                        }
+                        else
+                        {
+                            this.Logger.LogWarning("Dependency {DependencyName} not found in uv.lock packages", dep.Name);
                         }
                     }
                 }
