@@ -51,15 +51,19 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                 var rootPackage = uvLock.Packages.FirstOrDefault(IsRootPackage);
 
                 var explicitPackages = new HashSet<string>();
-                foreach (var dep in rootPackage.MetadataRequiresDist)
-                {
-                    explicitPackages.Add(dep.Name);
-                }
-
                 var devPackages = new HashSet<string>();
-                foreach (var devDep in rootPackage.MetadataRequiresDev)
+
+                if (rootPackage != null)
                 {
-                    devPackages.Add(devDep.Name);
+                    foreach (var dep in rootPackage.MetadataRequiresDist)
+                    {
+                        explicitPackages.Add(dep.Name);
+                    }
+
+                    foreach (var devDep in rootPackage.MetadataRequiresDev)
+                    {
+                        devPackages.Add(devDep.Name);
+                    }
                 }
 
                 foreach (var pkg in uvLock.Packages)
@@ -75,17 +79,20 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
                     var detectedComponent = new DetectedComponent(pipComponent);
                     singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: isDev, isExplicitReferencedDependency: isExplicit);
 
-                    foreach (var dep in pkg.Dependencies)
+                    if (pkg.Dependencies != null)
                     {
-                        var depPkg = uvLock.Packages.FirstOrDefault(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase));
-                        if (depPkg != null)
+                        foreach (var dep in pkg.Dependencies)
                         {
-                            var depComponentWithVersion = new PipComponent(depPkg.Name, depPkg.Version);
-                            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponentWithVersion), parentComponentId: pipComponent.Id);
-                        }
-                        else
-                        {
-                            this.Logger.LogWarning("Dependency {DependencyName} not found in uv.lock packages", dep.Name);
+                            var depPkg = uvLock.Packages.FirstOrDefault(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase));
+                            if (depPkg != null)
+                            {
+                                var depComponentWithVersion = new PipComponent(depPkg.Name, depPkg.Version);
+                                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponentWithVersion), parentComponentId: pipComponent.Id);
+                            }
+                            else
+                            {
+                                this.Logger.LogWarning("Dependency {DependencyName} not found in uv.lock packages", dep.Name);
+                            }
                         }
                     }
                 }
