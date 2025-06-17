@@ -205,6 +205,10 @@ source = { virtual = '.' }
 requires-dist = [
     { name = "bar", specifier = ">=3.9.1" },
 ]
+
+[[package]]
+name = 'bar'
+version = '2.0.0'
 """;
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("uv.lock", uvLock)
@@ -225,6 +229,7 @@ requires-dist = [
         var uvLock = @"[[package]]
 name = 'foo'
 version = '1.2.3'
+source = { virtual = '.' }
 [package.metadata]
 requires-dist = [
     { name = 'bar', specifier = '>=2.0.0' },
@@ -252,10 +257,9 @@ version = '4.0.0'
         var detected = componentRecorder.GetDetectedComponents().ToList();
         var graph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
 
-        var fooId = detected.First(d => d.Component.Id.StartsWith("foo ")).Component.Id;
         var barId = detected.First(d => d.Component.Id.StartsWith("bar ")).Component.Id;
         var bazId = detected.First(d => d.Component.Id.StartsWith("baz ")).Component.Id;
-        var devonlyId = detected.First(d => d.Component.Id.StartsWith("devonly ")).Component.Id;
+        var devonlyId = new PipComponent("devonly", "4.0.0").Id;
 
         // bar and baz are non-dev dependencies, devonly is a dev dependency
         graph.IsDevelopmentDependency(barId).Should().BeFalse();
