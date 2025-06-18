@@ -170,7 +170,8 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         var dependencies = this.ResolveDependencyObject(packageLockJToken);
         var topLevelDependencies = new Queue<(JProperty, TypedComponent)>();
 
-        var dependencyLookup = dependencies.Children<JProperty>().ToDictionary(dependency => dependency.Name);
+        // Handle the case where dependencies is null (missing property in lockfile)
+        var dependencyLookup = dependencies?.Children<JProperty>().ToDictionary(dependency => dependency.Name) ?? [];
 
         foreach (var stream in packageJsonComponentStream)
         {
