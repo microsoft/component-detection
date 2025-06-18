@@ -17,8 +17,11 @@ using Newtonsoft.Json;
 
 public class VcpkgComponentDetector : FileComponentDetector
 {
+    private const string VcpkgInstalledFolder = "vcpkg_installed";
+    private const string ManifestInfoFile = "manifest-info.json";
+
     private readonly HashSet<string> projectRoots = [];
-    private readonly ConcurrentDictionary<string, ManifestInfo> manifestMappings = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, string> manifestMappings = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;
@@ -41,7 +44,7 @@ public class VcpkgComponentDetector : FileComponentDetector
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Vcpkg)];
 
-    public override IList<string> SearchPatterns { get; } = ["vcpkg.spdx.json", "manifest-info.json"];
+    public override IList<string> SearchPatterns { get; } = ["vcpkg.spdx.json", ManifestInfoFile];
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Vcpkg];
 
@@ -72,7 +75,7 @@ public class VcpkgComponentDetector : FileComponentDetector
             var fileLocation = pr.ComponentStream.Location;
             var fileName = Path.GetFileName(fileLocation);
 
-            if (fileName.Equals("manifest-info.json", StringComparison.OrdinalIgnoreCase))
+            if (fileName.Equals(ManifestInfoFile, StringComparison.OrdinalIgnoreCase))
             {
                 this.Logger.LogDebug("Discovered VCPKG package manifest file at: {Location}", pr.ComponentStream.Location);
 
@@ -87,7 +90,7 @@ public class VcpkgComponentDetector : FileComponentDetector
                     }
                     else
                     {
-                        this.manifestMappings.TryAdd(fileLocation, manifestData);
+                        this.manifestMappings.TryAdd(fileLocation, manifestData.ManifestPath);
                     }
                 }
             }
@@ -172,31 +175,30 @@ public class VcpkgComponentDetector : FileComponentDetector
     {
         try
         {
-            const string vcpkgInstalled = "vcpkg_installed";
             var manifestFileLocation = singleFileComponentRecorder.ManifestFileLocation;
 
-            var vcpkgInstalledIndex = manifestFileLocation.IndexOf(vcpkgInstalled, StringComparison.OrdinalIgnoreCase);
+            var vcpkgInstalledIndex = manifestFileLocation.IndexOf(VcpkgInstalledFolder, StringComparison.OrdinalIgnoreCase);
             if (vcpkgInstalledIndex < 0)
             {
                 this.Logger.LogDebug(
                     "Could not find '{VcpkgInstalled}' in ManifestFileLocation: '{ManifestFileLocation}'. Returning original recorder.",
-                    vcpkgInstalled,
+                    VcpkgInstalledFolder,
                     manifestFileLocation);
 
                 return singleFileComponentRecorder;
             }
 
-            var vcpkgInstalledDir = manifestFileLocation[..(vcpkgInstalledIndex + vcpkgInstalled.Length)];
+            var vcpkgInstalledDir = manifestFileLocation[..(vcpkgInstalledIndex + VcpkgInstalledFolder.Length)];
 
-            var preferredManifest = Path.Combine(vcpkgInstalledDir, "vcpkg", "manifest-info.json");
-            var fallbackManifest = Path.Combine(vcpkgInstalledDir, "manifest-info.json");
+            var preferredManifest = Path.Combine(vcpkgInstalledDir, "vcpkg", ManifestInfoFile);
+            var fallbackManifest = Path.Combine(vcpkgInstalledDir, ManifestInfoFile);
 
             // Try preferred location first
-            if (this.manifestMappings.TryGetValue(preferredManifest, out var manifestData) && manifestData != null)
+            if (this.manifestMappings.TryGetValue(preferredManifest, out var manifestPath) && manifestPath != null)
             {
-                return this.ComponentRecorder.CreateSingleFileComponentRecorder(manifestData.ManifestPath);
+                return this.ComponentRecorder.CreateSingleFileComponentRecorder(manifestPath);
             }
-            else if (this.manifestMappings.TryGetValue(fallbackManifest, out manifestData) && manifestData != null)
+            else if (this.manifestMappings.TryGetValue(fallbackManifest, out manifestPath) && manifestPath != null)
             {
                 // Use the fallback location.
                 this.Logger.LogDebug(
@@ -204,7 +206,7 @@ public class VcpkgComponentDetector : FileComponentDetector
                     preferredManifest,
                     fallbackManifest);
 
-                return this.ComponentRecorder.CreateSingleFileComponentRecorder(manifestData.ManifestPath);
+                return this.ComponentRecorder.CreateSingleFileComponentRecorder(manifestPath);
             }
 
             this.Logger.LogDebug(
