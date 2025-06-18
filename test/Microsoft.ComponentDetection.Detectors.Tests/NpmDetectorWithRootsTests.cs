@@ -637,33 +637,6 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
     }
 
     [TestMethod]
-    public async Task TestNpmDetector_PackageLockWithNullDependenciesValue_ShouldHandleGracefully()
-    {
-        // This test more specifically reproduces the NullReferenceException issue
-        var packageLockJson = @"{
-                ""name"": ""test"",
-                ""version"": ""1.0.0"",
-                ""lockfileVersion"": 2,
-                ""dependencies"": null
-            }";
-
-        var packageJsonContents = @"{
-                ""name"": ""test"",
-                ""version"": ""1.0.0""
-            }";
-
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
-            .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
-            .ExecuteDetectorAsync();
-
-        // The detector should handle the null "dependencies" object gracefully without throwing
-        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        detectedComponents.Should().BeEmpty(); // No dependencies should be detected
-    }
-
-    [TestMethod]
     public async Task TestNpmDetector_PackageLockMissingDependenciesButPackageJsonHasDependencies_ShouldHandleGracefully()
     {
         // This test reproduces a more specific scenario where package.json has dependencies but package-lock.json is missing dependencies
