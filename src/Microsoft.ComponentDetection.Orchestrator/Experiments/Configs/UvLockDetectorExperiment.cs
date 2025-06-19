@@ -13,7 +13,7 @@ public class UvLockDetectorExperiment : IExperimentConfiguration
     public string Name => "UvLockDetectorExperiment";
 
     /// <inheritdoc />
-    public bool IsInControlGroup(IComponentDetector componentDetector) => componentDetector is PipComponentDetector;
+    public bool IsInControlGroup(IComponentDetector componentDetector) => componentDetector is PipReportComponentDetector;
 
     /// <inheritdoc />
     public bool IsInExperimentGroup(IComponentDetector componentDetector) => componentDetector is UvLockComponentDetector;
