@@ -48,7 +48,7 @@ public class VcpkgComponentDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Vcpkg];
 
-    public override int Version => 2;
+    public override int Version => 3;
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
