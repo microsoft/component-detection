@@ -12,10 +12,17 @@ public class UvLockDetectorExperimentTests
     private readonly UvLockDetectorExperiment experiment = new();
 
     [TestMethod]
-    public void IsInControlGroup_ReturnsTrue_ForPipComponentDetector()
+    public void IsInControlGroup_ReturnsTrue_ForPipReportComponentDetector()
+    {
+        var pipReportDetector = new PipReportComponentDetector(null, null, null, null, null, null, null, null, null);
+        this.experiment.IsInControlGroup(pipReportDetector).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void IsInControlGroup_ReturnsFalse_ForPipComponentDetector()
     {
         var pipDetector = new PipComponentDetector(null, null, null, null, null);
-        this.experiment.IsInControlGroup(pipDetector).Should().BeTrue();
+        this.experiment.IsInControlGroup(pipDetector).Should().BeFalse();
     }
 
     [TestMethod]
