@@ -12,7 +12,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Sbom.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class RustSbomDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
 {
     private const string CargoSbomSearchPattern = "*.cargo-sbom.json";
     private const string CratesIoSource = "registry+https://github.com/rust-lang/crates.io-index";
