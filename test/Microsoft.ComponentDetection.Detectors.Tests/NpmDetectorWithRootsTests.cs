@@ -609,4 +609,88 @@ public class NpmDetectorWithRootsTests : BaseDetectorTest<NpmComponentDetectorWi
         dependencyGraph.GetDependenciesForComponent(componentBId).Should().Contain(componentCId);
         dependencyGraph.GetDependenciesForComponent(componentCId).Should().BeEmpty();
     }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockWithoutDependenciesObject_ShouldHandleGracefully()
+    {
+        // This test reproduces the NullReferenceException issue when package-lock.json doesn't contain a "dependencies" object
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0"",
+                ""lockfileVersion"": 2
+            }";
+
+        var packageJsonContents = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0""
+            }";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        // The detector should handle the missing "dependencies" object gracefully without throwing
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty(); // No dependencies should be detected
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockMissingDependenciesButPackageJsonHasDependencies_ShouldHandleGracefully()
+    {
+        // This test reproduces a more specific scenario where package.json has dependencies but package-lock.json is missing dependencies
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0"",
+                ""lockfileVersion"": 2
+            }";
+
+        var packageJsonContents = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0"",
+                ""dependencies"": {
+                    ""lodash"": ""^4.17.21""
+                }
+            }";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        // The detector should handle the missing "dependencies" object gracefully without throwing
+        // This may result in processing failure but should not throw NullReferenceException
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty(); // No dependencies should be detected since dependencies is missing
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockMissingDependenciesProperty_ShouldNotThrowNullReferenceException()
+    {
+        // This test reproduces the exact NullReferenceException scenario from the issue:
+        // package-lock.json doesn't contain a "dependencies" property at all
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0"",
+                ""lockfileVersion"": 2
+            }";
+
+        var packageJsonContents = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0""
+            }";
+
+        // Before the fix, this would throw a NullReferenceException because
+        // packageLockJToken["dependencies"] returns null, and calling .Children<JProperty>() on null throws
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        // The detector should handle the missing "dependencies" property gracefully without throwing
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty(); // No dependencies should be detected since dependencies is missing
+    }
 }
