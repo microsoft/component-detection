@@ -11,6 +11,10 @@ The vcpkg detector searches for `vcpkg.spdx.json` files produced by vcpkg during
 Because this detection strategy looks for the concrete files in the installed tree, it will accurately detect the precise packages used
 during this build and exclude packages optionally used on other platforms.
 
+## Enhancements
+
+The latest versions of `Component Detector (>= v5.2.26)` and `VCPKG (>= 2025.02.14)` resolve issues with Vcpkg detection by linking `vcpkg.spdx.json` files to their originating `vcpkg.json` file. This improvement, enabled through the new `manifest-info.json` introduced in `VCPKG`, ensures accurate dependency tracking and streamlines workflows like vulnerability resolution (e.g., Dependabot).
+
 ## Known limitations
 
 The vcpkg detector does not distinguish between direct dependencies and transitive dependencies. It also does not distinguish
