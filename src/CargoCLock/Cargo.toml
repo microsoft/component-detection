@@ -1,0 +1,11 @@
+[package]
+name = "cargo_c_lock"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+cargo-lock = { version = "10.1.0", features = ["dependency-tree"] }
+serde_json = "1.0.140"

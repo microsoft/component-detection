@@ -2,5 +2,8 @@
 	"sdk": {
 		"version": "8.0.408",
 		"rollForward": "latestMinor"
+	},
+	"msbuild-sdks": {
+		"Microsoft.Build.Cargo": "1.0.350-preview"
 	}
 }

@@ -206,6 +206,8 @@ public class RustSbomDetectorTests : BaseDetectorTest<RustSbomDetector>
     public async Task TestGraphIsCorrectAsync()
     {
         var sbom = CargoSbom.FromJson(this.testSbom);
+        var lockfile = new LockfileLoader("C:\\Users\\nahammond\\source\\repos\\component-detection\\src\\CargoCLock\\Cargo.lock");
+        var mystring = lockfile.ToString();
 
         var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("main.exe.cargo-sbom.json", this.testSbom)
