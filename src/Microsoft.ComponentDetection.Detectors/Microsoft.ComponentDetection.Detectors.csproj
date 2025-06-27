@@ -20,7 +20,8 @@
         <PackageReference Include="System.Formats.Asn1" />
     </ItemGroup>
 
-    <ItemGroup Label="Package References">
+    <ItemGroup Label="Project References">
+        <ProjectReference Include="..\CargoCLock\CargoCLock.proj" />
         <ProjectReference Include="..\Microsoft.ComponentDetection.Common\Microsoft.ComponentDetection.Common.csproj" />
     </ItemGroup>
 
@@ -31,6 +32,12 @@
         <EmbeddedResource Include="ivy\Resources\java-src\IvyComponentDetectionAntTask.java">
             <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="..\CargoCLock\bin\Debug\cargo_c_lock.*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>
