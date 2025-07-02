@@ -46,7 +46,7 @@ public class ScanSettings : BaseSettings
 
     [CommandOption("--DetectorCategories")]
     [Description(
-        "A comma separated list with the categories of components that are going to be scanned. The detectors that are going to run are the ones that belongs to the categories. The possible values are: Npm, NuGet, Maven, RubyGems, Cargo, Pip, GoMod, CocoaPods, Linux.")]
+        "A comma separated list with the categories of components that are going to be scanned. The detectors that are going to run are the ones that belongs to the categories. The possible values are: Cargo, CocoaPods, Conan, Conda, DotNet, DockerReference, GoMod, Linux, Maven, Npm, NuGet, Python, RubyGems, Rust, Spdx, Swift, Vcpkg.")]
     [TypeConverter(typeof(CommaDelimitedConverter))]
     public IEnumerable<string> DetectorCategories { get; set; }
 
