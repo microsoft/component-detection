@@ -109,4 +109,15 @@ public class PurlGenerationTests
 
         packageOne.PackageUrl.ToString().Should().Be("pkg:cocoapods/afnetworking@4.0.1?repository_url=https://custom_repo.example.com/path/to/repo/specs.git");
     }
+
+    [TestMethod]
+    public void ConanShouldSupportPurl()
+    {
+        // https://github.com/package-url/purl-spec/blob/main/PURL-TYPES.rst#conan
+        var packageOne = new ConanComponent("openssl", "3.4.1", "afcaa66ae3020340af2d5641a475b5ae", "80626e45106f252f73093b8b9376039358185fb4");
+
+        packageOne.PackageUrl.Type.Should().Be("conan");
+        packageOne.PackageUrl.Name.Should().Be("openssl");
+        packageOne.PackageUrl.ToString().Should().Be("pkg:conan/openssl@3.4.1");
+    }
 }
