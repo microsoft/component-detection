@@ -53,9 +53,11 @@ jobs:
 
       - name: Install Apache Ivy
         run: |
-          # Install Ant package non-interactively
+          echo "Starting Apache Ant and Ivy installation..."
           sudo apt install -y ant
-          # Download and install Ivy plugin
+
+          echo "Ant installed successfully. Installing Ivy plugin..."
+          sudo chmod 777 /usr/share/ant/lib
           curl https://downloads.apache.org/ant/ivy/2.5.2/apache-ivy-2.5.2-bin.tar.gz | tar xOz apache-ivy-2.5.2/ivy-2.5.2.jar > /usr/share/ant/lib/ivy.jar
 
       - name: Checkout Smoke Test Repo
