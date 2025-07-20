@@ -53,8 +53,8 @@ jobs:
 
       - name: Install Apache Ivy
         run: |
-          sudo mkdir /usr/share/ant
-          sudo chmod 777 /usr/share/ant
+          sudo apt update
+          sudo apt install ant
           curl https://downloads.apache.org/ant/ivy/2.5.2/apache-ivy-2.5.2-bin.tar.gz | tar xOz apache-ivy-2.5.2/ivy-2.5.2.jar > /usr/share/ant/lib/ivy.jar
 
       - name: Checkout Smoke Test Repo
