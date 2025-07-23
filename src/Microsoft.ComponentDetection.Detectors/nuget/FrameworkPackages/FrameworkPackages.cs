@@ -217,7 +217,7 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
     private void Add(string id, string version)
     {
-        if (string.IsNullOrWhitespace(version))
+        if (string.IsNullOrWhiteSpace(version))
         {
             this.Packages.Remove(id);
         }
