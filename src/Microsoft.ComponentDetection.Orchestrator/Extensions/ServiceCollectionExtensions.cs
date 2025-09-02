@@ -65,6 +65,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentService, ExperimentService>();
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
+        services.AddSingleton<IExperimentConfiguration, RustSbomVsCliExperiment>();
+        services.AddSingleton<IExperimentConfiguration, RustSbomVsCrateExperiment>();
         services.AddSingleton<IExperimentConfiguration, UvLockDetectorExperiment>();
 
         // Detectors
