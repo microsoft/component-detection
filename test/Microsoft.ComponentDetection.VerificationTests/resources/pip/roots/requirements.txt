@@ -55,7 +55,7 @@ pyjwt==2.8.0
     # via
     #   msal
     #   pyjwt
-requests==2.31.0
+requests==2.32.4
     # via
     #   azure-core
     #   msal
