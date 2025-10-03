@@ -12,7 +12,7 @@ namespace Microsoft.ComponentDetection.Detectors.Uv
     using Microsoft.ComponentDetection.Contracts.TypedComponent;
     using Microsoft.Extensions.Logging;
 
-    public class UvLockComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+    public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetector
     {
         public UvLockComponentDetector(
             IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
