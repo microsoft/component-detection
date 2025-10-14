@@ -54,3 +54,5 @@ launchSettings.json
 
 # Dev nupkgs
 dev-source
+
+# just checking for flaky tests
