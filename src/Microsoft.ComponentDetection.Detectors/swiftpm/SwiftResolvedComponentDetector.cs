@@ -1,4 +1,4 @@
-namespace Microsoft.ComponentDetection.Detectors.SwiftPM;
+namespace Microsoft.ComponentDetection.Detectors.Swift;
 
 using System;
 using System.Collections.Generic;
