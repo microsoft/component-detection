@@ -62,4 +62,13 @@ public class ComponentDetectorTests
             detector.SupportedComponentTypes.Should().OnlyHaveUniqueItems($"because {detector.Id} should have unique supported component types");
         }
     }
+
+    [TestMethod]
+    public void UvLockComponentDetector_ImplementsIExperimentalDetector()
+    {
+        var uvLockDetector = this.detectors.SingleOrDefault(d => d.Id == "UvLock");
+
+        uvLockDetector.Should().NotBeNull("because UvLockComponentDetector should be registered");
+        uvLockDetector.Should().BeAssignableTo<IExperimentalDetector>("because UvLockComponentDetector should implement IExperimentalDetector");
+    }
 }
