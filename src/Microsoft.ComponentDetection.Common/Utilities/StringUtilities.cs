@@ -1,5 +1,5 @@
 #nullable disable
-namespace Microsoft.ComponentDetection.Common.Utilities;
+namespace Microsoft.ComponentDetection.Common;
 
 using System;
 using System.Text.RegularExpressions;

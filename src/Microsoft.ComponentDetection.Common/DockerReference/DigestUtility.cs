@@ -1,5 +1,4 @@
-#nullable disable
-namespace Microsoft.ComponentDetection.Common.DockerReference;
+namespace Microsoft.ComponentDetection.Common;
 
 using System.Collections.Generic;
 
