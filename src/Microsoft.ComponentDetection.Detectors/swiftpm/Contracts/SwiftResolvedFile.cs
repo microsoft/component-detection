@@ -1,5 +1,5 @@
 #nullable disable
-namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
+namespace Microsoft.ComponentDetection.Detectors.SwiftPM.Contracts;
 
 using System.Collections.Generic;
 using Newtonsoft.Json;

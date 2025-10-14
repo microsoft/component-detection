@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Contracts;
 
 using System.Collections.Generic;

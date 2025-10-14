@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 
 using System.Threading.Tasks;

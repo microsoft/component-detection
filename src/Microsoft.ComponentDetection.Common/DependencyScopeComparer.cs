@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Common;
 
 using Microsoft.ComponentDetection.Contracts.BcdeModels;

@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 
 using System;

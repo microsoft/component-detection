@@ -1,5 +1,4 @@
-#nullable disable
-namespace Microsoft.ComponentDetection.Detectors.Swift;
+namespace Microsoft.ComponentDetection.Detectors.SwiftPM;
 
 using System;
 using System.Collections.Generic;
