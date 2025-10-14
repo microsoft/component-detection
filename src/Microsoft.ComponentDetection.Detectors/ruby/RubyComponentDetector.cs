@@ -1,3 +1,5 @@
+#nullable disable
+
 // Ruby detection highlights and todos:
 //
 // Dependencies are "fuzzy versions":
