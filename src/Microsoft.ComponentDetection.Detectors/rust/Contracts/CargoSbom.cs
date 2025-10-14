@@ -1,5 +1,6 @@
-// Schema for Cargo SBOM pre-cursor files (*.cargo-sbom.json)
+#nullable disable
 
+// Schema for Cargo SBOM pre-cursor files (*.cargo-sbom.json)
 namespace Microsoft.ComponentDetection.Detectors.Rust.Sbom.Contracts;
 
 using System;

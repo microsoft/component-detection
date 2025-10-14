@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests.Yarn;
 
 using FluentAssertions;

@@ -1,3 +1,5 @@
+#nullable disable
+
 // Ruby detection highlights and todos:
 //
 // Dependencies are "fuzzy versions":
@@ -24,7 +26,6 @@
 // There is a possibility to use manual root detection instead of automatic:
 // Gemfile.lock comes with a section called "Dependencies", in the section are listed the dependencies that the user specified in the Gemfile,
 // is necessary to investigate if this section is a new adition or always has been there.
-
 namespace Microsoft.ComponentDetection.Detectors.Ruby;
 
 using System;

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.Tests;
 
 using FluentAssertions;

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>Class of detector, the names of which are converted into categories for all default detectors.</summary>
