@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
 
 using Microsoft.ComponentDetection.Common;

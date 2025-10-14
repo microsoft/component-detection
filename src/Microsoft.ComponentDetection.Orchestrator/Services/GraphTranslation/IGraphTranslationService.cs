@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 
 using Microsoft.ComponentDetection.Contracts.BcdeModels;

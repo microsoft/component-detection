@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.TestsUtilities;
 
 using Microsoft.ComponentDetection.Contracts;

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 
 using System.Collections.Generic;

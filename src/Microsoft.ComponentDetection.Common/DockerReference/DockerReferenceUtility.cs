@@ -1,3 +1,5 @@
+#nullable disable
+
 // transcribed from https://github.com/containers/image/blob/c1a5f92d0ebbf9e0bf187b3353dd400472b388eb/docker/reference/reference.go
 
 // Package reference provides a general type to represent any way of referencing images within the registry.

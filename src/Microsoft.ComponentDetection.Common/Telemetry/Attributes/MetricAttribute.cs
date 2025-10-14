@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common.Telemetry.Attributes;
 
 using System;

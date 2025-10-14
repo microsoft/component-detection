@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 public class DockerLayer

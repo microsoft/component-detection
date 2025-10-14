@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common.Exceptions;
 
 using System;

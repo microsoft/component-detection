@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Conan.Contracts;
 
 using System.Text.Json.Serialization;
