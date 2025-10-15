@@ -203,6 +203,7 @@ public class RustSbomParser
                     var ownersApplied = false;
 
                     if (ownershipMap != null &&
+                        parentComponentRecorder != null &&
                         ownershipMap.TryGetValue(metadataId, out var owners) &&
                         owners != null && owners.Count > 0)
                     {

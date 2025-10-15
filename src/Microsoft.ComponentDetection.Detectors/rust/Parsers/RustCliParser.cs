@@ -11,9 +11,11 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 using Microsoft.Extensions.Logging;
+using static Microsoft.ComponentDetection.Detectors.Rust.IRustCliParser;
 
 /// <summary>
-/// Parser for Cargo.toml files using cargo metadata command or cached metadata.
+/// Parser for Cargo.toml files using cargo metadata command or cached metadata,
+/// with optional ownership-aware component registration.
 /// </summary>
 public class RustCliParser : IRustCliParser
 {
@@ -87,7 +89,12 @@ public class RustCliParser : IRustCliParser
             }
 
             var metadata = CargoMetadata.FromJson(cliResult.StdOut);
-            return this.ProcessMetadata(componentStream.Location, recorder, metadata);
+            return this.ProcessMetadata(
+                componentStream.Location,
+                fallbackRecorder: recorder,
+                metadata,
+                parentComponentRecorder: null,
+                ownershipMap: null);
         }
         catch (Exception e)
         {
@@ -105,11 +112,12 @@ public class RustCliParser : IRustCliParser
     /// <returns>Result of parsing cargo metadata.</returns>
     public Task<ParseResult> ParseFromMetadataAsync(
         IComponentStream componentStream,
-        ISingleFileComponentRecorder recorder,
+        ISingleFileComponentRecorder fallbackRecorder,
         CargoMetadata cachedMetadata,
+        IComponentRecorder parentComponentRecorder,
+        IReadOnlyDictionary<string, HashSet<string>> ownershipMap,
         CancellationToken cancellationToken = default)
     {
-        // Cancellation token is unused here since we do no IO, but kept for API symmetry.
         var result = new ParseResult();
 
         if (cachedMetadata == null)
@@ -127,7 +135,12 @@ public class RustCliParser : IRustCliParser
 
         try
         {
-            return Task.FromResult(this.ProcessMetadata(componentStream.Location, recorder, cachedMetadata));
+            return Task.FromResult(this.ProcessMetadata(
+                componentStream.Location,
+                fallbackRecorder,
+                cachedMetadata,
+                parentComponentRecorder,
+                ownershipMap));
         }
         catch (Exception e)
         {
@@ -138,13 +151,12 @@ public class RustCliParser : IRustCliParser
         }
     }
 
-    /// <summary>
-    /// Shared implementation to translate CargoMetadata into registered components and a ParseResult.
-    /// </summary>
     private ParseResult ProcessMetadata(
         string manifestLocation,
-        ISingleFileComponentRecorder recorder,
-        CargoMetadata metadata)
+        ISingleFileComponentRecorder fallbackRecorder,
+        CargoMetadata metadata,
+        IComponentRecorder parentComponentRecorder,
+        IReadOnlyDictionary<string, HashSet<string>> ownershipMap)
     {
         var result = new ParseResult();
 
@@ -171,31 +183,36 @@ public class RustCliParser : IRustCliParser
                 if (visitedDependencies.Add(componentKey))
                 {
                     this.TraverseAndRecordComponents(
-                        recorder,
                         manifestLocation,
                         graph,
                         dep.Id,
-                        null,
-                        null,
-                        packages,
-                        visitedDependencies,
-                        explicitlyReferencedDependency: false);
+                        parent: null,
+                        depInfo: null,
+                        packagesMetadata: packages,
+                        visitedDependencies: visitedDependencies,
+                        explicitlyReferencedDependency: false,
+                        isTomlRoot: false,
+                        parentComponentRecorder: parentComponentRecorder,
+                        ownershipMap: ownershipMap,
+                        fallbackRecorder: fallbackRecorder);
                 }
             }
         }
         else
         {
             this.TraverseAndRecordComponents(
-                recorder,
                 manifestLocation,
                 graph,
                 root,
-                null,
-                null,
-                packages,
-                visitedDependencies,
+                parent: null,
+                depInfo: null,
+                packagesMetadata: packages,
+                visitedDependencies: visitedDependencies,
                 explicitlyReferencedDependency: true,
-                isTomlRoot: true);
+                isTomlRoot: true,
+                parentComponentRecorder: parentComponentRecorder,
+                ownershipMap: ownershipMap,
+                fallbackRecorder: fallbackRecorder);
         }
 
         foreach (var package in metadata.Packages.Where(p => p.Source == null))
@@ -218,7 +235,6 @@ public class RustCliParser : IRustCliParser
         this.envVarService.IsEnvironmentVariableValueTrue("DisableRustCliScan");
 
     private void TraverseAndRecordComponents(
-        ISingleFileComponentRecorder recorder,
         string location,
         IReadOnlyDictionary<string, Node> graph,
         string id,
@@ -226,8 +242,11 @@ public class RustCliParser : IRustCliParser
         Dep depInfo,
         IReadOnlyDictionary<string, CargoComponent> packagesMetadata,
         ISet<string> visitedDependencies,
-        bool explicitlyReferencedDependency = false,
-        bool isTomlRoot = false)
+        bool explicitlyReferencedDependency,
+        bool isTomlRoot,
+        IComponentRecorder parentComponentRecorder,
+        IReadOnlyDictionary<string, HashSet<string>> ownershipMap,
+        ISingleFileComponentRecorder fallbackRecorder)
     {
         try
         {
@@ -250,11 +269,33 @@ public class RustCliParser : IRustCliParser
             var shouldRegister = !isTomlRoot && cargoComponent.Source != null;
             if (shouldRegister)
             {
-                recorder.RegisterUsage(
-                    detectedComponent,
-                    explicitlyReferencedDependency,
-                    isDevelopmentDependency: isDevelopmentDependency,
-                    parentComponentId: parent?.Component.Id);
+                var ownersApplied = false;
+                if (ownershipMap != null &&
+                    parentComponentRecorder != null &&
+                    ownershipMap.TryGetValue(id, out var owners) &&
+                    owners != null && owners.Count > 0)
+                {
+                    ownersApplied = true;
+                    foreach (var manifestPath in owners)
+                    {
+                        var ownerRecorder = parentComponentRecorder.CreateSingleFileComponentRecorder(manifestPath);
+                        ownerRecorder.RegisterUsage(
+                            detectedComponent,
+                            explicitlyReferencedDependency,
+                            isDevelopmentDependency: isDevelopmentDependency,
+                            parentComponentId: parent?.Component.Id);
+                    }
+                }
+
+                if (!ownersApplied)
+                {
+                    // Fallback to the manifest-local recorder
+                    fallbackRecorder.RegisterUsage(
+                        detectedComponent,
+                        explicitlyReferencedDependency,
+                        isDevelopmentDependency: isDevelopmentDependency,
+                        parentComponentId: parent?.Component.Id);
+                }
             }
 
             foreach (var dep in node.Deps)
@@ -263,7 +304,6 @@ public class RustCliParser : IRustCliParser
                 if (visitedDependencies.Add(componentKey))
                 {
                     this.TraverseAndRecordComponents(
-                        recorder,
                         location,
                         graph,
                         dep.Pkg,
@@ -271,41 +311,18 @@ public class RustCliParser : IRustCliParser
                         dep,
                         packagesMetadata,
                         visitedDependencies,
-                        explicitlyReferencedDependency: isTomlRoot && explicitlyReferencedDependency);
+                        explicitlyReferencedDependency: isTomlRoot && explicitlyReferencedDependency,
+                        isTomlRoot: false,
+                        parentComponentRecorder: parentComponentRecorder,
+                        ownershipMap: ownershipMap,
+                        fallbackRecorder: fallbackRecorder);
                 }
             }
         }
         catch (IndexOutOfRangeException e)
         {
             this.logger.LogWarning(e, "Could not parse {Id} at {Location}", id, location);
-            recorder.RegisterPackageParseFailure(id);
+            fallbackRecorder.RegisterPackageParseFailure(id);
         }
-    }
-
-    /// <summary>
-    /// Result of parsing a Cargo.toml file.
-    /// </summary>
-    public class ParseResult
-    {
-        /// <summary>
-        /// Gets or sets a value indicating whether parsing was successful.
-        /// </summary>
-        public bool Success { get; set; }
-
-        /// <summary>
-        /// Gets or sets the error message if parsing failed.
-        /// </summary>
-        public string ErrorMessage { get; set; }
-
-        /// <summary>
-        /// Gets or sets the reason for failure if parsing failed.
-        /// </summary>
-        public string FailureReason { get; set; }
-
-        /// <summary>
-        /// Gets or sets the local package directories that should be marked as visited.
-        /// This allows upstream client to skip TOMLs that were already accounted for in this run.
-        /// </summary>
-        public HashSet<string> LocalPackageDirectories { get; set; } = [];
     }
 }

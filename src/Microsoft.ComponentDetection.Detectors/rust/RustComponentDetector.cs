@@ -568,11 +568,16 @@ public class RustComponentDetector : FileComponentDetector
             this.manifestMetadataCache.TryGetValue(normalized, out var cachedMetadata))
         {
             this.Logger.LogDebug("Using cached cargo metadata for {Location}", normalized);
+
+            var parentRecorder = processRequest.SingleFileComponentRecorder.GetParentComponentRecorder();
             var result = await this.cliParser.ParseFromMetadataAsync(
                 processRequest.ComponentStream,
                 processRequest.SingleFileComponentRecorder,
                 cachedMetadata,
+                this.ComponentRecorder,
+                this.ownershipMap,
                 cancellationToken);
+
             if (result.Success)
             {
                 foreach (var dir in result.LocalPackageDirectories)
