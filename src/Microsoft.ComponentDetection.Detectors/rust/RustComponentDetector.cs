@@ -26,6 +26,7 @@ public class RustComponentDetector : FileComponentDetector
         IgnoreMissingProperties = true,
     };
 
+    private readonly IPathUtilityService pathUtilityService;
     private readonly RustSbomParser sbomParser;
     private readonly RustCliParser cliParser;
     private readonly RustCargoLockParser cargoLockParser;
@@ -36,6 +37,7 @@ public class RustComponentDetector : FileComponentDetector
     private readonly StringComparer pathComparer;
     private readonly StringComparison pathComparison;
     private IReadOnlyDictionary<string, HashSet<string>> ownershipMap;
+    private Dictionary<string, Contracts.CargoMetadata> manifestMetadataCache;
     private DetectionMode mode;
 
     /// <summary>
@@ -47,17 +49,20 @@ public class RustComponentDetector : FileComponentDetector
     /// <param name="envVarService">The environment variable service.</param>
     /// <param name="logger">The logger.</param>
     /// <param name="metadataContextBuilder">Rust meta data context builder.</param>
+    /// <param name="pathUtilityService">Path utility service.</param>
     public RustComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService cliService,
         IEnvironmentVariableService envVarService,
         ILogger<RustComponentDetector> logger,
-        IRustMetadataContextBuilder metadataContextBuilder)
+        IRustMetadataContextBuilder metadataContextBuilder,
+        IPathUtilityService pathUtilityService)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.Logger = logger;
+        this.pathUtilityService = pathUtilityService;
 
         // Initialize parsers
         this.sbomParser = new RustSbomParser(logger);
@@ -74,6 +79,7 @@ public class RustComponentDetector : FileComponentDetector
             : StringComparison.Ordinal;
         this.visitedDirs = new HashSet<string>(this.pathComparer);
         this.visitedGlobRules = [];
+        this.manifestMetadataCache = new Dictionary<string, Contracts.CargoMetadata>(this.pathComparer);
     }
 
     /// <summary>
@@ -145,42 +151,50 @@ public class RustComponentDetector : FileComponentDetector
 
         this.Logger.LogInformation("Detection mode: {Mode}", this.mode);
 
-        if (this.mode == DetectionMode.SBOM_ONLY)
+        // Collect Cargo.toml paths ordered (depth, then path)
+        var tomlPaths = allRequests
+            .Select(r => r.ComponentStream.Location)
+            .Where(p => string.Equals(Path.GetFileName(p), "Cargo.toml", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(p => this.GetDirectoryDepth(p))
+            .ThenBy(p => p, StringComparer.Ordinal)
+            .ToList();
+
+        if (tomlPaths.Count > 0)
         {
             try
             {
-                // Gather Cargo.toml files (we do not filter out workspace-only; metadata handles coverage)
-                var tomlPaths = allRequests
-                    .Select(r => r.ComponentStream.Location)
-                    .Where(p => string.Equals(Path.GetFileName(p), "Cargo.toml", StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(p => this.GetDirectoryDepth(p))
-                    .ThenBy(p => p, StringComparer.Ordinal)
-                    .ToList();
+                this.Logger.LogInformation("Building Rust ownership map from {Count} Cargo.toml files", tomlPaths.Count);
+                var ownership = await this.metadataContextBuilder.BuildPackageOwnershipMapAsync(tomlPaths, cancellationToken);
+                this.ownershipMap = ownership.PackageToTomls;
+                this.manifestMetadataCache = ownership.ManifestToMetadata;
+                this.Logger.LogInformation(
+                    "Loaded Rust ownership (packages: {PkgCount}) and metadata cache (manifests: {ManifestCount})",
+                    this.ownershipMap?.Count ?? 0,
+                    this.manifestMetadataCache?.Count ?? 0);
 
-                if (tomlPaths.Count > 0)
+                if (ownership.FailedManifests?.Count > 0)
                 {
-                    this.Logger.LogInformation("Building Rust ownership map from {Count} Cargo.toml files", tomlPaths.Count);
-                    var ownership = await this.metadataContextBuilder.BuildPackageOwnershipMapAsync(tomlPaths, cancellationToken);
-
-                    // Primary map (cargo metadata package IDs)
-                    this.ownershipMap = ownership.PackageToTomls;
-                }
-                else
-                {
-                    this.Logger.LogInformation("No Cargo.toml files found; SBOM ownership mapping unavailable");
-                    this.ownershipMap = null;
+                    this.Logger.LogInformation(
+                        "Rust metadata failed for {Count} manifests (will rely on lockfiles): {Manifests}",
+                        ownership.FailedManifests.Count,
+                        string.Join(", ", ownership.FailedManifests));
                 }
             }
             catch (Exception ex)
             {
-                this.Logger.LogWarning(ex, "Failed to compute Rust ownership map; proceeding without ownership");
+                this.Logger.LogWarning(ex, "Failed to compute Rust ownership/metadata cache; proceeding without cache");
                 this.ownershipMap = null;
+                this.manifestMetadataCache = null;
             }
         }
+        else
+        {
+            this.Logger.LogInformation("No Cargo.toml files found; ownership and metadata cache unavailable");
+            this.ownershipMap = null;
+            this.manifestMetadataCache = null;
+        }
 
-        // Step 3: Filter and order candidates based on mode
         IEnumerable<ProcessRequest> filteredRequests;
-
         if (this.mode == DetectionMode.SBOM_ONLY)
         {
             // Only SBOM files, ordered by path ascending
@@ -204,8 +218,7 @@ public class RustComponentDetector : FileComponentDetector
                 .OrderBy(r => Path.GetFileName(r.ComponentStream.Location).Equals("Cargo.lock", StringComparison.OrdinalIgnoreCase) ? 1 : 0) // TOML before LOCK
                 .ThenBy(r => this.GetDirectoryDepth(r.ComponentStream.Location))
                 .ThenBy(r => r.ComponentStream.Location, StringComparer.Ordinal);
-
-            this.Logger.LogInformation("FALLBACK mode: Processing {Count} Cargo.toml and Cargo.lock files", filteredRequests.Count());
+            this.Logger.LogInformation("FALLBACK mode: Processing {Count} Cargo.toml/Cargo.lock files", filteredRequests.Count());
         }
 
         // Step 4: Return the ordered sequence as an observable
@@ -220,7 +233,9 @@ public class RustComponentDetector : FileComponentDetector
     {
         var componentStream = processRequest.ComponentStream;
         var location = componentStream.Location;
+        var normLocation = this.pathUtilityService.NormalizePath(location);
         var directory = Path.GetDirectoryName(location);
+        var normDirectory = this.pathUtilityService.NormalizePath(directory);
         var fileName = Path.GetFileName(location);
 
         this.Logger.LogInformation("Processing file: {Location}", location);
@@ -243,7 +258,7 @@ public class RustComponentDetector : FileComponentDetector
         // Check if directory should be skipped
         if (this.ShouldSkip(directory, fileKind, location))
         {
-            this.Logger.LogInformation("Skipping file due to skip rules: {Location}", location);
+            this.Logger.LogInformation("Skipping file due to skip rules: {Location}", normLocation);
             return;
         }
 
@@ -266,33 +281,6 @@ public class RustComponentDetector : FileComponentDetector
     }
 
     /// <summary>
-    /// Normalizes a file path for consistent comparison across platforms.
-    /// </summary>
-    /// <param name="path">The path to normalize.</param>
-    /// <returns>
-    /// A normalized path with forward slashes. On Windows, the path is converted to uppercase for case-insensitive comparison.
-    /// Returns the original path if it is null or empty.
-    /// </returns>
-    private string NormalizePath(string path)
-    {
-        if (string.IsNullOrEmpty(path))
-        {
-            return path;
-        }
-
-        // Normalize to forward slashes and handle case sensitivity
-        var normalized = path.Replace('\\', '/');
-
-        // On Windows, normalize to uppercase for comparison
-        if (OperatingSystem.IsWindows())
-        {
-            normalized = normalized.ToUpperInvariant();
-        }
-
-        return normalized;
-    }
-
-    /// <summary>
     /// Calculates the depth of a directory path by counting the number of directory separators.
     /// </summary>
     /// <param name="path">The file or directory path to analyze.</param>
@@ -311,8 +299,8 @@ public class RustComponentDetector : FileComponentDetector
             return 0;
         }
 
-        var normalizedPath = this.NormalizePath(path);
-        return normalizedPath.Count(c => c == '/');
+        var normalizedPath = this.pathUtilityService.NormalizePath(path);
+        return normalizedPath.Count(c => c == Path.AltDirectorySeparatorChar);
     }
 
     /// <summary>
@@ -334,7 +322,7 @@ public class RustComponentDetector : FileComponentDetector
     /// </remarks>
     private bool ShouldSkip(string directory, FileKind fileKind, string fullPath)
     {
-        var normalizedDir = this.NormalizePath(directory);
+        var normalizedDir = this.pathUtilityService.NormalizePath(directory);
 
         // 1. If directory already processed, skip immediately
         if (this.visitedDirs.Contains(normalizedDir))
@@ -348,7 +336,7 @@ public class RustComponentDetector : FileComponentDetector
             return false;
         }
 
-        var normalizedFullPath = this.NormalizePath(fullPath);
+        var normalizedFullPath = this.pathUtilityService.NormalizePath(fullPath);
 
         // 3. Check each workspace rule for inclusion/exclusion
         foreach (var rule in this.visitedGlobRules)
@@ -398,7 +386,7 @@ public class RustComponentDetector : FileComponentDetector
     /// </remarks>
     private void AddGlobRule(string root, IEnumerable<string> includes, IEnumerable<string> excludes)
     {
-        var normalizedRoot = this.NormalizePath(root);
+        var normalizedRoot = this.pathUtilityService.NormalizePath(root);
         var includesList = includes?.ToList() ?? [];
         var excludesList = excludes?.ToList() ?? [];
 
@@ -413,14 +401,14 @@ public class RustComponentDetector : FileComponentDetector
         var includeGlobs = new List<Glob>();
         foreach (var pattern in includesList)
         {
-            var normalizedPattern = this.NormalizePath(pattern);
+            var normalizedPattern = this.pathUtilityService.NormalizePath(pattern);
             includeGlobs.Add(Glob.Parse(normalizedPattern, globOptions));
         }
 
         var excludeGlobs = new List<Glob>();
         foreach (var pattern in excludesList)
         {
-            var normalizedPattern = this.NormalizePath(pattern);
+            var normalizedPattern = this.pathUtilityService.NormalizePath(pattern);
             excludeGlobs.Add(Glob.Parse(normalizedPattern, globOptions));
         }
 
@@ -451,8 +439,8 @@ public class RustComponentDetector : FileComponentDetector
     /// </remarks>
     private bool IsDescendantOf(string path, string potentialParent)
     {
-        var normalizedPath = this.NormalizePath(path);
-        var normalizedParent = this.NormalizePath(potentialParent);
+        var normalizedPath = this.pathUtilityService.NormalizePath(path);
+        var normalizedParent = this.pathUtilityService.NormalizePath(potentialParent);
 
         // Ensure parent path ends with separator for proper comparison
         if (!normalizedParent.EndsWith('/'))
@@ -479,8 +467,8 @@ public class RustComponentDetector : FileComponentDetector
     /// </remarks>
     private string GetRelativePath(string basePath, string fullPath)
     {
-        var normalizedBase = this.NormalizePath(basePath);
-        var normalizedFull = this.NormalizePath(fullPath);
+        var normalizedBase = this.pathUtilityService.NormalizePath(basePath);
+        var normalizedFull = this.pathUtilityService.NormalizePath(fullPath);
 
         if (!normalizedBase.EndsWith('/'))
         {
@@ -588,20 +576,29 @@ public class RustComponentDetector : FileComponentDetector
     /// </remarks>
     private async Task ProcessCargoTomlAsync(ProcessRequest processRequest, string directory, CancellationToken cancellationToken)
     {
-        var result = await this.cliParser.ParseAsync(
-            processRequest.ComponentStream,
-            processRequest.SingleFileComponentRecorder,
-            cancellationToken);
-
-        if (result.Success)
+        var normalized = this.pathUtilityService.NormalizePath(processRequest.ComponentStream.Location);
+        if (this.manifestMetadataCache != null &&
+            this.manifestMetadataCache.TryGetValue(normalized, out var cachedMetadata))
         {
-            // Add local package directories and current directory to visited
-            foreach (var dir in result.LocalPackageDirectories)
+            this.Logger.LogDebug("Using cached cargo metadata for {Location}", normalized);
+            var result = await this.cliParser.ParseFromMetadataAsync(
+                processRequest.ComponentStream,
+                processRequest.SingleFileComponentRecorder,
+                cachedMetadata,
+                cancellationToken);
+            if (result.Success)
             {
-                this.visitedDirs.Add(this.NormalizePath(dir));
-            }
+                foreach (var dir in result.LocalPackageDirectories)
+                {
+                    this.visitedDirs.Add(this.pathUtilityService.NormalizePath(dir));
+                }
 
-            this.visitedDirs.Add(this.NormalizePath(directory));
+                this.visitedDirs.Add(this.pathUtilityService.NormalizePath(directory));
+            }
+        }
+        else
+        {
+            this.Logger.LogWarning("No cached cargo metadata for {Location}", processRequest.ComponentStream.Location);
         }
     }
 
@@ -642,7 +639,7 @@ public class RustComponentDetector : FileComponentDetector
             }
 
             // Add current directory to visitedDirs
-            this.visitedDirs.Add(this.NormalizePath(directory));
+            this.visitedDirs.Add(this.pathUtilityService.NormalizePath(directory));
         }
     }
 

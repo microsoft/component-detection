@@ -14,41 +14,47 @@ public class RustMetadataContextBuilder : IRustMetadataContextBuilder
 {
     private readonly ILogger<RustMetadataContextBuilder> logger;
     private readonly ICommandLineInvocationService cliService;
+    private readonly IPathUtilityService pathUtilityService;
 
-    public RustMetadataContextBuilder(ILogger<RustMetadataContextBuilder> logger, ICommandLineInvocationService cliService)
+    public RustMetadataContextBuilder(
+        ILogger<RustMetadataContextBuilder> logger,
+        ICommandLineInvocationService cliService,
+        IPathUtilityService pathUtilityService)
     {
         this.logger = logger;
         this.cliService = cliService;
+        this.pathUtilityService = pathUtilityService;
     }
 
     public async Task<OwnershipResult> BuildPackageOwnershipMapAsync(
         IEnumerable<string> orderedTomlPaths,
         CancellationToken cancellationToken = default)
     {
-        // aggregated ownership across all TOMLs
         var aggregate = new OwnershipResult();
         var visitedManifests = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var toml in orderedTomlPaths ?? [])
         {
-            var normToml = this.NormalizePath(toml);
+            var normToml = this.pathUtilityService.NormalizePath(toml);
             if (visitedManifests.Contains(normToml))
             {
-                this.logger.LogDebug("Skipping {Toml} (already visited)", toml);
+                this.logger.LogDebug("Skipping {Toml} (already visited)", normToml);
                 continue;
             }
 
             var metadata = await this.RunCargoMetadataAsync(toml, cancellationToken);
             if (metadata == null)
             {
-                this.logger.LogWarning("Skipping TOML due to cargo metadata failure: {Toml}", toml);
+                this.logger.LogWarning("Skipping TOML due to cargo metadata failure: {Toml}", normToml);
+                aggregate.FailedManifests.Add(normToml);
                 continue;
             }
 
-            // Compute ownership information just from metadata of this TOML
+            // Cache metadata for reuse (key by normalized manifest path)
+            aggregate.ManifestToMetadata[normToml] = metadata;
+
             var result = this.BuildOwnershipFromMetadata(metadata);
 
-            // Merge results into global aggregate
             foreach (var (pkgId, owners) in result.PackageToTomls)
             {
                 if (!aggregate.PackageToTomls.TryGetValue(pkgId, out var globalOwners))
@@ -70,12 +76,13 @@ public class RustMetadataContextBuilder : IRustMetadataContextBuilder
             }
 
             this.logger.LogInformation(
-                "Processed {Toml}: +{LocalCount} local manifests, +{DepCount} deps (aggregate: {AggLocal} manifests, {AggDeps} deps)",
+                "Processed {Toml}: +{LocalCount} local manifests, +{DepCount} deps (aggregate: {AggLocal} manifests, {AggDeps} deps, {MetadataCache} cached)",
                 toml,
                 result.LocalPackageManifests.Count,
                 result.PackageToTomls.Count,
                 aggregate.LocalPackageManifests.Count,
-                aggregate.PackageToTomls.Count);
+                aggregate.PackageToTomls.Count,
+                aggregate.ManifestToMetadata.Count);
         }
 
         return aggregate;
@@ -94,7 +101,7 @@ public class RustMetadataContextBuilder : IRustMetadataContextBuilder
         // Step 1: Gather all local packages (user-owned TOMLs)
         foreach (var pkg in metadata.Packages.Where(p => p.Source == null && !string.IsNullOrEmpty(p.ManifestPath)))
         {
-            var manifestPath = this.NormalizePath(pkg.ManifestPath);
+            var manifestPath = this.pathUtilityService.NormalizePath(pkg.ManifestPath);
             localManifests.Add(manifestPath);
             ownership[pkg.Id] = [manifestPath];
         }
@@ -151,6 +158,7 @@ public class RustMetadataContextBuilder : IRustMetadataContextBuilder
         {
             PackageToTomls = ownership,
             LocalPackageManifests = localManifests,
+            ManifestToMetadata = new Dictionary<string, CargoMetadata>(StringComparer.OrdinalIgnoreCase),
         };
     }
 
@@ -180,16 +188,5 @@ public class RustMetadataContextBuilder : IRustMetadataContextBuilder
         }
 
         return CargoMetadata.FromJson(res.StdOut);
-    }
-
-    private string NormalizePath(string path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            return path;
-        }
-
-        var s = path.Replace('\\', '/');
-        return OperatingSystem.IsWindows() ? s.ToUpperInvariant() : s;
     }
 }
