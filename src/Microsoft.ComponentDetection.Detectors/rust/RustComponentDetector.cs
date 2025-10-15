@@ -29,10 +29,13 @@ public class RustComponentDetector : FileComponentDetector
     private readonly RustSbomParser sbomParser;
     private readonly RustCliParser cliParser;
     private readonly RustCargoLockParser cargoLockParser;
+    private readonly IRustMetadataContextBuilder metadataContextBuilder;
+
     private readonly HashSet<string> visitedDirs;
     private readonly List<GlobRule> visitedGlobRules;
     private readonly StringComparer pathComparer;
     private readonly StringComparison pathComparison;
+    private IReadOnlyDictionary<string, HashSet<string>> ownershipMap;
     private DetectionMode mode;
 
     /// <summary>
@@ -43,12 +46,14 @@ public class RustComponentDetector : FileComponentDetector
     /// <param name="cliService">The command line invocation service.</param>
     /// <param name="envVarService">The environment variable service.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="metadataContextBuilder">Rust meta data context builder.</param>
     public RustComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService cliService,
         IEnvironmentVariableService envVarService,
-        ILogger<RustComponentDetector> logger)
+        ILogger<RustComponentDetector> logger,
+        IRustMetadataContextBuilder metadataContextBuilder)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -58,6 +63,7 @@ public class RustComponentDetector : FileComponentDetector
         this.sbomParser = new RustSbomParser(logger);
         this.cliParser = new RustCliParser(cliService, envVarService, logger);
         this.cargoLockParser = new RustCargoLockParser(logger);
+        this.metadataContextBuilder = metadataContextBuilder;
 
         // Initialize with case-insensitive comparison on Windows
         this.pathComparer = OperatingSystem.IsWindows()
@@ -138,6 +144,39 @@ public class RustComponentDetector : FileComponentDetector
         this.mode = hasSbomFiles ? DetectionMode.SBOM_ONLY : DetectionMode.FALLBACK;
 
         this.Logger.LogInformation("Detection mode: {Mode}", this.mode);
+
+        if (this.mode == DetectionMode.SBOM_ONLY)
+        {
+            try
+            {
+                // Gather Cargo.toml files (we do not filter out workspace-only; metadata handles coverage)
+                var tomlPaths = allRequests
+                    .Select(r => r.ComponentStream.Location)
+                    .Where(p => string.Equals(Path.GetFileName(p), "Cargo.toml", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(p => this.GetDirectoryDepth(p))
+                    .ThenBy(p => p, StringComparer.Ordinal)
+                    .ToList();
+
+                if (tomlPaths.Count > 0)
+                {
+                    this.Logger.LogInformation("Building Rust ownership map from {Count} Cargo.toml files", tomlPaths.Count);
+                    var ownership = await this.metadataContextBuilder.BuildPackageOwnershipMapAsync(tomlPaths, cancellationToken);
+
+                    // Primary map (cargo metadata package IDs)
+                    this.ownershipMap = ownership.PackageToTomls;
+                }
+                else
+                {
+                    this.Logger.LogInformation("No Cargo.toml files found; SBOM ownership mapping unavailable");
+                    this.ownershipMap = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Logger.LogWarning(ex, "Failed to compute Rust ownership map; proceeding without ownership");
+                this.ownershipMap = null;
+            }
+        }
 
         // Step 3: Filter and order candidates based on mode
         IEnumerable<ProcessRequest> filteredRequests;
@@ -506,10 +545,24 @@ public class RustComponentDetector : FileComponentDetector
             "SBOM parse starting. Recorder manifest location = {ManifestLocation}; SBOM stream location = {StreamLocation}",
             processRequest.SingleFileComponentRecorder.ManifestFileLocation,
             processRequest.ComponentStream.Location);
-        var version = await this.sbomParser.ParseAsync(
-            processRequest.ComponentStream,
-            processRequest.SingleFileComponentRecorder,
-            cancellationToken);
+
+        int? version;
+        if (this.ownershipMap != null)
+        {
+            version = await this.sbomParser.ParseWithOwnershipAsync(
+                processRequest.ComponentStream,
+                processRequest.SingleFileComponentRecorder,
+                this.ComponentRecorder,
+                this.ownershipMap,
+                cancellationToken);
+        }
+        else
+        {
+            version = await this.sbomParser.ParseAsync(
+                processRequest.ComponentStream,
+                processRequest.SingleFileComponentRecorder,
+                cancellationToken);
+        }
 
         if (version.HasValue)
         {

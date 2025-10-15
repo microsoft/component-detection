@@ -29,7 +29,7 @@ public class RustSbomParser
     private readonly ILogger logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="RustSbomDetector"/> class.
+    /// Initializes a new instance of the <see cref="RustSbomParser"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
     public RustSbomParser(ILogger logger) => this.logger = logger;
@@ -108,6 +108,145 @@ public class RustSbomParser
             if (visitedNodes.Add(dependency.Index))
             {
                 this.ProcessDependency(sbom, dep, recorder, components, visitedNodes, parentComponent, depth + 1);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Parses a Cargo SBOM file and registers each discovered component against all owning Cargo.toml recorders
+    /// using the provided ownership map (cargo metadata package id -> set of manifest paths).
+    /// Falls back to the supplied sbomRecorder when ownership info is absent.
+    /// </summary>
+    /// <param name="componentStream">SBOM stream.</param>
+    /// <param name="sbomRecorder">Recorder tied to the SBOM file (fallback target).</param>
+    /// <param name="parentComponentRecorder">Root component recorder used to create (or reuse) per-manifest recorders.</param>
+    /// <param name="ownershipMap">Package ownership map from RustMetadataContextBuilder (may be null).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>SBOM version or null on failure.</returns>
+    public async Task<int?> ParseWithOwnershipAsync(
+        IComponentStream componentStream,
+        ISingleFileComponentRecorder sbomRecorder,
+        IComponentRecorder parentComponentRecorder,
+        IReadOnlyDictionary<string, HashSet<string>> ownershipMap,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var reader = new StreamReader(componentStream.Stream);
+            var cargoSbom = CargoSbom.FromJson(await reader.ReadToEndAsync(cancellationToken));
+            this.ProcessCargoSbomWithOwnership(
+                cargoSbom,
+                componentStream,
+                sbomRecorder,
+                parentComponentRecorder,
+                ownershipMap);
+            return cargoSbom.Version;
+        }
+        catch (Exception e)
+        {
+            this.logger.LogError(e, "Failed to parse Cargo SBOM (ownership mode) '{FileLocation}'", componentStream.Location);
+            return null;
+        }
+    }
+
+    private void ProcessCargoSbomWithOwnership(
+        CargoSbom sbom,
+        IComponentStream sbomStream,
+        ISingleFileComponentRecorder sbomRecorder,
+        IComponentRecorder parentComponentRecorder,
+        IReadOnlyDictionary<string, HashSet<string>> ownershipMap)
+    {
+        try
+        {
+            var visitedNodes = new HashSet<int>();
+            this.ProcessDependencyWithOwnership(
+                sbom,
+                sbom.Crates[sbom.Root],
+                sbomStream,
+                sbomRecorder,
+                parentComponentRecorder,
+                ownershipMap,
+                visitedNodes,
+                parent: null,
+                depth: 0);
+        }
+        catch (Exception e)
+        {
+            this.logger.LogError(e, "Failed to process Cargo SBOM (ownership mode) '{FileLocation}'", sbomStream.Location);
+        }
+    }
+
+    private void ProcessDependencyWithOwnership(
+        CargoSbom sbom,
+        SbomCrate package,
+        IComponentStream sbomStream,
+        ISingleFileComponentRecorder sbomRecorder,
+        IComponentRecorder parentComponentRecorder,
+        IReadOnlyDictionary<string, HashSet<string>> ownershipMap,
+        HashSet<int> visitedNodes,
+        CargoComponent parent,
+        int depth)
+    {
+        foreach (var dependency in package.Dependencies)
+        {
+            var depCrate = sbom.Crates[dependency.Index];
+            var parentComponent = parent;
+
+            if (this.ParsePackageIdSpec(depCrate.Id, out var component))
+            {
+                if (component.Source == CratesIoSource)
+                {
+                    parentComponent = component;
+
+                    // Determine ownership
+                    var metadataId = depCrate.Id;
+                    var ownersApplied = false;
+
+                    if (ownershipMap != null &&
+                        ownershipMap.TryGetValue(metadataId, out var owners) &&
+                        owners != null && owners.Count > 0)
+                    {
+                        ownersApplied = true;
+                        foreach (var manifestPath in owners)
+                        {
+                            var ownerRecorder = parentComponentRecorder.CreateSingleFileComponentRecorder(manifestPath);
+                            ownerRecorder.RegisterUsage(
+                                new DetectedComponent(component),
+                                isExplicitReferencedDependency: depth == 0,
+                                parentComponentId: null,
+                                isDevelopmentDependency: false);
+                        }
+                    }
+
+                    if (!ownersApplied)
+                    {
+                        // Fallback to SBOM recorder if no ownership info
+                        sbomRecorder.RegisterUsage(
+                            new DetectedComponent(component),
+                            isExplicitReferencedDependency: depth == 0,
+                            parentComponentId: null,
+                            isDevelopmentDependency: false);
+                    }
+                }
+            }
+            else
+            {
+                this.logger.LogError(null, "Failed to parse Cargo PackageIdSpec '{Id}' in '{Location}'", depCrate.Id, sbomStream.Location);
+                sbomRecorder.RegisterPackageParseFailure(depCrate.Id);
+            }
+
+            if (visitedNodes.Add(dependency.Index))
+            {
+                this.ProcessDependencyWithOwnership(
+                    sbom,
+                    depCrate,
+                    sbomStream,
+                    sbomRecorder,
+                    parentComponentRecorder,
+                    ownershipMap,
+                    visitedNodes,
+                    parentComponent,
+                    depth + 1);
             }
         }
     }
