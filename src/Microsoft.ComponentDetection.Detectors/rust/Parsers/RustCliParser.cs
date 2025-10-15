@@ -19,26 +19,19 @@ public class RustCliParser : IRustCliParser
 {
     private readonly ICommandLineInvocationService cliService;
     private readonly IEnvironmentVariableService envVarService;
-    private readonly ILogger logger;
+    private readonly ILogger<RustCliParser> logger;
     private readonly IPathUtilityService pathUtilityService;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RustCliParser"/> class.
-    /// </summary>
-    /// <param name="cliService">The command line invocation service.</param>
-    /// <param name="envVarService">The environment variable service.</param>
-    /// <param name="logger">The logger.</param>
-    /// <param name="pathUtilityService">Path utility service.</param>
     public RustCliParser(
         ICommandLineInvocationService cliService,
         IEnvironmentVariableService envVarService,
-        ILogger logger,
-        IPathUtilityService pathUtilityService)
+        IPathUtilityService pathUtilityService,
+        ILogger<RustCliParser> logger)
     {
         this.cliService = cliService;
         this.envVarService = envVarService;
-        this.logger = logger;
         this.pathUtilityService = pathUtilityService;
+        this.logger = logger;
     }
 
     /// <summary>
@@ -171,7 +164,7 @@ public class RustCliParser : IRustCliParser
 
         if (root == null)
         {
-            this.logger.LogInformation("Virtual Manifest detected: {Location}", manifestLocation);
+            this.logger.LogInformation("Virtual Manifest detected: {Location}", this.pathUtilityService.NormalizePath(manifestLocation));
             foreach (var dep in metadata.Resolve.Nodes)
             {
                 var componentKey = $"{dep.Id}";

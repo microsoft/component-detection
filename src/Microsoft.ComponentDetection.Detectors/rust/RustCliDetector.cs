@@ -19,7 +19,7 @@ using Newtonsoft.Json;
 /// </summary>
 public class RustCliDetector : FileComponentDetector
 {
-    private readonly RustCliParser cliParser;
+    private readonly IRustCliParser cliParser;
     private readonly RustCargoLockParser cargoLockParser;
 
     /// <summary>
@@ -30,17 +30,19 @@ public class RustCliDetector : FileComponentDetector
     /// <param name="cliService">The command line invocation service.</param>
     /// <param name="envVarService">The environment variable reader service.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="cliParser">Rust cli parser.</param>
     public RustCliDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         ICommandLineInvocationService cliService,
         IEnvironmentVariableService envVarService,
-        ILogger<RustCliDetector> logger)
+        ILogger<RustCliDetector> logger,
+        IRustCliParser cliParser)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.Logger = logger;
-        this.cliParser = new RustCliParser(cliService, envVarService, logger);
+        this.cliParser = cliParser;
         this.cargoLockParser = new RustCargoLockParser(logger);
     }
 

@@ -77,7 +77,7 @@ public class RustMetadataContextBuilder : IRustMetadataContextBuilder
 
             this.logger.LogInformation(
                 "Processed {Toml}: +{LocalCount} local manifests, +{DepCount} deps (aggregate: {AggLocal} manifests, {AggDeps} deps, {MetadataCache} cached)",
-                toml,
+                normToml,
                 result.LocalPackageManifests.Count,
                 result.PackageToTomls.Count,
                 aggregate.LocalPackageManifests.Count,

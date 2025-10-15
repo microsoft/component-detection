@@ -28,7 +28,7 @@ public class RustComponentDetector : FileComponentDetector
 
     private readonly IPathUtilityService pathUtilityService;
     private readonly RustSbomParser sbomParser;
-    private readonly RustCliParser cliParser;
+    private readonly IRustCliParser cliParser;
     private readonly RustCargoLockParser cargoLockParser;
     private readonly IRustMetadataContextBuilder metadataContextBuilder;
 
@@ -40,16 +40,6 @@ public class RustComponentDetector : FileComponentDetector
     private Dictionary<string, Contracts.CargoMetadata> manifestMetadataCache;
     private DetectionMode mode;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RustComponentDetector"/> class.
-    /// </summary>
-    /// <param name="componentStreamEnumerableFactory">The component stream enumerable factory.</param>
-    /// <param name="walkerFactory">The walker factory.</param>
-    /// <param name="cliService">The command line invocation service.</param>
-    /// <param name="envVarService">The environment variable service.</param>
-    /// <param name="logger">The logger.</param>
-    /// <param name="metadataContextBuilder">Rust meta data context builder.</param>
-    /// <param name="pathUtilityService">Path utility service.</param>
     public RustComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -57,7 +47,8 @@ public class RustComponentDetector : FileComponentDetector
         IEnvironmentVariableService envVarService,
         ILogger<RustComponentDetector> logger,
         IRustMetadataContextBuilder metadataContextBuilder,
-        IPathUtilityService pathUtilityService)
+        IPathUtilityService pathUtilityService,
+        IRustCliParser cliParser)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -66,17 +57,13 @@ public class RustComponentDetector : FileComponentDetector
 
         // Initialize parsers
         this.sbomParser = new RustSbomParser(logger);
-        this.cliParser = new RustCliParser(cliService, envVarService, logger);
+        this.cliParser = cliParser;
         this.cargoLockParser = new RustCargoLockParser(logger);
         this.metadataContextBuilder = metadataContextBuilder;
 
-        // Initialize with case-insensitive comparison on Windows
-        this.pathComparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
-        this.pathComparison = OperatingSystem.IsWindows()
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
+        // Initialize with uniform case-insensitive comparison across all platforms
+        this.pathComparer = StringComparer.OrdinalIgnoreCase;
+        this.pathComparison = StringComparison.OrdinalIgnoreCase;
         this.visitedDirs = new HashSet<string>(this.pathComparer);
         this.visitedGlobRules = [];
         this.manifestMetadataCache = new Dictionary<string, Contracts.CargoMetadata>(this.pathComparer);
@@ -146,7 +133,7 @@ public class RustComponentDetector : FileComponentDetector
         var allRequests = await processRequests.ToList().ToTask(cancellationToken);
 
         // Step 2: Determine detection mode
-        var hasSbomFiles = allRequests.Any(r => r.ComponentStream.Location.EndsWith(".cargo-sbom.json", StringComparison.OrdinalIgnoreCase));
+        var hasSbomFiles = allRequests.Any(r => r.ComponentStream.Location.EndsWith(".cargo-sbom.json", this.pathComparison));
         this.mode = hasSbomFiles ? DetectionMode.SBOM_ONLY : DetectionMode.FALLBACK;
 
         this.Logger.LogInformation("Detection mode: {Mode}", this.mode);
@@ -154,9 +141,9 @@ public class RustComponentDetector : FileComponentDetector
         // Collect Cargo.toml paths ordered (depth, then path)
         var tomlPaths = allRequests
             .Select(r => r.ComponentStream.Location)
-            .Where(p => string.Equals(Path.GetFileName(p), "Cargo.toml", StringComparison.OrdinalIgnoreCase))
+            .Where(p => string.Equals(Path.GetFileName(p), "Cargo.toml", this.pathComparison))
             .OrderBy(p => this.GetDirectoryDepth(p))
-            .ThenBy(p => p, StringComparer.Ordinal)
+            .ThenBy(p => p, this.pathComparer)
             .ToList();
 
         if (tomlPaths.Count > 0)
@@ -199,8 +186,8 @@ public class RustComponentDetector : FileComponentDetector
         {
             // Only SBOM files, ordered by path ascending
             filteredRequests = allRequests
-                .Where(r => r.ComponentStream.Location.EndsWith(".cargo-sbom.json", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(r => r.ComponentStream.Location, StringComparer.Ordinal);
+                .Where(r => r.ComponentStream.Location.EndsWith(".cargo-sbom.json", this.pathComparison))
+                .OrderBy(r => r.ComponentStream.Location, this.pathComparer);
 
             this.Logger.LogInformation("SBOM_ONLY mode: Processing {Count} SBOM files", filteredRequests.Count());
         }
@@ -212,12 +199,12 @@ public class RustComponentDetector : FileComponentDetector
                 .Where(r =>
                 {
                     var fileName = Path.GetFileName(r.ComponentStream.Location);
-                    return fileName.Equals("Cargo.toml", StringComparison.OrdinalIgnoreCase) ||
-                           fileName.Equals("Cargo.lock", StringComparison.OrdinalIgnoreCase);
+                    return fileName.Equals("Cargo.toml", this.pathComparison) ||
+                           fileName.Equals("Cargo.lock", this.pathComparison);
                 })
-                .OrderBy(r => Path.GetFileName(r.ComponentStream.Location).Equals("Cargo.lock", StringComparison.OrdinalIgnoreCase) ? 1 : 0) // TOML before LOCK
+                .OrderBy(r => Path.GetFileName(r.ComponentStream.Location).Equals("Cargo.lock", this.pathComparison) ? 1 : 0) // TOML before LOCK
                 .ThenBy(r => this.GetDirectoryDepth(r.ComponentStream.Location))
-                .ThenBy(r => r.ComponentStream.Location, StringComparer.Ordinal);
+                .ThenBy(r => r.ComponentStream.Location, this.pathComparer);
             this.Logger.LogInformation("FALLBACK mode: Processing {Count} Cargo.toml/Cargo.lock files", filteredRequests.Count());
         }
 
@@ -238,15 +225,15 @@ public class RustComponentDetector : FileComponentDetector
         var normDirectory = this.pathUtilityService.NormalizePath(directory);
         var fileName = Path.GetFileName(location);
 
-        this.Logger.LogInformation("Processing file: {Location}", location);
+        this.Logger.LogInformation("Processing file: {Location}", normLocation);
 
         // Determine file kind
         FileKind fileKind;
-        if (fileName.Equals("Cargo.toml", StringComparison.OrdinalIgnoreCase))
+        if (fileName.Equals("Cargo.toml", this.pathComparison))
         {
             fileKind = FileKind.CargoToml;
         }
-        else if (fileName.Equals("Cargo.lock", StringComparison.OrdinalIgnoreCase))
+        else if (fileName.Equals("Cargo.lock", this.pathComparison))
         {
             fileKind = FileKind.CargoLock;
         }
@@ -394,7 +381,7 @@ public class RustComponentDetector : FileComponentDetector
         {
             Evaluation = new EvaluationOptions
             {
-                CaseInsensitive = OperatingSystem.IsWindows(),
+                CaseInsensitive = true,
             },
         };
 
@@ -590,7 +577,7 @@ public class RustComponentDetector : FileComponentDetector
             {
                 foreach (var dir in result.LocalPackageDirectories)
                 {
-                    this.visitedDirs.Add(this.pathUtilityService.NormalizePath(dir));
+                    this.visitedDirs.Add(dir);
                 }
 
                 this.visitedDirs.Add(this.pathUtilityService.NormalizePath(directory));
