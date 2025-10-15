@@ -55,6 +55,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPathUtilityService, PathUtilityService>();
         services.AddSingleton<ISafeFileEnumerableFactory, SafeFileEnumerableFactory>();
         services.AddSingleton<IRustMetadataContextBuilder, RustMetadataContextBuilder>();
+        services.AddSingleton<IRustCliParser, RustCliParser>();
 
         // Command line services
         services.AddSingleton<IScanExecutionService, ScanExecutionService>();

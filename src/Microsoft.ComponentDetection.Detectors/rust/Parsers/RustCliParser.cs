@@ -13,13 +13,14 @@ using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
-/// Parser for Cargo.toml files using cargo metadata command.
+/// Parser for Cargo.toml files using cargo metadata command or cached metadata.
 /// </summary>
-public class RustCliParser
+public class RustCliParser : IRustCliParser
 {
     private readonly ICommandLineInvocationService cliService;
     private readonly IEnvironmentVariableService envVarService;
     private readonly ILogger logger;
+    private readonly IPathUtilityService pathUtilityService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RustCliParser"/> class.
@@ -27,18 +28,21 @@ public class RustCliParser
     /// <param name="cliService">The command line invocation service.</param>
     /// <param name="envVarService">The environment variable service.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="pathUtilityService">Path utility service.</param>
     public RustCliParser(
         ICommandLineInvocationService cliService,
         IEnvironmentVariableService envVarService,
-        ILogger logger)
+        ILogger logger,
+        IPathUtilityService pathUtilityService)
     {
         this.cliService = cliService;
         this.envVarService = envVarService;
         this.logger = logger;
+        this.pathUtilityService = pathUtilityService;
     }
 
     /// <summary>
-    /// Parses a Cargo.toml file using cargo metadata command.
+    /// Parses a Cargo.toml file by invoking 'cargo metadata'.
     /// </summary>
     /// <param name="componentStream">The component stream containing the Cargo.toml file.</param>
     /// <param name="recorder">The component recorder.</param>
@@ -90,68 +94,7 @@ public class RustCliParser
             }
 
             var metadata = CargoMetadata.FromJson(cliResult.StdOut);
-            var graph = this.BuildGraph(metadata);
-
-            var packages = metadata.Packages.ToDictionary(
-                x => $"{x.Id}",
-                x => new CargoComponent(
-                    x.Name,
-                    x.Version,
-                    (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || x.Authors.Length == 0) ? null : string.Join(", ", x.Authors),
-                    string.IsNullOrWhiteSpace(x.License) ? null : x.License,
-                    x.Source));
-
-            var root = metadata.Resolve.Root;
-            HashSet<string> visitedDependencies = [];
-
-            if (root == null)
-            {
-                this.logger.LogInformation("Virtual Manifest detected: {Location}", componentStream.Location);
-                foreach (var dep in metadata.Resolve.Nodes)
-                {
-                    var componentKey = $"{dep.Id}";
-                    if (visitedDependencies.Add(componentKey))
-                    {
-                        this.TraverseAndRecordComponents(
-                            recorder,
-                            componentStream.Location,
-                            graph,
-                            dep.Id,
-                            null,
-                            null,
-                            packages,
-                            visitedDependencies,
-                            explicitlyReferencedDependency: false);
-                    }
-                }
-            }
-            else
-            {
-                this.TraverseAndRecordComponents(
-                    recorder,
-                    componentStream.Location,
-                    graph,
-                    root,
-                    null,
-                    null,
-                    packages,
-                    visitedDependencies,
-                    explicitlyReferencedDependency: true,
-                    isTomlRoot: true);
-            }
-
-            // Collect local package directories
-            foreach (var package in metadata.Packages.Where(p => p.Source == null))
-            {
-                var pkgDir = Path.GetDirectoryName(package.ManifestPath);
-                if (!string.IsNullOrEmpty(pkgDir))
-                {
-                    result.LocalPackageDirectories.Add(pkgDir);
-                }
-            }
-
-            result.Success = true;
-            return result;
+            return this.ProcessMetadata(componentStream.Location, recorder, metadata);
         }
         catch (Exception e)
         {
@@ -160,6 +103,119 @@ public class RustCliParser
             result.FailureReason = "Exception during cargo metadata";
             return result;
         }
+    }
+
+    /// <summary>
+    /// Parses a Cargo.toml file using a previously obtained CargoMetadata (cached output).
+    /// Avoids re-running the cargo command.
+    /// </summary>
+    /// <returns>Result of parsing cargo metadata.</returns>
+    public Task<ParseResult> ParseFromMetadataAsync(
+        IComponentStream componentStream,
+        ISingleFileComponentRecorder recorder,
+        CargoMetadata cachedMetadata,
+        CancellationToken cancellationToken = default)
+    {
+        // Cancellation token is unused here since we do no IO, but kept for API symmetry.
+        var result = new ParseResult();
+
+        if (cachedMetadata == null)
+        {
+            result.FailureReason = "Cached metadata unavailable";
+            return Task.FromResult(result);
+        }
+
+        if (this.IsRustCliManuallyDisabled())
+        {
+            this.logger.LogInformation("Rust CLI manually disabled (cached path) for {Location}", componentStream.Location);
+            result.FailureReason = "Manually Disabled";
+            return Task.FromResult(result);
+        }
+
+        try
+        {
+            return Task.FromResult(this.ProcessMetadata(componentStream.Location, recorder, cachedMetadata));
+        }
+        catch (Exception e)
+        {
+            this.logger.LogWarning(e, "Failed processing cached cargo metadata for {Location}", componentStream.Location);
+            result.ErrorMessage = e.Message;
+            result.FailureReason = "Exception during cached cargo metadata processing";
+            return Task.FromResult(result);
+        }
+    }
+
+    /// <summary>
+    /// Shared implementation to translate CargoMetadata into registered components and a ParseResult.
+    /// </summary>
+    private ParseResult ProcessMetadata(
+        string manifestLocation,
+        ISingleFileComponentRecorder recorder,
+        CargoMetadata metadata)
+    {
+        var result = new ParseResult();
+
+        var graph = this.BuildGraph(metadata);
+
+        var packages = metadata.Packages.ToDictionary(
+            x => $"{x.Id}",
+            x => new CargoComponent(
+                x.Name,
+                x.Version,
+                (x.Authors == null || x.Authors.Any(a => string.IsNullOrWhiteSpace(a)) || x.Authors.Length == 0) ? null : string.Join(", ", x.Authors),
+                string.IsNullOrWhiteSpace(x.License) ? null : x.License,
+                x.Source));
+
+        var root = metadata.Resolve.Root;
+        HashSet<string> visitedDependencies = [];
+
+        if (root == null)
+        {
+            this.logger.LogInformation("Virtual Manifest detected: {Location}", manifestLocation);
+            foreach (var dep in metadata.Resolve.Nodes)
+            {
+                var componentKey = $"{dep.Id}";
+                if (visitedDependencies.Add(componentKey))
+                {
+                    this.TraverseAndRecordComponents(
+                        recorder,
+                        manifestLocation,
+                        graph,
+                        dep.Id,
+                        null,
+                        null,
+                        packages,
+                        visitedDependencies,
+                        explicitlyReferencedDependency: false);
+                }
+            }
+        }
+        else
+        {
+            this.TraverseAndRecordComponents(
+                recorder,
+                manifestLocation,
+                graph,
+                root,
+                null,
+                null,
+                packages,
+                visitedDependencies,
+                explicitlyReferencedDependency: true,
+                isTomlRoot: true);
+        }
+
+        foreach (var package in metadata.Packages.Where(p => p.Source == null))
+        {
+            var pkgDir = Path.GetDirectoryName(package.ManifestPath);
+            if (!string.IsNullOrEmpty(pkgDir))
+            {
+                result.LocalPackageDirectories.Add(this.pathUtilityService.NormalizePath(pkgDir));
+            }
+        }
+
+        result.Success = true;
+        return result;
     }
 
     private Dictionary<string, Node> BuildGraph(CargoMetadata cargoMetadata) =>
@@ -255,6 +311,7 @@ public class RustCliParser
 
         /// <summary>
         /// Gets or sets the local package directories that should be marked as visited.
+        /// This allows upstream client to skip TOMLs that were already accounted for in this run.
         /// </summary>
         public HashSet<string> LocalPackageDirectories { get; set; } = [];
     }
