@@ -269,33 +269,15 @@ public class RustCliParser : IRustCliParser
             var shouldRegister = !isTomlRoot && cargoComponent.Source != null;
             if (shouldRegister)
             {
-                var ownersApplied = false;
-                if (ownershipMap != null &&
-                    parentComponentRecorder != null &&
-                    ownershipMap.TryGetValue(id, out var owners) &&
-                    owners != null && owners.Count > 0)
-                {
-                    ownersApplied = true;
-                    foreach (var manifestPath in owners)
-                    {
-                        var ownerRecorder = parentComponentRecorder.CreateSingleFileComponentRecorder(manifestPath);
-                        ownerRecorder.RegisterUsage(
-                            detectedComponent,
-                            explicitlyReferencedDependency,
-                            isDevelopmentDependency: isDevelopmentDependency,
-                            parentComponentId: parent?.Component.Id);
-                    }
-                }
-
-                if (!ownersApplied)
-                {
-                    // Fallback to the manifest-local recorder
-                    fallbackRecorder.RegisterUsage(
-                        detectedComponent,
-                        explicitlyReferencedDependency,
-                        isDevelopmentDependency: isDevelopmentDependency,
-                        parentComponentId: parent?.Component.Id);
-                }
+                this.ApplyOwners(
+                    id,
+                    detectedComponent,
+                    explicitlyReferencedDependency,
+                    isDevelopmentDependency,
+                    parentComponentRecorder,
+                    ownershipMap,
+                    fallbackRecorder,
+                    parent);
             }
 
             foreach (var dep in node.Deps)
@@ -323,6 +305,46 @@ public class RustCliParser : IRustCliParser
         {
             this.logger.LogWarning(e, "Could not parse {Id} at {Location}", id, location);
             fallbackRecorder.RegisterPackageParseFailure(id);
+        }
+    }
+
+    private void ApplyOwners(
+        string id,
+        DetectedComponent detectedComponent,
+        bool explicitlyReferencedDependency,
+        bool isDevelopmentDependency,
+        IComponentRecorder parentComponentRecorder,
+        IReadOnlyDictionary<string, HashSet<string>> ownershipMap,
+        ISingleFileComponentRecorder fallbackRecorder,
+        DetectedComponent parent)
+    {
+        var ownersApplied = false;
+        var parentId = parent?.Component.Id;
+        if (ownershipMap != null &&
+            parentComponentRecorder != null &&
+            ownershipMap.TryGetValue(id, out var owners) &&
+            owners != null && owners.Count > 0)
+        {
+            ownersApplied = true;
+            foreach (var manifestPath in owners)
+            {
+                var ownerRecorder = parentComponentRecorder.CreateSingleFileComponentRecorder(manifestPath);
+                ownerRecorder.RegisterUsage(
+                    detectedComponent,
+                    explicitlyReferencedDependency,
+                    isDevelopmentDependency: isDevelopmentDependency,
+                    parentComponentId: parentId != null && ownerRecorder.DependencyGraph.Contains(parentId) ? parentId : null);
+            }
+        }
+
+        if (!ownersApplied)
+        {
+            // Fallback to the manifest-local recorder
+            fallbackRecorder.RegisterUsage(
+                detectedComponent,
+                explicitlyReferencedDependency,
+                isDevelopmentDependency: isDevelopmentDependency,
+                parentComponentId: parentId != null && fallbackRecorder.DependencyGraph.Contains(parentId) ? parentId : null);
         }
     }
 }
