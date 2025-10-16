@@ -140,7 +140,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, RustCrateDetector>();
         services.AddSingleton<IComponentDetector, RustCliDetector>();
         services.AddSingleton<IComponentDetector, RustSbomDetector>();
-        services.AddSingleton<IComponentDetector, RustComponentDetector>();
 
         // SPDX
         services.AddSingleton<IComponentDetector, Spdx22ComponentDetector>();
