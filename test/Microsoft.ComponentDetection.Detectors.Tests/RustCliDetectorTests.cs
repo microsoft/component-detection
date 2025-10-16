@@ -12,6 +12,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -510,15 +511,19 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
 
     private Mock<IComponentStreamEnumerableFactory> mockComponentStreamEnumerableFactory;
 
+    private Mock<ILogger<RustCliParser>> mockRustCliParserLogger;
+
     [TestInitialize]
     public void InitMocks()
     {
         this.mockCliService = new Mock<ICommandLineInvocationService>();
         this.DetectorTestUtility.AddServiceMock(this.mockCliService);
         this.mockComponentStreamEnumerableFactory = new Mock<IComponentStreamEnumerableFactory>();
+        this.mockRustCliParserLogger = new Mock<ILogger<RustCliParser>>();
         this.DetectorTestUtility.AddServiceMock(this.mockComponentStreamEnumerableFactory);
         this.mockEnvVarService = new Mock<IEnvironmentVariableService>();
         this.DetectorTestUtility.AddServiceMock(this.mockEnvVarService);
+        this.DetectorTestUtility.AddService<IRustCliParser>(new RustCliParser(this.mockCliService.Object, this.mockEnvVarService.Object, new PathUtilityService(new Mock<ILogger<PathUtilityService>>().Object), this.mockRustCliParserLogger.Object));
     }
 
     [TestMethod]
