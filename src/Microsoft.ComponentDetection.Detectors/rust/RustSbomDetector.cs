@@ -162,7 +162,7 @@ public class RustSbomDetector : FileComponentDetector
                 if (ownership.FailedManifests?.Count > 0)
                 {
                     this.Logger.LogInformation(
-                        "Rust metadata failed for {Count} manifests (will rely on lockfiles): {Manifests}",
+                        "Rust metadata failed for {Count} manifests: {Manifests}",
                         ownership.FailedManifests.Count,
                         string.Join(", ", ownership.FailedManifests));
                 }
@@ -518,8 +518,8 @@ public class RustSbomDetector : FileComponentDetector
         // Just before calling ParseAsync
         this.Logger.LogDebug(
             "SBOM parse starting. Recorder manifest location = {ManifestLocation}; SBOM stream location = {StreamLocation}",
-            processRequest.SingleFileComponentRecorder.ManifestFileLocation,
-            processRequest.ComponentStream.Location);
+            this.pathUtilityService.NormalizePath(processRequest.SingleFileComponentRecorder.ManifestFileLocation),
+            this.pathUtilityService.NormalizePath(processRequest.ComponentStream.Location));
 
         int? version;
         if (this.ownershipMap != null)

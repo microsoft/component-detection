@@ -221,6 +221,8 @@ public class RustSbomParser
 
                     if (!ownersApplied)
                     {
+                        this.logger.LogWarning("Falling back to SBOM recorder for {Id} because no ownership found", metadataId);
+
                         // Fallback to SBOM recorder if no ownership info
                         sbomRecorder.RegisterUsage(
                             new DetectedComponent(component),
