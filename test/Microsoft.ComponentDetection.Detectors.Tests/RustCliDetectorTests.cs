@@ -524,6 +524,7 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
         this.mockEnvVarService = new Mock<IEnvironmentVariableService>();
         this.DetectorTestUtility.AddServiceMock(this.mockEnvVarService);
         this.DetectorTestUtility.AddService<IRustCliParser>(new RustCliParser(this.mockCliService.Object, this.mockEnvVarService.Object, new PathUtilityService(new Mock<ILogger<PathUtilityService>>().Object), this.mockRustCliParserLogger.Object));
+        this.DetectorTestUtility.AddService<IRustCargoLockParser>(new RustCargoLockParser(new Mock<ILogger<RustCargoLockParser>>().Object));
     }
 
     [TestMethod]

@@ -4,11 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Rust.Sbom.Contracts;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -201,6 +204,16 @@ public class RustSbomDetectorTests : BaseDetectorTest<RustSbomDetector>
     },
     ""target"": ""x86_64-pc-windows-msvc""
 }";
+
+    [TestInitialize]
+    public void Initialize()
+    {
+        this.DetectorTestUtility.AddService<IPathUtilityService>(new PathUtilityService(new Mock<ILogger<PathUtilityService>>().Object));
+        this.DetectorTestUtility.AddService(new Mock<IRustMetadataContextBuilder>().Object);
+        this.DetectorTestUtility.AddService(new Mock<IRustCliParser>().Object);
+        this.DetectorTestUtility.AddService(new Mock<IRustCargoLockParser>().Object);
+        this.DetectorTestUtility.AddService<IRustSbomParser>(new RustSbomParser(new Mock<ILogger<RustSbomParser>>().Object));
+    }
 
     [TestMethod]
     public async Task TestGraphIsCorrectAsync()
