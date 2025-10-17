@@ -11,17 +11,18 @@ using Microsoft.Extensions.Logging;
 public class RustCrateDetector : FileComponentDetector
 {
     private const string CargoLockSearchPattern = "Cargo.lock";
-    private readonly RustCargoLockParser parser;
+    private readonly IRustCargoLockParser parser;
 
     public RustCrateDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ILogger<RustCrateDetector> logger)
+        ILogger<RustCrateDetector> logger,
+        IRustCargoLockParser parser)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.Logger = logger;
-        this.parser = new RustCargoLockParser(logger);
+        this.parser = parser;
     }
 
     public override string Id => "RustCrateDetector";

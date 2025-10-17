@@ -27,9 +27,9 @@ public class RustSbomDetector : FileComponentDetector
     };
 
     private readonly IPathUtilityService pathUtilityService;
-    private readonly RustSbomParser sbomParser;
+    private readonly IRustSbomParser sbomParser;
     private readonly IRustCliParser cliParser;
-    private readonly RustCargoLockParser cargoLockParser;
+    private readonly IRustCargoLockParser cargoLockParser;
     private readonly IRustMetadataContextBuilder metadataContextBuilder;
 
     private readonly HashSet<string> visitedDirs;
@@ -43,12 +43,12 @@ public class RustSbomDetector : FileComponentDetector
     public RustSbomDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
-        ICommandLineInvocationService cliService,
-        IEnvironmentVariableService envVarService,
         ILogger<RustSbomDetector> logger,
         IRustMetadataContextBuilder metadataContextBuilder,
         IPathUtilityService pathUtilityService,
-        IRustCliParser cliParser)
+        IRustCliParser cliParser,
+        IRustSbomParser sbomParser,
+        IRustCargoLockParser cargoLockParser)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -56,9 +56,9 @@ public class RustSbomDetector : FileComponentDetector
         this.pathUtilityService = pathUtilityService;
 
         // Initialize parsers
-        this.sbomParser = new RustSbomParser(logger);
+        this.sbomParser = sbomParser;
         this.cliParser = cliParser;
-        this.cargoLockParser = new RustCargoLockParser(logger);
+        this.cargoLockParser = cargoLockParser;
         this.metadataContextBuilder = metadataContextBuilder;
 
         // Initialize with uniform case-insensitive comparison across all platforms

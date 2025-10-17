@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Detector for Cargo SBOM (.cargo-sbom.json) files.
 /// </summary>
-public class RustSbomParser
+public class RustSbomParser : IRustSbomParser
 {
     private const string CratesIoSource = "registry+https://github.com/rust-lang/crates.io-index";
 
@@ -26,13 +26,13 @@ public class RustSbomParser
         @"^(?<source>[^#]*)#?(?<name>[\w\-]*)[@#]?(?<version>\d[\S]*)?$",
         RegexOptions.Compiled);
 
-    private readonly ILogger logger;
+    private readonly ILogger<RustSbomParser> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RustSbomParser"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
-    public RustSbomParser(ILogger logger) => this.logger = logger;
+    public RustSbomParser(ILogger<RustSbomParser> logger) => this.logger = logger;
 
     /// <summary>
     /// Parses a Cargo SBOM file and records components.

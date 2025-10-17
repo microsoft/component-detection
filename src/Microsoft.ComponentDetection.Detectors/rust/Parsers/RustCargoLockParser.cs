@@ -17,7 +17,7 @@ using Tomlyn;
 /// <summary>
 /// Detector for Cargo.lock files.
 /// </summary>
-public class RustCargoLockParser
+public class RustCargoLockParser : IRustCargoLockParser
 {
     ////  PkgName[ Version][ (Source)]
     private static readonly Regex DependencyFormatRegex = new Regex(
@@ -29,13 +29,13 @@ public class RustCargoLockParser
         IgnoreMissingProperties = true,
     };
 
-    private readonly ILogger logger;
+    private readonly ILogger<RustCargoLockParser> logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RustCargoLockParser"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
-    public RustCargoLockParser(ILogger logger) => this.logger = logger;
+    public RustCargoLockParser(ILogger<RustCargoLockParser> logger) => this.logger = logger;
 
     private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
 
