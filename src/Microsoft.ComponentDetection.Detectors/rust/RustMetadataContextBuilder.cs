@@ -15,15 +15,18 @@ public class RustMetadataContextBuilder : IRustMetadataContextBuilder
     private readonly ILogger<RustMetadataContextBuilder> logger;
     private readonly ICommandLineInvocationService cliService;
     private readonly IPathUtilityService pathUtilityService;
+    private readonly IEnvironmentVariableService envVarService;
 
     public RustMetadataContextBuilder(
         ILogger<RustMetadataContextBuilder> logger,
         ICommandLineInvocationService cliService,
-        IPathUtilityService pathUtilityService)
+        IPathUtilityService pathUtilityService,
+        IEnvironmentVariableService envVarService)
     {
         this.logger = logger;
         this.cliService = cliService;
         this.pathUtilityService = pathUtilityService;
+        this.envVarService = envVarService;
     }
 
     public async Task<OwnershipResult> BuildPackageOwnershipMapAsync(
@@ -31,6 +34,14 @@ public class RustMetadataContextBuilder : IRustMetadataContextBuilder
         CancellationToken cancellationToken = default)
     {
         var aggregate = new OwnershipResult();
+
+        // Check if Rust CLI scanning is manually disabled
+        if (this.IsRustCliManuallyDisabled())
+        {
+            this.logger.LogInformation("Rust CLI manually disabled, skipping package ownership map build");
+            return aggregate;
+        }
+
         var visitedManifests = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var toml in orderedTomlPaths ?? [])
@@ -87,6 +98,9 @@ public class RustMetadataContextBuilder : IRustMetadataContextBuilder
 
         return aggregate;
     }
+
+    private bool IsRustCliManuallyDisabled() =>
+        this.envVarService.IsEnvironmentVariableValueTrue("DisableRustCliScan");
 
     private OwnershipResult BuildOwnershipFromMetadata(CargoMetadata metadata)
     {
