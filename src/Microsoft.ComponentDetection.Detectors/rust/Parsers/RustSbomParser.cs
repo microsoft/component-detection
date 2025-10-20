@@ -184,7 +184,7 @@ public class RustSbomParser : IRustSbomParser
         IComponentRecorder parentComponentRecorder,
         IReadOnlyDictionary<string, HashSet<string>> ownershipMap,
         HashSet<int> visitedNodes,
-        CargoComponent parent,
+        DetectedComponent parent,
         int depth)
     {
         foreach (var dependency in package.Dependencies)
@@ -196,40 +196,19 @@ public class RustSbomParser : IRustSbomParser
             {
                 if (component.Source == CratesIoSource)
                 {
-                    parentComponent = component;
+                    var detectedComponent = new DetectedComponent(component);
+                    parentComponent = detectedComponent;
 
-                    // Determine ownership
-                    var metadataId = depCrate.Id;
-                    var ownersApplied = false;
-
-                    if (ownershipMap != null &&
-                        parentComponentRecorder != null &&
-                        ownershipMap.TryGetValue(metadataId, out var owners) &&
-                        owners != null && owners.Count > 0)
-                    {
-                        ownersApplied = true;
-                        foreach (var manifestPath in owners)
-                        {
-                            var ownerRecorder = parentComponentRecorder.CreateSingleFileComponentRecorder(manifestPath);
-                            ownerRecorder.RegisterUsage(
-                                new DetectedComponent(component),
-                                isExplicitReferencedDependency: depth == 0,
-                                parentComponentId: null,
-                                isDevelopmentDependency: false);
-                        }
-                    }
-
-                    if (!ownersApplied)
-                    {
-                        this.logger.LogWarning("Falling back to SBOM recorder for {Id} because no ownership found", metadataId);
-
-                        // Fallback to SBOM recorder if no ownership info
-                        sbomRecorder.RegisterUsage(
-                            new DetectedComponent(component),
-                            isExplicitReferencedDependency: depth == 0,
-                            parentComponentId: null,
-                            isDevelopmentDependency: false);
-                    }
+                    // Apply ownership using the new helper method
+                    this.ApplyOwners(
+                        depCrate.Id,
+                        detectedComponent,
+                        isExplicitReferencedDependency: depth == 0,
+                        isDevelopmentDependency: false,
+                        parentComponentRecorder,
+                        ownershipMap,
+                        sbomRecorder,
+                        parent);
                 }
             }
             else
@@ -251,6 +230,48 @@ public class RustSbomParser : IRustSbomParser
                     parentComponent,
                     depth + 1);
             }
+        }
+    }
+
+    private void ApplyOwners(
+        string id,
+        DetectedComponent detectedComponent,
+        bool isExplicitReferencedDependency,
+        bool isDevelopmentDependency,
+        IComponentRecorder parentComponentRecorder,
+        IReadOnlyDictionary<string, HashSet<string>> ownershipMap,
+        ISingleFileComponentRecorder fallbackRecorder,
+        DetectedComponent parent)
+    {
+        var ownersApplied = false;
+        var parentId = parent?.Component.Id;
+        if (ownershipMap != null &&
+            parentComponentRecorder != null &&
+            ownershipMap.TryGetValue(id, out var owners) &&
+            owners != null && owners.Count > 0)
+        {
+            ownersApplied = true;
+            foreach (var manifestPath in owners)
+            {
+                var ownerRecorder = parentComponentRecorder.CreateSingleFileComponentRecorder(manifestPath);
+                ownerRecorder.RegisterUsage(
+                    detectedComponent,
+                    isExplicitReferencedDependency,
+                    isDevelopmentDependency: isDevelopmentDependency,
+                    parentComponentId: parentId != null && ownerRecorder.DependencyGraph.Contains(parentId) ? parentId : null);
+            }
+        }
+
+        if (!ownersApplied)
+        {
+            this.logger.LogWarning("Falling back to SBOM recorder for {Id} because no ownership found", id);
+
+            // Fallback to SBOM recorder if no ownership info
+            fallbackRecorder.RegisterUsage(
+                detectedComponent,
+                isExplicitReferencedDependency,
+                isDevelopmentDependency: isDevelopmentDependency,
+                parentComponentId: parentId != null && fallbackRecorder.DependencyGraph.Contains(parentId) ? parentId : null);
         }
     }
 
