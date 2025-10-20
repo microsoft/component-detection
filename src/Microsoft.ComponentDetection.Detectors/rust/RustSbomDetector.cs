@@ -19,7 +19,7 @@ using Tomlyn.Model;
 /// <summary>
 /// A unified Rust detector that orchestrates SBOM, CLI, and Crate parsing.
 /// </summary>
-public class RustSbomDetector : FileComponentDetector
+public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
 {
     private static readonly TomlModelOptions TomlOptions = new TomlModelOptions
     {
@@ -31,7 +31,7 @@ public class RustSbomDetector : FileComponentDetector
     private readonly IRustCliParser cliParser;
     private readonly IRustCargoLockParser cargoLockParser;
     private readonly IRustMetadataContextBuilder metadataContextBuilder;
-
+    private readonly IFileUtilityService fileUtilityService;
     private readonly HashSet<string> visitedDirs;
     private readonly List<GlobRule> visitedGlobRules;
     private readonly StringComparer pathComparer;
@@ -48,7 +48,8 @@ public class RustSbomDetector : FileComponentDetector
         IPathUtilityService pathUtilityService,
         IRustCliParser cliParser,
         IRustSbomParser sbomParser,
-        IRustCargoLockParser cargoLockParser)
+        IRustCargoLockParser cargoLockParser,
+        IFileUtilityService fileUtilityService)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -60,6 +61,7 @@ public class RustSbomDetector : FileComponentDetector
         this.cliParser = cliParser;
         this.cargoLockParser = cargoLockParser;
         this.metadataContextBuilder = metadataContextBuilder;
+        this.fileUtilityService = fileUtilityService;
 
         // Initialize with uniform case-insensitive comparison across all platforms
         this.pathComparer = StringComparer.OrdinalIgnoreCase;
@@ -107,7 +109,7 @@ public class RustSbomDetector : FileComponentDetector
     }
 
     /// <inheritdoc />
-    public override string Id => nameof(RustSbomDetector);
+    public override string Id => "RustSbom";
 
     /// <inheritdoc />
     public override IEnumerable<string> Categories { get; } = ["Rust"];
@@ -487,7 +489,7 @@ public class RustSbomDetector : FileComponentDetector
     {
         try
         {
-            var content = File.ReadAllText(cargoTomlPath);
+            var content = this.fileUtilityService.ReadAllText(cargoTomlPath);
             var tomlTable = Toml.ToModel(content, options: TomlOptions);
 
             // Check if it has a [workspace] section but no [package] section
@@ -625,9 +627,9 @@ public class RustSbomDetector : FileComponentDetector
 
             // Check if Cargo.toml exists in same directory to parse workspace tables
             var cargoTomlPath = Path.Combine(directory, "Cargo.toml");
-            if (File.Exists(cargoTomlPath))
+            if (this.fileUtilityService.Exists(cargoTomlPath))
             {
-                await this.ProcessWorkspaceTablesAsync(cargoTomlPath, directory);
+                this.ProcessWorkspaceTables(cargoTomlPath, directory);
             }
 
             // Add current directory to visitedDirs
@@ -640,7 +642,6 @@ public class RustSbomDetector : FileComponentDetector
     /// </summary>
     /// <param name="cargoTomlPath">The full path to the Cargo.toml file to parse.</param>
     /// <param name="directory">The directory path where the Cargo.toml file is located, used as the root for glob patterns.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
     /// <remarks>
     /// This method parses the [workspace] section of a Cargo.toml file to extract:
     /// <list type="bullet">
@@ -651,11 +652,11 @@ public class RustSbomDetector : FileComponentDetector
     /// This enables proper filtering of workspace members during subsequent detection operations.
     /// If parsing fails, a warning is logged and the method continues without throwing an exception.
     /// </remarks>
-    private async Task ProcessWorkspaceTablesAsync(string cargoTomlPath, string directory)
+    private void ProcessWorkspaceTables(string cargoTomlPath, string directory)
     {
         try
         {
-            var content = await File.ReadAllTextAsync(cargoTomlPath);
+            var content = this.fileUtilityService.ReadAllText(cargoTomlPath);
             var tomlTable = Toml.ToModel(content, options: TomlOptions);
 
             if (tomlTable.ContainsKey("workspace") && tomlTable["workspace"] is TomlTable workspaceTable)
