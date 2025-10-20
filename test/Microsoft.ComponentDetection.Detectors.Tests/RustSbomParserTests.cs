@@ -492,6 +492,15 @@ public class RustSbomParserTests
         var parentRecorder = new Mock<IComponentRecorder>(MockBehavior.Strict);
         var owner1 = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
 
+        // Set up DependencyGraph for the recorders
+        var sbomGraph = new Mock<IDependencyGraph>();
+        sbomGraph.Setup(g => g.Contains(It.IsAny<string>())).Returns(false);
+        sbomRecorder.Setup(r => r.DependencyGraph).Returns(sbomGraph.Object);
+
+        var owner1Graph = new Mock<IDependencyGraph>();
+        owner1Graph.Setup(g => g.Contains(It.IsAny<string>())).Returns(false);
+        owner1.Setup(r => r.DependencyGraph).Returns(owner1Graph.Object);
+
         parentRecorder.Setup(p => p.CreateSingleFileComponentRecorder("manifests/owner1")).Returns(owner1.Object);
 
         var ownershipMap = new Dictionary<string, HashSet<string>>
