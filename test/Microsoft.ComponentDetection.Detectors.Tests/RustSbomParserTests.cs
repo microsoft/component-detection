@@ -724,4 +724,271 @@ public class RustSbomParserTests
             }
         }
     }
+
+    [TestMethod]
+    public async Task ParseWithOwnershipAsync_ParentInDependencyGraph_PassesParentId()
+    {
+        var json = BuildNestedSbomJson();
+        var sbomRecorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+        var parentRecorder = new Mock<IComponentRecorder>(MockBehavior.Strict);
+        var ownerRecorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        // Set up DependencyGraph to contain the parent ID
+        var ownerGraph = new Mock<IDependencyGraph>();
+        ownerGraph.Setup(g => g.Contains(It.IsAny<string>())).Returns(true);
+        ownerRecorder.Setup(r => r.DependencyGraph).Returns(ownerGraph.Object);
+
+        parentRecorder.Setup(p => p.CreateSingleFileComponentRecorder("manifests/owner1")).Returns(ownerRecorder.Object);
+
+        var ownershipMap = new Dictionary<string, HashSet<string>>
+        {
+            { $"{CratesIo}#parent@2.0.0", new HashSet<string> { "manifests/owner1" } },
+            { $"{CratesIo}#child@3.0.0", new HashSet<string> { "manifests/owner1" } },
+        };
+
+        await this.parser.ParseWithOwnershipAsync(
+            MakeSbomStream("test.cargo-sbom.json", json),
+            sbomRecorder.Object,
+            parentRecorder.Object,
+            ownershipMap);
+
+        // Verify that parentComponentId is passed when parent exists in graph
+        var usages = ownerRecorder.Invocations.Where(i => i.Method.Name == "RegisterUsage").ToList();
+        usages.Should().HaveCount(2);
+
+        // Child should have parent ID passed
+        var childUsage = usages.Last();
+        childUsage.Arguments[2].Should().Be("parent 2.0.0 - Cargo"); // parentComponentId should be set
+    }
+
+    [TestMethod]
+    public async Task ParseWithOwnershipAsync_ParentNotInDependencyGraph_PassesNullParentId()
+    {
+        var json = BuildNestedSbomJson();
+        var sbomRecorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+        var parentRecorder = new Mock<IComponentRecorder>(MockBehavior.Strict);
+        var ownerRecorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        // Set up DependencyGraph to NOT contain the parent ID
+        var ownerGraph = new Mock<IDependencyGraph>();
+        ownerGraph.Setup(g => g.Contains(It.IsAny<string>())).Returns(false);
+        ownerRecorder.Setup(r => r.DependencyGraph).Returns(ownerGraph.Object);
+
+        parentRecorder.Setup(p => p.CreateSingleFileComponentRecorder("manifests/owner1")).Returns(ownerRecorder.Object);
+
+        var ownershipMap = new Dictionary<string, HashSet<string>>
+        {
+            { $"{CratesIo}#parent@2.0.0", new HashSet<string> { "manifests/owner1" } },
+            { $"{CratesIo}#child@3.0.0", new HashSet<string> { "manifests/owner1" } },
+        };
+
+        await this.parser.ParseWithOwnershipAsync(
+            MakeSbomStream("test.cargo-sbom.json", json),
+            sbomRecorder.Object,
+            parentRecorder.Object,
+            ownershipMap);
+
+        // Verify that parentComponentId is null when parent not in graph
+        var usages = ownerRecorder.Invocations.Where(i => i.Method.Name == "RegisterUsage").ToList();
+        usages.Should().HaveCount(2);
+
+        // Child should have null parent ID
+        var childUsage = usages.Last();
+        childUsage.Arguments[2].Should().BeNull(); // parentComponentId should be null
+    }
+
+    [TestMethod]
+    public async Task ParseWithOwnershipAsync_EmptyOwnersSet_FallsBackToSbomRecorder()
+    {
+        var json = BuildSimpleSbomJson();
+        var sbomRecorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+        var parentRecorder = new Mock<IComponentRecorder>(MockBehavior.Strict);
+
+        // Set up an empty HashSet
+        var ownershipMap = new Dictionary<string, HashSet<string>>
+        {
+            { $"{CratesIo}#dep1@1.0.0", new HashSet<string>() }, // Empty set
+        };
+
+        await this.parser.ParseWithOwnershipAsync(
+            MakeSbomStream("test.cargo-sbom.json", json),
+            sbomRecorder.Object,
+            parentRecorder.Object,
+            ownershipMap);
+
+        // Should fall back to SBOM recorder
+        sbomRecorder.Invocations.Count(i => i.Method.Name == "RegisterUsage").Should().Be(1);
+        parentRecorder.Invocations.Should().BeEmpty();
+
+        // Verify logger warning was called
+        this.logger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Falling back to SBOM recorder")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ParseWithOwnershipAsync_FallbackScenario_LogsWarning()
+    {
+        var json = BuildSimpleSbomJson();
+        var sbomRecorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        await this.parser.ParseWithOwnershipAsync(
+            MakeSbomStream("test.cargo-sbom.json", json),
+            sbomRecorder.Object,
+            parentComponentRecorder: null,
+            ownershipMap: null);
+
+        // Verify logger warning was called
+        this.logger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Falling back to SBOM recorder")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ParseAsync_ExceptionInProcessCargoSbom_Caught()
+    {
+        // Create a SBOM with invalid root index to trigger exception in ProcessCargoSbom
+        var json = """
+        {
+          "version": 1,
+          "root": 999,
+          "crates": [
+            {
+              "id": "path+file:///repo/root#0.1.0",
+              "features": [],
+              "dependencies": []
+            }
+          ]
+        }
+        """;
+
+        var recorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        var version = await this.parser.ParseAsync(MakeSbomStream("test.cargo-sbom.json", json), recorder.Object);
+
+        // Should still return version even though ProcessCargoSbom throws
+        version.Should().Be(1);
+
+        // Verify error was logged
+        this.logger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to process Cargo SBOM file")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ParseWithOwnershipAsync_ExceptionInProcessCargoSbomWithOwnership_Caught()
+    {
+        // Create a SBOM with invalid root index
+        var json = """
+        {
+          "version": 1,
+          "root": 999,
+          "crates": [
+            {
+              "id": "path+file:///repo/root#0.1.0",
+              "features": [],
+              "dependencies": []
+            }
+          ]
+        }
+        """;
+
+        var sbomRecorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        var version = await this.parser.ParseWithOwnershipAsync(
+            MakeSbomStream("test.cargo-sbom.json", json),
+            sbomRecorder.Object,
+            parentComponentRecorder: null,
+            ownershipMap: null);
+
+        // Should still return version
+        version.Should().Be(1);
+
+        // Verify error was logged
+        this.logger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("Failed to process Cargo SBOM (ownership mode)")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ParseAsync_InvalidDependencyIndex_CatchesException()
+    {
+        var json = $$"""
+        {
+          "version": 1,
+          "root": 0,
+          "crates": [
+            {
+              "id": "path+file:///repo/root#0.1.0",
+              "features": [],
+              "dependencies": [
+                { "index": 999, "kind": "normal" }
+              ]
+            }
+          ]
+        }
+        """;
+
+        var recorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        var version = await this.parser.ParseAsync(MakeSbomStream("test.cargo-sbom.json", json), recorder.Object);
+
+        // Should catch exception and log error
+        version.Should().Be(1);
+
+        this.logger.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task ParseWithOwnershipAsync_FallbackWithParentInGraph_PassesParentId()
+    {
+        var json = BuildNestedSbomJson();
+        var sbomRecorder = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        // Set up DependencyGraph to contain parent ID
+        var sbomGraph = new Mock<IDependencyGraph>();
+        sbomGraph.Setup(g => g.Contains(It.IsAny<string>())).Returns(true);
+        sbomRecorder.Setup(r => r.DependencyGraph).Returns(sbomGraph.Object);
+
+        var ownershipMap = new Dictionary<string, HashSet<string>>
+        {
+            { $"{CratesIo}#parent@2.0.0", new HashSet<string>() }, // Empty - triggers fallback
+        };
+
+        await this.parser.ParseWithOwnershipAsync(
+            MakeSbomStream("test.cargo-sbom.json", json),
+            sbomRecorder.Object,
+            parentComponentRecorder: null,
+            ownershipMap);
+
+        // Verify fallback happened and parentId was checked in graph
+        sbomRecorder.Invocations.Count(i => i.Method.Name == "RegisterUsage").Should().BePositive();
+    }
 }

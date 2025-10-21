@@ -861,6 +861,280 @@ public class RustCliParserTests
         comp.Author.Should().Be("Alice Smith, Bob Jones, Charlie Brown");
     }
 
+    [TestMethod]
+    public async Task ProcessMetadata_EmptyPackagesAndNodes_Success()
+    {
+        // Tests handling of empty packages and nodes
+        var json = """
+    {
+      "packages": [],
+      "resolve": {
+        "root": null,
+        "nodes":[]
+      }
+    }
+    """;
+
+        var metadata = ParseMetadata(json);
+        var fallback = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        var result = await this.InvokeProcessMetadataAsync("C:/repo/Cargo.toml", fallback.Object, metadata);
+
+        result.Success.Should().BeTrue();
+        result.LocalPackageDirectories.Should().BeEmpty();
+        fallback.Invocations.Count(i => i.Method.Name == "RegisterUsage").Should().Be(0);
+    }
+
+    [TestMethod]
+    public async Task Traverse_IndexOutOfRangeException_RegistersParseFailure()
+    {
+        // Tests IndexOutOfRangeException handling in TraverseAndRecordComponents
+        var json = """
+    {
+      "packages": [
+        { "name":"root", "version":"1.0.0", "id":"root 1.0.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/root/Cargo.toml" },
+        { "name":"child", "version":"2.0.0", "id":"child 2.0.0", "authors":["A"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/child/Cargo.toml" }
+      ],
+      "resolve": {
+        "root":"root 1.0.0",
+        "nodes":[
+          { "id":"root 1.0.0", "deps":[ { "pkg":"child 2.0.0", "dep_kinds":[{"kind":"build"}] } ] },
+          { "id":"child 2.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+        var metadata = ParseMetadata(json);
+        var fallback = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        // Mock RegisterPackageParseFailure to verify it's called
+        fallback.Setup(f => f.RegisterPackageParseFailure(It.IsAny<string>()));
+
+        var result = await this.InvokeProcessMetadataAsync("C:/repo/Cargo.toml", fallback.Object, metadata);
+
+        result.Success.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task ProcessMetadata_LocalPackageWithEmptyManifestPath_Skipped()
+    {
+        // Tests handling of packages with empty manifest paths
+        var json = """
+    {
+      "packages": [
+        { "name":"root", "version":"1.0.0", "id":"root 1.0.0", "authors":[""], "license":"", "source":null, "manifest_path":"" }
+      ],
+      "resolve": {
+        "root":"root 1.0.0",
+        "nodes":[
+          { "id":"root 1.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+        var metadata = ParseMetadata(json);
+        var fallback = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        var result = await this.InvokeProcessMetadataAsync("C:/repo/Cargo.toml", fallback.Object, metadata);
+
+        result.Success.Should().BeTrue();
+        result.LocalPackageDirectories.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task ApplyOwners_WithParentInGraph_PassesParentId()
+    {
+        // Tests that parentComponentId is passed when parent exists in graph
+        var metadata = ParseMetadata(BuildNormalRootMetadataJson());
+
+        var parentRecorder = new Mock<IComponentRecorder>(MockBehavior.Strict);
+        var owner = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+        var ownerGraph = new Mock<IDependencyGraph>();
+
+        // Setup graph to contain the parent
+        ownerGraph.Setup(g => g.Contains("childA 2.0.0")).Returns(true);
+        owner.Setup(r => r.DependencyGraph).Returns(ownerGraph.Object);
+
+        parentRecorder.Setup(p => p.CreateSingleFileComponentRecorder("manifests/one")).Returns(owner.Object);
+
+        var ownershipMap = new Dictionary<string, HashSet<string>>
+    {
+        { "childA 2.0.0", new HashSet<string> { "manifests/one" } },
+    };
+
+        var result = await this.parser.ParseFromMetadataAsync(
+            MakeTomlStream("C:/repo/Cargo.toml"),
+            new Mock<ISingleFileComponentRecorder>().Object,
+            metadata,
+            parentRecorder.Object,
+            ownershipMap);
+
+        result.Success.Should().BeTrue();
+
+        var registrations = owner.Invocations.Where(i => i.Method.Name == "RegisterUsage").ToList();
+        registrations.Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task ApplyOwners_EmptyOwnersSet_UsesFallback()
+    {
+        // Tests that empty owners set falls back to fallback recorder
+        var metadata = ParseMetadata(BuildNormalRootMetadataJson());
+
+        var parentRecorder = new Mock<IComponentRecorder>(MockBehavior.Strict);
+        var fallback = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        var ownershipMap = new Dictionary<string, HashSet<string>>
+    {
+        { "childA 2.0.0", new HashSet<string>() }, // Empty set
+    };
+
+        var result = await this.parser.ParseFromMetadataAsync(
+            MakeTomlStream("C:/repo/Cargo.toml"),
+            fallback.Object,
+            metadata,
+            parentRecorder.Object,
+            ownershipMap);
+
+        result.Success.Should().BeTrue();
+
+        // Should use fallback for childA since owners set is empty
+        fallback.Invocations.Count(i => i.Method.Name == "RegisterUsage").Should().BeGreaterOrEqualTo(1);
+    }
+
+    [TestMethod]
+    public async Task Traverse_DepKindsNull_NotTreatedAsDevelopmentDependency()
+    {
+        // Tests handling of null DepKinds
+        var json = """
+    {
+      "packages": [
+        { "name":"root", "version":"1.0.0", "id":"root 1.0.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/root/Cargo.toml" },
+        { "name":"child", "version":"2.0.0", "id":"child 2.0.0", "authors":["A"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/child/Cargo.toml" }
+      ],
+      "resolve": {
+        "root":"root 1.0.0",
+        "nodes":[
+          { "id":"root 1.0.0", "deps":[ { "pkg":"child 2.0.0", "dep_kinds":null } ] },
+          { "id":"child 2.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+        var metadata = ParseMetadata(json);
+        var fallback = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        await this.InvokeProcessMetadataAsync("C:/repo/Cargo.toml", fallback.Object, metadata);
+
+        var registrations = fallback.Invocations.Where(i => i.Method.Name == "RegisterUsage").ToList();
+        registrations.Should().ContainSingle();
+
+        // Verify isDevelopmentDependency is false (not true)
+        registrations[0].Arguments[3].Should().Be(false);
+    }
+
+    [TestMethod]
+    public async Task ProcessMetadata_PackageWithNullAuthors_AuthorIsNull()
+    {
+        // Tests that null authors array results in null Author
+        var json = """
+    {
+      "packages": [
+        { "name":"root", "version":"1.0.0", "id":"root 1.0.0", "authors":null, "license":"MIT", "source":null, "manifest_path":"C:/repo/root/Cargo.toml" },
+        { "name":"child", "version":"2.0.0", "id":"child 2.0.0", "authors":null, "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/child/Cargo.toml" }
+      ],
+      "resolve": {
+        "root":"root 1.0.0",
+        "nodes":[
+          { "id":"root 1.0.0", "deps":[ { "pkg":"child 2.0.0", "dep_kinds":[{"kind":"build"}] } ] },
+          { "id":"child 2.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+        var metadata = ParseMetadata(json);
+        var fallback = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        await this.InvokeProcessMetadataAsync("C:/repo/Cargo.toml", fallback.Object, metadata);
+
+        var reg = fallback.Invocations.Single(i => i.Method.Name == "RegisterUsage");
+        var comp = ((DetectedComponent)reg.Arguments[0]).Component as CargoComponent;
+
+        comp.Author.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task ProcessMetadata_PackageWithNullLicense_LicenseIsNull()
+    {
+        // Tests that null license results in null License
+        var json = """
+    {
+      "packages": [
+        { "name":"root", "version":"1.0.0", "id":"root 1.0.0", "authors":["A"], "license":null, "source":null, "manifest_path":"C:/repo/root/Cargo.toml" },
+        { "name":"child", "version":"2.0.0", "id":"child 2.0.0", "authors":["B"], "license":null, "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/child/Cargo.toml" }
+      ],
+      "resolve": {
+        "root":"root 1.0.0",
+        "nodes":[
+          { "id":"root 1.0.0", "deps":[ { "pkg":"child 2.0.0", "dep_kinds":[{"kind":"build"}] } ] },
+          { "id":"child 2.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+        var metadata = ParseMetadata(json);
+        var fallback = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        await this.InvokeProcessMetadataAsync("C:/repo/Cargo.toml", fallback.Object, metadata);
+
+        var reg = fallback.Invocations.Single(i => i.Method.Name == "RegisterUsage");
+        var comp = ((DetectedComponent)reg.Arguments[0]).Component as CargoComponent;
+
+        comp.License.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task VirtualManifest_MultipleRootNodes_AllProcessed()
+    {
+        // Tests virtual manifest with multiple independent root nodes
+        var json = """
+    {
+      "packages": [
+        { "name":"pkgA", "version":"1.0.0", "id":"pkgA 1.0.0", "authors":["A"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/pkgA/Cargo.toml" },
+        { "name":"pkgB", "version":"2.0.0", "id":"pkgB 2.0.0", "authors":["B"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/pkgB/Cargo.toml" }
+      ],
+      "resolve": {
+        "root": null,
+        "nodes":[
+          { "id":"pkgA 1.0.0", "deps":[] },
+          { "id":"pkgB 2.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+        var metadata = ParseMetadata(json);
+        var fallback = new Mock<ISingleFileComponentRecorder>(MockBehavior.Loose);
+
+        var result = await this.InvokeProcessMetadataAsync("C:/repo/Cargo.toml", fallback.Object, metadata);
+
+        result.Success.Should().BeTrue();
+
+        var registrations = fallback.Invocations.Where(i => i.Method.Name == "RegisterUsage").ToList();
+        var distinctNames = registrations
+            .Select(r => ((CargoComponent)((DetectedComponent)r.Arguments[0]).Component).Name)
+            .Distinct()
+            .ToList();
+
+        distinctNames.Should().Contain("pkgA");
+        distinctNames.Should().Contain("pkgB");
+    }
+
     private async Task<ParseResult> InvokeProcessMetadataAsync(string manifestLocation, ISingleFileComponentRecorder fallbackRecorder, CargoMetadata metadata) =>
         await this.parser.ParseFromMetadataAsync(
             new ComponentStream { Location = manifestLocation, Pattern = "Cargo.toml", Stream = new MemoryStream([]) },

@@ -250,7 +250,7 @@ public class RustCliParser : IRustCliParser
     {
         try
         {
-            var isDevelopmentDependency = depInfo?.DepKinds.Any(x => x.Kind is Kind.Dev) ?? false;
+            var isDevelopmentDependency = depInfo?.DepKinds?.Any(x => x.Kind is Kind.Dev) ?? false;
 
             if (!packagesMetadata.TryGetValue($"{id}", out var cargoComponent))
             {
