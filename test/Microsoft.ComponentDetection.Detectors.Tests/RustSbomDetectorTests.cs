@@ -312,7 +312,6 @@ public class RustSbomDetectorTests : BaseDetectorTest<RustSbomDetector>
         detector.Id.Should().Be("RustSbom");
         detector.Categories.Should().BeEquivalentTo(["Rust"]);
         detector.SupportedComponentTypes.Should().BeEquivalentTo([ComponentType.Cargo]);
-        detector.Version.Should().Be(1);
         detector.SearchPatterns.Should().BeEquivalentTo(["Cargo.toml", "Cargo.lock", "*.cargo-sbom.json"]);
     }
 

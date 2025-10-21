@@ -31,7 +31,7 @@ public class RustCrateDetector : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Cargo];
 
-    public override int Version { get; } = 8;
+    public override int Version { get; } = 9;
 
     public override IEnumerable<string> Categories => ["Rust"];
 

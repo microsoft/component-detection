@@ -21,6 +21,9 @@ using Tomlyn.Model;
 /// </summary>
 public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
 {
+    private const string CargoTomlFileName = "Cargo.toml";
+    private const string CargoLockFileName = "Cargo.lock";
+
     private static readonly TomlModelOptions TomlOptions = new TomlModelOptions
     {
         IgnoreMissingProperties = true,
@@ -118,10 +121,10 @@ public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Cargo];
 
     /// <inheritdoc />
-    public override int Version => 1;
+    public override int Version => 2;
 
     /// <inheritdoc />
-    public override IList<string> SearchPatterns { get; } = ["Cargo.toml", "Cargo.lock", "*.cargo-sbom.json"];
+    public override IList<string> SearchPatterns { get; } = [CargoTomlFileName, CargoLockFileName, "*.cargo-sbom.json"];
 
     /// <inheritdoc />
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
@@ -143,7 +146,7 @@ public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
         // Collect Cargo.toml paths ordered (depth, then path)
         var tomlPaths = allRequests
             .Select(r => r.ComponentStream.Location)
-            .Where(p => string.Equals(Path.GetFileName(p), "Cargo.toml", this.pathComparison))
+            .Where(p => string.Equals(Path.GetFileName(p), CargoTomlFileName, this.pathComparison))
             .OrderBy(p => this.GetDirectoryDepth(p))
             .ThenBy(p => p, this.pathComparer)
             .ToList();
@@ -201,10 +204,10 @@ public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
                 .Where(r =>
                 {
                     var fileName = Path.GetFileName(r.ComponentStream.Location);
-                    return fileName.Equals("Cargo.toml", this.pathComparison) ||
-                           fileName.Equals("Cargo.lock", this.pathComparison);
+                    return fileName.Equals(CargoTomlFileName, this.pathComparison) ||
+                           fileName.Equals(CargoLockFileName, this.pathComparison);
                 })
-                .OrderBy(r => Path.GetFileName(r.ComponentStream.Location).Equals("Cargo.lock", this.pathComparison) ? 1 : 0) // TOML before LOCK
+                .OrderBy(r => Path.GetFileName(r.ComponentStream.Location).Equals(CargoLockFileName, this.pathComparison) ? 1 : 0) // TOML before LOCK
                 .ThenBy(r => this.GetDirectoryDepth(r.ComponentStream.Location))
                 .ThenBy(r => r.ComponentStream.Location, this.pathComparer);
             this.Logger.LogInformation("FALLBACK mode: Processing {Count} Cargo.toml/Cargo.lock files", filteredRequests.Count());
@@ -231,11 +234,11 @@ public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
 
         // Determine file kind
         FileKind fileKind;
-        if (fileName.Equals("Cargo.toml", this.pathComparison))
+        if (fileName.Equals(CargoTomlFileName, this.pathComparison))
         {
             fileKind = FileKind.CargoToml;
         }
-        else if (fileName.Equals("Cargo.lock", this.pathComparison))
+        else if (fileName.Equals(CargoLockFileName, this.pathComparison))
         {
             fileKind = FileKind.CargoLock;
         }
@@ -626,7 +629,7 @@ public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
             this.RecordLockfileVersion(version.Value);
 
             // Check if Cargo.toml exists in same directory to parse workspace tables
-            var cargoTomlPath = Path.Combine(directory, "Cargo.toml");
+            var cargoTomlPath = Path.Combine(directory, CargoTomlFileName);
             if (this.fileUtilityService.Exists(cargoTomlPath))
             {
                 this.ProcessWorkspaceTables(cargoTomlPath, directory);
