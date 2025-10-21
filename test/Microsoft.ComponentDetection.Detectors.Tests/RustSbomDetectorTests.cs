@@ -980,4 +980,495 @@ members = [""member1""]
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    [TestMethod]
+    public async Task TestShouldSkip_WorkspaceOnlyToml_WithPackageSection_NotSkipped()
+    {
+        var workspaceDir = Path.Combine(Path.GetTempPath(), "workspace");
+        var workspaceToml = Path.Combine(workspaceDir, "Cargo.toml");
+
+        // TOML with both [workspace] and [package] sections
+        var tomlContent = @"
+[workspace]
+members = [""member1""]
+
+[package]
+name = ""root""
+version = ""1.0.0""
+";
+
+        var mockFileUtilityService = new Mock<IFileUtilityService>();
+        mockFileUtilityService.Setup(x => x.Exists(workspaceToml)).Returns(true);
+        mockFileUtilityService.Setup(x => x.ReadAllText(workspaceToml)).Returns(tomlContent);
+
+        var metadata = new CargoMetadata
+        {
+            Packages = [],
+            Resolve = new Resolve { Nodes = [] },
+        };
+
+        this.mockMetadataContextBuilder
+            .Setup(x => x.BuildPackageOwnershipMapAsync(
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IRustMetadataContextBuilder.OwnershipResult
+            {
+                ManifestToMetadata = new Dictionary<string, CargoMetadata>
+                {
+                    [this.pathUtilityService.NormalizePath(workspaceToml)] = metadata,
+                },
+            });
+
+        this.mockCliParser
+            .Setup(x => x.ParseFromMetadataAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CargoMetadata>(),
+                It.IsAny<IComponentRecorder>(),
+                It.IsAny<IReadOnlyDictionary<string, HashSet<string>>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IRustCliParser.ParseResult { Success = true });
+
+        await this.DetectorTestUtility
+            .AddService(mockFileUtilityService.Object)
+            .WithFile("Cargo.toml", tomlContent, fileLocation: workspaceToml)
+            .ExecuteDetectorAsync();
+
+        // Should process the TOML since it has [package] section
+        this.mockCliParser.Verify(
+            x => x.ParseFromMetadataAsync(
+                It.Is<IComponentStream>(s => s.Location == workspaceToml),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CargoMetadata>(),
+                It.IsAny<IComponentRecorder>(),
+                It.IsAny<IReadOnlyDictionary<string, HashSet<string>>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task TestProcessCargoLockAsync_NoCargoToml_DirectoryStillMarkedVisited()
+    {
+        var lockDir = Path.Combine(Path.GetTempPath(), "project");
+        var lockFile = Path.Combine(lockDir, "Cargo.lock");
+        var tomlFile = Path.Combine(lockDir, "Cargo.toml");
+
+        var mockFileUtilityService = new Mock<IFileUtilityService>();
+        mockFileUtilityService.Setup(x => x.Exists(tomlFile)).Returns(false);
+
+        this.mockCargoLockParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(2);
+
+        await this.DetectorTestUtility
+            .AddService(mockFileUtilityService.Object)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: lockFile)
+            .ExecuteDetectorAsync();
+
+        this.mockCargoLockParser.Verify(
+            x => x.ParseAsync(
+                It.Is<IComponentStream>(s => s.Location == lockFile),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        mockFileUtilityService.Verify(x => x.Exists(tomlFile), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task TestProcessWorkspaceTables_DefaultMembers_CreatesGlobRule()
+    {
+        var workspaceDir = Path.Combine(Path.GetTempPath(), "workspace");
+        var rootLock = Path.Combine(workspaceDir, "Cargo.lock");
+        var rootToml = Path.Combine(workspaceDir, "Cargo.toml");
+        var memberLock = Path.Combine(workspaceDir, "member1", "Cargo.lock");
+
+        var workspaceTomlContent = @"
+[workspace]
+default-members = [""member1"", ""member2""]
+";
+
+        var mockFileUtilityService = new Mock<IFileUtilityService>();
+        mockFileUtilityService.Setup(x => x.Exists(rootToml)).Returns(true);
+        mockFileUtilityService.Setup(x => x.ReadAllText(rootToml)).Returns(workspaceTomlContent);
+
+        var lockCallCount = 0;
+        this.mockCargoLockParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<IComponentStream, ISingleFileComponentRecorder, CancellationToken>(
+                (stream, recorder, token) => lockCallCount++)
+            .ReturnsAsync(2);
+
+        await this.DetectorTestUtility
+            .AddService(mockFileUtilityService.Object)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: rootLock)
+            .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: rootToml)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"member\"", fileLocation: memberLock)
+            .ExecuteDetectorAsync();
+
+        // Root lock should be processed
+        this.mockCargoLockParser.Verify(
+            x => x.ParseAsync(
+                It.Is<IComponentStream>(s => s.Location == rootLock),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        mockFileUtilityService.Verify(x => x.ReadAllText(rootToml), Times.AtLeastOnce);
+    }
+
+    [TestMethod]
+    public async Task TestProcessWorkspaceTables_InvalidToml_LogsWarningAndContinues()
+    {
+        var workspaceDir = Path.Combine(Path.GetTempPath(), "workspace");
+        var rootLock = Path.Combine(workspaceDir, "Cargo.lock");
+        var rootToml = Path.Combine(workspaceDir, "Cargo.toml");
+
+        var invalidTomlContent = "[workspace\nmembers = broken";
+
+        var mockFileUtilityService = new Mock<IFileUtilityService>();
+        mockFileUtilityService.Setup(x => x.Exists(rootToml)).Returns(true);
+        mockFileUtilityService.Setup(x => x.ReadAllText(rootToml)).Returns(invalidTomlContent);
+
+        this.mockCargoLockParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(2);
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .AddService(mockFileUtilityService.Object)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: rootLock)
+            .WithFile("Cargo.toml", invalidTomlContent, fileLocation: rootToml)
+            .ExecuteDetectorAsync();
+
+        // Should continue despite invalid TOML
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        this.mockCargoLockParser.Verify(
+            x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task TestIsWorkspaceOnlyToml_ExceptionThrown_ReturnsFalse()
+    {
+        var workspaceDir = Path.Combine(Path.GetTempPath(), "workspace");
+        var workspaceToml = Path.Combine(workspaceDir, "Cargo.toml");
+        var workspaceLock = Path.Combine(workspaceDir, "Cargo.lock");
+
+        var mockFileUtilityService = new Mock<IFileUtilityService>();
+        mockFileUtilityService
+            .Setup(x => x.ReadAllText(workspaceToml))
+            .Throws(new IOException("File read error"));
+
+        var metadata = new CargoMetadata
+        {
+            Packages = [],
+            Resolve = new Resolve { Nodes = [] },
+        };
+
+        this.mockMetadataContextBuilder
+            .Setup(x => x.BuildPackageOwnershipMapAsync(
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IRustMetadataContextBuilder.OwnershipResult
+            {
+                ManifestToMetadata = new Dictionary<string, CargoMetadata>
+                {
+                    [this.pathUtilityService.NormalizePath(workspaceToml)] = metadata,
+                },
+            });
+
+        this.mockCliParser
+            .Setup(x => x.ParseFromMetadataAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CargoMetadata>(),
+                It.IsAny<IComponentRecorder>(),
+                It.IsAny<IReadOnlyDictionary<string, HashSet<string>>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IRustCliParser.ParseResult { Success = true });
+
+        this.mockCargoLockParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .AddService(mockFileUtilityService.Object)
+            .WithFile("Cargo.toml", "[workspace]\nmembers = []", fileLocation: workspaceToml)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: workspaceLock)
+            .ExecuteDetectorAsync();
+
+        // Should continue despite exception
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+    }
+
+    [TestMethod]
+    public async Task TestGetDirectoryDepth_NullOrEmptyPath_ReturnsZero()
+    {
+        // This test verifies the GetDirectoryDepth method handles edge cases
+        var sbomContent = /*lang=json,strict*/ @"{""version"":1,""root"":0,""crates"":[]}";
+
+        this.mockSbomParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("test.cargo-sbom.json", sbomContent)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+    }
+
+    [TestMethod]
+    public async Task TestCliParser_FailedParsing_DirectoryNotMarkedVisited()
+    {
+        var tomlDir = Path.Combine(Path.GetTempPath(), "project");
+        var tomlFile = Path.Combine(tomlDir, "Cargo.toml");
+        var lockFile = Path.Combine(tomlDir, "Cargo.lock");
+
+        var metadata = new CargoMetadata
+        {
+            Packages = [],
+            Resolve = new Resolve { Nodes = [] },
+        };
+
+        this.mockMetadataContextBuilder
+            .Setup(x => x.BuildPackageOwnershipMapAsync(
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IRustMetadataContextBuilder.OwnershipResult
+            {
+                ManifestToMetadata = new Dictionary<string, CargoMetadata>
+                {
+                    [this.pathUtilityService.NormalizePath(tomlFile)] = metadata,
+                },
+            });
+
+        // CLI parser fails
+        this.mockCliParser
+            .Setup(x => x.ParseFromMetadataAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CargoMetadata>(),
+                It.IsAny<IComponentRecorder>(),
+                It.IsAny<IReadOnlyDictionary<string, HashSet<string>>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IRustCliParser.ParseResult { Success = false });
+
+        this.mockCargoLockParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(2);
+
+        await this.DetectorTestUtility
+            .WithFile("Cargo.toml", "[package]\nname = \"test\"", fileLocation: tomlFile)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: lockFile)
+            .ExecuteDetectorAsync();
+
+        // Cargo.lock should be processed since CLI parsing failed
+        this.mockCargoLockParser.Verify(
+            x => x.ParseAsync(
+                It.Is<IComponentStream>(s => s.Location == lockFile),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task TestCargoLockParser_ReturnsNull_NoTelemetryRecorded()
+    {
+        var lockFile = Path.Combine(Path.GetTempPath(), "project", "Cargo.lock");
+
+        this.mockCargoLockParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((int?)null);
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: lockFile)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Telemetry should not contain lockfile version
+        result.AdditionalTelemetryDetails.Should().NotContainKey("LockfileVersion");
+    }
+
+    [TestMethod]
+    public async Task TestGlobRuleMatching_IncludeAndExclude_CorrectlyFilters()
+    {
+        var workspaceDir = Path.Combine(Path.GetTempPath(), "workspace");
+        var rootLock = Path.Combine(workspaceDir, "Cargo.lock");
+        var rootToml = Path.Combine(workspaceDir, "Cargo.toml");
+        var member1Lock = Path.Combine(workspaceDir, "member1", "Cargo.lock");
+        var examplesLock = Path.Combine(workspaceDir, "examples", "Cargo.lock");
+        var examplesSubdirLock = Path.Combine(workspaceDir, "examples", "example1", "Cargo.lock");
+
+        // Realistic workspace: members = ["*"] means all subdirectories are members
+        // except those explicitly excluded (examples/*)
+        var workspaceTomlContent = @"
+[workspace]
+members = [""*""]
+exclude = [""examples/*""]
+";
+
+        var mockFileUtilityService = new Mock<IFileUtilityService>();
+        mockFileUtilityService.Setup(x => x.Exists(rootToml)).Returns(true);
+        mockFileUtilityService.Setup(x => x.ReadAllText(rootToml)).Returns(workspaceTomlContent);
+
+        var processedFiles = new List<string>();
+        this.mockCargoLockParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<IComponentStream, ISingleFileComponentRecorder, CancellationToken>(
+                (stream, recorder, token) => processedFiles.Add(stream.Location))
+            .ReturnsAsync(2);
+
+        await this.DetectorTestUtility
+            .AddService(mockFileUtilityService.Object)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"root\"", fileLocation: rootLock)
+            .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: rootToml)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"member1\"", fileLocation: member1Lock)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"example\"", fileLocation: examplesLock)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"example1\"", fileLocation: examplesSubdirLock)
+            .ExecuteDetectorAsync();
+
+        // Root lock should be processed (workspace root)
+        processedFiles.Should().Contain(rootLock);
+
+        // member1 lock should be SKIPPED (included in workspace via members = ["*"])
+        processedFiles.Should().NotContain(member1Lock);
+
+        // examples/Cargo.lock should be SKIPPED (examples/* doesn't match examples/ itself)
+        processedFiles.Should().NotContain(examplesLock);
+
+        // examples/example1/Cargo.lock should be SKIPPED (matched by examples/*)
+        processedFiles.Should().Contain(examplesSubdirLock);
+
+        // Two lock files should have been processed: root and examples
+        processedFiles.Should().HaveCount(2, "Root workspace Cargo.lock and examples/Cargo.lock should be processed");
+    }
+
+    [TestMethod]
+    public async Task TestGlobRuleMatching_IncludeAllSubdirectories_SkipsAllMembers()
+    {
+        var workspaceDir = Path.Combine(Path.GetTempPath(), "workspace");
+        var rootLock = Path.Combine(workspaceDir, "Cargo.lock");
+        var rootToml = Path.Combine(workspaceDir, "Cargo.toml");
+        var member1Lock = Path.Combine(workspaceDir, "member1", "Cargo.lock");
+        var examplesLock = Path.Combine(workspaceDir, "examples", "Cargo.lock");
+
+        var workspaceTomlContent = @"
+[workspace]
+members = [""*""]
+";
+
+        var mockFileUtilityService = new Mock<IFileUtilityService>();
+        mockFileUtilityService.Setup(x => x.Exists(rootToml)).Returns(true);
+        mockFileUtilityService.Setup(x => x.ReadAllText(rootToml)).Returns(workspaceTomlContent);
+
+        var processedFiles = new List<string>();
+        this.mockCargoLockParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<IComponentStream, ISingleFileComponentRecorder, CancellationToken>(
+                (stream, recorder, token) => processedFiles.Add(stream.Location))
+            .ReturnsAsync(2);
+
+        await this.DetectorTestUtility
+            .AddService(mockFileUtilityService.Object)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"root\"", fileLocation: rootLock)
+            .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: rootToml)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"member1\"", fileLocation: member1Lock)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"example\"", fileLocation: examplesLock)
+            .ExecuteDetectorAsync();
+
+        // Root lock should be processed
+        processedFiles.Should().Contain(rootLock);
+
+        // All subdirectories (member1, examples) should be skipped
+        processedFiles.Should().NotContain(member1Lock);
+        processedFiles.Should().NotContain(examplesLock);
+
+        processedFiles.Should().ContainSingle("Only the root Cargo.lock should be processed since all subdirectories are workspace members.");
+    }
+
+    [TestMethod]
+    public async Task TestGlobRuleMatching_MixedExplicitAndGlob_CorrectlyIncludesAndSkips()
+    {
+        var workspaceDir = Path.Combine(Path.GetTempPath(), "workspace");
+        var rootLock = Path.Combine(workspaceDir, "Cargo.lock");
+        var rootToml = Path.Combine(workspaceDir, "Cargo.toml");
+        var member1Lock = Path.Combine(workspaceDir, "member1", "Cargo.lock");
+        var examplesLock = Path.Combine(workspaceDir, "examples", "Cargo.lock");
+        var examplesSubdirLock = Path.Combine(workspaceDir, "examples", "example1", "Cargo.lock");
+
+        var workspaceTomlContent = @"
+[workspace]
+members = [""member1"", ""examples/*""]
+";
+
+        var mockFileUtilityService = new Mock<IFileUtilityService>();
+        mockFileUtilityService.Setup(x => x.Exists(rootToml)).Returns(true);
+        mockFileUtilityService.Setup(x => x.ReadAllText(rootToml)).Returns(workspaceTomlContent);
+
+        var processedFiles = new List<string>();
+        this.mockCargoLockParser
+            .Setup(x => x.ParseAsync(
+                It.IsAny<IComponentStream>(),
+                It.IsAny<ISingleFileComponentRecorder>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<IComponentStream, ISingleFileComponentRecorder, CancellationToken>(
+                (stream, recorder, token) => processedFiles.Add(stream.Location))
+            .ReturnsAsync(2);
+
+        await this.DetectorTestUtility
+            .AddService(mockFileUtilityService.Object)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"root\"", fileLocation: rootLock)
+            .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: rootToml)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"member1\"", fileLocation: member1Lock)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"example\"", fileLocation: examplesLock)
+            .WithFile("Cargo.lock", "[[package]]\nname = \"example1\"", fileLocation: examplesSubdirLock)
+            .ExecuteDetectorAsync();
+
+        // Root processed
+        processedFiles.Should().Contain(rootLock);
+
+        // member1 in workspace
+        processedFiles.Should().NotContain(member1Lock);
+
+        // examples/ not matched by glob, should be processed
+        processedFiles.Should().Contain(examplesLock);
+
+        // examples/example1/ matched by glob, should be skipped
+        processedFiles.Should().NotContain(examplesSubdirLock);
+
+        processedFiles.Should().HaveCount(2, "Root and examples/ Cargo.locks should be processed, member1 and examples/example1 skipped.");
+    }
 }
