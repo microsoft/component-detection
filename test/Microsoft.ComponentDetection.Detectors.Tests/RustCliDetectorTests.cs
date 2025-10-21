@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
@@ -11,6 +12,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
@@ -509,15 +511,20 @@ public class RustCliDetectorTests : BaseDetectorTest<RustCliDetector>
 
     private Mock<IComponentStreamEnumerableFactory> mockComponentStreamEnumerableFactory;
 
+    private Mock<ILogger<RustCliParser>> mockRustCliParserLogger;
+
     [TestInitialize]
     public void InitMocks()
     {
         this.mockCliService = new Mock<ICommandLineInvocationService>();
         this.DetectorTestUtility.AddServiceMock(this.mockCliService);
         this.mockComponentStreamEnumerableFactory = new Mock<IComponentStreamEnumerableFactory>();
+        this.mockRustCliParserLogger = new Mock<ILogger<RustCliParser>>();
         this.DetectorTestUtility.AddServiceMock(this.mockComponentStreamEnumerableFactory);
         this.mockEnvVarService = new Mock<IEnvironmentVariableService>();
         this.DetectorTestUtility.AddServiceMock(this.mockEnvVarService);
+        this.DetectorTestUtility.AddService<IRustCliParser>(new RustCliParser(this.mockCliService.Object, this.mockEnvVarService.Object, new PathUtilityService(new Mock<ILogger<PathUtilityService>>().Object), this.mockRustCliParserLogger.Object));
+        this.DetectorTestUtility.AddService<IRustCargoLockParser>(new RustCargoLockParser(new Mock<ILogger<RustCargoLockParser>>().Object));
     }
 
     [TestMethod]
@@ -648,7 +655,12 @@ dependencies = [
     {
         var cargoMetadata = this.mockMetadataV1;
         this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("cargo", It.IsAny<IEnumerable<string>>())).ReturnsAsync(true);
-        this.mockCliService.Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string[]>()))
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync(
+            It.IsAny<string>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<string[]>()))
             .ReturnsAsync(new CommandLineExecutionResult { StdOut = cargoMetadata });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -770,7 +782,12 @@ dependencies = [
     {
         var cargoMetadata = this.mockMetadataWithLicenses;
         this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("cargo", It.IsAny<IEnumerable<string>>())).ReturnsAsync(true);
-        this.mockCliService.Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string[]>()))
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync(
+            It.IsAny<string>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<string[]>()))
             .ReturnsAsync(new CommandLineExecutionResult { StdOut = cargoMetadata });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -803,7 +820,12 @@ dependencies = [
     {
         var cargoMetadata = this.mockMetadataV1;
         this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("cargo", It.IsAny<IEnumerable<string>>())).ReturnsAsync(true);
-        this.mockCliService.Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string[]>()))
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync(
+            It.IsAny<string>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<string[]>()))
             .ReturnsAsync(new CommandLineExecutionResult { StdOut = cargoMetadata });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -937,7 +959,12 @@ dependencies = [
 }";
 
         this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("cargo", It.IsAny<IEnumerable<string>>())).ReturnsAsync(true);
-        this.mockCliService.Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string[]>()))
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync(
+            It.IsAny<string>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<string[]>()))
             .ReturnsAsync(new CommandLineExecutionResult { StdOut = cargoMetadata });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -971,7 +998,12 @@ dependencies = [
         var cargoMetadata = this.mockMetadataVirtualManifest;
 
         this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("cargo", It.IsAny<IEnumerable<string>>())).ReturnsAsync(true);
-        this.mockCliService.Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string[]>()))
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync(
+            It.IsAny<string>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<string[]>()))
             .ReturnsAsync(new CommandLineExecutionResult { StdOut = cargoMetadata });
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -1157,7 +1189,12 @@ dependencies = [
     public async Task RustCliDetector_FallBackLogicSkippedOnWorkspaceErrorAsync()
     {
         this.mockCliService.Setup(x => x.CanCommandBeLocatedAsync("cargo", It.IsAny<IEnumerable<string>>())).ReturnsAsync(true);
-        this.mockCliService.Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<string[]>()))
+        this.mockCliService.Setup(x => x.ExecuteCommandAsync(
+            It.IsAny<string>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<DirectoryInfo>(),
+            It.IsAny<CancellationToken>(),
+            It.IsAny<string[]>()))
             .ReturnsAsync(new CommandLineExecutionResult { StdOut = null, StdErr = "current package believes it's in a workspace when it's not:", ExitCode = -1 });
         var testCargoLockString = @"
 [[package]]

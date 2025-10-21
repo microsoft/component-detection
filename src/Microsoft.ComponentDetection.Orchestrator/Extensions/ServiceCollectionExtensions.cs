@@ -54,6 +54,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IGraphTranslationService, DefaultGraphTranslationService>();
         services.AddSingleton<IPathUtilityService, PathUtilityService>();
         services.AddSingleton<ISafeFileEnumerableFactory, SafeFileEnumerableFactory>();
+        services.AddSingleton<IRustMetadataContextBuilder, RustMetadataContextBuilder>();
+        services.AddSingleton<IRustCargoLockParser, RustCargoLockParser>();
+        services.AddSingleton<IRustCliParser, RustCliParser>();
+        services.AddSingleton<IRustSbomParser, RustSbomParser>();
 
         // Command line services
         services.AddSingleton<IScanExecutionService, ScanExecutionService>();

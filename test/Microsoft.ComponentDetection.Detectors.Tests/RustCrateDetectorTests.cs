@@ -12,7 +12,9 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Rust;
 using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -229,6 +231,12 @@ name = ""test_package""
 version = ""2.0.0""
 source = ""registry+https://github.com/rust-lang/crates.io-index""
 ";
+
+    [TestInitialize]
+    public void TestInitialize()
+    {
+        this.DetectorTestUtility.AddService<IRustCargoLockParser>(new RustCargoLockParser(new Mock<ILogger<RustCargoLockParser>>().Object));
+    }
 
     [TestMethod]
     public async Task TestGraphIsCorrectAsync()
