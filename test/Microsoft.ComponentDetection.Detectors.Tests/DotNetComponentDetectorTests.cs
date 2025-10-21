@@ -654,8 +654,19 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         discoveredComponents.Where(component => component.Component.Id == "0.0.0 net8.0 unknown - DotNet").Should().ContainSingle();
     }
 
+#pragma warning disable SA1201 // Elements should appear in the correct order
+    private static IEnumerable<object[]> AdditionalPathSegments { get; } =
+#pragma warning restore SA1201 // Elements should appear in the correct order
+    [
+        [string.Empty],
+        [$"{Path.DirectorySeparatorChar}{Path.DirectorySeparatorChar}"],
+        [$"{Path.AltDirectorySeparatorChar}{Path.DirectorySeparatorChar}"],
+        [$"{Path.AltDirectorySeparatorChar}{Path.AltDirectorySeparatorChar}"],
+    ];
+
     [TestMethod]
-    public async Task TestDotNetDetectorRebasePaths()
+    [DynamicData(nameof(AdditionalPathSegments))]
+    public async Task TestDotNetDetectorRebasePaths(string additionalPathSegment)
     {
         // DetectorTestUtility runs under Path.GetTempPath()
         var scanRoot = Path.TrimEndingDirectorySeparator(Path.GetTempPath());
@@ -676,7 +687,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(libraryProjectPath, null);
 
         var libraryOutputPath = Path.Combine(Path.GetDirectoryName(libraryProjectPath), "obj");
-        var libraryBuildOutputPath = Path.Combine(Path.GetDirectoryName(libraryBuildProjectPath), "obj");
+        var libraryBuildOutputPath = Path.Combine(Path.GetDirectoryName(libraryBuildProjectPath), "obj") + additionalPathSegment;
         var libraryAssetsPath = Path.Combine(libraryOutputPath, "project.assets.json");
 
         // use "build" paths to simulate an Assets file that has a different root.  Here the build assets have RootDir, but the scanned filesystem has scanRoot.

@@ -59,7 +59,8 @@ public class DotNetComponentDetector : FileComponentDetector
     public override IEnumerable<string> Categories => ["DotNet"];
 
     [return: NotNullIfNotNull(nameof(path))]
-    private string? NormalizeDirectory(string? path) => string.IsNullOrEmpty(path) ? path : Path.TrimEndingDirectorySeparator(this.pathUtilityService.NormalizePath(path));
+    private string? NormalizeDirectory(string? path) => string.IsNullOrEmpty(path) ? path :
+        this.pathUtilityService.NormalizePath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
     /// <summary>
     /// Given a path under sourceDirectory, and the same path in another filesystem,
