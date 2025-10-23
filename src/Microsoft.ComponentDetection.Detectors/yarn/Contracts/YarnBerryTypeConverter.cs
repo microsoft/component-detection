@@ -15,7 +15,7 @@ public class YarnBerryTypeConverter : IYamlTypeConverter
     public bool Accepts(Type type) => type == typeof(YarnBerryLockfile);
 
     /// <inheritdoc />
-    public object ReadYaml(IParser parser, Type type)
+    public object ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
     {
         var metadata = new YarnBerryLockfileMetadata();
         var entries = new Dictionary<string, YarnBerryLockfileEntry>();
@@ -51,5 +51,5 @@ public class YarnBerryTypeConverter : IYamlTypeConverter
     }
 
     /// <inheritdoc />
-    public void WriteYaml(IEmitter emitter, object value, Type type) => throw new NotImplementedException();
+    public void WriteYaml(IEmitter emitter, object value, Type type, ObjectSerializer serializer) => throw new NotImplementedException();
 }
