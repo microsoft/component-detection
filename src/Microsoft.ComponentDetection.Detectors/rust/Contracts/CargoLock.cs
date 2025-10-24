@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 
 using System.Collections.Generic;
