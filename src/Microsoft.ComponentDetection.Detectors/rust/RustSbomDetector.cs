@@ -19,7 +19,7 @@ using Tomlyn.Model;
 /// <summary>
 /// A unified Rust detector that orchestrates SBOM, CLI, and Crate parsing.
 /// </summary>
-public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
+public class RustSbomDetector : FileComponentDetector
 {
     private const string CargoTomlFileName = "Cargo.toml";
     private const string CargoLockFileName = "Cargo.lock";
@@ -558,7 +558,7 @@ public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     /// <remarks>
-    /// This method delegates parsing to the <see cref="RustCliDetector"/> which executes the 'cargo metadata' command.
+    /// This method delegates parsing to the <see cref="RustCliParser"/> which executes the 'cargo metadata' command.
     /// If the CLI parsing is successful, the method:
     /// <list type="bullet">
     /// <item><description>Adds all local package directories found in the workspace to the visited directories set to prevent duplicate processing.</description></item>
@@ -609,7 +609,7 @@ public class RustSbomDetector : FileComponentDetector, IExperimentalDetector
     /// <remarks>
     /// This method performs the following steps:
     /// <list type="number">
-    /// <item><description>Delegates parsing of the Cargo.lock file to the <see cref="RustCrateDetector"/>.</description></item>
+    /// <item><description>Delegates parsing of the Cargo.lock file to the <see cref="RustCargoLockParser"/>.</description></item>
     /// <item><description>If parsing is successful and returns a lockfile version, records the version in telemetry.</description></item>
     /// <item><description>Checks if a corresponding Cargo.toml file exists in the same directory.</description></item>
     /// <item><description>If Cargo.toml exists, parses its workspace tables to extract member and exclude patterns.</description></item>
