@@ -9,6 +9,7 @@ using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using global::DotNet.Globbing;
+using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -43,6 +44,14 @@ public class RustSbomDetector : FileComponentDetector
     private Dictionary<string, Contracts.CargoMetadata> manifestMetadataCache;
     private DetectionMode mode;
 
+    // Telemetry counters
+    private int skippedCargoTomlCount;
+    private int skippedCargoLockCount;
+    private int processedCargoTomlCount;
+    private int processedCargoLockCount;
+    private int processedSbomCount;
+    private int totalPackagesInOwnershipMap;
+
     public RustSbomDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -72,6 +81,14 @@ public class RustSbomDetector : FileComponentDetector
         this.visitedDirs = new HashSet<string>(this.pathComparer);
         this.visitedGlobRules = [];
         this.manifestMetadataCache = new Dictionary<string, Contracts.CargoMetadata>(this.pathComparer);
+
+        // Initialize telemetry counters
+        this.skippedCargoTomlCount = 0;
+        this.skippedCargoLockCount = 0;
+        this.processedCargoTomlCount = 0;
+        this.processedCargoLockCount = 0;
+        this.processedSbomCount = 0;
+        this.totalPackagesInOwnershipMap = 0;
     }
 
     /// <summary>
@@ -159,9 +176,11 @@ public class RustSbomDetector : FileComponentDetector
                 var ownership = await this.metadataContextBuilder.BuildPackageOwnershipMapAsync(tomlPaths, cancellationToken);
                 this.ownershipMap = ownership.PackageToTomls;
                 this.manifestMetadataCache = ownership.ManifestToMetadata;
+                this.totalPackagesInOwnershipMap = this.ownershipMap?.Count ?? 0;
+
                 this.Logger.LogInformation(
                     "Loaded Rust ownership (packages: {PkgCount}) and metadata cache (manifests: {ManifestCount})",
-                    this.ownershipMap?.Count ?? 0,
+                    this.totalPackagesInOwnershipMap,
                     this.manifestMetadataCache?.Count ?? 0);
 
                 if (ownership.FailedManifests?.Count > 0)
@@ -177,6 +196,7 @@ public class RustSbomDetector : FileComponentDetector
                 this.Logger.LogWarning(ex, "Failed to compute Rust ownership/metadata cache; proceeding without cache");
                 this.ownershipMap = null;
                 this.manifestMetadataCache = null;
+                this.totalPackagesInOwnershipMap = 0;
             }
         }
         else
@@ -184,6 +204,7 @@ public class RustSbomDetector : FileComponentDetector
             this.Logger.LogInformation("No Cargo.toml files found; ownership and metadata cache unavailable");
             this.ownershipMap = null;
             this.manifestMetadataCache = null;
+            this.totalPackagesInOwnershipMap = 0;
         }
 
         IEnumerable<ProcessRequest> filteredRequests;
@@ -251,12 +272,29 @@ public class RustSbomDetector : FileComponentDetector
         if (this.ShouldSkip(directory, fileKind, location))
         {
             this.Logger.LogInformation("Skipping file due to skip rules: {Location}", normLocation);
+
+            // Increment skip counters
+            switch (fileKind)
+            {
+                case FileKind.CargoToml:
+                    Interlocked.Increment(ref this.skippedCargoTomlCount);
+                    break;
+                case FileKind.CargoLock:
+                    Interlocked.Increment(ref this.skippedCargoLockCount);
+                    break;
+                case FileKind.CargoSbom:
+                    break;
+                default:
+                    break;
+            }
+
             return;
         }
 
         if (this.mode == DetectionMode.SBOM_ONLY)
         {
             await this.ProcessSbomFileAsync(processRequest, cancellationToken);
+            Interlocked.Increment(ref this.processedSbomCount);
         }
         else
         {
@@ -264,12 +302,43 @@ public class RustSbomDetector : FileComponentDetector
             if (fileKind == FileKind.CargoToml)
             {
                 await this.ProcessCargoTomlAsync(processRequest, directory, cancellationToken);
+                Interlocked.Increment(ref this.processedCargoTomlCount);
             }
             else if (fileKind == FileKind.CargoLock)
             {
                 await this.ProcessCargoLockAsync(processRequest, directory, cancellationToken);
+                Interlocked.Increment(ref this.processedCargoLockCount);
             }
         }
+    }
+
+    /// <inheritdoc />
+    protected override Task OnDetectionFinishedAsync()
+    {
+        // Record telemetry using the using pattern
+        var totalSkippedFiles = this.skippedCargoTomlCount + this.skippedCargoLockCount;
+        var totalProcessedFiles = this.processedCargoTomlCount + this.processedCargoLockCount + this.processedSbomCount;
+        var totalFiles = totalSkippedFiles + totalProcessedFiles;
+        var skipRatio = totalFiles > 0
+                        ? $"{100.0 * totalSkippedFiles / totalFiles:0.00}%"
+                        : "0.00%";
+
+        using var telemetryRecord = new RustDetectionTelemetryRecord
+        {
+            DetectionMode = this.mode.ToString(),
+            SkippedCargoTomlCount = this.skippedCargoTomlCount,
+            SkippedCargoLockCount = this.skippedCargoLockCount,
+            TotalSkippedFiles = totalSkippedFiles,
+            ProcessedCargoTomlCount = this.processedCargoTomlCount,
+            ProcessedCargoLockCount = this.processedCargoLockCount,
+            ProcessedSbomCount = this.processedSbomCount,
+            TotalProcessedFiles = totalProcessedFiles,
+            OwnershipMapPackageCount = this.totalPackagesInOwnershipMap,
+            OwnershipMapAvailable = this.ownershipMap != null,
+            SkipRatio = skipRatio,
+        };
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
