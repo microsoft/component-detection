@@ -294,7 +294,7 @@ public class DetectorProcessingServiceTests
         experimentalDetectorRecord.DetectedComponentCount.Should().Be(0);
         experimentalDetectorRecord.IsExperimental.Should().BeTrue();
         experimentalDetectorRecord.ReturnCode.Should().Be((int)ProcessingResultCode.InputError);
-        experimentalDetectorRecord.ExperimentalInformation.Contains("Simulated experimental failure");
+        experimentalDetectorRecord.ExperimentalInformation.Should().Contain("Simulated experimental failure");
 
         // We should have all components except the ones that came from our experimental detector
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount(records.Sum(x => x.DetectedComponentCount ?? 0));

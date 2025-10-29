@@ -63,7 +63,7 @@ public class ScanSettingsTests
         action.Should().NotThrow();
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(-1)]
     [DataRow(0)]
     public void Validate_FailInvalidMaxThreads(int? input)
@@ -79,7 +79,7 @@ public class ScanSettingsTests
         result.Successful.Should().BeFalse();
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(null)]
     [DataRow(1)]
     [DataRow(99)]
