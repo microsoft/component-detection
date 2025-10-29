@@ -875,7 +875,7 @@ replace github v1.5.0 => github v1.18
     /// Verifies that if Go CLI is enabled/available and succeeds, go.sum file is not parsed and vice-versa.
     /// </summary>
     /// <returns>Task.</returns>
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
     public async Task GoDetector_GoSum_GoSumParserExecuted(bool goCliSucceeds)

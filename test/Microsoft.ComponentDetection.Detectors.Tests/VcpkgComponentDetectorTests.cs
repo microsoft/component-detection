@@ -180,7 +180,6 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     }
 
     [TestMethod]
-    [DataTestMethod]
     [DataRow("vcpkg_installed\\manifest-info.json", "vcpkg.json")]
     [DataRow("vcpkg_installed\\vcpkg\\manifest-info.json", "vcpkg.json")]
     [DataRow("bad_location\\manifest-info.json", "vcpkg_installed\\packageLocation\\vcpkg.spdx.json")]
