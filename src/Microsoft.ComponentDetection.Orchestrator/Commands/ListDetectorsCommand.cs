@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 
 using System.Collections.Generic;
+using System.Threading;
 using Microsoft.ComponentDetection.Contracts;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -27,7 +28,10 @@ public sealed class ListDetectorsCommand : Command<ListDetectorsSettings>
     }
 
     /// <inheritdoc/>
-    public override int Execute(CommandContext context, ListDetectorsSettings settings)
+    public override int Execute(
+        CommandContext context,
+        ListDetectorsSettings settings,
+        CancellationToken cancellationToken)
     {
         var table = new Table();
         table.AddColumn("Name");
