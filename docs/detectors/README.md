@@ -58,13 +58,19 @@
 | NpmLockFileDetector  | Stable       |
 | NpmLockFile3Detector | Experimental |
 
-- NuGet
+- [NuGet](nuget.md)
 
 | Detector                                         | Status |
 | ------------------------------------------------ | ------ |
 | NugetComponentDetector                           | Stable |
 | NugetPackagesConfigDetector                      | Stable |
 | NuGetProjectModelProjectCentricComponentDetector | Stable |
+
+- [Paket](paket.md)
+
+| Detector              | Status |
+| --------------------- | ------ |
+| PaketComponentDetector | Stable |
 
 - [Pip](pip.md)
 
