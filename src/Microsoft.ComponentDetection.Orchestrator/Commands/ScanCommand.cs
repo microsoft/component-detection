@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -37,7 +38,10 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     }
 
     /// <inheritdoc />
-    public override async Task<int> ExecuteAsync(CommandContext context, ScanSettings settings)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        ScanSettings settings,
+        CancellationToken cancellationToken)
     {
         this.fileWritingService.Init(settings.Output);
         var result = await this.scanExecutionService.ExecuteScanAsync(settings);

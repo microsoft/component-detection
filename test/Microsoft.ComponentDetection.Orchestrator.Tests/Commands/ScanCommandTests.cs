@@ -2,6 +2,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Commands;
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ComponentDetection.Common;
@@ -40,7 +41,7 @@ public class ScanCommandTests
     {
         var settings = new ScanSettings { Output = "output" };
 
-        var result = await this.command.ExecuteAsync(null, settings);
+        var result = await this.command.ExecuteAsync(null, settings, CancellationToken.None);
 
         this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
         this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
@@ -54,7 +55,7 @@ public class ScanCommandTests
     {
         var settings = new ScanSettings { Output = "output", ManifestFile = new FileInfo("manifest.json") };
 
-        var result = await this.command.ExecuteAsync(null, settings);
+        var result = await this.command.ExecuteAsync(null, settings, CancellationToken.None);
 
         this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
         this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
@@ -71,7 +72,7 @@ public class ScanCommandTests
         await using var tw = new StreamWriter(ms);
         Console.SetOut(tw);
 
-        var result = await this.command.ExecuteAsync(null, settings);
+        var result = await this.command.ExecuteAsync(null, settings, CancellationToken.None);
 
         this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
         this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
