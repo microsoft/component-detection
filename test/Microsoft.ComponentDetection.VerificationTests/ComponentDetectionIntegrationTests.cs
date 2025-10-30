@@ -211,7 +211,7 @@ public class ComponentDetectionIntegrationTests
                     var newTime = float.Parse(match.Groups[1].Value);
 
                     var maxTimeThreshold = (float)(oldTime + Math.Max(5, oldTime * this.allowedTimeDriftRatio));
-                    newTime.Should().BeLessOrEqualTo(maxTimeThreshold, $"Total Time take increased by a large amount. Please verify before continuing. old time: {oldTime}, new time: {newTime}");
+                    newTime.Should().BeLessThanOrEqualTo(maxTimeThreshold, $"Total Time take increased by a large amount. Please verify before continuing. old time: {oldTime}, new time: {newTime}");
                 }
                 else
                 {
@@ -250,7 +250,7 @@ public class ComponentDetectionIntegrationTests
                 this.bumpedDetectorVersions.Add(cd.DetectorId);
             }
 
-            cd.SupportedComponentTypes.Should().OnlyContain(type => newDetector.SupportedComponentTypes.Contains(type), "the detector {cd.DetectorId} has lost suppported component types. Verify this is expected behavior.");
+            cd.SupportedComponentTypes.Should().OnlyContain(type => newDetector.SupportedComponentTypes.Contains(type), $"the detector {cd.DetectorId} has lost suppported component types. Verify this is expected behavior.");
         }
     }
 
