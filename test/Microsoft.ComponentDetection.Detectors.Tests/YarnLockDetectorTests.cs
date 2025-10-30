@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common;
@@ -17,7 +18,6 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
 using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityExtensions;
 
 [TestClass]
@@ -218,7 +218,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             workspaces = new[] { "workspace" },
         };
 
-        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonConvert.SerializeObject(workspaceJson).ToStream() };
+        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonSerializer.Serialize(workspaceJson).ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
 
@@ -263,7 +263,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             @private = true,
             workspaces = new[] { "workspace" },
         };
-        var str = JsonConvert.SerializeObject(workspaceJson);
+        var str = JsonSerializer.Serialize(workspaceJson);
         var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = str.ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
@@ -310,7 +310,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             workspaces = new[] { "workspace" },
         };
 
-        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonConvert.SerializeObject(workspaceJson).ToStream() };
+        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonSerializer.Serialize(workspaceJson).ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
 
@@ -356,7 +356,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             workspaces = new { packages = new[] { "workspace" } },
         };
 
-        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonConvert.SerializeObject(workspaceJson).ToStream() };
+        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonSerializer.Serialize(workspaceJson).ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
 
@@ -402,7 +402,7 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
             workspaces = new { packages = new[] { "workspace" } },
         };
 
-        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonConvert.SerializeObject(workspaceJson).ToStream() };
+        var workspaceJsonComponentStream = new ComponentStream { Location = directory.ToString(), Pattern = "package.json", Stream = JsonSerializer.Serialize(workspaceJson).ToStream() };
 
         var packageStream = NpmTestUtilities.GetPackageJsonOneRootComponentStream(componentA.Name, componentA.RequestedVersion);
 
