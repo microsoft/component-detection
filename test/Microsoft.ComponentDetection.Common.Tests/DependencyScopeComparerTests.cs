@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static Microsoft.ComponentDetection.Common.DependencyScopeComparer;

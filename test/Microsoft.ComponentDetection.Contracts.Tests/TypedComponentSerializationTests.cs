@@ -1,7 +1,7 @@
 namespace Microsoft.ComponentDetection.Contracts.Tests;
 
 using System;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Commands;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

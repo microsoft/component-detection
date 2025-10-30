@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.Serialization;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -41,7 +41,7 @@ public class BaseDetectionTelemetryRecordTests
 
             recordName.Should().NotBeNullOrEmpty($"RecordName not set for {type.FullName}!");
 
-            dic.Should().NotContainKey(recordName, "Duplicate RecordName:`{RecordName}` found for {TypeName}!", recordName, type.FullName);
+            dic.Should().NotContainKey(recordName, $"Duplicate RecordName:{recordName} found for {type.FullName}!");
 
             dic.Add(recordName, type);
         }

@@ -38,3 +38,8 @@ dotnet_diagnostic.CA1062.severity = none
 # Justification: Test method names contain underscores
 # https://docs.microsoft.com/en-us/visualstudio/code-quality/ca1707
 dotnet_diagnostic.CA1707.severity = none
+
+# FAA0001: AwesomeAssertions analyzer suggestions
+# Justification: Suppress style suggestions that would be treated as errors
+# https://awesomeassertions.org/tips/
+dotnet_diagnostic.FAA0001.severity = none

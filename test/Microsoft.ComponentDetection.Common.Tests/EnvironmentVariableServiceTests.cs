@@ -1,7 +1,7 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]

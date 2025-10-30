@@ -1,7 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.Collections.Generic;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

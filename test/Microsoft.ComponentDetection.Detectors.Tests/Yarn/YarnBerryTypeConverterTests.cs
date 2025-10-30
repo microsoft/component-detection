@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests.Yarn;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.Yarn.Contracts;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using YamlDotNet.Serialization;

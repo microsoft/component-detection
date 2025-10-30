@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Common.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;

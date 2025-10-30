@@ -6,7 +6,7 @@
 
     <ItemGroup Label="Package References">
       <PackageReference Include="Docker.DotNet" />
-      <PackageReference Include="FluentAssertions.Analyzers" PrivateAssets="all" />
+      <PackageReference Include="AwesomeAssertions.Analyzers" PrivateAssets="all" />
       <PackageReference Include="Microsoft.Extensions.Logging" />
       <PackageReference Include="System.Threading.Tasks.Dataflow" />
       <PackageReference Include="MSTest.TestAdapter" />

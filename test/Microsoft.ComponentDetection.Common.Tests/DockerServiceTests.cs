@@ -2,8 +2,8 @@ namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Threading.Tasks;
+using AwesomeAssertions;
 using Docker.DotNet.Models;
-using FluentAssertions;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
