@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Commands;
 
 using System.IO;
 using System.Text.Json;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

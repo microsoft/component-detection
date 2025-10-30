@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;

@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

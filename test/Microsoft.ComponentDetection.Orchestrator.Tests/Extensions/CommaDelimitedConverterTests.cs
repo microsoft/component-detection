@@ -1,7 +1,7 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Extensions;
 
 using System;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Orchestrator.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

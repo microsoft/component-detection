@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.Yarn;
 using Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

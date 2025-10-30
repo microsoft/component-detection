@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

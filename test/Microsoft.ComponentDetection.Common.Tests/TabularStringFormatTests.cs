@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]

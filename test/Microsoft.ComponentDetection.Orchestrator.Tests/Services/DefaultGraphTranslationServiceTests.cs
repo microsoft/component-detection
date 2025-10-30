@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;

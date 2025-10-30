@@ -11,7 +11,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using global::NuGet.Frameworks;
 using global::NuGet.ProjectModel;
 using Microsoft.ComponentDetection.Contracts;

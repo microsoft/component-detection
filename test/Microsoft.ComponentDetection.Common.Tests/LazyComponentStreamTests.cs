@@ -1,7 +1,7 @@
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System.IO;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
