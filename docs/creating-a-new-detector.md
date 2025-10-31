@@ -67,7 +67,7 @@ Go inside the project MS.VS.Services.Governance.ComponentDetection.Detectors, an
 
 ![ruby-component-detector.png](./images/creating-a-new-detector/ruby-component-detector.png)
 
-- **Export**: All detectors are loaded during runtime, so this attribute helps with the discoverability.
+- **Constructor Injection**: Detectors use standard .NET dependency injection. Inject required services like `IComponentStreamEnumerableFactory`, `IObservableDirectoryWalkerFactory`, and `ILogger<T>` through the constructor.
 - **FileComponentDetector**: This is base class of all file based detectors
 - **IDefaultOffComponentDetector**: All new detectors should also implement this interface (not shown in above screenshot) so new detectors are not going to run as part of the default set of detectors. They are only run when a user manually enables the detector via [argument](./enable-default-off.md).
 - **Id**: Detector's identifier
@@ -80,6 +80,17 @@ Go inside the project MS.VS.Services.Governance.ComponentDetection.Detectors, an
 
 ### Advanced detection
 The above example is a basic introduction to creating your own detector and should be sufficient for most new detectors. Sometimes you need more granularity when processing files, as such we have 2 additional detection [lifecycle methods](#-Detector-File-Processing-Lifecycle).
+
+## Register the detector in dependency injection
+
+After creating your detector class, you must register it in the dependency injection container. Add your detector to `src/Microsoft.ComponentDetection.Orchestrator/Extensions/ServiceCollectionExtensions.cs` in the `AddComponentDetection` method:
+
+```csharp
+// YourEcosystem
+services.AddSingleton<IComponentDetector, YourDetector>();
+```
+
+This registration allows the orchestrator to discover and instantiate your detector at runtime.
 
 ## Registering Components
 
