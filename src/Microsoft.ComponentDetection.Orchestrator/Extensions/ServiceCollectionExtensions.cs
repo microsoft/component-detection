@@ -7,6 +7,7 @@ using Microsoft.ComponentDetection.Detectors.CocoaPods;
 using Microsoft.ComponentDetection.Detectors.Conan;
 using Microsoft.ComponentDetection.Detectors.Dockerfile;
 using Microsoft.ComponentDetection.Detectors.DotNet;
+using Microsoft.ComponentDetection.Detectors.Fcib;
 using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
 using Microsoft.ComponentDetection.Detectors.Ivy;
@@ -86,6 +87,9 @@ public static class ServiceCollectionExtensions
 
         // DotNet
         services.AddSingleton<IComponentDetector, DotNetComponentDetector>();
+
+        // Fcib
+        services.AddSingleton<IComponentDetector, FcibComponentDetector>();
 
         // Go
         services.AddSingleton<IComponentDetector, GoComponentDetector>();
