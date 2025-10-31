@@ -64,5 +64,5 @@ public enum ComponentType : byte
     DotNet = 19,
 
     [EnumMember]
-    Fcib = 20,
+    SensitiveBinary = 20,
 }

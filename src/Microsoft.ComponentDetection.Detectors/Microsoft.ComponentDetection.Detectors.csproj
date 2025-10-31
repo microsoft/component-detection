@@ -3,6 +3,7 @@
     <ItemGroup>
         <PackageReference Include="DotNet.Glob" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Microsoft.FileAffordance" />
         <PackageReference Include="morelinq" />
         <PackageReference Include="NuGet.ProjectModel" />
         <PackageReference Include="NuGet.Versioning" />

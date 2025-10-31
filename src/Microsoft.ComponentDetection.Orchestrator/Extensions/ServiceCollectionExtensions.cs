@@ -89,7 +89,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, DotNetComponentDetector>();
 
         // Fcib
-        services.AddSingleton<IComponentDetector, FcibComponentDetector>();
+        services.AddSingleton<IComponentDetector, SecuritySensitiveBinaryDetector>();
 
         // Go
         services.AddSingleton<IComponentDetector, GoComponentDetector>();
