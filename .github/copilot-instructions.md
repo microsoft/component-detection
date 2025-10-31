@@ -25,7 +25,7 @@ All new detectors start as **IDefaultOffComponentDetector** (must be explicitly 
 1. **DefaultOff** → 2. **IExperimentalDetector** (enabled but output not captured) → 3. **Default** (fully integrated)
 
 ### Dependency Injection
-All services auto-register via `ServiceCollectionExtensions.AddComponentDetection()` in Orchestrator. Detectors are discovered at runtime via `[Export]` attribute.
+All services register via `ServiceCollectionExtensions.AddComponentDetection()` in Orchestrator using standard .NET DI. Detectors use constructor injection for dependencies.
 
 ## Creating a New Detector
 
@@ -37,9 +37,18 @@ All services auto-register via `ServiceCollectionExtensions.AddComponentDetectio
 
 2. **Implement Detector**:
    ```csharp
-   [Export]
    public class YourDetector : FileComponentDetector, IDefaultOffComponentDetector
    {
+       public YourDetector(
+           IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+           IObservableDirectoryWalkerFactory walkerFactory,
+           ILogger<YourDetector> logger)
+       {
+           this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+           this.Scanner = walkerFactory;
+           this.Logger = logger;
+       }
+
        public override string Id => "YourEcosystem";
        public override IEnumerable<string> Categories => [DetectorClass.YourCategory];
        public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.YourType];
@@ -53,7 +62,13 @@ All services auto-register via `ServiceCollectionExtensions.AddComponentDetectio
    }
    ```
 
-3. **Register Components**:
+3. **Register Detector in DI**:
+   Add to `ServiceCollectionExtensions.AddComponentDetection()` in Orchestrator:
+   ```csharp
+   services.AddSingleton<IComponentDetector, YourDetector>();
+   ```
+
+4. **Register Components in Code**:
    ```csharp
    var component = new DetectedComponent(new YourComponent("name", "1.0.0"));
    recorder.RegisterUsage(
