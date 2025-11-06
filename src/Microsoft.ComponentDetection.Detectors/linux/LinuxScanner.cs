@@ -15,7 +15,7 @@ using Newtonsoft.Json;
 
 public class LinuxScanner : ILinuxScanner
 {
-    private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v1.16.0@sha256:12774e791a2b2bc48935c73da15180eee7f31815bc978b14f8f85cc408ec960b";
+    private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v1.37.0@sha256:48d679480c6d272c1801cf30460556959c01d4826795be31d4fd8b53750b7d91";
 
     private static readonly IList<string> CmdParameters =
     [
@@ -92,7 +92,7 @@ public class LinuxScanner : ILinuxScanner
         if (string.IsNullOrWhiteSpace(stdout) || !string.IsNullOrWhiteSpace(stderr))
         {
             throw new InvalidOperationException(
-                $"Scan failed with exit info: {stdout}{Environment.NewLine}{stderr}");
+                $"Scan failed with exit info: {stdout}{System.Environment.NewLine}{stderr}");
         }
 
         var layerDictionary = dockerLayers
