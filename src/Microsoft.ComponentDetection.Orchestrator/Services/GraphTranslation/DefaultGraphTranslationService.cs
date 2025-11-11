@@ -295,6 +295,7 @@ public class DefaultGraphTranslationService : IGraphTranslationService
                 relativePath = "/" + relativePath;
             }
 
+            relativePath = Uri.UnescapeDataString(relativePath);
             relativePathSet.Add(relativePath);
         }
 
