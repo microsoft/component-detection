@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IEnvironmentVariableService, EnvironmentVariableService>();
         services.AddSingleton<IObservableDirectoryWalkerFactory, FastDirectoryWalkerFactory>();
         services.AddSingleton<IFileUtilityService, FileUtilityService>();
+        services.AddSingleton<IComponentDetectionConfigFileService, ComponentDetectionConfigFileService>();
         services.AddSingleton<IDirectoryUtilityService, DirectoryUtilityService>();
         services.AddSingleton<IFileWritingService, FileWritingService>();
         services.AddSingleton<IGraphTranslationService, DefaultGraphTranslationService>();

@@ -20,6 +20,7 @@ public class ScanCommandTests
 {
     private Mock<IFileWritingService> fileWritingServiceMock;
     private Mock<IScanExecutionService> scanExecutionServiceMock;
+    private Mock<IComponentDetectionConfigFileService> componentDetectionConfigFileServiceMock;
     private Mock<ILogger<ScanCommand>> loggerMock;
     private ScanCommand command;
 
@@ -28,11 +29,13 @@ public class ScanCommandTests
     {
         this.fileWritingServiceMock = new Mock<IFileWritingService>();
         this.scanExecutionServiceMock = new Mock<IScanExecutionService>();
+        this.componentDetectionConfigFileServiceMock = new Mock<IComponentDetectionConfigFileService>();
         this.loggerMock = new Mock<ILogger<ScanCommand>>();
 
         this.command = new ScanCommand(
             this.fileWritingServiceMock.Object,
             this.scanExecutionServiceMock.Object,
+            this.componentDetectionConfigFileServiceMock.Object,
             this.loggerMock.Object);
     }
 

@@ -5,6 +5,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
+        <PackageReference Include="yamldotnet" />
     </ItemGroup>
 
     <ItemGroup Label="Package References">
