@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
@@ -765,10 +766,11 @@ public class BcdeScanExecutionServiceTests
                 x.ProcessDetectorsAsync(
                     settings,
                     It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Length),
-                    Match.Create<DetectorRestrictions>(restriction => true)))
+                    Match.Create<DetectorRestrictions>(restriction => true),
+                    CancellationToken.None))
             .ReturnsAsync(processingResult);
 
-        var result = await this.serviceUnderTest.ExecuteScanAsync(settings);
+        var result = await this.serviceUnderTest.ExecuteScanAsync(settings, CancellationToken.None);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.SourceDirectory.Should().NotBeNull();
         result.SourceDirectory.Should().Be(settings.SourceDirectory.ToString());
@@ -824,10 +826,11 @@ public class BcdeScanExecutionServiceTests
                 x.ProcessDetectorsAsync(
                     settings,
                     It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Length),
-                    Match.Create<DetectorRestrictions>(restriction => true)))
+                    Match.Create<DetectorRestrictions>(restriction => true),
+                    CancellationToken.None))
             .ReturnsAsync(processingResult);
 
-        var result = await this.serviceUnderTest.ExecuteScanAsync(settings);
+        var result = await this.serviceUnderTest.ExecuteScanAsync(settings, CancellationToken.None);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.SourceDirectory.Should().NotBeNull();
         result.SourceDirectory.Should().Be(settings.SourceDirectory.ToString());
@@ -880,10 +883,11 @@ public class BcdeScanExecutionServiceTests
                 x.ProcessDetectorsAsync(
                     settings,
                     It.Is<IEnumerable<IComponentDetector>>(inputDetectors => restrictedDetectors.Intersect(inputDetectors).Count() == restrictedDetectors.Length),
-                    Match.Create<DetectorRestrictions>(restriction => true)))
+                    Match.Create<DetectorRestrictions>(restriction => true),
+                    CancellationToken.None))
             .ReturnsAsync(processingResult);
 
-        var result = await this.serviceUnderTest.ExecuteScanAsync(settings);
+        var result = await this.serviceUnderTest.ExecuteScanAsync(settings, CancellationToken.None);
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         result.SourceDirectory.Should().NotBeNull();
         result.SourceDirectory.Should().Be(settings.SourceDirectory.ToString());
