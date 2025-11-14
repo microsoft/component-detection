@@ -11,6 +11,8 @@ using Microsoft.ComponentDetection.Detectors.Go;
 using Microsoft.ComponentDetection.Detectors.Gradle;
 using Microsoft.ComponentDetection.Detectors.Ivy;
 using Microsoft.ComponentDetection.Detectors.Linux;
+using Microsoft.ComponentDetection.Detectors.Linux.Factories;
+using Microsoft.ComponentDetection.Detectors.Linux.Filters;
 using Microsoft.ComponentDetection.Detectors.Maven;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.NuGet;
@@ -99,6 +101,10 @@ public static class ServiceCollectionExtensions
 
         // Linux
         services.AddSingleton<ILinuxScanner, LinuxScanner>();
+        services.AddSingleton<IArtifactComponentFactory, LinuxComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, NpmComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, PipComponentFactory>();
+        services.AddSingleton<IArtifactFilter, Mariner2ArtifactFilter>();
         services.AddSingleton<IComponentDetector, LinuxContainerDetector>();
 
         // Maven
