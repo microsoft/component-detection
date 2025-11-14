@@ -1,11 +1,11 @@
-name: 'Generate docs'
+name: "Generate docs"
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'src/Microsoft.ComponentDetection.Orchestrator/ArgumentSets/*.cs'
+      - "src/Microsoft.ComponentDetection.Orchestrator/ArgumentSets/*.cs"
 
 permissions:
   contents: read
@@ -13,9 +13,14 @@ permissions:
 jobs:
   gen-docs:
     permissions:
-      contents: write  # for stefanzweifel/git-auto-commit-action to push code in repo
+      contents: write # for stefanzweifel/git-auto-commit-action to push code in repo
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
@@ -27,12 +32,12 @@ jobs:
         run: |
           touch version.json
           touch version_dev.json
-          
+
           # Run CLI
           dotnet run -p src/Microsoft.ComponentDetection help scan 2> help.txt || true
           cat <<EOF > docs/detector-arguments.md
           # Detector arguments
-          
+
           \`\`\`shell
           dotnet run -p './src/Microsoft.ComponentDetection' help scan
           \`\`\`
@@ -45,5 +50,5 @@ jobs:
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@28e16e81777b558cc906c8750092100bbb34c5e3 # v7.0.0
         with:
-          commit_message: 'Update docs'
-          file_pattern: '*.md'
+          commit_message: "Update docs"
+          file_pattern: "*.md"

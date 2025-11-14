@@ -38,10 +38,15 @@ jobs:
       max-parallel: 4 # limit the total number of running jobs to avoid rate limiting
     name: ${{ matrix.language.name }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
       - name: Checkout Component Detection
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Prepare Dotnet 
+      - name: Prepare Dotnet
         run: |
           # When using a Vanilla Ubuntu image, GH Actions may not have access to the /usr/share/dotnet directory.
           sudo mkdir /usr/share/dotnet
@@ -85,6 +90,11 @@ jobs:
     permissions:
       issues: write
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: audit
+
       - name: Create GitHub Issue
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
