@@ -30,7 +30,7 @@ public class LinuxContainerDetectorTests
         new LayerMappedLinuxComponents
         {
             DockerLayer = new DockerLayer(),
-            LinuxComponents = [new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1")],
+            Components = [new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1")],
         },
     ];
 
