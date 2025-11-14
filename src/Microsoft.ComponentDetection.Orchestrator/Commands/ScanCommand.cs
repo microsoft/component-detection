@@ -44,7 +44,7 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
         CancellationToken cancellationToken)
     {
         this.fileWritingService.Init(settings.Output);
-        var result = await this.scanExecutionService.ExecuteScanAsync(settings);
+        var result = await this.scanExecutionService.ExecuteScanAsync(settings, cancellationToken);
         this.WriteComponentManifest(settings, result);
         return 0;
     }
@@ -53,11 +53,12 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     /// Method to provide a way to execute the scan command and obtain the ScanResult object.
     /// </summary>
     /// <param name="settings">ScanSettings object specifying the parameters for the scan execution.</param>
+    /// <param name="cancellationToken">CancellationToken to monitor for cancellation requests.</param>
     /// <returns>A ScanResult object.</returns>
-    public async Task<ScanResult> ExecuteScanCommandAsync(ScanSettings settings)
+    public async Task<ScanResult> ExecuteScanCommandAsync(ScanSettings settings, CancellationToken cancellationToken = default)
     {
         this.fileWritingService.Init(settings.Output);
-        var result = await this.scanExecutionService.ExecuteScanAsync(settings);
+        var result = await this.scanExecutionService.ExecuteScanAsync(settings, cancellationToken);
         this.WriteComponentManifest(settings, result);
         return result;
     }

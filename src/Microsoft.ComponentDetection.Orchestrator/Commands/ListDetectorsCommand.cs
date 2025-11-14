@@ -9,24 +9,12 @@ using Spectre.Console.Cli;
 /// <summary>
 /// Lists available detectors.
 /// </summary>
-public sealed class ListDetectorsCommand : Command<ListDetectorsSettings>
+/// <param name="detectors">The detectors.</param>
+/// <param name="console">The console.</param>
+public sealed class ListDetectorsCommand(
+    IEnumerable<IComponentDetector> detectors,
+    IAnsiConsole console) : Command<ListDetectorsSettings>
 {
-    private readonly IEnumerable<IComponentDetector> detectors;
-    private readonly IAnsiConsole console;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ListDetectorsCommand"/> class.
-    /// </summary>
-    /// <param name="detectors">The detectors.</param>
-    /// <param name="console">The console.</param>
-    public ListDetectorsCommand(
-        IEnumerable<IComponentDetector> detectors,
-        IAnsiConsole console)
-    {
-        this.detectors = detectors;
-        this.console = console;
-    }
-
     /// <inheritdoc/>
     public override int Execute(
         CommandContext context,
@@ -36,12 +24,12 @@ public sealed class ListDetectorsCommand : Command<ListDetectorsSettings>
         var table = new Table();
         table.AddColumn("Name");
 
-        foreach (var detector in this.detectors)
+        foreach (var detector in detectors)
         {
             table.AddRow(detector.Id);
         }
 
-        this.console.Write(table);
+        console.Write(table);
 
         return (int)ProcessingResultCode.Success;
     }
