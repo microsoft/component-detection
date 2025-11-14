@@ -23,16 +23,12 @@ public static class AsyncExecution
     {
         ArgumentNullException.ThrowIfNull(toExecute);
 
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(timeout);
-
-        var work = Task.Run(toExecute, cts.Token);
-
+        var work = toExecute();
         try
         {
-            return await work;
+            return await work.WaitAsync(timeout, cancellationToken);
         }
-        catch (OperationCanceledException) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        catch (TimeoutException)
         {
             throw new TimeoutException($"The execution did not complete in the allotted time ({timeout.TotalSeconds} seconds) and has been terminated prior to completion");
         }
@@ -47,20 +43,18 @@ public static class AsyncExecution
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="toExecute"/> is null.</exception>
     /// <exception cref="TimeoutException">Thrown when the execution does not complete within the timeout.</exception>
+    /// <remarks>NOTE: If the function to execute does not respect cancellation tokens, it may continue running in the background after a timeout.</remarks>
     public static async Task ExecuteVoidWithTimeoutAsync(Action toExecute, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(toExecute);
 
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(timeout);
-
-        var work = Task.Run(toExecute, cts.Token);
+        var work = Task.Run(toExecute, CancellationToken.None);
 
         try
         {
-            await work;
+            await work.WaitAsync(timeout, cancellationToken);
         }
-        catch (OperationCanceledException) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        catch (TimeoutException)
         {
             throw new TimeoutException($"The execution did not complete in the allotted time ({timeout.TotalSeconds} seconds) and has been terminated prior to completion");
         }
