@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Filters out invalid ELF binary packages from Mariner 2.0 images that lack proper release/epoch version fields.
 /// This workaround addresses an issue where Syft's elf-binary-package-cataloger detects packages without complete
 /// version information. The issue was fixed in Azure Linux 3.0 (https://github.com/microsoft/azurelinux/pull/10405),
-/// but Mariner 2.0 no longer receives non-security updates and will be deprecated in July 2025.
+/// but Mariner 2.0 no longer receives non-security updates and is deprecated as of July 2025.
 /// Related Syft PR: https://github.com/anchore/syft/pull/3008.
 /// </summary>
 public class Mariner2ArtifactFilter : IArtifactFilter
