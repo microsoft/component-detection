@@ -36,7 +36,7 @@ public class CargoComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Cargo;
 
-    public override PackageURL PackageUrl => new PackageURL("cargo", string.Empty, this.Name, this.Version, null, string.Empty);
+    public override PackageURL PackageUrl => new PackageURL("cargo", null, this.Name, this.Version, null, null);
 
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
 }
