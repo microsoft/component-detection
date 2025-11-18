@@ -10,9 +10,14 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
+using Microsoft.ComponentDetection.Detectors.Linux.Factories;
+using Microsoft.ComponentDetection.Detectors.Linux.Filters;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
+/// <summary>
+/// Scanner for Linux container layers using Syft.
+/// </summary>
 public class LinuxScanner : ILinuxScanner
 {
     private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v1.37.0@sha256:48d679480c6d272c1801cf30460556959c01d4826795be31d4fd8b53750b7d91";
@@ -26,22 +31,47 @@ public class LinuxScanner : ILinuxScanner
         "json",
     ];
 
-    private static readonly IEnumerable<string> AllowedArtifactTypes = ["apk", "deb", "rpm"];
-
-    private static readonly SemaphoreSlim DockerSemaphore = new SemaphoreSlim(2);
+    private static readonly SemaphoreSlim ContainerSemaphore = new SemaphoreSlim(2);
 
     private static readonly int SemaphoreTimeout = Convert.ToInt32(TimeSpan.FromHours(1).TotalMilliseconds);
 
     private readonly IDockerService dockerService;
     private readonly ILogger<LinuxScanner> logger;
+    private readonly IEnumerable<IArtifactComponentFactory> componentFactories;
+    private readonly IEnumerable<IArtifactFilter> artifactFilters;
+    private readonly Dictionary<string, IArtifactComponentFactory> factoryLookup;
 
-    public LinuxScanner(IDockerService dockerService, ILogger<LinuxScanner> logger)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LinuxScanner"/> class.
+    /// </summary>
+    /// <param name="dockerService">The docker service.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="componentFactories">The component factories.</param>
+    /// <param name="artifactFilters">The artifact filters.</param>
+    public LinuxScanner(
+        IDockerService dockerService,
+        ILogger<LinuxScanner> logger,
+        IEnumerable<IArtifactComponentFactory> componentFactories,
+        IEnumerable<IArtifactFilter> artifactFilters)
     {
         this.dockerService = dockerService;
         this.logger = logger;
+        this.componentFactories = componentFactories;
+        this.artifactFilters = artifactFilters;
+
+        // Build a lookup dictionary for quick factory access by artifact type
+        this.factoryLookup = [];
+        foreach (var factory in componentFactories)
+        {
+            foreach (var artifactType in factory.SupportedArtifactTypes)
+            {
+                this.factoryLookup[artifactType] = factory;
+            }
+        }
     }
 
-    public async Task<IEnumerable<LayerMappedLinuxComponents>> ScanLinuxAsync(string imageHash, IEnumerable<DockerLayer> dockerLayers, int baseImageLayerCount, CancellationToken cancellationToken = default)
+    /// <inheritdoc/>
+    public async Task<IEnumerable<LayerMappedLinuxComponents>> ScanLinuxAsync(string imageHash, IEnumerable<DockerLayer> containerLayers, int baseImageLayerCount, CancellationToken cancellationToken = default)
     {
         using var record = new LinuxScannerTelemetryRecord
         {
@@ -57,7 +87,7 @@ public class LinuxScanner : ILinuxScanner
 
         try
         {
-            acquired = await DockerSemaphore.WaitAsync(SemaphoreTimeout, cancellationToken);
+            acquired = await ContainerSemaphore.WaitAsync(SemaphoreTimeout, cancellationToken);
             if (acquired)
             {
                 try
@@ -75,14 +105,14 @@ public class LinuxScanner : ILinuxScanner
             else
             {
                 record.SemaphoreFailure = true;
-                this.logger.LogWarning("Failed to enter the docker semaphore for image {ImageHash}", imageHash);
+                this.logger.LogWarning("Failed to enter the container semaphore for image {ImageHash}", imageHash);
             }
         }
         finally
         {
             if (acquired)
             {
-                DockerSemaphore.Release();
+                ContainerSemaphore.Release();
             }
         }
 
@@ -95,49 +125,44 @@ public class LinuxScanner : ILinuxScanner
                 $"Scan failed with exit info: {stdout}{System.Environment.NewLine}{stderr}");
         }
 
-        var layerDictionary = dockerLayers
+        var layerDictionary = containerLayers
             .DistinctBy(layer => layer.DiffId)
             .ToDictionary(
                 layer => layer.DiffId,
-                _ => new List<LinuxComponent>());
+                _ => new List<TypedComponent>());
 
         try
         {
             var syftOutput = JsonConvert.DeserializeObject<SyftOutput>(stdout);
 
-            // This workaround ignores some packages that originate from the mariner 2.0 image that
-            // have not been properly tagged with the release and epoch fields in their versions. This
-            // was fixed for azurelinux 3.0 with https://github.com/microsoft/azurelinux/pull/10405, but
-            // 2.0 no longer recieves non-security updates and will be deprecated in July 2025.
-            // This became a problem after the Syft update https://github.com/anchore/syft/pull/3008 which
-            // allowed for Syft to respect the package type that is listed in the ELF notes file. Since
-            // mariner 2.0 lists the packages as RPMs, Syft categorizes them as such.
-            var validArtifacts = syftOutput.Artifacts.ToList();
-            if (syftOutput.Distro.Id == "mariner" && syftOutput.Distro.VersionId == "2.0")
+            // Apply artifact filters (e.g., Mariner 2.0 workaround)
+            var validArtifacts = syftOutput.Artifacts.AsEnumerable();
+            foreach (var filter in this.artifactFilters)
             {
-                var elfVersionsWithoutRelease = validArtifacts
-                    .Where(artifact =>
-                        artifact.FoundBy == "elf-binary-package-cataloger" // a number of detectors execute with Syft, this one can container invalid results
-                        && !artifact.Version.Contains('-', StringComparison.OrdinalIgnoreCase)) // dash character indicates that the release version was properly appended to the version, so allow these
-                    .ToList();
-
-                var elfVersionsRemoved = new List<string>();
-                foreach (var elfArtifact in elfVersionsWithoutRelease)
-                {
-                    elfVersionsRemoved.Add(elfArtifact.Name + " " + elfArtifact.Version);
-                    validArtifacts.Remove(elfArtifact);
-                }
-
-                syftTelemetryRecord.Mariner2ComponentsRemoved = JsonConvert.SerializeObject(elfVersionsRemoved);
+                validArtifacts = filter.Filter(validArtifacts, syftOutput.Distro);
             }
 
-            var linuxComponentsWithLayers = validArtifacts
-                .DistinctBy(artifact => (artifact.Name, artifact.Version))
-                .Where(artifact => AllowedArtifactTypes.Contains(artifact.Type))
-                .Select(artifact =>
-                    (Component: new LinuxComponent(syftOutput.Distro.Id, syftOutput.Distro.VersionId, artifact.Name, artifact.Version, this.GetLicenseFromArtifactElement(artifact), this.GetSupplierFromArtifactElement(artifact)), layerIds: artifact.Locations.Select(location => location.LayerId).Distinct()));
+            // Create components using factories
+            var componentsWithLayers = validArtifacts
+                .DistinctBy(artifact => (artifact.Name, artifact.Version, artifact.Type))
+                .Select(artifact => this.CreateComponentWithLayers(artifact, syftOutput.Distro))
+                .Where(result => result.Component != null)
+                .ToList();
 
-            foreach (var (component, layers) in linuxComponentsWithLayers)
+            // Track unsupported artifact types for telemetry
+            var unsupportedTypes = validArtifacts
+                .Where(a => !this.factoryLookup.ContainsKey(a.Type))
+                .Select(a => a.Type)
+                .Distinct()
+                .ToList();
+
+            if (unsupportedTypes.Count > 0)
+            {
+                this.logger.LogDebug("Encountered unsupported artifact types: {UnsupportedTypes}", string.Join(", ", unsupportedTypes));
+            }
+
+            // Map components to layers
+            foreach (var (component, layers) in componentsWithLayers)
             {
                 layers.ToList().ForEach(layer => layerDictionary[layer].Add(component));
             }
@@ -147,17 +172,13 @@ public class LinuxScanner : ILinuxScanner
                 (var layerId, var components) = kvp;
                 return new LayerMappedLinuxComponents
                 {
-                    LinuxComponents = components,
-                    DockerLayer = dockerLayers.First(layer => layer.DiffId == layerId),
+                    Components = components,
+                    DockerLayer = containerLayers.First(layer => layer.DiffId == layerId),
                 };
             });
 
-            syftTelemetryRecord.LinuxComponents = JsonConvert.SerializeObject(linuxComponentsWithLayers.Select(linuxComponentWithLayer =>
-                new LinuxComponentRecord
-                {
-                    Name = linuxComponentWithLayer.Component.Name,
-                    Version = linuxComponentWithLayer.Component.Version,
-                }));
+            // Track detected components in telemetry
+            syftTelemetryRecord.Components = JsonConvert.SerializeObject(componentsWithLayers.Select(c => c.Component.Id));
 
             return layerMappedLinuxComponents;
         }
@@ -168,44 +189,20 @@ public class LinuxScanner : ILinuxScanner
         }
     }
 
-    private string GetSupplierFromArtifactElement(ArtifactElement artifact)
+    private (TypedComponent Component, IEnumerable<string> LayerIds) CreateComponentWithLayers(ArtifactElement artifact, Distro distro)
     {
-        var supplier = artifact.Metadata?.Author;
-        if (!string.IsNullOrEmpty(supplier))
+        if (!this.factoryLookup.TryGetValue(artifact.Type, out var factory))
         {
-            return supplier;
+            return (null, []);
         }
 
-        supplier = artifact.Metadata?.Maintainer;
-        if (!string.IsNullOrEmpty(supplier))
+        var component = factory.CreateComponent(artifact, distro);
+        if (component == null)
         {
-            return supplier;
+            return (null, []);
         }
 
-        return null;
-    }
-
-    private string GetLicenseFromArtifactElement(ArtifactElement artifact)
-    {
-        var license = artifact.Metadata?.License?.String;
-        if (license != null)
-        {
-            return license;
-        }
-
-        var licenses = artifact.Licenses;
-        if (licenses != null && licenses.Length != 0)
-        {
-            return string.Join(", ", licenses.Select(l => l.Value));
-        }
-
-        return null;
-    }
-
-    internal sealed class LinuxComponentRecord
-    {
-        public string Name { get; set; }
-
-        public string Version { get; set; }
+        var layerIds = artifact.Locations?.Select(location => location.LayerId).Distinct() ?? [];
+        return (component, layerIds);
     }
 }
