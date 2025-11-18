@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -613,7 +614,7 @@ public class RustCliParserTests
       "resolve": {
         "root":"root 1.0.0",
         "nodes":[
-          { "id":"root 1.0.0", "deps":[ 
+          { "id":"root 1.0.0", "deps":[
               { "pkg":"depA 1.0.0", "dep_kinds":[{"kind":"build"}] },
               { "pkg":"depB 1.0.0", "dep_kinds":[{"kind":"build"}] }
           ] },
@@ -726,7 +727,7 @@ public class RustCliParserTests
       "resolve": {
         "root":"root 1.0.0",
         "nodes":[
-          { "id":"root 1.0.0", "deps":[ 
+          { "id":"root 1.0.0", "deps":[
               { "pkg":"devDep 1.0.0", "dep_kinds":[{"kind":"dev"}] },
               { "pkg":"buildDep 1.0.0", "dep_kinds":[{"kind":"build"}] },
               { "pkg":"normalDep 1.0.0", "dep_kinds":[{"kind":null}] }

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -655,7 +656,7 @@ public class RustCargoLockParserTests
         // This would require a specially crafted TOML that parses but causes issues in processing
         var toml = $"""
                 version = 3
-                
+
                 [[package]]
                 name = "valid"
                 version = "1.0.0"

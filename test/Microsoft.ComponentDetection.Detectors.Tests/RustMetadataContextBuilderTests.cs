@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.Threading;
@@ -81,7 +82,7 @@ public class RustMetadataContextBuilderTests
       "resolve": {
         "root":"root 1.0.0",
         "nodes":[
-          { "id":"root 1.0.0", "deps":[ 
+          { "id":"root 1.0.0", "deps":[
               { "pkg":"depA 1.0.0", "dep_kinds":[{"kind":"build"}] },
               { "pkg":"depB 1.0.0", "dep_kinds":[{"kind":"build"}] }
           ] },
