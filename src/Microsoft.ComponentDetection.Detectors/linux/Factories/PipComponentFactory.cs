@@ -5,7 +5,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 
 /// <summary>
-/// Factory for creating PipComponent instances from Python package artifacts.
+/// Factory for creating <see cref="PipComponent"/> instances from Python package artifacts.
 /// </summary>
 public class PipComponentFactory : ArtifactComponentFactoryBase
 {

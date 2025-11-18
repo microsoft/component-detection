@@ -5,7 +5,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 
 /// <summary>
-/// Factory for creating LinuxComponent instances from system package artifacts (apk, deb, rpm).
+/// Factory for creating <see cref="LinuxComponent"/> instances from system package artifacts (apk, deb, rpm).
 /// </summary>
 public class LinuxComponentFactory : ArtifactComponentFactoryBase
 {

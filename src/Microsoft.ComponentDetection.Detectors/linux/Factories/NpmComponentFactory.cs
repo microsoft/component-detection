@@ -6,7 +6,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 
 /// <summary>
-/// Factory for creating NpmComponent instances from npm package artifacts.
+/// Factory for creating <see cref="NpmComponent"/> instances from npm package artifacts.
 /// </summary>
 public class NpmComponentFactory : ArtifactComponentFactoryBase
 {
