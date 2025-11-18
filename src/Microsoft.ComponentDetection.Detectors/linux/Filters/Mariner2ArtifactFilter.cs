@@ -50,7 +50,7 @@ public class Mariner2ArtifactFilter : IArtifactFilter
                 artifactsList.Remove(elfArtifact);
             }
 
-            syftTelemetryRecord.Mariner2ComponentsRemoved = JsonConvert.SerializeObject(removedComponents);
+            syftTelemetryRecord.ComponentsRemoved = JsonConvert.SerializeObject(removedComponents);
         }
 
         return artifactsList;

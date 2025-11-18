@@ -178,25 +178,7 @@ public class LinuxScanner : ILinuxScanner
             });
 
             // Track detected components in telemetry
-            syftTelemetryRecord.LinuxComponents = JsonConvert.SerializeObject(componentsWithLayers.Select(c =>
-                new ComponentRecord
-                {
-                    Name = c.Component switch
-                    {
-                        LinuxComponent lc => lc.Name,
-                        NpmComponent nc => nc.Name,
-                        PipComponent pc => pc.Name,
-                        _ => "Unknown",
-                    },
-                    Version = c.Component switch
-                    {
-                        LinuxComponent lc => lc.Version,
-                        NpmComponent nc => nc.Version,
-                        PipComponent pc => pc.Version,
-                        _ => "Unknown",
-                    },
-                    Type = c.Component.Type.ToString(),
-                }));
+            syftTelemetryRecord.Components = JsonConvert.SerializeObject(componentsWithLayers.Select(c => c.Component.Id));
 
             return layerMappedLinuxComponents;
         }
@@ -222,14 +204,5 @@ public class LinuxScanner : ILinuxScanner
 
         var layerIds = artifact.Locations?.Select(location => location.LayerId).Distinct() ?? [];
         return (component, layerIds);
-    }
-
-    internal sealed class ComponentRecord
-    {
-        public string Name { get; set; }
-
-        public string Version { get; set; }
-
-        public string Type { get; set; }
     }
 }

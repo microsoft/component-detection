@@ -32,10 +32,18 @@ public class LinuxContainerDetector(ILinuxScanner linuxScanner, IDockerService d
     public string Id => "Linux";
 
     /// <inheritdoc/>
-    public IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.All)];
+    public IEnumerable<string> Categories => [
+        Enum.GetName(typeof(DetectorClass), DetectorClass.Linux),
+        Enum.GetName(typeof(DetectorClass), DetectorClass.Npm),
+        Enum.GetName(typeof(DetectorClass), DetectorClass.Pip)
+    ];
 
     /// <inheritdoc/>
-    public IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Linux, ComponentType.Npm, ComponentType.Pip];
+    public IEnumerable<ComponentType> SupportedComponentTypes => [
+        ComponentType.Linux,
+        ComponentType.Npm,
+        ComponentType.Pip
+    ];
 
     /// <inheritdoc/>
     public int Version => 7;
@@ -111,6 +119,11 @@ public class LinuxContainerDetector(ILinuxScanner linuxScanner, IDockerService d
         ResultCode = ProcessingResultCode.Success,
     };
 
+    /// <summary>
+    /// Creates an empty <see cref="ImageScanningResult"/> instance with no container details or components.
+    /// Used when image processing fails.
+    /// </summary>
+    /// <returns>An <see cref="ImageScanningResult"/> with null container details and an empty components collection.</returns>
     private static ImageScanningResult EmptyImageScanningResult() => new()
     {
         ContainerDetails = null,

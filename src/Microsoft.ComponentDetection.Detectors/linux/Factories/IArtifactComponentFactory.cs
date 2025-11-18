@@ -12,6 +12,10 @@ public interface IArtifactComponentFactory
     /// <summary>
     /// Gets the artifact types (e.g., "npm", "apk", "deb") that this factory can handle.
     /// </summary>
+    /// <remarks>
+    /// For a complete list of Syft artifact types, see:
+    /// https://github.com/anchore/syft/blob/main/syft/pkg/type.go.
+    /// </remarks>
     public IEnumerable<string> SupportedArtifactTypes { get; }
 
     /// <summary>
