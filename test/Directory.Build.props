@@ -5,12 +5,12 @@
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-  
+
   <ItemGroup Label="Package References">
     <PackageReference Include="MSTest.TestFramework"/>
     <PackageReference Include="MSTest.Analyzers "/>
     <PackageReference Include="Moq"/>
-    <PackageReference Include="FluentAssertions"/>
+    <PackageReference Include="AwesomeAssertions"/>
     <PackageReference Include="Faker.net"/>
   </ItemGroup>
 

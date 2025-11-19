@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -5,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -180,7 +181,6 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     }
 
     [TestMethod]
-    [DataTestMethod]
     [DataRow("vcpkg_installed\\manifest-info.json", "vcpkg.json")]
     [DataRow("vcpkg_installed\\vcpkg\\manifest-info.json", "vcpkg.json")]
     [DataRow("bad_location\\manifest-info.json", "vcpkg_installed\\packageLocation\\vcpkg.spdx.json")]

@@ -1,13 +1,17 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux;
+using Microsoft.ComponentDetection.Detectors.Linux.Factories;
+using Microsoft.ComponentDetection.Detectors.Linux.Filters;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -208,6 +212,8 @@ public class LinuxScannerTests
     private readonly LinuxScanner linuxScanner;
     private readonly Mock<IDockerService> mockDockerService;
     private readonly Mock<ILogger<LinuxScanner>> mockLogger;
+    private readonly List<IArtifactComponentFactory> componentFactories;
+    private readonly List<IArtifactFilter> artifactFilters;
 
     public LinuxScannerTests()
     {
@@ -218,7 +224,24 @@ public class LinuxScannerTests
 
         this.mockLogger = new Mock<ILogger<LinuxScanner>>();
 
-        this.linuxScanner = new LinuxScanner(this.mockDockerService.Object, this.mockLogger.Object);
+        // Set up factories and filters
+        this.componentFactories =
+        [
+            new LinuxComponentFactory(),
+            new NpmComponentFactory(),
+            new PipComponentFactory(),
+        ];
+
+        this.artifactFilters =
+        [
+            new Mariner2ArtifactFilter(),
+        ];
+
+        this.linuxScanner = new LinuxScanner(
+            this.mockDockerService.Object,
+            this.mockLogger.Object,
+            this.componentFactories,
+            this.artifactFilters);
     }
 
     [TestMethod]
@@ -229,10 +252,10 @@ public class LinuxScannerTests
         this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((syftOutput, string.Empty));
 
-        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971" }], 0)).First().LinuxComponents;
+        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971" }], 0)).First().Components;
 
         result.Should().ContainSingle();
-        var package = result.First();
+        var package = result.First() as LinuxComponent;
         package.Name.Should().Be("test");
         package.Version.Should().Be("1.0.0");
         package.Release.Should().Be("1.0.0");
@@ -248,10 +271,10 @@ public class LinuxScannerTests
         this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((syftOutput, string.Empty));
 
-        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971" }], 0)).First().LinuxComponents;
+        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971" }], 0)).First().Components;
 
         result.Should().ContainSingle();
-        var package = result.First();
+        var package = result.First() as LinuxComponent;
         package.Name.Should().Be("test");
         package.Version.Should().Be("1.0.0");
         package.Release.Should().Be("1.0.0");
@@ -267,10 +290,10 @@ public class LinuxScannerTests
         this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((syftOutput, string.Empty));
 
-        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6" }], 0)).First().LinuxComponents;
+        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6" }], 0)).First().Components;
 
         result.Should().ContainSingle();
-        var package = result.First();
+        var package = result.First() as LinuxComponent;
         package.Name.Should().Be("busybox");
         package.Version.Should().Be("1.35.0-13.cm2");
         package.Release.Should().Be("2.0");
@@ -286,8 +309,97 @@ public class LinuxScannerTests
         this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((syftOutput, string.Empty));
 
-        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6" }], 0)).First().LinuxComponents;
+        var result = (await this.linuxScanner.ScanLinuxAsync("fake_hash", [new DockerLayer { LayerIndex = 0, DiffId = "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6" }], 0)).First().Components;
 
         result.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestLinuxScanner_SupportsMultipleComponentTypes_Async()
+    {
+        const string syftOutputWithMixedTypes = @"{
+                ""distro"": {
+                    ""id"":""ubuntu"",
+                    ""versionId"":""22.04""
+                },
+                ""artifacts"": [
+                    {
+                        ""name"":""curl"",
+                        ""version"":""7.81.0-1ubuntu1.10"",
+                        ""type"":""deb"",
+                        ""locations"": [
+                            {
+                                ""path"": ""/var/lib/dpkg/status"",
+                                ""layerID"": ""sha256:layer1""
+                            }
+                        ],
+                        ""metadata"": {
+                            ""maintainer"": ""Ubuntu Developers""
+                        }
+                    },
+                    {
+                        ""name"":""express"",
+                        ""version"":""4.18.2"",
+                        ""type"":""npm"",
+                        ""locations"": [
+                            {
+                                ""path"": ""/app/node_modules/express/package.json"",
+                                ""layerID"": ""sha256:layer2""
+                            }
+                        ],
+                        ""metadata"": {
+                            ""author"": ""TJ Holowaychuk"",
+                            ""integrity"": ""sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ==""
+                        }
+                    },
+                    {
+                        ""name"":""requests"",
+                        ""version"":""2.31.0"",
+                        ""type"":""python"",
+                        ""locations"": [
+                            {
+                                ""path"": ""/usr/local/lib/python3.10/site-packages/requests-2.31.0.dist-info/METADATA"",
+                                ""layerID"": ""sha256:layer2""
+                            }
+                        ],
+                        ""metadata"": {
+                            ""author"": ""Kenneth Reitz"",
+                            ""license"": ""Apache-2.0""
+                        }
+                    }
+                ]
+            }";
+
+        this.mockDockerService.Setup(service => service.CreateAndRunContainerAsync(It.IsAny<string>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((syftOutputWithMixedTypes, string.Empty));
+
+        var layers = await this.linuxScanner.ScanLinuxAsync(
+            "fake_hash",
+            [
+                new DockerLayer { LayerIndex = 0, DiffId = "sha256:layer1" },
+                new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
+            ],
+            0);
+
+        var allComponents = layers.SelectMany(l => l.Components).ToList();
+        allComponents.Should().HaveCount(3);
+
+        // Verify Linux component
+        var linuxComponent = allComponents.OfType<LinuxComponent>().Single();
+        linuxComponent.Name.Should().Be("curl");
+        linuxComponent.Version.Should().Be("7.81.0-1ubuntu1.10");
+        linuxComponent.Distribution.Should().Be("ubuntu");
+
+        // Verify Npm component
+        var npmComponent = allComponents.OfType<NpmComponent>().Single();
+        npmComponent.Name.Should().Be("express");
+        npmComponent.Version.Should().Be("4.18.2");
+        npmComponent.Hash.Should().Be("sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ==");
+
+        // Verify Pip component
+        var pipComponent = allComponents.OfType<PipComponent>().Single();
+        pipComponent.Name.Should().Be("requests");
+        pipComponent.Version.Should().Be("2.31.0");
+        pipComponent.License.Should().Be("Apache-2.0");
     }
 }

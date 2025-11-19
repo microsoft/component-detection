@@ -1,9 +1,10 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Newtonsoft.Json;

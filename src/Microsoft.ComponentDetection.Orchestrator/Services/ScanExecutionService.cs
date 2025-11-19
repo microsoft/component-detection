@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -33,7 +34,8 @@ public class ScanExecutionService : IScanExecutionService
         this.logger = logger;
     }
 
-    public async Task<ScanResult> ExecuteScanAsync(ScanSettings settings)
+    /// <inheritdoc />
+    public async Task<ScanResult> ExecuteScanAsync(ScanSettings settings, CancellationToken cancellationToken = default)
     {
         using var scope = this.logger.BeginScope("Executing BCDE scan");
 
@@ -44,7 +46,7 @@ public class ScanExecutionService : IScanExecutionService
 
         this.logger.LogDebug("Finished applying restrictions to detectors.");
 
-        var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(settings, detectorsWithAppliedRestrictions, detectorRestrictions);
+        var processingResult = await this.detectorProcessingService.ProcessDetectorsAsync(settings, detectorsWithAppliedRestrictions, detectorRestrictions, cancellationToken);
         var scanResult = this.graphTranslationService.GenerateScanResultFromProcessingResult(processingResult, settings);
 
         scanResult.DetectorsInScan = detectorsWithAppliedRestrictions.Select(ConvertToContract).ToList();

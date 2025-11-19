@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -6,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -30,7 +31,7 @@ public class LinuxContainerDetectorTests
         new LayerMappedLinuxComponents
         {
             DockerLayer = new DockerLayer(),
-            LinuxComponents = [new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1")],
+            Components = [new LinuxComponent("Ubuntu", "20.04", "bash", "5.0-6ubuntu1")],
         },
     ];
 

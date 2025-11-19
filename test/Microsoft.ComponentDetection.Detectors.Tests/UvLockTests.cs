@@ -1,10 +1,11 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests
 {
     using System;
     using System.IO;
     using System.Linq;
     using System.Text;
-    using FluentAssertions;
+    using AwesomeAssertions;
     using Microsoft.ComponentDetection.Detectors.Uv;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Tomlyn.Model;

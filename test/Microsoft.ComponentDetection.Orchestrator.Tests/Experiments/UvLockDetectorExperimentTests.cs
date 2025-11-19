@@ -1,6 +1,7 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Uv;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;

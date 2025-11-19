@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Models;
 
 using System.Collections.Generic;

@@ -4,7 +4,7 @@ public class DockerServiceSystemInfoTelemetryRecord : BaseDetectionTelemetryReco
 {
     public override string RecordName => "DockerServiceSystemInfo";
 
-    public string SystemInfo { get; set; }
+    public string? SystemInfo { get; set; }
 
-    public string ExceptionMessage { get; set; }
+    public string? ExceptionMessage { get; set; }
 }

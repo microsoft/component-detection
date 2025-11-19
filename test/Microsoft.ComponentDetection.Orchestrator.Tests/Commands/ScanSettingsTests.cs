@@ -1,8 +1,9 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Commands;
 
 using System.IO;
 using System.Text.Json;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -63,7 +64,7 @@ public class ScanSettingsTests
         action.Should().NotThrow();
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(-1)]
     [DataRow(0)]
     public void Validate_FailInvalidMaxThreads(int? input)
@@ -79,7 +80,7 @@ public class ScanSettingsTests
         result.Successful.Should().BeFalse();
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(null)]
     [DataRow(1)]
     [DataRow(99)]

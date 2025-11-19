@@ -1,7 +1,9 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -37,10 +39,13 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     }
 
     /// <inheritdoc />
-    public override async Task<int> ExecuteAsync(CommandContext context, ScanSettings settings)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        ScanSettings settings,
+        CancellationToken cancellationToken)
     {
         this.fileWritingService.Init(settings.Output);
-        var result = await this.scanExecutionService.ExecuteScanAsync(settings);
+        var result = await this.scanExecutionService.ExecuteScanAsync(settings, cancellationToken);
         this.WriteComponentManifest(settings, result);
         return 0;
     }
@@ -49,11 +54,12 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
     /// Method to provide a way to execute the scan command and obtain the ScanResult object.
     /// </summary>
     /// <param name="settings">ScanSettings object specifying the parameters for the scan execution.</param>
+    /// <param name="cancellationToken">CancellationToken to monitor for cancellation requests.</param>
     /// <returns>A ScanResult object.</returns>
-    public async Task<ScanResult> ExecuteScanCommandAsync(ScanSettings settings)
+    public async Task<ScanResult> ExecuteScanCommandAsync(ScanSettings settings, CancellationToken cancellationToken = default)
     {
         this.fileWritingService.Init(settings.Output);
-        var result = await this.scanExecutionService.ExecuteScanAsync(settings);
+        var result = await this.scanExecutionService.ExecuteScanAsync(settings, cancellationToken);
         this.WriteComponentManifest(settings, result);
         return result;
     }

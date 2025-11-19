@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -6,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -667,7 +668,7 @@ public class RustSbomParserTests
         var sharedRegistrations = registrations.Where(r =>
             ((CargoComponent)((DetectedComponent)r.Arguments[0]).Component).Name == "shared").ToList();
 
-        sharedRegistrations.Should().HaveCountGreaterOrEqualTo(1);
+        sharedRegistrations.Should().HaveCountGreaterThanOrEqualTo(1);
     }
 
     [TestMethod]

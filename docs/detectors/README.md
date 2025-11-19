@@ -1,10 +1,16 @@
 # Detectors
 
-- CocoaPods
+- [CocoaPods](cocoapods.md)
 
 | Detector             | Status |
 | -------------------- | ------ |
 | PodComponentDetector | Stable |
+
+- [Conan](conan.md)
+
+| Detector                   | Status     |
+| -------------------------- | ---------- |
+| ConanLockComponentDetector | DefaultOff |
 
 - [Conda](conda.md)
 
@@ -12,11 +18,17 @@
 | -------------------------- | ---------- |
 | CondaLockComponentDetector | DefaultOff |
 
-- DockerFile
+- [Dockerfile](dockerfile.md)
 
-| Detector           | Status     |
-| ------------------ | ---------- |
-| DockerFileDetector | DefaultOff |
+| Detector                    | Status     |
+| --------------------------- | ---------- |
+| DockerfileComponentDetector | DefaultOff |
+
+- [DotNet](dotnet.md)
+
+| Detector                | Status |
+| ----------------------- | ------ |
+| DotNetComponentDetector | Stable |
 
 - [Go](go.md)
 
@@ -30,7 +42,7 @@
 | ----------------------- | ------ |
 | GradleComponentDetector | Stable |
 
-- Ivy
+- [Ivy](ivy.md)
 
 | Detector    | Status       |
 | ----------- | ------------ |
@@ -43,40 +55,40 @@
 | LinuxContainerDetector | Stable |
 
 - [Maven](maven.md)
-- NPM
-- [NuGet](nuget.md)
 
-| Detector                  | Status |
-| ------------------------- | ------ |
-| MavenCliComponentDetector | Stable |
+| Detector                | Status |
+| ----------------------- | ------ |
+| MvnCliComponentDetector | Stable |
 
 - [NPM](npm.md)
 
-| Detector             | Status       |
-| -------------------- | ------------ |
-| NpmComponentDetector | Stable       |
-| NpmLockFileDetector  | Stable       |
-| NpmLockFile3Detector | Experimental |
+| Detector                      | Status       |
+| ----------------------------- | ------------ |
+| NpmComponentDetector          | Stable       |
+| NpmComponentDetectorWithRoots | Stable       |
+| NpmLockfile3Detector          | Experimental |
 
-- NuGet
+- [NuGet](nuget.md)
 
 | Detector                                         | Status |
 | ------------------------------------------------ | ------ |
-| NugetComponentDetector                           | Stable |
-| NugetPackagesConfigDetector                      | Stable |
+| NuGetComponentDetector                           | Stable |
+| NuGetPackagesConfigDetector                      | Stable |
 | NuGetProjectModelProjectCentricComponentDetector | Stable |
 
 - [Pip](pip.md)
 
-| Detector             | Status |
-| -------------------- | ------ |
-| PipComponentDetector | Stable |
+| Detector                   | Status     |
+| -------------------------- | ---------- |
+| PipReportComponentDetector | Stable     |
+| PipComponentDetector       | DefaultOff |
+| SimplePipComponentDetector | DefaultOff |
 
-- Pnpm
+- [Pnpm](pnpm.md)
 
-| Detector              | Status |
-| --------------------- | ------ |
-| PnpmComponentDetector | Stable |
+| Detector                     | Status |
+| ---------------------------- | ------ |
+| PnpmComponentDetectorFactory | Stable |
 
 - [Poetry](poetry.md)
 
@@ -84,32 +96,44 @@
 | ----------------------- | ------------ |
 | PoetryComponentDetector | Experimental |
 
-- Ruby
+- [Ruby](ruby.md)
 
 | Detector              | Status |
 | --------------------- | ------ |
 | RubyComponentDetector | Stable |
 
-- Rust
+- [Rust](rust.md)
 
-| Detector          | Status |
-| ----------------- | ------ |
-| RustCrateDetector | Stable |
+| Detector         | Status |
+| ---------------- | ------ |
+| RustSbomDetector | Stable |
 
-- Spdx
+- [Spdx](spdx.md)
 
 | Detector                | Status     |
 | ----------------------- | ---------- |
 | Spdx22ComponentDetector | DefaultOff |
 
-- Vcpkg
+- [Swift](swift.md)
 
-| Detector               | Status       |
-| ---------------------- | ------------ |
-| VcpkgComponentDetector | Experimental |
+| Detector                        | Status     |
+| ------------------------------- | ---------- |
+| SwiftResolvedComponentDetector  | DefaultOff |
 
-- Yarn
+- [Uv](uv.md)
 
-| Detector         | Status |
-| ---------------- | ------ |
-| YarnLockDetector | Stable |
+| Detector                | Status       |
+| ----------------------- | ------------ |
+| UvLockComponentDetector | Experimental |
+
+- [Vcpkg](vcpkg.md)
+
+| Detector               | Status |
+| ---------------------- | ------ |
+| VcpkgComponentDetector | Stable |
+
+- [Yarn](yarn.md)
+
+| Detector                 | Status |
+| ------------------------ | ------ |
+| YarnLockComponentDetector | Stable |

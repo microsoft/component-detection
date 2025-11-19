@@ -1,10 +1,11 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

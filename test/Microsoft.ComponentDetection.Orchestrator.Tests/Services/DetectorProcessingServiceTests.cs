@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 using System;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
@@ -294,7 +295,7 @@ public class DetectorProcessingServiceTests
         experimentalDetectorRecord.DetectedComponentCount.Should().Be(0);
         experimentalDetectorRecord.IsExperimental.Should().BeTrue();
         experimentalDetectorRecord.ReturnCode.Should().Be((int)ProcessingResultCode.InputError);
-        experimentalDetectorRecord.ExperimentalInformation.Contains("Simulated experimental failure");
+        experimentalDetectorRecord.ExperimentalInformation.Should().Contain("Simulated experimental failure");
 
         // We should have all components except the ones that came from our experimental detector
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount(records.Sum(x => x.DetectedComponentCount ?? 0));

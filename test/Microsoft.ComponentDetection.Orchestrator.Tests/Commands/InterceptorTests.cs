@@ -1,7 +1,8 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Commands;
 
 using System.Collections.Generic;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

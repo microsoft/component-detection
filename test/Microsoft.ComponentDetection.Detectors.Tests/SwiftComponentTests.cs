@@ -1,8 +1,9 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests.Swift;
 
 using System;
 using System.Collections.Generic;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PackageUrl;

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.VerificationTests;
 
 using System;
@@ -5,8 +6,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using FluentAssertions;
-using FluentAssertions.Execution;
+using AwesomeAssertions;
+using AwesomeAssertions.Execution;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -182,7 +183,7 @@ public class ComponentDetectionIntegrationTests
             var oldMatches = Regex.Matches(this.oldLogFileContents, regexPattern);
             var newMatches = Regex.Matches(this.newLogFileContents, regexPattern);
 
-            newMatches.Should().HaveCountGreaterOrEqualTo(oldMatches.Count, "A detector was lost, make sure this was intentional.");
+            newMatches.Should().HaveCountGreaterThanOrEqualTo(oldMatches.Count, "A detector was lost, make sure this was intentional.");
 
             var detectorTimes = new Dictionary<string, float>();
             var detectorCounts = new Dictionary<string, int>();
@@ -211,7 +212,7 @@ public class ComponentDetectionIntegrationTests
                     var newTime = float.Parse(match.Groups[1].Value);
 
                     var maxTimeThreshold = (float)(oldTime + Math.Max(5, oldTime * this.allowedTimeDriftRatio));
-                    newTime.Should().BeLessOrEqualTo(maxTimeThreshold, $"Total Time take increased by a large amount. Please verify before continuing. old time: {oldTime}, new time: {newTime}");
+                    newTime.Should().BeLessThanOrEqualTo(maxTimeThreshold, $"Total Time take increased by a large amount. Please verify before continuing. old time: {oldTime}, new time: {newTime}");
                 }
                 else
                 {
@@ -219,7 +220,7 @@ public class ComponentDetectionIntegrationTests
                     var newCount = int.Parse(match.Groups[4].Value);
                     if (detectorCounts.TryGetValue(detectorId, out var oldCount) && detectorId != "Total")
                     {
-                        newCount.Should().BeGreaterOrEqualTo(oldCount, $"{oldCount - newCount} Components were lost for detector {detectorId}. Verify this is expected behavior. \n Old Count: {oldCount}, PPE Count: {newCount}");
+                        newCount.Should().BeGreaterThanOrEqualTo(oldCount, $"{oldCount - newCount} Components were lost for detector {detectorId}. Verify this is expected behavior. \n Old Count: {oldCount}, PPE Count: {newCount}");
 
                         (newCount > oldCount && !this.bumpedDetectorVersions.Contains(detectorId)).Should().BeFalse($"{newCount - oldCount} New Components were found for detector {detectorId}, but the detector version was not updated.");
                     }
@@ -243,14 +244,14 @@ public class ComponentDetectionIntegrationTests
                 continue;
             }
 
-            newDetector.Version.Should().BeGreaterOrEqualTo(cd.Version, $"the version for detector {cd.DetectorId} was unexpectedly reduced. please check all detector versions and verify this behavior.");
+            newDetector.Version.Should().BeGreaterThanOrEqualTo(cd.Version, $"the version for detector {cd.DetectorId} was unexpectedly reduced. please check all detector versions and verify this behavior.");
 
             if (newDetector.Version > cd.Version)
             {
                 this.bumpedDetectorVersions.Add(cd.DetectorId);
             }
 
-            cd.SupportedComponentTypes.Should().OnlyContain(type => newDetector.SupportedComponentTypes.Contains(type), "the detector {cd.DetectorId} has lost suppported component types. Verify this is expected behavior.");
+            cd.SupportedComponentTypes.Should().OnlyContain(type => newDetector.SupportedComponentTypes.Contains(type), $"the detector {cd.DetectorId} has lost suppported component types. Verify this is expected behavior.");
         }
     }
 

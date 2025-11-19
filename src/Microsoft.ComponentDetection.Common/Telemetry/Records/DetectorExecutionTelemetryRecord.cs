@@ -4,7 +4,7 @@ public class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "DetectorExecution";
 
-    public string DetectorId { get; set; }
+    public string? DetectorId { get; set; }
 
     public int? DetectedComponentCount { get; set; }
 
@@ -14,7 +14,7 @@ public class DetectorExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 
     public bool IsExperimental { get; set; }
 
-    public string ExperimentalInformation { get; set; }
+    public string? ExperimentalInformation { get; set; }
 
-    public string AdditionalTelemetryDetails { get; set; }
+    public string? AdditionalTelemetryDetails { get; set; }
 }

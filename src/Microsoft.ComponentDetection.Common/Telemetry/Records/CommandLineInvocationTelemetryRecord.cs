@@ -7,15 +7,15 @@ public class CommandLineInvocationTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "CommandLineInvocation";
 
-    public string PathThatWasRan { get; set; }
+    public string? PathThatWasRan { get; set; }
 
-    public string Parameters { get; set; }
+    public string? Parameters { get; set; }
 
     public int? ExitCode { get; set; }
 
-    public string StandardError { get; set; }
+    public string? StandardError { get; set; }
 
-    public string UnhandledException { get; set; }
+    public string? UnhandledException { get; set; }
 
     internal void Track(CommandLineExecutionResult result, string path, string parameters)
     {

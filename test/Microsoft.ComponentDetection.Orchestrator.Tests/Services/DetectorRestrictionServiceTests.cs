@@ -1,8 +1,9 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 using System;
 using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Exceptions;
 using Microsoft.ComponentDetection.Orchestrator.Services;

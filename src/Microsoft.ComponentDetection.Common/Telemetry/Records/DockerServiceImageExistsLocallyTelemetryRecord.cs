@@ -4,9 +4,9 @@ public class DockerServiceImageExistsLocallyTelemetryRecord : BaseDetectionTelem
 {
     public override string RecordName => "DockerServiceImageExistsLocally";
 
-    public string Image { get; set; }
+    public string? Image { get; set; }
 
-    public string ImageInspectResponse { get; set; }
+    public string? ImageInspectResponse { get; set; }
 
-    public string ExceptionMessage { get; set; }
+    public string? ExceptionMessage { get; set; }
 }

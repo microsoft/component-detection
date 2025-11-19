@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -6,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -875,7 +876,7 @@ replace github v1.5.0 => github v1.18
     /// Verifies that if Go CLI is enabled/available and succeeds, go.sum file is not parsed and vice-versa.
     /// </summary>
     /// <returns>Task.</returns>
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
     public async Task GoDetector_GoSum_GoSumParserExecuted(bool goCliSucceeds)

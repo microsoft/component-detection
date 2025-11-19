@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Rust;
@@ -188,7 +189,7 @@ public class RustCargoLockParserTests
         var (usages, explicitRoots, edges, failures) = Analyze(recorder);
 
         // child initial + explicit (from local parent edge) =2 usages, no Pass3 root (child is dependency)
-        usages.Should().BeGreaterOrEqualTo(2);
+        usages.Should().BeGreaterThanOrEqualTo(2);
         explicitRoots.Should().Be(1); // the explicit edge registration
         edges.Should().Be(0); // edge from local parent recorded as root usage (no parentComponentId)
         failures.Should().Be(0);
@@ -590,8 +591,8 @@ public class RustCargoLockParserTests
         // remote-dep: initial + explicit (from local-root) = 2
         // remote-leaf: initial (local-intermediate ignored as parent) = 1
         // remote-leaf should be marked as root since local parent edge doesn't count
-        usages.Should().BeGreaterOrEqualTo(3);
-        explicitRoots.Should().BeGreaterOrEqualTo(1);
+        usages.Should().BeGreaterThanOrEqualTo(3);
+        explicitRoots.Should().BeGreaterThanOrEqualTo(1);
         failures.Should().Be(0);
     }
 
@@ -655,7 +656,7 @@ public class RustCargoLockParserTests
         // This would require a specially crafted TOML that parses but causes issues in processing
         var toml = $"""
                 version = 3
-                
+
                 [[package]]
                 name = "valid"
                 version = "1.0.0"

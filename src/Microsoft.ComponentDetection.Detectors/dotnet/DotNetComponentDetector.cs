@@ -1,6 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.DotNet;
 
-#nullable enable
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -26,7 +25,9 @@ public class DotNetComponentDetector : FileComponentDetector
     private readonly IPathUtilityService pathUtilityService;
     private readonly LockFileFormat lockFileFormat = new();
     private readonly ConcurrentDictionary<string, string?> sdkVersionCache = [];
-    private readonly JsonDocumentOptions jsonDocumentOptions = new() { CommentHandling = JsonCommentHandling.Skip };
+    private readonly JsonDocumentOptions jsonDocumentOptions =
+        new() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+
     private string? sourceDirectory;
     private string? sourceFileRootDirectory;
 
@@ -58,8 +59,22 @@ public class DotNetComponentDetector : FileComponentDetector
 
     public override IEnumerable<string> Categories => ["DotNet"];
 
+    private static string TrimAllEndingDirectorySeparators(string path)
+    {
+        string last;
+
+        do
+        {
+            last = path;
+            path = Path.TrimEndingDirectorySeparator(last);
+        }
+        while (!ReferenceEquals(last, path));
+
+        return path;
+    }
+
     [return: NotNullIfNotNull(nameof(path))]
-    private string? NormalizeDirectory(string? path) => string.IsNullOrEmpty(path) ? path : Path.TrimEndingDirectorySeparator(this.pathUtilityService.NormalizePath(path));
+    private string? NormalizeDirectory(string? path) => string.IsNullOrEmpty(path) ? path : TrimAllEndingDirectorySeparators(this.pathUtilityService.NormalizePath(path));
 
     /// <summary>
     /// Given a path under sourceDirectory, and the same path in another filesystem,

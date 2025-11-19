@@ -697,6 +697,12 @@ dotnet_diagnostic.CA1851.severity = suggestion
 # CA1861: Avoid constant arrays as arguments
 dotnet_diagnostic.CA1861.severity = suggestion
 
+# IDE0240: Nullable directive is redundant
+dotnet_diagnostic.IDE0240.severity = suggestion
+
+# IDE0241: Nullable directive is unnecessary
+dotnet_diagnostic.IDE0241.severity = suggestion
+
 # Workaround for https://github.com/dotnet/roslyn-analyzers/issues/5628
 [Program.cs]
 dotnet_diagnostic.ca1812.severity = none

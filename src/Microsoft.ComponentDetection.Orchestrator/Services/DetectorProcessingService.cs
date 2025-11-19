@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 using System;
@@ -41,10 +42,12 @@ public class DetectorProcessingService : IDetectorProcessingService
         this.logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<DetectorProcessingResult> ProcessDetectorsAsync(
         ScanSettings settings,
         IEnumerable<IComponentDetector> detectors,
-        DetectorRestrictions detectorRestrictions)
+        DetectorRestrictions detectorRestrictions,
+        CancellationToken cancellationToken = default)
     {
         using var scope = this.logger.BeginScope("Processing detectors");
         this.logger.LogInformation($"Finding components...");

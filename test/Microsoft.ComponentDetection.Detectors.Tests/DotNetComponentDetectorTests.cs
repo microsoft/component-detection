@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -11,7 +12,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using global::NuGet.Frameworks;
 using global::NuGet.ProjectModel;
 using Microsoft.ComponentDetection.Contracts;
@@ -301,6 +302,38 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         var discoveredComponents = detectedComponents.ToArray();
         discoveredComponents.Where(component => component.Component.Id == "8.2.100 unknown unknown - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "8.2.100 net8.0 unknown - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorGlobalJsonWithTrailingCommas_ReturnsSDKVersion()
+    {
+        var projectPath = Path.Combine(RootDir, "path", "to", "project");
+        var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
+
+        // Trailing commas after version property and after sdk object
+        var globalJson = StreamFromString("""
+        {
+            "sdk": {
+                "version": "9.9.900",
+            },
+        }
+        """);
+        this.AddFile(projectPath, null);
+        this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
+        this.SetCommandResult(-1); // force reading from file instead of dotnet --version
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("project.assets.json", projectAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "9.9.900 unknown unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "9.9.900 net8.0 unknown - DotNet").Should().ContainSingle();
     }
 
     [TestMethod]
@@ -654,8 +687,19 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         discoveredComponents.Where(component => component.Component.Id == "0.0.0 net8.0 unknown - DotNet").Should().ContainSingle();
     }
 
+#pragma warning disable SA1201 // Elements should appear in the correct order
+    private static IEnumerable<object[]> AdditionalPathSegments { get; } =
+#pragma warning restore SA1201 // Elements should appear in the correct order
+    [
+        [string.Empty],
+        [$"{Path.DirectorySeparatorChar}{Path.DirectorySeparatorChar}"],
+        [$"{Path.AltDirectorySeparatorChar}{Path.DirectorySeparatorChar}"],
+        [$"{Path.AltDirectorySeparatorChar}{Path.AltDirectorySeparatorChar}"],
+    ];
+
     [TestMethod]
-    public async Task TestDotNetDetectorRebasePaths()
+    [DynamicData(nameof(AdditionalPathSegments))]
+    public async Task TestDotNetDetectorRebasePaths(string additionalPathSegment)
     {
         // DetectorTestUtility runs under Path.GetTempPath()
         var scanRoot = Path.TrimEndingDirectorySeparator(Path.GetTempPath());
@@ -676,7 +720,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(libraryProjectPath, null);
 
         var libraryOutputPath = Path.Combine(Path.GetDirectoryName(libraryProjectPath), "obj");
-        var libraryBuildOutputPath = Path.Combine(Path.GetDirectoryName(libraryBuildProjectPath), "obj");
+        var libraryBuildOutputPath = Path.Combine(Path.GetDirectoryName(libraryBuildProjectPath), "obj") + additionalPathSegment;
         var libraryAssetsPath = Path.Combine(libraryOutputPath, "project.assets.json");
 
         // use "build" paths to simulate an Assets file that has a different root.  Here the build assets have RootDir, but the scanned filesystem has scanRoot.

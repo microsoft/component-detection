@@ -1,6 +1,7 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common.Tests;
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]

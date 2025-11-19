@@ -6,7 +6,7 @@ public class PipReportTypeTelemetryRecord : BaseDetectionTelemetryRecord
 
     public bool PreGenerated { get; set; }
 
-    public string FilePath { get; set; }
+    public string? FilePath { get; set; }
 
     public int PackageCount { get; set; }
 }

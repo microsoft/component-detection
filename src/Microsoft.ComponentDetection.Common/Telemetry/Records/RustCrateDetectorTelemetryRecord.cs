@@ -4,7 +4,7 @@ public class RustCrateDetectorTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "RustCrateMalformedDependencies";
 
-    public string PackageInfo { get; set; }
+    public string? PackageInfo { get; set; }
 
-    public string Dependencies { get; set; }
+    public string? Dependencies { get; set; }
 }

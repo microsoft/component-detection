@@ -4,11 +4,11 @@ public class LinuxContainerDetectorImageDetectionFailed : BaseDetectionTelemetry
 {
     public override string RecordName => "LinuxContainerDetectorImageDetectionFailed";
 
-    public string ImageId { get; set; }
+    public string? ImageId { get; set; }
 
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
-    public string ExceptionType { get; set; }
+    public string? ExceptionType { get; set; }
 
-    public string StackTrace { get; set; }
+    public string? StackTrace { get; set; }
 }

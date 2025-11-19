@@ -4,5 +4,5 @@ public class LoadComponentDetectorsTelemetryRecord : BaseDetectionTelemetryRecor
 {
     public override string RecordName => "LoadComponentDetectors";
 
-    public string DetectorIds { get; set; }
+    public string? DetectorIds { get; set; }
 }
