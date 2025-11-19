@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 /// <summary>Used to communicate Dependency Scope of Component.

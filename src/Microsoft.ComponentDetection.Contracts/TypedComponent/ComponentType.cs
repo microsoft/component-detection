@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System.Runtime.Serialization;

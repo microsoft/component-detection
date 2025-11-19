@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Contracts;
 
 /// <summary>Code used to communicate the state of a scan after completion.</summary>
