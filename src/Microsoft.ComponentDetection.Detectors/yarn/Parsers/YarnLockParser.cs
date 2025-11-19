@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Yarn.Parsers;
 
 using System;

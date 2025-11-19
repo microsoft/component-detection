@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Commands;
 
 using System;

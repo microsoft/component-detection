@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.CondaLock.Contracts;
 
 using System.Collections.Generic;
