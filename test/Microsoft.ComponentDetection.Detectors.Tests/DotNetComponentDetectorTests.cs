@@ -305,6 +305,38 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
     }
 
     [TestMethod]
+    public async Task TestDotNetDetectorGlobalJsonWithTrailingCommas_ReturnsSDKVersion()
+    {
+        var projectPath = Path.Combine(RootDir, "path", "to", "project");
+        var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
+
+        // Trailing commas after version property and after sdk object
+        var globalJson = StreamFromString("""
+        {
+            "sdk": {
+                "version": "9.9.900",
+            },
+        }
+        """);
+        this.AddFile(projectPath, null);
+        this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
+        this.SetCommandResult(-1); // force reading from file instead of dotnet --version
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("project.assets.json", projectAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(2);
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "9.9.900 unknown unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "9.9.900 net8.0 unknown - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
     public async Task TestDotNetDetectorGlobalJsonWithoutVersion()
     {
         var projectPath = Path.Combine(RootDir, "path", "to", "project");
