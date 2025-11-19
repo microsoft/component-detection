@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
@@ -9,11 +8,11 @@ public class NuGetProjectAssetsTelemetryRecord : IDetectionTelemetryRecord, IDis
 
     public string RecordName => "NuGetProjectAssets";
 
-    public string FoundTargets { get; set; }
+    public string? FoundTargets { get; set; }
 
-    public string UnhandledException { get; set; }
+    public string? UnhandledException { get; set; }
 
-    public string Frameworks { get; set; }
+    public string? Frameworks { get; set; }
 
     public void Dispose()
     {

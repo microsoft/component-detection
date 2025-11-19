@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System;
@@ -10,21 +9,21 @@ public class BcdeExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "BcdeExecution";
 
-    public string Command { get; set; }
+    public string? Command { get; set; }
 
     public int? ExitCode { get; set; }
 
     public int? HiddenExitCode { get; set; }
 
-    public string UnhandledException { get; set; }
+    public string? UnhandledException { get; set; }
 
-    public string Arguments { get; set; }
+    public string? Arguments { get; set; }
 
-    public string ErrorMessage { get; set; }
+    public string? ErrorMessage { get; set; }
 
-    public string AgentOSMeaningfulDetails { get; set; }
+    public string? AgentOSMeaningfulDetails { get; set; }
 
-    public string AgentOSDescription { get; set; }
+    public string? AgentOSDescription { get; set; }
 
     public static async Task<TReturn> TrackAsync<TReturn>(
         Func<BcdeExecutionTelemetryRecord, CancellationToken, Task<TReturn>> functionToTrack,

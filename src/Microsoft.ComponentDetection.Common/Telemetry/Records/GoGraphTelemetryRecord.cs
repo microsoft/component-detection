@@ -1,11 +1,10 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 public class GoGraphTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "GoGraph";
 
-    public string ProjectRoot { get; set; }
+    public string? ProjectRoot { get; set; }
 
     public bool IsGoAvailable { get; set; }
 
@@ -17,9 +16,9 @@ public class GoGraphTelemetryRecord : BaseDetectionTelemetryRecord
 
     public bool DidGoCliCommandFail { get; set; }
 
-    public string GoCliCommandError { get; set; }
+    public string? GoCliCommandError { get; set; }
 
-    public string GoModVersion { get; set; }
+    public string? GoModVersion { get; set; }
 
-    public string ExceptionMessage { get; set; }
+    public string? ExceptionMessage { get; set; }
 }

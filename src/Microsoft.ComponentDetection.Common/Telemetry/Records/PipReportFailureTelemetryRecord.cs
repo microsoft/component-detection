@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 public class PipReportFailureTelemetryRecord : BaseDetectionTelemetryRecord
@@ -7,5 +6,5 @@ public class PipReportFailureTelemetryRecord : BaseDetectionTelemetryRecord
 
     public int ExitCode { get; set; }
 
-    public string StdErr { get; set; }
+    public string? StdErr { get; set; }
 }
