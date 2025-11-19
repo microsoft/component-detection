@@ -1,6 +1,5 @@
 namespace Microsoft.ComponentDetection.Detectors.DotNet;
 
-#nullable enable
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
