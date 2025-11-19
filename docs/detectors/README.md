@@ -1,6 +1,6 @@
 # Detectors
 
-- CocoaPods
+- [CocoaPods](cocoapods.md)
 
 | Detector             | Status |
 | -------------------- | ------ |
@@ -18,10 +18,10 @@
 | -------------------------- | ---------- |
 | CondaLockComponentDetector | DefaultOff |
 
-- DockerFile
+- [Dockerfile](dockerfile.md)
 
-| Detector                   | Status     |
-| -------------------------- | ---------- |
+| Detector                    | Status     |
+| --------------------------- | ---------- |
 | DockerfileComponentDetector | DefaultOff |
 
 - [DotNet](dotnet.md)
@@ -42,7 +42,7 @@
 | ----------------------- | ------ |
 | GradleComponentDetector | Stable |
 
-- Ivy
+- [Ivy](ivy.md)
 
 | Detector    | Status       |
 | ----------- | ------------ |
@@ -84,7 +84,7 @@
 | PipComponentDetector       | DefaultOff |
 | SimplePipComponentDetector | DefaultOff |
 
-- Pnpm
+- [Pnpm](pnpm.md)
 
 | Detector                     | Status |
 | ---------------------------- | ------ |
@@ -96,7 +96,7 @@
 | ----------------------- | ------------ |
 | PoetryComponentDetector | Experimental |
 
-- Ruby
+- [Ruby](ruby.md)
 
 | Detector              | Status |
 | --------------------- | ------ |
@@ -108,7 +108,7 @@
 | ---------------- | ------ |
 | RustSbomDetector | Stable |
 
-- Spdx
+- [Spdx](spdx.md)
 
 | Detector                | Status     |
 | ----------------------- | ---------- |
@@ -126,13 +126,13 @@
 | ----------------------- | ------------ |
 | UvLockComponentDetector | Experimental |
 
-- Vcpkg
+- [Vcpkg](vcpkg.md)
 
 | Detector               | Status |
 | ---------------------- | ------ |
 | VcpkgComponentDetector | Stable |
 
-- Yarn
+- [Yarn](yarn.md)
 
 | Detector                 | Status |
 | ------------------------ | ------ |
