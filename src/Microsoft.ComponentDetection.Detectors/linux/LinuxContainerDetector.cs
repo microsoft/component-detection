@@ -36,14 +36,16 @@ public class LinuxContainerDetector(ILinuxScanner linuxScanner, IDockerService d
     public IEnumerable<string> Categories => [
         Enum.GetName(typeof(DetectorClass), DetectorClass.Linux),
         Enum.GetName(typeof(DetectorClass), DetectorClass.Npm),
-        Enum.GetName(typeof(DetectorClass), DetectorClass.Pip)
+        Enum.GetName(typeof(DetectorClass), DetectorClass.Pip),
+        Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)
     ];
 
     /// <inheritdoc/>
     public IEnumerable<ComponentType> SupportedComponentTypes => [
         ComponentType.Linux,
         ComponentType.Npm,
-        ComponentType.Pip
+        ComponentType.Pip,
+        ComponentType.NuGet
     ];
 
     /// <inheritdoc/>
