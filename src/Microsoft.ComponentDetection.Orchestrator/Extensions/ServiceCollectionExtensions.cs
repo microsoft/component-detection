@@ -104,6 +104,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IArtifactComponentFactory, LinuxComponentFactory>();
         services.AddSingleton<IArtifactComponentFactory, NpmComponentFactory>();
         services.AddSingleton<IArtifactComponentFactory, PipComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, DotnetComponentFactory>();
         services.AddSingleton<IArtifactFilter, Mariner2ArtifactFilter>();
         services.AddSingleton<IComponentDetector, LinuxContainerDetector>();
 
