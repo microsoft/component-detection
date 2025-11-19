@@ -7,13 +7,12 @@ Component Detection uses standard .NET dependency injection for service registra
 1. **Create your service interface** in `src/Microsoft.ComponentDetection.Contracts/IMyNewService.cs`
 
 ```c#
-namespace Microsoft.ComponentDetection.Contracts
+namespace Microsoft.ComponentDetection.Contracts;
+
+public interface IMyNewService
 {
-    public interface IMyNewService
-    {
-        // Define your service methods
-        string DoSomething();
-    }
+    // Define your service methods
+    string DoSomething();
 }
 ```
 
@@ -22,20 +21,19 @@ namespace Microsoft.ComponentDetection.Contracts
 ```c#
 using Microsoft.ComponentDetection.Contracts;
 
-namespace Microsoft.ComponentDetection.Common
-{
-    public class MyNewService : IMyNewService
-    {
-        // Inject any dependencies your service needs
-        public MyNewService(ILogger<MyNewService> logger)
-        {
-            // Constructor injection
-        }
+namespace Microsoft.ComponentDetection.Common;
 
-        public string DoSomething()
-        {
-            // Implementation
-        }
+public class MyNewService : IMyNewService
+{
+    // Inject any dependencies your service needs
+    public MyNewService(ILogger<MyNewService> logger)
+    {
+        // Constructor injection
+    }
+
+    public string DoSomething()
+    {
+        // Implementation
     }
 }
 ```
