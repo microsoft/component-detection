@@ -25,7 +25,9 @@ public class DotNetComponentDetector : FileComponentDetector
     private readonly IPathUtilityService pathUtilityService;
     private readonly LockFileFormat lockFileFormat = new();
     private readonly ConcurrentDictionary<string, string?> sdkVersionCache = [];
-    private readonly JsonDocumentOptions jsonDocumentOptions = new() { CommentHandling = JsonCommentHandling.Skip };
+    private readonly JsonDocumentOptions jsonDocumentOptions =
+        new() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
+
     private string? sourceDirectory;
     private string? sourceFileRootDirectory;
 
