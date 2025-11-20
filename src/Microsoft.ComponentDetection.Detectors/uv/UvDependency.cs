@@ -1,9 +1,8 @@
-namespace Microsoft.ComponentDetection.Detectors.Uv
-{
-    public class UvDependency
-    {
-        public required string Name { get; init; }
+namespace Microsoft.ComponentDetection.Detectors.Uv;
 
-        public string? Specifier { get; set; }
-    }
+public class UvDependency
+{
+    public required string Name { get; init; }
+
+    public string? Specifier { get; set; }
 }
