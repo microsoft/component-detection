@@ -36,11 +36,6 @@ internal class CommandLineTelemetryService : ITelemetryService
     /// <inheritdoc/>
     public void PostRecord(IDetectionTelemetryRecord record)
     {
-        if (this.telemetryMode == TelemetryMode.Disabled)
-        {
-            return;
-        }
-
         var jsonRecord = JsonSerializer.SerializeToNode(record, record.GetType());
         jsonRecord["Timestamp"] = DateTime.UtcNow;
         jsonRecord["CorrelationId"] = TelemetryConstants.CorrelationId;

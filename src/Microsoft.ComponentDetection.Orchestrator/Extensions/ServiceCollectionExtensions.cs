@@ -1,5 +1,7 @@
 namespace Microsoft.ComponentDetection.Orchestrator.Extensions;
 
+using System;
+using System.Reflection;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry;
 using Microsoft.ComponentDetection.Contracts;
@@ -32,6 +34,8 @@ using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 public static class ServiceCollectionExtensions
 {
@@ -42,8 +46,20 @@ public static class ServiceCollectionExtensions
     /// <returns>The <see cref="IServiceCollection" /> so that additional calls can be chained.</returns>
     public static IServiceCollection AddComponentDetection(this IServiceCollection services)
     {
-        // Shared services
-        services.AddSingleton<ITelemetryService, CommandLineTelemetryService>();
+        // Configure OpenTelemetry and telemetry service
+        var enableOpenTelemetry = ConfigureOpenTelemetry(services);
+
+        // Shared services - wrap CommandLineTelemetryService with OpenTelemetryAdapter for dual-write
+        services.AddSingleton<ITelemetryService>(sp =>
+        {
+            var legacyService = new CommandLineTelemetryService(
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<CommandLineTelemetryService>>(),
+                sp.GetRequiredService<IFileWritingService>());
+
+            return enableOpenTelemetry
+                ? new OpenTelemetryAdapter(legacyService, enableOpenTelemetry: true)
+                : legacyService;
+        });
         services.AddSingleton<ICommandLineInvocationService, CommandLineInvocationService>();
         services.AddSingleton<IComponentStreamEnumerableFactory, ComponentStreamEnumerableFactory>();
         services.AddSingleton<IConsoleWritingService, ConsoleWritingService>();
@@ -163,5 +179,37 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, UvLockComponentDetector>();
 
         return services;
+    }
+
+    /// <summary>
+    /// Configures OpenTelemetry tracing with console exporter if enabled via environment variable.
+    /// </summary>
+    /// <param name="services">The service collection to configure.</param>
+    /// <returns>True if OpenTelemetry is enabled, false otherwise.</returns>
+    private static bool ConfigureOpenTelemetry(IServiceCollection services)
+    {
+        var enableOpenTelemetry = Environment.GetEnvironmentVariable("ComponentDetection.EnableOpenTelemetry")
+            ?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
+
+        if (enableOpenTelemetry)
+        {
+            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+
+            services.AddOpenTelemetry()
+                .ConfigureResource(resource => resource
+                    .AddService(
+                        serviceName: SemanticConventions.ActivitySource.Name,
+                        serviceVersion: version,
+                        serviceInstanceId: TelemetryConstants.CorrelationId.ToString()))
+                .WithTracing(tracing => tracing
+                    .AddSource(SemanticConventions.ActivitySource.Name)
+                    .SetSampler(new OpenTelemetry.Trace.AlwaysOnSampler())
+                    .AddConsoleExporter(options =>
+                    {
+                        options.Targets = OpenTelemetry.Exporter.ConsoleExporterOutputTargets.Console;
+                    }));
+        }
+
+        return enableOpenTelemetry;
     }
 }

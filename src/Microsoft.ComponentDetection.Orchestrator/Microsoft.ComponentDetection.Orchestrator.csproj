@@ -6,6 +6,9 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="OpenTelemetry" />
+        <PackageReference Include="OpenTelemetry.Exporter.Console" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
         <PackageReference Include="Polly" />
         <PackageReference Include="Serilog" />
         <PackageReference Include="Serilog.Sinks.Async" />
