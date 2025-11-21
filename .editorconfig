@@ -463,6 +463,9 @@ dotnet_diagnostic.SA1623.severity = none
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers
 ##########################################
 
+dotnet_diagnostic.SA1009.severity = none
+dotnet_diagnostic.SA1111.severity = none
+
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented
 dotnet_diagnostic.SA1600.severity = suggestion
