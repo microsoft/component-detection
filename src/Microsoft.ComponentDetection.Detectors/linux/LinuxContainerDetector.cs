@@ -33,18 +33,10 @@ public class LinuxContainerDetector(ILinuxScanner linuxScanner, IDockerService d
     public string Id => "Linux";
 
     /// <inheritdoc/>
-    public IEnumerable<string> Categories => [
-        Enum.GetName(typeof(DetectorClass), DetectorClass.Linux),
-        Enum.GetName(typeof(DetectorClass), DetectorClass.Npm),
-        Enum.GetName(typeof(DetectorClass), DetectorClass.Pip)
-    ];
+    public IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Linux)];
 
     /// <inheritdoc/>
-    public IEnumerable<ComponentType> SupportedComponentTypes => [
-        ComponentType.Linux,
-        ComponentType.Npm,
-        ComponentType.Pip
-    ];
+    public IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Linux];
 
     /// <inheritdoc/>
     public int Version => 7;

@@ -72,6 +72,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentProcessor, DefaultExperimentProcessor>();
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, UvLockDetectorExperiment>();
+        services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
 
         // Detectors
         // CocoaPods
@@ -106,6 +107,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IArtifactComponentFactory, PipComponentFactory>();
         services.AddSingleton<IArtifactFilter, Mariner2ArtifactFilter>();
         services.AddSingleton<IComponentDetector, LinuxContainerDetector>();
+        services.AddSingleton<IComponentDetector, LinuxApplicationLayerDetector>();
 
         // Maven
         services.AddSingleton<IMavenCommandService, MavenCommandService>();
