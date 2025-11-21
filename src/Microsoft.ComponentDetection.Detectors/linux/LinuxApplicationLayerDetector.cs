@@ -35,4 +35,8 @@ public class LinuxApplicationLayerDetector(
     /// <inheritdoc/>
     public new IEnumerable<ComponentType> SupportedComponentTypes =>
         [ComponentType.Linux, ComponentType.Npm, ComponentType.Pip];
+
+    /// <inheritdoc/>
+    protected override ISet<ComponentType> GetEnabledComponentTypes() =>
+        new HashSet<ComponentType> { ComponentType.Linux, ComponentType.Npm, ComponentType.Pip };
 }
