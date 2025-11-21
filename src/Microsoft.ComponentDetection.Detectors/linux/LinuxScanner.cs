@@ -21,7 +21,8 @@ using Newtonsoft.Json;
 /// </summary>
 public class LinuxScanner : ILinuxScanner
 {
-    private const string ScannerImage = "governancecontainerregistry.azurecr.io/syft:v1.37.0@sha256:48d679480c6d272c1801cf30460556959c01d4826795be31d4fd8b53750b7d91";
+    private const string ScannerImage =
+        "governancecontainerregistry.azurecr.io/syft:v1.37.0@sha256:48d679480c6d272c1801cf30460556959c01d4826795be31d4fd8b53750b7d91";
 
     private static readonly IList<string> CmdParameters =
     [
@@ -34,13 +35,19 @@ public class LinuxScanner : ILinuxScanner
 
     private static readonly SemaphoreSlim ContainerSemaphore = new SemaphoreSlim(2);
 
-    private static readonly int SemaphoreTimeout = Convert.ToInt32(TimeSpan.FromHours(1).TotalMilliseconds);
+    private static readonly int SemaphoreTimeout = Convert.ToInt32(
+        TimeSpan.FromHours(1).TotalMilliseconds
+    );
 
     private readonly IDockerService dockerService;
     private readonly ILogger<LinuxScanner> logger;
     private readonly IEnumerable<IArtifactComponentFactory> componentFactories;
     private readonly IEnumerable<IArtifactFilter> artifactFilters;
     private readonly Dictionary<string, IArtifactComponentFactory> factoryLookup;
+    private readonly Dictionary<
+        ComponentType,
+        IArtifactComponentFactory
+    > componentTypeToFactoryLookup;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LinuxScanner"/> class.
@@ -53,7 +60,8 @@ public class LinuxScanner : ILinuxScanner
         IDockerService dockerService,
         ILogger<LinuxScanner> logger,
         IEnumerable<IArtifactComponentFactory> componentFactories,
-        IEnumerable<IArtifactFilter> artifactFilters)
+        IEnumerable<IArtifactFilter> artifactFilters
+    )
     {
         this.dockerService = dockerService;
         this.logger = logger;
@@ -69,10 +77,27 @@ public class LinuxScanner : ILinuxScanner
                 this.factoryLookup[artifactType] = factory;
             }
         }
+
+        // Build a lookup dictionary for component type to factory mapping
+        this.componentTypeToFactoryLookup = new Dictionary<ComponentType, IArtifactComponentFactory>
+        {
+            {
+                ComponentType.Linux,
+                componentFactories.FirstOrDefault(f => f is LinuxComponentFactory)
+            },
+            { ComponentType.Npm, componentFactories.FirstOrDefault(f => f is NpmComponentFactory) },
+            { ComponentType.Pip, componentFactories.FirstOrDefault(f => f is PipComponentFactory) },
+        };
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<LayerMappedLinuxComponents>> ScanLinuxAsync(string imageHash, IEnumerable<DockerLayer> containerLayers, int baseImageLayerCount, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<LayerMappedLinuxComponents>> ScanLinuxAsync(
+        string imageHash,
+        IEnumerable<DockerLayer> containerLayers,
+        int baseImageLayerCount,
+        ISet<ComponentType> enabledComponentTypes,
+        CancellationToken cancellationToken = default
+    )
     {
         using var record = new LinuxScannerTelemetryRecord
         {
@@ -93,8 +118,14 @@ public class LinuxScanner : ILinuxScanner
             {
                 try
                 {
-                    var command = new List<string> { imageHash }.Concat(CmdParameters).ToList();
-                    (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(ScannerImage, command, cancellationToken);
+                    var command = new List<string> { imageHash }
+                        .Concat(CmdParameters)
+                        .ToList();
+                    (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(
+                        ScannerImage,
+                        command,
+                        cancellationToken
+                    );
                 }
                 catch (Exception e)
                 {
@@ -106,7 +137,10 @@ public class LinuxScanner : ILinuxScanner
             else
             {
                 record.SemaphoreFailure = true;
-                this.logger.LogWarning("Failed to enter the container semaphore for image {ImageHash}", imageHash);
+                this.logger.LogWarning(
+                    "Failed to enter the container semaphore for image {ImageHash}",
+                    imageHash
+                );
             }
         }
         finally
@@ -123,14 +157,13 @@ public class LinuxScanner : ILinuxScanner
         if (string.IsNullOrWhiteSpace(stdout) || !string.IsNullOrWhiteSpace(stderr))
         {
             throw new InvalidOperationException(
-                $"Scan failed with exit info: {stdout}{System.Environment.NewLine}{stderr}");
+                $"Scan failed with exit info: {stdout}{System.Environment.NewLine}{stderr}"
+            );
         }
 
         var layerDictionary = containerLayers
             .DistinctBy(layer => layer.DiffId)
-            .ToDictionary(
-                layer => layer.DiffId,
-                _ => new List<TypedComponent>());
+            .ToDictionary(layer => layer.DiffId, _ => new List<TypedComponent>());
 
         try
         {
@@ -143,10 +176,25 @@ public class LinuxScanner : ILinuxScanner
                 validArtifacts = filter.Filter(validArtifacts, syftOutput.Distro);
             }
 
-            // Create components using factories
+            // Build a set of enabled factories based on requested component types
+            var enabledFactories = new HashSet<IArtifactComponentFactory>();
+            foreach (var componentType in enabledComponentTypes)
+            {
+                if (
+                    this.componentTypeToFactoryLookup.TryGetValue(componentType, out var factory)
+                    && factory != null
+                )
+                {
+                    enabledFactories.Add(factory);
+                }
+            }
+
+            // Create components using only enabled factories
             var componentsWithLayers = validArtifacts
                 .DistinctBy(artifact => (artifact.Name, artifact.Version, artifact.Type))
-                .Select(artifact => this.CreateComponentWithLayers(artifact, syftOutput.Distro))
+                .Select(artifact =>
+                    this.CreateComponentWithLayers(artifact, syftOutput.Distro, enabledFactories)
+                )
                 .Where(result => result.Component != null)
                 .ToList();
 
@@ -159,7 +207,10 @@ public class LinuxScanner : ILinuxScanner
 
             if (unsupportedTypes.Count > 0)
             {
-                this.logger.LogDebug("Encountered unsupported artifact types: {UnsupportedTypes}", string.Join(", ", unsupportedTypes));
+                this.logger.LogDebug(
+                    "Encountered unsupported artifact types: {UnsupportedTypes}",
+                    string.Join(", ", unsupportedTypes)
+                );
             }
 
             // Map components to layers
@@ -179,7 +230,9 @@ public class LinuxScanner : ILinuxScanner
             });
 
             // Track detected components in telemetry
-            syftTelemetryRecord.Components = JsonConvert.SerializeObject(componentsWithLayers.Select(c => c.Component.Id));
+            syftTelemetryRecord.Components = JsonConvert.SerializeObject(
+                componentsWithLayers.Select(c => c.Component.Id)
+            );
 
             return layerMappedLinuxComponents;
         }
@@ -190,9 +243,19 @@ public class LinuxScanner : ILinuxScanner
         }
     }
 
-    private (TypedComponent Component, IEnumerable<string> LayerIds) CreateComponentWithLayers(ArtifactElement artifact, Distro distro)
+    private (TypedComponent Component, IEnumerable<string> LayerIds) CreateComponentWithLayers(
+        ArtifactElement artifact,
+        Distro distro,
+        HashSet<IArtifactComponentFactory> enabledFactories
+    )
     {
         if (!this.factoryLookup.TryGetValue(artifact.Type, out var factory))
+        {
+            return (null, []);
+        }
+
+        // Skip this artifact if its factory is not in the enabled set
+        if (!enabledFactories.Contains(factory))
         {
             return (null, []);
         }
