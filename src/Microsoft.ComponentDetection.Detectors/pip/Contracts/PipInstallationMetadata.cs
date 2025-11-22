@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 /// <summary>
@@ -14,18 +15,21 @@ public sealed record PipInstallationMetadata
     /// as of May 2024.
     /// </summary>
     [JsonProperty("metadata_version")]
+    [JsonPropertyName("metadata_version")]
     public string MetadataVersion { get; set; }
 
     /// <summary>
     /// The name of the distribution.
     /// </summary>
     [JsonProperty("name")]
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
     /// <summary>
-    /// A string containing the distribution’s version number.
+    /// A string containing the distribution's version number.
     /// </summary>
     [JsonProperty("version")]
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
     /// <summary>
@@ -33,42 +37,49 @@ public sealed record PipInstallationMetadata
     /// See https://peps.python.org/pep-0508/ for the format of the strings.
     /// </summary>
     [JsonProperty("requires_dist")]
+    [JsonPropertyName("requires_dist")]
     public string[] RequiresDist { get; set; }
 
     /// <summary>
-    /// URL for the distribution’s home page.
+    /// URL for the distribution's home page.
     /// </summary>
     [JsonProperty("home_page")]
+    [JsonPropertyName("home_page")]
     public string HomePage { get; set; }
 
     /// <summary>
-    /// Maintainer’s name at a minimum; additional contact information may be provided.
+    /// Maintainer's name at a minimum; additional contact information may be provided.
     /// </summary>
     [JsonProperty("maintainer")]
+    [JsonPropertyName("maintainer")]
     public string Maintainer { get; set; }
 
     /// <summary>
     /// Maintainer’s e-mail address. It can contain a name and e-mail address in the legal forms for a RFC-822 From: header.
     /// </summary>
     [JsonProperty("maintainer_email")]
+    [JsonPropertyName("maintainer_email")]
     public string MaintainerEmail { get; set; }
 
     /// <summary>
     /// Author’s name at a minimum; additional contact information may be provided.
     /// </summary>
     [JsonProperty("author")]
+    [JsonPropertyName("author")]
     public string Author { get; set; }
 
     /// <summary>
     /// Author’s e-mail address. It can contain a name and e-mail address in the legal forms for a RFC-822 From: header.
     /// </summary>
     [JsonProperty("author_email")]
+    [JsonPropertyName("author_email")]
     public string AuthorEmail { get; set; }
 
     /// <summary>
     /// Text indicating the license covering the distribution.
     /// </summary>
     [JsonProperty("license")]
+    [JsonPropertyName("license")]
     public string License { get; set; }
 
     /// <summary>
@@ -76,5 +87,6 @@ public sealed record PipInstallationMetadata
     /// Classifiers are described in PEP 301 https://peps.python.org/pep-0301/.
     /// </summary>
     [JsonProperty("classifier")]
+    [JsonPropertyName("classifier")]
     public string[] Classifier { get; set; }
 }

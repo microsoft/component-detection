@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 /// <summary>
@@ -14,10 +15,12 @@ public class LayerMappedLinuxComponents
     /// Gets or sets the components detected in this layer.
     /// This can include system packages (LinuxComponent) as well as application-level packages (NpmComponent, PipComponent, etc.).
     /// </summary>
+    [JsonPropertyName("components")]
     public IEnumerable<TypedComponent> Components { get; set; }
 
     /// <summary>
     /// Gets or sets the Docker layer associated with these components.
     /// </summary>
+    [JsonPropertyName("dockerLayer")]
     public DockerLayer DockerLayer { get; set; }
 }

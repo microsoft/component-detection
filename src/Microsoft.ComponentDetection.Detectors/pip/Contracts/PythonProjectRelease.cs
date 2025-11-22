@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 /// <summary>
@@ -9,12 +10,16 @@ using Newtonsoft.Json;
 /// </summary>
 public class PythonProjectRelease
 {
+    [JsonPropertyName("packageType")]
     public string PackageType { get; set; }
 
     [JsonProperty("python_version")]
+    [JsonPropertyName("python_version")]
     public string PythonVersion { get; set; }
 
+    [JsonPropertyName("size")]
     public double Size { get; set; }
 
+    [JsonPropertyName("url")]
     public Uri Url { get; set; }
 }
