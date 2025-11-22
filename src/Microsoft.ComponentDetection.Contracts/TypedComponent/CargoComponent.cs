@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using PackageUrl;
 
@@ -20,18 +21,26 @@ public class CargoComponent : TypedComponent
         this.Source = source;
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
 #nullable enable
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] // Newtonsoft.Json
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] // System.Text.Json
+    [JsonPropertyName("author")]
     public string? Author { get; set; }
 
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] // Newtonsoft.Json
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] // System.Text.Json
+    [JsonPropertyName("license")]
     public string? License { get; set; }
 
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] // Newtonsoft.Json
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] // System.Text.Json
+    [JsonPropertyName("source")]
     public string? Source { get; set; }
 #nullable disable
 

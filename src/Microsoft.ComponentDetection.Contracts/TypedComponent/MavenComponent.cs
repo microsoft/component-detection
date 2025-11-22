@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class MavenComponent : TypedComponent
@@ -17,10 +18,13 @@ public class MavenComponent : TypedComponent
         /* Reserved for deserialization */
     }
 
+    [JsonPropertyName("groupId")]
     public string GroupId { get; set; }
 
+    [JsonPropertyName("artifactId")]
     public string ArtifactId { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
     public override ComponentType Type => ComponentType.Maven;

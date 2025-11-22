@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class ConanComponent : TypedComponent
@@ -18,14 +19,19 @@ public class ConanComponent : TypedComponent
         this.Sha1Hash = this.ValidateRequiredInput(packageId, nameof(this.Sha1Hash), nameof(ComponentType.Conan));
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("md5Hash")]
     public string Md5Hash { get; set; }
 
+    [JsonPropertyName("sha1Hash")]
     public string Sha1Hash { get; set; }
 
+    [JsonPropertyName("packageSourceURL")]
     public string PackageSourceURL => $"https://conan.io/center/recipes/{this.Name}?version={this.Version}";
 
     public override ComponentType Type => ComponentType.Conan;

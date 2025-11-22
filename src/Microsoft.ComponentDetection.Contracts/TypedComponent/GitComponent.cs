@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Text.Json.Serialization;
 
 public class GitComponent : TypedComponent
 {
@@ -19,10 +20,13 @@ public class GitComponent : TypedComponent
         /* Reserved for deserialization */
     }
 
+    [JsonPropertyName("repositoryUrl")]
     public Uri RepositoryUrl { get; set; }
 
+    [JsonPropertyName("commitHash")]
     public string CommitHash { get; set; }
 
+    [JsonPropertyName("tag")]
     public string Tag { get; set; }
 
     public override ComponentType Type => ComponentType.Git;

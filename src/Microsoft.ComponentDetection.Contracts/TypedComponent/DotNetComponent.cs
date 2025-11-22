@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Text.Json.Serialization;
 
 public class DotNetComponent : TypedComponent
 {
@@ -27,16 +28,19 @@ public class DotNetComponent : TypedComponent
     /// <summary>
     /// SDK Version detected, could be null if no global.json exists and no dotnet is on the path.
     /// </summary>
+    [JsonPropertyName("sdkVersion")]
     public string SdkVersion { get; set; }
 
     /// <summary>
     /// Target framework for this instance.  Null in the case of global.json.
     /// </summary>
+    [JsonPropertyName("targetFramework")]
     public string TargetFramework { get; set; }
 
     /// <summary>
     /// Project type: application, library.  Null in the case of global.json or if no project output could be discovered.
     /// </summary>
+    [JsonPropertyName("projectType")]
     public string ProjectType { get; set; }
 
     public override ComponentType Type => ComponentType.DotNet;

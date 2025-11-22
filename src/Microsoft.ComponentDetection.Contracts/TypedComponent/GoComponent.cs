@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class GoComponent : TypedComponent, IEquatable<GoComponent>
@@ -25,10 +26,13 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
         /* Reserved for deserialization */
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("hash")]
     public string Hash { get; set; }
 
     // Commit should be used in place of version when available

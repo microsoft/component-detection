@@ -50,6 +50,7 @@ public abstract class TypedComponent
     /// <summary>Gets the type of the component, must be well known.</summary>
     [JsonConverter(typeof(StringEnumConverter))] // Newtonsoft.Json
     [System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))] // System.Text.Json
+    [System.Text.Json.Serialization.JsonPropertyName("type")]
     public abstract ComponentType Type { get; }
 
     /// <summary>Gets the id of the component.</summary>

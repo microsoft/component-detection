@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Text.Json.Serialization;
 
 public class SpdxComponent : TypedComponent
 {
@@ -22,16 +23,22 @@ public class SpdxComponent : TypedComponent
 
     public override ComponentType Type => ComponentType.Spdx;
 
+    [JsonPropertyName("rootElementId")]
     public string RootElementId { get; set; }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("spdxVersion")]
     public string SpdxVersion { get; set; }
 
+    [JsonPropertyName("documentNamespace")]
     public Uri DocumentNamespace { get; set; }
 
+    [JsonPropertyName("checksum")]
     public string Checksum { get; set; }
 
+    [JsonPropertyName("path")]
     public string Path { get; set; }
 
     protected override string ComputeId() => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
