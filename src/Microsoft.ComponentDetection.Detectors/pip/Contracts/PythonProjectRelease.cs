@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 /// </summary>
 public class PythonProjectRelease
 {
-    [JsonPropertyName("packageType")]
+    [JsonPropertyName("packagetype")]
     public string PackageType { get; set; }
 
     [JsonProperty("python_version")]
