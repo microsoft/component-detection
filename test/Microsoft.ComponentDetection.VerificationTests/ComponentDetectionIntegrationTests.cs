@@ -151,7 +151,7 @@ public class ComponentDetectionIntegrationTests
                         rightDependencies.Should().Contain(leftDependency, $"Component dependency {leftDependency} for component {leftComponent} was not in the {rightGraphName} dependency graph.");
                     }
 
-                    leftDependencies.Should().BeEquivalentTo(rightDependencies, $"{rightGraphName} has the following components that were not found in {leftGraphName}, please verify this is expected behavior. {JsonConvert.SerializeObject(rightDependencies.Except(leftDependencies))}");
+                    leftDependencies.Should().BeEquivalentTo(rightDependencies, $"{rightGraphName} has the following components that were not found in {leftGraphName}, please verify this is expected behavior. {System.Text.Json.JsonSerializer.Serialize(rightDependencies.Except(leftDependencies))}");
                 }
             }
         }
@@ -287,7 +287,7 @@ public class ComponentDetectionIntegrationTests
 
         var newGithubDirectory = new DirectoryInfo(newGithubArtifactsDir);
         this.newLogFileContents = this.GetFileTextWithPattern("GovCompDisc_Log*.log", newGithubDirectory);
-        this.newScanResult = JsonConvert.DeserializeObject<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", newGithubDirectory));
+        this.newScanResult = System.Text.Json.JsonSerializer.Deserialize<DefaultGraphScanResult>(this.GetFileTextWithPattern("ScanManifest*.json", newGithubDirectory));
     }
 
     private string GetFileTextWithPattern(string pattern, DirectoryInfo directory)

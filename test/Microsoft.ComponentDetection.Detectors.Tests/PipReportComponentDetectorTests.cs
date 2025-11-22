@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
@@ -18,7 +19,6 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
 
 [TestClass]
 public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportComponentDetector>
@@ -64,12 +64,12 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         this.pipCommandService.Setup(x => x.GetPipVersionAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(new Version(23, 0, 0));
 
-        this.singlePackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg);
-        this.singlePackageReportBadVersion = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg_bad_version);
-        this.singlePackageReportInvalidPkgVersion = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_single_pkg_invalid_pkg_version);
-        this.multiPackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_multi_pkg);
-        this.jupyterPackageReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_jupyterlab);
-        this.simpleExtrasReport = JsonConvert.DeserializeObject<PipInstallationReport>(TestResources.pip_report_simple_extras);
+        this.singlePackageReport = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_single_pkg);
+        this.singlePackageReportBadVersion = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_single_pkg_bad_version);
+        this.singlePackageReportInvalidPkgVersion = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_single_pkg_invalid_pkg_version);
+        this.multiPackageReport = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_multi_pkg);
+        this.jupyterPackageReport = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_jupyterlab);
+        this.simpleExtrasReport = JsonSerializer.Deserialize<PipInstallationReport>(TestResources.pip_report_simple_extras);
     }
 
     [TestMethod]

@@ -1,9 +1,11 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 // This is used in BcdeModels as well
 [DataContract]
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ComponentType : byte
 {
     [EnumMember]
