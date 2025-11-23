@@ -53,31 +53,6 @@ public class GoComponentDetectorTests : BaseDetectorTest<GoComponentDetector>
         this.DetectorTestUtility.AddServiceMock(this.mockParserFactory);
     }
 
-    private void SetupMockGoModParser()
-    {
-        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoMod, It.IsAny<ILogger>())).Returns(this.mockGoModParser.Object);
-    }
-
-    private void SetupMockGoSumParser()
-    {
-        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>())).Returns(this.mockGoSumParser.Object);
-    }
-
-    private void SetupMockGoCLIParser()
-    {
-        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoCLI, It.IsAny<ILogger>())).Returns(this.mockGoCliParser.Object);
-    }
-
-    private void SetupActualGoModParser()
-    {
-        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoMod, It.IsAny<ILogger>())).Returns(new GoModParser(this.mockLogger.Object));
-    }
-
-    private void SetupActualGoSumParser()
-    {
-        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>())).Returns(new GoSumParser(this.mockLogger.Object));
-    }
-
     [TestMethod]
     public async Task TestGoModDetectorWithValidFile_ReturnsSuccessfullyAsync()
     {
@@ -1207,5 +1182,30 @@ replace github v1.5.0 => github v1.18
             Path.Combine(root, "b", "go.mod"),
             Path.Combine(root, "a", "a", "go.mod"),
             Path.Combine(root, "a", "b", "go.mod"));
+    }
+
+    private void SetupMockGoModParser()
+    {
+        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoMod, It.IsAny<ILogger>())).Returns(this.mockGoModParser.Object);
+    }
+
+    private void SetupMockGoSumParser()
+    {
+        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>())).Returns(this.mockGoSumParser.Object);
+    }
+
+    private void SetupMockGoCLIParser()
+    {
+        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoCLI, It.IsAny<ILogger>())).Returns(this.mockGoCliParser.Object);
+    }
+
+    private void SetupActualGoModParser()
+    {
+        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoMod, It.IsAny<ILogger>())).Returns(new GoModParser(this.mockLogger.Object));
+    }
+
+    private void SetupActualGoSumParser()
+    {
+        this.mockParserFactory.Setup(f => f.CreateParser(GoParserType.GoSum, It.IsAny<ILogger>())).Returns(new GoSumParser(this.mockLogger.Object));
     }
 }

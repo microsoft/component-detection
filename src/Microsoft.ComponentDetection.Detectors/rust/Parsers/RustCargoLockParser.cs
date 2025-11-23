@@ -38,8 +38,6 @@ public class RustCargoLockParser : IRustCargoLockParser
     /// <param name="logger">The logger.</param>
     public RustCargoLockParser(ILogger<RustCargoLockParser> logger) => this.logger = logger;
 
-    private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
-
     /// <summary>
     /// Parses a Cargo.lock file and records components.
     /// </summary>
@@ -66,6 +64,8 @@ public class RustCargoLockParser : IRustCargoLockParser
             return null;
         }
     }
+
+    private static bool IsLocalPackage(CargoPackage package) => package.Source == null;
 
     private void ProcessCargoLock(CargoLock cargoLock, ISingleFileComponentRecorder singleFileComponentRecorder, IComponentStream cargoLockFile)
     {

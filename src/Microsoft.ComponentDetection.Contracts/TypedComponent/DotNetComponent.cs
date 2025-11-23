@@ -7,11 +7,6 @@ public class DotNetComponent : TypedComponent
 {
     private const string UnknownValue = "unknown";
 
-    private DotNetComponent()
-    {
-        /* Reserved for deserialization */
-    }
-
     public DotNetComponent(string sdkVersion, string targetFramework = null, string projectType = null)
     {
         if (string.IsNullOrWhiteSpace(sdkVersion) && string.IsNullOrWhiteSpace(targetFramework))
@@ -22,6 +17,11 @@ public class DotNetComponent : TypedComponent
         this.SdkVersion = string.IsNullOrWhiteSpace(sdkVersion) ? UnknownValue : sdkVersion;
         this.TargetFramework = string.IsNullOrWhiteSpace(targetFramework) ? UnknownValue : targetFramework;
         this.ProjectType = string.IsNullOrWhiteSpace(projectType) ? UnknownValue : projectType;
+    }
+
+    private DotNetComponent()
+    {
+        /* Reserved for deserialization */
     }
 
     /// <summary>

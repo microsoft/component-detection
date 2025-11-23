@@ -481,7 +481,7 @@ dotnet_diagnostic.SA1201.severity = warning
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1202.md
 # Elements should be ordered by access
-dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1202.severity = warning
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented

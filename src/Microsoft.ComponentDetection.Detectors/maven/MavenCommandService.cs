@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 
 public class MavenCommandService : IMavenCommandService
 {
-    private const string DetectorLogPrefix = "MvnCli detector";
     internal const string MvnCLIFileLevelTimeoutSecondsEnvVar = "MvnCLIFileLevelTimeoutSeconds";
     internal const string PrimaryCommand = "mvn";
 
@@ -19,6 +18,7 @@ public class MavenCommandService : IMavenCommandService
 
     internal static readonly string[] AdditionalValidCommands = ["mvn.cmd"];
 
+    private const string DetectorLogPrefix = "MvnCli detector";
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IMavenStyleDependencyGraphParserService parserService;
     private readonly IEnvironmentVariableService envVarService;

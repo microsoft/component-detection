@@ -35,65 +35,6 @@ public class RustMetadataContextBuilderTests
             this.envVarService.Object);
     }
 
-    private static string BuildSimpleMetadataJson(string rootManifest, string rootId) => $$"""
-    {
-      "packages": [
-        { "name":"rootpkg", "version":"1.0.0", "id":"{{rootId}}", "authors":[""], "license":"", "source":null, "manifest_path":"{{rootManifest}}" },
-        { "name":"dep1", "version":"2.0.0", "id":"dep1 2.0.0", "authors":["A"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/dep1/Cargo.toml" }
-      ],
-      "resolve": {
-        "root":"{{rootId}}",
-        "nodes":[
-          { "id":"{{rootId}}", "deps":[ { "pkg":"dep1 2.0.0", "dep_kinds":[{"kind":"build"}] } ] },
-          { "id":"dep1 2.0.0", "deps":[] }
-        ]
-      }
-    }
-    """;
-
-    private static string BuildWorkspaceMetadataJson() => """
-    {
-      "packages": [
-        { "name":"workspace", "version":"0.1.0", "id":"workspace 0.1.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/Cargo.toml" },
-        { "name":"member1", "version":"0.2.0", "id":"member1 0.2.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/member1/Cargo.toml" },
-        { "name":"member2", "version":"0.3.0", "id":"member2 0.3.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/member2/Cargo.toml" },
-        { "name":"shared", "version":"1.0.0", "id":"shared 1.0.0", "authors":["S"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/shared/Cargo.toml" }
-      ],
-      "resolve": {
-        "root":"workspace 0.1.0",
-        "nodes":[
-          { "id":"workspace 0.1.0", "deps":[] },
-          { "id":"member1 0.2.0", "deps":[ { "pkg":"shared 1.0.0", "dep_kinds":[{"kind":"build"}] } ] },
-          { "id":"member2 0.3.0", "deps":[ { "pkg":"shared 1.0.0", "dep_kinds":[{"kind":"build"}] } ] },
-          { "id":"shared 1.0.0", "deps":[] }
-        ]
-      }
-    }
-    """;
-
-    private static string BuildDiamondDependencyJson() => """
-    {
-      "packages": [
-        { "name":"root", "version":"1.0.0", "id":"root 1.0.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/Cargo.toml" },
-        { "name":"depA", "version":"1.0.0", "id":"depA 1.0.0", "authors":["A"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/depA/Cargo.toml" },
-        { "name":"depB", "version":"1.0.0", "id":"depB 1.0.0", "authors":["B"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/depB/Cargo.toml" },
-        { "name":"shared", "version":"1.0.0", "id":"shared 1.0.0", "authors":["S"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/shared/Cargo.toml" }
-      ],
-      "resolve": {
-        "root":"root 1.0.0",
-        "nodes":[
-          { "id":"root 1.0.0", "deps":[
-              { "pkg":"depA 1.0.0", "dep_kinds":[{"kind":"build"}] },
-              { "pkg":"depB 1.0.0", "dep_kinds":[{"kind":"build"}] }
-          ] },
-          { "id":"depA 1.0.0", "deps":[ { "pkg":"shared 1.0.0", "dep_kinds":[{"kind":"build"}] } ] },
-          { "id":"depB 1.0.0", "deps":[ { "pkg":"shared 1.0.0", "dep_kinds":[{"kind":"build"}] } ] },
-          { "id":"shared 1.0.0", "deps":[] }
-        ]
-      }
-    }
-    """;
-
     [TestMethod]
     public async Task BuildPackageOwnershipMapAsync_ManuallyDisabled_ReturnsEmptyResult()
     {
@@ -474,4 +415,63 @@ public class RustMetadataContextBuilderTests
         result.LocalPackageManifests.Should().Contain(normalizedPath);
         result.ManifestToMetadata.Should().ContainKey(normalizedPath);
     }
+
+    private static string BuildSimpleMetadataJson(string rootManifest, string rootId) => $$"""
+    {
+      "packages": [
+        { "name":"rootpkg", "version":"1.0.0", "id":"{{rootId}}", "authors":[""], "license":"", "source":null, "manifest_path":"{{rootManifest}}" },
+        { "name":"dep1", "version":"2.0.0", "id":"dep1 2.0.0", "authors":["A"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/dep1/Cargo.toml" }
+      ],
+      "resolve": {
+        "root":"{{rootId}}",
+        "nodes":[
+          { "id":"{{rootId}}", "deps":[ { "pkg":"dep1 2.0.0", "dep_kinds":[{"kind":"build"}] } ] },
+          { "id":"dep1 2.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+    private static string BuildWorkspaceMetadataJson() => """
+    {
+      "packages": [
+        { "name":"workspace", "version":"0.1.0", "id":"workspace 0.1.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/Cargo.toml" },
+        { "name":"member1", "version":"0.2.0", "id":"member1 0.2.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/member1/Cargo.toml" },
+        { "name":"member2", "version":"0.3.0", "id":"member2 0.3.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/member2/Cargo.toml" },
+        { "name":"shared", "version":"1.0.0", "id":"shared 1.0.0", "authors":["S"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/shared/Cargo.toml" }
+      ],
+      "resolve": {
+        "root":"workspace 0.1.0",
+        "nodes":[
+          { "id":"workspace 0.1.0", "deps":[] },
+          { "id":"member1 0.2.0", "deps":[ { "pkg":"shared 1.0.0", "dep_kinds":[{"kind":"build"}] } ] },
+          { "id":"member2 0.3.0", "deps":[ { "pkg":"shared 1.0.0", "dep_kinds":[{"kind":"build"}] } ] },
+          { "id":"shared 1.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+    private static string BuildDiamondDependencyJson() => """
+    {
+      "packages": [
+        { "name":"root", "version":"1.0.0", "id":"root 1.0.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/Cargo.toml" },
+        { "name":"depA", "version":"1.0.0", "id":"depA 1.0.0", "authors":["A"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/depA/Cargo.toml" },
+        { "name":"depB", "version":"1.0.0", "id":"depB 1.0.0", "authors":["B"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/depB/Cargo.toml" },
+        { "name":"shared", "version":"1.0.0", "id":"shared 1.0.0", "authors":["S"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/shared/Cargo.toml" }
+      ],
+      "resolve": {
+        "root":"root 1.0.0",
+        "nodes":[
+          { "id":"root 1.0.0", "deps":[
+              { "pkg":"depA 1.0.0", "dep_kinds":[{"kind":"build"}] },
+              { "pkg":"depB 1.0.0", "dep_kinds":[{"kind":"build"}] }
+          ] },
+          { "id":"depA 1.0.0", "deps":[ { "pkg":"shared 1.0.0", "dep_kinds":[{"kind":"build"}] } ] },
+          { "id":"depB 1.0.0", "deps":[ { "pkg":"shared 1.0.0", "dep_kinds":[{"kind":"build"}] } ] },
+          { "id":"shared 1.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
 }

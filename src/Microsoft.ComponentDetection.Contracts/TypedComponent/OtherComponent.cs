@@ -5,17 +5,17 @@ using System;
 
 public class OtherComponent : TypedComponent
 {
-    private OtherComponent()
-    {
-        /* Reserved for deserialization */
-    }
-
     public OtherComponent(string name, string version, Uri downloadUrl, string hash)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Other));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Other));
         this.DownloadUrl = this.ValidateRequiredInput(downloadUrl, nameof(this.DownloadUrl), nameof(ComponentType.Other));
         this.Hash = hash;
+    }
+
+    private OtherComponent()
+    {
+        /* Reserved for deserialization */
     }
 
     public string Name { get; set; }

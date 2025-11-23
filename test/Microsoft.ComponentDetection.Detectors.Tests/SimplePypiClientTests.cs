@@ -20,29 +20,6 @@ using Newtonsoft.Json;
 [TestClass]
 public class SimplePyPiClientTests
 {
-    private Mock<HttpMessageHandler> MockHttpMessageHandler(string content, HttpStatusCode statusCode)
-    {
-        var handlerMock = new Mock<HttpMessageHandler>();
-        handlerMock.Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage()
-            {
-                StatusCode = statusCode,
-                Content = new StringContent(content),
-            });
-
-        return handlerMock;
-    }
-
-    private ISimplePyPiClient CreateSimplePypiClient(HttpMessageHandler messageHandler, IEnvironmentVariableService evs, ILogger<SimplePyPiClient> logger)
-    {
-        SimplePyPiClient.HttpClient = new HttpClient(messageHandler);
-        return new SimplePyPiClient(evs, logger);
-    }
-
     [TestMethod]
     public async Task GetSimplePypiProject_DuplicateEntries_CallsGetAsync_OnceAsync()
     {
@@ -354,5 +331,28 @@ public class SimplePyPiClientTests
         var packageJsonTemplate = string.Format(packageJson, packageName, version);
 
         return packageJsonTemplate;
+    }
+
+    private Mock<HttpMessageHandler> MockHttpMessageHandler(string content, HttpStatusCode statusCode)
+    {
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage()
+            {
+                StatusCode = statusCode,
+                Content = new StringContent(content),
+            });
+
+        return handlerMock;
+    }
+
+    private ISimplePyPiClient CreateSimplePypiClient(HttpMessageHandler messageHandler, IEnvironmentVariableService evs, ILogger<SimplePyPiClient> logger)
+    {
+        SimplePyPiClient.HttpClient = new HttpClient(messageHandler);
+        return new SimplePyPiClient(evs, logger);
     }
 }

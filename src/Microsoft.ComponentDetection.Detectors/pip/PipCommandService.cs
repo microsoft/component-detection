@@ -76,50 +76,6 @@ public class PipCommandService : IPipCommandService
         }
     }
 
-    private async Task<(string PipExectuable, string PythonExecutable)> ResolvePipAsync(string pipPath = null, string pythonPath = null)
-    {
-        var pipCommand = string.IsNullOrEmpty(pipPath) ? "pip" : pipPath;
-        var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : pythonPath;
-
-        if (await this.CanCommandBeLocatedAsync(pipCommand))
-        {
-            return (pipCommand, null);
-        }
-        else if (await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonCommand, null, "-m", "pip", "--version"))
-        {
-            return (null, pythonCommand);
-        }
-
-        return (null, null);
-    }
-
-    private async Task<bool> CanCommandBeLocatedAsync(string pipPath)
-    {
-        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, ["pip3"], "--version");
-    }
-
-    private async Task<CommandLineExecutionResult> ExecuteCommandAsync(
-        string pipExecutable = null,
-        string pythonExecutable = null,
-        IEnumerable<string> additionalCandidateCommands = null,
-        DirectoryInfo workingDirectory = null,
-        CancellationToken cancellationToken = default,
-        params string[] parameters)
-    {
-        if (!string.IsNullOrEmpty(pipExecutable))
-        {
-            return await this.commandLineInvocationService.ExecuteCommandAsync(
-                pipExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parameters);
-        }
-        else
-        {
-            var pythonPipParams = new[] { "-m", "pip" };
-            var parametersFull = pythonPipParams.Concat(parameters).ToArray();
-            return await this.commandLineInvocationService.ExecuteCommandAsync(
-                pythonExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parametersFull);
-        }
-    }
-
     public async Task<(PipInstallationReport Report, FileInfo ReportFile)> GenerateInstallationReportAsync(
         string path, string pipExePath = null, string pythonExePath = null, CancellationToken cancellationToken = default)
     {
@@ -223,6 +179,50 @@ public class PipCommandService : IPipCommandService
             {
                 duplicateFile.Delete();
             }
+        }
+    }
+
+    private async Task<(string PipExectuable, string PythonExecutable)> ResolvePipAsync(string pipPath = null, string pythonPath = null)
+    {
+        var pipCommand = string.IsNullOrEmpty(pipPath) ? "pip" : pipPath;
+        var pythonCommand = string.IsNullOrEmpty(pythonPath) ? "python" : pythonPath;
+
+        if (await this.CanCommandBeLocatedAsync(pipCommand))
+        {
+            return (pipCommand, null);
+        }
+        else if (await this.commandLineInvocationService.CanCommandBeLocatedAsync(pythonCommand, null, "-m", "pip", "--version"))
+        {
+            return (null, pythonCommand);
+        }
+
+        return (null, null);
+    }
+
+    private async Task<bool> CanCommandBeLocatedAsync(string pipPath)
+    {
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(pipPath, ["pip3"], "--version");
+    }
+
+    private async Task<CommandLineExecutionResult> ExecuteCommandAsync(
+        string pipExecutable = null,
+        string pythonExecutable = null,
+        IEnumerable<string> additionalCandidateCommands = null,
+        DirectoryInfo workingDirectory = null,
+        CancellationToken cancellationToken = default,
+        params string[] parameters)
+    {
+        if (!string.IsNullOrEmpty(pipExecutable))
+        {
+            return await this.commandLineInvocationService.ExecuteCommandAsync(
+                pipExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parameters);
+        }
+        else
+        {
+            var pythonPipParams = new[] { "-m", "pip" };
+            var parametersFull = pythonPipParams.Concat(parameters).ToArray();
+            return await this.commandLineInvocationService.ExecuteCommandAsync(
+                pythonExecutable, additionalCandidateCommands, workingDirectory, cancellationToken, parametersFull);
         }
     }
 }

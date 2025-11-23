@@ -125,19 +125,6 @@ public class ExperimentService : IExperimentService
         }
     }
 
-    private void FilterExperiments(IComponentDetector detector, int count)
-    {
-        var experimentsToRemove = this.experiments
-            .Where(x => !x.Key.ShouldRecord(detector, count))
-            .Select(x => x.Key)
-            .ToList();
-
-        foreach (var config in experimentsToRemove.Where(config => this.experiments.TryRemove(config, out _)))
-        {
-            this.logger.LogDebug("Removing {Experiment} from active experiments", config.Name);
-        }
-    }
-
     public void RemoveUnwantedExperimentsbyDetectors(IEnumerable<IComponentDetector> detectors)
     {
         if (detectors == null)
@@ -199,6 +186,19 @@ public class ExperimentService : IExperimentService
             {
                 this.logger.LogError(e, "Error processing experiment {Experiment}", config.Name);
             }
+        }
+    }
+
+    private void FilterExperiments(IComponentDetector detector, int count)
+    {
+        var experimentsToRemove = this.experiments
+            .Where(x => !x.Key.ShouldRecord(detector, count))
+            .Select(x => x.Key)
+            .ToList();
+
+        foreach (var config in experimentsToRemove.Where(config => this.experiments.TryRemove(config, out _)))
+        {
+            this.logger.LogDebug("Removing {Experiment} from active experiments", config.Name);
         }
     }
 }

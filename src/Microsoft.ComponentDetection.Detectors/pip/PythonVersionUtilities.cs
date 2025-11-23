@@ -84,6 +84,23 @@ public static class PythonVersionUtilities
         }
     }
 
+    public static (string Operator, string Version) ParseSpec(string spec)
+    {
+        var opChars = new char[] { '=', '<', '>', '~', '!' };
+        var specArray = spec.ToCharArray();
+
+        var i = 0;
+        while (i < spec.Length && i < 3 && opChars.Contains(specArray[i]))
+        {
+            i++;
+        }
+
+        var op = spec[..i];
+        var specVerSection = spec[i..].Trim();
+
+        return (op, specVerSection);
+    }
+
     private static bool VersionValidForSpec(string version, string spec)
     {
         (var op, var specVersion) = ParseSpec(spec);
@@ -113,22 +130,5 @@ public static class PythonVersionUtilities
             "~=" => CheckEquality(version, specVersion, true),
             _ => false,
         };
-    }
-
-    public static (string Operator, string Version) ParseSpec(string spec)
-    {
-        var opChars = new char[] { '=', '<', '>', '~', '!' };
-        var specArray = spec.ToCharArray();
-
-        var i = 0;
-        while (i < spec.Length && i < 3 && opChars.Contains(specArray[i]))
-        {
-            i++;
-        }
-
-        var op = spec[..i];
-        var specVerSection = spec[i..].Trim();
-
-        return (op, specVerSection);
     }
 }

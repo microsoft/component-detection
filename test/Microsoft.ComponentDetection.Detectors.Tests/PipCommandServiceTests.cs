@@ -359,29 +359,6 @@ public class PipCommandServiceTests
         this.commandLineInvokationService.Verify();
     }
 
-    private static void ValidateRequirementsTxtReportFile(PipInstallationReport report, FileInfo reportFile)
-    {
-        // the file shouldn't exist since we're not writing to it in the test
-        reportFile.Should().NotBeNull();
-        reportFile.Exists.Should().Be(false);
-
-        // validate report parameters
-        report.Should().NotBeNull();
-        report.Version.Should().Be("1");
-        report.InstallItems.Should().NotBeNull();
-        report.InstallItems.Should().ContainSingle();
-
-        // validate packages
-        report.InstallItems[0].Requested.Should().BeTrue();
-        report.InstallItems[0].Metadata.Name.Should().Be("six");
-        report.InstallItems[0].Metadata.Version.Should().Be("1.16.0");
-        report.InstallItems[0].Metadata.License.Should().Be("MIT");
-        report.InstallItems[0].Metadata.Author.Should().Be("Benjamin Peterson");
-        report.InstallItems[0].Metadata.AuthorEmail.Should().Be("benjamin@python.org");
-        report.InstallItems[0].Metadata.Maintainer.Should().BeNullOrEmpty();
-        report.InstallItems[0].Metadata.MaintainerEmail.Should().BeNullOrEmpty();
-    }
-
     [TestMethod]
     public async Task PipCommandService_GeneratesReport_SetupPy_CorrectlyAsync()
     {
@@ -702,5 +679,28 @@ public class PipCommandServiceTests
         await cts.CancelAsync();
         var action = async () => await service.GenerateInstallationReportAsync(testPath, cancellationToken: cts.Token);
         await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("PipReport: Cancelled*");
+    }
+
+    private static void ValidateRequirementsTxtReportFile(PipInstallationReport report, FileInfo reportFile)
+    {
+        // the file shouldn't exist since we're not writing to it in the test
+        reportFile.Should().NotBeNull();
+        reportFile.Exists.Should().Be(false);
+
+        // validate report parameters
+        report.Should().NotBeNull();
+        report.Version.Should().Be("1");
+        report.InstallItems.Should().NotBeNull();
+        report.InstallItems.Should().ContainSingle();
+
+        // validate packages
+        report.InstallItems[0].Requested.Should().BeTrue();
+        report.InstallItems[0].Metadata.Name.Should().Be("six");
+        report.InstallItems[0].Metadata.Version.Should().Be("1.16.0");
+        report.InstallItems[0].Metadata.License.Should().Be("MIT");
+        report.InstallItems[0].Metadata.Author.Should().Be("Benjamin Peterson");
+        report.InstallItems[0].Metadata.AuthorEmail.Should().Be("benjamin@python.org");
+        report.InstallItems[0].Metadata.Maintainer.Should().BeNullOrEmpty();
+        report.InstallItems[0].Metadata.MaintainerEmail.Should().BeNullOrEmpty();
     }
 }

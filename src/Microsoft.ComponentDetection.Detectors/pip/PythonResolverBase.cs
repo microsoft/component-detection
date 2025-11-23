@@ -16,6 +16,32 @@ public abstract class PythonResolverBase
     internal PythonResolverBase(ILogger logger) => this.logger = logger;
 
     /// <summary>
+    /// Multiple dependency specification versions can be given for a single package name.
+    /// Until a better method is devised, choose the latest entry.
+    /// See https://github.com/microsoft/component-detection/issues/963.
+    /// </summary>
+    /// <returns>Dictionary of package names to dependency version specifiers.</returns>
+    public Dictionary<string, PipDependencySpecification> ResolveDependencySpecifications(PipComponent component, IList<PipDependencySpecification> fetchedDependences)
+    {
+        var dependencies = new Dictionary<string, PipDependencySpecification>();
+        fetchedDependences.ForEach(d =>
+        {
+            if (!dependencies.TryAdd(d.Name, d))
+            {
+                this.logger.LogWarning(
+                    "Duplicate package dependencies entry for component:{ComponentName} with dependency:{DependencyName}. Existing dependency specifiers: {ExistingSpecifiers}. New dependency specifiers: {NewSpecifiers}.",
+                    component.Name,
+                    d.Name,
+                    JsonConvert.SerializeObject(dependencies[d.Name].DependencySpecifiers),
+                    JsonConvert.SerializeObject(d.DependencySpecifiers));
+                dependencies[d.Name] = d;
+            }
+        });
+
+        return dependencies;
+    }
+
+    /// <summary>
     /// Given a state, node, and new spec, will reprocess a new valid version for the node.
     /// </summary>
     /// <param name="state">The PythonResolverState.</param>
@@ -74,32 +100,6 @@ public abstract class PythonResolverBase
         }
 
         return true;
-    }
-
-    /// <summary>
-    /// Multiple dependency specification versions can be given for a single package name.
-    /// Until a better method is devised, choose the latest entry.
-    /// See https://github.com/microsoft/component-detection/issues/963.
-    /// </summary>
-    /// <returns>Dictionary of package names to dependency version specifiers.</returns>
-    public Dictionary<string, PipDependencySpecification> ResolveDependencySpecifications(PipComponent component, IList<PipDependencySpecification> fetchedDependences)
-    {
-        var dependencies = new Dictionary<string, PipDependencySpecification>();
-        fetchedDependences.ForEach(d =>
-        {
-            if (!dependencies.TryAdd(d.Name, d))
-            {
-                this.logger.LogWarning(
-                    "Duplicate package dependencies entry for component:{ComponentName} with dependency:{DependencyName}. Existing dependency specifiers: {ExistingSpecifiers}. New dependency specifiers: {NewSpecifiers}.",
-                    component.Name,
-                    d.Name,
-                    JsonConvert.SerializeObject(dependencies[d.Name].DependencySpecifiers),
-                    JsonConvert.SerializeObject(d.DependencySpecifiers));
-                dependencies[d.Name] = d;
-            }
-        });
-
-        return dependencies;
     }
 
     protected abstract Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(

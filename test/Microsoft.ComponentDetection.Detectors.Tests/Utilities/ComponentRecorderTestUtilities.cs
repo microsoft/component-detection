@@ -113,30 +113,6 @@ public static class ComponentRecorderTestUtilities
         });
     }
 
-    private static ComponentOrientedGrouping TupleToObject(IEnumerable<(string Location, IDependencyGraph Graph, string ComponentId)> x)
-    {
-        var additionalRelatedFiles = new List<string>(x.SelectMany(y => y.Graph.GetAdditionalRelatedFiles()));
-        additionalRelatedFiles.AddRange(x.Select(y => y.Location));
-
-        return new ComponentOrientedGrouping
-        {
-            ComponentId = x.First().ComponentId,
-            FoundInGraphs = x.Select(y => (y.Location, y.Graph)).ToList(),
-            AllFileLocations = additionalRelatedFiles.Distinct().ToList(),
-            ParentComponentIdsThatAreExplicitReferences = x.SelectMany(y => y.Graph.GetExplicitReferencedDependencyIds(x.First().ComponentId)).Distinct().ToList(),
-        };
-    }
-
-    private static List<IGrouping<string, (string Location, IDependencyGraph Graph, string ComponentId)>> GroupByComponentId(IReadOnlyDictionary<string, IDependencyGraph> graphs)
-    {
-        return graphs
-            .Select(x => (Location: x.Key, Graph: x.Value))
-            .SelectMany(x => x.Graph.GetComponents()
-                .Select(componentId => (x.Location, x.Graph, ComponentId: componentId)))
-            .GroupBy(x => x.ComponentId)
-            .ToList();
-    }
-
     public static void CheckGraphStructure(IDependencyGraph graph, Dictionary<string, string[]> graphComponentsWithDeps)
     {
         var graphComponents = graph.GetComponents().ToArray();
@@ -170,6 +146,30 @@ public static class ComponentRecorderTestUtilities
         recorder.AssertAllExplicitlyReferencedComponents(
             childId,
             parentIds.Select(parentId => new Func<T, bool>(x => x.Id == parentId)).ToArray());
+    }
+
+    private static ComponentOrientedGrouping TupleToObject(IEnumerable<(string Location, IDependencyGraph Graph, string ComponentId)> x)
+    {
+        var additionalRelatedFiles = new List<string>(x.SelectMany(y => y.Graph.GetAdditionalRelatedFiles()));
+        additionalRelatedFiles.AddRange(x.Select(y => y.Location));
+
+        return new ComponentOrientedGrouping
+        {
+            ComponentId = x.First().ComponentId,
+            FoundInGraphs = x.Select(y => (y.Location, y.Graph)).ToList(),
+            AllFileLocations = additionalRelatedFiles.Distinct().ToList(),
+            ParentComponentIdsThatAreExplicitReferences = x.SelectMany(y => y.Graph.GetExplicitReferencedDependencyIds(x.First().ComponentId)).Distinct().ToList(),
+        };
+    }
+
+    private static List<IGrouping<string, (string Location, IDependencyGraph Graph, string ComponentId)>> GroupByComponentId(IReadOnlyDictionary<string, IDependencyGraph> graphs)
+    {
+        return graphs
+            .Select(x => (Location: x.Key, Graph: x.Value))
+            .SelectMany(x => x.Graph.GetComponents()
+                .Select(componentId => (x.Location, x.Graph, ComponentId: componentId)))
+            .GroupBy(x => x.ComponentId)
+            .ToList();
     }
 
     public class ComponentOrientedGrouping

@@ -61,6 +61,43 @@ public class RustSbomParser : IRustSbomParser
         }
     }
 
+    /// <summary>
+    /// Parses a Cargo SBOM file and registers each discovered component against all owning Cargo.toml recorders
+    /// using the provided ownership map (cargo metadata package id -> set of manifest paths).
+    /// Falls back to the supplied sbomRecorder when ownership info is absent.
+    /// </summary>
+    /// <param name="componentStream">SBOM stream.</param>
+    /// <param name="sbomRecorder">Recorder tied to the SBOM file (fallback target).</param>
+    /// <param name="parentComponentRecorder">Root component recorder used to create (or reuse) per-manifest recorders.</param>
+    /// <param name="ownershipMap">Package ownership map from RustMetadataContextBuilder (may be null).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>SBOM version or null on failure.</returns>
+    public async Task<int?> ParseWithOwnershipAsync(
+        IComponentStream componentStream,
+        ISingleFileComponentRecorder sbomRecorder,
+        IComponentRecorder parentComponentRecorder,
+        IReadOnlyDictionary<string, HashSet<string>> ownershipMap,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var reader = new StreamReader(componentStream.Stream);
+            var cargoSbom = CargoSbom.FromJson(await reader.ReadToEndAsync(cancellationToken));
+            this.ProcessCargoSbomWithOwnership(
+                cargoSbom,
+                componentStream,
+                sbomRecorder,
+                parentComponentRecorder,
+                ownershipMap);
+            return cargoSbom.Version;
+        }
+        catch (Exception e)
+        {
+            this.logger.LogError(e, "Failed to parse Cargo SBOM (ownership mode) '{FileLocation}'", componentStream.Location);
+            return null;
+        }
+    }
+
     private void ProcessCargoSbom(CargoSbom sbom, ISingleFileComponentRecorder recorder, IComponentStream components)
     {
         try
@@ -110,43 +147,6 @@ public class RustSbomParser : IRustSbomParser
             {
                 this.ProcessDependency(sbom, dep, recorder, components, visitedNodes, parentComponent, depth + 1);
             }
-        }
-    }
-
-    /// <summary>
-    /// Parses a Cargo SBOM file and registers each discovered component against all owning Cargo.toml recorders
-    /// using the provided ownership map (cargo metadata package id -> set of manifest paths).
-    /// Falls back to the supplied sbomRecorder when ownership info is absent.
-    /// </summary>
-    /// <param name="componentStream">SBOM stream.</param>
-    /// <param name="sbomRecorder">Recorder tied to the SBOM file (fallback target).</param>
-    /// <param name="parentComponentRecorder">Root component recorder used to create (or reuse) per-manifest recorders.</param>
-    /// <param name="ownershipMap">Package ownership map from RustMetadataContextBuilder (may be null).</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>SBOM version or null on failure.</returns>
-    public async Task<int?> ParseWithOwnershipAsync(
-        IComponentStream componentStream,
-        ISingleFileComponentRecorder sbomRecorder,
-        IComponentRecorder parentComponentRecorder,
-        IReadOnlyDictionary<string, HashSet<string>> ownershipMap,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            using var reader = new StreamReader(componentStream.Stream);
-            var cargoSbom = CargoSbom.FromJson(await reader.ReadToEndAsync(cancellationToken));
-            this.ProcessCargoSbomWithOwnership(
-                cargoSbom,
-                componentStream,
-                sbomRecorder,
-                parentComponentRecorder,
-                ownershipMap);
-            return cargoSbom.Version;
-        }
-        catch (Exception e)
-        {
-            this.logger.LogError(e, "Failed to parse Cargo SBOM (ownership mode) '{FileLocation}'", componentStream.Location);
-            return null;
         }
     }
 

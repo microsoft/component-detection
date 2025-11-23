@@ -54,28 +54,6 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
     public Dictionary<string, NuGetVersion> Packages { get; } = new Dictionary<string, NuGetVersion>(StringComparer.OrdinalIgnoreCase);
 
-    private static string GetFrameworkKey(string frameworkName) =>
-        frameworkName switch
-        {
-            FrameworkNames.NetStandardLibrary => DefaultFrameworkKey,
-            FrameworkNames.NetCoreApp => DefaultFrameworkKey,
-            _ => frameworkName,
-        };
-
-    internal static void Register(params FrameworkPackages[] toRegister)
-    {
-        foreach (var frameworkPackages in toRegister)
-        {
-            if (!FrameworkPackagesByFramework.TryGetValue(frameworkPackages.Framework, out var frameworkPackagesForVersion))
-            {
-                FrameworkPackagesByFramework[frameworkPackages.Framework] = frameworkPackagesForVersion = [];
-            }
-
-            var frameworkKey = GetFrameworkKey(frameworkPackages.FrameworkName);
-            frameworkPackagesForVersion[frameworkKey] = frameworkPackages;
-        }
-    }
-
     public static FrameworkPackages[] GetFrameworkPackages(NuGetFramework framework, string[] frameworkReferences, LockFileTarget lockFileTarget)
     {
         var frameworkPackages = new List<FrameworkPackages>();
@@ -109,6 +87,34 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
 
         return frameworkPackages.ToArray();
     }
+
+    public bool IsAFrameworkComponent(string id, NuGetVersion version) => this.Packages.TryGetValue(id, out var frameworkPackageVersion) && frameworkPackageVersion >= version;
+
+    IEnumerator<KeyValuePair<string, NuGetVersion>> IEnumerable<KeyValuePair<string, NuGetVersion>>.GetEnumerator() => this.Packages.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
+
+    internal static void Register(params FrameworkPackages[] toRegister)
+    {
+        foreach (var frameworkPackages in toRegister)
+        {
+            if (!FrameworkPackagesByFramework.TryGetValue(frameworkPackages.Framework, out var frameworkPackagesForVersion))
+            {
+                FrameworkPackagesByFramework[frameworkPackages.Framework] = frameworkPackagesForVersion = [];
+            }
+
+            var frameworkKey = GetFrameworkKey(frameworkPackages.FrameworkName);
+            frameworkPackagesForVersion[frameworkKey] = frameworkPackages;
+        }
+    }
+
+    private static string GetFrameworkKey(string frameworkName) =>
+        frameworkName switch
+        {
+            FrameworkNames.NetStandardLibrary => DefaultFrameworkKey,
+            FrameworkNames.NetCoreApp => DefaultFrameworkKey,
+            _ => frameworkName,
+        };
 
     private static IEnumerable<FrameworkPackages> GetLegacyFrameworkPackagesFromPlatformPackages(NuGetFramework framework, LockFileTarget lockFileTarget)
     {
@@ -228,12 +234,6 @@ internal sealed partial class FrameworkPackages : IEnumerable<KeyValuePair<strin
             this.Packages[id] = NuGetVersion.Parse(version);
         }
     }
-
-    public bool IsAFrameworkComponent(string id, NuGetVersion version) => this.Packages.TryGetValue(id, out var frameworkPackageVersion) && frameworkPackageVersion >= version;
-
-    IEnumerator<KeyValuePair<string, NuGetVersion>> IEnumerable<KeyValuePair<string, NuGetVersion>>.GetEnumerator() => this.Packages.GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
 
     internal static class FrameworkNames
     {

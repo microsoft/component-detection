@@ -41,51 +41,6 @@ public class RustCliParserTests
         this.parser = new RustCliParser(this.cli.Object, this.env.Object, new PathUtilityService(new Mock<ILogger<PathUtilityService>>().Object), this.logger.Object);
     }
 
-    private static IComponentStream MakeTomlStream(string path) =>
-        new ComponentStream { Location = path, Pattern = "Cargo.toml", Stream = new MemoryStream(Encoding.UTF8.GetBytes("[package]\nname=\"x\"")) };
-
-    // kind: build (non-dev), kind: dev (development), or absent/null.
-    private static string BuildNormalRootMetadataJson() => """
-    {
-      "packages": [
-        { "name":"rootpkg", "version":"1.0.0", "id":"rootpkg 1.0.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/root/Cargo.toml" },
-        { "name":"childA", "version":"2.0.0", "id":"childA 2.0.0", "authors":["Alice"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/root/childA/Cargo.toml" },
-        { "name":"childDev", "version":"3.0.0", "id":"childDev 3.0.0", "authors":["Bob"], "license":"Apache-2.0", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/root/childDev/Cargo.toml" }
-      ],
-      "resolve": {
-        "root":"rootpkg 1.0.0",
-        "nodes":[
-          { "id":"rootpkg 1.0.0",
-            "deps":[
-              { "pkg":"childA 2.0.0", "dep_kinds":[{"kind":"build"}] },
-              { "pkg":"childDev 3.0.0", "dep_kinds":[{"kind":"dev"}] }
-            ]
-          },
-          { "id":"childA 2.0.0", "deps":[] },
-          { "id":"childDev 3.0.0", "deps":[] }
-        ]
-      }
-    }
-    """;
-
-    private static string BuildVirtualManifestMetadataJson() => """
-    {
-      "packages": [
-        { "name":"virtA", "version":"0.2.0", "id":"virtA 0.2.0", "authors":["Ann"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/virtA/Cargo.toml" },
-        { "name":"virtB", "version":"0.3.0", "id":"virtB 0.3.0", "authors":["Ben"], "license":"Apache-2.0", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/virtB/Cargo.toml" }
-      ],
-      "resolve": {
-        "root": null,
-        "nodes":[
-          { "id":"virtA 0.2.0", "deps":[ { "pkg":"virtB 0.3.0", "dep_kinds":[{"kind":"build"}] } ] },
-          { "id":"virtB 0.3.0", "deps":[] }
-        ]
-      }
-    }
-    """;
-
-    private static CargoMetadata ParseMetadata(string json) => CargoMetadata.FromJson(json);
-
     [TestMethod]
     public async Task ParseAsync_ManuallyDisabled_ReturnsFailure()
     {
@@ -1135,6 +1090,51 @@ public class RustCliParserTests
         distinctNames.Should().Contain("pkgA");
         distinctNames.Should().Contain("pkgB");
     }
+
+    private static IComponentStream MakeTomlStream(string path) =>
+        new ComponentStream { Location = path, Pattern = "Cargo.toml", Stream = new MemoryStream(Encoding.UTF8.GetBytes("[package]\nname=\"x\"")) };
+
+    // kind: build (non-dev), kind: dev (development), or absent/null.
+    private static string BuildNormalRootMetadataJson() => """
+    {
+      "packages": [
+        { "name":"rootpkg", "version":"1.0.0", "id":"rootpkg 1.0.0", "authors":[""], "license":"", "source":null, "manifest_path":"C:/repo/root/Cargo.toml" },
+        { "name":"childA", "version":"2.0.0", "id":"childA 2.0.0", "authors":["Alice"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/root/childA/Cargo.toml" },
+        { "name":"childDev", "version":"3.0.0", "id":"childDev 3.0.0", "authors":["Bob"], "license":"Apache-2.0", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/root/childDev/Cargo.toml" }
+      ],
+      "resolve": {
+        "root":"rootpkg 1.0.0",
+        "nodes":[
+          { "id":"rootpkg 1.0.0",
+            "deps":[
+              { "pkg":"childA 2.0.0", "dep_kinds":[{"kind":"build"}] },
+              { "pkg":"childDev 3.0.0", "dep_kinds":[{"kind":"dev"}] }
+            ]
+          },
+          { "id":"childA 2.0.0", "deps":[] },
+          { "id":"childDev 3.0.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+    private static string BuildVirtualManifestMetadataJson() => """
+    {
+      "packages": [
+        { "name":"virtA", "version":"0.2.0", "id":"virtA 0.2.0", "authors":["Ann"], "license":"MIT", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/virtA/Cargo.toml" },
+        { "name":"virtB", "version":"0.3.0", "id":"virtB 0.3.0", "authors":["Ben"], "license":"Apache-2.0", "source":"registry+https://github.com/rust-lang/crates.io-index", "manifest_path":"C:/repo/virtB/Cargo.toml" }
+      ],
+      "resolve": {
+        "root": null,
+        "nodes":[
+          { "id":"virtA 0.2.0", "deps":[ { "pkg":"virtB 0.3.0", "dep_kinds":[{"kind":"build"}] } ] },
+          { "id":"virtB 0.3.0", "deps":[] }
+        ]
+      }
+    }
+    """;
+
+    private static CargoMetadata ParseMetadata(string json) => CargoMetadata.FromJson(json);
 
     private async Task<ParseResult> InvokeProcessMetadataAsync(string manifestLocation, ISingleFileComponentRecorder fallbackRecorder, CargoMetadata metadata) =>
         await this.parser.ParseFromMetadataAsync(

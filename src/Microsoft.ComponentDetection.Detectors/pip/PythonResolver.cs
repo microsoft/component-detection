@@ -79,6 +79,32 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
         return await this.ProcessQueueAsync(singleFileComponentRecorder, state) ?? [];
     }
 
+    public void SetPythonEnvironmentVariable(string key, string value)
+    {
+        this.pythonEnvironmentVariables[key] = value;
+    }
+
+    public Dictionary<string, string> GetPythonEnvironmentVariables()
+    {
+        return this.pythonEnvironmentVariables;
+    }
+
+    protected override async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(
+        PythonResolverState state,
+        PipDependencySpecification spec)
+    {
+        var candidateVersion = state.NodeReferences[spec.Name].Value.Version;
+
+        var packageToFetch = state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_wheel", x.PackageType, StringComparison.OrdinalIgnoreCase)) ??
+                             state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
+        if (packageToFetch == null)
+        {
+            return [];
+        }
+
+        return await this.pypiClient.FetchPackageDependenciesAsync(spec.Name, candidateVersion, packageToFetch);
+    }
+
     private async Task<IList<PipGraphNode>> ProcessQueueAsync(ISingleFileComponentRecorder singleFileComponentRecorder, PythonResolverState state)
     {
         while (state.ProcessingQueue.Count > 0)
@@ -154,22 +180,6 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
         return state.Roots;
     }
 
-    protected override async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(
-        PythonResolverState state,
-        PipDependencySpecification spec)
-    {
-        var candidateVersion = state.NodeReferences[spec.Name].Value.Version;
-
-        var packageToFetch = state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_wheel", x.PackageType, StringComparison.OrdinalIgnoreCase)) ??
-                             state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
-        if (packageToFetch == null)
-        {
-            return [];
-        }
-
-        return await this.pypiClient.FetchPackageDependenciesAsync(spec.Name, candidateVersion, packageToFetch);
-    }
-
     private void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version, string license = null, string author = null)
     {
         if (state.NodeReferences.TryGetValue(name, out var value))
@@ -231,15 +241,5 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
         }
 
         return null;
-    }
-
-    public void SetPythonEnvironmentVariable(string key, string value)
-    {
-        this.pythonEnvironmentVariables[key] = value;
-    }
-
-    public Dictionary<string, string> GetPythonEnvironmentVariables()
-    {
-        return this.pythonEnvironmentVariables;
     }
 }

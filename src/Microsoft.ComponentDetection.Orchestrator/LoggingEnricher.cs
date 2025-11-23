@@ -13,13 +13,15 @@ public class LoggingEnricher : ILogEventEnricher
     /// The name of the log file path property.
     /// </summary>
     public const string LogFilePathPropertyName = "LogFilePath";
-    private string cachedLogFilePath;
-    private LogEventProperty cachedLogFilePathProperty;
 
     /// <summary>
     /// The name of the print stderr property.
     /// </summary>
     public const string PrintStderrPropertyName = "PrintStderr";
+
+    private string cachedLogFilePath;
+    private LogEventProperty cachedLogFilePathProperty;
+
     private bool? cachedPrintStderr;
     private LogEventProperty cachedPrintStderrProperty;
 

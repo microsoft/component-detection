@@ -43,46 +43,6 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
 
     public override int Version { get; } = 2;
 
-    private static string[] GetFrameworkReferences(LockFile lockFile, LockFileTarget target)
-    {
-        var frameworkInformation = lockFile.PackageSpec.TargetFrameworks.FirstOrDefault(x => x.FrameworkName.Equals(target.TargetFramework));
-
-        if (frameworkInformation == null)
-        {
-            return [];
-        }
-
-        // add directly referenced frameworks
-        var results = frameworkInformation.FrameworkReferences.Select(x => x.Name);
-
-        // add transitive framework references
-        results = results.Concat(target.Libraries.SelectMany(l => l.FrameworkReferences));
-
-        return results.Distinct().ToArray();
-    }
-
-    private static bool IsADevelopmentDependency(LockFileTargetLibrary library, LockFile lockFile)
-    {
-        // a placeholder item is an empty file that doesn't exist with name _._ meant to indicate an empty folder in a nuget package, but also used by NuGet when a package's assets are excluded.
-        static bool IsAPlaceholderItem(LockFileItem item) => Path.GetFileName(item.Path).Equals(PackagingCoreConstants.EmptyFolder, StringComparison.OrdinalIgnoreCase);
-
-        // All(IsAPlaceholderItem) checks if the collection is empty or all items are placeholders.
-        return library.RuntimeAssemblies.All(IsAPlaceholderItem) &&
-            library.RuntimeTargets.All(IsAPlaceholderItem) &&
-            library.ResourceAssemblies.All(IsAPlaceholderItem) &&
-            library.NativeLibraries.All(IsAPlaceholderItem) &&
-            library.ContentFiles.All(IsAPlaceholderItem) &&
-            library.Build.All(IsAPlaceholderItem) &&
-            library.BuildMultiTargeting.All(IsAPlaceholderItem) &&
-
-            // The SDK looks at the library for analyzers using the following hueristic:
-            // https://github.com/dotnet/sdk/blob/d7fe6e66d8f67dc93c5c294a75f42a2924889196/src/Tasks/Microsoft.NET.Build.Tasks/NuGetUtils.NuGet.cs#L43
-            (!lockFile.GetLibrary(library.Name, library.Version)?.Files
-                .Any(file => file.StartsWith("analyzers", StringComparison.Ordinal)
-                    && file.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
-                    && !file.EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase)) ?? false);
-    }
-
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         try
@@ -133,6 +93,46 @@ public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDet
         }
 
         return Task.CompletedTask;
+    }
+
+    private static string[] GetFrameworkReferences(LockFile lockFile, LockFileTarget target)
+    {
+        var frameworkInformation = lockFile.PackageSpec.TargetFrameworks.FirstOrDefault(x => x.FrameworkName.Equals(target.TargetFramework));
+
+        if (frameworkInformation == null)
+        {
+            return [];
+        }
+
+        // add directly referenced frameworks
+        var results = frameworkInformation.FrameworkReferences.Select(x => x.Name);
+
+        // add transitive framework references
+        results = results.Concat(target.Libraries.SelectMany(l => l.FrameworkReferences));
+
+        return results.Distinct().ToArray();
+    }
+
+    private static bool IsADevelopmentDependency(LockFileTargetLibrary library, LockFile lockFile)
+    {
+        // a placeholder item is an empty file that doesn't exist with name _._ meant to indicate an empty folder in a nuget package, but also used by NuGet when a package's assets are excluded.
+        static bool IsAPlaceholderItem(LockFileItem item) => Path.GetFileName(item.Path).Equals(PackagingCoreConstants.EmptyFolder, StringComparison.OrdinalIgnoreCase);
+
+        // All(IsAPlaceholderItem) checks if the collection is empty or all items are placeholders.
+        return library.RuntimeAssemblies.All(IsAPlaceholderItem) &&
+            library.RuntimeTargets.All(IsAPlaceholderItem) &&
+            library.ResourceAssemblies.All(IsAPlaceholderItem) &&
+            library.NativeLibraries.All(IsAPlaceholderItem) &&
+            library.ContentFiles.All(IsAPlaceholderItem) &&
+            library.Build.All(IsAPlaceholderItem) &&
+            library.BuildMultiTargeting.All(IsAPlaceholderItem) &&
+
+            // The SDK looks at the library for analyzers using the following hueristic:
+            // https://github.com/dotnet/sdk/blob/d7fe6e66d8f67dc93c5c294a75f42a2924889196/src/Tasks/Microsoft.NET.Build.Tasks/NuGetUtils.NuGet.cs#L43
+            (!lockFile.GetLibrary(library.Name, library.Version)?.Files
+                .Any(file => file.StartsWith("analyzers", StringComparison.Ordinal)
+                    && file.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+                    && !file.EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase)) ?? false);
     }
 
     private void NavigateAndRegister(

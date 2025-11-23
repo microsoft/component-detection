@@ -45,11 +45,6 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
 
-    private void LogDebugWithId(string message)
-    {
-        this.Logger.LogDebug("{DetectorId} detector: {Message}", this.Id, message);
-    }
-
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
         if (!await this.mavenCommandService.MavenCLIExistsAsync())
@@ -100,6 +95,11 @@ public class MvnCliComponentDetector : FileComponentDetector
         File.Delete(processRequest.ComponentStream.Location);
 
         await Task.CompletedTask;
+    }
+
+    private void LogDebugWithId(string message)
+    {
+        this.Logger.LogDebug("{DetectorId} detector: {Message}", this.Id, message);
     }
 
     private IObservable<ProcessRequest> RemoveNestedPomXmls(IObservable<ProcessRequest> componentStreams)

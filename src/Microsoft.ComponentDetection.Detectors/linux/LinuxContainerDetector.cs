@@ -49,15 +49,6 @@ public class LinuxContainerDetector(
     /// <inheritdoc/>
     public bool NeedsAutomaticRootDependencyCalculation => false;
 
-    /// <summary>
-    /// Gets the component types that should be detected by this detector.
-    /// By default, only Linux system packages are detected.
-    /// Override this method in derived classes to enable detection of additional component types.
-    /// </summary>
-    /// <returns>A set of component types to include in scan results.</returns>
-    protected virtual ISet<ComponentType> GetEnabledComponentTypes() =>
-        new HashSet<ComponentType> { ComponentType.Linux };
-
     /// <inheritdoc/>
     public async Task<IndividualDetectorScanResult> ExecuteDetectorAsync(
         ScanRequest request,
@@ -117,6 +108,15 @@ public class LinuxContainerDetector(
             ResultCode = ProcessingResultCode.Success,
         };
     }
+
+    /// <summary>
+    /// Gets the component types that should be detected by this detector.
+    /// By default, only Linux system packages are detected.
+    /// Override this method in derived classes to enable detection of additional component types.
+    /// </summary>
+    /// <returns>A set of component types to include in scan results.</returns>
+    protected virtual ISet<ComponentType> GetEnabledComponentTypes() =>
+        new HashSet<ComponentType> { ComponentType.Linux };
 
     /// <summary>
     /// Extracts and returns the timeout defined by the user, or a default value if one is not provided.

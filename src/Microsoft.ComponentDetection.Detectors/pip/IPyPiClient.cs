@@ -235,6 +235,13 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         return versions;
     }
 
+    public void Dispose()
+    {
+        this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
+        this.cacheTelemetry.Dispose();
+        this.cachedResponses.Dispose();
+    }
+
     /// <summary>
     /// Returns a cached response if it exists, otherwise returns the response from PyPi REST call.
     /// The response from PyPi is automatically added to the cache.
@@ -284,12 +291,5 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         }
 
         this.checkedMaxEntriesVariable = true;
-    }
-
-    public void Dispose()
-    {
-        this.cacheTelemetry.FinalCacheSize = this.cachedResponses.Count;
-        this.cacheTelemetry.Dispose();
-        this.cachedResponses.Dispose();
     }
 }
