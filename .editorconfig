@@ -464,6 +464,7 @@ dotnet_diagnostic.SA1623.severity = none
 ##########################################
 
 dotnet_diagnostic.SA1009.severity = none
+dotnet_diagnostic.SA1101.severity = warning
 dotnet_diagnostic.SA1111.severity = none
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
