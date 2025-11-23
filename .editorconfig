@@ -463,9 +463,25 @@ dotnet_diagnostic.SA1623.severity = none
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers
 ##########################################
 
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1009.md
+# Closing parenthesis should be spaced correctly
 dotnet_diagnostic.SA1009.severity = none
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1101.md
+# Local calls should be prefixed with `this`
 dotnet_diagnostic.SA1101.severity = warning
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1111.md
+# Closing parenthesis should be on the line of last parameter
 dotnet_diagnostic.SA1111.severity = none
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1201.md
+# Elements should be in the correct order
+dotnet_diagnostic.SA1201.severity = warning
+
+# https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1202.md
+# Elements should be ordered by access
+dotnet_diagnostic.SA1202.severity = none
 
 # https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1600.md
 # Elements should be documented
@@ -612,9 +628,6 @@ dotnet_diagnostic.CA1837.severity = suggestion
 
 # CA1024: Use properties where appropriate
 dotnet_diagnostic.CA1024.severity = suggestion
-
-# SA1202: Elements should be ordered by access
-dotnet_diagnostic.SA1202.severity = suggestion
 
 # IDE0022: Use expression body for methods
 dotnet_diagnostic.IDE0022.severity = suggestion
