@@ -8,7 +8,7 @@ using PackageUrl;
 
 public class PipComponent : TypedComponent
 {
-    private PipComponent()
+    public PipComponent()
     {
         /* Reserved for deserialization */
     }

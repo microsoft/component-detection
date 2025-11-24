@@ -7,7 +7,7 @@ using PackageUrl;
 
 public class PodComponent : TypedComponent
 {
-    private PodComponent()
+    public PodComponent()
     {
         /* Reserved for deserialization */
     }

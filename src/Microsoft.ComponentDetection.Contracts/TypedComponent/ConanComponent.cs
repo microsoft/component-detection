@@ -6,7 +6,7 @@ using PackageUrl;
 
 public class ConanComponent : TypedComponent
 {
-    private ConanComponent()
+    public ConanComponent()
     {
         // reserved for deserialization
     }

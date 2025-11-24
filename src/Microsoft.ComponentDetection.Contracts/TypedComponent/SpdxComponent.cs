@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 public class SpdxComponent : TypedComponent
 {
-    private SpdxComponent()
+    public SpdxComponent()
     {
         /* Reserved for deserialization */
     }

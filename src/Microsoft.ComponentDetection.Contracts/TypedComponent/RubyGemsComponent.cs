@@ -6,7 +6,7 @@ using PackageUrl;
 
 public class RubyGemsComponent : TypedComponent
 {
-    private RubyGemsComponent()
+    public RubyGemsComponent()
     {
         /* Reserved for deserialization */
     }

@@ -13,7 +13,7 @@ public class MavenComponent : TypedComponent
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Maven));
     }
 
-    private MavenComponent()
+    public MavenComponent()
     {
         /* Reserved for deserialization */
     }

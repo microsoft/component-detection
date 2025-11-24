@@ -17,7 +17,7 @@ public class CondaComponent : TypedComponent
         this.MD5 = md5;
     }
 
-    private CondaComponent()
+    public CondaComponent()
     {
         /* Reserved for deserialization */
     }

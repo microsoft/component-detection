@@ -7,7 +7,7 @@ using PackageUrl;
 
 public class CargoComponent : TypedComponent
 {
-    private CargoComponent()
+    public CargoComponent()
     {
         // reserved for deserialization
     }
