@@ -11,6 +11,8 @@ internal partial class FrameworkPackages
 {
     internal static class NETCoreApp90
     {
+        private static NuGetFramework Net90 { get; } = new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.NetCoreApp, new Version(9, 0));
+
         internal static FrameworkPackages Instance { get; } = new(Net90, FrameworkNames.NetCoreApp, NETCoreApp80.Instance)
         {
             { "Microsoft.VisualBasic", "10.4.0" },
@@ -192,8 +194,6 @@ internal partial class FrameworkPackages
             { "System.Security.Cryptography.Pkcs", "8.0.1" },
             { "System.Security.Cryptography.Xml", "8.0.2" },
         };
-
-        private static NuGetFramework Net90 { get; } = new NuGetFramework(FrameworkConstants.FrameworkIdentifiers.NetCoreApp, new Version(9, 0));
 
         internal static void Register() => FrameworkPackages.Register(Instance, AspNetCore, WindowsDesktop);
     }

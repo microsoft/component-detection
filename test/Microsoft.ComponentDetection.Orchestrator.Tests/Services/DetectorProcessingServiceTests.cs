@@ -72,6 +72,15 @@ public class DetectorProcessingServiceTests
         this.isWin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
     }
 
+    private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId)
+    {
+        return new IndividualDetectorScanResult
+        {
+            AdditionalTelemetryDetails = new Dictionary<string, string> { { "detectorId", detectorId } },
+            ResultCode = ProcessingResultCode.Success,
+        };
+    }
+
     [TestMethod]
     public async Task ProcessDetectorsAsync_HappyPathReturnsDetectedComponentsAsync()
     {
@@ -577,15 +586,6 @@ public class DetectorProcessingServiceTests
         await this.serviceUnderTest.ProcessDetectorsAsync(DefaultArgs, this.detectorsToUse, new DetectorRestrictions());
 
         this.experimentServiceMock.Verify(x => x.InitializeAsync(), Times.Once);
-    }
-
-    private IndividualDetectorScanResult ExpectedResultForDetector(string detectorId)
-    {
-        return new IndividualDetectorScanResult
-        {
-            AdditionalTelemetryDetails = new Dictionary<string, string> { { "detectorId", detectorId } },
-            ResultCode = ProcessingResultCode.Success,
-        };
     }
 
     private Mock<FileComponentDetector> SetupFileDetectorMock(string id, DirectoryInfo sourceDirectory = null)

@@ -5,16 +5,16 @@ using PackageUrl;
 
 public class NuGetComponent : TypedComponent
 {
+    private NuGetComponent()
+    {
+        /* Reserved for deserialization */
+    }
+
     public NuGetComponent(string name, string version, string[] authors = null)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.NuGet));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.NuGet));
         this.Authors = authors;
-    }
-
-    private NuGetComponent()
-    {
-        /* Reserved for deserialization */
     }
 
     public string Name { get; set; }

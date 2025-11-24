@@ -15,12 +15,12 @@ using Newtonsoft.Json.Linq;
 
 public static class NpmComponentUtilities
 {
-    public static readonly string NodeModules = "node_modules";
-    public static readonly string LockFile3EnvFlag = "CD_LOCKFILE_V3_ENABLED";
-
     private static readonly Regex UnsafeCharactersRegex = new Regex(
         @"[?<>#%{}|`'^\\~\[\]""\s\x7f]|[\x00-\x1f]|[\x80-\xff]",
         RegexOptions.Compiled);
+
+    public static readonly string NodeModules = "node_modules";
+    public static readonly string LockFile3EnvFlag = "CD_LOCKFILE_V3_ENABLED";
 
     public static void TraverseAndRecordComponents(JProperty currentDependency, ISingleFileComponentRecorder singleFileComponentRecorder, TypedComponent component, TypedComponent explicitReferencedDependency, string parentComponentId = null)
     {

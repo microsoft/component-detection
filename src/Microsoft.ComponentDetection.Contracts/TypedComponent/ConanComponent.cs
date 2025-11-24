@@ -5,17 +5,17 @@ using PackageUrl;
 
 public class ConanComponent : TypedComponent
 {
+    private ConanComponent()
+    {
+        // reserved for deserialization
+    }
+
     public ConanComponent(string name, string version, string previous, string packageId)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Conan));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Conan));
         this.Md5Hash = this.ValidateRequiredInput(previous, nameof(this.Md5Hash), nameof(ComponentType.Conan));
         this.Sha1Hash = this.ValidateRequiredInput(packageId, nameof(this.Sha1Hash), nameof(ComponentType.Conan));
-    }
-
-    private ConanComponent()
-    {
-        // reserved for deserialization
     }
 
     public string Name { get; set; }

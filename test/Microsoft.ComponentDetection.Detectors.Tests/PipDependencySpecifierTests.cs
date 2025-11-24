@@ -9,6 +9,59 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public class PipDependencySpecifierTests
 {
+    private static void VerifyPipDependencyParsing(
+        List<(string SpecString, PipDependencySpecification ReferenceDependencySpecification)> testCases,
+        bool requiresDist = false)
+    {
+        foreach (var (specString, referenceDependencySpecification) in testCases)
+        {
+            var dependencySpecifier = new PipDependencySpecification(specString, requiresDist);
+
+            dependencySpecifier.Name.Should().Be(referenceDependencySpecification.Name);
+            dependencySpecifier.DependencySpecifiers.Should().HaveCount(referenceDependencySpecification.DependencySpecifiers.Count);
+            for (var i = 0; i < referenceDependencySpecification.DependencySpecifiers.Count; i++)
+            {
+                dependencySpecifier.DependencySpecifiers.Should().HaveElementAt(
+                    i, referenceDependencySpecification.DependencySpecifiers[i]);
+            }
+
+            dependencySpecifier.ConditionalDependencySpecifiers.Should().HaveCount(referenceDependencySpecification.ConditionalDependencySpecifiers.Count);
+            for (var i = 0; i < referenceDependencySpecification.ConditionalDependencySpecifiers.Count; i++)
+            {
+                dependencySpecifier.ConditionalDependencySpecifiers.Should().HaveElementAt(
+                    i, referenceDependencySpecification.ConditionalDependencySpecifiers[i]);
+            }
+        }
+    }
+
+    private static void VerifyPipConditionalDependencyParsing(
+        List<(string SpecString, bool ShouldBeIncluded, PipDependencySpecification ReferenceDependencySpecification)> testCases,
+        Dictionary<string, string> pythonEnvironmentVariables,
+        bool requiresDist = false)
+    {
+        foreach (var (specString, shouldBeIncluded, referenceDependencySpecification) in testCases)
+        {
+            var dependencySpecifier = new PipDependencySpecification(specString, requiresDist);
+
+            dependencySpecifier.Name.Should().Be(referenceDependencySpecification.Name);
+            dependencySpecifier.DependencySpecifiers.Should().HaveCount(referenceDependencySpecification.DependencySpecifiers.Count);
+            for (var i = 0; i < referenceDependencySpecification.DependencySpecifiers.Count; i++)
+            {
+                dependencySpecifier.DependencySpecifiers.Should().HaveElementAt(
+                    i, referenceDependencySpecification.DependencySpecifiers[i]);
+            }
+
+            dependencySpecifier.ConditionalDependencySpecifiers.Should().HaveCount(referenceDependencySpecification.ConditionalDependencySpecifiers.Count);
+            for (var i = 0; i < referenceDependencySpecification.ConditionalDependencySpecifiers.Count; i++)
+            {
+                dependencySpecifier.ConditionalDependencySpecifiers.Should().HaveElementAt(
+                    i, referenceDependencySpecification.ConditionalDependencySpecifiers[i]);
+            }
+
+            dependencySpecifier.PackageConditionsMet(pythonEnvironmentVariables).Should().Be(shouldBeIncluded, string.Join(',', dependencySpecifier.ConditionalDependencySpecifiers));
+        }
+    }
+
     [TestMethod]
     public void TestPipDependencySpecifierConstruction()
     {
@@ -147,58 +200,5 @@ public class PipDependencySpecifierTests
 
         var highestVersion = spec.GetHighestExplicitPackageVersion();
         highestVersion.Should().BeNull();
-    }
-
-    private static void VerifyPipDependencyParsing(
-        List<(string SpecString, PipDependencySpecification ReferenceDependencySpecification)> testCases,
-        bool requiresDist = false)
-    {
-        foreach (var (specString, referenceDependencySpecification) in testCases)
-        {
-            var dependencySpecifier = new PipDependencySpecification(specString, requiresDist);
-
-            dependencySpecifier.Name.Should().Be(referenceDependencySpecification.Name);
-            dependencySpecifier.DependencySpecifiers.Should().HaveCount(referenceDependencySpecification.DependencySpecifiers.Count);
-            for (var i = 0; i < referenceDependencySpecification.DependencySpecifiers.Count; i++)
-            {
-                dependencySpecifier.DependencySpecifiers.Should().HaveElementAt(
-                    i, referenceDependencySpecification.DependencySpecifiers[i]);
-            }
-
-            dependencySpecifier.ConditionalDependencySpecifiers.Should().HaveCount(referenceDependencySpecification.ConditionalDependencySpecifiers.Count);
-            for (var i = 0; i < referenceDependencySpecification.ConditionalDependencySpecifiers.Count; i++)
-            {
-                dependencySpecifier.ConditionalDependencySpecifiers.Should().HaveElementAt(
-                    i, referenceDependencySpecification.ConditionalDependencySpecifiers[i]);
-            }
-        }
-    }
-
-    private static void VerifyPipConditionalDependencyParsing(
-        List<(string SpecString, bool ShouldBeIncluded, PipDependencySpecification ReferenceDependencySpecification)> testCases,
-        Dictionary<string, string> pythonEnvironmentVariables,
-        bool requiresDist = false)
-    {
-        foreach (var (specString, shouldBeIncluded, referenceDependencySpecification) in testCases)
-        {
-            var dependencySpecifier = new PipDependencySpecification(specString, requiresDist);
-
-            dependencySpecifier.Name.Should().Be(referenceDependencySpecification.Name);
-            dependencySpecifier.DependencySpecifiers.Should().HaveCount(referenceDependencySpecification.DependencySpecifiers.Count);
-            for (var i = 0; i < referenceDependencySpecification.DependencySpecifiers.Count; i++)
-            {
-                dependencySpecifier.DependencySpecifiers.Should().HaveElementAt(
-                    i, referenceDependencySpecification.DependencySpecifiers[i]);
-            }
-
-            dependencySpecifier.ConditionalDependencySpecifiers.Should().HaveCount(referenceDependencySpecification.ConditionalDependencySpecifiers.Count);
-            for (var i = 0; i < referenceDependencySpecification.ConditionalDependencySpecifiers.Count; i++)
-            {
-                dependencySpecifier.ConditionalDependencySpecifiers.Should().HaveElementAt(
-                    i, referenceDependencySpecification.ConditionalDependencySpecifiers[i]);
-            }
-
-            dependencySpecifier.PackageConditionsMet(pythonEnvironmentVariables).Should().Be(shouldBeIncluded, string.Join(',', dependencySpecifier.ConditionalDependencySpecifiers));
-        }
     }
 }

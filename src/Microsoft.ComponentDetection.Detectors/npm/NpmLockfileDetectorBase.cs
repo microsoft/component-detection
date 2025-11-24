@@ -54,10 +54,10 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.Npm];
 
+    private List<ProcessRequest> LernaFiles { get; } = [];
+
     /// <inheritdoc />
     protected override IList<string> SkippedFolders => ["node_modules", "pnpm-store"];
-
-    private List<ProcessRequest> LernaFiles { get; } = [];
 
     protected abstract bool IsSupportedLockfileVersion(int lockfileVersion);
 

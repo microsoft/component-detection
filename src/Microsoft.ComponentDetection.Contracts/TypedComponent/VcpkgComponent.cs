@@ -5,6 +5,11 @@ using PackageUrl;
 
 public class VcpkgComponent : TypedComponent
 {
+    private VcpkgComponent()
+    {
+        /* Reserved for deserialization */
+    }
+
     public VcpkgComponent(string spdxid, string name, string version, string triplet = null, string portVersion = null, string description = null, string downloadLocation = null)
     {
         int.TryParse(portVersion, out var port);
@@ -16,11 +21,6 @@ public class VcpkgComponent : TypedComponent
         this.Triplet = triplet;
         this.Description = description;
         this.DownloadLocation = downloadLocation;
-    }
-
-    private VcpkgComponent()
-    {
-        /* Reserved for deserialization */
     }
 
     public string SPDXID { get; set; }

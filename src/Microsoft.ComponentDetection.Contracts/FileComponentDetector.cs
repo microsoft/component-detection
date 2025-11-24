@@ -17,6 +17,18 @@ using Microsoft.Extensions.Logging;
 /// <summary>Specialized base class for file based component detection.</summary>
 public abstract class FileComponentDetector : IComponentDetector
 {
+    /// <summary>
+    /// Gets or sets the factory for handing back component streams to File detectors.
+    /// </summary>
+    protected IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
+
+    protected IObservableDirectoryWalkerFactory Scanner { get; set; }
+
+    /// <summary>
+    /// Gets or sets the logger for writing basic logging message to both console and file.
+    /// </summary>
+    protected ILogger Logger { get; set; }
+
     public IComponentRecorder ComponentRecorder { get; private set; }
 
     /// <inheritdoc />
@@ -34,25 +46,6 @@ public abstract class FileComponentDetector : IComponentDetector
     /// <summary>Gets the version of this component detector. </summary>
     public abstract int Version { get; }
 
-    public virtual bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
-
-    /// <summary>
-    /// List of any any additional properties as key-value pairs that we would like to capture for the detector.
-    /// </summary>
-    public List<(string PropertyKey, string PropertyValue)> AdditionalProperties { get; set; } = [];
-
-    /// <summary>
-    /// Gets or sets the factory for handing back component streams to File detectors.
-    /// </summary>
-    protected IComponentStreamEnumerableFactory ComponentStreamEnumerableFactory { get; set; }
-
-    protected IObservableDirectoryWalkerFactory Scanner { get; set; }
-
-    /// <summary>
-    /// Gets or sets the logger for writing basic logging message to both console and file.
-    /// </summary>
-    protected ILogger Logger { get; set; }
-
     /// <summary>
     /// Gets the folder names that will be skipped by the Component Detector.
     /// </summary>
@@ -64,7 +57,14 @@ public abstract class FileComponentDetector : IComponentDetector
     /// </summary>
     protected ScanRequest CurrentScanRequest { get; set; }
 
+    public virtual bool NeedsAutomaticRootDependencyCalculation { get; protected set; }
+
     protected ConcurrentDictionary<string, string> Telemetry { get; set; } = [];
+
+    /// <summary>
+    /// List of any any additional properties as key-value pairs that we would like to capture for the detector.
+    /// </summary>
+    public List<(string PropertyKey, string PropertyValue)> AdditionalProperties { get; set; } = [];
 
     protected IObservable<IComponentStream> ComponentStreams { get; private set; }
 
@@ -76,6 +76,16 @@ public abstract class FileComponentDetector : IComponentDetector
         this.ComponentRecorder = request.ComponentRecorder;
         this.Scanner.Initialize(request.SourceDirectory, request.DirectoryExclusionPredicate, 1);
         return await this.ScanDirectoryAsync(request, cancellationToken);
+    }
+
+    private Task<IndividualDetectorScanResult> ScanDirectoryAsync(ScanRequest request, CancellationToken cancellationToken = default)
+    {
+        this.CurrentScanRequest = request;
+
+        var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
+
+        this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
+        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, request.CleanupCreatedFiles, cancellationToken);
     }
 
     /// <summary>
@@ -100,6 +110,37 @@ public abstract class FileComponentDetector : IComponentDetector
     /// </summary>
     /// <param name="lockfileVersion">The lockfile version.</param>
     protected void RecordLockfileVersion(string lockfileVersion) => this.Telemetry["LockfileVersion"] = lockfileVersion;
+
+    private async Task<IndividualDetectorScanResult> ProcessAsync(
+        IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, bool cleanupCreatedFiles, CancellationToken cancellationToken = default)
+    {
+        var threadsToUse = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1;
+        this.Telemetry["ThreadsUsed"] = $"{threadsToUse}";
+
+        var processor = new ActionBlock<ProcessRequest>(
+            async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cleanupCreatedFiles, cancellationToken),
+            new ExecutionDataflowBlockOptions
+            {
+                // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
+                MaxDegreeOfParallelism = threadsToUse,
+            });
+
+        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
+
+        await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
+
+        processor.Complete();
+
+        await processor.Completion;
+
+        await this.OnDetectionFinishedAsync();
+
+        return new IndividualDetectorScanResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            AdditionalTelemetryDetails = this.Telemetry.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+        };
+    }
 
     /// <summary>
     /// Auxliary method executed before the actual scanning of a given file takes place.
@@ -133,45 +174,4 @@ public abstract class FileComponentDetector : IComponentDetector
     // Do not cleanup by default, only if the detector uses the FileComponentWithCleanup abstract class.
     protected virtual async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, bool cleanupCreatedFiles, CancellationToken cancellationToken = default) =>
         await this.OnFileFoundAsync(processRequest, detectorArgs, cancellationToken);
-
-    private Task<IndividualDetectorScanResult> ScanDirectoryAsync(ScanRequest request, CancellationToken cancellationToken = default)
-    {
-        this.CurrentScanRequest = request;
-
-        var filteredObservable = this.Scanner.GetFilteredComponentStreamObservable(request.SourceDirectory, this.SearchPatterns, request.ComponentRecorder);
-
-        this.Logger.LogDebug("Registered {Detector}", this.GetType().FullName);
-        return this.ProcessAsync(filteredObservable, request.DetectorArgs, request.MaxThreads, request.CleanupCreatedFiles, cancellationToken);
-    }
-
-    private async Task<IndividualDetectorScanResult> ProcessAsync(
-        IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, int maxThreads, bool cleanupCreatedFiles, CancellationToken cancellationToken = default)
-    {
-        var threadsToUse = this.EnableParallelism ? Math.Min(Environment.ProcessorCount, maxThreads) : 1;
-        this.Telemetry["ThreadsUsed"] = $"{threadsToUse}";
-
-        var processor = new ActionBlock<ProcessRequest>(
-            async processRequest => await this.OnFileFoundAsync(processRequest, detectorArgs, cleanupCreatedFiles, cancellationToken),
-            new ExecutionDataflowBlockOptions
-            {
-                // MaxDegreeOfParallelism is the lower of the processor count and the max threads arg that the customer passed in
-                MaxDegreeOfParallelism = threadsToUse,
-            });
-
-        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
-
-        await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
-
-        processor.Complete();
-
-        await processor.Completion;
-
-        await this.OnDetectionFinishedAsync();
-
-        return new IndividualDetectorScanResult
-        {
-            ResultCode = ProcessingResultCode.Success,
-            AdditionalTelemetryDetails = this.Telemetry.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
-        };
-    }
 }

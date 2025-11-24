@@ -73,11 +73,168 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
             .Returns((string c, IEnumerable<string> ac, DirectoryInfo d, CancellationToken ct, string[] args) => Task.FromResult(this.CommandResult(c, d)));
     }
 
+    private bool FileExists(string path)
+    {
+        var fileName = Path.GetFileName(path);
+        var directory = Path.GetDirectoryName(path);
+
+        return this.files.TryGetValue(directory, out var fileNames) &&
+               fileNames.TryGetValue(fileName, out _);
+    }
+
+    private Stream OpenFile(string path)
+    {
+        var fileName = Path.GetFileName(path);
+        var directory = Path.GetDirectoryName(path);
+
+        return this.files.TryGetValue(directory, out var fileNames) &&
+               fileNames.TryGetValue(fileName, out var stream) ? stream : null;
+    }
+
+    private bool DirectoryExists(string directory) => this.files.ContainsKey(directory);
+
+    private IEnumerable<string> EnumerateFilesRecursive(string directory, string pattern)
+    {
+        if (this.files.TryGetValue(directory, out var fileNames))
+        {
+            // a basic approximation of globbing
+            var patternRegex = new Regex(pattern.Replace(".", "\\.").Replace("*", ".*"));
+
+            foreach (var fileName in fileNames.Keys)
+            {
+                var filePath = Path.Combine(directory, fileName);
+
+                if (fileName.EndsWith(Path.DirectorySeparatorChar))
+                {
+                    foreach (var subFile in this.EnumerateFilesRecursive(Path.TrimEndingDirectorySeparator(filePath), pattern))
+                    {
+                        yield return subFile;
+                    }
+                }
+                else
+                {
+                    if (patternRegex.IsMatch(fileName))
+                    {
+                        yield return filePath;
+                    }
+                }
+            }
+        }
+    }
+
+    private void AddFile(string path, Stream content)
+    {
+        var fileName = Path.GetFileName(path);
+        var directory = Path.GetDirectoryName(path);
+        this.AddDirectory(directory);
+        this.files[directory][fileName] = content;
+    }
+
+    private void AddDirectory(string path, string subDirectory = null)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return;
+        }
+
+        if (subDirectory is not null)
+        {
+            // use a trailing slash to indicate a sub directory in the files collection
+            subDirectory += Path.DirectorySeparatorChar;
+        }
+
+        if (this.files.TryGetValue(path, out var directoryFiles))
+        {
+            if (subDirectory is not null)
+            {
+                directoryFiles.Add(subDirectory, null);
+            }
+        }
+        else
+        {
+            this.files.Add(path, subDirectory is null ? [] : new() { { subDirectory, null } });
+            this.AddDirectory(Path.GetDirectoryName(path), Path.GetFileName(path));
+        }
+    }
+
+    private void SetCommandResult(int exitCode, string stdOut = null, string stdErr = null)
+    {
+        this.commandLineCallback = null;
+        this.commandLineExecutionResult.ExitCode = exitCode;
+        this.commandLineExecutionResult.StdOut = stdOut;
+        this.commandLineExecutionResult.StdErr = stdErr;
+    }
+
+    private void SetCommandResult(Func<string, DirectoryInfo, CommandLineExecutionResult> callback)
+    {
+        this.commandLineCallback = callback;
+    }
+
+    private CommandLineExecutionResult CommandResult(string command, DirectoryInfo directory) =>
+        (this.commandLineCallback != null) ? this.commandLineCallback(command, directory) : this.commandLineExecutionResult;
+
     [TestCleanup]
     public void ClearMocks()
     {
         this.files.Clear();
         this.SetCommandResult(-1);
+    }
+
+    private static string ProjectAssets(string projectName, string outputPath, string projectPath, params string[] targetFrameworks)
+    {
+        LockFileFormat format = new();
+        LockFile lockFile = new();
+        using var textWriter = new StringWriter();
+
+        // assets file always includes a trailing separator
+        if (!Path.EndsInDirectorySeparator(outputPath))
+        {
+            outputPath += Path.DirectorySeparatorChar;
+        }
+
+        lockFile.Targets = targetFrameworks.Select(tfm => new LockFileTarget() { TargetFramework = NuGetFramework.Parse(tfm) }).ToList();
+        lockFile.PackageSpec = new()
+        {
+            RestoreMetadata = new()
+            {
+                ProjectName = projectName,
+                OutputPath = outputPath,
+                ProjectPath = projectPath,
+            },
+        };
+
+        format.Write(textWriter, lockFile);
+        return textWriter.ToString();
+    }
+
+    private static Stream GlobalJson(string sdkVersion)
+    {
+        var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new() { Indented = true }))
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("sdk");
+            writer.WriteStartObject();
+            writer.WriteString("version", sdkVersion);
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        }
+
+        stream.Position = 0;
+        return stream;
+    }
+
+    private static Stream StreamFromString(string content)
+    {
+        var stream = new MemoryStream();
+        using (var writer = new StreamWriter(stream, leaveOpen: true))
+        {
+            writer.Write(content);
+            writer.Flush();
+            stream.Position = 0;
+        }
+
+        return stream;
     }
 
     [TestMethod]
@@ -588,161 +745,4 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net6.0 library - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 netstandard2.0 library - DotNet").Should().ContainSingle();
     }
-
-    private static string ProjectAssets(string projectName, string outputPath, string projectPath, params string[] targetFrameworks)
-    {
-        LockFileFormat format = new();
-        LockFile lockFile = new();
-        using var textWriter = new StringWriter();
-
-        // assets file always includes a trailing separator
-        if (!Path.EndsInDirectorySeparator(outputPath))
-        {
-            outputPath += Path.DirectorySeparatorChar;
-        }
-
-        lockFile.Targets = targetFrameworks.Select(tfm => new LockFileTarget() { TargetFramework = NuGetFramework.Parse(tfm) }).ToList();
-        lockFile.PackageSpec = new()
-        {
-            RestoreMetadata = new()
-            {
-                ProjectName = projectName,
-                OutputPath = outputPath,
-                ProjectPath = projectPath,
-            },
-        };
-
-        format.Write(textWriter, lockFile);
-        return textWriter.ToString();
-    }
-
-    private static Stream GlobalJson(string sdkVersion)
-    {
-        var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new() { Indented = true }))
-        {
-            writer.WriteStartObject();
-            writer.WritePropertyName("sdk");
-            writer.WriteStartObject();
-            writer.WriteString("version", sdkVersion);
-            writer.WriteEndObject();
-            writer.WriteEndObject();
-        }
-
-        stream.Position = 0;
-        return stream;
-    }
-
-    private static Stream StreamFromString(string content)
-    {
-        var stream = new MemoryStream();
-        using (var writer = new StreamWriter(stream, leaveOpen: true))
-        {
-            writer.Write(content);
-            writer.Flush();
-            stream.Position = 0;
-        }
-
-        return stream;
-    }
-
-    private bool FileExists(string path)
-    {
-        var fileName = Path.GetFileName(path);
-        var directory = Path.GetDirectoryName(path);
-
-        return this.files.TryGetValue(directory, out var fileNames) &&
-               fileNames.TryGetValue(fileName, out _);
-    }
-
-    private Stream OpenFile(string path)
-    {
-        var fileName = Path.GetFileName(path);
-        var directory = Path.GetDirectoryName(path);
-
-        return this.files.TryGetValue(directory, out var fileNames) &&
-               fileNames.TryGetValue(fileName, out var stream) ? stream : null;
-    }
-
-    private bool DirectoryExists(string directory) => this.files.ContainsKey(directory);
-
-    private IEnumerable<string> EnumerateFilesRecursive(string directory, string pattern)
-    {
-        if (this.files.TryGetValue(directory, out var fileNames))
-        {
-            // a basic approximation of globbing
-            var patternRegex = new Regex(pattern.Replace(".", "\\.").Replace("*", ".*"));
-
-            foreach (var fileName in fileNames.Keys)
-            {
-                var filePath = Path.Combine(directory, fileName);
-
-                if (fileName.EndsWith(Path.DirectorySeparatorChar))
-                {
-                    foreach (var subFile in this.EnumerateFilesRecursive(Path.TrimEndingDirectorySeparator(filePath), pattern))
-                    {
-                        yield return subFile;
-                    }
-                }
-                else
-                {
-                    if (patternRegex.IsMatch(fileName))
-                    {
-                        yield return filePath;
-                    }
-                }
-            }
-        }
-    }
-
-    private void AddFile(string path, Stream content)
-    {
-        var fileName = Path.GetFileName(path);
-        var directory = Path.GetDirectoryName(path);
-        this.AddDirectory(directory);
-        this.files[directory][fileName] = content;
-    }
-
-    private void AddDirectory(string path, string subDirectory = null)
-    {
-        if (string.IsNullOrEmpty(path))
-        {
-            return;
-        }
-
-        if (subDirectory is not null)
-        {
-            // use a trailing slash to indicate a sub directory in the files collection
-            subDirectory += Path.DirectorySeparatorChar;
-        }
-
-        if (this.files.TryGetValue(path, out var directoryFiles))
-        {
-            if (subDirectory is not null)
-            {
-                directoryFiles.Add(subDirectory, null);
-            }
-        }
-        else
-        {
-            this.files.Add(path, subDirectory is null ? [] : new() { { subDirectory, null } });
-            this.AddDirectory(Path.GetDirectoryName(path), Path.GetFileName(path));
-        }
-    }
-
-    private void SetCommandResult(int exitCode, string stdOut = null, string stdErr = null)
-    {
-        this.commandLineCallback = null;
-        this.commandLineExecutionResult.ExitCode = exitCode;
-        this.commandLineExecutionResult.StdOut = stdOut;
-        this.commandLineExecutionResult.StdErr = stdErr;
-    }
-
-    private void SetCommandResult(Func<string, DirectoryInfo, CommandLineExecutionResult> callback)
-    {
-        this.commandLineCallback = callback;
-    }
-
-    private CommandLineExecutionResult CommandResult(string command, DirectoryInfo directory) =>
-        (this.commandLineCallback != null) ? this.commandLineCallback(command, directory) : this.commandLineExecutionResult;
 }

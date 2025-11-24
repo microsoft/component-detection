@@ -75,6 +75,8 @@ public class PathUtilityService : IPathUtilityService
         return fileInfo.Exists ? this.ResolvePathFromInfo(fileInfo) : null;
     }
 
+    private string ResolvePathFromInfo(FileSystemInfo info) => info.LinkTarget ?? info.FullName;
+
     public string NormalizePath(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
@@ -87,6 +89,4 @@ public class PathUtilityService : IPathUtilityService
         // AltDirectorySeparatorChar is / on Unix and on Windows.
         return path.Replace('\\', Path.AltDirectorySeparatorChar);
     }
-
-    private string ResolvePathFromInfo(FileSystemInfo info) => info.LinkTarget ?? info.FullName;
 }

@@ -31,6 +31,39 @@ public class RustCargoLockParserTests
         this.parser = new RustCargoLockParser(this.logger.Object);
     }
 
+    private static IComponentStream MakeStream(string name, string toml)
+    {
+        return new ComponentStream
+        {
+            Location = name,
+            Pattern = "Cargo.lock",
+            Stream = new MemoryStream(Encoding.UTF8.GetBytes(toml)),
+        };
+    }
+
+    private static (int Usages, int ExplicitRoots, int Edges, int Failures) Analyze(Mock<ISingleFileComponentRecorder> recorder)
+    {
+        var usageInvocations = recorder.Invocations.Where(i => i.Method.Name == "RegisterUsage").ToList();
+        var explicitRoots = 0;
+        var edges = 0;
+        foreach (var inv in usageInvocations)
+        {
+            // Signature: RegisterUsage(DetectedComponent dc, bool isExplicitReferencedDependency = false, string parentComponentId = null, bool isDevelopmentDependency = false)
+            if (inv.Arguments.Count >= 2 && inv.Arguments[1] is bool explicitFlag && explicitFlag)
+            {
+                explicitRoots++;
+            }
+
+            if (inv.Arguments.Count >= 3 && inv.Arguments[2] is string parentId)
+            {
+                edges++;
+            }
+        }
+
+        var failures = recorder.Invocations.Count(i => i.Method.Name == "RegisterPackageParseFailure");
+        return (usageInvocations.Count, explicitRoots, edges, failures);
+    }
+
     [TestMethod]
     public async Task ParseAsync_NoPackages_ReturnsVersion_NoUsage()
     {
@@ -697,38 +730,5 @@ public class RustCargoLockParserTests
         explicitRoots.Should().Be(1);
         edges.Should().Be(2);
         failures.Should().Be(0);
-    }
-
-    private static IComponentStream MakeStream(string name, string toml)
-    {
-        return new ComponentStream
-        {
-            Location = name,
-            Pattern = "Cargo.lock",
-            Stream = new MemoryStream(Encoding.UTF8.GetBytes(toml)),
-        };
-    }
-
-    private static (int Usages, int ExplicitRoots, int Edges, int Failures) Analyze(Mock<ISingleFileComponentRecorder> recorder)
-    {
-        var usageInvocations = recorder.Invocations.Where(i => i.Method.Name == "RegisterUsage").ToList();
-        var explicitRoots = 0;
-        var edges = 0;
-        foreach (var inv in usageInvocations)
-        {
-            // Signature: RegisterUsage(DetectedComponent dc, bool isExplicitReferencedDependency = false, string parentComponentId = null, bool isDevelopmentDependency = false)
-            if (inv.Arguments.Count >= 2 && inv.Arguments[1] is bool explicitFlag && explicitFlag)
-            {
-                explicitRoots++;
-            }
-
-            if (inv.Arguments.Count >= 3 && inv.Arguments[2] is string parentId)
-            {
-                edges++;
-            }
-        }
-
-        var failures = recorder.Invocations.Count(i => i.Method.Name == "RegisterPackageParseFailure");
-        return (usageInvocations.Count, explicitRoots, edges, failures);
     }
 }

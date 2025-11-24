@@ -6,6 +6,11 @@ using PackageUrl;
 
 public class LinuxComponent : TypedComponent
 {
+    private LinuxComponent()
+    {
+        /* Reserved for deserialization */
+    }
+
     public LinuxComponent(string distribution, string release, string name, string version, string license = null, string author = null)
     {
         this.Distribution = this.ValidateRequiredInput(distribution, nameof(this.Distribution), nameof(ComponentType.Linux));
@@ -14,11 +19,6 @@ public class LinuxComponent : TypedComponent
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Linux));
         this.License = license;
         this.Author = author;
-    }
-
-    private LinuxComponent()
-    {
-        /* Reserved for deserialization */
     }
 
     public string Distribution { get; set; }

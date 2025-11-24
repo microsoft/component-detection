@@ -18,12 +18,12 @@ using Polly;
 
 public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
 {
-    // max number of retries allowed, to cap the total delay period
-    public const long MAXRETRIES = 15;
-
     // Values used for cache creation
     private const long CACHEINTERVALSECONDS = 180;
     private const long DEFAULTCACHEENTRIES = 4096;
+
+    // max number of retries allowed, to cap the total delay period
+    public const long MAXRETRIES = 15;
 
     private static readonly ProductInfoHeaderValue ProductValue = new(
     "ComponentDetection",
@@ -83,16 +83,6 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
         var projectStream = await this.GetAndCacheProjectFileAsync(releaseUrl);
 
         return projectStream;
-    }
-
-    public void Dispose()
-    {
-        this.cacheTelemetry.FinalSimpleProjectCacheSize = this.cachedSimplePyPiProjects.Count;
-        this.cacheTelemetry.FinalProjectFileCacheSize = this.cachedProjectWheelFiles.Count;
-        this.cacheTelemetry.Dispose();
-        this.cachedProjectWheelFiles.Dispose();
-        this.cachedSimplePyPiProjects.Dispose();
-        HttpClient.Dispose();
     }
 
     /// <summary>
@@ -283,5 +273,15 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.pypi.simple.v1+json"));
         var response = await HttpClient.SendAsync(request);
         return response;
+    }
+
+    public void Dispose()
+    {
+        this.cacheTelemetry.FinalSimpleProjectCacheSize = this.cachedSimplePyPiProjects.Count;
+        this.cacheTelemetry.FinalProjectFileCacheSize = this.cachedProjectWheelFiles.Count;
+        this.cacheTelemetry.Dispose();
+        this.cachedProjectWheelFiles.Dispose();
+        this.cachedSimplePyPiProjects.Dispose();
+        HttpClient.Dispose();
     }
 }

@@ -33,6 +33,60 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
         this.logger = logger;
     }
 
+    /// <summary>
+    /// Uses regex to extract the version from the file name.
+    /// </summary>
+    /// <param name="fileName"> the name of the file from simple pypi. </param>
+    /// <returns> returns a string representing the release version. </returns>
+    private static string GetVersionFromFileName(string fileName)
+    {
+        var version = VersionRegex.Match(fileName).Groups[1];
+        return version.Value;
+    }
+
+    /// <summary>
+    /// Returns the package type based on the file name.
+    /// </summary>
+    /// <param name="fileName"> the name of the file from simple pypi. </param>
+    /// <returns>a string representing the package type.</returns>
+    private static string GetPackageType(string fileName)
+    {
+        if (fileName.EndsWith(".whl"))
+        {
+            return "bdist_wheel";
+        }
+
+        if (fileName.EndsWith(".tar.gz"))
+        {
+            return "sdist";
+        }
+
+        return fileName.EndsWith(".egg") ? "bdist_egg" : string.Empty;
+    }
+
+    /// <summary>
+    /// Adds a node to the graph.
+    /// </summary>
+    /// <param name="state"> The PythonResolverState. </param>
+    /// <param name="parent"> The parent node. </param>
+    /// <param name="name"> The package name. </param>
+    /// <param name="version"> The package version. </param>
+    private static void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
+    {
+        if (state.NodeReferences.TryGetValue(name, out var value))
+        {
+            parent.Children.Add(value);
+            value.Parents.Add(parent);
+        }
+        else
+        {
+            var node = new PipGraphNode(new PipComponent(name, version));
+            state.NodeReferences[name] = node;
+            parent.Children.Add(node);
+            node.Parents.Add(parent);
+        }
+    }
+
     /// <inheritdoc />
     public async Task<IList<PipGraphNode>> ResolveRootsAsync(ISingleFileComponentRecorder singleFileComponentRecorder, IList<PipDependencySpecification> initialPackages)
     {
@@ -95,89 +149,6 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
 
         // Now queue packages for processing
         return await this.ProcessQueueAsync(singleFileComponentRecorder, state) ?? [];
-    }
-
-    /// <summary>
-    /// Fetches the dependencies for a package.
-    /// </summary>
-    /// <param name="state"> The PythonResolverState. </param>
-    /// <param name="spec"> The PipDependencySpecification. </param>
-    /// <returns> Returns a list of PipDependencySpecification. </returns>
-    protected override async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(
-        PythonResolverState state,
-        PipDependencySpecification spec)
-    {
-        var candidateVersion = state.NodeReferences[spec.Name].Value.Version;
-
-        var packageToFetch = state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_wheel", x.PackageType, StringComparison.OrdinalIgnoreCase)) ??
-                             state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
-        if (packageToFetch == null)
-        {
-            return [];
-        }
-
-        var packageFileStream = await this.simplePypiClient.FetchPackageFileStreamAsync(packageToFetch.Url);
-
-        if (packageFileStream.Length == 0)
-        {
-            return [];
-        }
-
-        return await this.FetchDependenciesFromPackageStreamAsync(spec.Name, candidateVersion, packageFileStream);
-    }
-
-    /// <summary>
-    /// Uses regex to extract the version from the file name.
-    /// </summary>
-    /// <param name="fileName"> the name of the file from simple pypi. </param>
-    /// <returns> returns a string representing the release version. </returns>
-    private static string GetVersionFromFileName(string fileName)
-    {
-        var version = VersionRegex.Match(fileName).Groups[1];
-        return version.Value;
-    }
-
-    /// <summary>
-    /// Returns the package type based on the file name.
-    /// </summary>
-    /// <param name="fileName"> the name of the file from simple pypi. </param>
-    /// <returns>a string representing the package type.</returns>
-    private static string GetPackageType(string fileName)
-    {
-        if (fileName.EndsWith(".whl"))
-        {
-            return "bdist_wheel";
-        }
-
-        if (fileName.EndsWith(".tar.gz"))
-        {
-            return "sdist";
-        }
-
-        return fileName.EndsWith(".egg") ? "bdist_egg" : string.Empty;
-    }
-
-    /// <summary>
-    /// Adds a node to the graph.
-    /// </summary>
-    /// <param name="state"> The PythonResolverState. </param>
-    /// <param name="parent"> The parent node. </param>
-    /// <param name="name"> The package name. </param>
-    /// <param name="version"> The package version. </param>
-    private static void AddGraphNode(PythonResolverState state, PipGraphNode parent, string name, string version)
-    {
-        if (state.NodeReferences.TryGetValue(name, out var value))
-        {
-            parent.Children.Add(value);
-            value.Parents.Add(parent);
-        }
-        else
-        {
-            var node = new PipGraphNode(new PipComponent(name, version));
-            state.NodeReferences[name] = node;
-            parent.Children.Add(node);
-            node.Parents.Add(parent);
-        }
     }
 
     private async Task<IList<PipGraphNode>> ProcessQueueAsync(ISingleFileComponentRecorder singleFileComponentRecorder, PythonResolverState state)
@@ -307,6 +278,35 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
         }
 
         return sortedProjectVersions;
+    }
+
+    /// <summary>
+    /// Fetches the dependencies for a package.
+    /// </summary>
+    /// <param name="state"> The PythonResolverState. </param>
+    /// <param name="spec"> The PipDependencySpecification. </param>
+    /// <returns> Returns a list of PipDependencySpecification. </returns>
+    protected override async Task<IList<PipDependencySpecification>> FetchPackageDependenciesAsync(
+        PythonResolverState state,
+        PipDependencySpecification spec)
+    {
+        var candidateVersion = state.NodeReferences[spec.Name].Value.Version;
+
+        var packageToFetch = state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_wheel", x.PackageType, StringComparison.OrdinalIgnoreCase)) ??
+                             state.ValidVersionMap[spec.Name][candidateVersion].FirstOrDefault(x => string.Equals("bdist_egg", x.PackageType, StringComparison.OrdinalIgnoreCase));
+        if (packageToFetch == null)
+        {
+            return [];
+        }
+
+        var packageFileStream = await this.simplePypiClient.FetchPackageFileStreamAsync(packageToFetch.Url);
+
+        if (packageFileStream.Length == 0)
+        {
+            return [];
+        }
+
+        return await this.FetchDependenciesFromPackageStreamAsync(spec.Name, candidateVersion, packageFileStream);
     }
 
     /// <summary>

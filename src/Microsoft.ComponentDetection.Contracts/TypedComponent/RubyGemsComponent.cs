@@ -5,16 +5,16 @@ using PackageUrl;
 
 public class RubyGemsComponent : TypedComponent
 {
+    private RubyGemsComponent()
+    {
+        /* Reserved for deserialization */
+    }
+
     public RubyGemsComponent(string name, string version, string source = "")
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.RubyGems));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.RubyGems));
         this.Source = source;
-    }
-
-    private RubyGemsComponent()
-    {
-        /* Reserved for deserialization */
     }
 
     public string Name { get; set; }

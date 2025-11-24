@@ -18,51 +18,6 @@ public class GoModParser : IGoParser
 
     public GoModParser(ILogger logger) => this.logger = logger;
 
-    public async Task<bool> ParseAsync(
-        ISingleFileComponentRecorder singleFileComponentRecorder,
-        IComponentStream file,
-        GoGraphTelemetryRecord record)
-    {
-        // Collect replace directives
-        var (replacePathDirectives, moduleReplacements) = await this.GetAllReplaceDirectivesAsync(file);
-
-        // Rewind stream after reading replace directives
-        file.Stream.Seek(0, SeekOrigin.Begin);
-
-        using var reader = new StreamReader(file.Stream);
-
-        // There can be multiple require( ) sections in go 1.17+. loop over all of them.
-        while (!reader.EndOfStream)
-        {
-            var line = await reader.ReadLineAsync();
-
-            while (line != null && !line.StartsWith("require ("))
-            {
-                if (line.StartsWith("go "))
-                {
-                    record.GoModVersion = line[3..].Trim();
-                }
-
-                // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
-                // are listed in the require () section
-                if (line.StartsWith(StartString))
-                {
-                    this.TryRegisterDependencyFromModLine(file, line[StartString.Length..], singleFileComponentRecorder, replacePathDirectives, moduleReplacements);
-                }
-
-                line = await reader.ReadLineAsync();
-            }
-
-            // Stopping at the first ) restrict the detection to only the require section.
-            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(')'))
-            {
-                this.TryRegisterDependencyFromModLine(file, line, singleFileComponentRecorder, replacePathDirectives, moduleReplacements);
-            }
-        }
-
-        return true;
-    }
-
     /// <summary>
     /// Checks whether the input path is a potential local file system path
     /// 1. '.' checks whether the path is relative to current directory.
@@ -111,6 +66,51 @@ public class GoModParser : IGoParser
             var key = sourceVersion != null ? $"{sourceName}@{sourceVersion}" : sourceName;
             moduleReplaces[key] = new GoReplaceDirective(sourceName, sourceVersion, targetName, targetVersion);
         }
+    }
+
+    public async Task<bool> ParseAsync(
+        ISingleFileComponentRecorder singleFileComponentRecorder,
+        IComponentStream file,
+        GoGraphTelemetryRecord record)
+    {
+        // Collect replace directives
+        var (replacePathDirectives, moduleReplacements) = await this.GetAllReplaceDirectivesAsync(file);
+
+        // Rewind stream after reading replace directives
+        file.Stream.Seek(0, SeekOrigin.Begin);
+
+        using var reader = new StreamReader(file.Stream);
+
+        // There can be multiple require( ) sections in go 1.17+. loop over all of them.
+        while (!reader.EndOfStream)
+        {
+            var line = await reader.ReadLineAsync();
+
+            while (line != null && !line.StartsWith("require ("))
+            {
+                if (line.StartsWith("go "))
+                {
+                    record.GoModVersion = line[3..].Trim();
+                }
+
+                // In go >= 1.17, direct dependencies are listed as "require x/y v1.2.3", and transitive dependencies
+                // are listed in the require () section
+                if (line.StartsWith(StartString))
+                {
+                    this.TryRegisterDependencyFromModLine(file, line[StartString.Length..], singleFileComponentRecorder, replacePathDirectives, moduleReplacements);
+                }
+
+                line = await reader.ReadLineAsync();
+            }
+
+            // Stopping at the first ) restrict the detection to only the require section.
+            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(')'))
+            {
+                this.TryRegisterDependencyFromModLine(file, line, singleFileComponentRecorder, replacePathDirectives, moduleReplacements);
+            }
+        }
+
+        return true;
     }
 
     private void TryRegisterDependencyFromModLine(IComponentStream file, string line, ISingleFileComponentRecorder singleFileComponentRecorder, HashSet<string> replacePathDirectives, Dictionary<string, GoReplaceDirective> moduleReplacements)

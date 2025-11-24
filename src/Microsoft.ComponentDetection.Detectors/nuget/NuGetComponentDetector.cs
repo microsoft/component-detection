@@ -19,9 +19,9 @@ using Microsoft.Extensions.Logging;
 
 public class NuGetComponentDetector : FileComponentDetector
 {
-    public const string NugetConfigFileName = "nuget.config";
-
     private static readonly IEnumerable<string> LowConfidencePackages = ["Newtonsoft.Json"];
+
+    public const string NugetConfigFileName = "nuget.config";
 
     private readonly IList<string> repositoryPathKeyNames = ["repositorypath", "globalpackagesfolder"];
 

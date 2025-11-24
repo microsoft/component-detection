@@ -83,6 +83,13 @@ public class DockerService : IDockerService
         }
     }
 
+    private async Task<ImageInspectResponse> InspectImageAndSanitizeVarsAsync(string image, CancellationToken cancellationToken = default)
+    {
+        var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
+        this.SanitizeEnvironmentVariables(imageInspectResponse);
+        return imageInspectResponse;
+    }
+
     public async Task<bool> TryPullImageAsync(string image, CancellationToken cancellationToken = default)
     {
         using var record = new DockerServiceTryPullImageTelemetryRecord
@@ -109,6 +116,23 @@ public class DockerService : IDockerService
             record.ExceptionMessage = e.Message;
             return false;
         }
+    }
+
+    internal void SanitizeEnvironmentVariables(ImageInspectResponse inspectResponse)
+    {
+        var envVariables = inspectResponse?.Config?.Env;
+        if (envVariables == null || !envVariables.Any())
+        {
+            return;
+        }
+
+        var sanitizedVarList = new List<string>();
+        foreach (var variable in inspectResponse.Config.Env)
+        {
+            sanitizedVarList.Add(variable.RemoveSensitiveInformation());
+        }
+
+        inspectResponse.Config.Env = sanitizedVarList;
     }
 
     public async Task<ContainerDetails> InspectImageAsync(string image, CancellationToken cancellationToken = default)
@@ -177,23 +201,6 @@ public class DockerService : IDockerService
         return (stdout, stderr);
     }
 
-    internal void SanitizeEnvironmentVariables(ImageInspectResponse inspectResponse)
-    {
-        var envVariables = inspectResponse?.Config?.Env;
-        if (envVariables == null || !envVariables.Any())
-        {
-            return;
-        }
-
-        var sanitizedVarList = new List<string>();
-        foreach (var variable in inspectResponse.Config.Env)
-        {
-            sanitizedVarList.Add(variable.RemoveSensitiveInformation());
-        }
-
-        inspectResponse.Config.Env = sanitizedVarList;
-    }
-
     private static async Task<CreateContainerResponse> CreateContainerAsync(
         string image,
         IList<string> command,
@@ -254,12 +261,5 @@ public class DockerService : IDockerService
     private static int GetContainerId()
     {
         return Interlocked.Increment(ref incrementingContainerId);
-    }
-
-    private async Task<ImageInspectResponse> InspectImageAndSanitizeVarsAsync(string image, CancellationToken cancellationToken = default)
-    {
-        var imageInspectResponse = await Client.Images.InspectImageAsync(image, cancellationToken);
-        this.SanitizeEnvironmentVariables(imageInspectResponse);
-        return imageInspectResponse;
     }
 }

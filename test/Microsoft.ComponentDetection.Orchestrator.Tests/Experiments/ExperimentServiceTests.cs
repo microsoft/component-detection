@@ -50,6 +50,13 @@ public class ExperimentServiceTests
         this.experimentConfigMock.Setup(x => x.ShouldRecord(this.detectorMock.Object, It.IsAny<int>())).Returns(true);
     }
 
+    private void SetupGraphMock(IEnumerable<ScannedComponent> components)
+    {
+        this.graphTranslationServiceMock
+            .Setup(x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<ScanSettings>(), It.IsAny<bool>()))
+            .Returns(new ScanResult() { ComponentsFound = components });
+    }
+
     [TestInitialize]
     public void TestInitialize()
     {
@@ -350,12 +357,5 @@ public class ExperimentServiceTests
 
         await action.Should().NotThrowAsync();
         this.experimentConfigMock.Verify(x => x.InitAsync(), Times.Once());
-    }
-
-    private void SetupGraphMock(IEnumerable<ScannedComponent> components)
-    {
-        this.graphTranslationServiceMock
-            .Setup(x => x.GenerateScanResultFromProcessingResult(It.IsAny<DetectorProcessingResult>(), It.IsAny<ScanSettings>(), It.IsAny<bool>()))
-            .Returns(new ScanResult() { ComponentsFound = components });
     }
 }

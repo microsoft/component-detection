@@ -91,6 +91,64 @@ public class PipDependencySpecification
 
     private ILogger Logger { get; set; }
 
+    private void Initialize(string packageString, bool requiresDist)
+    {
+        if (requiresDist)
+        {
+            var distMatch = RequiresDistRegex.Match(packageString);
+
+            for (var i = 1; i < distMatch.Groups.Count; i++)
+            {
+                if (string.IsNullOrWhiteSpace(distMatch.Groups[i].Value))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(this.Name))
+                {
+                    this.Name = distMatch.Groups[i].Value.Trim();
+                }
+                else
+                {
+                    this.DependencySpecifiers = distMatch.Groups[i].Value.Split(',');
+                }
+            }
+
+            var conditionalDependenciesMatches = RequiresDistConditionalDependenciesMatch.Matches(packageString);
+
+            for (var i = 0; i < conditionalDependenciesMatches.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(conditionalDependenciesMatches[i].Value))
+                {
+                    this.ConditionalDependencySpecifiers.Add(conditionalDependenciesMatches[i].Value);
+                }
+            }
+        }
+        else
+        {
+            var nameMatches = PipNameExtractionRegex.Match(packageString);
+            var versionMatches = PipVersionExtractionRegex.Match(packageString);
+
+            if (nameMatches.Captures.Count > 0)
+            {
+                this.Name = nameMatches.Captures[0].Value;
+            }
+            else
+            {
+                this.Name = packageString;
+            }
+
+            if (versionMatches.Captures.Count > 0)
+            {
+                this.DependencySpecifiers = versionMatches.Captures[0].Value.Split(',');
+            }
+        }
+
+        this.DependencySpecifiers = this.DependencySpecifiers.Where(x => !x.Contains("python_version"))
+            .Select(x => x.Trim())
+            .ToList();
+    }
+
     /// <summary>
     /// Whether or not the package is safe to resolve based on the packagesToIgnore.
     /// </summary>
@@ -214,62 +272,4 @@ public class PipDependencySpecification
         !this.PackageIsUnsafe()
         && this.PackageConditionsMet(pythonEnvironmentVariables)
         && !this.ConditionalDependencySpecifiers.Any(s => s.Contains("extra ==", StringComparison.OrdinalIgnoreCase));
-
-    private void Initialize(string packageString, bool requiresDist)
-    {
-        if (requiresDist)
-        {
-            var distMatch = RequiresDistRegex.Match(packageString);
-
-            for (var i = 1; i < distMatch.Groups.Count; i++)
-            {
-                if (string.IsNullOrWhiteSpace(distMatch.Groups[i].Value))
-                {
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(this.Name))
-                {
-                    this.Name = distMatch.Groups[i].Value.Trim();
-                }
-                else
-                {
-                    this.DependencySpecifiers = distMatch.Groups[i].Value.Split(',');
-                }
-            }
-
-            var conditionalDependenciesMatches = RequiresDistConditionalDependenciesMatch.Matches(packageString);
-
-            for (var i = 0; i < conditionalDependenciesMatches.Count; i++)
-            {
-                if (!string.IsNullOrWhiteSpace(conditionalDependenciesMatches[i].Value))
-                {
-                    this.ConditionalDependencySpecifiers.Add(conditionalDependenciesMatches[i].Value);
-                }
-            }
-        }
-        else
-        {
-            var nameMatches = PipNameExtractionRegex.Match(packageString);
-            var versionMatches = PipVersionExtractionRegex.Match(packageString);
-
-            if (nameMatches.Captures.Count > 0)
-            {
-                this.Name = nameMatches.Captures[0].Value;
-            }
-            else
-            {
-                this.Name = packageString;
-            }
-
-            if (versionMatches.Captures.Count > 0)
-            {
-                this.DependencySpecifiers = versionMatches.Captures[0].Value.Split(',');
-            }
-        }
-
-        this.DependencySpecifiers = this.DependencySpecifiers.Where(x => !x.Contains("python_version"))
-            .Select(x => x.Trim())
-            .ToList();
-    }
 }

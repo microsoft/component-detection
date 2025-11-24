@@ -32,6 +32,63 @@ public class RustSbomParserTests
         this.parser = new RustSbomParser(this.logger.Object);
     }
 
+    private static IComponentStream MakeSbomStream(string location, string json) =>
+        new ComponentStream
+        {
+            Location = location,
+            Pattern = "*.cargo-sbom.json",
+            Stream = new MemoryStream(Encoding.UTF8.GetBytes(json)),
+        };
+
+    private static string BuildSimpleSbomJson() => $$"""
+    {
+      "version": 1,
+      "root": 0,
+      "crates": [
+        {
+          "id": "path+file:///repo/root#0.1.0",
+          "features": [],
+          "dependencies": [
+            { "index": 1, "kind": "normal" }
+          ]
+        },
+        {
+          "id": "{{CratesIo}}#dep1@1.0.0",
+          "features": [],
+          "dependencies": []
+        }
+      ]
+    }
+    """;
+
+    private static string BuildNestedSbomJson() => $$"""
+    {
+      "version": 1,
+      "root": 0,
+      "crates": [
+        {
+          "id": "path+file:///repo/root#0.1.0",
+          "features": [],
+          "dependencies": [
+            { "index": 1, "kind": "normal" }
+          ]
+        },
+        {
+          "id": "{{CratesIo}}#parent@2.0.0",
+          "features": [],
+          "dependencies": [
+            { "index": 2, "kind": "normal" }
+          ]
+        },
+        {
+          "id": "{{CratesIo}}#child@3.0.0",
+          "features": [],
+          "dependencies": []
+        }
+      ]
+    }
+    """;
+
     [TestMethod]
     public async Task ParseAsync_ValidSimpleSbom_RegistersComponents()
     {
@@ -935,61 +992,4 @@ public class RustSbomParserTests
         // Verify fallback happened and parentId was checked in graph
         sbomRecorder.Invocations.Count(i => i.Method.Name == "RegisterUsage").Should().BePositive();
     }
-
-    private static IComponentStream MakeSbomStream(string location, string json) =>
-        new ComponentStream
-        {
-            Location = location,
-            Pattern = "*.cargo-sbom.json",
-            Stream = new MemoryStream(Encoding.UTF8.GetBytes(json)),
-        };
-
-    private static string BuildSimpleSbomJson() => $$"""
-    {
-      "version": 1,
-      "root": 0,
-      "crates": [
-        {
-          "id": "path+file:///repo/root#0.1.0",
-          "features": [],
-          "dependencies": [
-            { "index": 1, "kind": "normal" }
-          ]
-        },
-        {
-          "id": "{{CratesIo}}#dep1@1.0.0",
-          "features": [],
-          "dependencies": []
-        }
-      ]
-    }
-    """;
-
-    private static string BuildNestedSbomJson() => $$"""
-    {
-      "version": 1,
-      "root": 0,
-      "crates": [
-        {
-          "id": "path+file:///repo/root#0.1.0",
-          "features": [],
-          "dependencies": [
-            { "index": 1, "kind": "normal" }
-          ]
-        },
-        {
-          "id": "{{CratesIo}}#parent@2.0.0",
-          "features": [],
-          "dependencies": [
-            { "index": 2, "kind": "normal" }
-          ]
-        },
-        {
-          "id": "{{CratesIo}}#child@3.0.0",
-          "features": [],
-          "dependencies": []
-        }
-      ]
-    }
-    """;
 }
