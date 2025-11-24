@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Text.Json.Serialization;
 
 public class OtherComponent : TypedComponent
 {
@@ -18,12 +19,16 @@ public class OtherComponent : TypedComponent
         this.Hash = hash;
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("downloadUrl")]
     public Uri DownloadUrl { get; set; }
 
+    [JsonPropertyName("hash")]
     public string Hash { get; set; }
 
     public override ComponentType Type => ComponentType.Other;

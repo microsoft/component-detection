@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class PodComponent : TypedComponent
@@ -18,10 +19,13 @@ public class PodComponent : TypedComponent
         this.SpecRepo = specRepo;
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("specRepo")]
     public string SpecRepo { get; set; }
 
     public override ComponentType Type => ComponentType.Pod;
