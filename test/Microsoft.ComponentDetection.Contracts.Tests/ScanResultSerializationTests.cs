@@ -2,12 +2,12 @@
 namespace Microsoft.ComponentDetection.Contracts.Tests;
 
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -60,8 +60,8 @@ public class ScanResultSerializationTests
     [TestMethod]
     public void ScanResultSerialization_HappyPath()
     {
-        var serializedResult = JsonConvert.SerializeObject(this.scanResultUnderTest);
-        var actual = JsonConvert.DeserializeObject<ScanResult>(serializedResult);
+        var serializedResult = JsonSerializer.Serialize(this.scanResultUnderTest);
+        var actual = JsonSerializer.Deserialize<ScanResult>(serializedResult);
 
         actual.ResultCode.Should().Be(ProcessingResultCode.PartialSuccess);
         actual.SourceDirectory.Should().Be("D:\\test\\directory");
@@ -92,30 +92,30 @@ public class ScanResultSerializationTests
     [TestMethod]
     public void ScanResultSerialization_ExpectedJsonFormat()
     {
-        var serializedResult = JsonConvert.SerializeObject(this.scanResultUnderTest);
-        var json = JObject.Parse(serializedResult);
+        var serializedResult = JsonSerializer.Serialize(this.scanResultUnderTest);
+        var json = JsonNode.Parse(serializedResult);
 
-        json.Value<string>("resultCode").Should().Be("PartialSuccess");
-        json.Value<string>("sourceDirectory").Should().Be("D:\\test\\directory");
-        var foundComponent = json["componentsFound"].First();
+        json["resultCode"].GetValue<string>().Should().Be("PartialSuccess");
+        json["sourceDirectory"].GetValue<string>().Should().Be("D:\\test\\directory");
+        var foundComponent = json["componentsFound"][0];
 
-        foundComponent.Value<string>("detectorId").Should().Be("NpmDetectorId");
-        foundComponent.Value<bool>("isDevelopmentDependency").Should().Be(true);
-        foundComponent.Value<string>("dependencyScope").Should().Be("MavenCompile");
-        foundComponent["locationsFoundAt"].First().Value<string>().Should().Be("some/location");
-        foundComponent["component"].Value<string>("type").Should().Be("Npm");
-        foundComponent["component"].Value<string>("name").Should().Be("SampleNpmComponent");
-        foundComponent["component"].Value<string>("version").Should().Be("1.2.3");
+        foundComponent["detectorId"].GetValue<string>().Should().Be("NpmDetectorId");
+        foundComponent["isDevelopmentDependency"].GetValue<bool>().Should().Be(true);
+        foundComponent["dependencyScope"].GetValue<string>().Should().Be("MavenCompile");
+        foundComponent["locationsFoundAt"][0].GetValue<string>().Should().Be("some/location");
+        foundComponent["component"]["type"].GetValue<string>().Should().Be("Npm");
+        foundComponent["component"]["name"].GetValue<string>().Should().Be("SampleNpmComponent");
+        foundComponent["component"]["version"].GetValue<string>().Should().Be("1.2.3");
 
-        var rootComponent = foundComponent["topLevelReferrers"].First();
-        rootComponent.Value<string>("type").Should().Be("Npm");
-        rootComponent.Value<string>("name").Should().Be("RootNpmComponent");
-        rootComponent.Value<string>("version").Should().Be("4.5.6");
+        var rootComponent = foundComponent["topLevelReferrers"][0];
+        rootComponent["type"].GetValue<string>().Should().Be("Npm");
+        rootComponent["name"].GetValue<string>().Should().Be("RootNpmComponent");
+        rootComponent["version"].GetValue<string>().Should().Be("4.5.6");
 
-        var detector = json["detectorsInScan"].First();
-        detector.Value<string>("detectorId").Should().Be("NpmDetectorId");
-        detector.Value<int>("version").Should().Be(2);
-        detector.Value<bool>("isExperimental").Should().Be(true);
-        detector["supportedComponentTypes"].First().Value<string>().Should().Be("Npm");
+        var detector = json["detectorsInScan"][0];
+        detector["detectorId"].GetValue<string>().Should().Be("NpmDetectorId");
+        detector["version"].GetValue<int>().Should().Be(2);
+        detector["isExperimental"].GetValue<bool>().Should().Be(true);
+        detector["supportedComponentTypes"][0].GetValue<string>().Should().Be("Npm");
     }
 }
