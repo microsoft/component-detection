@@ -4,15 +4,21 @@ namespace Microsoft.ComponentDetection.Detectors.Pip;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using MoreLinq;
-using Newtonsoft.Json;
 
 public class PythonResolver : PythonResolverBase, IPythonResolver
 {
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
     private readonly IPyPiClient pypiClient;
     private readonly ILogger<PythonResolver> logger;
     private readonly Dictionary<string, string> pythonEnvironmentVariables = [];
@@ -69,7 +75,7 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
                     this.logger.LogWarning(
                         "Unable to resolve root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
                         rootPackage.Name,
-                        JsonConvert.SerializeObject(rootPackage.DependencySpecifiers));
+                        JsonSerializer.Serialize(rootPackage.DependencySpecifiers, JsonSerializerOptions));
                     singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
                 }
             }
@@ -136,7 +142,7 @@ public class PythonResolver : PythonResolverBase, IPythonResolver
                             this.logger.LogWarning(
                                 "Unable to resolve non-root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
                                 dependencyNode.Name,
-                                JsonConvert.SerializeObject(dependencyNode.DependencySpecifiers));
+                                JsonSerializer.Serialize(dependencyNode.DependencySpecifiers, JsonSerializerOptions));
                             singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                         }
                     }

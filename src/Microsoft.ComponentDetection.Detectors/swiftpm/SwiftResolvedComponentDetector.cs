@@ -4,13 +4,13 @@ namespace Microsoft.ComponentDetection.Detectors.Swift;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 /// <summary>
 /// Detects Swift Package Manager components.
@@ -109,6 +109,6 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
             resolvedFile = reader.ReadToEnd();
         }
 
-        return JsonConvert.DeserializeObject<SwiftResolvedFile>(resolvedFile);
+        return JsonSerializer.Deserialize<SwiftResolvedFile>(resolvedFile);
     }
 }

@@ -3,14 +3,20 @@ namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using MoreLinq;
-using Newtonsoft.Json;
 
 public abstract class PythonResolverBase
 {
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
     private readonly ILogger logger;
 
     internal PythonResolverBase(ILogger logger) => this.logger = logger;
@@ -93,8 +99,8 @@ public abstract class PythonResolverBase
                     "Duplicate package dependencies entry for component:{ComponentName} with dependency:{DependencyName}. Existing dependency specifiers: {ExistingSpecifiers}. New dependency specifiers: {NewSpecifiers}.",
                     component.Name,
                     d.Name,
-                    JsonConvert.SerializeObject(dependencies[d.Name].DependencySpecifiers),
-                    JsonConvert.SerializeObject(d.DependencySpecifiers));
+                    JsonSerializer.Serialize(dependencies[d.Name].DependencySpecifiers, JsonSerializerOptions),
+                    JsonSerializer.Serialize(d.DependencySpecifiers, JsonSerializerOptions));
                 dependencies[d.Name] = d;
             }
         });
