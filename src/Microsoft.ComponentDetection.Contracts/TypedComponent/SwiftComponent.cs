@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 /// <summary>
@@ -30,8 +31,10 @@ public class SwiftComponent : TypedComponent
         this.hash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; }
 
+    [JsonPropertyName("version")]
     public string Version { get; }
 
     public override ComponentType Type => ComponentType.Swift;
