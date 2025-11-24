@@ -5,16 +5,16 @@ using System.Text.Json.Serialization;
 
 public class DockerImageComponent : TypedComponent
 {
-    private DockerImageComponent()
-    {
-        /* Reserved for deserialization */
-    }
-
     public DockerImageComponent(string hash, string name = null, string tag = null)
     {
         this.Digest = this.ValidateRequiredInput(hash, nameof(this.Digest), nameof(ComponentType.DockerImage));
         this.Name = name;
         this.Tag = tag;
+    }
+
+    private DockerImageComponent()
+    {
+        /* Reserved for deserialization */
     }
 
     [JsonPropertyName("name")]

@@ -7,16 +7,16 @@ using PackageUrl;
 
 public class PodComponent : TypedComponent
 {
-    private PodComponent()
-    {
-        /* Reserved for deserialization */
-    }
-
     public PodComponent(string name, string version, string specRepo = "")
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Pod));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Pod));
         this.SpecRepo = specRepo;
+    }
+
+    private PodComponent()
+    {
+        /* Reserved for deserialization */
     }
 
     [JsonPropertyName("name")]

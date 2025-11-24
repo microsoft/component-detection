@@ -7,11 +7,6 @@ using PackageUrl;
 
 public class CargoComponent : TypedComponent
 {
-    private CargoComponent()
-    {
-        // reserved for deserialization
-    }
-
     public CargoComponent(string name, string version, string author = null, string license = null, string source = null)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Cargo));
@@ -19,6 +14,11 @@ public class CargoComponent : TypedComponent
         this.Author = author;
         this.License = license;
         this.Source = source;
+    }
+
+    private CargoComponent()
+    {
+        // reserved for deserialization
     }
 
     [JsonPropertyName("name")]

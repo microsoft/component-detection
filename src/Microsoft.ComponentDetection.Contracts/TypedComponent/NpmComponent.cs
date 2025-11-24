@@ -7,17 +7,17 @@ using PackageUrl;
 
 public class NpmComponent : TypedComponent
 {
-    private NpmComponent()
-    {
-        /* Reserved for deserialization */
-    }
-
     public NpmComponent(string name, string version, string hash = null, NpmAuthor author = null)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Npm));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Npm));
         this.Hash = hash; // Not required; only found in package-lock.json, not package.json
         this.Author = author;
+    }
+
+    private NpmComponent()
+    {
+        /* Reserved for deserialization */
     }
 
     [JsonPropertyName("name")]

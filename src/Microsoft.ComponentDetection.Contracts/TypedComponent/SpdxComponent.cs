@@ -6,11 +6,6 @@ using System.Text.Json.Serialization;
 
 public class SpdxComponent : TypedComponent
 {
-    private SpdxComponent()
-    {
-        /* Reserved for deserialization */
-    }
-
     public SpdxComponent(string spdxVersion, Uri documentNamespace, string name, string checksum, string rootElementId, string path)
     {
         this.SpdxVersion = this.ValidateRequiredInput(spdxVersion, nameof(this.SpdxVersion), nameof(ComponentType.Spdx));
@@ -19,6 +14,11 @@ public class SpdxComponent : TypedComponent
         this.Checksum = this.ValidateRequiredInput(checksum, nameof(this.Checksum), nameof(ComponentType.Spdx));
         this.RootElementId = this.ValidateRequiredInput(rootElementId, nameof(this.RootElementId), nameof(ComponentType.Spdx));
         this.Path = this.ValidateRequiredInput(path, nameof(this.Path), nameof(ComponentType.Spdx));
+    }
+
+    private SpdxComponent()
+    {
+        /* Reserved for deserialization */
     }
 
     public override ComponentType Type => ComponentType.Spdx;

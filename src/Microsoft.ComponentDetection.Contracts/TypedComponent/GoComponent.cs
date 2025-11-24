@@ -41,8 +41,6 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
 
     public override ComponentType Type => ComponentType.Go;
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
-
     public override bool Equals(object obj)
     {
         return obj is GoComponent otherComponent && this.Equals(otherComponent);
@@ -62,4 +60,6 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
     {
         return this.Name.GetHashCode() ^ this.Version.GetHashCode() ^ this.Hash.GetHashCode();
     }
+
+    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
 }
