@@ -8,17 +8,17 @@ using PackageUrl;
 
 public class PipComponent : TypedComponent
 {
+    public PipComponent()
+    {
+        /* Reserved for deserialization */
+    }
+
     public PipComponent(string name, string version, string author = null, string license = null)
     {
         this.Name = this.ValidateRequiredInput(name, nameof(this.Name), nameof(ComponentType.Pip));
         this.Version = this.ValidateRequiredInput(version, nameof(this.Version), nameof(ComponentType.Pip));
         this.Author = author;
         this.License = license;
-    }
-
-    private PipComponent()
-    {
-        /* Reserved for deserialization */
     }
 
     [JsonPropertyName("name")]

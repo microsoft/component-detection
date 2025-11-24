@@ -21,7 +21,7 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
         this.Hash = this.ValidateRequiredInput(hash, nameof(this.Hash), nameof(ComponentType.Go));
     }
 
-    private GoComponent()
+    public GoComponent()
     {
         /* Reserved for deserialization */
     }
