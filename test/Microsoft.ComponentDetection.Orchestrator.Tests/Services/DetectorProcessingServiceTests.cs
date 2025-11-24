@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
@@ -19,7 +20,6 @@ using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -199,7 +199,7 @@ public class DetectorProcessingServiceTests
 
         foreach (var record in records)
         {
-            var additionalTelemetryDetails = JsonConvert.DeserializeObject<Dictionary<string, string>>(record.AdditionalTelemetryDetails);
+            var additionalTelemetryDetails = JsonSerializer.Deserialize<Dictionary<string, string>>(record.AdditionalTelemetryDetails);
             additionalTelemetryDetails["detectorId"].Should().Be(record.DetectorId);
         }
     }
