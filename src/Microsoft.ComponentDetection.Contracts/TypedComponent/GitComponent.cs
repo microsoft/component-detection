@@ -15,7 +15,7 @@ public class GitComponent : TypedComponent
     public GitComponent(Uri repositoryUrl, string commitHash, string tag)
         : this(repositoryUrl, commitHash) => this.Tag = tag;
 
-    private GitComponent()
+    public GitComponent()
     {
         /* Reserved for deserialization */
     }

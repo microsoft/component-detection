@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 
 public class DockerImageComponent : TypedComponent
 {
-    private DockerImageComponent()
+    public DockerImageComponent()
     {
         /* Reserved for deserialization */
     }

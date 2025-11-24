@@ -6,7 +6,7 @@ using PackageUrl;
 
 public class NuGetComponent : TypedComponent
 {
-    private NuGetComponent()
+    public NuGetComponent()
     {
         /* Reserved for deserialization */
     }

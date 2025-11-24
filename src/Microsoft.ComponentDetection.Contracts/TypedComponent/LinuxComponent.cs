@@ -7,7 +7,7 @@ using PackageUrl;
 
 public class LinuxComponent : TypedComponent
 {
-    private LinuxComponent()
+    public LinuxComponent()
     {
         /* Reserved for deserialization */
     }

@@ -8,7 +8,7 @@ public class DotNetComponent : TypedComponent
 {
     private const string UnknownValue = "unknown";
 
-    private DotNetComponent()
+    public DotNetComponent()
     {
         /* Reserved for deserialization */
     }

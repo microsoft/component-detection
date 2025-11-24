@@ -7,7 +7,7 @@ using PackageUrl;
 
 public class NpmComponent : TypedComponent
 {
-    private NpmComponent()
+    public NpmComponent()
     {
         /* Reserved for deserialization */
     }

@@ -16,7 +16,7 @@ public class DockerReferenceComponent : TypedComponent
     {
     }
 
-    private DockerReferenceComponent()
+    public DockerReferenceComponent()
     {
         /* Reserved for deserialization */
     }

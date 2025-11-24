@@ -6,7 +6,7 @@ using PackageUrl;
 
 public class VcpkgComponent : TypedComponent
 {
-    private VcpkgComponent()
+    public VcpkgComponent()
     {
         /* Reserved for deserialization */
     }

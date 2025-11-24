@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 public class OtherComponent : TypedComponent
 {
-    private OtherComponent()
+    public OtherComponent()
     {
         /* Reserved for deserialization */
     }
