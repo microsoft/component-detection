@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class PipCommandService : IPipCommandService
 {
@@ -215,7 +215,7 @@ public class PipCommandService : IPipCommandService
             }
 
             var reportOutput = await this.fileUtilityService.ReadAllTextAsync(reportFile);
-            return (JsonConvert.DeserializeObject<PipInstallationReport>(reportOutput), reportFile);
+            return (JsonSerializer.Deserialize<PipInstallationReport>(reportOutput), reportFile);
         }
         finally
         {

@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -15,7 +16,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class PipReportComponentDetector : FileComponentDetectorWithCleanup
 {
@@ -200,7 +200,7 @@ public class PipReportComponentDetector : FileComponentDetectorWithCleanup
                 {
                     this.Logger.LogInformation("PipReport: Using pre-generated pip report '{ReportFile}' for package file '{File}'.", existingReport.FullName, file.Location);
                     var reportOutput = await this.fileUtilityService.ReadAllTextAsync(existingReport);
-                    var report = JsonConvert.DeserializeObject<PipInstallationReport>(reportOutput);
+                    var report = JsonSerializer.Deserialize<PipInstallationReport>(reportOutput);
 
                     if (await this.IsValidPreGeneratedReportAsync(report, pythonExePath, file.Location))
                     {
