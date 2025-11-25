@@ -31,6 +31,7 @@ public class OtherComponent : TypedComponent
     [JsonPropertyName("hash")]
     public string Hash { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Other;
 
     protected override string ComputeId() => $"{this.Name} {this.Version} {this.DownloadUrl} - {this.Type}";

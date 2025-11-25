@@ -46,6 +46,7 @@ public class CondaComponent : TypedComponent
     [JsonPropertyName("mD5")]
     public string MD5 { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Conda;
 
     protected override string ComputeId() => $"{this.Name} {this.Version} {this.Build} {this.Channel} {this.Subdir} {this.Namespace} {this.Url} {this.MD5} - {this.Type}";

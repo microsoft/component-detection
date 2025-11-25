@@ -54,8 +54,11 @@ public abstract class TypedComponent
     public abstract ComponentType Type { get; }
 
     /// <summary>Gets the id of the component.</summary>
+    [JsonProperty("id")] // Newtonsoft.Json
+    [JsonPropertyName("id")] // System.Text.Json
     public string Id => this.id ??= this.ComputeId();
 
+    [JsonPropertyName("packageUrl")]
     public virtual PackageURL PackageUrl { get; }
 
     [JsonIgnore] // Newtonsoft.Json

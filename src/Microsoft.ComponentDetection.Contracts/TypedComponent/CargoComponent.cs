@@ -2,7 +2,6 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
 using PackageUrl;
 
 public class CargoComponent : TypedComponent
@@ -28,24 +27,23 @@ public class CargoComponent : TypedComponent
     public string Version { get; set; }
 
 #nullable enable
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] // System.Text.Json
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("author")]
     public string? Author { get; set; }
 
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] // System.Text.Json
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("license")]
     public string? License { get; set; }
 
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] // System.Text.Json
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("source")]
     public string? Source { get; set; }
 #nullable disable
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Cargo;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("cargo", string.Empty, this.Name, this.Version, null, string.Empty);
 
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";

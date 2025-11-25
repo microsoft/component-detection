@@ -27,8 +27,10 @@ public class RubyGemsComponent : TypedComponent
     [JsonPropertyName("source")]
     public string Source { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.RubyGems;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("gem", null, this.Name, this.Version, null, null);
 
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";

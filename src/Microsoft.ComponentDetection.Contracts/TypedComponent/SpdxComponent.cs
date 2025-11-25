@@ -21,6 +21,7 @@ public class SpdxComponent : TypedComponent
         this.Path = this.ValidateRequiredInput(path, nameof(this.Path), nameof(ComponentType.Spdx));
     }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Spdx;
 
     [JsonPropertyName("rootElementId")]

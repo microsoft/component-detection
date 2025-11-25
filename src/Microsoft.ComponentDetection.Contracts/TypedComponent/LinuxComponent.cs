@@ -42,8 +42,10 @@ public class LinuxComponent : TypedComponent
     public string? Author { get; set; }
 #nullable disable
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Linux;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl
     {
         get

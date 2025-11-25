@@ -26,6 +26,7 @@ public class DockerImageComponent : TypedComponent
     [JsonPropertyName("tag")]
     public string Tag { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.DockerImage;
 
     protected override string ComputeId() => $"{this.Name} {this.Tag} {this.Digest}";
