@@ -4,6 +4,7 @@ namespace Microsoft.ComponentDetection.Detectors.Linux;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -14,7 +15,6 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 using Microsoft.ComponentDetection.Detectors.Linux.Factories;
 using Microsoft.ComponentDetection.Detectors.Linux.Filters;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 /// <summary>
 /// Scanner for Linux container layers using Syft.
@@ -129,7 +129,7 @@ public class LinuxScanner : ILinuxScanner
                 }
                 catch (Exception e)
                 {
-                    syftTelemetryRecord.Exception = JsonConvert.SerializeObject(e);
+                    syftTelemetryRecord.Exception = JsonSerializer.Serialize(e);
                     this.logger.LogError(e, "Failed to run syft");
                     throw;
                 }
@@ -167,7 +167,7 @@ public class LinuxScanner : ILinuxScanner
 
         try
         {
-            var syftOutput = JsonConvert.DeserializeObject<SyftOutput>(stdout);
+            var syftOutput = SyftOutput.FromJson(stdout);
 
             // Apply artifact filters (e.g., Mariner 2.0 workaround)
             var validArtifacts = syftOutput.Artifacts.AsEnumerable();
@@ -230,7 +230,7 @@ public class LinuxScanner : ILinuxScanner
             });
 
             // Track detected components in telemetry
-            syftTelemetryRecord.Components = JsonConvert.SerializeObject(
+            syftTelemetryRecord.Components = JsonSerializer.Serialize(
                 componentsWithLayers.Select(c => c.Component.Id)
             );
 
