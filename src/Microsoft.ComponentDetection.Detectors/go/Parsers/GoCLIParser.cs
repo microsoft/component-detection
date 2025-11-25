@@ -5,12 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class GoCLIParser : IGoParser
 {
@@ -74,19 +74,37 @@ public class GoCLIParser : IGoParser
     private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder, string projectRootDirectoryFullName)
     {
         var goBuildModules = new List<GoBuildModule>();
-        var reader = new JsonTextReader(new StringReader(goListOutput))
-        {
-            SupportMultipleContent = true,
-        };
 
         using var record = new GoReplaceTelemetryRecord();
 
-        while (reader.Read())
+        // Go CLI outputs multiple JSON objects (not an array), so we need to parse them one by one
+        var remaining = goListOutput.AsMemory();
+        while (!remaining.IsEmpty)
         {
-            var serializer = new JsonSerializer();
-            var buildModule = serializer.Deserialize<GoBuildModule>(reader);
+            var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(remaining.ToString()));
+            try
+            {
+                var buildModule = JsonSerializer.Deserialize<GoBuildModule>(ref reader);
+                if (buildModule != null)
+                {
+                    goBuildModules.Add(buildModule);
+                }
 
-            goBuildModules.Add(buildModule);
+                // Move past the consumed bytes plus any whitespace
+                var consumed = (int)reader.BytesConsumed;
+                remaining = remaining[consumed..];
+
+                // Skip whitespace between JSON objects
+                while (!remaining.IsEmpty && char.IsWhiteSpace(remaining.Span[0]))
+                {
+                    remaining = remaining[1..];
+                }
+            }
+            catch (JsonException ex)
+            {
+                this.logger.LogWarning("Failed to parse Go build module JSON: {ErrorMessage}", ex.Message);
+                break;
+            }
         }
 
         foreach (var dependency in goBuildModules)

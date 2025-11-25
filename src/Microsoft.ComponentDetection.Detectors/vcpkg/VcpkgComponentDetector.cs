@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -14,7 +15,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class VcpkgComponentDetector : FileComponentDetector
 {
@@ -83,7 +83,7 @@ public class VcpkgComponentDetector : FileComponentDetector
                 using (var reader = new StreamReader(pr.ComponentStream.Stream))
                 {
                     var contents = await reader.ReadToEndAsync().ConfigureAwait(false);
-                    var manifestData = JsonConvert.DeserializeObject<ManifestInfo>(contents);
+                    var manifestData = JsonSerializer.Deserialize<ManifestInfo>(contents);
 
                     if (manifestData == null || string.IsNullOrWhiteSpace(manifestData.ManifestPath))
                     {
@@ -112,7 +112,7 @@ public class VcpkgComponentDetector : FileComponentDetector
         VcpkgSBOM sbom;
         try
         {
-            sbom = JsonConvert.DeserializeObject<VcpkgSBOM>(await reader.ReadToEndAsync());
+            sbom = JsonSerializer.Deserialize<VcpkgSBOM>(await reader.ReadToEndAsync());
         }
         catch (Exception)
         {
