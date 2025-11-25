@@ -8,13 +8,14 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Polly;
 
 [assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Detectors.Tests")]
@@ -48,6 +49,11 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         Assembly.GetEntryAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
 
     private static readonly ProductInfoHeaderValue CommentValue = new("(+https://github.com/microsoft/component-detection)");
+
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     // Keep telemetry on how the cache is being used for future refinements
     private readonly PypiCacheTelemetryRecord cacheTelemetry;
@@ -201,7 +207,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         }
 
         var response = await request.Content.ReadAsStringAsync();
-        var project = JsonConvert.DeserializeObject<PythonProject>(response);
+        var project = JsonSerializer.Deserialize<PythonProject>(response);
         var versions = new PythonProject
         {
             Info = project.Info,
@@ -226,7 +232,7 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
                     ae,
                     "Component {ReleaseKey} : {ReleaseValue} could not be added to the sorted list of pip components for spec={SpecName}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions).",
                     release.Key,
-                    JsonConvert.SerializeObject(release.Value),
+                    JsonSerializer.Serialize(release.Value, JsonSerializerOptions),
                     spec.Name);
                 continue;
             }

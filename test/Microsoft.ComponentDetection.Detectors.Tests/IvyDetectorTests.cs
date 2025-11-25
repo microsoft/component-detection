@@ -47,7 +47,7 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
                                    "{ \"gav\": { \"g\": \"d0g\", \"a\": \"d0a\", \"v\": \"0.0.0\"}, \"DevelopmentDependency\": false, \"resolved\": false},\n" +
                                    "{ \"gav\": { \"g\": \"d1g\", \"a\": \"d1a\", \"v\": \"1.1.1\"}, \"DevelopmentDependency\": true, \"resolved\": true},\n" +
                                    "{ \"gav\": { \"g\": \"d2g\", \"a\": \"d2a\", \"v\": \"2.2.2\"}, \"DevelopmentDependency\": false, \"resolved\": true},\n" +
-                                   "{ \"gav\": { \"g\": \"d3g\", \"a\": \"d3a\", \"v\": \"3.3.3\"}, \"DevelopmentDependency\": false, \"resolved\": true, \"parent_gav\": { \"g\": \"d2g\", \"a\": \"d2a\", \"v\": \"2.2.2\"}},\n" +
+                                   "{ \"gav\": { \"g\": \"d3g\", \"a\": \"d3a\", \"v\": \"3.3.3\"}, \"DevelopmentDependency\": false, \"resolved\": true, \"parent_gav\": { \"g\": \"d2g\", \"a\": \"d2a\", \"v\": \"2.2.2\"}}\n" +
                                    "]}";
 
         this.IvyHappyPath(content: registerUsageContent);
@@ -93,7 +93,7 @@ public class IvyDetectorTests : BaseDetectorTest<IvyDetector>
                                    "{ \"gav\": { \"g\": \"d0g\", \"a\": \"d0a\", \"v\": \"0.0.0\"}, \"DevelopmentDependency\": false, \"resolved\": false},\n" +
                                    "{ \"gav\": { \"g\": \"d1g\", \"a\": \"d1a\", \"v\": \"1.1.1\"}, \"DevelopmentDependency\": true, \"resolved\": true},\n" +
                                    "{ \"gav\": { \"g\": \"d2g\", \"a\": \"d2a\", \"v\": \"2.2.2\"}, \"DevelopmentDependency\": false, \"resolved\": true},\n" +
-                                   "{ \"gav\": { \"g\": \"d3g\", \"a\": \"d3a\", \"v\": \"3.3.3\"}, \"DevelopmentDependency\": false, \"resolved\": true, \"parent_gav\": { \"g\": \"d2g\", \"a\": \"d2a\", \"v\": \"2.2.2\"}},\n" +
+                                   "{ \"gav\": { \"g\": \"d3g\", \"a\": \"d3a\", \"v\": \"3.3.3\"}, \"DevelopmentDependency\": false, \"resolved\": true, \"parent_gav\": { \"g\": \"d2g\", \"a\": \"d2a\", \"v\": \"2.2.2\"}}\n" +
                                    "]}";
 
         var d1Id = "d1g d1a 1.1.1 - Maven";
