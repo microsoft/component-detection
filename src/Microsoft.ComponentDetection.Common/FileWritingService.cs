@@ -5,10 +5,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Exceptions;
-using Newtonsoft.Json;
 
 /// <inheritdoc />
 public sealed class FileWritingService : IFileWritingService
@@ -17,6 +18,13 @@ public sealed class FileWritingService : IFileWritingService
     /// The format string used to generate the timestamp for the manifest file.
     /// </summary>
     public const string TimestampFormatString = "yyyyMMddHHmmssfff";
+
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        WriteIndented = true,
+    };
+
     private readonly ConcurrentDictionary<string, StreamWriter> bufferedStreams = new();
 
     private readonly object lockObject = new();
@@ -50,11 +58,8 @@ public sealed class FileWritingService : IFileWritingService
             _ = this.bufferedStreams.TryAdd(relativeFilePath, streamWriter);
         }
 
-        var serializer = new JsonSerializer
-        {
-            Formatting = Formatting.Indented,
-        };
-        serializer.Serialize(streamWriter, obj);
+        var jsonString = JsonSerializer.Serialize(obj, JsonSerializerOptions);
+        streamWriter.Write(jsonString);
     }
 
     /// <inheritdoc />
@@ -79,13 +84,8 @@ public sealed class FileWritingService : IFileWritingService
     /// <inheritdoc />
     public void WriteFile<T>(FileInfo relativeFilePath, T obj)
     {
-        using var streamWriter = new StreamWriter(relativeFilePath.FullName);
-        using var jsonWriter = new JsonTextWriter(streamWriter);
-        var serializer = new JsonSerializer
-        {
-            Formatting = Formatting.Indented,
-        };
-        serializer.Serialize(jsonWriter, obj);
+        using var stream = relativeFilePath.Create();
+        JsonSerializer.Serialize(stream, obj, JsonSerializerOptions);
     }
 
     /// <inheritdoc />
