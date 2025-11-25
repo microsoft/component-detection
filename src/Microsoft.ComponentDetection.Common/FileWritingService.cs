@@ -58,7 +58,7 @@ public sealed class FileWritingService : IFileWritingService
             _ = this.bufferedStreams.TryAdd(relativeFilePath, streamWriter);
         }
 
-        var jsonString = JsonSerializer.Serialize(obj, JsonSerializerOptions);
+        var jsonString = JsonSerializer.Serialize(obj, obj.GetType(), JsonSerializerOptions);
         streamWriter.Write(jsonString);
     }
 
@@ -85,7 +85,9 @@ public sealed class FileWritingService : IFileWritingService
     public void WriteFile<T>(FileInfo relativeFilePath, T obj)
     {
         using var stream = relativeFilePath.Create();
-        JsonSerializer.Serialize(stream, obj, JsonSerializerOptions);
+
+        // Use runtime type to ensure derived class properties are serialized
+        JsonSerializer.Serialize(stream, obj, obj.GetType(), JsonSerializerOptions);
     }
 
     /// <inheritdoc />
