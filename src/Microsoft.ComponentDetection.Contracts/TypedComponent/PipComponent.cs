@@ -3,7 +3,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
 using PackageUrl;
 
 public class PipComponent : TypedComponent
@@ -28,19 +27,19 @@ public class PipComponent : TypedComponent
     public string Version { get; set; }
 
 #nullable enable
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] // System.Text.Json
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("author")]
     public string? Author { get; set; }
 
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] // System.Text.Json
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("license")]
     public string? License { get; set; }
 #nullable disable
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Pip;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("pypi", null, this.Name, this.Version, null, null);
 
     [SuppressMessage("Usage", "CA1308:Normalize String to Uppercase", Justification = "Casing cannot be overwritten.")]

@@ -27,8 +27,10 @@ public class NuGetComponent : TypedComponent
     [JsonPropertyName("authors")]
     public string[] Authors { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.NuGet;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("nuget", null, this.Name, this.Version, null, null);
 
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";

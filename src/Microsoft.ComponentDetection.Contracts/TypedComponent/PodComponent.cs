@@ -28,8 +28,10 @@ public class PodComponent : TypedComponent
     [JsonPropertyName("specRepo")]
     public string SpecRepo { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Pod;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl
     {
         get

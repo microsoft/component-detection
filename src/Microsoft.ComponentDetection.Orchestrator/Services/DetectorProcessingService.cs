@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNet.Globbing;
@@ -18,7 +19,6 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Spectre.Console;
 using static System.Environment;
 
@@ -115,7 +115,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                     resultCode = result.ResultCode;
                     containerDetails = result.ContainerDetails;
 
-                    record.AdditionalTelemetryDetails = result.AdditionalTelemetryDetails != null ? JsonConvert.SerializeObject(result.AdditionalTelemetryDetails) : null;
+                    record.AdditionalTelemetryDetails = result.AdditionalTelemetryDetails != null ? JsonSerializer.Serialize(result.AdditionalTelemetryDetails) : null;
                     record.IsExperimental = isExperimentalDetector;
                     record.DetectorId = detector.Id;
                     record.DetectedComponentCount = detectedComponents.Count();

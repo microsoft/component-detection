@@ -33,6 +33,7 @@ public class DockerReferenceComponent : TypedComponent
     [JsonPropertyName("domain")]
     public string Domain { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.DockerReference;
 
     public DockerReference FullReference

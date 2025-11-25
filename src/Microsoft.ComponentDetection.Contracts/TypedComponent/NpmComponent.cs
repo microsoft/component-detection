@@ -32,8 +32,10 @@ public class NpmComponent : TypedComponent
     [JsonPropertyName("author")]
     public NpmAuthor Author { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Npm;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("npm", null, this.Name, this.Version, null, null);
 
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";

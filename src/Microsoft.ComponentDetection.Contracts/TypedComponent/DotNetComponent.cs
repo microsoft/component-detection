@@ -43,6 +43,7 @@ public class DotNetComponent : TypedComponent
     [JsonPropertyName("projectType")]
     public string ProjectType { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.DotNet;
 
     /// <summary>

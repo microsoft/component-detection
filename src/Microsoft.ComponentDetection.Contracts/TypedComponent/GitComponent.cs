@@ -29,6 +29,7 @@ public class GitComponent : TypedComponent
     [JsonPropertyName("tag")]
     public string Tag { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Git;
 
     protected override string ComputeId() => $"{this.RepositoryUrl} : {this.CommitHash} - {this.Type}";

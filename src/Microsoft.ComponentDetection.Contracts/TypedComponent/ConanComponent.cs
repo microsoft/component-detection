@@ -34,8 +34,10 @@ public class ConanComponent : TypedComponent
     [JsonPropertyName("packageSourceURL")]
     public string PackageSourceURL => $"https://conan.io/center/recipes/{this.Name}?version={this.Version}";
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Conan;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("conan", string.Empty, this.Name, this.Version, null, string.Empty);
 
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";

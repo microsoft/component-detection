@@ -45,8 +45,10 @@ public class VcpkgComponent : TypedComponent
     [JsonPropertyName("portVersion")]
     public int PortVersion { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Vcpkg;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl
     {
         get
