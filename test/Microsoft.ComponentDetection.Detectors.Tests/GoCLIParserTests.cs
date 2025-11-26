@@ -318,7 +318,6 @@ public class GoCLIParserTests
     {
         var mock = new Mock<IComponentStream>();
         mock.Setup(s => s.Location).Returns(location);
-        mock.Setup(s => s.Stream).Returns(new MemoryStream(Encoding.UTF8.GetBytes("module test")));
         return mock.Object;
     }
 
@@ -381,6 +380,7 @@ public class GoCLIParserTests
                 "go",
                 null,
                 It.IsAny<DirectoryInfo>(),
+                It.IsAny<CancellationToken>(),
                 It.Is<string[]>(args => args.Contains("list") && args.Contains("-m") && args.Contains("-json") && args.Contains("all"))))
             .ReturnsAsync(new CommandLineExecutionResult
             {
