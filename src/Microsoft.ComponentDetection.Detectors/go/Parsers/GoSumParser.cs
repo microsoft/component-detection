@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Go;
 
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
@@ -24,12 +25,13 @@ public class GoSumParser : IGoParser
     public async Task<bool> ParseAsync(
         ISingleFileComponentRecorder singleFileComponentRecorder,
         IComponentStream file,
-        GoGraphTelemetryRecord record)
+        GoGraphTelemetryRecord record,
+        CancellationToken cancellationToken = default)
     {
         using var reader = new StreamReader(file.Stream);
 
         string line;
-        while ((line = await reader.ReadLineAsync()) != null)
+        while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
         {
             if (this.TryToCreateGoComponentFromSumLine(line, out var goComponent))
             {

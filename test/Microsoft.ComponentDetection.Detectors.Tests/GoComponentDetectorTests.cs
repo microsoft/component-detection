@@ -869,7 +869,7 @@ replace github v1.5.0 => github v1.18
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        goModParserMock.Verify(parser => parser.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()), Times.Once);
+        goModParserMock.Verify(parser => parser.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
@@ -888,10 +888,10 @@ replace github v1.5.0 => github v1.18
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
         // Setup go cli parser to succeed/fail
-        this.mockGoCliParser.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>())).ReturnsAsync(goCliSucceeds);
+        this.mockGoCliParser.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>())).ReturnsAsync(goCliSucceeds);
 
         // Setup go sum parser to succeed
-        this.mockGoSumParser.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>())).ReturnsAsync(true);
+        this.mockGoSumParser.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("go.sum", string.Empty)
             .ExecuteDetectorAsync();
@@ -913,8 +913,8 @@ replace github v1.5.0 => github v1.18
         // Setup environment variable to disable CLI scan
         this.envVarService.Setup(s => s.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
 
-        // Setup go sum parser to succed
-        goSumParserMock.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>())).ReturnsAsync(true);
+        // Setup go sum parser to succeed
+        goSumParserMock.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("go.sum", string.Empty)
@@ -941,7 +941,7 @@ replace github v1.5.0 => github v1.18
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        this.mockGoModParser.Verify(parser => parser.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()), Times.Once);
+        this.mockGoModParser.Verify(parser => parser.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [TestMethod]
@@ -996,9 +996,9 @@ replace github v1.5.0 => github v1.18
         var processedFiles = new List<string>();
         this.SetupMockGoModParser();
         this.mockGoModParser
-            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()))
+            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true)
-            .Callback<ISingleFileComponentRecorder, IComponentStream, GoGraphTelemetryRecord>((_, file, record) =>
+            .Callback<ISingleFileComponentRecorder, IComponentStream, GoGraphTelemetryRecord, CancellationToken>((_, file, record, _) =>
             {
                 processedFiles.Add(file.Location);
                 record.GoModVersion = "1.18";
@@ -1031,9 +1031,9 @@ replace github v1.5.0 => github v1.18
         var processedFiles = new List<string>();
         this.SetupMockGoModParser();
         this.mockGoModParser
-            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()))
+            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true)
-            .Callback<ISingleFileComponentRecorder, IComponentStream, GoGraphTelemetryRecord>((_, file, record) =>
+            .Callback<ISingleFileComponentRecorder, IComponentStream, GoGraphTelemetryRecord, CancellationToken>((_, file, record, _) =>
             {
                 processedFiles.Add(file.Location);
                 var rootMod = Path.Combine(root, "go.mod");
@@ -1080,8 +1080,8 @@ replace github v1.5.0 => github v1.18
         this.SetupMockGoModParser();
 
         this.mockGoModParser
-            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()))
-            .ReturnsAsync((ISingleFileComponentRecorder recorder, IComponentStream file, GoGraphTelemetryRecord record) =>
+            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ISingleFileComponentRecorder recorder, IComponentStream file, GoGraphTelemetryRecord record, CancellationToken cancellationToken) =>
             {
                 processedFiles.Add(file.Location);
                 var aMod = Path.Combine(root, "a", "go.mod");
@@ -1134,9 +1134,9 @@ replace github v1.5.0 => github v1.18
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
         this.SetupMockGoCLIParser();
         this.mockGoCliParser
-            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()))
+            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true)
-            .Callback<ISingleFileComponentRecorder, IComponentStream, GoGraphTelemetryRecord>((_, file, record) =>
+            .Callback<ISingleFileComponentRecorder, IComponentStream, GoGraphTelemetryRecord, CancellationToken>((_, file, record, _) =>
             {
                 processedFiles.Add(file.Location);
             });
@@ -1167,8 +1167,8 @@ replace github v1.5.0 => github v1.18
         this.SetupMockGoSumParser();
 
         this.mockGoModParser
-            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()))
-            .ReturnsAsync((ISingleFileComponentRecorder recorder, IComponentStream file, GoGraphTelemetryRecord record) =>
+            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ISingleFileComponentRecorder recorder, IComponentStream file, GoGraphTelemetryRecord record, CancellationToken cancellationToken) =>
             {
                 processedFiles.Add(file.Location);
                 var bMod = Path.Combine(root, "b", "go.mod");
@@ -1182,8 +1182,8 @@ replace github v1.5.0 => github v1.18
             });
 
         this.mockGoCliParser
-            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>()))
-            .ReturnsAsync((ISingleFileComponentRecorder recorder, IComponentStream file, GoGraphTelemetryRecord record) =>
+            .Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ISingleFileComponentRecorder recorder, IComponentStream file, GoGraphTelemetryRecord record, CancellationToken cancellationToken) =>
             {
                 processedFiles.Add(file.Location);
                 return file.Location != Path.Combine(root, "a", "go.sum");
