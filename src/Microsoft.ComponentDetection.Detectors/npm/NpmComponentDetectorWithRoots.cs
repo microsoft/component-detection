@@ -1,15 +1,20 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System.Collections.Generic;
-using System.Linq;
+using System.Text.Json;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Npm.Contracts;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 public class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        AllowTrailingCommas = true,
+        PropertyNameCaseInsensitive = true,
+    };
+
     public NpmComponentDetectorWithRoots(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
@@ -34,69 +39,122 @@ public class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
 
     protected override bool IsSupportedLockfileVersion(int lockfileVersion) => lockfileVersion != 3;
 
-    protected override JToken ResolveDependencyObject(JToken packageLockJToken) => packageLockJToken["dependencies"];
-
-    protected override bool TryEnqueueFirstLevelDependencies(
-        Queue<(JProperty DependencyProperty, TypedComponent ParentComponent)> queue,
-        JToken dependencies,
-        IDictionary<string, JProperty> dependencyLookup,
-        TypedComponent parentComponent = null,
-        bool skipValidation = false)
-    {
-        if (dependencies == null)
-        {
-            return true;
-        }
-
-        var isValid = true;
-
-        foreach (var dependency in dependencies.Cast<JProperty>())
-        {
-            if (dependency?.Name == null)
-            {
-                continue;
-            }
-
-            var inLock = dependencyLookup.TryGetValue(dependency.Name, out var dependencyProperty);
-            if (inLock)
-            {
-                queue.Enqueue((dependencyProperty, parentComponent));
-            }
-            else if (skipValidation)
-            {
-            }
-            else
-            {
-                isValid = false;
-            }
-        }
-
-        return isValid;
-    }
-
-    protected override void EnqueueAllDependencies(
-        IDictionary<string, JProperty> dependencyLookup,
+    protected override void ProcessLockfile(
         ISingleFileComponentRecorder singleFileComponentRecorder,
-        Queue<(JProperty CurrentSubDependency, TypedComponent ParentComponent)> subQueue,
-        JProperty currentDependency,
-        TypedComponent typedComponent)
+        PackageJson packageJson,
+        JsonDocument lockfile,
+        int lockfileVersion)
     {
-        this.EnqueueDependencies(subQueue, currentDependency.Value["dependencies"], parentComponent: typedComponent);
-        this.TryEnqueueFirstLevelDependencies(subQueue, currentDependency.Value["requires"], dependencyLookup, parentComponent: typedComponent);
-    }
+        var root = lockfile.RootElement;
 
-    private void EnqueueDependencies(Queue<(JProperty Dependency, TypedComponent ParentComponent)> queue, JToken dependencies, TypedComponent parentComponent)
-    {
-        if (dependencies == null)
+        // Get dependencies from lockfile
+        if (!root.TryGetProperty("dependencies", out var dependenciesElement))
         {
             return;
         }
 
-        foreach (var dependency in dependencies.Cast<JProperty>())
+        // Build dependency lookup
+        var dependencyLookup = new Dictionary<string, (string Name, PackageLockV1Dependency Dependency)>();
+        foreach (var dep in dependenciesElement.EnumerateObject())
         {
-            if (dependency != null)
+            var dependency = JsonSerializer.Deserialize<PackageLockV1Dependency>(dep.Value.GetRawText(), JsonOptions);
+            if (dependency is not null)
             {
-                queue.Enqueue((dependency, parentComponent));
+                dependencyLookup[dep.Name] = (dep.Name, dependency);
+            }
+        }
+
+        // Collect all top-level dependencies from package.json
+        var topLevelDependencies = new Queue<(string Name, PackageLockV1Dependency Dependency, TypedComponent? Parent)>();
+
+        this.EnqueueDependencies(topLevelDependencies, packageJson.Dependencies, dependencyLookup, null);
+        this.EnqueueDependencies(topLevelDependencies, packageJson.DevDependencies, dependencyLookup, null);
+        this.EnqueueDependencies(topLevelDependencies, packageJson.OptionalDependencies, dependencyLookup, null);
+
+        // Process each top-level dependency
+        while (topLevelDependencies.Count > 0)
+        {
+            var (name, lockDependency, _) = topLevelDependencies.Dequeue();
+
+            var component = this.CreateComponent(name, lockDependency.Version, lockDependency.Integrity);
+            if (component is null)
+            {
+                continue;
+            }
+
+            var previouslyAddedComponents = new HashSet<string> { component.Id };
+            var subQueue = new Queue<(string Name, PackageLockV1Dependency Dependency, TypedComponent Parent)>();
+
+            // Record the top-level component
+            this.RecordComponent(singleFileComponentRecorder, component, lockDependency.Dev ?? false, component);
+
+            // Enqueue nested dependencies and requires
+            this.EnqueueNestedDependencies(subQueue, lockDependency, dependencyLookup, component);
+
+            // Process sub-dependencies
+            while (subQueue.Count > 0)
+            {
+                var (subName, subDependency, parentComponent) = subQueue.Dequeue();
+
+                var subComponent = this.CreateComponent(subName, subDependency.Version, subDependency.Integrity);
+                if (subComponent is null || previouslyAddedComponents.Contains(subComponent.Id))
+                {
+                    continue;
+                }
+
+                previouslyAddedComponents.Add(subComponent.Id);
+
+                this.RecordComponent(singleFileComponentRecorder, subComponent, subDependency.Dev ?? false, component, parentComponent.Id);
+
+                this.EnqueueNestedDependencies(subQueue, subDependency, dependencyLookup, subComponent);
+            }
+        }
+    }
+
+    private void EnqueueDependencies(
+        Queue<(string Name, PackageLockV1Dependency Dependency, TypedComponent? Parent)> queue,
+        IDictionary<string, string>? dependencies,
+        Dictionary<string, (string Name, PackageLockV1Dependency Dependency)> dependencyLookup,
+        TypedComponent? parent)
+    {
+        if (dependencies is null)
+        {
+            return;
+        }
+
+        foreach (var dep in dependencies)
+        {
+            if (dependencyLookup.TryGetValue(dep.Key, out var lockDep))
+            {
+                queue.Enqueue((lockDep.Name, lockDep.Dependency, parent));
+            }
+        }
+    }
+
+    private void EnqueueNestedDependencies(
+        Queue<(string Name, PackageLockV1Dependency Dependency, TypedComponent Parent)> queue,
+        PackageLockV1Dependency dependency,
+        Dictionary<string, (string Name, PackageLockV1Dependency Dependency)> dependencyLookup,
+        TypedComponent parent)
+    {
+        // Enqueue nested dependencies (these are local to this package)
+        if (dependency.Dependencies is not null)
+        {
+            foreach (var (name, nestedDep) in dependency.Dependencies)
+            {
+                queue.Enqueue((name, nestedDep, parent));
+            }
+        }
+
+        // Enqueue requires (these reference the top-level lookup)
+        if (dependency.Requires is not null)
+        {
+            foreach (var req in dependency.Requires)
+            {
+                if (dependencyLookup.TryGetValue(req.Key, out var lockDep))
+                {
+                    queue.Enqueue((lockDep.Name, lockDep.Dependency, parent));
+                }
             }
         }
     }
