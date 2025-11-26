@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
@@ -78,10 +79,11 @@ public class GoCLIParser : IGoParser
         using var record = new GoReplaceTelemetryRecord();
 
         // Go CLI outputs multiple JSON objects (not an array), so we need to parse them one by one
-        var remaining = goListOutput.AsMemory();
+        var utf8Bytes = Encoding.UTF8.GetBytes(goListOutput);
+        var remaining = utf8Bytes.AsSpan();
         while (!remaining.IsEmpty)
         {
-            var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(remaining.ToString()));
+            var reader = new Utf8JsonReader(remaining);
             try
             {
                 var buildModule = JsonSerializer.Deserialize<GoBuildModule>(ref reader);
@@ -95,7 +97,7 @@ public class GoCLIParser : IGoParser
                 remaining = remaining[consumed..];
 
                 // Skip whitespace between JSON objects
-                while (!remaining.IsEmpty && char.IsWhiteSpace(remaining.Span[0]))
+                while (!remaining.IsEmpty && char.IsWhiteSpace((char)remaining[0]))
                 {
                     remaining = remaining[1..];
                 }
