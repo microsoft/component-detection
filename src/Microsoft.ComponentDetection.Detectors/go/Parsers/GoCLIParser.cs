@@ -96,12 +96,6 @@ public class GoCLIParser : IGoParser
                 // Move past the consumed bytes plus any whitespace
                 var consumed = (int)reader.BytesConsumed;
                 remaining = remaining[consumed..];
-
-                // Skip whitespace between JSON objects
-                while (!remaining.IsEmpty && char.IsWhiteSpace((char)remaining[0]))
-                {
-                    remaining = remaining[1..];
-                }
             }
             catch (JsonException ex)
             {
