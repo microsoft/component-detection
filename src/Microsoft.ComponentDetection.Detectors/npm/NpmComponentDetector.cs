@@ -83,12 +83,9 @@ public class NpmComponentDetector : FileComponentDetector
         }
 
         var containsVsCodeEngine = false;
-        if (packageJson.Engines is not null)
+        if (packageJson.Engines is not null && packageJson.Engines.ContainsKey("vscode"))
         {
-            if (packageJson.Engines.ContainsKey("vscode"))
-            {
-                containsVsCodeEngine = true;
-            }
+            containsVsCodeEngine = true;
         }
 
         if (containsVsCodeEngine)

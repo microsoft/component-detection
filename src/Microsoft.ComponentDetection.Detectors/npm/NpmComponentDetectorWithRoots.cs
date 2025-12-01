@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -122,12 +123,11 @@ public class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
             return;
         }
 
-        foreach (var dep in dependencies)
+        foreach (var (name, dependency) in dependencies.Keys
+            .Where(dependencyLookup.ContainsKey)
+            .Select(key => dependencyLookup[key]))
         {
-            if (dependencyLookup.TryGetValue(dep.Key, out var lockDep))
-            {
-                queue.Enqueue((lockDep.Name, lockDep.Dependency, parent));
-            }
+            queue.Enqueue((name, dependency, parent));
         }
     }
 
@@ -149,12 +149,11 @@ public class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
         // Enqueue requires (these reference the top-level lookup)
         if (dependency.Requires is not null)
         {
-            foreach (var req in dependency.Requires)
+            foreach (var (name, dep) in dependency.Requires.Keys
+                .Where(dependencyLookup.ContainsKey)
+                .Select(key => dependencyLookup[key]))
             {
-                if (dependencyLookup.TryGetValue(req.Key, out var lockDep))
-                {
-                    queue.Enqueue((lockDep.Name, lockDep.Dependency, parent));
-                }
+                queue.Enqueue((name, dep, parent));
             }
         }
     }

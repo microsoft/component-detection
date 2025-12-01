@@ -132,13 +132,12 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
             return;
         }
 
-        foreach (var dep in dependencies)
+        foreach (var (path, package) in dependencies.Keys
+            .Select(key => $"{NodeModules}/{key}")
+            .Where(packageLookup.ContainsKey)
+            .Select(path => packageLookup[path]))
         {
-            var path = $"{NodeModules}/{dep.Key}";
-            if (packageLookup.TryGetValue(path, out var lockPkg))
-            {
-                queue.Enqueue((lockPkg.Path, lockPkg.Package, parent));
-            }
+            queue.Enqueue((path, package, parent));
         }
     }
 
