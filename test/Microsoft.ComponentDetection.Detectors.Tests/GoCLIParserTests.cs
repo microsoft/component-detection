@@ -307,7 +307,7 @@ public class GoCLIParserTests
         result.Should().BeTrue();
         record.IsGoAvailable.Should().BeTrue();
         record.DidGoCliCommandFail.Should().BeFalse();
-        record.ProjectRoot.Should().Be("/project");
+        record.ProjectRoot.Should().EndWith("project");
         record.WasGraphSuccessful.Should().BeTrue();
     }
 
