@@ -17,7 +17,7 @@ public sealed partial class PackageJsonAuthorConverter : JsonConverter<PackageJs
     //   "John Doe <john@example.com>"
     //   "John Doe <john@example.com> (https://example.com)"
     //   "John Doe (https://example.com)"
-    [GeneratedRegex(@"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\(([^)]+?)\)|$)", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^(?<name>([^<(]+?)?)[ \t]*(?:<(?<email>([^>(]+?))>)?[ \t]*(?:\((?<url>[^)]+?)\)|$)", RegexOptions.Compiled)]
     private static partial Regex AuthorStringPattern();
 
     /// <inheritdoc />
@@ -44,6 +44,7 @@ public sealed partial class PackageJsonAuthorConverter : JsonConverter<PackageJs
 
             var name = match.Groups["name"].Value.Trim();
             var email = match.Groups["email"].Value.Trim();
+            var url = match.Groups["url"].Value.Trim();
 
             if (string.IsNullOrEmpty(name))
             {
@@ -54,6 +55,7 @@ public sealed partial class PackageJsonAuthorConverter : JsonConverter<PackageJs
             {
                 Name = name,
                 Email = string.IsNullOrEmpty(email) ? null : email,
+                Url = string.IsNullOrEmpty(url) ? null : url,
             };
         }
 

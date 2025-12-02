@@ -54,6 +54,7 @@ public class PackageJsonAuthorConverterTests
         result.Author.Should().NotBeNull();
         result.Author.Name.Should().Be("John Doe");
         result.Author.Email.Should().Be("john@example.com");
+        result.Author.Url.Should().Be("https://example.com");
     }
 
     [TestMethod]
@@ -67,6 +68,7 @@ public class PackageJsonAuthorConverterTests
         result.Author.Should().NotBeNull();
         result.Author.Name.Should().Be("John Doe");
         result.Author.Email.Should().BeNull();
+        result.Author.Url.Should().Be("https://example.com");
     }
 
     [TestMethod]
