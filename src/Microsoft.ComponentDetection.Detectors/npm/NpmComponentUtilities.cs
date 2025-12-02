@@ -65,14 +65,20 @@ public static class NpmComponentUtilities
         return component;
     }
 
-    public static bool TryParseNpmVersion(string npmRegistryHost, string packageName, string? versionString, out SemanticVersion? version)
+    public static bool TryParseNpmVersion(
+        string npmRegistryHost,
+        string packageName,
+        string? versionString,
+        out SemanticVersion? version
+    )
     {
-        if (versionString is not null && Uri.TryCreate(versionString, UriKind.Absolute, out var parsedUri))
+        if (
+            versionString is not null
+            && Uri.TryCreate(versionString, UriKind.Absolute, out var parsedUri)
+            && string.Equals(npmRegistryHost, parsedUri.Host, StringComparison.OrdinalIgnoreCase)
+        )
         {
-            if (string.Equals(npmRegistryHost, parsedUri.Host, StringComparison.OrdinalIgnoreCase))
-            {
-                return TryParseNpmRegistryVersion(packageName, parsedUri, out version);
-            }
+            return TryParseNpmRegistryVersion(packageName, parsedUri, out version);
         }
 
         version = null;
