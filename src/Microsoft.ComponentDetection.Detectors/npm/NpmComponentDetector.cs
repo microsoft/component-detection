@@ -52,7 +52,7 @@ public class NpmComponentDetector : FileComponentDetector
             var packageJson = await JsonSerializer.DeserializeAsync<PackageJson>(file.Stream, JsonOptions, cancellationToken);
             if (packageJson is null)
             {
-                this.Logger.LogInformation("Could not deserialize {PackageJsonFile}.", filePath);
+                this.Logger.LogInformation("Could not deserialize {PackageJsonFile}", filePath);
                 return;
             }
 
@@ -66,7 +66,7 @@ public class NpmComponentDetector : FileComponentDetector
         }
         catch (JsonException e)
         {
-            this.Logger.LogInformation(e, "Could not parse JSON from file {PackageJsonFilePaths}.", filePath);
+            this.Logger.LogInformation(e, "Could not parse JSON from file {PackageJsonFilePaths}", filePath);
         }
     }
 
@@ -82,6 +82,8 @@ public class NpmComponentDetector : FileComponentDetector
             return false;
         }
 
+        // Check for VS Code extensions
+        // See https://code.visualstudio.com/api/working-with-extensions/publishing-extension#visual-studio-code-compatibility
         var containsVsCodeEngine = false;
         if (packageJson.Engines is not null && packageJson.Engines.ContainsKey("vscode"))
         {
