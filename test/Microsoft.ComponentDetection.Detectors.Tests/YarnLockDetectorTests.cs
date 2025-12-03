@@ -858,9 +858,10 @@ public class YarnLockDetectorTests : BaseDetectorTest<YarnLockComponentDetector>
                     builder.Append($@"  ""{dependencyComponents[i].Name}"": ""{dependencyComponents[i].RequestedVersion}"",");
                 }
             }
+
+            builder.Append('}');
         }
 
-        builder.Append('}');
         builder.Append('}');
 
         return builder.ToString();
