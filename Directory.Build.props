@@ -23,6 +23,9 @@
     <PackageReleaseNotes>https://github.com/microsoft/component-detection/releases</PackageReleaseNotes>
     <!-- https://github.com/NuGet/Home/issues/11822#issuecomment-1218230674 -->
     <NoWarn>$(NoWarn);NU1507</NoWarn>
+
+    <!-- MSTest analyzer for enabling parallelization. To be addressed later. -->
+    <NoWarn>$(NoWarn);MSTEST0001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup Label="Package References">
