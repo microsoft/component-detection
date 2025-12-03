@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
