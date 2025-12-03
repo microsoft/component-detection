@@ -31,19 +31,15 @@ public class GoComponentTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersion_NullVersion()
     {
-        var goComponent = new GoComponent(TestName, null);
+        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(TestName, null));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersion_NullName()
     {
-        var goComponent = new GoComponent(null, TestVersion);
+        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(null, TestVersion));
     }
 
     [TestMethod]
@@ -57,27 +53,21 @@ public class GoComponentTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersionHash_NullVersion()
     {
-        var goComponent = new GoComponent(TestName, null, TestHash);
+        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(TestName, null, TestHash));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersionHash_NullName()
     {
-        var goComponent = new GoComponent(null, TestVersion, TestHash);
+        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(null, TestVersion, TestHash));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentNullException))]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MSTEST0006:Avoid '[ExpectedException]'", Justification = "Single-line test case")]
     public void ConstructorTest_NameVersionHash_NullHash()
     {
-        var goComponent = new GoComponent(TestName, TestVersion, null);
+        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(TestName, TestVersion, null));
     }
 
     [TestMethod]
