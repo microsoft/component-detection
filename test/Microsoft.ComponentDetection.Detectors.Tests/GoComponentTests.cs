@@ -33,13 +33,15 @@ public class GoComponentTests
     [TestMethod]
     public void ConstructorTest_NameVersion_NullVersion()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(TestName, null));
+        var action = () => new GoComponent(TestName, null);
+        action.Should().ThrowExactly<ArgumentNullException>();
     }
 
     [TestMethod]
     public void ConstructorTest_NameVersion_NullName()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(null, TestVersion));
+        var action = () => new GoComponent(null, TestVersion);
+        action.Should().ThrowExactly<ArgumentNullException>();
     }
 
     [TestMethod]
@@ -55,19 +57,22 @@ public class GoComponentTests
     [TestMethod]
     public void ConstructorTest_NameVersionHash_NullVersion()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(TestName, null, TestHash));
+        var action = () => new GoComponent(TestName, null, TestHash);
+        action.Should().ThrowExactly<ArgumentNullException>();
     }
 
     [TestMethod]
     public void ConstructorTest_NameVersionHash_NullName()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(null, TestVersion, TestHash));
+        var action = () => new GoComponent(null, TestVersion, TestHash);
+        action.Should().ThrowExactly<ArgumentNullException>();
     }
 
     [TestMethod]
     public void ConstructorTest_NameVersionHash_NullHash()
     {
-        Assert.ThrowsExactly<ArgumentNullException>(() => new GoComponent(TestName, TestVersion, null));
+        var action = () => new GoComponent(TestName, TestVersion, null);
+        action.Should().ThrowExactly<ArgumentNullException>();
     }
 
     [TestMethod]
