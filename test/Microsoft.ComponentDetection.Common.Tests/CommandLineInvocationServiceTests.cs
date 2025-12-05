@@ -6,7 +6,6 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using AwesomeAssertions;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
@@ -22,28 +21,32 @@ public class CommandLineInvocationServiceTests
         this.commandLineService = new CommandLineInvocationService();
     }
 
-    [SkipTestIfNotWindows]
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
     public async Task ShowsCmdExeAsExecutableAsync()
     {
         var result = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
         result.Should().BeTrue();
     }
 
-    [SkipTestIfNotWindows]
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
     public async Task FallbackWorksIfBadCommandsAreFirstAsync()
     {
         var result = await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", ["fakecommandexecutable.exe", "cmd.exe"], "/C");
         result.Should().BeTrue();
     }
 
-    [SkipTestIfNotWindows]
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
     public async Task ReturnsFalseIfNoValidCommandIsFoundAsync()
     {
         var result = await this.commandLineService.CanCommandBeLocatedAsync("57AB44A4-885A-47F4-866C-41417133B983", ["fakecommandexecutable.exe"], "/C");
         result.Should().BeFalse();
     }
 
-    [SkipTestIfNotWindows]
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
     public async Task ReturnsStandardOutputAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
@@ -54,7 +57,8 @@ public class CommandLineInvocationServiceTests
         taskResult.StdOut.Replace(Environment.NewLine, string.Empty).Should().Be("Expected Output");
     }
 
-    [SkipTestIfNotWindows]
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
     public async Task ExecutesCommandEvenWithLargeStdOutAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
@@ -76,7 +80,8 @@ public class CommandLineInvocationServiceTests
                 taskResult.StdOut.Length < 100 ? $"Stdout was '{taskResult.StdOut}', which is shorter than 8100 chars" : $"Length was {taskResult.StdOut.Length}, which is less than 8100");
     }
 
-    [SkipTestIfNotWindows]
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
     public async Task ExecutesCommandCapturingErrorOutputAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
@@ -95,7 +100,8 @@ public class CommandLineInvocationServiceTests
         taskResult.StdOut.Should().BeEmpty();
     }
 
-    [SkipTestIfNotWindows]
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
     public async Task ExecutesInAWorkingDirectoryAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");
@@ -108,7 +114,8 @@ public class CommandLineInvocationServiceTests
         taskResult.StdOut.Should().Contain(tempDirectoryPath);
     }
 
-    [SkipTestIfNotWindows]
+    [TestMethod]
+    [OSCondition(OperatingSystems.Windows)]
     public async Task ThrowsIfWorkingDirectoryDoesNotExistAsync()
     {
         var isLocated = await this.commandLineService.CanCommandBeLocatedAsync("cmd.exe", default, "/C");

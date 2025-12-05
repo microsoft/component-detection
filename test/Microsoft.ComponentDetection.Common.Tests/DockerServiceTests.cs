@@ -5,7 +5,6 @@ using System;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Docker.DotNet.Models;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -31,21 +30,24 @@ public class DockerServiceTests
         canPingDocker.Should().BeTrue();
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanRunLinuxContainersAsync()
     {
         var isLinuxContainerModeEnabled = await this.dockerService.CanRunLinuxContainersAsync();
         isLinuxContainerModeEnabled.Should().BeTrue();
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanPullImageAsync()
     {
         Func<Task> action = async () => await this.dockerService.TryPullImageAsync(TestImage);
         await action.Should().NotThrowAsync();
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanInspectImageAsync()
     {
         await this.dockerService.TryPullImageAsync(TestImage);
@@ -54,7 +56,8 @@ public class DockerServiceTests
         details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest");
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_PopulatesBaseImageAndLayerDetailsAsync()
     {
         await this.dockerService.TryPullImageAsync(TestImageWithBaseDetails);
@@ -74,7 +77,8 @@ public class DockerServiceTests
         details.Layers.Should().ContainSingle();
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanCreateAndRunImageAsync()
     {
         var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, []);
