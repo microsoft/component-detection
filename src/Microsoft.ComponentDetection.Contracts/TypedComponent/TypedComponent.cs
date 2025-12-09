@@ -49,12 +49,16 @@ public abstract class TypedComponent
 
     /// <summary>Gets the type of the component, must be well known.</summary>
     [JsonConverter(typeof(StringEnumConverter))] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))] // System.Text.Json
+    [JsonProperty("type", Order = int.MinValue)] // Newtonsoft.Json
+    [System.Text.Json.Serialization.JsonIgnore] // System.Text.Json - type is handled by [JsonPolymorphic] discriminator
     public abstract ComponentType Type { get; }
 
     /// <summary>Gets the id of the component.</summary>
+    [JsonProperty("id")] // Newtonsoft.Json
+    [JsonPropertyName("id")] // System.Text.Json
     public string Id => this.id ??= this.ComputeId();
 
+    [JsonPropertyName("packageUrl")]
     public virtual PackageURL PackageUrl { get; }
 
     [JsonIgnore] // Newtonsoft.Json

@@ -3,9 +3,9 @@ namespace Microsoft.ComponentDetection.Detectors.Linux.Filters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
-using Newtonsoft.Json;
 
 /// <summary>
 /// Filters out invalid ELF binary packages from Mariner 2.0 images that lack proper release/epoch version fields.
@@ -50,7 +50,7 @@ public class Mariner2ArtifactFilter : IArtifactFilter
                 artifactsList.Remove(elfArtifact);
             }
 
-            syftTelemetryRecord.ComponentsRemoved = JsonConvert.SerializeObject(removedComponents);
+            syftTelemetryRecord.ComponentsRemoved = JsonSerializer.Serialize(removedComponents);
         }
 
         return artifactsList;

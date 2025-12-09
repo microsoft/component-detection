@@ -21,198 +21,203 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class LinuxScannerTests
 {
-    private const string SyftOutputLicensesFieldAndAuthor =
-        @"{
-                ""distro"": {
-                    ""id"":""test-distribution"",
-                    ""versionId"":""1.0.0""
-                },
-                ""artifacts"": [
-                    {
-                        ""name"":""test"",
-                        ""version"":""1.0.0"",
-                        ""type"":""deb"",
-                        ""locations"": [
-                            {
-                                ""path"": ""/var/lib/dpkg/status"",
-                                ""layerID"": ""sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971""
-                            }
-                        ],
-                        ""metadata"": {
-                            ""author"": ""John Doe""
+    private const string SyftOutputLicensesFieldAndAuthor = """
+        {
+            "distro": {
+                "id":"test-distribution",
+                "versionID":"1.0.0"
+            },
+            "artifacts": [
+                {
+                    "name":"test",
+                    "version":"1.0.0",
+                    "type":"deb",
+                    "locations": [
+                        {
+                            "path": "/var/lib/dpkg/status",
+                            "layerID": "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971"
+                        }
+                    ],
+                    "metadata": {
+                        "author": "John Doe"
+                    },
+                    "licenses": [
+                        {
+                            "value": "MIT"
                         },
-                        ""licenses"": [
-                            {
-                                ""value"": ""MIT"",
-                            },
-                            {
-                                ""value"": ""GPLv2"",
-                            },
-                            {
-                                ""value"": ""GPLv3"",
-                            }
-                        ]
-                    }
-                ]
-            }";
-
-    private const string SyftOutputLicenseFieldAndMaintainer =
-        @"{
-                ""distro"": {
-                    ""id"":""test-distribution"",
-                    ""versionId"":""1.0.0""
-                },
-                ""artifacts"": [
-                    {
-                        ""name"":""test"",
-                        ""version"":""1.0.0"",
-                        ""type"":""deb"",
-                        ""locations"": [
-                            {
-                                ""path"": ""/var/lib/dpkg/status"",
-                                ""layerID"": ""sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971""
-                            }
-                        ],
-                        ""metadata"": {
-                            ""maintainer"": ""John Doe"",
-                            ""license"": ""MIT, GPLv2, GPLv3""
+                        {
+                            "value": "GPLv2"
+                        },
+                        {
+                            "value": "GPLv3"
                         }
-                    }
-                ]
-            }";
+                    ]
+                }
+            ]
+        }
+        """;
 
-    private const string SyftOutputNoAuthorOrLicense =
-        @"{
-                ""distro"": {
-                    ""id"":""test-distribution"",
-                    ""versionId"":""1.0.0""
-                },
-                ""artifacts"": [
-                    {
-                        ""name"":""test"",
-                        ""version"":""1.0.0"",
-                        ""type"":""deb"",
-                        ""locations"": [
-                            {
-                                ""path"": ""/var/lib/dpkg/status"",
-                                ""layerID"": ""sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971""
-                            }
-                        ],
-                    }
-                ]
-            }";
-
-    private const string SyftOutputIgnoreInvalidMarinerPackages =
-        @"{
-                ""distro"": {
-                    ""prettyName"": ""CBL-Mariner/Linux"",
-                    ""name"": ""Common Base Linux Mariner"",
-                    ""id"": ""mariner"",
-                    ""version"": ""2.0.20250304"",
-                    ""versionID"": ""2.0"",
-                },
-                ""artifacts"": [
-                    {
-                        ""id"": ""4af20256df269904"",
-                        ""name"": ""busybox"",
-                        ""version"": ""1.35.0"",
-                        ""type"": ""rpm"",
-                        ""foundBy"": ""elf-binary-package-cataloger"",
-                        ""locations"": [
-                            {
-                                ""path"": ""/usr/sbin/busybox"",
-                                ""layerID"": ""sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6"",
-                                ""accessPath"": ""/usr/sbin/busybox"",
-                                ""annotations"": { ""evidence"": ""primary"" }
-                            }
-                        ],
-                        ""cpes"": [
-                            {
-                                ""cpe"": ""cpe:2.3:a:busybox:busybox:1.35.0:*:*:*:*:*:*:*"",
-                                ""source"": ""syft-generated""
-                            }
-                        ],
-                        ""purl"": ""pkg:rpm/mariner/busybox@1.35.0?distro=mariner-2.0"",
-                        ""metadataType"": ""elf-binary-package-note-json-payload"",
-                        ""metadata"": { ""type"": ""rpm"", ""os"": ""mariner"", ""osVersion"": ""2.0"" }
-                    },
-                    {
-                        ""id"": ""45849b2d67d236b0"",
-                        ""name"": ""busybox"",
-                        ""version"": ""1.35.0-13.cm2"",
-                        ""type"": ""rpm"",
-                        ""foundBy"": ""rpm-db-cataloger"",
-                        ""locations"": [
-                            {
-                                ""path"": ""/var/lib/rpmmanifest/container-manifest-2"",
-                                ""layerID"": ""sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6"",
-                                ""accessPath"": ""/var/lib/rpmmanifest/container-manifest-2"",
-                                ""annotations"": { ""evidence"": ""primary"" }
-                            }
-                        ],
-                        ""cpes"": [
-                            {
-                                ""cpe"": ""cpe:2.3:a:microsoftcorporation:busybox:1.35.0-13.cm2:*:*:*:*:*:*:*"",
-                                ""source"": ""syft-generated""
-                            },
-                            {
-                                ""cpe"": ""cpe:2.3:a:busybox:busybox:1.35.0-13.cm2:*:*:*:*:*:*:*"",
-                                ""source"": ""syft-generated""
-                            }
-                        ],
-                        ""purl"": ""pkg:rpm/busybox@1.35.0-13.cm2?arch=x86_64&upstream=busybox-1.35.0-13.cm2.src.rpm"",
-                        ""metadataType"": ""rpm-db-entry"",
-                        ""metadata"": {
-                            ""name"": ""busybox"",
-                            ""version"": ""1.35.0"",
-                            ""epoch"": null,
-                            ""architecture"": ""x86_64"",
-                            ""release"": ""13.cm2"",
-                            ""sourceRpm"": ""busybox-1.35.0-13.cm2.src.rpm"",
-                            ""size"": 3512551,
-                            ""vendor"": ""Microsoft Corporation"",
-                            ""files"": null
+    private const string SyftOutputLicenseFieldAndMaintainer = """
+        {
+            "distro": {
+                "id":"test-distribution",
+                "versionID":"1.0.0"
+            },
+            "artifacts": [
+                {
+                    "name":"test",
+                    "version":"1.0.0",
+                    "type":"deb",
+                    "locations": [
+                        {
+                            "path": "/var/lib/dpkg/status",
+                            "layerID": "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971"
                         }
-                    },
-                ]
-            }";
+                    ],
+                    "metadata": {
+                        "maintainer": "John Doe",
+                        "license": "MIT, GPLv2, GPLv3"
+                    }
+                }
+            ]
+        }
+        """;
 
-    private const string SyftOutputRemoveNonduplicatedMarinerPackages =
-        @"{
-                ""distro"": {
-                    ""prettyName"": ""CBL-Mariner/Linux"",
-                    ""name"": ""Common Base Linux Mariner"",
-                    ""id"": ""mariner"",
-                    ""version"": ""2.0.20250304"",
-                    ""versionID"": ""2.0"",
+    private const string SyftOutputNoAuthorOrLicense = """
+        {
+            "distro": {
+                "id":"test-distribution",
+                "versionID":"1.0.0"
+            },
+            "artifacts": [
+                {
+                    "name":"test",
+                    "version":"1.0.0",
+                    "type":"deb",
+                    "locations": [
+                        {
+                            "path": "/var/lib/dpkg/status",
+                            "layerID": "sha256:f95fc50d21d981f1efe1f04109c2c3287c271794f5d9e4fdf9888851a174a971"
+                        }
+                    ]
+                }
+            ]
+        }
+        """;
+
+    private const string SyftOutputIgnoreInvalidMarinerPackages = """
+        {
+            "distro": {
+                "prettyName": "CBL-Mariner/Linux",
+                "name": "Common Base Linux Mariner",
+                "id": "mariner",
+                "version": "2.0.20250304",
+                "versionID": "2.0"
+            },
+            "artifacts": [
+                {
+                    "id": "4af20256df269904",
+                    "name": "busybox",
+                    "version": "1.35.0",
+                    "type": "rpm",
+                    "foundBy": "elf-binary-package-cataloger",
+                    "locations": [
+                        {
+                            "path": "/usr/sbin/busybox",
+                            "layerID": "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6",
+                            "accessPath": "/usr/sbin/busybox",
+                            "annotations": { "evidence": "primary" }
+                        }
+                    ],
+                    "cpes": [
+                        {
+                            "cpe": "cpe:2.3:a:busybox:busybox:1.35.0:*:*:*:*:*:*:*",
+                            "source": "syft-generated"
+                        }
+                    ],
+                    "purl": "pkg:rpm/mariner/busybox@1.35.0?distro=mariner-2.0",
+                    "metadataType": "elf-binary-package-note-json-payload",
+                    "metadata": { "type": "rpm", "os": "mariner", "osVersion": "2.0" }
                 },
-                ""artifacts"": [
-                    {
-                        ""id"": ""4af20256df269904"",
-                        ""name"": ""busybox"",
-                        ""version"": ""1.35.0"",
-                        ""type"": ""rpm"",
-                        ""foundBy"": ""elf-binary-package-cataloger"",
-                        ""locations"": [
-                            {
-                                ""path"": ""/usr/sbin/busybox"",
-                                ""layerID"": ""sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6"",
-                                ""accessPath"": ""/usr/sbin/busybox"",
-                                ""annotations"": { ""evidence"": ""primary"" }
-                            }
-                        ],
-                        ""cpes"": [
-                            {
-                                ""cpe"": ""cpe:2.3:a:busybox:busybox:1.35.0:*:*:*:*:*:*:*"",
-                                ""source"": ""syft-generated""
-                            }
-                        ],
-                        ""purl"": ""pkg:rpm/mariner/busybox@1.35.0?distro=mariner-2.0"",
-                        ""metadataType"": ""elf-binary-package-note-json-payload"",
-                        ""metadata"": { ""type"": ""rpm"", ""os"": ""mariner"", ""osVersion"": ""2.0"" }
-                    },
-                ]
-            }";
+                {
+                    "id": "45849b2d67d236b0",
+                    "name": "busybox",
+                    "version": "1.35.0-13.cm2",
+                    "type": "rpm",
+                    "foundBy": "rpm-db-cataloger",
+                    "locations": [
+                        {
+                            "path": "/var/lib/rpmmanifest/container-manifest-2",
+                            "layerID": "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6",
+                            "accessPath": "/var/lib/rpmmanifest/container-manifest-2",
+                            "annotations": { "evidence": "primary" }
+                        }
+                    ],
+                    "cpes": [
+                        {
+                            "cpe": "cpe:2.3:a:microsoftcorporation:busybox:1.35.0-13.cm2:*:*:*:*:*:*:*",
+                            "source": "syft-generated"
+                        },
+                        {
+                            "cpe": "cpe:2.3:a:busybox:busybox:1.35.0-13.cm2:*:*:*:*:*:*:*",
+                            "source": "syft-generated"
+                        }
+                    ],
+                    "purl": "pkg:rpm/busybox@1.35.0-13.cm2?arch=x86_64&upstream=busybox-1.35.0-13.cm2.src.rpm",
+                    "metadataType": "rpm-db-entry",
+                    "metadata": {
+                        "name": "busybox",
+                        "version": "1.35.0",
+                        "epoch": null,
+                        "architecture": "x86_64",
+                        "release": "13.cm2",
+                        "sourceRpm": "busybox-1.35.0-13.cm2.src.rpm",
+                        "size": 3512551,
+                        "vendor": "Microsoft Corporation",
+                        "files": null
+                    }
+                }
+            ]
+        }
+        """;
+
+    private const string SyftOutputRemoveNonduplicatedMarinerPackages = """
+        {
+            "distro": {
+                "prettyName": "CBL-Mariner/Linux",
+                "name": "Common Base Linux Mariner",
+                "id": "mariner",
+                "version": "2.0.20250304",
+                "versionID": "2.0"
+            },
+            "artifacts": [
+                {
+                    "id": "4af20256df269904",
+                    "name": "busybox",
+                    "version": "1.35.0",
+                    "type": "rpm",
+                    "foundBy": "elf-binary-package-cataloger",
+                    "locations": [
+                        {
+                            "path": "/usr/sbin/busybox",
+                            "layerID": "sha256:81caca2c07d9859b258a9cdfb1b1ab9d063f30ab73a4de9ea2ae760fd175bac6",
+                            "accessPath": "/usr/sbin/busybox",
+                            "annotations": { "evidence": "primary" }
+                        }
+                    ],
+                    "cpes": [
+                        {
+                            "cpe": "cpe:2.3:a:busybox:busybox:1.35.0:*:*:*:*:*:*:*",
+                            "source": "syft-generated"
+                        }
+                    ],
+                    "purl": "pkg:rpm/mariner/busybox@1.35.0?distro=mariner-2.0",
+                    "metadataType": "elf-binary-package-note-json-payload",
+                    "metadata": { "type": "rpm", "os": "mariner", "osVersion": "2.0" }
+                }
+            ]
+        }
+        """;
 
     private readonly LinuxScanner linuxScanner;
     private readonly Mock<IDockerService> mockDockerService;
@@ -440,59 +445,60 @@ public class LinuxScannerTests
     [TestMethod]
     public async Task TestLinuxScanner_SupportsMultipleComponentTypes_Async()
     {
-        const string syftOutputWithMixedTypes =
-            @"{
-                ""distro"": {
-                    ""id"":""ubuntu"",
-                    ""versionId"":""22.04""
+        const string syftOutputWithMixedTypes = """
+            {
+                "distro": {
+                    "id":"ubuntu",
+                    "versionID":"22.04"
                 },
-                ""artifacts"": [
+                "artifacts": [
                     {
-                        ""name"":""curl"",
-                        ""version"":""7.81.0-1ubuntu1.10"",
-                        ""type"":""deb"",
-                        ""locations"": [
+                        "name":"curl",
+                        "version":"7.81.0-1ubuntu1.10",
+                        "type":"deb",
+                        "locations": [
                             {
-                                ""path"": ""/var/lib/dpkg/status"",
-                                ""layerID"": ""sha256:layer1""
+                                "path": "/var/lib/dpkg/status",
+                                "layerID": "sha256:layer1"
                             }
                         ],
-                        ""metadata"": {
-                            ""maintainer"": ""Ubuntu Developers""
+                        "metadata": {
+                            "maintainer": "Ubuntu Developers"
                         }
                     },
                     {
-                        ""name"":""express"",
-                        ""version"":""4.18.2"",
-                        ""type"":""npm"",
-                        ""locations"": [
+                        "name":"express",
+                        "version":"4.18.2",
+                        "type":"npm",
+                        "locations": [
                             {
-                                ""path"": ""/app/node_modules/express/package.json"",
-                                ""layerID"": ""sha256:layer2""
+                                "path": "/app/node_modules/express/package.json",
+                                "layerID": "sha256:layer2"
                             }
                         ],
-                        ""metadata"": {
-                            ""author"": ""TJ Holowaychuk"",
-                            ""integrity"": ""sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ==""
+                        "metadata": {
+                            "author": "TJ Holowaychuk",
+                            "integrity": "sha512-5/PsL6iGPdfQ/lKM1UuielYgv3BUoJfz1aUwU9vHZ+J7gyvwdQXFEBIEIaxeGf0GIcreATNyBExtalisDbuMqQ=="
                         }
                     },
                     {
-                        ""name"":""requests"",
-                        ""version"":""2.31.0"",
-                        ""type"":""python"",
-                        ""locations"": [
+                        "name":"requests",
+                        "version":"2.31.0",
+                        "type":"python",
+                        "locations": [
                             {
-                                ""path"": ""/usr/local/lib/python3.10/site-packages/requests-2.31.0.dist-info/METADATA"",
-                                ""layerID"": ""sha256:layer2""
+                                "path": "/usr/local/lib/python3.10/site-packages/requests-2.31.0.dist-info/METADATA",
+                                "layerID": "sha256:layer2"
                             }
                         ],
-                        ""metadata"": {
-                            ""author"": ""Kenneth Reitz"",
-                            ""license"": ""Apache-2.0""
+                        "metadata": {
+                            "author": "Kenneth Reitz",
+                            "license": "Apache-2.0"
                         }
                     }
                 ]
-            }";
+            }
+            """;
 
         this.mockDockerService.Setup(service =>
                 service.CreateAndRunContainerAsync(
@@ -548,54 +554,55 @@ public class LinuxScannerTests
     [TestMethod]
     public async Task TestLinuxScanner_FiltersComponentsByEnabledTypes_OnlyLinux_Async()
     {
-        const string syftOutputWithMixedTypes =
-            @"{
-                ""distro"": {
-                    ""id"":""ubuntu"",
-                    ""versionId"":""22.04""
+        const string syftOutputWithMixedTypes = """
+            {
+                "distro": {
+                    "id":"ubuntu",
+                    "versionID":"22.04"
                 },
-                ""artifacts"": [
+                "artifacts": [
                     {
-                        ""name"":""curl"",
-                        ""version"":""7.81.0-1ubuntu1.10"",
-                        ""type"":""deb"",
-                        ""locations"": [
+                        "name":"curl",
+                        "version":"7.81.0-1ubuntu1.10",
+                        "type":"deb",
+                        "locations": [
                             {
-                                ""path"": ""/var/lib/dpkg/status"",
-                                ""layerID"": ""sha256:layer1""
+                                "path": "/var/lib/dpkg/status",
+                                "layerID": "sha256:layer1"
                             }
                         ],
-                        ""metadata"": {
-                            ""maintainer"": ""Ubuntu Developers""
+                        "metadata": {
+                            "maintainer": "Ubuntu Developers"
                         }
                     },
                     {
-                        ""name"":""express"",
-                        ""version"":""4.18.2"",
-                        ""type"":""npm"",
-                        ""locations"": [
+                        "name":"express",
+                        "version":"4.18.2",
+                        "type":"npm",
+                        "locations": [
                             {
-                                ""path"": ""/app/node_modules/express/package.json"",
-                                ""layerID"": ""sha256:layer2""
+                                "path": "/app/node_modules/express/package.json",
+                                "layerID": "sha256:layer2"
                             }
                         ],
-                        ""metadata"": {
-                            ""author"": ""TJ Holowaychuk""
+                        "metadata": {
+                            "author": "TJ Holowaychuk"
                         }
                     },
                     {
-                        ""name"":""requests"",
-                        ""version"":""2.31.0"",
-                        ""type"":""python"",
-                        ""locations"": [
+                        "name":"requests",
+                        "version":"2.31.0",
+                        "type":"python",
+                        "locations": [
                             {
-                                ""path"": ""/usr/local/lib/python3.10/site-packages/requests-2.31.0.dist-info/METADATA"",
-                                ""layerID"": ""sha256:layer2""
+                                "path": "/usr/local/lib/python3.10/site-packages/requests-2.31.0.dist-info/METADATA",
+                                "layerID": "sha256:layer2"
                             }
                         ]
                     }
                 ]
-            }";
+            }
+            """;
 
         this.mockDockerService.Setup(service =>
                 service.CreateAndRunContainerAsync(
@@ -632,54 +639,55 @@ public class LinuxScannerTests
     [TestMethod]
     public async Task TestLinuxScanner_FiltersComponentsByEnabledTypes_OnlyNpmAndPip_Async()
     {
-        const string syftOutputWithMixedTypes =
-            @"{
-                ""distro"": {
-                    ""id"":""ubuntu"",
-                    ""versionId"":""22.04""
+        const string syftOutputWithMixedTypes = """
+            {
+                "distro": {
+                    "id":"ubuntu",
+                    "versionId":"22.04"
                 },
-                ""artifacts"": [
+                "artifacts": [
                     {
-                        ""name"":""curl"",
-                        ""version"":""7.81.0-1ubuntu1.10"",
-                        ""type"":""deb"",
-                        ""locations"": [
+                        "name":"curl",
+                        "version":"7.81.0-1ubuntu1.10",
+                        "type":"deb",
+                        "locations": [
                             {
-                                ""path"": ""/var/lib/dpkg/status"",
-                                ""layerID"": ""sha256:layer1""
+                                "path": "/var/lib/dpkg/status",
+                                "layerID": "sha256:layer1"
                             }
                         ],
-                        ""metadata"": {
-                            ""maintainer"": ""Ubuntu Developers""
+                        "metadata": {
+                            "maintainer": "Ubuntu Developers"
                         }
                     },
                     {
-                        ""name"":""express"",
-                        ""version"":""4.18.2"",
-                        ""type"":""npm"",
-                        ""locations"": [
+                        "name":"express",
+                        "version":"4.18.2",
+                        "type":"npm",
+                        "locations": [
                             {
-                                ""path"": ""/app/node_modules/express/package.json"",
-                                ""layerID"": ""sha256:layer2""
+                                "path": "/app/node_modules/express/package.json",
+                                "layerID": "sha256:layer2"
                             }
                         ],
-                        ""metadata"": {
-                            ""author"": ""TJ Holowaychuk""
+                        "metadata": {
+                            "author": "TJ Holowaychuk"
                         }
                     },
                     {
-                        ""name"":""requests"",
-                        ""version"":""2.31.0"",
-                        ""type"":""python"",
-                        ""locations"": [
+                        "name":"requests",
+                        "version":"2.31.0",
+                        "type":"python",
+                        "locations": [
                             {
-                                ""path"": ""/usr/local/lib/python3.10/site-packages/requests-2.31.0.dist-info/METADATA"",
-                                ""layerID"": ""sha256:layer2""
+                                "path": "/usr/local/lib/python3.10/site-packages/requests-2.31.0.dist-info/METADATA",
+                                "layerID": "sha256:layer2"
                             }
                         ]
                     }
                 ]
-            }";
+            }
+            """;
 
         this.mockDockerService.Setup(service =>
                 service.CreateAndRunContainerAsync(

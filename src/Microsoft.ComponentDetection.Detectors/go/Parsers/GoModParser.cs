@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
@@ -71,7 +72,8 @@ public class GoModParser : IGoParser
     public async Task<bool> ParseAsync(
         ISingleFileComponentRecorder singleFileComponentRecorder,
         IComponentStream file,
-        GoGraphTelemetryRecord record)
+        GoGraphTelemetryRecord record,
+        CancellationToken cancellationToken = default)
     {
         // Collect replace directives
         var (replacePathDirectives, moduleReplacements) = await this.GetAllReplaceDirectivesAsync(file);
@@ -84,7 +86,7 @@ public class GoModParser : IGoParser
         // There can be multiple require( ) sections in go 1.17+. loop over all of them.
         while (!reader.EndOfStream)
         {
-            var line = await reader.ReadLineAsync();
+            var line = await reader.ReadLineAsync(cancellationToken);
 
             while (line != null && !line.StartsWith("require ("))
             {
@@ -100,11 +102,11 @@ public class GoModParser : IGoParser
                     this.TryRegisterDependencyFromModLine(file, line[StartString.Length..], singleFileComponentRecorder, replacePathDirectives, moduleReplacements);
                 }
 
-                line = await reader.ReadLineAsync();
+                line = await reader.ReadLineAsync(cancellationToken);
             }
 
             // Stopping at the first ) restrict the detection to only the require section.
-            while ((line = await reader.ReadLineAsync()) != null && !line.EndsWith(')'))
+            while ((line = await reader.ReadLineAsync(cancellationToken)) != null && !line.EndsWith(')'))
             {
                 this.TryRegisterDependencyFromModLine(file, line, singleFileComponentRecorder, replacePathDirectives, moduleReplacements);
             }

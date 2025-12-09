@@ -3,14 +3,15 @@ namespace Microsoft.ComponentDetection.Detectors.Go;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class GoCLIParser : IGoParser
 {
@@ -25,11 +26,11 @@ public class GoCLIParser : IGoParser
         this.commandLineInvocationService = commandLineInvocationService;
     }
 
-    [SuppressMessage("Maintainability", "CA1508:Avoid dead conditional code", Justification = "False positive")]
     public async Task<bool> ParseAsync(
         ISingleFileComponentRecorder singleFileComponentRecorder,
         IComponentStream file,
-        GoGraphTelemetryRecord record)
+        GoGraphTelemetryRecord record,
+        CancellationToken cancellationToken = default)
     {
         record.WasGraphSuccessful = false;
         record.DidGoCliCommandFail = false;
@@ -49,7 +50,7 @@ public class GoCLIParser : IGoParser
                                    "Detection time may be improved by activating fallback strategy (https://github.com/microsoft/component-detection/blob/main/docs/detectors/go.md#fallback-detection-strategy). " +
                                    "But, it will introduce noise into the detected components.");
 
-        var goDependenciesProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, workingDirectory: projectRootDirectory, ["list", "-mod=readonly", "-m", "-json", "all"]);
+        var goDependenciesProcess = await this.commandLineInvocationService.ExecuteCommandAsync("go", null, projectRootDirectory, cancellationToken, "list", "-mod=readonly", "-m", "-json", "all");
         if (goDependenciesProcess.ExitCode != 0)
         {
             this.logger.LogError("Go CLI command \"go list -m -json all\" failed with error: {GoDependenciesProcessStdErr}", goDependenciesProcess.StdErr);
@@ -66,7 +67,8 @@ public class GoCLIParser : IGoParser
             this.logger,
             singleFileComponentRecorder,
             projectRootDirectory.FullName,
-            record);
+            record,
+            cancellationToken);
 
         return true;
     }
@@ -74,19 +76,32 @@ public class GoCLIParser : IGoParser
     private void RecordBuildDependencies(string goListOutput, ISingleFileComponentRecorder singleFileComponentRecorder, string projectRootDirectoryFullName)
     {
         var goBuildModules = new List<GoBuildModule>();
-        var reader = new JsonTextReader(new StringReader(goListOutput))
-        {
-            SupportMultipleContent = true,
-        };
 
         using var record = new GoReplaceTelemetryRecord();
 
-        while (reader.Read())
+        // Go CLI outputs multiple JSON objects (not an array), so we need to parse them one by one
+        var utf8Bytes = Encoding.UTF8.GetBytes(goListOutput);
+        var remaining = utf8Bytes.AsSpan();
+        while (!remaining.IsEmpty)
         {
-            var serializer = new JsonSerializer();
-            var buildModule = serializer.Deserialize<GoBuildModule>(reader);
+            var reader = new Utf8JsonReader(remaining);
+            try
+            {
+                var buildModule = JsonSerializer.Deserialize<GoBuildModule>(ref reader);
+                if (buildModule != null)
+                {
+                    goBuildModules.Add(buildModule);
+                }
 
-            goBuildModules.Add(buildModule);
+                // Move past the consumed bytes plus any whitespace
+                var consumed = (int)reader.BytesConsumed;
+                remaining = remaining[consumed..];
+            }
+            catch (JsonException ex)
+            {
+                this.logger.LogWarning("Failed to parse Go build module JSON: {ErrorMessage}", ex.Message);
+                break;
+            }
         }
 
         foreach (var dependency in goBuildModules)

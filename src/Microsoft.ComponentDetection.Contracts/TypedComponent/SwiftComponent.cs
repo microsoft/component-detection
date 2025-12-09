@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 /// <summary>
@@ -30,16 +31,20 @@ public class SwiftComponent : TypedComponent
         this.hash = this.ValidateRequiredInput(hash, nameof(hash), nameof(ComponentType.Swift));
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; }
 
+    [JsonPropertyName("version")]
     public string Version { get; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Swift;
 
     // Example PackageURL -> pkg:swift/github.com/apple/swift-asn1
     // type: swift
     // namespace: github.com/apple
     // name: swift-asn1
+    [JsonPropertyName("packageUrl")]
     public PackageURL PackageURL => new PackageURL(
         type: "swift",
         @namespace: this.GetNamespaceFromPackageUrl(),

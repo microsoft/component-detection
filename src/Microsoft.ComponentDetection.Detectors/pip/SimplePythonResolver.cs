@@ -6,17 +6,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using MoreLinq;
-using Newtonsoft.Json;
 
 public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
 {
     private static readonly Regex VersionRegex = new(@"-((\d+)((\.)\w+((\+|\.)\w*)*)*)(.tar|-)", RegexOptions.Compiled);
+
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     private readonly ISimplePyPiClient simplePypiClient;
     private readonly ILogger<SimplePythonResolver> logger;
@@ -141,7 +147,7 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
                     this.logger.LogWarning(
                         "Unable to resolve root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
                         rootPackage.Name,
-                        JsonConvert.SerializeObject(rootPackage.DependencySpecifiers));
+                        JsonSerializer.Serialize(rootPackage.DependencySpecifiers, JsonSerializerOptions));
                     singleFileComponentRecorder.RegisterPackageParseFailure(rootPackage.Name);
                 }
             }
@@ -215,7 +221,7 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
                             this.logger.LogWarning(
                                 "Unable to resolve non-root dependency {PackageName} with version specifiers {PackageVersions} from pypi possibly due to computed version constraints. Skipping package.",
                                 dependencyNode.Name,
-                                JsonConvert.SerializeObject(dependencyNode.DependencySpecifiers));
+                                JsonSerializer.Serialize(dependencyNode.DependencySpecifiers, JsonSerializerOptions));
                             singleFileComponentRecorder.RegisterPackageParseFailure(dependencyNode.Name);
                         }
                     }
@@ -272,7 +278,7 @@ public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
                 this.logger.LogError(
                     ae,
                     "Release {Release} could not be added to the sorted list of pip components for spec={SpecName}. Usually this happens with unexpected PyPi version formats (e.g. prerelease/dev versions).",
-                    JsonConvert.SerializeObject(file),
+                    JsonSerializer.Serialize(file, JsonSerializerOptions),
                     spec.Name);
             }
         }

@@ -1,11 +1,12 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class RubyGemsComponent : TypedComponent
 {
-    private RubyGemsComponent()
+    public RubyGemsComponent()
     {
         /* Reserved for deserialization */
     }
@@ -17,14 +18,19 @@ public class RubyGemsComponent : TypedComponent
         this.Source = source;
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("source")]
     public string Source { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.RubyGems;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("gem", null, this.Name, this.Version, null, null);
 
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";

@@ -3,13 +3,13 @@ namespace Microsoft.ComponentDetection.Orchestrator.Commands;
 
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Spectre.Console.Cli;
 
 /// <summary>
@@ -18,6 +18,8 @@ using Spectre.Console.Cli;
 public sealed class ScanCommand : AsyncCommand<ScanSettings>
 {
     private const string ManifestRelativePath = "ScanManifest_{timestamp}.json";
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
+
     private readonly IFileWritingService fileWritingService;
     private readonly IScanExecutionService scanExecutionService;
     private readonly ILogger<ScanCommand> logger;
@@ -89,12 +91,8 @@ public sealed class ScanCommand : AsyncCommand<ScanSettings>
 
         if (settings.PrintManifest)
         {
-            var jsonWriter = new JsonTextWriter(Console.Out);
-            var serializer = new JsonSerializer
-            {
-                Formatting = Formatting.Indented,
-            };
-            serializer.Serialize(jsonWriter, scanResult);
+            var jsonString = JsonSerializer.Serialize(scanResult, IndentedJsonOptions);
+            Console.WriteLine(jsonString);
         }
     }
 }

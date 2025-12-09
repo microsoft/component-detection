@@ -1,11 +1,12 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class VcpkgComponent : TypedComponent
 {
-    private VcpkgComponent()
+    public VcpkgComponent()
     {
         /* Reserved for deserialization */
     }
@@ -23,22 +24,31 @@ public class VcpkgComponent : TypedComponent
         this.DownloadLocation = downloadLocation;
     }
 
+    [JsonPropertyName("spdxid")]
     public string SPDXID { get; set; }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("downloadLocation")]
     public string DownloadLocation { get; set; }
 
+    [JsonPropertyName("triplet")]
     public string Triplet { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("description")]
     public string Description { get; set; }
 
+    [JsonPropertyName("portVersion")]
     public int PortVersion { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Vcpkg;
 
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl
     {
         get

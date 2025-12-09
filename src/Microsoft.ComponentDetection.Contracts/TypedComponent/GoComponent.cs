@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class GoComponent : TypedComponent, IEquatable<GoComponent>
@@ -20,21 +21,26 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
         this.Hash = this.ValidateRequiredInput(hash, nameof(this.Hash), nameof(ComponentType.Go));
     }
 
-    private GoComponent()
+    public GoComponent()
     {
         /* Reserved for deserialization */
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("hash")]
     public string Hash { get; set; }
 
     // Commit should be used in place of version when available
     // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L610
+    [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("golang", null, this.Name, string.IsNullOrWhiteSpace(this.Hash) ? this.Version : this.Hash, null, null);
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Go;
 
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";

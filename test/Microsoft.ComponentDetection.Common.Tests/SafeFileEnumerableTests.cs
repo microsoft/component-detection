@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -93,7 +92,7 @@ public class SafeFileEnumerableTests
     }
 
     [TestMethod]
-    [SkipTestOnWindows]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public void GetEnumerator_CallsSymlinkCode()
     {
         var subDir = Directory.CreateSymbolicLink(Path.Combine(this.temporaryDirectory, "SubDir"), this.temporaryDirectory);
@@ -115,7 +114,7 @@ public class SafeFileEnumerableTests
     }
 
     [TestMethod]
-    [SkipTestOnWindows]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public void GetEnumerator_DuplicatePathIgnored()
     {
         var subDir = Directory.CreateDirectory(Path.Combine(this.temporaryDirectory, "SubDir"));

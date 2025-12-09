@@ -4,10 +4,10 @@ namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-using Newtonsoft.Json;
 
 public static class ComponentRecorderTestUtilities
 {
@@ -154,12 +154,12 @@ public static class ComponentRecorderTestUtilities
 
             recordedDeps.Should().HaveCount(
                 expectedDeps.Length,
-                $"Count missmatch of expected dependencies ({JsonConvert.SerializeObject(expectedDeps)}) and recorded dependencies ({JsonConvert.SerializeObject(recordedDeps)}) for `{componentId}`!");
+                $"Count missmatch of expected dependencies ({JsonSerializer.Serialize(expectedDeps)}) and recorded dependencies ({JsonSerializer.Serialize(recordedDeps)}) for `{componentId}`!");
 
             foreach (var expectedDep in expectedDeps)
             {
                 recordedDeps.Should().Contain(
-                    expectedDep, $"Expected `{expectedDep}` in the list of dependencies for `{componentId}` but only recorded: {JsonConvert.SerializeObject(recordedDeps)}");
+                    expectedDep, $"Expected `{expectedDep}` in the list of dependencies for `{componentId}` but only recorded: {JsonSerializer.Serialize(recordedDeps)}");
             }
         }
     }

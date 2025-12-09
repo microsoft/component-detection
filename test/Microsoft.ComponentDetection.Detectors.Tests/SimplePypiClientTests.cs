@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
@@ -15,7 +16,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.Protected;
-using Newtonsoft.Json;
 
 [TestClass]
 public class SimplePyPiClientTests
@@ -73,7 +73,7 @@ public class SimplePyPiClientTests
             Files = [new SimplePypiProjectRelease()],
         };
 
-        var mockHandler = this.MockHttpMessageHandler(JsonConvert.SerializeObject(pythonProject), HttpStatusCode.OK);
+        var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject), HttpStatusCode.OK);
         var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () =>

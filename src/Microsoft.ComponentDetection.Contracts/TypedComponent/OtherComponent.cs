@@ -2,10 +2,11 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Text.Json.Serialization;
 
 public class OtherComponent : TypedComponent
 {
-    private OtherComponent()
+    public OtherComponent()
     {
         /* Reserved for deserialization */
     }
@@ -18,14 +19,19 @@ public class OtherComponent : TypedComponent
         this.Hash = hash;
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("downloadUrl")]
     public Uri DownloadUrl { get; set; }
 
+    [JsonPropertyName("hash")]
     public string Hash { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Other;
 
     protected override string ComputeId() => $"{this.Name} {this.Version} {this.DownloadUrl} - {this.Type}";
