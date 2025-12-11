@@ -4,6 +4,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.Linux;
 using Microsoft.ComponentDetection.Detectors.Npm;
+using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -39,6 +40,20 @@ public class LinuxApplicationLayerExperimentTests
     {
         var npmDetectorWithRoots = new NpmComponentDetectorWithRoots(null, null, null, null);
         this.experiment.IsInControlGroup(npmDetectorWithRoots).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void IsInControlGroup_NuGetComponentDetector_ReturnsTrue()
+    {
+        var nuGetDetector = new NuGetComponentDetector(null, null, null);
+        this.experiment.IsInControlGroup(nuGetDetector).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void IsInControlGroup_NuGetProjectModelProjectCentricComponentDetector_ReturnsTrue()
+    {
+        var nuGetDetector = new NuGetProjectModelProjectCentricComponentDetector(null, null, null, null);
+        this.experiment.IsInControlGroup(nuGetDetector).Should().BeTrue();
     }
 
     [TestMethod]
@@ -117,5 +132,19 @@ public class LinuxApplicationLayerExperimentTests
         );
 
         this.experiment.IsInExperimentGroup(pipDetector).Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void IsInExperimentGroup_NuGetComponentDetector_ReturnsFalse()
+    {
+        var nuGetDetector = new NuGetComponentDetector(null, null, null);
+        this.experiment.IsInExperimentGroup(nuGetDetector).Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void IsInExperimentGroup_NuGetProjectModelProjectCentricComponentDetector_ReturnsFalse()
+    {
+        var nuGetDetector = new NuGetProjectModelProjectCentricComponentDetector(null, null, null, null);
+        this.experiment.IsInExperimentGroup(nuGetDetector).Should().BeFalse();
     }
 }

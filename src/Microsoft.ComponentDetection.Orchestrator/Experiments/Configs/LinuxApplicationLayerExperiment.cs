@@ -24,7 +24,8 @@ public class LinuxApplicationLayerExperiment : IExperimentConfiguration
                 or NpmComponentDetector
                 or NpmLockfileDetectorBase
                 or PipReportComponentDetector
-                or NuGetComponentDetector;
+                or NuGetComponentDetector
+                or NuGetProjectModelProjectCentricComponentDetector;
 
     /// <inheritdoc />
     public bool IsInExperimentGroup(IComponentDetector componentDetector) =>
