@@ -4,6 +4,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Tests.Experiments;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.Linux;
 using Microsoft.ComponentDetection.Detectors.Npm;
+using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -39,6 +40,27 @@ public class LinuxApplicationLayerExperimentTests
     {
         var npmDetectorWithRoots = new NpmComponentDetectorWithRoots(null, null, null, null);
         this.experiment.IsInControlGroup(npmDetectorWithRoots).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void IsInControlGroup_NuGetComponentDetector_ReturnsTrue()
+    {
+        var nuGetDetector = new NuGetComponentDetector(null, null, null);
+        this.experiment.IsInControlGroup(nuGetDetector).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void IsInControlGroup_NuGetProjectModelProjectCentricComponentDetector_ReturnsTrue()
+    {
+        var nuGetDetector = new NuGetProjectModelProjectCentricComponentDetector(null, null, null, null);
+        this.experiment.IsInControlGroup(nuGetDetector).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void IsInControlGroup_NuGetPackagesConfigDetector_ReturnsTrue()
+    {
+        var nuGetPackagesConfigDetector = new NuGetPackagesConfigDetector(null, null, null);
+        this.experiment.IsInControlGroup(nuGetPackagesConfigDetector).Should().BeTrue();
     }
 
     [TestMethod]
@@ -117,5 +139,55 @@ public class LinuxApplicationLayerExperimentTests
         );
 
         this.experiment.IsInExperimentGroup(pipDetector).Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void IsInExperimentGroup_NuGetComponentDetector_ReturnsFalse()
+    {
+        var nuGetDetector = new NuGetComponentDetector(null, null, null);
+        this.experiment.IsInExperimentGroup(nuGetDetector).Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void IsInExperimentGroup_NuGetProjectModelProjectCentricComponentDetector_ReturnsFalse()
+    {
+        var nuGetDetector = new NuGetProjectModelProjectCentricComponentDetector(null, null, null, null);
+        this.experiment.IsInExperimentGroup(nuGetDetector).Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void ShouldRecord_ExperimentGroup_ReturnsTrue_WhenNumComponentsGreaterThanZero()
+    {
+        var experimentalDetector = new LinuxApplicationLayerDetector(null, null, null);
+        this.experiment.ShouldRecord(experimentalDetector, 1).Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void ShouldRecord_ExperimentGroup_ReturnsFalse_WhenNumComponentsIsZero()
+    {
+        var experimentalDetector = new LinuxApplicationLayerDetector(null, null, null);
+        this.experiment.ShouldRecord(experimentalDetector, 0).Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void ShouldRecord_ControlGroup_AlwaysReturnsTrue()
+    {
+        var linuxDetector = new LinuxContainerDetector(null, null, null);
+        this.experiment.ShouldRecord(linuxDetector, 0).Should().BeTrue();
+
+        var npmDetector = new NpmComponentDetector(null, null, null);
+        this.experiment.ShouldRecord(npmDetector, 0).Should().BeTrue();
+
+        var pipDetector = new PipReportComponentDetector(null, null, null, null, null, null, null, null, null);
+        this.experiment.ShouldRecord(pipDetector, 0).Should().BeTrue();
+
+        var nuGetDetector = new NuGetComponentDetector(null, null, null);
+        this.experiment.ShouldRecord(nuGetDetector, 0).Should().BeTrue();
+
+        var nuGetProjectCentricDetector = new NuGetProjectModelProjectCentricComponentDetector(null, null, null, null);
+        this.experiment.ShouldRecord(nuGetProjectCentricDetector, 0).Should().BeTrue();
+
+        var nuGetPackagesConfigDetector = new NuGetPackagesConfigDetector(null, null, null);
+        this.experiment.ShouldRecord(nuGetPackagesConfigDetector, 0).Should().BeTrue();
     }
 }

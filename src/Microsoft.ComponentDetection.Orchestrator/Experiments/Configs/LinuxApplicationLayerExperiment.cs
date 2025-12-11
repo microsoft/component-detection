@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Orchestrator.Experiments.Configs;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Linux;
 using Microsoft.ComponentDetection.Detectors.Npm;
+using Microsoft.ComponentDetection.Detectors.NuGet;
 using Microsoft.ComponentDetection.Detectors.Pip;
 
 /// <summary>
@@ -22,12 +23,27 @@ public class LinuxApplicationLayerExperiment : IExperimentConfiguration
             is (LinuxContainerDetector and not LinuxApplicationLayerDetector)
                 or NpmComponentDetector
                 or NpmLockfileDetectorBase
-                or PipReportComponentDetector;
+                or PipReportComponentDetector
+                or NuGetComponentDetector
+                or NuGetProjectModelProjectCentricComponentDetector
+                or NuGetPackagesConfigDetector;
 
     /// <inheritdoc />
     public bool IsInExperimentGroup(IComponentDetector componentDetector) =>
         componentDetector is LinuxApplicationLayerDetector;
 
     /// <inheritdoc />
-    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) => true;
+    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents)
+    {
+        // Only record telemetry if the experiment group detector (LinuxApplicationLayerDetector)
+        // actually found components.
+        if (componentDetector is LinuxApplicationLayerDetector)
+        {
+            return numComponents > 0;
+        }
+
+        // For control group detectors, record if the experiment group found anything
+        // This will be determined by the orchestrator based on whether the experiment group had components
+        return true;
+    }
 }
