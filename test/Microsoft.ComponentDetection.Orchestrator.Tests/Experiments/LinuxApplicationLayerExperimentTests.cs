@@ -57,6 +57,13 @@ public class LinuxApplicationLayerExperimentTests
     }
 
     [TestMethod]
+    public void IsInControlGroup_NuGetPackagesConfigDetector_ReturnsTrue()
+    {
+        var nuGetPackagesConfigDetector = new NuGetPackagesConfigDetector(null, null, null);
+        this.experiment.IsInControlGroup(nuGetPackagesConfigDetector).Should().BeTrue();
+    }
+
+    [TestMethod]
     public void IsInControlGroup_PipReportComponentDetector_ReturnsTrue()
     {
         var pipDetector = new PipReportComponentDetector(
@@ -179,5 +186,8 @@ public class LinuxApplicationLayerExperimentTests
 
         var nuGetProjectCentricDetector = new NuGetProjectModelProjectCentricComponentDetector(null, null, null, null);
         this.experiment.ShouldRecord(nuGetProjectCentricDetector, 0).Should().BeTrue();
+
+        var nuGetPackagesConfigDetector = new NuGetPackagesConfigDetector(null, null, null);
+        this.experiment.ShouldRecord(nuGetPackagesConfigDetector, 0).Should().BeTrue();
     }
 }
