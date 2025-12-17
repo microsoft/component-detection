@@ -29,6 +29,7 @@ public class TypedComponentConverter : JsonConverter
         { ComponentType.Vcpkg, typeof(VcpkgComponent) },
         { ComponentType.Spdx, typeof(SpdxComponent) },
         { ComponentType.DotNet, typeof(DotNetComponent) },
+        { ComponentType.CppSdk, typeof(CppSdkComponent) },
     };
 
     public override bool CanWrite

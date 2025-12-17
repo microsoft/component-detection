@@ -204,4 +204,16 @@ public class TypedComponentSerializationTests
         linuxComponent.Name.Should().Be("SomeLinuxComponentName");
         linuxComponent.Version.Should().Be("SomeLinuxComponentVersion");
     }
+
+    [TestMethod]
+    public void TypedComponent_Serialization_CppSdk()
+    {
+        TypedComponent tc = new CppSdkComponent("SomeCppSdk", "1.2.3");
+        var result = JsonSerializer.Serialize(tc);
+        var deserializedTC = JsonSerializer.Deserialize<TypedComponent>(result);
+        deserializedTC.Should().BeOfType(typeof(CppSdkComponent));
+        var cppSdkComponent = (CppSdkComponent)deserializedTC;
+        cppSdkComponent.Name.Should().Be("SomeCppSdk");
+        cppSdkComponent.Version.Should().Be("1.2.3");
+    }
 }
