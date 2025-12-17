@@ -346,4 +346,16 @@ public class TypedComponentSerializationTests
         result.Should().BeFalse("TryGetType should return false for whitespace-only discriminator");
         targetType.Should().BeNull("targetType should be null for whitespace-only discriminator");
     }
+
+    [TestMethod]
+    public void TypedComponent_Serialization_CppSdk()
+    {
+        TypedComponent tc = new CppSdkComponent("SomeCppSdk", "1.2.3");
+        var result = JsonSerializer.Serialize(tc);
+        var deserializedTC = JsonSerializer.Deserialize<TypedComponent>(result);
+        deserializedTC.Should().BeOfType(typeof(CppSdkComponent));
+        var cppSdkComponent = (CppSdkComponent)deserializedTC;
+        cppSdkComponent.Name.Should().Be("SomeCppSdk");
+        cppSdkComponent.Version.Should().Be("1.2.3");
+    }
 }

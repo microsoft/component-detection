@@ -64,4 +64,7 @@ public enum ComponentType : byte
 
     [EnumMember]
     DotNet = 19,
+
+    [EnumMember]
+    CppSdk = 20,
 }
