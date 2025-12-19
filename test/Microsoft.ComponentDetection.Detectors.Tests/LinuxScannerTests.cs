@@ -288,7 +288,8 @@ public class LinuxScannerTests
                     },
                 ],
                 0,
-                enabledTypes
+                enabledTypes,
+                LinuxScannerScope.AllLayers
             )
         )
             .First()
@@ -335,7 +336,8 @@ public class LinuxScannerTests
                     },
                 ],
                 0,
-                enabledTypes
+                enabledTypes,
+                LinuxScannerScope.AllLayers
             )
         )
             .First()
@@ -384,7 +386,8 @@ public class LinuxScannerTests
                     },
                 ],
                 0,
-                enabledTypes
+                enabledTypes,
+                LinuxScannerScope.AllLayers
             )
         )
             .First()
@@ -433,7 +436,8 @@ public class LinuxScannerTests
                     },
                 ],
                 0,
-                enabledTypes
+                enabledTypes,
+                LinuxScannerScope.AllLayers
             )
         )
             .First()
@@ -522,7 +526,8 @@ public class LinuxScannerTests
                 new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
             ],
             0,
-            enabledTypes
+            enabledTypes,
+            LinuxScannerScope.AllLayers
         );
 
         var allComponents = layers.SelectMany(l => l.Components).ToList();
@@ -622,7 +627,8 @@ public class LinuxScannerTests
                 new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
             ],
             0,
-            enabledTypes
+            enabledTypes,
+            LinuxScannerScope.AllLayers
         );
 
         var allComponents = layers.SelectMany(l => l.Components).ToList();
@@ -707,7 +713,8 @@ public class LinuxScannerTests
                 new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
             ],
             0,
-            enabledTypes
+            enabledTypes,
+            LinuxScannerScope.AllLayers
         );
 
         var allComponents = layers.SelectMany(l => l.Components).ToList();
