@@ -112,6 +112,16 @@ public class LinuxScanner : ILinuxScanner
         var stdout = string.Empty;
         var stderr = string.Empty;
 
+        var scopeParameters = scope switch
+        {
+            LinuxScannerScope.AllLayers => ScopeAllLayersParameter,
+            LinuxScannerScope.Squashed => ScopeSquashedParameter,
+            _ => throw new ArgumentOutOfRangeException(
+                    nameof(scope),
+                    $"Unsupported scope value: {scope}"
+                ),
+        };
+
         using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
 
         try
@@ -123,17 +133,7 @@ public class LinuxScanner : ILinuxScanner
                 {
                     var command = new List<string> { imageHash }
                         .Concat(CmdParameters)
-                        .Concat(
-                            scope switch
-                            {
-                                LinuxScannerScope.AllLayers => ScopeAllLayersParameter,
-                                LinuxScannerScope.Squashed => ScopeSquashedParameter,
-                                _ => throw new ArgumentOutOfRangeException(
-                                        nameof(scope),
-                                        $"Unsupported scope value: {scope}"
-                                    ),
-                            }
-                        )
+                        .Concat(scopeParameters)
                         .ToList();
                     (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(
                         ScannerImage,
