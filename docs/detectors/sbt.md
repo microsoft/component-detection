@@ -4,13 +4,24 @@
 
 SBT detection depends on the following to successfully run:
 
-- SBT CLI as part of your PATH. `sbt` should be runnable from a given command line.
-- sbt-dependency-graph plugin (recommended to be added globally or in the project's `project/plugins.sbt`).
-- One or more `build.sbt` files.
+- SBT CLI available via system PATH or Coursier distribution
+  - On Windows, detector checks: `sbt` command, then `C:\Users\{user}\AppData\Local\Coursier\data\bin\sbt.bat`
+  - On other platforms, checks system PATH for `sbt` command
+- One or more `build.sbt` files
+
+**Note**: The `sbt-dependency-graph` plugin is no longer required. The detector uses SBT's built-in `dependencyTree` task.
 
 ## Detection strategy
 
-SBT detection is performed by running `sbt "dependencyTree; export compile:dependencyTree > bcde.sbtdeps"` for each build.sbt file and parsing the results. The detector leverages the same Maven-style dependency graph parser used by the Maven detector, as SBT dependencies use Maven coordinates (groupId:artifactId:version).
+SBT detection is performed by running `sbt dependencyTree` for each `build.sbt` file and parsing the tree output. The detector applies a multi-stage filtering process to clean the output:
+
+1. Removes SBT metadata (`[info]`, `[warn]`, `[error]` prefixes)
+2. Removes Scala version suffixes from artifact names (e.g., `_2.13`)
+3. Removes root component markers (`[S]` suffix)
+4. Validates Maven coordinates (requires at least one dot in groupId per Maven convention)
+5. Inserts default `jar` packaging to match Maven coordinate format: `group:artifact:jar:version`
+
+The detector leverages the same Maven-style dependency graph parser used by the Maven detector, as SBT dependencies use Maven coordinates (groupId:artifactId:version) and output in a compatible tree format.
 
 Components are registered as Maven components since Scala projects publish to Maven repositories and use the same artifact coordinate system.
 
@@ -20,13 +31,10 @@ Full dependency graph generation is supported.
 
 ## Known limitations
 
-- SBT detection will not run if `sbt` is unavailable in the PATH.
-- The sbt-dependency-graph plugin must be available. For best results, install it globally in `~/.sbt/1.0/plugins/plugins.sbt`:
-  ```scala
-  addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
-  ```
-- Only the `compile` configuration is scanned by default. Test dependencies may be detected as development dependencies if they appear in the dependency tree output.
-- Multi-project builds (nested `build.sbt` files) are detected, with parent projects taking precedence.
+- SBT detection will not run if `sbt` CLI is not available in the system PATH or Coursier distribution
+- Only the compile-scope dependencies are scanned by default (test dependencies may be detected as development dependencies if they appear in the dependency tree output)
+- Multi-project builds (nested `build.sbt` files) are detected, with parent projects taking precedence
+- First invocation of SBT may be slow due to JVM startup and dependency resolution; subsequent runs benefit from cached dependencies
 
 ## Environment Variables
 

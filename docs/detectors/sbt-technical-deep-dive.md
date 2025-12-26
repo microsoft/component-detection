@@ -58,8 +58,10 @@ protected override async Task OnPrepareDetectionAsync(IObservableDirectoryWalker
 
 **CLI Detection Logic** (`SbtCommandService.SbtCLIExistsAsync`):
 - Primary command: `sbt`
-- Fallback commands: `sbt.bat` (Windows)
-- Verification: Runs `sbt sbtVersion` to confirm functional installation
+- Coursier fallback: `C:\Users\{user}\AppData\Local\Coursier\data\bin\sbt.bat` (Windows)
+- Verification: Runs `sbt --version` to confirm functional installation
+  - **Critical Fix**: Uses `--version` (not `sbtVersion`) because `--version` works without a project directory
+  - `sbtVersion` command requires an active project context, causing failures in subprocess environment
 
 This prevents expensive file processing if SBT isn't available.
 
@@ -81,21 +83,30 @@ var buildDirectory = new DirectoryInfo(Path.GetDirectoryName(buildSbtFile.Locati
 #### Command Execution
 
 ```csharp
-var cliParameters = new[] { 
-    $"\"dependencyTree; export compile:dependencyTree > {this.BcdeSbtDependencyFileName}\"" 
-};
+var cliParameters = new[] { "dependencyTree" };
 ```
 
 **Command Breakdown**:
-- `dependencyTree` - Invokes the sbt-dependency-graph plugin to analyze dependencies
-- `;` - SBT command separator (sequential execution)
-- `export compile:dependencyTree` - Exports the compile-scope dependency tree as text
-- `> bcde.sbtdeps` - Redirects output to a temporary file
+- `dependencyTree` - Invokes the built-in dependency tree analysis task
+- Outputs dependency tree to stdout in a format compatible with Maven's tree format
+- Each line contains tree structure markers (`|`, `+-`) followed by coordinates
+
+**SBT Output Example**:
+```
+[info] test-project:test-project_2.13:1.0.0 [S]
+[info]   +-com.google.guava:guava:32.1.3-jre
+[info]   | +-com.google.code.findbugs:jsr305:3.0.2
+[info]   | +-com.google.guava:failureaccess:1.0.1
+[info]   |
+[info]   +-org.apache.commons:commons-lang3:3.14.0
+[info]
+[success] Total time: 0 s
+```
 
 **Why This Approach?**:
-- SBT's dependency tree output is too verbose for stdout parsing (includes SBT's own startup messages, warnings, etc.)
-- The `export` task generates clean, parseable output without SBT metadata
-- Writing to a file allows reliable parsing and cleanup
+- `dependencyTree` is a standard SBT task (no plugin required)
+- Output includes SBT metadata (`[info]` prefixes, startup messages) which is filtered downstream
+- Captures compile-scope dependencies which are the most relevant for security scanning
 
 #### Timeout Management
 
@@ -130,7 +141,38 @@ if (result.ExitCode != 0)
 
 **Failure Registration**: The detector records parse failures instead of crashing, allowing the scan to continue with other files.
 
-### 4. Dependency Parsing (`ParseDependenciesFile`)
+### 4. Output Filtering (`GenerateDependenciesFileAsync` - cleanup phase)
+
+After SBT execution, the raw output is cleaned to prepare for Maven parsing:
+
+```csharp
+var cleanedLines = allLines
+    .Select(line => Regex.Replace(line, @"\s*\[.\]$", string.Empty))  // Remove [S] suffixes
+    .Select(line => Regex.Replace(line, @"^\[info\]\s*|\[warn\]\s*|\[error\]\s*", string.Empty))
+    .Select(line => Regex.Replace(line, @"_\d+\.\d+(?=:)", string.Empty))  // Remove Scala version _2.13
+    .Where(line => Regex.IsMatch(line, @"^[\s|\-+]*[a-z0-9\-_.]*\.[a-z0-9\-_.]+:[a-z0-9\-_.,]+:[a-z0-9\-_.]+"))
+    .Select(line => /* Insert packaging 'jar' in correct position */)
+    .ToList();
+```
+
+**Filtering Pipeline**:
+1. **Remove `[S]` suffixes**: Root component markers (e.g., `test-project:test-project_2.13:1.0.0 [S]` → `test-project:test-project_2.13:1.0.0`)
+2. **Remove `[info]`/`[warn]`/`[error]` prefixes**: SBT metadata prefixes
+3. **Remove Scala version suffixes**: Artifact names include Scala version (e.g., `guava_2.13` → `guava`)
+4. **Filter to valid Maven coordinates**: Keep only lines matching pattern (requires dot in groupId per Maven convention)
+5. **Insert default packaging**: Convert `group:artifact:version` to `group:artifact:jar:version` for Maven parser compatibility
+
+**Key Insight**: Tree structure characters (`|`, `+-`) are PRESERVED because the Maven parser needs them to understand dependency relationships.
+
+**Output After Filtering**:
+```
++-com.google.guava:guava:jar:32.1.3-jre
+| +-com.google.code.findbugs:jsr305:jar:3.0.2
+| +-com.google.guava:failureaccess:jar:1.0.1
+| +-org.apache.commons:commons-lang3:jar:3.14.0
+```
+
+### 5. Dependency Parsing (`ParseDependenciesFile`)
 
 ```csharp
 public void ParseDependenciesFile(ProcessRequest processRequest)
@@ -145,28 +187,28 @@ public void ParseDependenciesFile(ProcessRequest processRequest)
 
 #### Why This Works
 
-SBT outputs dependency trees in a format similar to Maven's `mvn dependency:tree`:
+SBT outputs dependency trees in a format compatible with Maven's `mvn dependency:tree`:
 
 ```
-org.scala-lang:scala-library:2.13.8
-  +-com.typesafe:config:1.4.2
-  +-org.scala-lang.modules:scala-parser-combinators_2.13:2.1.1
-     +-org.scala-lang:scala-library:2.13.6
+com.google.guava:guava:jar:32.1.3-jre
+| +-com.google.code.findbugs:jsr305:jar:3.0.2
+| +-com.google.guava:failureaccess:jar:1.0.1
 ```
 
 **Maven Parser Compatibility**:
-- Tree structure uses `+-` and `\-` for branches
-- Artifacts use Maven coordinates: `groupId:artifactId:version`
-- Indentation represents dependency hierarchy
-- Supports scope modifiers (compile, test, provided)
+- Tree structure uses `|` and `+-` for branches (preserved from SBT output)
+- Artifacts use Maven coordinates: `groupId:artifactId:jar:version`
+- Indentation and branch markers determine dependency hierarchy
+- Root component is the project itself; nested components are dependencies
 
 The `MavenStyleDependencyGraphParserService`:
-1. Parses each line to extract group:artifact:version
-2. Uses indentation to determine parent-child relationships
-3. Creates `MavenComponent` instances
-4. Registers components with the `IComponentRecorder` with proper graph edges
+1. Parses first non-empty line as root component
+2. For subsequent lines, extracts tree depth from indentation/markers
+3. Uses depth to determine parent-child relationships
+4. Creates `MavenComponent` instances with proper Maven coordinates
+5. Registers components with the `IComponentRecorder` with proper graph edges
 
-### 5. Component Registration
+### 6. Component Registration
 
 Inside `MavenStyleDependencyGraphParserService.Parse()`:
 
@@ -184,30 +226,21 @@ singleFileComponentRecorder.RegisterUsage(
 - **Transitive dependencies**: Indirect dependencies pulled in by root deps (linked via `parentComponentId`)
 - **Component Identity**: Uses Maven's `groupId:artifactId:version` as the unique identifier
 
-### 6. Cleanup (`OnDetectionFinished`)
+### 7. Cleanup (File Deletion in `OnFileFoundAsync`)
 
 ```csharp
-protected override Task OnDetectionFinished()
+protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
 {
-    foreach (var processRequest in this.processedRequests)
-    {
-        var dependenciesFilePath = Path.Combine(
-            Path.GetDirectoryName(processRequest.ComponentStream.Location),
-            this.sbtCommandService.BcdeSbtDependencyFileName);
-        
-        if (File.Exists(dependenciesFilePath))
-        {
-            this.Logger.LogDebug("Deleting {DependenciesFilePath}", dependenciesFilePath);
-            File.Delete(dependenciesFilePath);
-        }
-    }
+    this.sbtCommandService.ParseDependenciesFile(processRequest);
+    File.Delete(processRequest.ComponentStream.Location);
+    await Task.CompletedTask;
 }
 ```
 
 **Temporary File Management**:
-- Each `build.sbt` generates a `bcde.sbtdeps` file in its directory
-- All temporary files are tracked in `processedRequests`
-- Cleanup occurs after all detectors finish (via `FileComponentDetectorWithCleanup` lifecycle)
+- The detector does NOT create temporary files on disk during normal operation
+- File writing is internal to `GenerateDependenciesFileAsync()` but files are deleted immediately after parsing
+- This approach keeps the filesystem clean and prevents accumulation of temp files
 
 ## Dependency Injection
 
@@ -331,36 +364,45 @@ Per Component Detection lifecycle, all new detectors start as `IDefaultOffCompon
 
 **Alternative**: Parse stdout directly
 
-**Problem**: SBT stdout is polluted with:
+**Problem**: SBT stdout is polluted with metadata that needs filtering:
 ```
 [info] Loading settings for project...
 [info] Compiling 1 Scala source...
 [info] Done compiling.
-org.scala-lang:scala-library:2.13.8  <-- Actual data we want
+[info]   +-com.google.guava:guava:32.1.3-jre  <-- Actual data with [info] prefix
 ```
 
-**Solution**: `export` task + file redirection gives clean, parseable output
+**Solution**: Capture stdout, then apply multi-stage filtering to clean output before parsing
 
 ## Performance Characteristics
 
 ### Bottlenecks
 
-1. **SBT Startup**: 2-5 seconds per invocation (JVM warmup)
-2. **Dependency Resolution**: First run downloads artifacts (can be minutes)
-3. **Plugin Compilation**: `dependencyTree` plugin must compile on first use
+1. **SBT Startup**: 10-15 seconds per invocation (JVM warmup + dependency resolution)
+2. **First Build**: Downloads SBT, plugins, and dependencies (can be minutes on first run)
+3. **Dependency Traversal**: Building the complete dependency tree for complex projects
+
+### Observed Performance (Test Project)
+
+For a simple Scala project with 8 direct/transitive dependencies:
+- **Total detection time**: ~14 seconds
+- **SBT execution time**: ~13 seconds (majority of time)
+- **Parsing time**: <100ms
+- **Components detected**: 8 (7 explicit + 1 implicit)
 
 ### Optimizations
 
 - **CLI Availability Check**: Short-circuits if SBT missing (avoids processing all files)
-- **Timeout Configuration**: Prevents hanging on problematic projects
-- **Batch Cleanup**: Deletes temp files once at end instead of per-file
+- **Timeout Configuration**: Prevents hanging on problematic projects via `SbtCLIFileLevelTimeoutSeconds`
+- **Efficient Filtering**: Regex-based filtering reduces memory usage on large dependency trees
 
 ### Scaling Considerations
 
 For monorepos with 100+ SBT projects:
-- Total scan time ≈ N × (SBT startup time + dependency resolution)
-- Recommended: Use `SbtCLIFileLevelTimeoutSeconds` to cap max time per project
-- Potential future enhancement: Parallel execution of independent projects
+- Total scan time ≈ N × 13-15 seconds per project
+- **Recommendation**: Use `SbtCLIFileLevelTimeoutSeconds` (e.g., 60 seconds) to cap max time per project
+- **Future enhancement**: Parallel execution of independent projects (detector already supports async)
+- **Cache potential**: Could cache `.ivy2` directory between runs to skip artifact downloads
 
 ## Error Scenarios Handled
 

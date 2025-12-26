@@ -2,7 +2,10 @@
 namespace Microsoft.ComponentDetection.Detectors.Sbt;
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -16,7 +19,7 @@ public class SbtCommandService : ISbtCommandService
     internal const string SbtCLIFileLevelTimeoutSecondsEnvVar = "SbtCLIFileLevelTimeoutSeconds";
     internal const string PrimaryCommand = "sbt";
 
-    internal const string SbtVersionArgument = "sbtVersion";
+    internal const string SbtVersionArgument = "--version";
 
     internal static readonly string[] AdditionalValidCommands = ["sbt.bat"];
 
@@ -41,7 +44,26 @@ public class SbtCommandService : ISbtCommandService
 
     public async Task<bool> SbtCLIExistsAsync()
     {
-        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(PrimaryCommand, AdditionalValidCommands, SbtVersionArgument);
+        var additionalCommands = new List<string>(AdditionalValidCommands);
+
+        // On Windows, try to locate sbt via Coursier installation
+        var coursierPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Coursier",
+            "data",
+            "bin",
+            "sbt.bat");
+
+        if (File.Exists(coursierPath))
+        {
+            additionalCommands.Add(coursierPath);
+            this.logger.LogDebug("{DetectorPrefix}: Found sbt at Coursier path: {Path}", DetectorLogPrefix, coursierPath);
+        }
+
+        return await this.commandLineInvocationService.CanCommandBeLocatedAsync(
+            PrimaryCommand,
+            additionalCommands,
+            SbtVersionArgument);
     }
 
     public async Task GenerateDependenciesFileAsync(ProcessRequest processRequest, CancellationToken cancellationToken = default)
@@ -61,11 +83,26 @@ public class SbtCommandService : ISbtCommandService
         this.logger.LogDebug("{DetectorPrefix}: Running \"dependencyTree\" on {BuildSbtLocation}", DetectorLogPrefix, buildSbtFile.Location);
 
         // SBT requires running from the project directory
-        var cliParameters = new[] { $"\"dependencyTree; export compile:dependencyTree > {this.BcdeSbtDependencyFileName}\"" };
+        var cliParameters = new[] { "dependencyTree" };
+
+        // Build additional commands list with Coursier path detection
+        var additionalCommands = new List<string>(AdditionalValidCommands);
+        var coursierPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Coursier",
+            "data",
+            "bin",
+            "sbt.bat");
+
+        if (File.Exists(coursierPath))
+        {
+            additionalCommands.Add(coursierPath);
+            this.logger.LogDebug("{DetectorPrefix}: Using sbt from Coursier path: {Path}", DetectorLogPrefix, coursierPath);
+        }
 
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(
             PrimaryCommand,
-            AdditionalValidCommands,
+            additionalCommands,
             workingDirectory: buildDirectory,
             cancellationToken: cliFileTimeout.Token,
             cliParameters);
@@ -90,6 +127,59 @@ public class SbtCommandService : ISbtCommandService
         else
         {
             this.logger.LogDebug("{DetectorPrefix}: Execution of \"dependencyTree\" on {BuildSbtLocation} completed successfully", DetectorLogPrefix, buildSbtFile.Location);
+
+            // Save stdout to the sbtdeps file for parsing, removing [info] prefixes
+            var sbtDepsPath = Path.Combine(buildDirectory.FullName, this.BcdeSbtDependencyFileName);
+            try
+            {
+                // Clean SBT output: remove [info]/[warn]/[error] prefixes and Scala version suffixes
+                // BUT keep tree structure characters (|, -, +) which are needed by the Maven parser
+                var allLines = result.StdOut.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+                var cleanedLines = allLines
+                    .Select(line => Regex.Replace(line, @"\s*\[.\]$", string.Empty)) // Remove [S] or similar suffixes
+                    .Select(line => Regex.Replace(line, @"^\[info\]\s*|\[warn\]\s*|\[error\]\s*", string.Empty))
+                    .Select(line => Regex.Replace(line, @"_\d+\.\d+(?=:)", string.Empty)) // Remove Scala version suffix like _2.13:
+                    .Where(line =>
+                    {
+                        var trimmed = line.Trim();
+
+                        // Keep only lines that look like valid Maven coordinates
+                        // Valid Maven coordinate pattern: optional tree chars then [group]:[artifact]:[version]...
+                        // The group must contain at least one dot (standard Maven convention)
+                        return Regex.IsMatch(trimmed, @"^[\s|\-+]*[a-z0-9\-_.]*\.[a-z0-9\-_.]+:[a-z0-9\-_.,]+:[a-z0-9\-_.]+");
+                    })
+                    .Select(line =>
+                    {
+                        // Extract just the coordinates part (after tree structure chars)
+                        var coordinatesMatch = Regex.Match(line, @"([a-z0-9\-_.]*\.[a-z0-9\-_.]+:[a-z0-9\-_.,]+:[a-z0-9\-_.]+)");
+                        if (coordinatesMatch.Success)
+                        {
+                            var coords = coordinatesMatch.Groups[1].Value;
+                            var parts = coords.Split(':');
+                            if (parts.Length == 3)
+                            {
+                                // Insert default packaging 'jar': group:artifact:jar:version
+                                var mavenCoord = parts[0] + ":" + parts[1] + ":jar:" + parts[2];
+
+                                // Find where the coordinates start in the original line and preserve tree structure
+                                var treePrefix = line[..coordinatesMatch.Index];
+                                return treePrefix + mavenCoord;
+                            }
+                        }
+
+                        return line;
+                    })
+                    .ToList();
+
+                var cleanedOutput = string.Join(Environment.NewLine, cleanedLines);
+                this.logger.LogDebug("{DetectorPrefix}: Writing {LineCount} cleaned lines to {SbtDepsPath}", DetectorLogPrefix, cleanedLines.Count, sbtDepsPath);
+                await File.WriteAllTextAsync(sbtDepsPath, cleanedOutput, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError("Failed to write SBT dependencies file at {Path}: {Exception}", sbtDepsPath, ex);
+            }
         }
     }
 
