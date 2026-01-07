@@ -252,8 +252,6 @@ public class RustSbomDetector : FileComponentDetector
         var normDirectory = this.pathUtilityService.NormalizePath(directory);
         var fileName = Path.GetFileName(location);
 
-        this.Logger.LogDebug("Processing file: {Location}", normLocation);
-
         // Determine file kind
         FileKind fileKind;
         if (fileName.Equals(CargoTomlFileName, this.pathComparison))
