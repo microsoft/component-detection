@@ -252,7 +252,7 @@ public class RustSbomDetector : FileComponentDetector
         var normDirectory = this.pathUtilityService.NormalizePath(directory);
         var fileName = Path.GetFileName(location);
 
-        this.Logger.LogInformation("Processing file: {Location}", normLocation);
+        this.Logger.LogDebug("Processing file: {Location}", normLocation);
 
         // Determine file kind
         FileKind fileKind;
@@ -272,7 +272,7 @@ public class RustSbomDetector : FileComponentDetector
         // Check if directory should be skipped
         if (this.ShouldSkip(directory, fileKind, location))
         {
-            this.Logger.LogInformation("Skipping file due to skip rules: {Location}", normLocation);
+            this.Logger.LogDebug("Skipping file due to skip rules: {Location}", normLocation);
 
             // Increment skip counters
             switch (fileKind)
