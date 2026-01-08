@@ -369,4 +369,160 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().BeEmpty(); // No dependencies should be detected since packages is missing
     }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockVersion3WithDevOptionalDependenciesReturnsValidAsync()
+    {
+        // Test for issue #1380: devOptional dependencies (peer + dev) should be marked as dev dependencies
+        var componentName0 = Guid.NewGuid().ToString("N");
+        var version0 = NewRandomVersion();
+        var componentName1 = Guid.NewGuid().ToString("N");
+        var version1 = NewRandomVersion();
+
+        var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedNestedPackageLock3WithDevOptionalDependencies(this.packageLockJsonFileName, componentName0, version0, componentName1, version1);
+
+        var packagejson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""devDependencies"": {{
+                    ""{0}"": ""{1}"",
+                    ""{2}"": ""{3}""
+                }},
+                ""peerDependencies"": {{
+                    ""{0}"": ""{1}"",
+                    ""{2}"": ""{3}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(2);
+
+        // devOptional packages should be marked as dev dependencies
+        var component0 = detectedComponents.First(x => x.Component.Id.Contains(componentName0));
+        componentRecorder.GetEffectiveDevDependencyValue(component0.Component.Id).Should().BeTrue();
+
+        var component1 = detectedComponents.First(x => x.Component.Id.Contains(componentName1));
+        componentRecorder.GetEffectiveDevDependencyValue(component1.Component.Id).Should().BeTrue();
+
+        foreach (var component in detectedComponents)
+        {
+            ((NpmComponent)component.Component).Hash.Should().NotBeNullOrWhiteSpace();
+        }
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockVersion3WithPeerDependenciesReturnsValidAsync()
+    {
+        // Test that peer dependencies without dev flag should NOT be marked as dev dependencies
+        var componentName0 = Guid.NewGuid().ToString("N");
+        var version0 = NewRandomVersion();
+        var componentName1 = Guid.NewGuid().ToString("N");
+        var version1 = NewRandomVersion();
+
+        var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedNestedPackageLock3WithPeerDependencies(this.packageLockJsonFileName, componentName0, version0, componentName1, version1);
+
+        var packagejson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {{
+                    ""{0}"": ""{1}"",
+                    ""{2}"": ""{3}""
+                }},
+                ""peerDependencies"": {{
+                    ""{0}"": ""{1}"",
+                    ""{2}"": ""{3}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(2);
+
+        // Peer-only packages (without dev flag) should NOT be marked as dev dependencies
+        var component0 = detectedComponents.First(x => x.Component.Id.Contains(componentName0));
+        componentRecorder.GetEffectiveDevDependencyValue(component0.Component.Id).Should().BeFalse();
+
+        var component1 = detectedComponents.First(x => x.Component.Id.Contains(componentName1));
+        componentRecorder.GetEffectiveDevDependencyValue(component1.Component.Id).Should().BeFalse();
+
+        foreach (var component in detectedComponents)
+        {
+            ((NpmComponent)component.Component).Hash.Should().NotBeNullOrWhiteSpace();
+        }
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockVersion3WithEnginesAsArray_DoesNotThrowAndReturnsSuccessAsync()
+    {
+        var componentName0 = Guid.NewGuid().ToString("N");
+        var version0 = NewRandomVersion();
+
+        var packageLockJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 3,
+                ""requires"": true,
+                ""packages"": {{
+                    """": {{
+                        ""name"": ""test"",
+                        ""version"": ""0.0.0"",
+                        ""dependencies"": {{
+                            ""{0}"": ""^{1}""
+                        }}
+                    }},
+                    ""node_modules/{0}"": {{
+                        ""version"": ""{1}"",
+                        ""resolved"": ""https://registry.npmjs.org/{0}/-/{0}-{1}.tgz"",
+                        ""integrity"": ""sha512-nAEMjKcB1LDrMyYnjNsDkxoewI2aexrwlT3UJeL+nlbd64FEQNmKgPGAYIieaLVgtpRiHE9OL6/rmHLlstQwnQ=="",
+                        ""engines"": [
+                            ""node >= 18""
+                        ]
+                    }}
+                }}
+            }}";
+
+        var packageLockTemplate = string.Format(packageLockJson, componentName0, version0);
+
+        var packageJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {{
+                    ""{0}"": ""{1}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(packageJson, componentName0, version0);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().ContainSingle(x => ((NpmComponent)x.Component).Name.Equals(componentName0));
+
+        foreach (var component in detectedComponents)
+        {
+            ((NpmComponent)component.Component).Hash.Should().NotBeNullOrWhiteSpace();
+        }
+    }
 }

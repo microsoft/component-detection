@@ -527,4 +527,106 @@ public static class NpmTestUtilities
 
         return (lockFileName, packageLockTemplate, Path.Combine(Path.GetTempPath(), lockFileName));
     }
+
+    /// <summary>
+    /// Creates a package-lock.json v3 with devOptional dependencies.
+    /// These are peer dependencies that are also dev dependencies (peer: true + dev: true = devOptional: true).
+    /// </summary>
+    /// <returns>A tuple containing the lockfile name, contents, and path.</returns>
+    public static (string PackageJsonName, string PackageJsonContents, string PackageJsonPath) GetWellFormedNestedPackageLock3WithDevOptionalDependencies(string lockFileName, string depName0 = null, string depVersion0 = null, string depName1 = null, string depVersion1 = null)
+    {
+        var packageLockJson = @"{{
+              ""name"": ""test"",
+              ""version"": ""0.0.0"",
+              ""lockfileVersion"": 3,
+              ""requires"": true,
+              ""packages"": {{
+                """": {{
+                  ""name"": ""test"",
+                  ""version"": ""0.0.0"",
+                  ""devDependencies"": {{
+                    ""{0}"": ""^{2}"",
+                    ""{1}"": ""^{3}""
+                  }},
+                  ""peerDependencies"": {{
+                    ""{0}"": ""^{2}"",
+                    ""{1}"": ""^{3}""
+                  }}
+                }},
+                ""node_modules/{0}"": {{
+                  ""version"": ""{2}"",
+                  ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry"",
+                  ""integrity"": ""sha512-nAEMjKcB1LDrMyYnjNsDkxoewI2aexrwlT3UJeL+nlbd64FEQNmKgPGAYIieaLVgtpRiHE9OL6/rmHLlstQwnQ=="",
+                  ""devOptional"": true,
+                  ""peer"": true
+                }},
+                ""node_modules/{1}"": {{
+                  ""version"": ""{3}"",
+                  ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry"",
+                  ""integrity"": ""sha512-W86pkk7P9PAfARThHaD4fIjJ8QJUGMB2OhlCFsrueciPqlYZvDg/w62BmRm7PghVQcxGLbYoPN4+iykzP+0jRQ=="",
+                  ""devOptional"": true,
+                  ""peer"": true
+                }}
+              }}
+            }}";
+
+        var componentName0 = depName0 ?? Guid.NewGuid().ToString("N");
+        var version0 = depVersion0 ?? NewRandomVersion();
+        var componentName1 = depName1 ?? Guid.NewGuid().ToString("N");
+        var version1 = depVersion1 ?? NewRandomVersion();
+
+        var packageLockTemplate = string.Format(packageLockJson, componentName0, componentName1, version0, version1);
+
+        return (lockFileName, packageLockTemplate, Path.Combine(Path.GetTempPath(), lockFileName));
+    }
+
+    /// <summary>
+    /// Creates a package-lock.json v3 with peer dependencies (not dev).
+    /// These should be detected as production dependencies.
+    /// </summary>
+    /// <returns>A tuple containing the lockfile name, contents, and path.</returns>
+    public static (string PackageJsonName, string PackageJsonContents, string PackageJsonPath) GetWellFormedNestedPackageLock3WithPeerDependencies(string lockFileName, string depName0 = null, string depVersion0 = null, string depName1 = null, string depVersion1 = null)
+    {
+        var packageLockJson = @"{{
+              ""name"": ""test"",
+              ""version"": ""0.0.0"",
+              ""lockfileVersion"": 3,
+              ""requires"": true,
+              ""packages"": {{
+                """": {{
+                  ""name"": ""test"",
+                  ""version"": ""0.0.0"",
+                  ""dependencies"": {{
+                    ""{0}"": ""^{2}"",
+                    ""{1}"": ""^{3}""
+                  }},
+                  ""peerDependencies"": {{
+                    ""{0}"": ""^{2}"",
+                    ""{1}"": ""^{3}""
+                  }}
+                }},
+                ""node_modules/{0}"": {{
+                  ""version"": ""{2}"",
+                  ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry"",
+                  ""integrity"": ""sha512-nAEMjKcB1LDrMyYnjNsDkxoewI2aexrwlT3UJeL+nlbd64FEQNmKgPGAYIieaLVgtpRiHE9OL6/rmHLlstQwnQ=="",
+                  ""peer"": true
+                }},
+                ""node_modules/{1}"": {{
+                  ""version"": ""{3}"",
+                  ""resolved"": ""https://mseng.pkgs.visualstudio.com/_packaging/VsoMicrosoftExternals/npm/registry"",
+                  ""integrity"": ""sha512-W86pkk7P9PAfARThHaD4fIjJ8QJUGMB2OhlCFsrueciPqlYZvDg/w62BmRm7PghVQcxGLbYoPN4+iykzP+0jRQ=="",
+                  ""peer"": true
+                }}
+              }}
+            }}";
+
+        var componentName0 = depName0 ?? Guid.NewGuid().ToString("N");
+        var version0 = depVersion0 ?? NewRandomVersion();
+        var componentName1 = depName1 ?? Guid.NewGuid().ToString("N");
+        var version1 = depVersion1 ?? NewRandomVersion();
+
+        var packageLockTemplate = string.Format(packageLockJson, componentName0, componentName1, version0, version1);
+
+        return (lockFileName, packageLockTemplate, Path.Combine(Path.GetTempPath(), lockFileName));
+    }
 }
