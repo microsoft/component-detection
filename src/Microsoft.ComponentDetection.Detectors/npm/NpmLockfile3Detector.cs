@@ -153,7 +153,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
             var npmComponent = (NpmComponent)component;
             var isDirectDependency = directDependencies.Contains(npmComponent.Name);
 
-            this.RecordComponent(singleFileComponentRecorder, component, isDevDependency, component, isDirectDependency);
+            this.RecordComponent(singleFileComponentRecorder, component, isDevDependency, isDirectDependency);
         }
 
         // Third pass: Build dependency graph edges using node-style resolution
