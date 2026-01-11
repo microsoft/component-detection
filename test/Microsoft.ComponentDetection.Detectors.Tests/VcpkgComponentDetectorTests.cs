@@ -181,6 +181,78 @@ public class VcpkgComponentDetectorTests : BaseDetectorTest<VcpkgComponentDetect
     }
 
     [TestMethod]
+    public async Task TestEmptyManifestInfoAsync()
+    {
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84"",
+    ""name"": ""nlohmann-json:x64-linux@3.10.4 69dcfc6886529ad2d210f71f132d743672a7e65d2c39f53456f17fc5fc08b278"",
+    ""packages"": [
+        {
+            ""name"": ""nlohmann-json"",
+            ""SPDXID"": ""SPDXRef-port"",
+            ""versionInfo"": ""3.10.4#5"",
+            ""downloadLocation"": ""git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"",
+            ""homepage"": ""https://github.com/nlohmann/json"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""description"": ""JSON for Modern C++"",
+            ""comment"": ""This is the port (recipe) consumed by vcpkg.""
+        }
+    ]
+}";
+
+        // Empty manifest-info.json should not cause an exception
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\vcpkg\\manifest-info.json")), string.Empty)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestInvalidManifestInfoAsync()
+    {
+        var spdxFile = @"{
+    ""SPDXID"": ""SPDXRef - DOCUMENT"",
+    ""documentNamespace"":
+        ""https://spdx.org/spdxdocs/nlohmann-json-x64-linux-3.10.4-78c7f190-b402-44d1-a364-b9ac86392b84"",
+    ""name"": ""nlohmann-json:x64-linux@3.10.4 69dcfc6886529ad2d210f71f132d743672a7e65d2c39f53456f17fc5fc08b278"",
+    ""packages"": [
+        {
+            ""name"": ""nlohmann-json"",
+            ""SPDXID"": ""SPDXRef-port"",
+            ""versionInfo"": ""3.10.4#5"",
+            ""downloadLocation"": ""git+https://github.com/Microsoft/vcpkg#ports/nlohmann-json"",
+            ""homepage"": ""https://github.com/nlohmann/json"",
+            ""licenseConcluded"": ""NOASSERTION"",
+            ""licenseDeclared"": ""NOASSERTION"",
+            ""copyrightText"": ""NOASSERTION"",
+            ""description"": ""JSON for Modern C++"",
+            ""comment"": ""This is the port (recipe) consumed by vcpkg.""
+        }
+    ]
+}";
+
+        // Invalid JSON in manifest-info.json should not cause an exception
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\packageLocation\\vcpkg.spdx.json")), spdxFile)
+            .WithFile(CrossPlatformPath(Path.GetFullPath("vcpkg_installed\\vcpkg\\manifest-info.json")), "invalid json content")
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
     [DataRow("vcpkg_installed\\manifest-info.json", "vcpkg.json")]
     [DataRow("vcpkg_installed\\vcpkg\\manifest-info.json", "vcpkg.json")]
     [DataRow("bad_location\\manifest-info.json", "vcpkg_installed\\packageLocation\\vcpkg.spdx.json")]
