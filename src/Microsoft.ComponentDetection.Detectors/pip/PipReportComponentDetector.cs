@@ -251,6 +251,7 @@ public class PipReportComponentDetector : FileComponentDetectorWithCleanup
 
                 // Call pip executable to generate the installation report of a given project file.
                 (var report, var reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath, pythonExePath, childCts.Token);
+
                 if (report is not null)
                 {
                     reports.Add(report);

@@ -552,6 +552,13 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
             It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Want to fallback, so fail initial report generation"));
 
+        this.pipCommandService.Setup(x => x.GenerateInstallationReportAsync(
+            It.Is<string>(s => s.Contains("setup.py", StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Want to fallback for setup.py too, so fail initial report generation"));
+
         var (result, componentRecorder) = await this.DetectorTestUtility
             .WithFile("setup.py", string.Empty)
             .WithFile("requirements.txt", string.Empty)

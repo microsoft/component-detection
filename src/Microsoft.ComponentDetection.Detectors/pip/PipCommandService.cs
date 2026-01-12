@@ -216,11 +216,9 @@ public class PipCommandService : IPipCommandService
 
             var reportOutput = await this.fileUtilityService.ReadAllTextAsync(reportFile);
 
-            // System.Text.Json throws on empty strings, unlike Newtonsoft.Json which returned null
             if (string.IsNullOrWhiteSpace(reportOutput))
             {
-                this.logger.LogDebug("PipReport: Empty pip installation report for file {Path}", path);
-                return (null, reportFile);
+                throw new InvalidOperationException($"PipReport: Empty pip installation report for file {path}.");
             }
 
             PipInstallationReport report;
@@ -230,8 +228,7 @@ public class PipCommandService : IPipCommandService
             }
             catch (JsonException ex)
             {
-                this.logger.LogWarning(ex, "PipReport: Invalid JSON in pip installation report for file {Path}", path);
-                return (null, reportFile);
+                throw new InvalidOperationException($"PipReport: Invalid generated pip installation report JSON for {path}.", ex);
             }
 
             return (report, reportFile);
