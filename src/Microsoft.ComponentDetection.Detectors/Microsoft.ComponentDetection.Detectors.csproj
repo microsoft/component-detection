@@ -10,7 +10,6 @@
         <PackageReference Include="SemanticVersioning" />
         <PackageReference Include="yamldotnet" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
-        <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="System.Reactive" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="Tomlyn.Signed" />

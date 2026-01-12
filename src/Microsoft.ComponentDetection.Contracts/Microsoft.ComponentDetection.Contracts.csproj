@@ -6,7 +6,6 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Logging" />
-        <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="packageurl-dotnet" />
         <PackageReference Include="System.Memory" />
         <PackageReference Include="System.Reactive" />
