@@ -209,8 +209,8 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
         bool isDevDependency,
         bool isExplicitReferencedDependency)
     {
-        // Intentionally keep explicitReferencedDependency for API consistency with other overloads.
-        // Currently, callers pass the same value as component, so we record component with the explicit flag.
+        // Intentionally keep isExplicitReferencedDependency for API consistency with other overloads.
+        // Callers should pass true when the component is an explicit dependency so we record it with the explicit flag.
         NpmComponentUtilities.AddOrUpdateDetectedComponent(
             recorder,
             component,
