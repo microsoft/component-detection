@@ -127,7 +127,8 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
                 continue;
             }
 
-            // Check both Dev and DevOptional - DevOptional is set for peer dependencies that are also dev dependencies
+            // Check both Dev and DevOptional. In npm lockfiles, devOptional is set when a package has both peer: true and dev: true,
+            // and for detection purposes we treat devOptional packages as dev dependencies.
             var isDevDependency = package.Dev == true || package.DevOptional == true;
 
             // Track component and its dev status
