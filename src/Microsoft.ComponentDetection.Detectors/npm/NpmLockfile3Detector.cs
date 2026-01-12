@@ -226,7 +226,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
         // "node_modules/a/node_modules/b" -> "node_modules/a"
         // "node_modules/@scope/a/node_modules/@scope/b" -> "node_modules/@scope/a"
         const string marker = "/node_modules/";
-        var idx = packagePath.LastIndexOf(marker, System.StringComparison.OrdinalIgnoreCase);
+        var idx = packagePath.LastIndexOf(marker, System.StringComparison.Ordinal);
         if (idx < 0)
         {
             return null;
