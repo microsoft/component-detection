@@ -733,16 +733,8 @@ public class PipCommandServiceTests
         this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
             .ReturnsAsync(string.Empty);
 
-        var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
-        report.Should().BeNull();
-        this.logger.Verify(
-            x => x.Log(
-                LogLevel.Debug,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty pip installation report")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-            Times.Once);
+        var action = async () => await service.GenerateInstallationReportAsync(testPath);
+        await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Empty pip installation report*");
     }
 
     [TestMethod]
@@ -774,15 +766,7 @@ public class PipCommandServiceTests
         this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
             .ReturnsAsync("{ invalid json }");
 
-        var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
-        report.Should().BeNull();
-        this.logger.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Invalid JSON in pip installation report")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
-            Times.Once);
+        var action = async () => await service.GenerateInstallationReportAsync(testPath);
+        await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Invalid generated pip installation report*");
     }
 }
