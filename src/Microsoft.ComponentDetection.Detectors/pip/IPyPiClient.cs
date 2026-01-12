@@ -207,7 +207,25 @@ public sealed class PyPiClient : IPyPiClient, IDisposable
         }
 
         var response = await request.Content.ReadAsStringAsync();
-        var project = JsonSerializer.Deserialize<PythonProject>(response);
+
+        // System.Text.Json throws on empty strings, unlike Newtonsoft.Json which returned null
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            this.logger.LogWarning("Empty response from PyPI for {SpecName}", spec.Name);
+            return new PythonProject();
+        }
+
+        PythonProject project;
+        try
+        {
+            project = JsonSerializer.Deserialize<PythonProject>(response);
+        }
+        catch (JsonException ex)
+        {
+            this.logger.LogWarning(ex, "Invalid JSON response from PyPI for {SpecName}", spec.Name);
+            return new PythonProject();
+        }
+
         var versions = new PythonProject
         {
             Info = project.Info,
