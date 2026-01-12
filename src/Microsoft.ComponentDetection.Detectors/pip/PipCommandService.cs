@@ -215,7 +215,23 @@ public class PipCommandService : IPipCommandService
             }
 
             var reportOutput = await this.fileUtilityService.ReadAllTextAsync(reportFile);
-            return (JsonSerializer.Deserialize<PipInstallationReport>(reportOutput), reportFile);
+
+            if (string.IsNullOrWhiteSpace(reportOutput))
+            {
+                throw new InvalidOperationException($"PipReport: Empty pip installation report for file {path}.");
+            }
+
+            PipInstallationReport report;
+            try
+            {
+                report = JsonSerializer.Deserialize<PipInstallationReport>(reportOutput);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException($"PipReport: Invalid generated pip installation report JSON for {path}.", ex);
+            }
+
+            return (report, reportFile);
         }
         finally
         {
