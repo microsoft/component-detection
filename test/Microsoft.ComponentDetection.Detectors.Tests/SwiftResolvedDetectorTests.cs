@@ -469,4 +469,28 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """
 ;
+
+    [TestMethod]
+    public async Task TestEmptyPackageResolvedAsync()
+    {
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Package.resolved", string.Empty)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestInvalidJsonPackageResolvedAsync()
+    {
+        var invalidJson = "{ invalid json content }";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Package.resolved", invalidJson)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
 }

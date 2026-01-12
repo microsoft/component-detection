@@ -709,6 +709,54 @@ public class PipReportComponentDetectorTests : BaseDetectorTest<PipReportCompone
         idnaComponent.Version.Should().Be("3.7");
     }
 
+    [TestMethod]
+    public async Task TestPipReportDetector_EmptyPreGeneratedReportAsync()
+    {
+        this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("DisablePipReportSkipRun")).Returns(false);
+
+        var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "EmptyReport", "requirements.txt");
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty, fileLocation: file1)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Verify that the empty pre-generated file was detected and logged
+        this.mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty report file")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task TestPipReportDetector_InvalidJsonPreGeneratedReportAsync()
+    {
+        this.mockEnvVarService.Setup(x => x.DoesEnvironmentVariableExist("DisablePipReportSkipRun")).Returns(false);
+
+        var file1 = Path.Join(Directory.GetCurrentDirectory(), "Mocks", "InvalidJsonReport", "requirements.txt");
+
+        var (result, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("requirements.txt", string.Empty, fileLocation: file1)
+            .ExecuteDetectorAsync();
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Verify that the invalid JSON pre-generated file was detected and logged
+        this.mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Invalid JSON")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
     private List<(string PackageString, GitComponent Component)> ToGitTuple(IList<string> components)
     {
         return components.Select<string, (string, GitComponent)>(dep => (dep, null)).ToList();

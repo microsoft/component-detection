@@ -200,7 +200,24 @@ public class PipReportComponentDetector : FileComponentDetectorWithCleanup
                 {
                     this.Logger.LogInformation("PipReport: Using pre-generated pip report '{ReportFile}' for package file '{File}'.", existingReport.FullName, file.Location);
                     var reportOutput = await this.fileUtilityService.ReadAllTextAsync(existingReport);
-                    var report = JsonSerializer.Deserialize<PipInstallationReport>(reportOutput);
+
+                    // System.Text.Json throws on empty strings, unlike Newtonsoft.Json which returned null
+                    if (string.IsNullOrWhiteSpace(reportOutput))
+                    {
+                        this.Logger.LogDebug("PipReport: Empty report file '{ReportFile}' for package file '{File}'.", existingReport.FullName, file.Location);
+                        continue;
+                    }
+
+                    PipInstallationReport report;
+                    try
+                    {
+                        report = JsonSerializer.Deserialize<PipInstallationReport>(reportOutput);
+                    }
+                    catch (JsonException ex)
+                    {
+                        this.Logger.LogWarning(ex, "PipReport: Invalid JSON in report file '{ReportFile}' for package file '{File}'.", existingReport.FullName, file.Location);
+                        continue;
+                    }
 
                     if (await this.IsValidPreGeneratedReportAsync(report, pythonExePath, file.Location))
                     {
@@ -234,8 +251,15 @@ public class PipReportComponentDetector : FileComponentDetectorWithCleanup
 
                 // Call pip executable to generate the installation report of a given project file.
                 (var report, var reportFile) = await this.pipCommandService.GenerateInstallationReportAsync(file.Location, pipExePath, pythonExePath, childCts.Token);
-                reports.Add(report);
-                reportFiles.Add(reportFile);
+                if (report is not null)
+                {
+                    reports.Add(report);
+                }
+
+                if (reportFile is not null)
+                {
+                    reportFiles.Add(reportFile);
+                }
             }
 
             if (reports.Count == 0)

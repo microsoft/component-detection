@@ -239,6 +239,34 @@ public class PyPiClientTests
             ItExpr.IsAny<CancellationToken>());
     }
 
+    [TestMethod]
+    public async Task GetProject_EmptyResponse_ReturnsEmptyProjectAsync()
+    {
+        var pythonSpecs = new PipDependencySpecification { Name = "requests" };
+
+        var mockHandler = this.MockHttpMessageHandler(string.Empty);
+        PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
+
+        var result = await this.pypiClient.GetProjectAsync(pythonSpecs);
+
+        result.Should().NotBeNull();
+        result.Releases.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task GetProject_InvalidJson_ReturnsEmptyProjectAsync()
+    {
+        var pythonSpecs = new PipDependencySpecification { Name = "requests" };
+
+        var mockHandler = this.MockHttpMessageHandler("{ invalid json }");
+        PyPiClient.HttpClient = new HttpClient(mockHandler.Object);
+
+        var result = await this.pypiClient.GetProjectAsync(pythonSpecs);
+
+        result.Should().NotBeNull();
+        result.Releases.Should().BeNull();
+    }
+
     private Mock<HttpMessageHandler> MockHttpMessageHandler(string content)
     {
         var handlerMock = new Mock<HttpMessageHandler>();

@@ -215,7 +215,26 @@ public class PipCommandService : IPipCommandService
             }
 
             var reportOutput = await this.fileUtilityService.ReadAllTextAsync(reportFile);
-            return (JsonSerializer.Deserialize<PipInstallationReport>(reportOutput), reportFile);
+
+            // System.Text.Json throws on empty strings, unlike Newtonsoft.Json which returned null
+            if (string.IsNullOrWhiteSpace(reportOutput))
+            {
+                this.logger.LogDebug("PipReport: Empty pip installation report for file {Path}", path);
+                return (null, reportFile);
+            }
+
+            PipInstallationReport report;
+            try
+            {
+                report = JsonSerializer.Deserialize<PipInstallationReport>(reportOutput);
+            }
+            catch (JsonException ex)
+            {
+                this.logger.LogWarning(ex, "PipReport: Invalid JSON in pip installation report for file {Path}", path);
+                return (null, reportFile);
+            }
+
+            return (report, reportFile);
         }
         finally
         {

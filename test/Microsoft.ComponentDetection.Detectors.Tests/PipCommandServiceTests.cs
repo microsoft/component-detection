@@ -703,4 +703,86 @@ public class PipCommandServiceTests
         var action = async () => await service.GenerateInstallationReportAsync(testPath, cancellationToken: cts.Token);
         await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("PipReport: Cancelled*");
     }
+
+    [TestMethod]
+    public async Task PipCommandService_EmptyReportThrowsExceptionAsync()
+    {
+        var testPath = Path.Join(Directory.GetCurrentDirectory(), "requirements.txt");
+
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(true);
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
+            It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty });
+
+        this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
+            .ReturnsAsync(string.Empty);
+
+        var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
+        report.Should().BeNull();
+        this.logger.Verify(
+            x => x.Log(
+                LogLevel.Debug,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty pip installation report")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task PipCommandService_InvalidJsonReportThrowsExceptionAsync()
+    {
+        var testPath = Path.Join(Directory.GetCurrentDirectory(), "requirements.txt");
+
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(true);
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
+            It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty });
+
+        this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
+            .ReturnsAsync("{ invalid json }");
+
+        var (report, reportFile) = await service.GenerateInstallationReportAsync(testPath);
+        report.Should().BeNull();
+        this.logger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Invalid JSON in pip installation report")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()),
+            Times.Once);
+    }
 }
