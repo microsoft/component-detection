@@ -56,7 +56,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
         }
 
         // Collect direct dependencies from package.json for explicit reference tracking
-        var directDependencies = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        var directDependencies = new HashSet<string>(System.StringComparer.Ordinal);
         if (packageJson.Dependencies is not null)
         {
             foreach (var dep in packageJson.Dependencies.Keys)
