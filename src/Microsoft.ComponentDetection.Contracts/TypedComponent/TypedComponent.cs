@@ -5,16 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
-using Microsoft.ComponentDetection.Contracts.BcdeModels;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 using PackageUrl;
-using JsonConverterAttribute = Newtonsoft.Json.JsonConverterAttribute;
-using JsonIgnoreAttribute = Newtonsoft.Json.JsonIgnoreAttribute;
 
-[JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-[JsonConverter(typeof(TypedComponentConverter))]
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(CargoComponent), typeDiscriminator: nameof(ComponentType.Cargo))]
@@ -39,8 +31,7 @@ using JsonIgnoreAttribute = Newtonsoft.Json.JsonIgnoreAttribute;
 [JsonDerivedType(typeof(VcpkgComponent), typeDiscriminator: nameof(ComponentType.Vcpkg))]
 public abstract class TypedComponent
 {
-    [JsonIgnore] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore] // System.Text.Json
+    [JsonIgnore]
     private string id;
 
     internal TypedComponent()
@@ -49,21 +40,17 @@ public abstract class TypedComponent
     }
 
     /// <summary>Gets the type of the component, must be well known.</summary>
-    [JsonConverter(typeof(StringEnumConverter))] // Newtonsoft.Json
-    [JsonProperty("type", Order = int.MinValue)] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore] // System.Text.Json - type is handled by [JsonPolymorphic] discriminator
+    [JsonIgnore] // type is handled by [JsonPolymorphic] discriminator
     public abstract ComponentType Type { get; }
 
     /// <summary>Gets the id of the component.</summary>
-    [JsonProperty("id")] // Newtonsoft.Json
-    [JsonPropertyName("id")] // System.Text.Json
+    [JsonPropertyName("id")]
     public string Id => this.id ??= this.ComputeId();
 
     [JsonPropertyName("packageUrl")]
     public virtual PackageURL PackageUrl { get; }
 
-    [JsonIgnore] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore] // System.Text.Json
+    [JsonIgnore]
     internal string DebuggerDisplay => $"{this.Id}";
 
     protected string ValidateRequiredInput(string input, string fieldName, string componentType)
