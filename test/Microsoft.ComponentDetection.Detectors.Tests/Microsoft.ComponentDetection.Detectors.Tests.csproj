@@ -57,6 +57,18 @@
         <None Update="Mocks\test.component-detection-pip-report.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Mocks\EmptyReport\requirements.txt">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\EmptyReport\test.component-detection-pip-report.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\InvalidJsonReport\requirements.txt">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Mocks\InvalidJsonReport\test.component-detection-pip-report.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
         <None Update="TestFiles\go_WithLocalReferences.mod">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>

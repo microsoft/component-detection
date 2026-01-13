@@ -703,4 +703,70 @@ public class PipCommandServiceTests
         var action = async () => await service.GenerateInstallationReportAsync(testPath, cancellationToken: cts.Token);
         await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("PipReport: Cancelled*");
     }
+
+    [TestMethod]
+    public async Task PipCommandService_EmptyReportThrowsExceptionAsync()
+    {
+        var testPath = Path.Join(Directory.GetCurrentDirectory(), "requirements.txt");
+
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(true);
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
+            It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty });
+
+        this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
+            .ReturnsAsync(string.Empty);
+
+        var action = async () => await service.GenerateInstallationReportAsync(testPath);
+        await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Empty pip installation report*");
+    }
+
+    [TestMethod]
+    public async Task PipCommandService_InvalidJsonReportThrowsExceptionAsync()
+    {
+        var testPath = Path.Join(Directory.GetCurrentDirectory(), "requirements.txt");
+
+        this.commandLineInvokationService.Setup(x => x.CanCommandBeLocatedAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            "--version"))
+            .ReturnsAsync(true);
+
+        var service = new PipCommandService(
+            this.commandLineInvokationService.Object,
+            this.pathUtilityService,
+            this.fileUtilityService.Object,
+            this.envVarService.Object,
+            this.logger.Object);
+
+        this.commandLineInvokationService.Setup(x => x.ExecuteCommandAsync(
+            "pip",
+            It.IsAny<IEnumerable<string>>(),
+            It.Is<DirectoryInfo>(d => d.FullName.Contains(Directory.GetCurrentDirectory(), StringComparison.OrdinalIgnoreCase)),
+            It.IsAny<CancellationToken>(),
+            It.Is<string>(s => s.Contains("requirements.txt", StringComparison.OrdinalIgnoreCase))))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 0, StdErr = string.Empty, StdOut = string.Empty });
+
+        this.fileUtilityService.Setup(x => x.ReadAllTextAsync(It.IsAny<FileInfo>()))
+            .ReturnsAsync("{ invalid json }");
+
+        var action = async () => await service.GenerateInstallationReportAsync(testPath);
+        await action.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Invalid generated pip installation report*");
+    }
 }

@@ -62,6 +62,12 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
     {
         var parsedResolvedFile = this.ReadAndParseResolvedFile(componentStream.Stream);
 
+        if (parsedResolvedFile?.Pins == null)
+        {
+            this.Logger.LogWarning("Failed to parse Package.resolved file at {Location}", componentStream.Location);
+            return;
+        }
+
         foreach (var package in parsedResolvedFile.Pins)
         {
             try
@@ -109,6 +115,21 @@ public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOff
             resolvedFile = reader.ReadToEnd();
         }
 
-        return JsonSerializer.Deserialize<SwiftResolvedFile>(resolvedFile);
+        // System.Text.Json throws on empty strings, unlike Newtonsoft.Json which returned null
+        if (string.IsNullOrWhiteSpace(resolvedFile))
+        {
+            this.Logger.LogDebug("Empty Package.resolved file encountered");
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<SwiftResolvedFile>(resolvedFile);
+        }
+        catch (JsonException ex)
+        {
+            this.Logger.LogWarning(ex, "Invalid JSON in Package.resolved file");
+            return null;
+        }
     }
 }
