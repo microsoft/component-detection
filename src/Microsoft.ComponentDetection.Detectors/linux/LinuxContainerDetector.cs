@@ -28,8 +28,6 @@ public class LinuxContainerDetector(
 {
     private const string TimeoutConfigKey = "Linux.ScanningTimeoutSec";
     private const int DefaultTimeoutMinutes = 10;
-    private const string ScanScopeConfigKey = "Linux.ImageScanScope";
-    private const LinuxScannerScope DefaultScanScope = LinuxScannerScope.AllLayers;
 
     private readonly ILinuxScanner linuxScanner = linuxScanner;
     private readonly IDockerService dockerService = dockerService;
@@ -79,8 +77,6 @@ public class LinuxContainerDetector(
             return EmptySuccessfulScan();
         }
 
-        var scannerScope = GetScanScope(request.DetectorArgs);
-
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(GetTimeout(request.DetectorArgs));
 
@@ -100,7 +96,6 @@ public class LinuxContainerDetector(
             results = await this.ProcessImagesAsync(
                 imagesToProcess,
                 request.ComponentRecorder,
-                scannerScope,
                 timeoutCts.Token
             );
         }
@@ -140,26 +135,6 @@ public class LinuxContainerDetector(
         return double.TryParse(timeout, out var parsedTimeout)
             ? TimeSpan.FromSeconds(parsedTimeout)
             : defaultTimeout;
-    }
-
-    /// <summary>
-    /// Extracts and returns the scan scope from detector arguments.
-    /// </summary>
-    /// <param name="detectorArgs">The arguments provided by the user.</param>
-    /// <returns>The <see cref="LinuxScannerScope"/> to use for scanning. Defaults to <see cref="DefaultScanScope"/> if not specified.</returns>
-    private static LinuxScannerScope GetScanScope(IDictionary<string, string> detectorArgs)
-    {
-        if (detectorArgs == null || !detectorArgs.TryGetValue(ScanScopeConfigKey, out var scopeValue))
-        {
-            return DefaultScanScope;
-        }
-
-        return scopeValue?.ToUpperInvariant() switch
-        {
-            "ALL-LAYERS" => LinuxScannerScope.AllLayers,
-            "SQUASHED" => LinuxScannerScope.Squashed,
-            _ => DefaultScanScope,
-        };
     }
 
     private static IndividualDetectorScanResult EmptySuccessfulScan() =>
@@ -204,7 +179,6 @@ public class LinuxContainerDetector(
     private async Task<IEnumerable<ImageScanningResult>> ProcessImagesAsync(
         IEnumerable<string> imagesToProcess,
         IComponentRecorder componentRecorder,
-        LinuxScannerScope scannerScope,
         CancellationToken cancellationToken = default
     )
     {
@@ -275,7 +249,6 @@ public class LinuxContainerDetector(
                     internalContainerDetails.Layers,
                     baseImageLayerCount,
                     enabledComponentTypes,
-                    scannerScope,
                     cancellationToken
                 );
 

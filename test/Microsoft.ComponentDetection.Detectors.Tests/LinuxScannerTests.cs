@@ -1,7 +1,6 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -289,8 +288,7 @@ public class LinuxScannerTests
                     },
                 ],
                 0,
-                enabledTypes,
-                LinuxScannerScope.AllLayers
+                enabledTypes
             )
         )
             .First()
@@ -337,8 +335,7 @@ public class LinuxScannerTests
                     },
                 ],
                 0,
-                enabledTypes,
-                LinuxScannerScope.AllLayers
+                enabledTypes
             )
         )
             .First()
@@ -387,8 +384,7 @@ public class LinuxScannerTests
                     },
                 ],
                 0,
-                enabledTypes,
-                LinuxScannerScope.AllLayers
+                enabledTypes
             )
         )
             .First()
@@ -437,8 +433,7 @@ public class LinuxScannerTests
                     },
                 ],
                 0,
-                enabledTypes,
-                LinuxScannerScope.AllLayers
+                enabledTypes
             )
         )
             .First()
@@ -527,8 +522,7 @@ public class LinuxScannerTests
                 new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
             ],
             0,
-            enabledTypes,
-            LinuxScannerScope.AllLayers
+            enabledTypes
         );
 
         var allComponents = layers.SelectMany(l => l.Components).ToList();
@@ -628,8 +622,7 @@ public class LinuxScannerTests
                 new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
             ],
             0,
-            enabledTypes,
-            LinuxScannerScope.AllLayers
+            enabledTypes
         );
 
         var allComponents = layers.SelectMany(l => l.Components).ToList();
@@ -714,8 +707,7 @@ public class LinuxScannerTests
                 new DockerLayer { LayerIndex = 1, DiffId = "sha256:layer2" },
             ],
             0,
-            enabledTypes,
-            LinuxScannerScope.AllLayers
+            enabledTypes
         );
 
         var allComponents = layers.SelectMany(l => l.Components).ToList();
@@ -729,62 +721,5 @@ public class LinuxScannerTests
 
         var pipComponent = allComponents.OfType<PipComponent>().Single();
         pipComponent.Name.Should().Be("requests");
-    }
-
-    [TestMethod]
-    [DataRow(LinuxScannerScope.AllLayers, "all-layers")]
-    [DataRow(LinuxScannerScope.Squashed, "squashed")]
-    public async Task TestLinuxScanner_ScopeParameter_IncludesCorrectFlagAsync(
-        LinuxScannerScope scope,
-        string expectedFlag
-    )
-    {
-        this.mockDockerService.Setup(service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<List<string>>(),
-                    It.IsAny<CancellationToken>()
-                )
-            )
-            .ReturnsAsync((SyftOutputNoAuthorOrLicense, string.Empty));
-
-        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
-        await this.linuxScanner.ScanLinuxAsync(
-            "fake_hash",
-            [new DockerLayer { LayerIndex = 0, DiffId = "sha256:layer1" }],
-            0,
-            enabledTypes,
-            scope
-        );
-
-        this.mockDockerService.Verify(
-            service =>
-                service.CreateAndRunContainerAsync(
-                    It.IsAny<string>(),
-                    It.Is<List<string>>(cmd =>
-                        cmd.Contains("--scope") && cmd.Contains(expectedFlag)
-                    ),
-                    It.IsAny<CancellationToken>()
-                ),
-            Times.Once
-        );
-    }
-
-    [TestMethod]
-    public async Task TestLinuxScanner_InvalidScopeParameter_ThrowsArgumentOutOfRangeExceptionAsync()
-    {
-        var enabledTypes = new HashSet<ComponentType> { ComponentType.Linux };
-        var invalidScope = (LinuxScannerScope)999; // Invalid enum value
-
-        Func<Task> action = async () =>
-            await this.linuxScanner.ScanLinuxAsync(
-                "fake_hash",
-                [new DockerLayer { LayerIndex = 0, DiffId = "sha256:layer1" }],
-                0,
-                enabledTypes,
-                invalidScope
-            );
-
-        await action.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 }
