@@ -20,7 +20,6 @@ using JsonIgnoreAttribute = Newtonsoft.Json.JsonIgnoreAttribute;
 [JsonDerivedType(typeof(CargoComponent), typeDiscriminator: nameof(ComponentType.Cargo))]
 [JsonDerivedType(typeof(ConanComponent), typeDiscriminator: nameof(ComponentType.Conan))]
 [JsonDerivedType(typeof(CondaComponent), typeDiscriminator: nameof(ComponentType.Conda))]
-[JsonDerivedType(typeof(CppSdkComponent), typeDiscriminator: nameof(ComponentType.CppSdk))]
 [JsonDerivedType(typeof(DockerImageComponent), typeDiscriminator: nameof(ComponentType.DockerImage))]
 [JsonDerivedType(typeof(DockerReferenceComponent), typeDiscriminator: nameof(ComponentType.DockerReference))]
 [JsonDerivedType(typeof(DotNetComponent), typeDiscriminator: nameof(ComponentType.DotNet))]
