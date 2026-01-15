@@ -87,6 +87,10 @@ public class LinuxScanner : ILinuxScanner
             },
             { ComponentType.Npm, componentFactories.FirstOrDefault(f => f is NpmComponentFactory) },
             { ComponentType.Pip, componentFactories.FirstOrDefault(f => f is PipComponentFactory) },
+            {
+                ComponentType.NuGet,
+                componentFactories.FirstOrDefault(f => f is DotnetComponentFactory)
+            },
         };
     }
 

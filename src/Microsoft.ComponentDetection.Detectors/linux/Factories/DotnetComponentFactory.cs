@@ -14,7 +14,10 @@ public class DotnetComponentFactory : ArtifactComponentFactoryBase
     public override IEnumerable<string> SupportedArtifactTypes => ["dotnet"];
 
     /// <inheritdoc/>
-    public override TypedComponent? CreateComponent([NotNull] ArtifactElement artifact, [NotNull] Distro distro)
+    public override TypedComponent? CreateComponent(
+        [NotNull] ArtifactElement artifact,
+        [NotNull] Distro distro
+    )
     {
         if (string.IsNullOrWhiteSpace(artifact.Name) || string.IsNullOrWhiteSpace(artifact.Version))
         {
@@ -24,9 +27,6 @@ public class DotnetComponentFactory : ArtifactComponentFactoryBase
         var author = GetAuthorFromArtifact(artifact);
         var authors = string.IsNullOrWhiteSpace(author) ? null : new[] { author };
 
-        return new NuGetComponent(
-            name: artifact.Name,
-            version: artifact.Version,
-            authors: authors);
+        return new NuGetComponent(name: artifact.Name, version: artifact.Version, authors: authors);
     }
 }
