@@ -9,8 +9,11 @@ using Microsoft.ComponentDetection.Detectors.Pip;
 /// <summary>
 /// Experiment to validate the <see cref="LinuxApplicationLayerDetector"/> which captures application-level
 /// packages in addition to system packages from Linux containers.
-/// Control group includes the standard file-based npm and pip detectors plus the Linux system package detector.
-/// Experiment group uses container-based detection for all package types together.
+/// Control group uses file-based detectors plus LinuxContainerDetector (system packages only).
+/// Experiment group uses file-based detectors plus LinuxApplicationLayerDetector (system + application packages).
+/// The diff reveals net-new application packages found only inside containers (e.g., RUN npm add lodash),
+/// excluding both manifest-detected components (canceled by file-based detectors) and system packages
+/// (canceled by LinuxContainerDetector).
 /// </summary>
 public class LinuxApplicationLayerExperiment : IExperimentConfiguration
 {
@@ -30,20 +33,25 @@ public class LinuxApplicationLayerExperiment : IExperimentConfiguration
 
     /// <inheritdoc />
     public bool IsInExperimentGroup(IComponentDetector componentDetector) =>
-        componentDetector is LinuxApplicationLayerDetector;
+        componentDetector
+            is LinuxApplicationLayerDetector
+                or NpmComponentDetector
+                or NpmLockfileDetectorBase
+                or PipReportComponentDetector
+                or NuGetComponentDetector
+                or NuGetProjectModelProjectCentricComponentDetector
+                or NuGetPackagesConfigDetector;
 
     /// <inheritdoc />
     public bool ShouldRecord(IComponentDetector componentDetector, int numComponents)
     {
-        // Only record telemetry if the experiment group detector (LinuxApplicationLayerDetector)
-        // actually found components.
-        if (componentDetector is LinuxApplicationLayerDetector)
+        // Only record telemetry if a Linux container detector found components,
+        // indicating containers were detected and scanned.
+        if (componentDetector is LinuxContainerDetector)
         {
             return numComponents > 0;
         }
 
-        // For control group detectors, record if the experiment group found anything
-        // This will be determined by the orchestrator based on whether the experiment group had components
         return true;
     }
 }
