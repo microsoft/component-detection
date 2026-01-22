@@ -265,7 +265,7 @@ public class RustSbomParser : IRustSbomParser
 
         if (!ownersApplied)
         {
-            this.logger.LogWarning("Falling back to SBOM recorder for {Id} because no ownership found", id);
+            this.logger.LogDebug("Falling back to SBOM recorder for {Id} because no ownership found", id);
 
             // Fallback to SBOM recorder if no ownership info
             fallbackRecorder.RegisterUsage(
