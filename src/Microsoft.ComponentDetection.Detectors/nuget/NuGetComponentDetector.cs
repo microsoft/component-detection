@@ -39,7 +39,7 @@ public class NuGetComponentDetector : FileComponentDetector
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)];
 
-    public override IList<string> SearchPatterns { get; } = ["*.nupkg", "*.nuspec", NugetConfigFileName, "paket.lock"];
+    public override IList<string> SearchPatterns { get; } = ["*.nupkg", "*.nuspec", NugetConfigFileName];
 
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.NuGet];
 
