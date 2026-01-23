@@ -203,6 +203,22 @@ public abstract class NpmLockfileDetectorBase : FileComponentDetector
             parentComponentId);
     }
 
+    protected void RecordComponent(
+        ISingleFileComponentRecorder recorder,
+        TypedComponent component,
+        bool isDevDependency,
+        bool isExplicitReferencedDependency)
+    {
+        // Intentionally keep isExplicitReferencedDependency for API consistency with other overloads.
+        // Callers should pass true when the component is an explicit dependency so we record it with the explicit flag.
+        NpmComponentUtilities.AddOrUpdateDetectedComponent(
+            recorder,
+            component,
+            isDevDependency,
+            parentComponentId: null,
+            isExplicitReferencedDependency);
+    }
+
     private IObservable<ProcessRequest> RemoveNodeModuleNestedFiles(IObservable<ProcessRequest> componentStreams)
     {
         var directoryItemFacades = new List<DirectoryItemFacade>();

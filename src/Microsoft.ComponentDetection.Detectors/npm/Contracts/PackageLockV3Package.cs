@@ -79,7 +79,12 @@ internal sealed record PackageLockV3Package
     [JsonPropertyName("license")]
     public string? License { get; init; }
 
+    /// <summary>
+    /// The engines this package supports. Can be a dictionary or array in practice.
+    /// Using PackageJsonEnginesConverter to handle both formats consistently.
+    /// </summary>
     [JsonPropertyName("engines")]
+    [JsonConverter(typeof(PackageJsonEnginesConverter))]
     public IDictionary<string, string>? Engines { get; init; }
 
     [JsonPropertyName("dependencies")]

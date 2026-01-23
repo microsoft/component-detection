@@ -1,7 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Npm;
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -56,8 +55,38 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
             return;
         }
 
-        // Build package lookup - keys are paths like "node_modules/lodash" or "node_modules/a/node_modules/b"
+        // Collect direct dependencies from package.json for explicit reference tracking
+        var directDependencies = new HashSet<string>(System.StringComparer.Ordinal);
+        if (packageJson.Dependencies is not null)
+        {
+            foreach (var dep in packageJson.Dependencies.Keys)
+            {
+                directDependencies.Add(dep);
+            }
+        }
+
+        if (packageJson.DevDependencies is not null)
+        {
+            foreach (var dep in packageJson.DevDependencies.Keys)
+            {
+                directDependencies.Add(dep);
+            }
+        }
+
+        if (packageJson.OptionalDependencies is not null)
+        {
+            foreach (var dep in packageJson.OptionalDependencies.Keys)
+            {
+                directDependencies.Add(dep);
+            }
+        }
+
+        // Build package lookup and component map - keys are paths like "node_modules/lodash" or "node_modules/a/node_modules/b"
         var packageLookup = new Dictionary<string, (string Path, PackageLockV3Package Package)>();
+        var componentMap = new Dictionary<string, TypedComponent>();
+        var componentDevStatus = new Dictionary<string, bool>();
+
+        // First pass: Create all components and determine dev status
         foreach (var pkg in packagesElement.EnumerateObject())
         {
             if (string.IsNullOrEmpty(pkg.Name))
@@ -66,138 +95,193 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
             }
 
             var package = JsonSerializer.Deserialize<PackageLockV3Package>(pkg.Value.GetRawText(), JsonOptions);
-            if (package is not null)
+            if (package is null)
             {
-                packageLookup[pkg.Name] = (pkg.Name, package);
+                continue;
             }
-        }
 
-        // Collect all top-level dependencies from package.json
-        var topLevelDependencies = new Queue<(string Path, PackageLockV3Package Package, TypedComponent? Parent)>();
+            // Skip link packages (symbolic links to workspace packages)
+            if (package.Link == true)
+            {
+                continue;
+            }
 
-        this.EnqueueDependencies(topLevelDependencies, packageJson.Dependencies, packageLookup, null);
-        this.EnqueueDependencies(topLevelDependencies, packageJson.DevDependencies, packageLookup, null);
-        this.EnqueueDependencies(topLevelDependencies, packageJson.OptionalDependencies, packageLookup, null);
+            // Skip bundled dependencies (they are installed by their parent)
+            if (package.InBundle == true)
+            {
+                continue;
+            }
 
-        // Process each top-level dependency
-        while (topLevelDependencies.Count > 0)
-        {
-            var (path, lockPackage, _) = topLevelDependencies.Dequeue();
-            var name = NpmComponentUtilities.GetModuleName(path);
+            packageLookup[pkg.Name] = (pkg.Name, package);
 
-            var component = this.CreateComponent(name, lockPackage.Version, lockPackage.Integrity);
+            // Derive package name from path
+            var name = NpmComponentUtilities.GetModuleName(pkg.Name);
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(package.Version))
+            {
+                continue;
+            }
+
+            var component = this.CreateComponent(name, package.Version, package.Integrity);
             if (component is null)
             {
                 continue;
             }
 
-            var previouslyAddedComponents = new HashSet<string> { component.Id };
-            var subQueue = new Queue<(string Path, PackageLockV3Package Package, TypedComponent Parent)>();
+            // Check both Dev and DevOptional. In npm lockfiles, devOptional is set when a package has both peer: true and dev: true,
+            // and for detection purposes we treat devOptional packages as dev dependencies.
+            var isDevDependency = package.Dev == true || package.DevOptional == true;
 
-            // Record the top-level component
-            this.RecordComponent(singleFileComponentRecorder, component, lockPackage.Dev ?? false, component);
-
-            // Enqueue nested dependencies
-            this.EnqueueNestedDependencies(subQueue, path, lockPackage, packageLookup, singleFileComponentRecorder, component);
-
-            // Process sub-dependencies
-            while (subQueue.Count > 0)
+            // Track component and its dev status
+            // If a component appears multiple times (at different paths), it's dev-only if ALL instances are dev
+            if (componentMap.TryGetValue(component.Id, out _))
             {
-                var (subPath, subPackage, parentComponent) = subQueue.Dequeue();
-                var subName = NpmComponentUtilities.GetModuleName(subPath);
-
-                var subComponent = this.CreateComponent(subName, subPackage.Version, subPackage.Integrity);
-                if (subComponent is null || previouslyAddedComponents.Contains(subComponent.Id))
-                {
-                    continue;
-                }
-
-                previouslyAddedComponents.Add(subComponent.Id);
-
-                this.RecordComponent(singleFileComponentRecorder, subComponent, subPackage.Dev ?? false, component, parentComponent.Id);
-
-                this.EnqueueNestedDependencies(subQueue, subPath, subPackage, packageLookup, singleFileComponentRecorder, subComponent);
+                // Already seen this component - update dev status (if any is non-dev, it's not dev-only)
+                componentDevStatus[component.Id] = componentDevStatus[component.Id] && isDevDependency;
             }
+            else
+            {
+                componentMap[component.Id] = component;
+                componentDevStatus[component.Id] = isDevDependency;
+            }
+        }
+
+        // Second pass: Register all components
+        foreach (var (componentId, component) in componentMap)
+        {
+            var isDevDependency = componentDevStatus[componentId];
+
+            // Check if this is a direct dependency from package.json
+            var npmComponent = (NpmComponent)component;
+            var isDirectDependency = directDependencies.Contains(npmComponent.Name);
+
+            this.RecordComponent(singleFileComponentRecorder, component, isDevDependency, isDirectDependency);
+        }
+
+        // Third pass: Build dependency graph edges using node-style resolution
+        foreach (var (path, (_, package)) in packageLookup)
+        {
+            if (package.Dependencies is null && package.OptionalDependencies is null)
+            {
+                continue;
+            }
+
+            var name = NpmComponentUtilities.GetModuleName(path);
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(package.Version))
+            {
+                continue;
+            }
+
+            var parentComponent = this.CreateComponent(name, package.Version, package.Integrity);
+            if (parentComponent is null || !componentMap.ContainsKey(parentComponent.Id))
+            {
+                continue;
+            }
+
+            // Process regular dependencies
+            this.ProcessDependencyEdges(path, package.Dependencies, packageLookup, componentMap, singleFileComponentRecorder, parentComponent);
+
+            // Process optional dependencies
+            this.ProcessDependencyEdges(path, package.OptionalDependencies, packageLookup, componentMap, singleFileComponentRecorder, parentComponent);
         }
     }
 
-    private void EnqueueDependencies(
-        Queue<(string Path, PackageLockV3Package Package, TypedComponent? Parent)> queue,
+    /// <summary>
+    /// Resolves a dependency using node-style module resolution.
+    /// Walks up from the current path checking for the dependency in nested node_modules folders.
+    /// </summary>
+    private string? ResolveDependencyPath(
+        string fromPath,
+        string dependencyName,
+        Dictionary<string, (string Path, PackageLockV3Package Package)> packageLookup)
+    {
+        var basePath = fromPath;
+
+        while (true)
+        {
+            // Build candidate path: either at top level or nested in current base
+            var candidate = string.IsNullOrEmpty(basePath) || basePath == NodeModules
+                ? $"{NodeModules}/{dependencyName}"
+                : $"{basePath}/{NodeModules}/{dependencyName}";
+
+            if (packageLookup.TryGetValue(candidate, out var pkg) && !string.IsNullOrEmpty(pkg.Package.Version))
+            {
+                return candidate;
+            }
+
+            // Move up to parent's node_modules
+            if (string.IsNullOrEmpty(basePath))
+            {
+                return null;
+            }
+
+            basePath = this.GetParentPackagePath(basePath);
+        }
+    }
+
+    /// <summary>
+    /// Gets the parent package path by removing the trailing /node_modules/pkg segment.
+    /// </summary>
+    private string? GetParentPackagePath(string packagePath)
+    {
+        // "node_modules/a/node_modules/b" -> "node_modules/a"
+        // "node_modules/@scope/a/node_modules/@scope/b" -> "node_modules/@scope/a"
+        const string marker = "/node_modules/";
+        var idx = packagePath.LastIndexOf(marker, System.StringComparison.Ordinal);
+        if (idx < 0)
+        {
+            return null;
+        }
+
+        var parent = packagePath[..idx];
+        return string.IsNullOrEmpty(parent) ? null : parent;
+    }
+
+    /// <summary>
+    /// Processes dependency edges for a package, resolving each dependency using node-style resolution.
+    /// </summary>
+    private void ProcessDependencyEdges(
+        string fromPath,
         IDictionary<string, string>? dependencies,
         Dictionary<string, (string Path, PackageLockV3Package Package)> packageLookup,
-        TypedComponent? parent)
+        Dictionary<string, TypedComponent> componentMap,
+        ISingleFileComponentRecorder componentRecorder,
+        TypedComponent parentComponent)
     {
         if (dependencies is null)
         {
             return;
         }
 
-        foreach (var (path, package) in dependencies.Keys
-            .Select(key => $"{NodeModules}/{key}")
-            .Where(packageLookup.ContainsKey)
-            .Select(path => packageLookup[path]))
+        foreach (var dep in dependencies)
         {
-            queue.Enqueue((path, package, parent));
-        }
-    }
-
-    private void EnqueueNestedDependencies(
-        Queue<(string Path, PackageLockV3Package Package, TypedComponent Parent)> queue,
-        string currentPath,
-        PackageLockV3Package package,
-        Dictionary<string, (string Path, PackageLockV3Package Package)> packageLookup,
-        ISingleFileComponentRecorder componentRecorder,
-        TypedComponent parent)
-    {
-        if (package.Dependencies is null)
-        {
-            return;
-        }
-
-        foreach (var dep in package.Dependencies)
-        {
-            // First, check if there is an entry in the lockfile for this dependency nested in its ancestors
-            var ancestors = componentRecorder.DependencyGraph.GetAncestors(parent.Id);
-            ancestors.Add(parent.Id);
-
-            // Remove version information from ancestor IDs
-            ancestors = ancestors.Select(x => x.Split(' ')[0]).ToList();
-
-            var found = false;
-
-            // Depth-first search through ancestors
-            for (var i = 0; i < ancestors.Count && !found; i++)
+            var resolvedPath = this.ResolveDependencyPath(fromPath, dep.Key, packageLookup);
+            if (resolvedPath is null)
             {
-                var possiblePath = ancestors.Skip(i).ToList();
-                var ancestorNodeModulesPath = string.Format(
-                    "{0}/{1}/{0}/{2}",
-                    NodeModules,
-                    string.Join($"/{NodeModules}/", possiblePath),
-                    dep.Key);
-
-                if (packageLookup.TryGetValue(ancestorNodeModulesPath, out var nestedPkg))
-                {
-                    this.Logger.LogDebug("Found nested dependency {Dependency} in {AncestorNodeModulesPath}", dep.Key, ancestorNodeModulesPath);
-                    queue.Enqueue((nestedPkg.Path, nestedPkg.Package, parent));
-                    found = true;
-                }
+                this.Logger.LogDebug("Could not resolve dependency {Dependency} from {FromPath}", dep.Key, fromPath);
+                continue;
             }
 
-            if (found)
+            if (!packageLookup.TryGetValue(resolvedPath, out var resolvedPkg))
             {
                 continue;
             }
 
-            // If not found in ancestors, check at the top level
-            var topLevelPath = $"{NodeModules}/{dep.Key}";
-            if (packageLookup.TryGetValue(topLevelPath, out var topLevelPkg))
+            var resolvedName = NpmComponentUtilities.GetModuleName(resolvedPath);
+            if (string.IsNullOrEmpty(resolvedName) || string.IsNullOrEmpty(resolvedPkg.Package.Version))
             {
-                queue.Enqueue((topLevelPkg.Path, topLevelPkg.Package, parent));
+                continue;
             }
-            else
+
+            var childComponent = this.CreateComponent(resolvedName, resolvedPkg.Package.Version, resolvedPkg.Package.Integrity);
+            if (childComponent is null || !componentMap.ContainsKey(childComponent.Id))
             {
-                this.Logger.LogWarning("Could not find dependency {Dependency} in lockfile", dep.Key);
+                continue;
             }
+
+            // Register the dependency edge
+            componentRecorder.RegisterUsage(
+                new DetectedComponent(childComponent),
+                parentComponentId: parentComponent.Id);
         }
     }
 }

@@ -133,6 +133,61 @@ public class NpmDetectorTests : BaseDetectorTest<NpmComponentDetector>
     }
 
     [TestMethod]
+    public async Task TestNpmDetector_AuthorNull_WhenAuthorMalformed_EmailOnlyAsync()
+    {
+        var authorName = GetRandomString();
+        var authorEmail = GetRandomString();
+        var (packageJsonName, packageJsonContents, packageJsonPath) =
+            NpmTestUtilities.GetPackageJsonNoDependenciesMalformedAuthorAsSingleString(authorName, authorEmail, null);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
+            .ExecuteDetectorAsync();
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        AssertDetectedComponentCount(detectedComponents, 1);
+        AssertNpmComponent(detectedComponents);
+        ((NpmComponent)detectedComponents.First().Component).Author.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_AuthorNull_WhenAuthorMalformed_UrlOnlyAsync()
+    {
+        var authorName = GetRandomString();
+        var authorUrl = GetRandomString();
+        var (packageJsonName, packageJsonContents, packageJsonPath) =
+            NpmTestUtilities.GetPackageJsonNoDependenciesMalformedAuthorAsSingleString(authorName, null, authorUrl);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
+            .ExecuteDetectorAsync();
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        AssertDetectedComponentCount(detectedComponents, 1);
+        AssertNpmComponent(detectedComponents);
+        ((NpmComponent)detectedComponents.First().Component).Author.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_AuthorDetected_WhenAuthorMalformed_NameOnlyAsync()
+    {
+        var authorName = GetRandomString();
+        var (packageJsonName, packageJsonContents, packageJsonPath) =
+            NpmTestUtilities.GetPackageJsonNoDependenciesMalformedAuthorAsSingleString(authorName, null, null);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
+            .ExecuteDetectorAsync();
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        AssertDetectedComponentCount(detectedComponents, 1);
+        AssertNpmComponent(detectedComponents);
+
+        // When malformed, but it's just the name, it should still work
+        ((NpmComponent)detectedComponents.First().Component).Author.Name.Should().Be(authorName);
+    }
+
+    [TestMethod]
     public async Task TestNpmDetector_AuthorNameDetected_WhenEmailNotPresentAndUrlNotPresent_AuthorAsSingleStringAsync()
     {
         var authorName = GetRandomString();
