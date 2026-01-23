@@ -124,6 +124,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, NuGetComponentDetector>();
         services.AddSingleton<IComponentDetector, NuGetPackagesConfigDetector>();
         services.AddSingleton<IComponentDetector, NuGetProjectModelProjectCentricComponentDetector>();
+        services.AddSingleton<IComponentDetector, NuGetCentralPackageManagementDetector>();
 
         // PIP
         services.AddSingleton<IPyPiClient, PyPiClient>();
