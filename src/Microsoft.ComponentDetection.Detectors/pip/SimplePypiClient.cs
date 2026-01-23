@@ -42,6 +42,9 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     // Keep telemetry on how the cache is being used for future refinements
     private readonly SimplePypiCacheTelemetryRecord cacheTelemetry = new SimplePypiCacheTelemetryRecord();
 
+    // Semaphore to limit the number of concurrent calls to pypi.org
+    private readonly SemaphoreSlim semaphore;
+
     /// <summary>
     /// A thread safe cache implementation which contains a mapping of URI -> SimpleProject for simplepypi api projects
     /// and has a limited number of entries which will expire after the cache fills or a specified interval.
@@ -63,6 +66,7 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     {
         this.environmentVariableService = environmentVariableService;
         this.logger = logger;
+        this.semaphore = new SemaphoreSlim(5);
     }
 
     public static HttpClient HttpClient { get; internal set; } = new HttpClient(HttpClientHandler);
@@ -266,12 +270,14 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
     /// <returns> Returns the httpresponsemessage. </returns>
     private async Task<HttpResponseMessage> GetPypiResponseAsync(Uri uri)
     {
+        await this.semaphore.WaitAsync();
         this.logger.LogInformation("Getting Python data from {Uri}", uri);
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.UserAgent.Add(ProductValue);
         request.Headers.UserAgent.Add(CommentValue);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.pypi.simple.v1+json"));
         var response = await HttpClient.SendAsync(request);
+        this.semaphore.Release();
         return response;
     }
 
@@ -282,6 +288,6 @@ public sealed class SimplePyPiClient : ISimplePyPiClient, IDisposable
         this.cacheTelemetry.Dispose();
         this.cachedProjectWheelFiles.Dispose();
         this.cachedSimplePyPiProjects.Dispose();
-        HttpClient.Dispose();
+        this.semaphore.Dispose();
     }
 }
