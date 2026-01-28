@@ -585,13 +585,15 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
             componentAId,
             parentComponent => parentComponent.Name == componentA.Name);
 
-        // B and C should be transitive dependencies under A
+        // B should be a transitive dependency of A (which is explicitly referenced)
         componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
             componentBId,
-            parentComponent => parentComponent.Name == componentA.Name);
+            parentComponent => parentComponent.Name == componentA.Name).Should().BeTrue();
 
+        // C should also be a transitive dependency of A (reachable via A->B->C)
+        // Even with the circular dependency C->A, C is still reachable from the explicitly referenced A
         componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
             componentCId,
-            parentComponent => parentComponent.Name == componentA.Name || parentComponent.Name == componentB.Name);
+            parentComponent => parentComponent.Name == componentA.Name).Should().BeTrue();
     }
 }
