@@ -369,4 +369,112 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().BeEmpty(); // No dependencies should be detected since packages is missing
     }
+
+    [TestMethod]
+    public async Task TestNpmDetector_SameComponentWithDifferentParents_BothPathsRecordedAsync()
+    {
+        // This test verifies that if we have both a->b->c and a->c dependency paths,
+        // both relationships are recorded (c appears twice with different parents)
+        var componentA = (Name: "componentA", Version: "1.0.0");
+        var componentB = (Name: "componentB", Version: "1.0.0");
+        var componentC = (Name: "componentC", Version: "1.0.0");
+
+        var packageLockJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 3,
+                ""requires"": true,
+                ""packages"": {{
+                    """": {{
+                        ""name"": ""test"",
+                        ""version"": ""0.0.0"",
+                        ""dependencies"": {{
+                            ""{0}"": ""{1}""
+                        }}
+                    }},
+                    ""node_modules/{0}"": {{
+                        ""version"": ""{1}"",
+                        ""resolved"": ""https://registry.npmjs.org/{0}/-/{0}-{1}.tgz"",
+                        ""integrity"": ""sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="",
+                        ""dependencies"": {{
+                            ""{2}"": ""{3}"",
+                            ""{4}"": ""{5}""
+                        }}
+                    }},
+                    ""node_modules/{2}"": {{
+                        ""version"": ""{3}"",
+                        ""resolved"": ""https://registry.npmjs.org/{2}/-/{2}-{3}.tgz"",
+                        ""integrity"": ""sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="",
+                        ""dependencies"": {{
+                            ""{4}"": ""{5}""
+                        }}
+                    }},
+                    ""node_modules/{4}"": {{
+                        ""version"": ""{5}"",
+                        ""resolved"": ""https://registry.npmjs.org/{4}/-/{4}-{5}.tgz"",
+                        ""integrity"": ""sha512-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=""
+                    }}
+                }}
+            }}";
+
+        var packageLockTemplate = string.Format(
+            packageLockJson,
+            componentA.Name,
+            componentA.Version,
+            componentB.Name,
+            componentB.Version,
+            componentC.Name,
+            componentC.Version);
+
+        var packageJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {{
+                    ""{0}"": ""{1}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(
+            packageJson,
+            componentA.Name,
+            componentA.Version);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(3);
+
+        // Get component IDs
+        var componentAId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentA.Name)).Component.Id;
+        var componentBId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentB.Name)).Component.Id;
+        var componentCId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentC.Name)).Component.Id;
+
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        // Verify a->b and a->c relationships exist
+        var aDependencies = dependencyGraph.GetDependenciesForComponent(componentAId);
+        aDependencies.Should().HaveCount(2);
+        aDependencies.Should().Contain(componentBId);
+        aDependencies.Should().Contain(componentCId);
+
+        // Verify b->c relationship exists
+        var bDependencies = dependencyGraph.GetDependenciesForComponent(componentBId);
+        bDependencies.Should().HaveCount(1);
+        bDependencies.Should().Contain(componentCId);
+
+        // Verify c has no dependencies
+        var cDependencies = dependencyGraph.GetDependenciesForComponent(componentCId);
+        cDependencies.Should().BeEmpty();
+
+        // Verify that c appears as a child of both a and b
+        var parentsOfC = dependencyGraph.GetAncestors(componentCId);
+        parentsOfC.Should().HaveCount(2);
+        parentsOfC.Should().Contain(componentAId);
+        parentsOfC.Should().Contain(componentBId);
+    }
 }
