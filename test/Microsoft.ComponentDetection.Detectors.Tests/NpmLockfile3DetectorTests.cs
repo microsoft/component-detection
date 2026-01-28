@@ -477,4 +477,121 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
         parentsOfC.Should().Contain(componentAId);
         parentsOfC.Should().Contain(componentBId);
     }
+
+    [TestMethod]
+    public async Task TestNpmDetector_CircularDependency_HandledGracefullyAsync()
+    {
+        // This test verifies that circular dependencies (a->b->c->a) are handled without infinite loops
+        // NPM can have circular dependencies in rare cases with peer dependencies or symlinks
+        var componentA = (Name: "componentA", Version: "1.0.0");
+        var componentB = (Name: "componentB", Version: "1.0.0");
+        var componentC = (Name: "componentC", Version: "1.0.0");
+
+        var packageLockJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 3,
+                ""requires"": true,
+                ""packages"": {{
+                    """": {{
+                        ""name"": ""test"",
+                        ""version"": ""0.0.0"",
+                        ""dependencies"": {{
+                            ""{0}"": ""{1}""
+                        }}
+                    }},
+                    ""node_modules/{0}"": {{
+                        ""version"": ""{1}"",
+                        ""resolved"": ""https://registry.npmjs.org/{0}/-/{0}-{1}.tgz"",
+                        ""integrity"": ""sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="",
+                        ""dependencies"": {{
+                            ""{2}"": ""{3}""
+                        }}
+                    }},
+                    ""node_modules/{2}"": {{
+                        ""version"": ""{3}"",
+                        ""resolved"": ""https://registry.npmjs.org/{2}/-/{2}-{3}.tgz"",
+                        ""integrity"": ""sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="",
+                        ""dependencies"": {{
+                            ""{4}"": ""{5}""
+                        }}
+                    }},
+                    ""node_modules/{4}"": {{
+                        ""version"": ""{5}"",
+                        ""resolved"": ""https://registry.npmjs.org/{4}/-/{4}-{5}.tgz"",
+                        ""integrity"": ""sha512-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="",
+                        ""dependencies"": {{
+                            ""{0}"": ""{1}""
+                        }}
+                    }}
+                }}
+            }}";
+
+        var packageLockTemplate = string.Format(
+            packageLockJson,
+            componentA.Name,
+            componentA.Version,
+            componentB.Name,
+            componentB.Version,
+            componentC.Name,
+            componentC.Version);
+
+        var packageJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {{
+                    ""{0}"": ""{1}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(
+            packageJson,
+            componentA.Name,
+            componentA.Version);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        // The detector should handle circular dependencies gracefully without hanging or throwing
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(3);
+
+        // Get component IDs
+        var componentAId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentA.Name)).Component.Id;
+        var componentBId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentB.Name)).Component.Id;
+        var componentCId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentC.Name)).Component.Id;
+
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        // Verify the circular dependency chain is recorded
+        // A depends on B
+        var aDependencies = dependencyGraph.GetDependenciesForComponent(componentAId);
+        aDependencies.Should().Contain(componentBId);
+
+        // B depends on C
+        var bDependencies = dependencyGraph.GetDependenciesForComponent(componentBId);
+        bDependencies.Should().Contain(componentCId);
+
+        // C depends on A (circular)
+        var cDependencies = dependencyGraph.GetDependenciesForComponent(componentCId);
+        cDependencies.Should().Contain(componentAId);
+
+        // Verify all three components are properly registered
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            componentAId,
+            parentComponent => parentComponent.Name == componentA.Name);
+
+        // B and C should be transitive dependencies under A
+        componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
+            componentBId,
+            parentComponent => parentComponent.Name == componentA.Name);
+
+        componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
+            componentCId,
+            parentComponent => parentComponent.Name == componentA.Name || parentComponent.Name == componentB.Name);
+    }
 }
