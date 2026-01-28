@@ -1,0 +1,9 @@
+{
+  "name": "test-proj",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "glob": "7.2.3"
+  }
+}

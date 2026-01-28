@@ -91,7 +91,11 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
                 continue;
             }
 
-            var previouslyAddedComponents = new HashSet<string> { component.Id };
+            // Track component-parent pairs instead of just component IDs
+            var previouslyAddedComponentParents = new HashSet<(string ComponentId, string? ParentId)>
+            {
+                (component.Id, null),
+            };
             var subQueue = new Queue<(string Path, PackageLockV3Package Package, TypedComponent Parent)>();
 
             // Record the top-level component
@@ -107,12 +111,19 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
                 var subName = NpmComponentUtilities.GetModuleName(subPath);
 
                 var subComponent = this.CreateComponent(subName, subPackage.Version, subPackage.Integrity);
-                if (subComponent is null || previouslyAddedComponents.Contains(subComponent.Id))
+                if (subComponent is null)
                 {
                     continue;
                 }
 
-                previouslyAddedComponents.Add(subComponent.Id);
+                // Only skip if this exact component-parent relationship was already added
+                var componentParentPair = (subComponent.Id, parentComponent.Id);
+                if (previouslyAddedComponentParents.Contains(componentParentPair))
+                {
+                    continue;
+                }
+
+                previouslyAddedComponentParents.Add(componentParentPair);
 
                 this.RecordComponent(singleFileComponentRecorder, subComponent, subPackage.Dev ?? false, component, parentComponent.Id);
 
