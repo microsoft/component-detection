@@ -22,6 +22,9 @@ public class StringUtilitiesTests
     [DataRow(
         "install -r requirements.txt --dry-run --ignore-installed --quiet --report file.zvn --index-url https://user:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@someregistry.localhost.com",
         $"install -r requirements.txt --dry-run --ignore-installed --quiet --report file.zvn --index-url https://{StringUtilities.SensitivePlaceholder}@someregistry.localhost.com")]
+    [DataRow(
+        "pip install --index-url https://token@registry1.com/simple --extra-index-url https://secret@registry2.com/simple",
+        $"pip install --index-url https://{StringUtilities.SensitivePlaceholder}@registry1.com/simple --extra-index-url https://{StringUtilities.SensitivePlaceholder}@registry2.com/simple")]
     public void RemoveSensitiveInformation_ReturnsAsExpected(string input, string expected)
     {
         var actual = StringUtilities.RemoveSensitiveInformation(input);

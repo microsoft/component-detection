@@ -192,11 +192,10 @@ public class PipCommandService : IPipCommandService
 
             if (command.ExitCode == -1 && cancellationToken.IsCancellationRequested)
             {
-                var errorMessage = $"PipReport: Cancelled for file '{formattedPath}' with command '{pipReportCommand.RemoveSensitiveInformation()}'.";
+                var errorMessage = $"PipReport: Cancelled for file '{formattedPath}'.";
                 using var failureRecord = new PipReportFailureTelemetryRecord
                 {
                     ExitCode = command.ExitCode,
-                    StdErr = $"{errorMessage} {command.StdErr}",
                 };
 
                 this.logger.LogWarning("{Error}", errorMessage);
@@ -207,10 +206,9 @@ public class PipCommandService : IPipCommandService
                 using var failureRecord = new PipReportFailureTelemetryRecord
                 {
                     ExitCode = command.ExitCode,
-                    StdErr = command.StdErr,
                 };
 
-                this.logger.LogDebug("PipReport: Pip installation report error: {StdErr}", command.StdErr);
+                this.logger.LogDebug("PipReport: Pip installation report failed with exit code {ExitCode} for {Path}", command.ExitCode, formattedPath);
                 throw new InvalidOperationException($"PipReport: Failed to generate pip installation report for file {path} with exit code {command.ExitCode}");
             }
 

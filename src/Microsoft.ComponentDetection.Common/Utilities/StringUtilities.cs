@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 public static class StringUtilities
 {
-    private static readonly Regex SensitiveInfoRegex = new Regex(@"(?<=https://)(.+)(?=@)", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
+    private static readonly Regex SensitiveInfoRegex = new Regex(@"(?<=https://)(.+?)(?=@)", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
     public const string SensitivePlaceholder = "******";
 
     /// <summary>
