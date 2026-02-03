@@ -34,6 +34,42 @@ public class StringUtilitiesTests
     [DataRow(
         "Multiple SAS tokens: https://host1.blob.core.windows.net/path?sig=token1 and https://host2.blob.core.windows.net/path?sv=2021&sig=token2",
         $"Multiple SAS tokens: https://host1.blob.core.windows.net/path?{StringUtilities.SensitivePlaceholder} and https://host2.blob.core.windows.net/path?{StringUtilities.SensitivePlaceholder}")]
+
+    // Plain HTTP URLs - credentials ARE masked (same as HTTPS)
+    [DataRow("http://username:password@domain.me", $"http://{StringUtilities.SensitivePlaceholder}@domain.me")]
+    [DataRow("http://domain.me?sig=token", $"http://domain.me?{StringUtilities.SensitivePlaceholder}")]
+
+    // Mixed scenario: URL credentials AND SAS token in same string
+    [DataRow(
+        "https://user:pass@storage.blob.core.windows.net/container/file.blob?sv=2021-06-08&sig=abcdef123456",
+        $"https://{StringUtilities.SensitivePlaceholder}@storage.blob.core.windows.net/container/file.blob?{StringUtilities.SensitivePlaceholder}")]
+    [DataRow(
+        "https://user%40email.com:p%40ssword@domain.me/path",
+        $"https://{StringUtilities.SensitivePlaceholder}@domain.me/path")]
+    [DataRow(
+        "https://user:pass%3Dword@domain.me/path?query=value",
+        $"https://{StringUtilities.SensitivePlaceholder}@domain.me/path?query=value")]
+    [DataRow(
+        "https://storage.blob.core.windows.net/path?sv=2021&sig=abc%2Fdef%3D123",
+        $"https://storage.blob.core.windows.net/path?{StringUtilities.SensitivePlaceholder}")]
+
+    // Edge case: @ symbol in query string - the regex will see this as credentials (known limitation)
+    [DataRow("https://domain.me/path?email=user@example.com", $"https://{StringUtilities.SensitivePlaceholder}@example.com")]
+
+    // Edge case: multiple @ symbols - non-greedy regex matches only up to first @
+    [DataRow(
+        "https://user@org:token@domain.me/path",
+        $"https://{StringUtilities.SensitivePlaceholder}@org:token@domain.me/path")]
+
+    // Edge case: SAS token at end of string with no trailing content
+    [DataRow(
+        "blob url: https://account.blob.core.windows.net/container/blob?sig=xyz",
+        $"blob url: https://account.blob.core.windows.net/container/blob?{StringUtilities.SensitivePlaceholder}")]
+
+    // Edge case: query string without sig parameter should NOT be masked
+    [DataRow(
+        "https://example.com/path?param1=value1&param2=value2",
+        "https://example.com/path?param1=value1&param2=value2")]
     public void RemoveSensitiveInformation_ReturnsAsExpected(string input, string expected)
     {
         var actual = StringUtilities.RemoveSensitiveInformation(input);
