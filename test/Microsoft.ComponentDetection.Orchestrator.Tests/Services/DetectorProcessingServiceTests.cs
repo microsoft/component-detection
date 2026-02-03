@@ -20,6 +20,7 @@ using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Spectre.Console;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -42,6 +43,7 @@ public class DetectorProcessingServiceTests
     private readonly DetectorProcessingService serviceUnderTest;
     private readonly Mock<IObservableDirectoryWalkerFactory> directoryWalkerFactory;
     private readonly Mock<IExperimentService> experimentServiceMock;
+    private readonly Mock<IAnsiConsole> consoleMock;
 
     private readonly Mock<FileComponentDetector> firstFileComponentDetectorMock;
     private readonly Mock<FileComponentDetector> secondFileComponentDetectorMock;
@@ -58,8 +60,9 @@ public class DetectorProcessingServiceTests
         this.experimentServiceMock = new Mock<IExperimentService>();
         this.loggerMock = new Mock<ILogger<DetectorProcessingService>>();
         this.directoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
+        this.consoleMock = new Mock<IAnsiConsole>();
         this.serviceUnderTest =
-            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.experimentServiceMock.Object, this.loggerMock.Object);
+            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.experimentServiceMock.Object, this.loggerMock.Object, this.consoleMock.Object);
 
         this.firstFileComponentDetectorMock = this.SetupFileDetectorMock("firstFileDetectorId");
         this.secondFileComponentDetectorMock = this.SetupFileDetectorMock("secondFileDetectorId");
