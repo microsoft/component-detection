@@ -73,6 +73,7 @@ public class LinuxContainerDetectorTests
                     It.IsAny<IEnumerable<DockerLayer>>(),
                     It.IsAny<int>(),
                     It.IsAny<ISet<ComponentType>>(),
+                    It.IsAny<LinuxScannerScope>(),
                     It.IsAny<CancellationToken>()
                 )
             )
@@ -277,6 +278,7 @@ public class LinuxContainerDetectorTests
                     It.IsAny<IEnumerable<DockerLayer>>(),
                     It.IsAny<int>(),
                     It.IsAny<ISet<ComponentType>>(),
+                    It.IsAny<LinuxScannerScope>(),
                     It.IsAny<CancellationToken>()
                 ),
             Times.Once
@@ -305,6 +307,48 @@ public class LinuxContainerDetectorTests
         Func<Task> action = async () =>
             await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
         await action.Should().NotThrowAsync<OperationCanceledException>();
+    }
+
+    [TestMethod]
+    [DataRow("all-layers", LinuxScannerScope.AllLayers)]
+    [DataRow("squashed", LinuxScannerScope.Squashed)]
+    [DataRow("ALL-LAYERS", LinuxScannerScope.AllLayers)]
+    [DataRow("SQUASHED", LinuxScannerScope.Squashed)]
+    [DataRow(null, LinuxScannerScope.AllLayers)] // Test default behavior
+    [DataRow("", LinuxScannerScope.AllLayers)] // Test empty string default
+    [DataRow("invalid-value", LinuxScannerScope.AllLayers)] // Test invalid input defaults to AllLayers
+    public async Task TestLinuxContainerDetector_ImageScanScopeParameterSpecifiedAsync(string scopeValue, LinuxScannerScope expectedScope)
+    {
+        var detectorArgs = new Dictionary<string, string> { { "Linux.ImageScanScope", scopeValue } };
+        var scanRequest = new ScanRequest(
+            new DirectoryInfo(Path.GetTempPath()),
+            (_, __) => false,
+            this.mockLogger.Object,
+            detectorArgs,
+            [NodeLatestImage],
+            new ComponentRecorder()
+        );
+
+        var linuxContainerDetector = new LinuxContainerDetector(
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
+
+        await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+        this.mockSyftLinuxScanner.Verify(
+            scanner =>
+                scanner.ScanLinuxAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<IEnumerable<DockerLayer>>(),
+                    It.IsAny<int>(),
+                    It.IsAny<ISet<ComponentType>>(),
+                    expectedScope,
+                    It.IsAny<CancellationToken>()
+                ),
+            Times.Once
+        );
     }
 
     [TestMethod]
