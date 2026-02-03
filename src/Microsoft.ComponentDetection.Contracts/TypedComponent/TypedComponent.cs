@@ -4,7 +4,6 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text.Json.Serialization;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -12,34 +11,16 @@ using Newtonsoft.Json.Serialization;
 using PackageUrl;
 using JsonConverterAttribute = Newtonsoft.Json.JsonConverterAttribute;
 using JsonIgnoreAttribute = Newtonsoft.Json.JsonIgnoreAttribute;
+using SystemTextJson = System.Text.Json.Serialization;
 
 [JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-[JsonConverter(typeof(TypedComponentConverter))]
+[JsonConverter(typeof(TypedComponentConverter))] // Newtonsoft.Json
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-[JsonDerivedType(typeof(CargoComponent), typeDiscriminator: nameof(ComponentType.Cargo))]
-[JsonDerivedType(typeof(ConanComponent), typeDiscriminator: nameof(ComponentType.Conan))]
-[JsonDerivedType(typeof(CondaComponent), typeDiscriminator: nameof(ComponentType.Conda))]
-[JsonDerivedType(typeof(DockerImageComponent), typeDiscriminator: nameof(ComponentType.DockerImage))]
-[JsonDerivedType(typeof(DockerReferenceComponent), typeDiscriminator: nameof(ComponentType.DockerReference))]
-[JsonDerivedType(typeof(DotNetComponent), typeDiscriminator: nameof(ComponentType.DotNet))]
-[JsonDerivedType(typeof(GitComponent), typeDiscriminator: nameof(ComponentType.Git))]
-[JsonDerivedType(typeof(GoComponent), typeDiscriminator: nameof(ComponentType.Go))]
-[JsonDerivedType(typeof(LinuxComponent), typeDiscriminator: nameof(ComponentType.Linux))]
-[JsonDerivedType(typeof(MavenComponent), typeDiscriminator: nameof(ComponentType.Maven))]
-[JsonDerivedType(typeof(NpmComponent), typeDiscriminator: nameof(ComponentType.Npm))]
-[JsonDerivedType(typeof(NuGetComponent), typeDiscriminator: nameof(ComponentType.NuGet))]
-[JsonDerivedType(typeof(OtherComponent), typeDiscriminator: nameof(ComponentType.Other))]
-[JsonDerivedType(typeof(PipComponent), typeDiscriminator: nameof(ComponentType.Pip))]
-[JsonDerivedType(typeof(PodComponent), typeDiscriminator: nameof(ComponentType.Pod))]
-[JsonDerivedType(typeof(RubyGemsComponent), typeDiscriminator: nameof(ComponentType.RubyGems))]
-[JsonDerivedType(typeof(SpdxComponent), typeDiscriminator: nameof(ComponentType.Spdx))]
-[JsonDerivedType(typeof(SwiftComponent), typeDiscriminator: nameof(ComponentType.Swift))]
-[JsonDerivedType(typeof(VcpkgComponent), typeDiscriminator: nameof(ComponentType.Vcpkg))]
+[SystemTextJson.JsonConverter(typeof(TypedComponentSystemTextJsonConverter))] // System.Text.Json
 public abstract class TypedComponent
 {
     [JsonIgnore] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore] // System.Text.Json
+    [SystemTextJson.JsonIgnore] // System.Text.Json
     private string id;
 
     internal TypedComponent()
@@ -50,19 +31,19 @@ public abstract class TypedComponent
     /// <summary>Gets the type of the component, must be well known.</summary>
     [JsonConverter(typeof(StringEnumConverter))] // Newtonsoft.Json
     [JsonProperty("type", Order = int.MinValue)] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore] // System.Text.Json - type is handled by [JsonPolymorphic] discriminator
+    [SystemTextJson.JsonIgnore] // System.Text.Json - type is handled by TypedComponentSystemTextJsonConverter
     public abstract ComponentType Type { get; }
 
     /// <summary>Gets the id of the component.</summary>
     [JsonProperty("id")] // Newtonsoft.Json
-    [JsonPropertyName("id")] // System.Text.Json
+    [SystemTextJson.JsonPropertyName("id")] // System.Text.Json
     public string Id => this.id ??= this.ComputeId();
 
-    [JsonPropertyName("packageUrl")]
+    [SystemTextJson.JsonPropertyName("packageUrl")]
     public virtual PackageURL PackageUrl { get; }
 
     [JsonIgnore] // Newtonsoft.Json
-    [System.Text.Json.Serialization.JsonIgnore] // System.Text.Json
+    [SystemTextJson.JsonIgnore] // System.Text.Json
     internal string DebuggerDisplay => $"{this.Id}";
 
     protected string ValidateRequiredInput(string input, string fieldName, string componentType)
