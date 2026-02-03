@@ -13,5 +13,7 @@ public interface IMavenCommandService
 
     Task GenerateDependenciesFileAsync(ProcessRequest processRequest, CancellationToken cancellationToken = default);
 
+    Task GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken = default);
+
     void ParseDependenciesFile(ProcessRequest processRequest);
 }

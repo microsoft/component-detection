@@ -45,6 +45,11 @@ public class MavenCommandService : IMavenCommandService
 
     public async Task GenerateDependenciesFileAsync(ProcessRequest processRequest, CancellationToken cancellationToken = default)
     {
+        await this.GenerateDependenciesFileAsync(processRequest, this.BcdeMvnDependencyFileName, cancellationToken);
+    }
+
+    public async Task GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken = default)
+    {
         var cliFileTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var timeoutSeconds = -1;
         if (this.envVarService.DoesEnvironmentVariableExist(MvnCLIFileLevelTimeoutSecondsEnvVar)
@@ -58,7 +63,7 @@ public class MavenCommandService : IMavenCommandService
         var pomFile = processRequest.ComponentStream;
         this.logger.LogDebug("{DetectorPrefix}: Running \"dependency:tree\" on {PomFileLocation}", DetectorLogPrefix, pomFile.Location);
 
-        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={this.BcdeMvnDependencyFileName}", "-DoutputType=text", $"-f{pomFile.Location}" };
+        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={outputFileName}", "-DoutputType=text", $"-f{pomFile.Location}" };
 
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, AdditionalValidCommands, cancellationToken: cliFileTimeout.Token, cliParameters);
 
