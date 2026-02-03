@@ -1,0 +1,706 @@
+#nullable disable
+namespace Microsoft.ComponentDetection.Detectors.Maven;
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reactive.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
+using System.Xml;
+using Microsoft.ComponentDetection.Common;
+using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.Internal;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.Extensions.Logging;
+
+/// <summary>
+/// Enum representing which detection method was used.
+/// </summary>
+internal enum MavenDetectionMethod
+{
+    /// <summary>No detection performed.</summary>
+    None,
+
+    /// <summary>MvnCli was used successfully for all files.</summary>
+    MvnCliOnly,
+
+    /// <summary>Static parser was used for all files (MvnCli not available or failed completely).</summary>
+    StaticParserOnly,
+
+    /// <summary>MvnCli succeeded for some files, static parser used for failed files.</summary>
+    Mixed,
+}
+
+/// <summary>
+/// Enum representing why fallback occurred.
+/// </summary>
+internal enum MavenFallbackReason
+{
+    /// <summary>No fallback was needed.</summary>
+    None,
+
+    /// <summary>Maven CLI was explicitly disabled via detector argument.</summary>
+    MvnCliDisabledByUser,
+
+    /// <summary>Maven CLI was not available in PATH.</summary>
+    MavenCliNotAvailable,
+
+    /// <summary>MvnCli failed due to authentication error (401/403).</summary>
+    AuthenticationFailure,
+
+    /// <summary>MvnCli failed due to other reasons.</summary>
+    OtherMvnCliFailure,
+}
+
+/// <summary>
+/// Experimental Maven detector that combines MvnCli detection with static pom.xml parsing fallback.
+/// Runs MvnCli detection first (like standard MvnCliComponentDetector), then checks if detection
+/// produced any results. If MvnCli fails for any pom.xml, falls back to static parsing for failed files.
+/// </summary>
+public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDetector
+{
+    /// <summary>
+    /// Environment variable to disable MvnCli and use only static pom.xml parsing.
+    /// Set to "true" to disable MvnCli detection.
+    /// Usage: Set CD_MAVEN_DISABLE_CLI=true as a pipeline/environment variable.
+    /// </summary>
+    internal const string DisableMvnCliEnvVar = "CD_MAVEN_DISABLE_CLI";
+
+    private const string MavenManifest = "pom.xml";
+    private const string BcdeMvnDepsPattern = "bcde.mvndeps";
+    private const string MavenXmlNamespace = "http://maven.apache.org/POM/4.0.0";
+    private const string ProjNamespace = "proj";
+    private const string DependencyNode = "//proj:dependency";
+    private const string GroupIdSelector = "groupId";
+    private const string ArtifactIdSelector = "artifactId";
+    private const string VersionSelector = "version";
+
+    private static readonly Regex VersionRegex = new(
+        @"^\$\{(.*)\}$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    // Auth error patterns to detect in Maven error output
+    private static readonly string[] AuthErrorPatterns =
+    [
+        "401",
+        "403",
+        "Unauthorized",
+        "Not authorized",
+        "authentication",
+        "Could not authenticate",
+        "Access denied",
+        "Forbidden",
+        "status code: 401",
+        "status code: 403",
+    ];
+
+    // Pattern to extract failed endpoint URL from Maven error messages
+    private static readonly Regex EndpointRegex = new(
+        @"https?://[^\s\]\)>]+",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private readonly IMavenCommandService mavenCommandService;
+    private readonly IEnvironmentVariableService envVarService;
+    private readonly Dictionary<string, XmlDocument> documentsLoaded = [];
+
+    // Track original pom.xml files for potential fallback
+    private readonly ConcurrentBag<ProcessRequest> originalPomFiles = [];
+
+    // Track Maven CLI errors for analysis
+    private readonly ConcurrentBag<string> mavenCliErrors = [];
+    private readonly ConcurrentBag<string> failedEndpoints = [];
+
+    // Telemetry tracking
+    private MavenDetectionMethod usedDetectionMethod = MavenDetectionMethod.None;
+    private MavenFallbackReason fallbackReason = MavenFallbackReason.None;
+    private int mvnCliComponentCount;
+    private int staticParserComponentCount;
+    private bool mavenCliAvailable;
+
+    public MavenWithFallbackDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IMavenCommandService mavenCommandService,
+        IEnvironmentVariableService envVarService,
+        ILogger<MavenWithFallbackDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.mavenCommandService = mavenCommandService;
+        this.envVarService = envVarService;
+        this.Logger = logger;
+    }
+
+    public override string Id => "MavenWithFallback";
+
+    public override IList<string> SearchPatterns => [MavenManifest];
+
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Maven];
+
+    public override int Version => 1;
+
+    public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
+
+    private void LogDebug(string message) =>
+        this.Logger.LogDebug("{DetectorId}: {Message}", this.Id, message);
+
+    private void LogInfo(string message) =>
+        this.Logger.LogInformation("{DetectorId}: {Message}", this.Id, message);
+
+    private void LogWarning(string message) =>
+        this.Logger.LogWarning("{DetectorId}: {Message}", this.Id, message);
+
+    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
+    {
+        // Check if user explicitly disabled MvnCli detection via environment variable
+        if (this.envVarService.DoesEnvironmentVariableExist(DisableMvnCliEnvVar) &&
+            bool.TryParse(this.envVarService.GetEnvironmentVariable(DisableMvnCliEnvVar), out var disableMvnCli) &&
+            disableMvnCli)
+        {
+            this.LogInfo($"MvnCli detection disabled via {DisableMvnCliEnvVar} environment variable. Using static pom.xml parsing only.");
+            this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
+            this.fallbackReason = MavenFallbackReason.MvnCliDisabledByUser;
+            this.mavenCliAvailable = false;
+
+            // Return original pom.xml files for static parsing
+            return processRequests;
+        }
+
+        this.mavenCliAvailable = await this.mavenCommandService.MavenCLIExistsAsync();
+
+        if (!this.mavenCliAvailable)
+        {
+            this.LogInfo("Maven CLI not found in PATH. Will use static pom.xml parsing only.");
+            this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
+            this.fallbackReason = MavenFallbackReason.MavenCliNotAvailable;
+
+            // Return original pom.xml files for static parsing
+            return processRequests;
+        }
+
+        this.LogDebug("Maven CLI is available. Running MvnCli detection.");
+
+        // Track pom.xml directories for later comparison
+        var pomFileDirectories = new ConcurrentDictionary<string, ProcessRequest>(StringComparer.OrdinalIgnoreCase);
+
+        // Run MvnCli detection exactly like MvnCliComponentDetector does
+        var processPomFile = new ActionBlock<ProcessRequest>(async processRequest =>
+        {
+            // Store original pom.xml for potential fallback
+            this.originalPomFiles.Add(processRequest);
+
+            // Track by directory for later comparison with bcde.mvndeps files
+            var pomDir = Path.GetDirectoryName(processRequest.ComponentStream.Location);
+            pomFileDirectories.TryAdd(pomDir, processRequest);
+
+            // Generate dependency file using Maven CLI
+            await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, cancellationToken);
+        });
+
+        await this.RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest =>
+        {
+            processPomFile.Post(processRequest);
+        });
+
+        processPomFile.Complete();
+        await processPomFile.Completion;
+
+        this.LogDebug($"Maven CLI processing complete for {this.originalPomFiles.Count} root pom.xml files.");
+
+        // Collect generated dependency files and track which directories succeeded
+        var successfulDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var mvnCliResults = this.ComponentStreamEnumerableFactory
+            .GetComponentStreams(
+                this.CurrentScanRequest.SourceDirectory,
+                [this.mavenCommandService.BcdeMvnDependencyFileName],
+                this.CurrentScanRequest.DirectoryExclusionPredicate)
+            .Select(componentStream =>
+            {
+                var depsDir = Path.GetDirectoryName(componentStream.Location);
+                successfulDirectories.Add(depsDir);
+
+                using var reader = new StreamReader(componentStream.Stream);
+                var content = reader.ReadToEnd();
+                return new ProcessRequest
+                {
+                    ComponentStream = new ComponentStream
+                    {
+                        Stream = new MemoryStream(Encoding.UTF8.GetBytes(content)),
+                        Location = componentStream.Location,
+                        Pattern = BcdeMvnDepsPattern,
+                    },
+                    SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(
+                        Path.Combine(depsDir, MavenManifest)),
+                };
+            })
+            .ToList();
+
+        // Find pom.xml files that failed (no corresponding bcde.mvndeps file)
+        var failedPomFiles = pomFileDirectories
+            .Where(kvp => !successfulDirectories.Contains(kvp.Key))
+            .Select(kvp => kvp.Value)
+            .ToList();
+
+        var successCount = successfulDirectories.Count;
+        var failedCount = failedPomFiles.Count;
+
+        this.LogDebug($"MvnCli results: {successCount} succeeded, {failedCount} failed out of {pomFileDirectories.Count} total.");
+
+        // Determine detection method and handle results
+        if (failedCount == 0 && successCount > 0)
+        {
+            // All succeeded - use MvnCli results only
+            this.usedDetectionMethod = MavenDetectionMethod.MvnCliOnly;
+            this.LogDebug("All pom.xml files processed successfully with Maven CLI.");
+            return mvnCliResults.ToObservable();
+        }
+
+        if (successCount == 0)
+        {
+            // All failed - fall back to static parsing for everything
+            this.LogWarning("Maven CLI did not produce any dependency files. Falling back to static pom.xml parsing.");
+            this.AnalyzeMvnCliFailure();
+            this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
+            return this.GetAllPomFilesForStaticParsing();
+        }
+
+        // Partial success - use MvnCli results for successful ones, static parsing for failed ones
+        this.LogWarning($"Maven CLI failed for {failedCount} pom.xml files. Using MvnCli results for successful files and falling back to static parsing for failed files.");
+        this.AnalyzeMvnCliFailure();
+        this.usedDetectionMethod = MavenDetectionMethod.Mixed;
+
+        // Get static parsing results for failed pom.xml files
+        var staticParsingResults = this.GetStaticParsingRequestsForFailedFiles(failedPomFiles);
+
+        // Combine MvnCli results with static parsing fallback for failed files
+        return mvnCliResults.Concat(staticParsingResults).ToObservable();
+    }
+
+    protected override async Task OnFileFoundAsync(
+        ProcessRequest processRequest,
+        IDictionary<string, string> detectorArgs,
+        CancellationToken cancellationToken = default)
+    {
+        var pattern = processRequest.ComponentStream.Pattern;
+
+        if (pattern == BcdeMvnDepsPattern)
+        {
+            // Process MvnCli result
+            this.ProcessMvnCliResult(processRequest);
+        }
+        else
+        {
+            // Process via static XML parsing
+            this.ProcessPomFileStatically(processRequest);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    protected override Task OnDetectionFinishedAsync()
+    {
+        // Record telemetry
+        this.Telemetry["DetectionMethod"] = this.usedDetectionMethod.ToString();
+        this.Telemetry["FallbackReason"] = this.fallbackReason.ToString();
+        this.Telemetry["MvnCliComponentCount"] = this.mvnCliComponentCount.ToString();
+        this.Telemetry["StaticParserComponentCount"] = this.staticParserComponentCount.ToString();
+        this.Telemetry["TotalComponentCount"] = (this.mvnCliComponentCount + this.staticParserComponentCount).ToString();
+        this.Telemetry["MavenCliAvailable"] = this.mavenCliAvailable.ToString();
+        this.Telemetry["OriginalPomFileCount"] = this.originalPomFiles.Count.ToString();
+
+        if (!this.failedEndpoints.IsEmpty)
+        {
+            this.Telemetry["FailedEndpoints"] = string.Join(";", this.failedEndpoints.Distinct().Take(10));
+        }
+
+        this.LogInfo($"Detection completed. Method: {this.usedDetectionMethod}, " +
+                     $"FallbackReason: {this.fallbackReason}, " +
+                     $"MvnCli components: {this.mvnCliComponentCount}, " +
+                     $"Static parser components: {this.staticParserComponentCount}");
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Analyzes Maven CLI failure by checking logged errors for authentication issues.
+    /// </summary>
+    private void AnalyzeMvnCliFailure()
+    {
+        // Check if any recorded errors indicate authentication failure
+        var hasAuthError = this.mavenCliErrors.Any(this.IsAuthenticationError);
+
+        if (hasAuthError)
+        {
+            this.fallbackReason = MavenFallbackReason.AuthenticationFailure;
+
+            // Extract failed endpoints from error messages
+            foreach (var error in this.mavenCliErrors)
+            {
+                var endpoints = this.ExtractFailedEndpoints(error);
+                foreach (var endpoint in endpoints)
+                {
+                    this.failedEndpoints.Add(endpoint);
+                }
+            }
+
+            this.LogAuthErrorGuidance();
+        }
+        else
+        {
+            this.fallbackReason = MavenFallbackReason.OtherMvnCliFailure;
+            this.LogWarning("Maven CLI failed. Check Maven logs for details.");
+        }
+    }
+
+    /// <summary>
+    /// Gets all pom.xml files for static parsing fallback.
+    /// </summary>
+    private IObservable<ProcessRequest> GetAllPomFilesForStaticParsing()
+    {
+        return this.ComponentStreamEnumerableFactory
+            .GetComponentStreams(
+                this.CurrentScanRequest.SourceDirectory,
+                [MavenManifest],
+                this.CurrentScanRequest.DirectoryExclusionPredicate)
+            .Select(componentStream =>
+            {
+                using var reader = new StreamReader(componentStream.Stream);
+                var content = reader.ReadToEnd();
+                return new ProcessRequest
+                {
+                    ComponentStream = new ComponentStream
+                    {
+                        Stream = new MemoryStream(Encoding.UTF8.GetBytes(content)),
+                        Location = componentStream.Location,
+                        Pattern = MavenManifest,
+                    },
+                    SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(componentStream.Location),
+                };
+            })
+            .ToObservable();
+    }
+
+    /// <summary>
+    /// Gets static parsing requests for pom.xml files that failed MvnCli detection.
+    /// This scans all pom.xml files under the directories where MvnCli failed.
+    /// </summary>
+    /// <param name="failedPomFiles">The root pom.xml files that failed MvnCli detection.</param>
+    /// <returns>ProcessRequests for static parsing of all pom.xml files in failed directories.</returns>
+    private IEnumerable<ProcessRequest> GetStaticParsingRequestsForFailedFiles(List<ProcessRequest> failedPomFiles)
+    {
+        // Get directories where MvnCli failed
+        var failedDirectories = failedPomFiles
+            .Select(pr => Path.GetDirectoryName(pr.ComponentStream.Location))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        this.LogDebug($"Scanning for pom.xml files in {failedDirectories.Count} failed directories for static parsing fallback.");
+
+        // Get all pom.xml files under failed directories
+        return this.ComponentStreamEnumerableFactory
+            .GetComponentStreams(
+                this.CurrentScanRequest.SourceDirectory,
+                [MavenManifest],
+                this.CurrentScanRequest.DirectoryExclusionPredicate)
+            .Where(componentStream =>
+            {
+                var fileDir = Path.GetDirectoryName(componentStream.Location);
+
+                // Include if this file is in or under any failed directory
+                return failedDirectories.Any(fd =>
+                    fileDir.Equals(fd, StringComparison.OrdinalIgnoreCase) ||
+                    fileDir.StartsWith(fd + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+            })
+            .Select(componentStream =>
+            {
+                using var reader = new StreamReader(componentStream.Stream);
+                var content = reader.ReadToEnd();
+                return new ProcessRequest
+                {
+                    ComponentStream = new ComponentStream
+                    {
+                        Stream = new MemoryStream(Encoding.UTF8.GetBytes(content)),
+                        Location = componentStream.Location,
+                        Pattern = MavenManifest,
+                    },
+                    SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(componentStream.Location),
+                };
+            })
+            .ToList();
+    }
+
+    private void ProcessMvnCliResult(ProcessRequest processRequest)
+    {
+        var initialCount = this.ComponentRecorder.GetDetectedComponents().Count();
+
+        this.mavenCommandService.ParseDependenciesFile(processRequest);
+
+        // Try to delete the deps file
+        try
+        {
+            File.Delete(processRequest.ComponentStream.Location);
+        }
+        catch
+        {
+            // Ignore deletion errors
+        }
+
+        var newCount = this.ComponentRecorder.GetDetectedComponents().Count();
+        this.mvnCliComponentCount += newCount - initialCount;
+    }
+
+    private void ProcessPomFileStatically(ProcessRequest processRequest)
+    {
+        var file = processRequest.ComponentStream;
+        var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+        var filePath = file.Location;
+
+        try
+        {
+            var document = new XmlDocument();
+            document.Load(file.Stream);
+
+            lock (this.documentsLoaded)
+            {
+                this.documentsLoaded.TryAdd(file.Location, document);
+            }
+
+            var namespaceManager = new XmlNamespaceManager(document.NameTable);
+            namespaceManager.AddNamespace(ProjNamespace, MavenXmlNamespace);
+
+            var dependencyList = document.SelectNodes(DependencyNode, namespaceManager);
+            var componentsFoundInFile = 0;
+
+            foreach (XmlNode dependency in dependencyList)
+            {
+                var groupId = dependency[GroupIdSelector]?.InnerText;
+                var artifactId = dependency[ArtifactIdSelector]?.InnerText;
+
+                if (groupId == null || artifactId == null)
+                {
+                    continue;
+                }
+
+                var version = dependency[VersionSelector];
+                if (version != null && !version.InnerText.Contains(','))
+                {
+                    var versionRef = version.InnerText.Trim('[', ']');
+                    string versionString;
+
+                    if (versionRef.StartsWith("${"))
+                    {
+                        versionString = this.ResolveVersion(versionRef, document, file.Location);
+                    }
+                    else
+                    {
+                        versionString = versionRef;
+                    }
+
+                    if (!versionString.StartsWith("${"))
+                    {
+                        var component = new MavenComponent(groupId, artifactId, versionString);
+                        var detectedComponent = new DetectedComponent(component);
+                        singleFileComponentRecorder.RegisterUsage(detectedComponent);
+                        componentsFoundInFile++;
+                    }
+                    else
+                    {
+                        this.Logger.LogDebug(
+                            "Version string {Version} for component {Group}/{Artifact} is invalid or unsupported and a component will not be recorded.",
+                            versionString,
+                            groupId,
+                            artifactId);
+                    }
+                }
+                else
+                {
+                    this.Logger.LogDebug(
+                        "Version string for component {Group}/{Artifact} is invalid or unsupported and a component will not be recorded.",
+                        groupId,
+                        artifactId);
+                }
+            }
+
+            this.staticParserComponentCount += componentsFoundInFile;
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogError(e, "Failed to read file {Path}", filePath);
+        }
+    }
+
+    private bool IsAuthenticationError(string errorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(errorMessage))
+        {
+            return false;
+        }
+
+        return AuthErrorPatterns.Any(pattern =>
+            errorMessage.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private IEnumerable<string> ExtractFailedEndpoints(string errorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(errorMessage))
+        {
+            return [];
+        }
+
+        return EndpointRegex.Matches(errorMessage)
+            .Select(m => m.Value)
+            .Distinct();
+    }
+
+    private void LogAuthErrorGuidance()
+    {
+        var guidance = new StringBuilder();
+        guidance.AppendLine("Maven CLI failed with authentication errors.");
+
+        if (!this.failedEndpoints.IsEmpty)
+        {
+            guidance.AppendLine("2. The following Maven repository endpoints had authentication failures:");
+            foreach (var endpoint in this.failedEndpoints.Distinct().Take(5))
+            {
+                guidance.AppendLine($"   - {endpoint}");
+            }
+
+            guidance.AppendLine("   Ensure your pipeline has access to these Maven repositories.");
+        }
+
+        guidance.AppendLine("Note: Falling back to static pom.xml parsing.");
+
+        this.LogWarning(guidance.ToString());
+    }
+
+    private string ResolveVersion(string versionString, XmlDocument currentDocument, string currentDocumentFileLocation)
+    {
+        var returnedVersionString = versionString;
+        var match = VersionRegex.Match(versionString);
+
+        if (match.Success)
+        {
+            var variable = match.Groups[1].Captures[0].ToString();
+            var replacement = this.ReplaceVariable(variable, currentDocument, currentDocumentFileLocation);
+            returnedVersionString = versionString.Replace("${" + variable + "}", replacement);
+        }
+
+        return returnedVersionString;
+    }
+
+    private string ReplaceVariable(string variable, XmlDocument currentDocument, string currentDocumentFileLocation)
+    {
+        var result = this.FindVariableInDocument(currentDocument, currentDocumentFileLocation, variable);
+        if (result != null)
+        {
+            return result;
+        }
+
+        lock (this.documentsLoaded)
+        {
+            foreach (var pathDocumentPair in this.documentsLoaded)
+            {
+                var path = pathDocumentPair.Key;
+                var document = pathDocumentPair.Value;
+                result = this.FindVariableInDocument(document, path, variable);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+        }
+
+        return $"${{{variable}}}";
+    }
+
+    private string FindVariableInDocument(XmlDocument document, string path, string variable)
+    {
+        try
+        {
+            var namespaceManager = new XmlNamespaceManager(document.NameTable);
+            namespaceManager.AddNamespace(ProjNamespace, MavenXmlNamespace);
+
+            var nodeListProject = document.SelectNodes($"//proj:{variable}", namespaceManager);
+            var nodeListProperties = document.SelectNodes($"//proj:properties/proj:{variable}", namespaceManager);
+
+            if (nodeListProject.Count != 0)
+            {
+                return nodeListProject.Item(0).InnerText;
+            }
+
+            if (nodeListProperties.Count != 0)
+            {
+                return nodeListProperties.Item(0).InnerText;
+            }
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogError(e, "Failed to read file {Path}", path);
+        }
+
+        return null;
+    }
+
+    private IObservable<ProcessRequest> RemoveNestedPomXmls(IObservable<ProcessRequest> componentStreams)
+    {
+        var directoryItemFacades = new ConcurrentDictionary<string, DirectoryItemFacadeOptimized>(StringComparer.OrdinalIgnoreCase);
+        var topLevelDirectories = new ConcurrentDictionary<string, DirectoryItemFacadeOptimized>(StringComparer.OrdinalIgnoreCase);
+
+        return Observable.Create<ProcessRequest>(s =>
+        {
+            return componentStreams.Subscribe(
+                processRequest =>
+                {
+                    var item = processRequest.ComponentStream;
+                    var currentDir = item.Location;
+                    DirectoryItemFacadeOptimized last = null;
+
+                    while (!string.IsNullOrWhiteSpace(currentDir))
+                    {
+                        currentDir = Path.GetDirectoryName(currentDir);
+
+                        if (string.IsNullOrWhiteSpace(currentDir))
+                        {
+                            if (last != null && !topLevelDirectories.ContainsKey(last.Name))
+                            {
+                                topLevelDirectories.TryAdd(last.Name, last);
+                            }
+
+                            this.LogDebug($"Discovered {item.Location}.");
+                            s.OnNext(processRequest);
+                            break;
+                        }
+
+                        var current = directoryItemFacades.GetOrAdd(currentDir, _ => new DirectoryItemFacadeOptimized
+                        {
+                            Name = currentDir,
+                            FileNames = [],
+                        });
+
+                        if (last == null)
+                        {
+                            current.FileNames.Add(Path.GetFileName(item.Location));
+                        }
+
+                        if (last != null && current.FileNames.Contains(MavenManifest))
+                        {
+                            this.LogDebug($"Ignoring {MavenManifest} at {item.Location}, as it has a parent {MavenManifest} that will be processed at {current.Name}\\{MavenManifest}.");
+                            break;
+                        }
+
+                        last = current;
+                    }
+                },
+                s.OnCompleted);
+        });
+    }
+}

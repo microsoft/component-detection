@@ -73,6 +73,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, UvLockDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
+        services.AddSingleton<IExperimentConfiguration, MavenWithFallbackExperiment>();
 
         // Detectors
         // CocoaPods
@@ -114,6 +115,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMavenCommandService, MavenCommandService>();
         services.AddSingleton<IMavenStyleDependencyGraphParserService, MavenStyleDependencyGraphParserService>();
         services.AddSingleton<IComponentDetector, MvnCliComponentDetector>();
+        services.AddSingleton<IComponentDetector, MavenWithFallbackDetector>();
 
         // npm
         services.AddSingleton<IComponentDetector, NpmComponentDetector>();
