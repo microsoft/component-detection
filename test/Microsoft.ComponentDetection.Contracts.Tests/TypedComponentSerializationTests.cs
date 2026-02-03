@@ -319,4 +319,31 @@ public class TypedComponentSerializationTests
             typeProperties.Should().Be(1, $"The 'type' property should appear exactly once at the root level for {component.Type}");
         }
     }
+
+    [TestMethod]
+    public void TypedComponentMapping_TryGetType_NullDiscriminator_ReturnsFalseAndNull()
+    {
+        var result = TypedComponentMapping.TryGetType(null, out var targetType);
+
+        result.Should().BeFalse("TryGetType should return false for null discriminator");
+        targetType.Should().BeNull("targetType should be null for null discriminator");
+    }
+
+    [TestMethod]
+    public void TypedComponentMapping_TryGetType_EmptyDiscriminator_ReturnsFalseAndNull()
+    {
+        var result = TypedComponentMapping.TryGetType(string.Empty, out var targetType);
+
+        result.Should().BeFalse("TryGetType should return false for empty discriminator");
+        targetType.Should().BeNull("targetType should be null for empty discriminator");
+    }
+
+    [TestMethod]
+    public void TypedComponentMapping_TryGetType_WhitespaceDiscriminator_ReturnsFalseAndNull()
+    {
+        var result = TypedComponentMapping.TryGetType("   ", out var targetType);
+
+        result.Should().BeFalse("TryGetType should return false for whitespace-only discriminator");
+        targetType.Should().BeNull("targetType should be null for whitespace-only discriminator");
+    }
 }

@@ -46,7 +46,7 @@ internal static class TypedComponentMapping
     /// <returns>True if the type discriminator was recognized; otherwise false.</returns>
     public static bool TryGetType(string typeDiscriminator, out Type targetType)
     {
-        if (string.IsNullOrEmpty(typeDiscriminator))
+        if (string.IsNullOrWhiteSpace(typeDiscriminator))
         {
             targetType = null;
             return false;
