@@ -31,15 +31,18 @@ public class DetectorProcessingService : IDetectorProcessingService
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
     private readonly IExperimentService experimentService;
+    private readonly IAnsiConsole console;
 
     public DetectorProcessingService(
         IObservableDirectoryWalkerFactory scanner,
         IExperimentService experimentService,
-        ILogger<DetectorProcessingService> logger)
+        ILogger<DetectorProcessingService> logger,
+        IAnsiConsole console = null)
     {
         this.scanner = scanner;
         this.experimentService = experimentService;
         this.logger = logger;
+        this.console = console ?? AnsiConsole.Console;
     }
 
     /// <inheritdoc/>
@@ -384,7 +387,7 @@ public class DetectorProcessingService : IDetectorProcessingService
             providerElapsedTime.Sum(x => x.Value.ComponentsFoundCount).ToString(),
             providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount).ToString());
 
-        AnsiConsole.Write(table);
+        this.console.Write(table);
 
         var tsf = new TabularStringFormat(
         [

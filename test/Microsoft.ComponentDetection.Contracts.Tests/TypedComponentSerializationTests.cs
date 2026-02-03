@@ -2,8 +2,10 @@
 namespace Microsoft.ComponentDetection.Contracts.Tests;
 
 using System;
+using System.Linq;
 using System.Text.Json;
 using AwesomeAssertions;
+using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -203,5 +205,145 @@ public class TypedComponentSerializationTests
         linuxComponent.Release.Should().Be("SomeLinuxRelease");
         linuxComponent.Name.Should().Be("SomeLinuxComponentName");
         linuxComponent.Version.Should().Be("SomeLinuxComponentVersion");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Deserialization_UnknownComponentType_ReturnsNull()
+    {
+        // Simulate a JSON payload with a component type that doesn't exist in the current version
+        // This tests forward compatibility when new component types are added
+        var unknownComponentJson = """
+            {
+                "type": "FutureComponentType",
+                "name": "SomeComponent",
+                "version": "1.0.0"
+            }
+            """;
+
+        var deserializedTC = JsonSerializer.Deserialize<TypedComponent>(unknownComponentJson);
+        deserializedTC.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TypedComponent_Deserialization_InvalidComponentType_ReturnsNull()
+    {
+        // Test with a completely invalid/malformed type value
+        var invalidComponentJson = """
+            {
+                "type": "Not_A_Valid_Enum_Value_12345",
+                "name": "SomeComponent",
+                "version": "1.0.0"
+            }
+            """;
+
+        var deserializedTC = JsonSerializer.Deserialize<TypedComponent>(invalidComponentJson);
+        deserializedTC.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TypedComponentMapping_AllComponentTypes_HaveMapping()
+    {
+        // Ensure every ComponentType enum value has a corresponding entry in the mapping
+        // This prevents forgetting to add new component types to the serialization mapping
+        var allComponentTypes = Enum.GetValues(typeof(ComponentType)).Cast<ComponentType>();
+        var mappedTypes = TypedComponentMapping.TypeDiscriminatorToType;
+
+        foreach (var componentType in allComponentTypes)
+        {
+            var typeName = componentType.ToString();
+            mappedTypes.Should().ContainKey(typeName, $"ComponentType.{typeName} should have a mapping in TypedComponentMapping");
+        }
+    }
+
+    [TestMethod]
+    public void TypedComponentMapping_AllMappedTypes_AreTypedComponentSubclasses()
+    {
+        // Ensure all mapped types are actually subclasses of TypedComponent
+        foreach (var kvp in TypedComponentMapping.TypeDiscriminatorToType)
+        {
+            kvp.Value.Should().BeAssignableTo<TypedComponent>($"Mapped type for '{kvp.Key}' should be a TypedComponent subclass");
+        }
+    }
+
+    [TestMethod]
+    public void TypedComponentMapping_AllMappedTypes_AreUnique()
+    {
+        // Ensure no two discriminators map to the same type
+        var mappedTypes = TypedComponentMapping.TypeDiscriminatorToType.Values.ToList();
+        var uniqueTypes = mappedTypes.Distinct().ToList();
+
+        mappedTypes.Should().HaveCount(uniqueTypes.Count, "Each component type should map to a unique concrete type");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Serialization_TypePropertyNotDuplicated()
+    {
+        // Ensure the "type" property is only serialized once at the root level, not duplicated
+        TypedComponent tc = new NpmComponent("TestPackage", "1.0.0");
+        var json = JsonSerializer.Serialize(tc);
+
+        // Parse the JSON and check root-level properties only
+        using var doc = JsonDocument.Parse(json);
+        var typeProperties = doc.RootElement.EnumerateObject()
+            .Count(p => p.Name.Equals("type", StringComparison.OrdinalIgnoreCase));
+
+        typeProperties.Should().Be(1, "The 'type' property should appear exactly once at the root level in the serialized JSON");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Serialization_AllComponentTypes_TypePropertyNotDuplicated()
+    {
+        // Test all component types to ensure none have duplicate "type" properties at the root level
+        var testComponents = new TypedComponent[]
+        {
+            new NpmComponent("test", "1.0.0"),
+            new NuGetComponent("test", "1.0.0"),
+            new MavenComponent("group", "artifact", "1.0.0"),
+            new PipComponent("test", "1.0.0"),
+            new GoComponent("test", "1.0.0"),
+            new CargoComponent("test", "1.0.0"),
+            new RubyGemsComponent("test", "1.0.0"),
+            new GitComponent(new Uri("https://github.com/test/test"), "abc123"),
+            new OtherComponent("test", "1.0.0", new Uri("https://example.com"), "hash"),
+        };
+
+        foreach (var component in testComponents)
+        {
+            var json = JsonSerializer.Serialize(component);
+
+            // Parse the JSON and check root-level properties only
+            using var doc = JsonDocument.Parse(json);
+            var typeProperties = doc.RootElement.EnumerateObject()
+                .Count(p => p.Name.Equals("type", StringComparison.OrdinalIgnoreCase));
+
+            typeProperties.Should().Be(1, $"The 'type' property should appear exactly once at the root level for {component.Type}");
+        }
+    }
+
+    [TestMethod]
+    public void TypedComponentMapping_TryGetType_NullDiscriminator_ReturnsFalseAndNull()
+    {
+        var result = TypedComponentMapping.TryGetType(null, out var targetType);
+
+        result.Should().BeFalse("TryGetType should return false for null discriminator");
+        targetType.Should().BeNull("targetType should be null for null discriminator");
+    }
+
+    [TestMethod]
+    public void TypedComponentMapping_TryGetType_EmptyDiscriminator_ReturnsFalseAndNull()
+    {
+        var result = TypedComponentMapping.TryGetType(string.Empty, out var targetType);
+
+        result.Should().BeFalse("TryGetType should return false for empty discriminator");
+        targetType.Should().BeNull("targetType should be null for empty discriminator");
+    }
+
+    [TestMethod]
+    public void TypedComponentMapping_TryGetType_WhitespaceDiscriminator_ReturnsFalseAndNull()
+    {
+        var result = TypedComponentMapping.TryGetType("   ", out var targetType);
+
+        result.Should().BeFalse("TryGetType should return false for whitespace-only discriminator");
+        targetType.Should().BeNull("targetType should be null for whitespace-only discriminator");
     }
 }

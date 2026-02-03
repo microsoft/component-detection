@@ -118,4 +118,152 @@ public class ScanResultSerializationTests
         detector["isExperimental"].GetValue<bool>().Should().Be(true);
         detector["supportedComponentTypes"][0].GetValue<string>().Should().Be("Npm");
     }
+
+    [TestMethod]
+    public void ScanResultSerialization_UnknownComponentType_IsSkipped()
+    {
+        // Simulate a ScanResult JSON with an unknown component type
+        // This tests forward compatibility when new component types are added
+        var scanResultJson = """
+            {
+                "resultCode": "Success",
+                "sourceDirectory": "D:\\test\\directory",
+                "componentsFound": [
+                    {
+                        "detectorId": "NpmDetectorId",
+                        "component": {
+                            "type": "Npm",
+                            "name": "KnownNpmComponent",
+                            "version": "1.0.0"
+                        },
+                        "locationsFoundAt": ["some/location"]
+                    },
+                    {
+                        "detectorId": "FutureDetectorId",
+                        "component": {
+                            "type": "FutureComponentType",
+                            "name": "UnknownComponent",
+                            "version": "2.0.0"
+                        },
+                        "locationsFoundAt": ["another/location"]
+                    }
+                ],
+                "detectorsInScan": []
+            }
+            """;
+
+        var result = JsonSerializer.Deserialize<ScanResult>(scanResultJson);
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        result.SourceDirectory.Should().Be("D:\\test\\directory");
+
+        // Both components are in the array, but the unknown one has a null Component
+        result.ComponentsFound.Should().HaveCount(2);
+
+        var knownComponent = result.ComponentsFound.First();
+        knownComponent.Component.Should().NotBeNull();
+        knownComponent.Component.Should().BeOfType<NpmComponent>();
+        ((NpmComponent)knownComponent.Component).Name.Should().Be("KnownNpmComponent");
+
+        var unknownComponent = result.ComponentsFound.Last();
+        unknownComponent.Component.Should().BeNull();
+        unknownComponent.DetectorId.Should().Be("FutureDetectorId");
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_UnknownTopLevelReferrer_IsNull()
+    {
+        // Test that unknown component types in TopLevelReferrers are handled gracefully
+        var scanResultJson = """
+            {
+                "resultCode": "Success",
+                "sourceDirectory": "D:\\test\\directory",
+                "componentsFound": [
+                    {
+                        "detectorId": "NpmDetectorId",
+                        "component": {
+                            "type": "Npm",
+                            "name": "ChildComponent",
+                            "version": "1.0.0"
+                        },
+                        "locationsFoundAt": ["some/location"],
+                        "topLevelReferrers": [
+                            {
+                                "type": "Npm",
+                                "name": "KnownParent",
+                                "version": "2.0.0"
+                            },
+                            {
+                                "type": "FutureComponentType",
+                                "name": "UnknownParent",
+                                "version": "3.0.0"
+                            }
+                        ]
+                    }
+                ],
+                "detectorsInScan": []
+            }
+            """;
+
+        var result = JsonSerializer.Deserialize<ScanResult>(scanResultJson);
+
+        var component = result.ComponentsFound.First();
+        component.Component.Should().NotBeNull();
+
+        // TopLevelReferrers should contain both entries, with the unknown one being null
+        component.TopLevelReferrers.Should().HaveCount(2);
+        var referrers = component.TopLevelReferrers.ToList();
+
+        referrers[0].Should().NotBeNull();
+        referrers[0].Should().BeOfType<NpmComponent>();
+        ((NpmComponent)referrers[0]).Name.Should().Be("KnownParent");
+
+        referrers[1].Should().BeNull();
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_AllUnknownComponents_StillDeserializes()
+    {
+        // Edge case: all components are unknown types
+        var scanResultJson = """
+            {
+                "resultCode": "Success",
+                "sourceDirectory": "D:\\test\\directory",
+                "componentsFound": [
+                    {
+                        "detectorId": "FutureDetector1",
+                        "component": {
+                            "type": "FutureType1",
+                            "name": "Component1",
+                            "version": "1.0.0"
+                        },
+                        "locationsFoundAt": ["location1"]
+                    },
+                    {
+                        "detectorId": "FutureDetector2",
+                        "component": {
+                            "type": "FutureType2",
+                            "name": "Component2",
+                            "version": "2.0.0"
+                        },
+                        "locationsFoundAt": ["location2"]
+                    }
+                ],
+                "detectorsInScan": []
+            }
+            """;
+
+        var result = JsonSerializer.Deserialize<ScanResult>(scanResultJson);
+
+        result.Should().NotBeNull();
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+        result.ComponentsFound.Should().HaveCount(2);
+
+        // All components should be null, but the ScannedComponent wrapper should still exist
+        foreach (var scannedComponent in result.ComponentsFound)
+        {
+            scannedComponent.Component.Should().BeNull();
+            scannedComponent.DetectorId.Should().NotBeNullOrEmpty();
+        }
+    }
 }
