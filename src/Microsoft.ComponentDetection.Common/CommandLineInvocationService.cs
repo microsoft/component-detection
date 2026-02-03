@@ -31,11 +31,10 @@ public class CommandLineInvocationService : ICommandLineInvocationService
                 using var record = new CommandLineInvocationTelemetryRecord();
 
                 var joinedParameters = string.Join(" ", parameters);
-                var commandForLogging = joinedParameters.RemoveSensitiveInformation();
                 try
                 {
                     var result = await RunProcessAsync(commandToTry, joinedParameters, workingDirectory);
-                    record.Track(result, commandToTry, commandForLogging);
+                    record.Track(result, commandToTry, joinedParameters);
 
                     if (result.ExitCode == 0)
                     {
@@ -46,7 +45,7 @@ public class CommandLineInvocationService : ICommandLineInvocationService
                 catch (Exception ex) when (ex is Win32Exception || ex is FileNotFoundException || ex is PlatformNotSupportedException)
                 {
                     // When we get an exception indicating the command cannot be found.
-                    record.Track(ex, commandToTry, commandForLogging);
+                    record.Track(ex, commandToTry, joinedParameters);
                 }
             }
         }
@@ -79,16 +78,15 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
         var pathToRun = this.commandLocatableCache[command];
         var joinedParameters = string.Join(" ", parameters);
-        var commandForLogging = joinedParameters.RemoveSensitiveInformation();
         try
         {
             var result = await RunProcessAsync(pathToRun, joinedParameters, workingDirectory, cancellationToken);
-            record.Track(result, pathToRun, commandForLogging);
+            record.Track(result, pathToRun, joinedParameters);
             return result;
         }
         catch (Exception ex)
         {
-            record.Track(ex, pathToRun, commandForLogging);
+            record.Track(ex, pathToRun, joinedParameters);
             throw;
         }
     }
