@@ -125,10 +125,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         groupIds.Should().Contain("junit");
     }
 
-    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
-    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
-    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenMavenCliSucceeds_UsesMvnCliResults_Async()
     {
         // Arrange
@@ -159,10 +156,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         mavenComponent.Version.Should().Be("3.6.1-SNAPSHOT");
     }
 
-    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
-    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
-    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenMavenCliSucceeds_PreservesTransitiveDependencies_Async()
     {
         // Arrange
@@ -561,10 +555,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Verify(x => x.MavenCLIExistsAsync(), Times.Never);
     }
 
-    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
-    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
-    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenDisableMvnCliEnvVarIsFalse_UsesMvnCliNormally_Async()
     {
         // Arrange - Maven CLI is available and CD_MAVEN_DISABLE_CLI is false
@@ -605,10 +596,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Verify(x => x.MavenCLIExistsAsync(), Times.Once);
     }
 
-    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
-    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
-    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenMvnCliSucceeds_NestedPomXmlsAreFilteredOut_Async()
     {
         // Arrange - Maven CLI is available and succeeds
@@ -769,10 +757,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         artifactIds.Should().Contain("guava");          // From module-b/pom.xml (nested - restored)
     }
 
-    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
-    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
-    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenMvnCliPartiallyFails_NestedPomXmlsRestoredOnlyForFailedDirectories_Async()
     {
         // Arrange - Maven CLI succeeds for projectA but fails for projectB

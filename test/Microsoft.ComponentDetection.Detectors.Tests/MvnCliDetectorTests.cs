@@ -21,11 +21,14 @@ using Moq;
 public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
 {
     private readonly Mock<IMavenCommandService> mavenCommandServiceMock;
+    private readonly Mock<IEnvironmentVariableService> envVarServiceMock;
 
     public MvnCliDetectorTests()
     {
         this.mavenCommandServiceMock = new Mock<IMavenCommandService>();
+        this.envVarServiceMock = new Mock<IEnvironmentVariableService>();
         this.DetectorTestUtility.AddServiceMock(this.mavenCommandServiceMock);
+        this.DetectorTestUtility.AddServiceMock(this.envVarServiceMock);
     }
 
     [TestMethod]
