@@ -615,7 +615,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         if (!this.failedEndpoints.IsEmpty)
         {
-            guidance.AppendLine("2. The following Maven repository endpoints had authentication failures:");
+            guidance.AppendLine("The following Maven repository endpoints had authentication failures:");
             foreach (var endpoint in this.failedEndpoints.Distinct().Take(5))
             {
                 guidance.AppendLine($"   - {endpoint}");
