@@ -78,16 +78,15 @@ public class CommandLineInvocationService : ICommandLineInvocationService
 
         var pathToRun = this.commandLocatableCache[command];
         var joinedParameters = string.Join(" ", parameters);
-        var commandForLogging = joinedParameters.RemoveSensitiveInformation();
         try
         {
             var result = await RunProcessAsync(pathToRun, joinedParameters, workingDirectory, cancellationToken);
-            record.Track(result, pathToRun, commandForLogging);
+            record.Track(result, pathToRun, joinedParameters);
             return result;
         }
         catch (Exception ex)
         {
-            record.Track(ex, pathToRun, commandForLogging);
+            record.Track(ex, pathToRun, joinedParameters);
             throw;
         }
     }
