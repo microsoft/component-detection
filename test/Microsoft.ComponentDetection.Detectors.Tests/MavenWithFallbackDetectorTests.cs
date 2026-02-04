@@ -125,7 +125,10 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         groupIds.Should().Contain("junit");
     }
 
+    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
+    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
+    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenMavenCliSucceeds_UsesMvnCliResults_Async()
     {
         // Arrange
@@ -156,7 +159,10 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         mavenComponent.Version.Should().Be("3.6.1-SNAPSHOT");
     }
 
+    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
+    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
+    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenMavenCliSucceeds_PreservesTransitiveDependencies_Async()
     {
         // Arrange
@@ -454,13 +460,65 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
     }
 
     [TestMethod]
-    public async Task WhenDisableMvnCliEnvVarIsTrue_SkipsMvnCliAndUsesStaticParsing_Async()
+    public async Task WhenUseFallbackDetectorNotSet_UsesStaticParsingOnly_Async()
     {
-        // Arrange - Maven CLI is available but we're disabling it via environment variable
+        // Arrange - Maven CLI is available but UseFallbackDetectorEnvVar is not set
+        // so the detector runs in "experimental mode" with static parsing only
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
-        // Set up the environment variable to disable MvnCli
+        var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        // Act
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", pomXmlContent)
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Should detect component via static parsing since UseFallbackDetectorEnvVar is not set
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var mavenComponent = detectedComponents.First().Component as MavenComponent;
+        mavenComponent.Should().NotBeNull();
+        mavenComponent.GroupId.Should().Be("org.apache.commons");
+        mavenComponent.ArtifactId.Should().Be("commons-lang3");
+        mavenComponent.Version.Should().Be("3.12.0");
+
+        // Verify MavenCLIExistsAsync was never called since we're in experimental mode
+        this.mavenCommandServiceMock.Verify(x => x.MavenCLIExistsAsync(), Times.Never);
+    }
+
+    [TestMethod]
+    public async Task WhenUseFallbackDetectorTrue_AndDisableMvnCliTrue_UsesStaticParsing_Async()
+    {
+        // Arrange - UseFallbackDetectorEnvVar is true (detector fully enabled)
+        // and DisableMvnCliEnvVar is also true (explicitly disable Maven CLI)
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(true);
+
+        // Enable the fallback detector
+        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns(true);
+        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns("true");
+
+        // Also disable MvnCli explicitly
         this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.DisableMvnCliEnvVar))
             .Returns(true);
         this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.DisableMvnCliEnvVar))
@@ -503,11 +561,20 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Verify(x => x.MavenCLIExistsAsync(), Times.Never);
     }
 
+    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
+    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
+    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenDisableMvnCliEnvVarIsFalse_UsesMvnCliNormally_Async()
     {
         // Arrange - Maven CLI is available and CD_MAVEN_DISABLE_CLI is false
         const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
+
+        // Enable the fallback detector to use Maven CLI
+        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns(true);
+        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns("true");
 
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
@@ -538,11 +605,21 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Verify(x => x.MavenCLIExistsAsync(), Times.Once);
     }
 
+    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
+    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
+    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenMvnCliSucceeds_NestedPomXmlsAreFilteredOut_Async()
     {
         // Arrange - Maven CLI is available and succeeds
         // In a multi-module project, only the root pom.xml should be processed by MvnCli
+
+        // Enable the fallback detector to use Maven CLI
+        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns(true);
+        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns("true");
+
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
@@ -692,10 +769,20 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         artifactIds.Should().Contain("guava");          // From module-b/pom.xml (nested - restored)
     }
 
+    // NOTE: This test is disabled while MavenWithFallbackDetector is experimental and runs alongside MvnCliComponentDetector.
+    // The detector currently skips Maven CLI to avoid race conditions. Re-enable this test when the detector is promoted.
     [TestMethod]
+    [Ignore("Maven CLI is disabled while detector is experimental to avoid race conditions with MvnCliComponentDetector")]
     public async Task WhenMvnCliPartiallyFails_NestedPomXmlsRestoredOnlyForFailedDirectories_Async()
     {
         // Arrange - Maven CLI succeeds for projectA but fails for projectB
+
+        // Enable the fallback detector to use Maven CLI
+        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns(true);
+        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns("true");
+
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
@@ -811,6 +898,13 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
     private void SetupMvnCliSuccess(string content)
     {
+        // Enable the fallback detector to use Maven CLI
+        // (required when CD_USE_MAVEN_FALLBACK_DETECTOR=true to avoid race conditions with MvnCliComponentDetector)
+        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns(true);
+        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns("true");
+
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 

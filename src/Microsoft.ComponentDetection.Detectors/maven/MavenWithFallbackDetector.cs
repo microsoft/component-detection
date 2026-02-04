@@ -72,6 +72,14 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     /// </summary>
     internal const string DisableMvnCliEnvVar = "CD_MAVEN_DISABLE_CLI";
 
+    /// <summary>
+    /// Environment variable to enable this detector and disable MvnCliComponentDetector.
+    /// Set to "true" to use this detector instead of MvnCliComponentDetector.
+    /// Usage: Set CD_USE_MAVEN_FALLBACK_DETECTOR=true as a pipeline/environment variable.
+    /// When set, this detector will fully run (including Maven CLI) and MvnCliComponentDetector will be disabled.
+    /// </summary>
+    internal const string UseFallbackDetectorEnvVar = "CD_USE_MAVEN_FALLBACK_DETECTOR";
+
     private const string MavenManifest = "pom.xml";
 
     /// <summary>
@@ -168,6 +176,31 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
+        // Check if user explicitly enabled this detector via environment variable.
+        // When CD_USE_MAVEN_FALLBACK_DETECTOR=true, this detector fully runs (including Maven CLI)
+        // and MvnCliComponentDetector is disabled, avoiding race conditions.
+        var useFallbackDetector = this.envVarService.DoesEnvironmentVariableExist(UseFallbackDetectorEnvVar) &&
+            bool.TryParse(this.envVarService.GetEnvironmentVariable(UseFallbackDetectorEnvVar), out var useFallback) &&
+            useFallback;
+
+        if (!useFallbackDetector)
+        {
+            // While this detector is experimental (IExperimentalDetector), it runs alongside
+            // the standard MvnCliComponentDetector. To avoid race conditions where both detectors
+            // try to invoke Maven CLI simultaneously (causing file locking issues in .m2/repository),
+            // we skip Maven CLI execution and use static parsing only.
+            // Set CD_USE_MAVEN_FALLBACK_DETECTOR=true to fully enable this detector.
+            this.LogInfo($"MavenWithFallbackDetector is experimental and running alongside MvnCliComponentDetector. Using static pom.xml parsing only to avoid race conditions. Set {UseFallbackDetectorEnvVar}=true to fully enable this detector.");
+            this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
+            this.fallbackReason = MavenFallbackReason.None;
+            this.mavenCliAvailable = false;
+
+            // Return original pom.xml files for static parsing
+            return processRequests;
+        }
+
+        this.LogInfo($"{UseFallbackDetectorEnvVar}=true detected. This detector is fully enabled and MvnCliComponentDetector is disabled.");
+
         // Check if user explicitly disabled MvnCli detection via environment variable
         if (this.envVarService.DoesEnvironmentVariableExist(DisableMvnCliEnvVar) &&
             bool.TryParse(this.envVarService.GetEnvironmentVariable(DisableMvnCliEnvVar), out var disableMvnCli) &&
