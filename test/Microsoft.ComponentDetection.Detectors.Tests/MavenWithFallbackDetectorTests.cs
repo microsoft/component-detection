@@ -27,6 +27,11 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
     {
         this.mavenCommandServiceMock = new Mock<IMavenCommandService>();
         this.mavenCommandServiceMock.Setup(x => x.BcdeMvnDependencyFileName).Returns(BcdeMvnFileName);
+
+        // Default setup for GenerateDependenciesFileAsync to avoid NullReferenceException
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(true, null));
+
         this.DetectorTestUtility.AddServiceMock(this.mavenCommandServiceMock);
 
         this.envVarServiceMock = new Mock<IEnvironmentVariableService>();
@@ -208,7 +213,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
         // MvnCli runs but produces no bcde-fallback.mvndeps files (simulating failure)
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(new MavenCliResult(true, null));
 
         var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
 <project xmlns=""http://maven.apache.org/POM/4.0.0"">
@@ -680,7 +685,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
         // MvnCli runs but produces no bcde-fallback.mvndeps files (simulating complete failure)
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(new MavenCliResult(true, null));
 
         // Root pom.xml content
         var rootPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
@@ -773,7 +778,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
         // MvnCli runs but only produces output for projectA (projectB fails)
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(new MavenCliResult(true, null));
 
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
@@ -881,6 +886,122 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         artifactIds.Should().NotContain("dep-from-nested-a");
     }
 
+    [TestMethod]
+    public async Task WhenMvnCliFailsWithAuthError_LogsFailedEndpointAndSetsTelemetry_Async()
+    {
+        // Arrange - Enable the fallback detector
+        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns(true);
+        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns("true");
+
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(true);
+
+        // Simulate Maven CLI failure with authentication error message containing endpoint URL
+        var authErrorMessage = "[ERROR] Failed to execute goal on project my-app: Could not resolve dependencies for project com.test:my-app:jar:1.0.0: " +
+            "Failed to collect dependencies at com.private:private-lib:jar:2.0.0: " +
+            "Failed to read artifact descriptor for com.private:private-lib:jar:2.0.0: " +
+            "Could not transfer artifact com.private:private-lib:pom:2.0.0 from/to private-repo (https://private-maven-repo.example.com/repository/maven-releases/): " +
+            "status code: 401, reason phrase: Unauthorized";
+
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(false, authErrorMessage));
+
+        var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        // Act
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", pomXmlContent)
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Should fall back to static parsing and detect the component
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var mavenComponent = detectedComponents.First().Component as MavenComponent;
+        mavenComponent.Should().NotBeNull();
+        mavenComponent.ArtifactId.Should().Be("commons-lang3");
+
+        // Verify telemetry contains auth failure info
+        detectorResult.AdditionalTelemetryDetails.Should().ContainKey("FallbackReason");
+        detectorResult.AdditionalTelemetryDetails["FallbackReason"].Should().Be("AuthenticationFailure");
+
+        // Verify telemetry contains the failed endpoint
+        detectorResult.AdditionalTelemetryDetails.Should().ContainKey("FailedEndpoints");
+        detectorResult.AdditionalTelemetryDetails["FailedEndpoints"].Should().Contain("https://private-maven-repo.example.com");
+    }
+
+    [TestMethod]
+    public async Task WhenMvnCliFailsWithNonAuthError_SetsFallbackReasonToOther_Async()
+    {
+        // Arrange - Enable the fallback detector
+        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns(true);
+        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.UseFallbackDetectorEnvVar))
+            .Returns("true");
+
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(true);
+
+        // Simulate Maven CLI failure with a non-auth error (e.g., build error)
+        var nonAuthErrorMessage = "[ERROR] Failed to execute goal on project my-app: Compilation failure: " +
+            "src/main/java/com/test/App.java:[10,5] cannot find symbol";
+
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(false, nonAuthErrorMessage));
+
+        var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>my-app</artifactId>
+    <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        // Act
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", pomXmlContent)
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Should fall back to static parsing
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        // Verify telemetry shows non-auth failure
+        detectorResult.AdditionalTelemetryDetails.Should().ContainKey("FallbackReason");
+        detectorResult.AdditionalTelemetryDetails["FallbackReason"].Should().Be("OtherMvnCliFailure");
+
+        // Should NOT have FailedEndpoints since this wasn't an auth error
+        detectorResult.AdditionalTelemetryDetails.Should().NotContainKey("FailedEndpoints");
+    }
+
     private void SetupMvnCliSuccess(string content)
     {
         // Enable the fallback detector to use Maven CLI
@@ -892,6 +1013,9 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
+
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(true, null));
 
         this.DetectorTestUtility
             .WithFile("pom.xml", content)

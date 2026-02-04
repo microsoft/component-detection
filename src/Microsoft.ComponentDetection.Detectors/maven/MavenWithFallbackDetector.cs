@@ -244,7 +244,13 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
             // Generate dependency file using Maven CLI with our custom filename
             // to avoid conflicts with MvnCliComponentDetector which uses bcde.mvndeps
-            await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, BcdeMvnDepsFileName, cancellationToken);
+            var result = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, BcdeMvnDepsFileName, cancellationToken);
+
+            // Capture error output for later analysis
+            if (!result.Success && !string.IsNullOrWhiteSpace(result.ErrorOutput))
+            {
+                this.mavenCliErrors.Add(result.ErrorOutput);
+            }
         });
 
         await this.RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest =>

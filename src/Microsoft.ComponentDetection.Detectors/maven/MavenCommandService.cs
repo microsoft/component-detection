@@ -43,12 +43,12 @@ public class MavenCommandService : IMavenCommandService
         return await this.commandLineInvocationService.CanCommandBeLocatedAsync(PrimaryCommand, AdditionalValidCommands, MvnVersionArgument);
     }
 
-    public async Task GenerateDependenciesFileAsync(ProcessRequest processRequest, CancellationToken cancellationToken = default)
+    public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, CancellationToken cancellationToken = default)
     {
-        await this.GenerateDependenciesFileAsync(processRequest, this.BcdeMvnDependencyFileName, cancellationToken);
+        return await this.GenerateDependenciesFileAsync(processRequest, this.BcdeMvnDependencyFileName, cancellationToken);
     }
 
-    public async Task GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken = default)
+    public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken = default)
     {
         var cliFileTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var timeoutSeconds = -1;
@@ -83,10 +83,13 @@ public class MavenCommandService : IMavenCommandService
             {
                 this.logger.LogWarning("{DetectorPrefix}: There was a timeout in {PomFileLocation} file. Increase it using {TimeoutVar} environment variable.", DetectorLogPrefix, pomFile.Location, MvnCLIFileLevelTimeoutSecondsEnvVar);
             }
+
+            return new MavenCliResult(false, errorMessage);
         }
         else
         {
             this.logger.LogDebug("{DetectorPrefix}: Execution of \"dependency:tree\" on {PomFileLocation} completed successfully", DetectorLogPrefix, pomFile.Location);
+            return new MavenCliResult(true, null);
         }
     }
 
