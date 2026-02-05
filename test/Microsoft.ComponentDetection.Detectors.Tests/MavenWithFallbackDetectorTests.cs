@@ -531,7 +531,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .Returns(false);
 
         // Act
-        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+        var (detectorResult, _) = await this.DetectorTestUtility
             .WithFile("pom.xml", componentString)
             .WithFile("pom.xml", componentString, searchPatterns: [BcdeMvnFileName])
             .ExecuteDetectorAsync();
@@ -601,7 +601,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .Returns(false);
 
         // Act
-        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+        var (detectorResult, _) = await this.DetectorTestUtility
             .WithFile("pom.xml", componentString)
             .WithFile("pom.xml", componentString, searchPatterns: [BcdeMvnFileName])
             .ExecuteDetectorAsync();
