@@ -80,6 +80,7 @@ internal sealed record PackageLockV3Package
     public string? License { get; init; }
 
     [JsonPropertyName("engines")]
+    [JsonConverter(typeof(PackageJsonEnginesConverter))]
     public IDictionary<string, string>? Engines { get; init; }
 
     [JsonPropertyName("dependencies")]
