@@ -11,7 +11,7 @@ using Microsoft.ComponentDetection.Detectors.Maven;
 public class MavenWithFallbackExperiment : IExperimentConfiguration
 {
     /// <inheritdoc />
-    public string Name => "MavenWithFallbackExperiment";
+    public string Name => "MavenWithFallback";
 
     /// <inheritdoc />
     public bool IsInControlGroup(IComponentDetector componentDetector) => componentDetector is MvnCliComponentDetector;
@@ -20,5 +20,5 @@ public class MavenWithFallbackExperiment : IExperimentConfiguration
     public bool IsInExperimentGroup(IComponentDetector componentDetector) => componentDetector is MavenWithFallbackDetector;
 
     /// <inheritdoc />
-    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) => true;
+    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) => numComponents > 0;
 }

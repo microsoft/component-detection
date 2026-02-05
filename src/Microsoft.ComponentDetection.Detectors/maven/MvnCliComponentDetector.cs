@@ -19,29 +19,19 @@ using Microsoft.Extensions.Logging;
 
 public class MvnCliComponentDetector : FileComponentDetector
 {
-    /// <summary>
-    /// Environment variable to enable MavenWithFallbackDetector and disable this detector.
-    /// Set to "true" to use the fallback detector instead.
-    /// Usage: Set CD_USE_MAVEN_FALLBACK_DETECTOR=true as a pipeline/environment variable.
-    /// </summary>
-    internal const string UseFallbackDetectorEnvVar = "CD_USE_MAVEN_FALLBACK_DETECTOR";
-
     private const string MavenManifest = "pom.xml";
 
     private readonly IMavenCommandService mavenCommandService;
-    private readonly IEnvironmentVariableService envVarService;
 
     public MvnCliComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         IMavenCommandService mavenCommandService,
-        IEnvironmentVariableService envVarService,
         ILogger<MvnCliComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.mavenCommandService = mavenCommandService;
-        this.envVarService = envVarService;
         this.Logger = logger;
     }
 
@@ -62,15 +52,6 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
-        // Check if user wants to use MavenWithFallbackDetector instead
-        if (this.envVarService.DoesEnvironmentVariableExist(UseFallbackDetectorEnvVar) &&
-            bool.TryParse(this.envVarService.GetEnvironmentVariable(UseFallbackDetectorEnvVar), out var useFallbackDetector) &&
-            useFallbackDetector)
-        {
-            this.LogDebugWithId($"Skipping MvnCli detection because {UseFallbackDetectorEnvVar}=true. MavenWithFallbackDetector will handle Maven detection.");
-            return Enumerable.Empty<ProcessRequest>().ToObservable();
-        }
-
         if (!await this.mavenCommandService.MavenCLIExistsAsync())
         {
             this.LogDebugWithId("Skipping maven detection as maven is not available in the local PATH.");

@@ -548,6 +548,78 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
     }
 
     [TestMethod]
+    public async Task WhenDisableMvnCliEnvVarNotSet_UsesMvnCliNormally_Async()
+    {
+        // Arrange - Maven CLI is available and CD_MAVEN_DISABLE_CLI is NOT set (doesn't exist)
+        const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
+
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(true);
+
+        this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
+            .Callback((ProcessRequest pr) =>
+            {
+                pr.SingleFileComponentRecorder.RegisterUsage(
+                    new DetectedComponent(new MavenComponent("org.apache.maven", "maven-compat", "3.6.1-SNAPSHOT")));
+            });
+
+        // Explicitly set up the environment variable to NOT exist
+        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.DisableMvnCliEnvVar))
+            .Returns(false);
+
+        // Act
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", componentString)
+            .WithFile("pom.xml", componentString, searchPatterns: [BcdeMvnFileName])
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Should use MvnCli since CD_MAVEN_DISABLE_CLI doesn't exist
+        this.mavenCommandServiceMock.Verify(x => x.MavenCLIExistsAsync(), Times.Once);
+
+        // Verify telemetry shows MvnCliOnly detection method
+        detectorResult.AdditionalTelemetryDetails.Should().ContainKey("DetectionMethod");
+        detectorResult.AdditionalTelemetryDetails["DetectionMethod"].Should().Be("MvnCliOnly");
+    }
+
+    [TestMethod]
+    public async Task WhenDisableMvnCliEnvVarSetToInvalidValue_UsesMvnCliNormally_Async()
+    {
+        // Arrange - Maven CLI is available and CD_MAVEN_DISABLE_CLI is set to an invalid (non-boolean) value
+        const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
+
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(true);
+
+        this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
+            .Callback((ProcessRequest pr) =>
+            {
+                pr.SingleFileComponentRecorder.RegisterUsage(
+                    new DetectedComponent(new MavenComponent("org.apache.maven", "maven-compat", "3.6.1-SNAPSHOT")));
+            });
+
+        // Set up the environment variable with an invalid value (not "true" or "false")
+        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.DisableMvnCliEnvVar))
+            .Returns(true);
+        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.DisableMvnCliEnvVar))
+            .Returns("invalid_value");
+
+        // Act
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", componentString)
+            .WithFile("pom.xml", componentString, searchPatterns: [BcdeMvnFileName])
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Should use MvnCli since the env var value is invalid (bool.TryParse fails)
+        this.mavenCommandServiceMock.Verify(x => x.MavenCLIExistsAsync(), Times.Once);
+    }
+
+    [TestMethod]
     public async Task WhenMvnCliSucceeds_NestedPomXmlsAreFilteredOut_Async()
     {
         // Arrange - Maven CLI is available and succeeds.

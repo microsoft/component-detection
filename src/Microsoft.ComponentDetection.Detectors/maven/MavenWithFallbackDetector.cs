@@ -98,13 +98,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         "401",
         "403",
         "Unauthorized",
-        "Not authorized",
-        "authentication",
-        "Could not authenticate",
         "Access denied",
-        "Forbidden",
-        "status code: 401",
-        "status code: 403",
     ];
 
     // Pattern to extract failed endpoint URL from Maven error messages
@@ -171,7 +165,34 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
-        // Check if user explicitly disabled MvnCli detection via environment variable
+        // Check if we should skip Maven CLI and use static parsing only
+        if (this.ShouldSkipMavenCli())
+        {
+            return processRequests;
+        }
+
+        // Check if Maven CLI is available
+        if (!await this.TryInitializeMavenCliAsync())
+        {
+            return processRequests;
+        }
+
+        // Run Maven CLI detection on all pom.xml files
+        var pomFileDirectories = await this.RunMavenCliDetectionAsync(processRequests, cancellationToken);
+
+        // Collect results and determine which files succeeded/failed
+        var (mvnCliResults, failedPomFiles) = this.CollectMvnCliResults(pomFileDirectories);
+
+        // Determine final detection method and return appropriate results
+        return this.DetermineDetectionOutcome(mvnCliResults, failedPomFiles, pomFileDirectories.Count);
+    }
+
+    /// <summary>
+    /// Checks if Maven CLI should be skipped due to environment variable configuration.
+    /// </summary>
+    /// <returns>True if Maven CLI should be skipped; otherwise, false.</returns>
+    private bool ShouldSkipMavenCli()
+    {
         if (this.envVarService.DoesEnvironmentVariableExist(DisableMvnCliEnvVar) &&
             bool.TryParse(this.envVarService.GetEnvironmentVariable(DisableMvnCliEnvVar), out var disableMvnCli) &&
             disableMvnCli)
@@ -180,11 +201,18 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
             this.fallbackReason = MavenFallbackReason.MvnCliDisabledByUser;
             this.mavenCliAvailable = false;
-
-            // Return original pom.xml files for static parsing
-            return processRequests;
+            return true;
         }
 
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if Maven CLI is available and initializes the temporary local repository.
+    /// </summary>
+    /// <returns>True if Maven CLI is available and initialized; otherwise, false.</returns>
+    private async Task<bool> TryInitializeMavenCliAsync()
+    {
         this.mavenCliAvailable = await this.mavenCommandService.MavenCLIExistsAsync();
 
         if (!this.mavenCliAvailable)
@@ -192,9 +220,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             this.LogInfo("Maven CLI not found in PATH. Will use static pom.xml parsing only.");
             this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
             this.fallbackReason = MavenFallbackReason.MavenCliNotAvailable;
-
-            // Return original pom.xml files for static parsing
-            return processRequests;
+            return false;
         }
 
         this.LogDebug("Maven CLI is available. Running MvnCli detection.");
@@ -205,10 +231,21 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         Directory.CreateDirectory(this.tempMavenLocalRepository);
         this.LogDebug($"Using temporary Maven local repository: {this.tempMavenLocalRepository}");
 
-        // Track pom.xml directories for later comparison
+        return true;
+    }
+
+    /// <summary>
+    /// Runs Maven CLI detection on all root pom.xml files.
+    /// </summary>
+    /// <param name="processRequests">The incoming process requests.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A dictionary mapping pom.xml directories to their process requests.</returns>
+    private async Task<ConcurrentDictionary<string, ProcessRequest>> RunMavenCliDetectionAsync(
+        IObservable<ProcessRequest> processRequests,
+        CancellationToken cancellationToken)
+    {
         var pomFileDirectories = new ConcurrentDictionary<string, ProcessRequest>(StringComparer.OrdinalIgnoreCase);
 
-        // Run MvnCli detection exactly like MvnCliComponentDetector does
         var processPomFile = new ActionBlock<ProcessRequest>(async processRequest =>
         {
             // Store original pom.xml for potential fallback
@@ -220,7 +257,11 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
             // Generate dependency file using Maven CLI with our custom filename and separate local repository
             // to avoid conflicts with MvnCliComponentDetector which uses bcde.mvndeps and default .m2/repository
-            var result = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, BcdeMvnDepsFileName, this.tempMavenLocalRepository, cancellationToken);
+            var result = await this.mavenCommandService.GenerateDependenciesFileAsync(
+                processRequest,
+                BcdeMvnDepsFileName,
+                this.tempMavenLocalRepository,
+                cancellationToken);
 
             // Capture error output for later analysis
             if (!result.Success && !string.IsNullOrWhiteSpace(result.ErrorOutput))
@@ -239,8 +280,19 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         this.LogDebug($"Maven CLI processing complete for {this.originalPomFiles.Count} root pom.xml files.");
 
-        // Collect generated dependency files and track which directories succeeded
+        return pomFileDirectories;
+    }
+
+    /// <summary>
+    /// Collects Maven CLI results and identifies which pom.xml files failed.
+    /// </summary>
+    /// <param name="pomFileDirectories">Dictionary of pom.xml directories to their process requests.</param>
+    /// <returns>A tuple containing the successful MvnCli results and the list of failed pom files.</returns>
+    private (List<ProcessRequest> MvnCliResults, List<ProcessRequest> FailedPomFiles) CollectMvnCliResults(
+        ConcurrentDictionary<string, ProcessRequest> pomFileDirectories)
+    {
         var successfulDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         var mvnCliResults = this.ComponentStreamEnumerableFactory
             .GetComponentStreams(
                 this.CurrentScanRequest.SourceDirectory,
@@ -273,23 +325,37 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             .Select(kvp => kvp.Value)
             .ToList();
 
-        var successCount = successfulDirectories.Count;
+        return (mvnCliResults, failedPomFiles);
+    }
+
+    /// <summary>
+    /// Determines the detection outcome based on MvnCli results and failed files.
+    /// </summary>
+    /// <param name="mvnCliResults">The successful MvnCli results.</param>
+    /// <param name="failedPomFiles">The pom.xml files that failed MvnCli detection.</param>
+    /// <param name="totalPomCount">The total number of pom.xml files processed.</param>
+    /// <returns>An observable of process requests for further processing.</returns>
+    private IObservable<ProcessRequest> DetermineDetectionOutcome(
+        List<ProcessRequest> mvnCliResults,
+        List<ProcessRequest> failedPomFiles,
+        int totalPomCount)
+    {
+        var successCount = mvnCliResults.Count;
         var failedCount = failedPomFiles.Count;
 
-        this.LogDebug($"MvnCli results: {successCount} succeeded, {failedCount} failed out of {pomFileDirectories.Count} total.");
+        this.LogDebug($"MvnCli results: {successCount} succeeded, {failedCount} failed out of {totalPomCount} total.");
 
-        // Determine detection method and handle results
+        // All succeeded - use MvnCli results only
         if (failedCount == 0 && successCount > 0)
         {
-            // All succeeded - use MvnCli results only
             this.usedDetectionMethod = MavenDetectionMethod.MvnCliOnly;
             this.LogDebug("All pom.xml files processed successfully with Maven CLI.");
             return mvnCliResults.ToObservable();
         }
 
+        // All failed - fall back to static parsing for everything
         if (successCount == 0)
         {
-            // All failed - fall back to static parsing for everything
             this.LogWarning("Maven CLI did not produce any dependency files. Falling back to static pom.xml parsing.");
             this.AnalyzeMvnCliFailure();
             this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
@@ -395,13 +461,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             this.fallbackReason = MavenFallbackReason.AuthenticationFailure;
 
             // Extract failed endpoints from error messages
-            foreach (var error in this.mavenCliErrors)
+            foreach (var endpoint in this.mavenCliErrors.SelectMany(this.ExtractFailedEndpoints))
             {
-                var endpoints = this.ExtractFailedEndpoints(error);
-                foreach (var endpoint in endpoints)
-                {
-                    this.failedEndpoints.Add(endpoint);
-                }
+                this.failedEndpoints.Add(endpoint);
             }
 
             this.LogAuthErrorGuidance();
@@ -507,7 +569,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         }
 
         var newCount = this.ComponentRecorder.GetDetectedComponents().Count();
-        this.mvnCliComponentCount += newCount - initialCount;
+        Interlocked.Add(ref this.mvnCliComponentCount, newCount - initialCount);
     }
 
     private void ProcessPomFileStatically(ProcessRequest processRequest)
@@ -582,7 +644,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 }
             }
 
-            this.staticParserComponentCount += componentsFoundInFile;
+            Interlocked.Add(ref this.staticParserComponentCount, componentsFoundInFile);
         }
         catch (Exception e)
         {
