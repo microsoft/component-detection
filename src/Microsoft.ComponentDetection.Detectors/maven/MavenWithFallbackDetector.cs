@@ -193,9 +193,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     /// <returns>True if Maven CLI should be skipped; otherwise, false.</returns>
     private bool ShouldSkipMavenCli()
     {
-        if (this.envVarService.DoesEnvironmentVariableExist(DisableMvnCliEnvVar) &&
-            bool.TryParse(this.envVarService.GetEnvironmentVariable(DisableMvnCliEnvVar), out var disableMvnCli) &&
-            disableMvnCli)
+        if (this.envVarService.IsEnvironmentVariableValueTrue(DisableMvnCliEnvVar))
         {
             this.LogInfo($"MvnCli detection disabled via {DisableMvnCliEnvVar} environment variable. Using static pom.xml parsing only.");
             this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;

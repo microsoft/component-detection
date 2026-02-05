@@ -470,10 +470,8 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // Disable MvnCli explicitly
-        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.DisableMvnCliEnvVar))
+        this.envVarServiceMock.Setup(x => x.IsEnvironmentVariableValueTrue(MavenWithFallbackDetector.DisableMvnCliEnvVar))
             .Returns(true);
-        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.DisableMvnCliEnvVar))
-            .Returns("true");
 
         var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
 <project xmlns=""http://maven.apache.org/POM/4.0.0"">
@@ -528,11 +526,9 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
                     new DetectedComponent(new MavenComponent("org.apache.maven", "maven-compat", "3.6.1-SNAPSHOT")));
             });
 
-        // Set up the environment variable to NOT disable MvnCli
-        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.DisableMvnCliEnvVar))
-            .Returns(true);
-        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.DisableMvnCliEnvVar))
-            .Returns("false");
+        // Set up the environment variable to NOT disable MvnCli (false)
+        this.envVarServiceMock.Setup(x => x.IsEnvironmentVariableValueTrue(MavenWithFallbackDetector.DisableMvnCliEnvVar))
+            .Returns(false);
 
         // Act
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
@@ -563,8 +559,8 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
                     new DetectedComponent(new MavenComponent("org.apache.maven", "maven-compat", "3.6.1-SNAPSHOT")));
             });
 
-        // Explicitly set up the environment variable to NOT exist
-        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.DisableMvnCliEnvVar))
+        // Explicitly set up the environment variable to NOT exist (returns false)
+        this.envVarServiceMock.Setup(x => x.IsEnvironmentVariableValueTrue(MavenWithFallbackDetector.DisableMvnCliEnvVar))
             .Returns(false);
 
         // Act
@@ -600,11 +596,9 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
                     new DetectedComponent(new MavenComponent("org.apache.maven", "maven-compat", "3.6.1-SNAPSHOT")));
             });
 
-        // Set up the environment variable with an invalid value (not "true" or "false")
-        this.envVarServiceMock.Setup(x => x.DoesEnvironmentVariableExist(MavenWithFallbackDetector.DisableMvnCliEnvVar))
-            .Returns(true);
-        this.envVarServiceMock.Setup(x => x.GetEnvironmentVariable(MavenWithFallbackDetector.DisableMvnCliEnvVar))
-            .Returns("invalid_value");
+        // Set up the environment variable with an invalid value (IsEnvironmentVariableValueTrue returns false for non-"true" values)
+        this.envVarServiceMock.Setup(x => x.IsEnvironmentVariableValueTrue(MavenWithFallbackDetector.DisableMvnCliEnvVar))
+            .Returns(false);
 
         // Act
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
