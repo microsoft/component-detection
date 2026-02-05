@@ -72,14 +72,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     /// </summary>
     internal const string DisableMvnCliEnvVar = "CD_MAVEN_DISABLE_CLI";
 
-    /// <summary>
-    /// Environment variable to enable this detector and disable MvnCliComponentDetector.
-    /// Set to "true" to use this detector instead of MvnCliComponentDetector.
-    /// Usage: Set CD_USE_MAVEN_FALLBACK_DETECTOR=true as a pipeline/environment variable.
-    /// When set, this detector will fully run (including Maven CLI) and MvnCliComponentDetector will be disabled.
-    /// </summary>
-    internal const string UseFallbackDetectorEnvVar = "CD_USE_MAVEN_FALLBACK_DETECTOR";
-
     private const string MavenManifest = "pom.xml";
 
     /// <summary>
@@ -131,6 +123,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private readonly ConcurrentBag<string> mavenCliErrors = [];
     private readonly ConcurrentBag<string> failedEndpoints = [];
 
+    // Temporary Maven local repository for this detector to avoid conflicts with MvnCliComponentDetector
+    private string tempMavenLocalRepository;
+
     // Telemetry tracking
     private MavenDetectionMethod usedDetectionMethod = MavenDetectionMethod.None;
     private MavenFallbackReason fallbackReason = MavenFallbackReason.None;
@@ -176,31 +171,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
-        // Check if user explicitly enabled this detector via environment variable.
-        // When CD_USE_MAVEN_FALLBACK_DETECTOR=true, this detector fully runs (including Maven CLI)
-        // and MvnCliComponentDetector is disabled, avoiding race conditions.
-        var useFallbackDetector = this.envVarService.DoesEnvironmentVariableExist(UseFallbackDetectorEnvVar) &&
-            bool.TryParse(this.envVarService.GetEnvironmentVariable(UseFallbackDetectorEnvVar), out var useFallback) &&
-            useFallback;
-
-        if (!useFallbackDetector)
-        {
-            // While this detector is experimental (IExperimentalDetector), it runs alongside
-            // the standard MvnCliComponentDetector. To avoid race conditions where both detectors
-            // try to invoke Maven CLI simultaneously (causing file locking issues in .m2/repository),
-            // we skip Maven CLI execution and use static parsing only.
-            // Set CD_USE_MAVEN_FALLBACK_DETECTOR=true to fully enable this detector.
-            this.LogInfo($"MavenWithFallbackDetector is experimental and running alongside MvnCliComponentDetector. Using static pom.xml parsing only to avoid race conditions. Set {UseFallbackDetectorEnvVar}=true to fully enable this detector.");
-            this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
-            this.fallbackReason = MavenFallbackReason.None;
-            this.mavenCliAvailable = false;
-
-            // Return original pom.xml files for static parsing
-            return processRequests;
-        }
-
-        this.LogInfo($"{UseFallbackDetectorEnvVar}=true detected. This detector is fully enabled and MvnCliComponentDetector is disabled.");
-
         // Check if user explicitly disabled MvnCli detection via environment variable
         if (this.envVarService.DoesEnvironmentVariableExist(DisableMvnCliEnvVar) &&
             bool.TryParse(this.envVarService.GetEnvironmentVariable(DisableMvnCliEnvVar), out var disableMvnCli) &&
@@ -229,6 +199,12 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         this.LogDebug("Maven CLI is available. Running MvnCli detection.");
 
+        // Create a temporary Maven local repository for this detector to avoid file locking conflicts
+        // with MvnCliComponentDetector which uses the default ~/.m2/repository
+        this.tempMavenLocalRepository = Path.Combine(Path.GetTempPath(), $"maven-fallback-detector-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(this.tempMavenLocalRepository);
+        this.LogDebug($"Using temporary Maven local repository: {this.tempMavenLocalRepository}");
+
         // Track pom.xml directories for later comparison
         var pomFileDirectories = new ConcurrentDictionary<string, ProcessRequest>(StringComparer.OrdinalIgnoreCase);
 
@@ -242,9 +218,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             var pomDir = Path.GetDirectoryName(processRequest.ComponentStream.Location);
             pomFileDirectories.TryAdd(pomDir, processRequest);
 
-            // Generate dependency file using Maven CLI with our custom filename
-            // to avoid conflicts with MvnCliComponentDetector which uses bcde.mvndeps
-            var result = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, BcdeMvnDepsFileName, cancellationToken);
+            // Generate dependency file using Maven CLI with our custom filename and separate local repository
+            // to avoid conflicts with MvnCliComponentDetector which uses bcde.mvndeps and default .m2/repository
+            var result = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, BcdeMvnDepsFileName, this.tempMavenLocalRepository, cancellationToken);
 
             // Capture error output for later analysis
             if (!result.Success && !string.IsNullOrWhiteSpace(result.ErrorOutput))
@@ -355,6 +331,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
     protected override Task OnDetectionFinishedAsync()
     {
+        // Clean up temporary Maven local repository
+        this.CleanupTempMavenRepository();
+
         // Record telemetry
         this.Telemetry["DetectionMethod"] = this.usedDetectionMethod.ToString();
         this.Telemetry["FallbackReason"] = this.fallbackReason.ToString();
@@ -375,6 +354,32 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                      $"Static parser components: {this.staticParserComponentCount}");
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Cleans up the temporary Maven local repository created for this detector.
+    /// </summary>
+    private void CleanupTempMavenRepository()
+    {
+        if (string.IsNullOrEmpty(this.tempMavenLocalRepository))
+        {
+            return;
+        }
+
+        try
+        {
+            if (Directory.Exists(this.tempMavenLocalRepository))
+            {
+                this.LogDebug($"Cleaning up temporary Maven local repository: {this.tempMavenLocalRepository}");
+                Directory.Delete(this.tempMavenLocalRepository, recursive: true);
+                this.LogDebug("Temporary Maven local repository cleaned up successfully.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log but don't fail detection if cleanup fails
+            this.LogWarning($"Failed to clean up temporary Maven local repository: {ex.Message}");
+        }
     }
 
     /// <summary>

@@ -50,6 +50,11 @@ public class MavenCommandService : IMavenCommandService
 
     public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken = default)
     {
+        return await this.GenerateDependenciesFileAsync(processRequest, outputFileName, localRepositoryPath: null, cancellationToken);
+    }
+
+    public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, string localRepositoryPath, CancellationToken cancellationToken = default)
+    {
         var cliFileTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var timeoutSeconds = -1;
         if (this.envVarService.DoesEnvironmentVariableExist(MvnCLIFileLevelTimeoutSecondsEnvVar)
@@ -63,7 +68,10 @@ public class MavenCommandService : IMavenCommandService
         var pomFile = processRequest.ComponentStream;
         this.logger.LogDebug("{DetectorPrefix}: Running \"dependency:tree\" on {PomFileLocation}", DetectorLogPrefix, pomFile.Location);
 
-        var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={outputFileName}", "-DoutputType=text", $"-f{pomFile.Location}" };
+        // Build CLI parameters - add custom local repository if specified
+        string[] cliParameters = string.IsNullOrEmpty(localRepositoryPath)
+            ? ["dependency:tree", "-B", $"-DoutputFile={outputFileName}", "-DoutputType=text", $"-f{pomFile.Location}"]
+            : ["dependency:tree", "-B", $"-DoutputFile={outputFileName}", "-DoutputType=text", $"-f{pomFile.Location}", $"-Dmaven.repo.local={localRepositoryPath}"];
 
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, AdditionalValidCommands, cancellationToken: cliFileTimeout.Token, cliParameters);
 
