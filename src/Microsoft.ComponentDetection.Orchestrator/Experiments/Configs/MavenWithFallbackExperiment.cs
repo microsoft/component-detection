@@ -20,5 +20,15 @@ public class MavenWithFallbackExperiment : IExperimentConfiguration
     public bool IsInExperimentGroup(IComponentDetector componentDetector) => componentDetector is MavenWithFallbackDetector;
 
     /// <inheritdoc />
-    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents) => numComponents > 0;
+    public bool ShouldRecord(IComponentDetector componentDetector, int numComponents)
+    {
+        // Only record telemetry if a Maven detector found components,
+        // indicating Maven projects were detected and scanned.
+        if (componentDetector is MvnCliComponentDetector or MavenWithFallbackDetector)
+        {
+            return numComponents > 0;
+        }
+
+        return true;
+    }
 }
