@@ -97,7 +97,16 @@ public class MavenCommandService : IMavenCommandService
         else
         {
             this.logger.LogDebug("{DetectorPrefix}: Execution of \"dependency:tree\" on {PomFileLocation} completed successfully", DetectorLogPrefix, pomFile.Location);
-            return new MavenCliResult(true, null);
+
+            // Read the generated dependencies file and return its content
+            var depsFilePath = Path.Combine(Path.GetDirectoryName(pomFile.Location), outputFileName);
+            string depsFileContent = null;
+            if (File.Exists(depsFilePath))
+            {
+                depsFileContent = await File.ReadAllTextAsync(depsFilePath, cancellationToken);
+            }
+
+            return new MavenCliResult(true, null, depsFileContent);
         }
     }
 

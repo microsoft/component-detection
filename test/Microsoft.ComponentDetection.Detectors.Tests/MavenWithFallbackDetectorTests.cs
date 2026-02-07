@@ -18,7 +18,7 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallbackDetector>
 {
-    private const string BcdeMvnFileName = "bcde-fallback.mvndeps";
+    private const string BcdeMvnFileName = "bcde.mvndeps";
 
     private readonly Mock<IMavenCommandService> mavenCommandServiceMock;
     private readonly Mock<IEnvironmentVariableService> envVarServiceMock;
@@ -552,6 +552,10 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
+        // Setup GenerateDependenciesFileAsync to return content so CLI is considered successful
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(true, null, componentString));
+
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
             {
@@ -566,7 +570,6 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         // Act
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("pom.xml", componentString)
-            .WithFile("pom.xml", componentString, searchPatterns: [BcdeMvnFileName])
             .ExecuteDetectorAsync();
 
         // Assert
@@ -621,6 +624,10 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
+        // Setup GenerateDependenciesFileAsync to return content so CLI is considered successful
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(true, null, "com.test:parent-app:jar:1.0.0"));
+
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
             {
@@ -665,7 +672,6 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("pom.xml", rootPomContent)
             .WithFile("module-a/pom.xml", moduleAPomContent)
-            .WithFile("bcde-fallback.mvndeps", "com.test:parent-app:jar:1.0.0", searchPatterns: [BcdeMvnFileName])
             .ExecuteDetectorAsync();
 
         // Assert
@@ -677,7 +683,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
         // MvnCli should only be called once for root pom.xml (nested filtered out)
         this.mavenCommandServiceMock.Verify(
-            x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -774,9 +780,18 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
-        // MvnCli runs but only produces output for projectA (projectB fails)
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MavenCliResult(true, null));
+        // MvnCli runs: projectA succeeds (returns content), projectB fails (returns no content)
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ProcessRequest pr, string _, CancellationToken _) =>
+            {
+                if (pr.ComponentStream.Location.Contains("projectA"))
+                {
+                    return new MavenCliResult(true, null, "com.projecta:app-a:jar:1.0.0");
+                }
+
+                // projectB fails - no content returned
+                return new MavenCliResult(true, null);
+            });
 
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
@@ -848,13 +863,12 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
     </dependencies>
 </project>";
 
-        // Act - projectA gets bcde-fallback.mvndeps, projectB does not
+        // Act - projectA gets bcde-fallback.mvndeps (via mock), projectB does not
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("projectA/pom.xml", projectAPomContent)
             .WithFile("projectA/module-a1/pom.xml", projectAModulePomContent)
             .WithFile("projectB/pom.xml", projectBPomContent)
             .WithFile("projectB/module-b1/pom.xml", projectBModulePomContent)
-            .WithFile("projectA/bcde-fallback.mvndeps", "com.projecta:app-a:jar:1.0.0", searchPatterns: [BcdeMvnFileName])
             .ExecuteDetectorAsync();
 
         // Assert
@@ -898,7 +912,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             "Could not transfer artifact com.private:private-lib:pom:2.0.0 from/to private-repo (https://private-maven-repo.example.com/repository/maven-releases/): " +
             "status code: 401, reason phrase: Unauthorized";
 
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(false, authErrorMessage));
 
         var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
@@ -952,7 +966,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         var nonAuthErrorMessage = "[ERROR] Failed to execute goal on project my-app: Compilation failure: " +
             "src/main/java/com/test/App.java:[10,5] cannot find symbol";
 
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(false, nonAuthErrorMessage));
 
         var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
@@ -995,12 +1009,12 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
-        // Setup for 4-parameter version (with custom local repository)
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MavenCliResult(true, null));
+        // Setup for 3-parameter version (used by MavenWithFallbackDetector)
+        // Return content in DependenciesFileContent so the detector can create a MemoryStream from it
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(true, null, content));
 
-        this.DetectorTestUtility
-            .WithFile("pom.xml", content)
-            .WithFile("pom.xml", content, searchPatterns: [BcdeMvnFileName]);
+        // Only need to create a pom.xml file - the deps file content comes from the mock result
+        this.DetectorTestUtility.WithFile("pom.xml", content);
     }
 }
