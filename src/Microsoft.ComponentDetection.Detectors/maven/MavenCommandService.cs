@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,19 @@ public class MavenCommandService : IMavenCommandService
     internal const string MvnVersionArgument = "--version";
 
     internal static readonly string[] AdditionalValidCommands = ["mvn.cmd"];
+
+    /// <summary>
+    /// Per-location semaphores to prevent concurrent Maven CLI executions for the same pom.xml.
+    /// This allows multiple detectors (e.g., MvnCliComponentDetector and MavenWithFallbackDetector)
+    /// to safely share the same output file without race conditions.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> locationLocks = new();
+
+    /// <summary>
+    /// Tracks locations where dependency generation has completed successfully.
+    /// Used to skip duplicate executions when multiple detectors process the same pom.xml.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, MavenCliResult> completedLocations = new();
 
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IMavenStyleDependencyGraphParserService parserService;
@@ -54,6 +68,36 @@ public class MavenCommandService : IMavenCommandService
     }
 
     public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, string localRepositoryPath, CancellationToken cancellationToken = default)
+    {
+        var pomFile = processRequest.ComponentStream;
+
+        // Use semaphore to prevent concurrent Maven CLI executions for the same pom.xml.
+        // This allows MvnCliComponentDetector and MavenWithFallbackDetector to safely share the output file.
+        // Note: We don't pass the cancellation token to WaitAsync so that we can still check the cache
+        // even if cancellation is requested. The cancellation will be honored during the actual CLI execution.
+        var semaphore = this.locationLocks.GetOrAdd(pomFile.Location, _ => new SemaphoreSlim(1, 1));
+
+        await semaphore.WaitAsync(CancellationToken.None);
+        try
+        {
+            // Check if another detector already generated the deps file for this location
+            if (this.completedLocations.TryGetValue(pomFile.Location, out var cachedResult))
+            {
+                this.logger.LogDebug("{DetectorPrefix}: Skipping duplicate \"dependency:tree\" for {PomFileLocation}, already generated", DetectorLogPrefix, pomFile.Location);
+                return cachedResult;
+            }
+
+            var result = await this.GenerateDependenciesFileCoreAsync(processRequest, outputFileName, localRepositoryPath, cancellationToken);
+            this.completedLocations.TryAdd(pomFile.Location, result);
+            return result;
+        }
+        finally
+        {
+            semaphore.Release();
+        }
+    }
+
+    private async Task<MavenCliResult> GenerateDependenciesFileCoreAsync(ProcessRequest processRequest, string outputFileName, string localRepositoryPath, CancellationToken cancellationToken)
     {
         var cliFileTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var timeoutSeconds = -1;

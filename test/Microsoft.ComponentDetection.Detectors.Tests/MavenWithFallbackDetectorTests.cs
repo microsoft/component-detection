@@ -18,6 +18,10 @@ using Moq;
 [TestCategory("Governance/ComponentDetection")]
 public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallbackDetector>
 {
+    /// <summary>
+    /// The shared deps filename used by MavenCommandService.
+    /// Must match BcdeMvnDependencyFileName from MavenCommandService.
+    /// </summary>
     private const string BcdeMvnFileName = "bcde.mvndeps";
 
     private readonly Mock<IMavenCommandService> mavenCommandServiceMock;
@@ -849,7 +853,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
             {
-                // Only register components for projectA's bcde-fallback.mvndeps
+                // Only register components for projectA's bcde.mvndeps
                 if (pr.ComponentStream.Location.Contains("projectA"))
                 {
                     pr.SingleFileComponentRecorder.RegisterUsage(

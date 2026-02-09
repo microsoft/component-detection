@@ -76,6 +76,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private const string MavenXmlNamespace = "http://maven.apache.org/POM/4.0.0";
     private const string ProjNamespace = "proj";
     private const string DependencyNode = "//proj:dependency";
+
     private const string GroupIdSelector = "groupId";
     private const string ArtifactIdSelector = "artifactId";
     private const string VersionSelector = "version";
