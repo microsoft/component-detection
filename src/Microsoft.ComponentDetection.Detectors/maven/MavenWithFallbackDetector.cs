@@ -274,9 +274,11 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         var cliSuccessCount = 0;
         var cliFailureCount = 0;
 
-        // Use unbounded parallelism to match MvnCliComponentDetector behavior.
-        // Maven CLI invocations are I/O bound and benefit from parallel execution.
-        var processPomFile = new ActionBlock<ProcessRequest>(async processRequest =>
+        // Process pom.xml files sequentially to match MvnCliComponentDetector behavior.
+        // Sequential execution avoids Maven local repository lock contention and
+        // reduces memory pressure from concurrent Maven JVM processes.
+        var processPomFile = new ActionBlock<ProcessRequest>(
+            async processRequest =>
         {
             // Store original pom.xml for telemetry
             this.originalPomFiles.Add(processRequest);

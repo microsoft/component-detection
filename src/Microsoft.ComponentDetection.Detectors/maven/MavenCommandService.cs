@@ -65,6 +65,8 @@ public class MavenCommandService : IMavenCommandService
     public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken = default)
     {
         var pomFile = processRequest.ComponentStream;
+        var pomDir = Path.GetDirectoryName(pomFile.Location);
+        var depsFilePath = Path.Combine(pomDir, outputFileName);
 
         // Use semaphore to prevent concurrent Maven CLI executions for the same pom.xml.
         // This allows MvnCliComponentDetector and MavenWithFallbackDetector to safely share the output file.
@@ -75,15 +77,25 @@ public class MavenCommandService : IMavenCommandService
         await semaphore.WaitAsync(CancellationToken.None);
         try
         {
-            // Check if another detector already generated the deps file for this location
-            if (this.completedLocations.TryGetValue(pomFile.Location, out var cachedResult))
+            // Check if another detector already generated the deps file for this location.
+            // Also verify the file still exists - a previous consumer may have deleted it.
+            if (this.completedLocations.TryGetValue(pomFile.Location, out var cachedResult)
+                && cachedResult.Success
+                && File.Exists(depsFilePath))
             {
                 this.logger.LogDebug("{DetectorPrefix}: Skipping duplicate \"dependency:tree\" for {PomFileLocation}, already generated", DetectorLogPrefix, pomFile.Location);
                 return cachedResult;
             }
 
             var result = await this.GenerateDependenciesFileCoreAsync(processRequest, outputFileName, cancellationToken);
-            this.completedLocations.TryAdd(pomFile.Location, result);
+
+            // Only cache successful results. Failed results should allow retries for transient failures,
+            // and caching them would waste memory since the cache check requires Success == true anyway.
+            if (result.Success)
+            {
+                this.completedLocations[pomFile.Location] = result;
+            }
+
             return result;
         }
         finally
