@@ -33,12 +33,8 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock = new Mock<IMavenCommandService>();
         this.mavenCommandServiceMock.Setup(x => x.BcdeMvnDependencyFileName).Returns(BcdeMvnFileName);
 
-        // Default setup for GenerateDependenciesFileAsync (3-parameter version for backwards compatibility)
+        // Default setup for GenerateDependenciesFileAsync
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MavenCliResult(true, null));
-
-        // Default setup for GenerateDependenciesFileAsync (4-parameter version with custom local repository)
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         this.DetectorTestUtility.AddServiceMock(this.mavenCommandServiceMock);
@@ -556,7 +552,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .Returns(false);
 
         // Act
-        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+        var (detectorResult, _) = await this.DetectorTestUtility
             .WithFile("pom.xml", validPomXml)
             .ExecuteDetectorAsync();
 
@@ -602,7 +598,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .Returns(false);
 
         // Act
-        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+        var (detectorResult, _) = await this.DetectorTestUtility
             .WithFile("pom.xml", componentString)
             .ExecuteDetectorAsync();
 
@@ -655,7 +651,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .Returns(false);
 
         // Act
-        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+        var (detectorResult, _) = await this.DetectorTestUtility
             .WithFile("pom.xml", validPomXml)
             .ExecuteDetectorAsync();
 
@@ -1061,7 +1057,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         detectorResult.AdditionalTelemetryDetails.Should().NotContainKey("FailedEndpoints");
     }
 
-    private void SetupMvnCliSuccess(string content)
+    private void SetupMvnCliSuccess(string depsFileContent)
     {
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
@@ -1075,9 +1071,19 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.fileUtilityServiceMock.Setup(x => x.Exists(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
             .Returns(true);
         this.fileUtilityServiceMock.Setup(x => x.ReadAllText(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
-            .Returns(content);
+            .Returns(depsFileContent);
 
-        // Only need to create a pom.xml file - the deps file content comes from the mock file service
-        this.DetectorTestUtility.WithFile("pom.xml", content);
+        // Use a valid minimal pom.xml - the actual content doesn't matter for MvnCli success path
+        // since components come from the mocked ParseDependenciesFile, but using valid XML
+        // makes the test more robust against future changes that might read/validate the pom.
+        const string validPomXml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>test-app</artifactId>
+    <version>1.0.0</version>
+</project>";
+
+        this.DetectorTestUtility.WithFile("pom.xml", validPomXml);
     }
 }

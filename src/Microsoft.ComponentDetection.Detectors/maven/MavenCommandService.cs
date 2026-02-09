@@ -64,11 +64,6 @@ public class MavenCommandService : IMavenCommandService
 
     public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken = default)
     {
-        return await this.GenerateDependenciesFileAsync(processRequest, outputFileName, localRepositoryPath: null, cancellationToken);
-    }
-
-    public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, string localRepositoryPath, CancellationToken cancellationToken = default)
-    {
         var pomFile = processRequest.ComponentStream;
 
         // Use semaphore to prevent concurrent Maven CLI executions for the same pom.xml.
@@ -87,7 +82,7 @@ public class MavenCommandService : IMavenCommandService
                 return cachedResult;
             }
 
-            var result = await this.GenerateDependenciesFileCoreAsync(processRequest, outputFileName, localRepositoryPath, cancellationToken);
+            var result = await this.GenerateDependenciesFileCoreAsync(processRequest, outputFileName, cancellationToken);
             this.completedLocations.TryAdd(pomFile.Location, result);
             return result;
         }
@@ -97,7 +92,7 @@ public class MavenCommandService : IMavenCommandService
         }
     }
 
-    private async Task<MavenCliResult> GenerateDependenciesFileCoreAsync(ProcessRequest processRequest, string outputFileName, string localRepositoryPath, CancellationToken cancellationToken)
+    private async Task<MavenCliResult> GenerateDependenciesFileCoreAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken)
     {
         var cliFileTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var timeoutSeconds = -1;
@@ -112,10 +107,7 @@ public class MavenCommandService : IMavenCommandService
         var pomFile = processRequest.ComponentStream;
         this.logger.LogDebug("{DetectorPrefix}: Running \"dependency:tree\" on {PomFileLocation}", DetectorLogPrefix, pomFile.Location);
 
-        // Build CLI parameters - add custom local repository if specified
-        string[] cliParameters = string.IsNullOrEmpty(localRepositoryPath)
-            ? ["dependency:tree", "-B", $"-DoutputFile={outputFileName}", "-DoutputType=text", $"-f{pomFile.Location}"]
-            : ["dependency:tree", "-B", $"-DoutputFile={outputFileName}", "-DoutputType=text", $"-f{pomFile.Location}", $"-Dmaven.repo.local={localRepositoryPath}"];
+        string[] cliParameters = ["dependency:tree", "-B", $"-DoutputFile={outputFileName}", "-DoutputType=text", $"-f{pomFile.Location}"];
 
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, AdditionalValidCommands, cancellationToken: cliFileTimeout.Token, cliParameters);
 

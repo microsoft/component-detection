@@ -516,8 +516,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
     private void ProcessMvnCliResult(ProcessRequest processRequest)
     {
-        var initialCount = this.ComponentRecorder.GetDetectedComponents().Count();
-
         this.mavenCommandService.ParseDependenciesFile(processRequest);
 
         // Try to delete the deps file
@@ -530,8 +528,10 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             // Ignore deletion errors
         }
 
-        var newCount = this.ComponentRecorder.GetDetectedComponents().Count();
-        Interlocked.Add(ref this.mvnCliComponentCount, newCount - initialCount);
+        // Count components registered to this specific file's recorder to avoid race conditions
+        // when OnFileFoundAsync runs concurrently for multiple files.
+        var componentsInFile = processRequest.SingleFileComponentRecorder.GetDetectedComponents().Count;
+        Interlocked.Add(ref this.mvnCliComponentCount, componentsInFile);
     }
 
     private void ProcessPomFileStatically(ProcessRequest processRequest)
