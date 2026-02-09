@@ -273,6 +273,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         var cliSuccessCount = 0;
         var cliFailureCount = 0;
 
+        // Use unbounded parallelism to match MvnCliComponentDetector behavior.
+        // Maven CLI invocations are I/O bound and benefit from parallel execution.
         var processPomFile = new ActionBlock<ProcessRequest>(async processRequest =>
         {
             // Store original pom.xml for telemetry
@@ -374,6 +376,11 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     {
         this.LogDebug($"Scanning for pom.xml files in {directories.Count} failed directories for static parsing fallback.");
 
+        // Normalize directories once for efficient lookup
+        var normalizedDirs = directories
+            .Select(d => d.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar)
+            .ToList();
+
         return this.ComponentStreamEnumerableFactory
             .GetComponentStreams(
                 this.CurrentScanRequest.SourceDirectory,
@@ -382,11 +389,13 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             .Where(componentStream =>
             {
                 var fileDir = Path.GetDirectoryName(componentStream.Location);
+                var normalizedFileDir = fileDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
 
                 // Include if this file is in or under any failed directory
-                return directories.Any(fd =>
-                    fileDir.Equals(fd, StringComparison.OrdinalIgnoreCase) ||
-                    fileDir.StartsWith(fd + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+                // Use pre-normalized directories for efficient comparison
+                return normalizedDirs.Any(fd =>
+                    normalizedFileDir.Equals(fd, StringComparison.OrdinalIgnoreCase) ||
+                    normalizedFileDir.StartsWith(fd, StringComparison.OrdinalIgnoreCase));
             })
             .Select(componentStream =>
             {
