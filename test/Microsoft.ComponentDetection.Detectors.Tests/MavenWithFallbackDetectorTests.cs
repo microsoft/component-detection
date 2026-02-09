@@ -519,9 +519,26 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
     {
         // Arrange - Maven CLI is available and CD_MAVEN_DISABLE_CLI is false
         const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
+        const string validPomXml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>test-app</artifactId>
+    <version>1.0.0</version>
+</project>";
 
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
+
+        // Setup GenerateDependenciesFileAsync to return success
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(true, null));
+
+        // Setup file utility to return the deps file content
+        this.fileUtilityServiceMock.Setup(x => x.Exists(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns(true);
+        this.fileUtilityServiceMock.Setup(x => x.ReadAllText(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns(componentString);
 
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
@@ -535,9 +552,8 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .Returns(false);
 
         // Act
-        var (detectorResult, _) = await this.DetectorTestUtility
-            .WithFile("pom.xml", componentString)
-            .WithFile("pom.xml", componentString, searchPatterns: [BcdeMvnFileName])
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", validPomXml)
             .ExecuteDetectorAsync();
 
         // Assert
@@ -545,6 +561,10 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
         // Should use MvnCli since CD_MAVEN_DISABLE_CLI is false
         this.mavenCommandServiceMock.Verify(x => x.MavenCLIExistsAsync(), Times.Once);
+
+        // Verify telemetry shows MvnCliOnly detection method
+        detectorResult.AdditionalTelemetryDetails.Should().ContainKey("DetectionMethod");
+        detectorResult.AdditionalTelemetryDetails["DetectionMethod"].Should().Be("MvnCliOnly");
     }
 
     [TestMethod]
@@ -598,9 +618,26 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
     {
         // Arrange - Maven CLI is available and CD_MAVEN_DISABLE_CLI is set to an invalid (non-boolean) value
         const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
+        const string validPomXml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>test-app</artifactId>
+    <version>1.0.0</version>
+</project>";
 
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
+
+        // Setup GenerateDependenciesFileAsync to return success
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(true, null));
+
+        // Setup file utility to return the deps file content
+        this.fileUtilityServiceMock.Setup(x => x.Exists(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns(true);
+        this.fileUtilityServiceMock.Setup(x => x.ReadAllText(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns(componentString);
 
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
@@ -614,9 +651,8 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .Returns(false);
 
         // Act
-        var (detectorResult, _) = await this.DetectorTestUtility
-            .WithFile("pom.xml", componentString)
-            .WithFile("pom.xml", componentString, searchPatterns: [BcdeMvnFileName])
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", validPomXml)
             .ExecuteDetectorAsync();
 
         // Assert
@@ -624,6 +660,10 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
         // Should use MvnCli since the env var value is invalid (bool.TryParse fails)
         this.mavenCommandServiceMock.Verify(x => x.MavenCLIExistsAsync(), Times.Once);
+
+        // Verify telemetry shows MvnCliOnly detection method
+        detectorResult.AdditionalTelemetryDetails.Should().ContainKey("DetectionMethod");
+        detectorResult.AdditionalTelemetryDetails["DetectionMethod"].Should().Be("MvnCliOnly");
     }
 
     [TestMethod]
