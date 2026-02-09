@@ -22,6 +22,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
     private readonly Mock<IMavenCommandService> mavenCommandServiceMock;
     private readonly Mock<IEnvironmentVariableService> envVarServiceMock;
+    private readonly Mock<IFileUtilityService> fileUtilityServiceMock;
 
     public MavenWithFallbackDetectorTests()
     {
@@ -40,6 +41,9 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
         this.envVarServiceMock = new Mock<IEnvironmentVariableService>();
         this.DetectorTestUtility.AddServiceMock(this.envVarServiceMock);
+
+        this.fileUtilityServiceMock = new Mock<IFileUtilityService>();
+        this.DetectorTestUtility.AddServiceMock(this.fileUtilityServiceMock);
     }
 
     [TestMethod]
@@ -552,9 +556,15 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
-        // Setup GenerateDependenciesFileAsync to return content so CLI is considered successful
+        // Setup GenerateDependenciesFileAsync to return success
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MavenCliResult(true, null, componentString));
+            .ReturnsAsync(new MavenCliResult(true, null));
+
+        // Setup file utility to return the deps file content
+        this.fileUtilityServiceMock.Setup(x => x.Exists(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns(true);
+        this.fileUtilityServiceMock.Setup(x => x.ReadAllText(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns(componentString);
 
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
@@ -624,9 +634,15 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
-        // Setup GenerateDependenciesFileAsync to return content so CLI is considered successful
+        // Setup GenerateDependenciesFileAsync to return success
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MavenCliResult(true, null, "com.test:parent-app:jar:1.0.0"));
+            .ReturnsAsync(new MavenCliResult(true, null));
+
+        // Setup file utility to return the deps file content
+        this.fileUtilityServiceMock.Setup(x => x.Exists(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns(true);
+        this.fileUtilityServiceMock.Setup(x => x.ReadAllText(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns("com.test:parent-app:jar:1.0.0");
 
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
@@ -780,18 +796,15 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
-        // MvnCli runs: projectA succeeds (returns content), projectB fails (returns no content)
+        // MvnCli runs: projectA succeeds, projectB fails
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((ProcessRequest pr, string _, CancellationToken _) =>
-            {
-                if (pr.ComponentStream.Location.Contains("projectA"))
-                {
-                    return new MavenCliResult(true, null, "com.projecta:app-a:jar:1.0.0");
-                }
+            .ReturnsAsync(new MavenCliResult(true, null));
 
-                // projectB fails - no content returned
-                return new MavenCliResult(true, null);
-            });
+        // Setup file utility: projectA has deps file, projectB does not
+        this.fileUtilityServiceMock.Setup(x => x.Exists(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns((string path) => path.Contains("projectA"));
+        this.fileUtilityServiceMock.Setup(x => x.ReadAllText(It.Is<string>(s => s.EndsWith(BcdeMvnFileName) && s.Contains("projectA"))))
+            .Returns("com.projecta:app-a:jar:1.0.0");
 
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
@@ -1010,11 +1023,17 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // Setup for 3-parameter version (used by MavenWithFallbackDetector)
-        // Return content in DependenciesFileContent so the detector can create a MemoryStream from it
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new MavenCliResult(true, null, content));
+            .ReturnsAsync(new MavenCliResult(true, null));
 
-        // Only need to create a pom.xml file - the deps file content comes from the mock result
+        // Setup file utility service to return the deps file content
+        // The detector reads the file from disk after CLI succeeds
+        this.fileUtilityServiceMock.Setup(x => x.Exists(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns(true);
+        this.fileUtilityServiceMock.Setup(x => x.ReadAllText(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
+            .Returns(content);
+
+        // Only need to create a pom.xml file - the deps file content comes from the mock file service
         this.DetectorTestUtility.WithFile("pom.xml", content);
     }
 }

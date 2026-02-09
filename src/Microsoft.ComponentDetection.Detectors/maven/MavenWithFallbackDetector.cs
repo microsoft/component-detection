@@ -107,6 +107,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
     private readonly IMavenCommandService mavenCommandService;
     private readonly IEnvironmentVariableService envVarService;
+    private readonly IFileUtilityService fileUtilityService;
     private readonly Dictionary<string, XmlDocument> documentsLoaded = [];
 
     // Track original pom.xml files for potential fallback
@@ -128,12 +129,14 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         IObservableDirectoryWalkerFactory walkerFactory,
         IMavenCommandService mavenCommandService,
         IEnvironmentVariableService envVarService,
+        IFileUtilityService fileUtilityService,
         ILogger<MavenWithFallbackDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
         this.mavenCommandService = mavenCommandService;
         this.envVarService = envVarService;
+        this.fileUtilityService = fileUtilityService;
         this.Logger = logger;
     }
 
@@ -277,31 +280,50 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
             var pomFile = processRequest.ComponentStream;
             var pomDir = Path.GetDirectoryName(pomFile.Location);
+            var depsFileName = this.mavenCommandService.BcdeMvnDependencyFileName;
+            var depsFilePath = Path.Combine(pomDir, depsFileName);
 
             // Generate dependency file using Maven CLI.
-            // MavenCommandService uses semaphore coordination to prevent duplicate CLI runs
-            // if MvnCliComponentDetector is processing the same pom.xml concurrently.
+            // Note: If both MvnCliComponentDetector and this detector are enabled,
+            // they may run Maven CLI on the same pom.xml independently.
             var result = await this.mavenCommandService.GenerateDependenciesFileAsync(
                 processRequest,
-                this.mavenCommandService.BcdeMvnDependencyFileName,
+                depsFileName,
                 cancellationToken);
 
-            if (result.Success && !string.IsNullOrEmpty(result.DependenciesFileContent))
+            if (result.Success)
             {
-                // CLI succeeded - use the deps file content returned from MavenCommandService
-                Interlocked.Increment(ref cliSuccessCount);
-                var depsFileName = this.mavenCommandService.BcdeMvnDependencyFileName;
-                results.Add(new ProcessRequest
+                // CLI succeeded - read the generated deps file
+                // We read the file here (rather than in MavenCommandService) to avoid
+                // unnecessary I/O for callers like MvnCliComponentDetector that scan for files later.
+                string depsFileContent = null;
+                if (this.fileUtilityService.Exists(depsFilePath))
                 {
-                    ComponentStream = new ComponentStream
+                    depsFileContent = this.fileUtilityService.ReadAllText(depsFilePath);
+                }
+
+                if (!string.IsNullOrEmpty(depsFileContent))
+                {
+                    Interlocked.Increment(ref cliSuccessCount);
+                    results.Add(new ProcessRequest
                     {
-                        Stream = new MemoryStream(Encoding.UTF8.GetBytes(result.DependenciesFileContent)),
-                        Location = Path.Combine(pomDir, depsFileName),
-                        Pattern = depsFileName,
-                    },
-                    SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(
-                        Path.Combine(pomDir, MavenManifest)),
-                });
+                        ComponentStream = new ComponentStream
+                        {
+                            Stream = new MemoryStream(Encoding.UTF8.GetBytes(depsFileContent)),
+                            Location = depsFilePath,
+                            Pattern = depsFileName,
+                        },
+                        SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(
+                            Path.Combine(pomDir, MavenManifest)),
+                    });
+                }
+                else
+                {
+                    // CLI reported success but deps file is missing or empty - treat as failure
+                    Interlocked.Increment(ref cliFailureCount);
+                    failedDirectories.Add(pomDir);
+                    this.LogWarning($"Maven CLI succeeded but deps file not found or empty: {depsFilePath}");
+                }
             }
             else
             {
