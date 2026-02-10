@@ -265,11 +265,12 @@ public class MavenCommandServiceTests
         var pomLocation = Path.Combine(tempDir, "pom.xml");
         var depsFilePath = Path.Combine(tempDir, "bcde.mvndeps");
 
+        using var cliStartedEvent = new ManualResetEventSlim(false);
+        using var allowCliToCompleteEvent = new ManualResetEventSlim(false);
+
         try
         {
             var cliInvocationCount = 0;
-            var cliStartedEvent = new ManualResetEventSlim(false);
-            var allowCliToCompleteEvent = new ManualResetEventSlim(false);
 
             var bcdeMvnFileName = "bcde.mvndeps";
             var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
@@ -285,7 +286,7 @@ public class MavenCommandServiceTests
                     cliStartedEvent.Set();
 
                     // Simulate CLI execution time - wait until test allows completion
-                    allowCliToCompleteEvent.Wait(TimeSpan.FromSeconds(5));
+                    allowCliToCompleteEvent.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue("CLI should receive completion signal within timeout");
 
                     // Create the deps file (simulating what mvn does)
                     await File.WriteAllTextAsync(depsFilePath, "com.test:artifact:jar:1.0.0");
@@ -307,7 +308,7 @@ public class MavenCommandServiceTests
             var task2 = Task.Run(() => this.mavenCommandService.GenerateDependenciesFileAsync(processRequest2));
 
             // Wait for the first CLI call to start
-            cliStartedEvent.Wait(TimeSpan.FromSeconds(5));
+            cliStartedEvent.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue("CLI should start within timeout");
 
             // Allow the CLI to complete
             allowCliToCompleteEvent.Set();
@@ -329,8 +330,6 @@ public class MavenCommandServiceTests
             {
                 Directory.Delete(tempDir, recursive: true);
             }
-
-            this.mavenCommandService.ClearCache();
         }
     }
 
@@ -390,8 +389,6 @@ public class MavenCommandServiceTests
             {
                 Directory.Delete(tempDir, recursive: true);
             }
-
-            this.mavenCommandService.ClearCache();
         }
     }
 
@@ -422,22 +419,15 @@ public class MavenCommandServiceTests
             SingleFileComponentRecorder = new Mock<ISingleFileComponentRecorder>().Object,
         };
 
-        try
-        {
-            // Act: First call - should fail
-            var result1 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
-            result1.Success.Should().BeFalse();
-            cliInvocationCount.Should().Be(1);
+        // Act: First call - should fail
+        var result1 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
+        result1.Success.Should().BeFalse();
+        cliInvocationCount.Should().Be(1);
 
-            // Second call - should retry (not use cached failure)
-            var result2 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
-            result2.Success.Should().BeFalse();
-            cliInvocationCount.Should().Be(2, "failed results should not be cached, allowing retries");
-        }
-        finally
-        {
-            this.mavenCommandService.ClearCache();
-        }
+        // Second call - should retry (not use cached failure)
+        var result2 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
+        result2.Success.Should().BeFalse();
+        cliInvocationCount.Should().Be(2, "failed results should not be cached, allowing retries");
     }
 
     [TestMethod]
@@ -493,17 +483,7 @@ public class MavenCommandServiceTests
             {
                 Directory.Delete(tempDir, recursive: true);
             }
-
-            this.mavenCommandService.ClearCache();
         }
-    }
-
-    [TestMethod]
-    public void ClearCache_DisposesAndClearsResources()
-    {
-        // This test verifies ClearCache doesn't throw and can be called multiple times
-        this.mavenCommandService.ClearCache();
-        this.mavenCommandService.ClearCache(); // Should not throw on second call
     }
 
     protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)

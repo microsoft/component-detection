@@ -485,9 +485,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                      $"MvnCli components: {this.mvnCliComponentCount}, " +
                      $"Static parser components: {this.staticParserComponentCount}");
 
-        // Clear the Maven command service cache to prevent unbounded memory growth
-        this.mavenCommandService.ClearCache();
-
         return Task.CompletedTask;
     }
 

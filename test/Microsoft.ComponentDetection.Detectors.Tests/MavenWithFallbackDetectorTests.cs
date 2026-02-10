@@ -228,7 +228,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
-        // MvnCli runs but produces no bcde-fallback.mvndeps files (simulating failure)
+        // MvnCli runs but produces no bcde.mvndeps files (simulating failure)
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
@@ -733,7 +733,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 </project>";
 
         // Act - Add root pom.xml first, then nested module pom.xml
-        // The root should get MvnCli bcde-fallback.mvndeps, nested should be filtered
+        // The root should get MvnCli bcde.mvndeps, nested should be filtered
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("pom.xml", rootPomContent)
             .WithFile("module-a/pom.xml", moduleAPomContent)
@@ -759,7 +759,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
 
-        // MvnCli runs but produces no bcde-fallback.mvndeps files (simulating complete failure)
+        // MvnCli runs but produces no bcde.mvndeps files (simulating complete failure)
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
@@ -893,7 +893,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
     </dependencies>
 </project>";
 
-        // ProjectB - MvnCli will fail (no bcde-fallback.mvndeps generated)
+        // ProjectB - MvnCli will fail (no bcde.mvndeps generated)
         var projectBPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
 <project xmlns=""http://maven.apache.org/POM/4.0.0"">
     <groupId>com.projectb</groupId>
@@ -925,7 +925,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
     </dependencies>
 </project>";
 
-        // Act - projectA gets bcde-fallback.mvndeps (via mock), projectB does not
+        // Act - projectA gets bcde.mvndeps (via mock), projectB does not
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("projectA/pom.xml", projectAPomContent)
             .WithFile("projectA/module-a1/pom.xml", projectAModulePomContent)

@@ -159,16 +159,4 @@ public class MavenCommandService : IMavenCommandService
         var lines = sr.ReadToEnd().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
         this.parserService.Parse(lines, processRequest.SingleFileComponentRecorder);
     }
-
-    /// <inheritdoc />
-    public void ClearCache()
-    {
-        foreach (var semaphore in this.locationLocks.Values)
-        {
-            semaphore.Dispose();
-        }
-
-        this.locationLocks.Clear();
-        this.completedLocations.Clear();
-    }
 }
