@@ -293,7 +293,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             // they may run Maven CLI on the same pom.xml independently.
             var result = await this.mavenCommandService.GenerateDependenciesFileAsync(
                 processRequest,
-                depsFileName,
                 cancellationToken);
 
             if (result.Success)

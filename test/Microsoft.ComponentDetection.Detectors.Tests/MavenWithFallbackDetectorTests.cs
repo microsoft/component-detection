@@ -34,7 +34,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         this.mavenCommandServiceMock.Setup(x => x.BcdeMvnDependencyFileName).Returns(BcdeMvnFileName);
 
         // Default setup for GenerateDependenciesFileAsync
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         this.DetectorTestUtility.AddServiceMock(this.mavenCommandServiceMock);
@@ -220,7 +220,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // MvnCli runs but produces no bcde-fallback.mvndeps files (simulating failure)
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
@@ -531,7 +531,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // Setup GenerateDependenciesFileAsync to return success
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         // Setup file utility to return the deps file content
@@ -577,7 +577,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // Setup GenerateDependenciesFileAsync to return success
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         // Setup file utility to return the deps file content
@@ -630,7 +630,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // Setup GenerateDependenciesFileAsync to return success
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         // Setup file utility to return the deps file content
@@ -675,7 +675,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // Setup GenerateDependenciesFileAsync to return success
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         // Setup file utility to return the deps file content
@@ -739,7 +739,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 
         // MvnCli should only be called once for root pom.xml (nested filtered out)
         this.mavenCommandServiceMock.Verify(
-            x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -751,7 +751,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // MvnCli runs but produces no bcde-fallback.mvndeps files (simulating complete failure)
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         // Root pom.xml content
@@ -837,7 +837,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // MvnCli runs: projectA succeeds, projectB fails
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         // Setup file utility: projectA has deps file, projectB does not
@@ -965,7 +965,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             "Could not transfer artifact com.private:private-lib:pom:2.0.0 from/to private-repo (https://private-maven-repo.example.com/repository/maven-releases/): " +
             "status code: 401, reason phrase: Unauthorized";
 
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(false, authErrorMessage));
 
         var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
@@ -1019,7 +1019,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         var nonAuthErrorMessage = "[ERROR] Failed to execute goal on project my-app: Compilation failure: " +
             "src/main/java/com/test/App.java:[10,5] cannot find symbol";
 
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(false, nonAuthErrorMessage));
 
         var pomXmlContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
@@ -1063,7 +1063,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // Setup for 3-parameter version (used by MavenWithFallbackDetector)
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
 
         // Setup file utility service to return the deps file content

@@ -59,14 +59,9 @@ public class MavenCommandService : IMavenCommandService
 
     public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, CancellationToken cancellationToken = default)
     {
-        return await this.GenerateDependenciesFileAsync(processRequest, this.BcdeMvnDependencyFileName, cancellationToken);
-    }
-
-    public async Task<MavenCliResult> GenerateDependenciesFileAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken = default)
-    {
         var pomFile = processRequest.ComponentStream;
         var pomDir = Path.GetDirectoryName(pomFile.Location);
-        var depsFilePath = Path.Combine(pomDir, outputFileName);
+        var depsFilePath = Path.Combine(pomDir, this.BcdeMvnDependencyFileName);
 
         // Use semaphore to prevent concurrent Maven CLI executions for the same pom.xml.
         // This allows MvnCliComponentDetector and MavenWithFallbackDetector to safely share the output file.
@@ -87,7 +82,7 @@ public class MavenCommandService : IMavenCommandService
                 return cachedResult;
             }
 
-            var result = await this.GenerateDependenciesFileCoreAsync(processRequest, outputFileName, cancellationToken);
+            var result = await this.GenerateDependenciesFileCoreAsync(processRequest, cancellationToken);
 
             // Only cache successful results. Failed results should allow retries for transient failures,
             // and caching them would waste memory since the cache check requires Success == true anyway.
@@ -104,7 +99,7 @@ public class MavenCommandService : IMavenCommandService
         }
     }
 
-    private async Task<MavenCliResult> GenerateDependenciesFileCoreAsync(ProcessRequest processRequest, string outputFileName, CancellationToken cancellationToken)
+    private async Task<MavenCliResult> GenerateDependenciesFileCoreAsync(ProcessRequest processRequest, CancellationToken cancellationToken)
     {
         var cliFileTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var timeoutSeconds = -1;
@@ -119,7 +114,7 @@ public class MavenCommandService : IMavenCommandService
         var pomFile = processRequest.ComponentStream;
         this.logger.LogDebug("{DetectorPrefix}: Running \"dependency:tree\" on {PomFileLocation}", DetectorLogPrefix, pomFile.Location);
 
-        string[] cliParameters = ["dependency:tree", "-B", $"-DoutputFile={outputFileName}", "-DoutputType=text", $"-f{pomFile.Location}"];
+        string[] cliParameters = ["dependency:tree", "-B", $"-DoutputFile={this.BcdeMvnDependencyFileName}", "-DoutputType=text", $"-f{pomFile.Location}"];
 
         var result = await this.commandLineInvocationService.ExecuteCommandAsync(PrimaryCommand, AdditionalValidCommands, cancellationToken: cliFileTimeout.Token, cliParameters);
 
