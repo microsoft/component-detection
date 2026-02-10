@@ -73,7 +73,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, UvLockDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
-        services.AddSingleton<IExperimentConfiguration, MavenWithFallbackExperiment>();
 
         // Detectors
         // CocoaPods
