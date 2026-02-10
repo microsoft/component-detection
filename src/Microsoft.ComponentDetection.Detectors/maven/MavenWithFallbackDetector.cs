@@ -45,7 +45,7 @@ internal enum MavenFallbackReason
     /// <summary>No fallback was needed.</summary>
     None,
 
-    /// <summary>Maven CLI was explicitly disabled via detector argument.</summary>
+    /// <summary>Maven CLI was explicitly disabled via the CD_MAVEN_DISABLE_CLI environment variable.</summary>
     MvnCliDisabledByUser,
 
     /// <summary>Maven CLI was not available in PATH.</summary>
@@ -484,6 +484,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                      $"FallbackReason: {this.fallbackReason}, " +
                      $"MvnCli components: {this.mvnCliComponentCount}, " +
                      $"Static parser components: {this.staticParserComponentCount}");
+
+        // Clear the Maven command service cache to prevent unbounded memory growth
+        this.mavenCommandService.ClearCache();
 
         return Task.CompletedTask;
     }

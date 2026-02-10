@@ -210,6 +210,15 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         // Verify dependency graph has the transitive relationship
         var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
         dependencyGraph.Should().NotBeNull();
+
+        // Verify the transitive component is reachable from the direct dependency
+        var directComponentId = "org.apache.commons commons-lang3 3.12.0 - Maven";
+        var transitiveComponentId = "org.apache.commons commons-text 1.9 - Maven";
+
+        var directDependencies = dependencyGraph.GetDependenciesForComponent(directComponentId);
+        directDependencies.Should().Contain(
+            transitiveComponentId,
+            "the transitive dependency should be a child of the direct dependency");
     }
 
     [TestMethod]

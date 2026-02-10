@@ -102,6 +102,12 @@ public class MvnCliComponentDetector : FileComponentDetector
         await Task.CompletedTask;
     }
 
+    protected override Task OnDetectionFinishedAsync()
+    {
+        this.mavenCommandService.ClearCache();
+        return Task.CompletedTask;
+    }
+
     private IObservable<ProcessRequest> RemoveNestedPomXmls(IObservable<ProcessRequest> componentStreams)
     {
         var directoryItemFacades = new ConcurrentDictionary<string, DirectoryItemFacadeOptimized>(StringComparer.OrdinalIgnoreCase);

@@ -63,18 +63,26 @@ public class MavenCommandService : IMavenCommandService
         var pomDir = Path.GetDirectoryName(pomFile.Location);
         var depsFilePath = Path.Combine(pomDir, this.BcdeMvnDependencyFileName);
 
+        // Check the cache before acquiring the semaphore to allow fast-path returns
+        // even when cancellation has been requested.
+        if (this.completedLocations.TryGetValue(pomFile.Location, out var cachedResult)
+            && cachedResult.Success
+            && File.Exists(depsFilePath))
+        {
+            this.logger.LogDebug("{DetectorPrefix}: Skipping duplicate \"dependency:tree\" for {PomFileLocation}, already generated", DetectorLogPrefix, pomFile.Location);
+            return cachedResult;
+        }
+
         // Use semaphore to prevent concurrent Maven CLI executions for the same pom.xml.
         // This allows MvnCliComponentDetector and MavenWithFallbackDetector to safely share the output file.
-        // Note: We don't pass the cancellation token to WaitAsync so that we can still check the cache
-        // even if cancellation is requested. The cancellation will be honored during the actual CLI execution.
         var semaphore = this.locationLocks.GetOrAdd(pomFile.Location, _ => new SemaphoreSlim(1, 1));
 
-        await semaphore.WaitAsync(CancellationToken.None);
+        await semaphore.WaitAsync(cancellationToken);
         try
         {
-            // Check if another detector already generated the deps file for this location.
-            // Also verify the file still exists - a previous consumer may have deleted it.
-            if (this.completedLocations.TryGetValue(pomFile.Location, out var cachedResult)
+            // Re-check the cache after acquiring the semaphore in case another caller
+            // completed while we were waiting.
+            if (this.completedLocations.TryGetValue(pomFile.Location, out cachedResult)
                 && cachedResult.Success
                 && File.Exists(depsFilePath))
             {
@@ -150,5 +158,17 @@ public class MavenCommandService : IMavenCommandService
 
         var lines = sr.ReadToEnd().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
         this.parserService.Parse(lines, processRequest.SingleFileComponentRecorder);
+    }
+
+    /// <inheritdoc />
+    public void ClearCache()
+    {
+        foreach (var semaphore in this.locationLocks.Values)
+        {
+            semaphore.Dispose();
+        }
+
+        this.locationLocks.Clear();
+        this.completedLocations.Clear();
     }
 }
