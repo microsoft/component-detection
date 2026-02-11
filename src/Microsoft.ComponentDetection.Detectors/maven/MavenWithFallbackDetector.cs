@@ -280,6 +280,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         var processPomFile = new ActionBlock<ProcessRequest>(
             async processRequest =>
         {
+            // Check for cancellation before processing each pom.xml
+            cancellationToken.ThrowIfCancellationRequested();
+
             // Store original pom.xml for telemetry
             this.originalPomFiles.Add(processRequest);
 
@@ -343,10 +346,12 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             }
         });
 
-        await this.RemoveNestedPomXmls(processRequests).ForEachAsync(processRequest =>
-        {
-            processPomFile.Post(processRequest);
-        });
+        await this.RemoveNestedPomXmls(processRequests, cancellationToken).ForEachAsync(
+            processRequest =>
+            {
+                processPomFile.Post(processRequest);
+            },
+            cancellationToken);
 
         processPomFile.Complete();
         await processPomFile.Completion;
@@ -354,9 +359,15 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         // For failed directories, scan and add all pom.xml files for static parsing
         if (!failedDirectories.IsEmpty)
         {
-            var staticParsingRequests = this.GetAllPomFilesInDirectories(failedDirectories.ToHashSet(StringComparer.OrdinalIgnoreCase));
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var staticParsingRequests = this.GetAllPomFilesInDirectories(
+                failedDirectories.ToHashSet(StringComparer.OrdinalIgnoreCase),
+                cancellationToken);
+
             foreach (var request in staticParsingRequests)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 results.Add(request);
             }
         }
@@ -373,8 +384,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     /// Gets all pom.xml files in the specified directories and their subdirectories for static parsing.
     /// </summary>
     /// <param name="directories">The directories to scan for pom.xml files.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>ProcessRequests for all pom.xml files in the specified directories.</returns>
-    private IEnumerable<ProcessRequest> GetAllPomFilesInDirectories(HashSet<string> directories)
+    private List<ProcessRequest> GetAllPomFilesInDirectories(HashSet<string> directories, CancellationToken cancellationToken)
     {
         this.LogDebug($"Scanning for pom.xml files in {directories.Count} failed directories for static parsing fallback.");
 
@@ -383,38 +395,45 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             .Select(d => d.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar)
             .ToList();
 
-        return this.ComponentStreamEnumerableFactory
+        var results = new List<ProcessRequest>();
+
+        foreach (var componentStream in this.ComponentStreamEnumerableFactory
             .GetComponentStreams(
                 this.CurrentScanRequest.SourceDirectory,
                 [MavenManifest],
-                this.CurrentScanRequest.DirectoryExclusionPredicate)
-            .Where(componentStream =>
-            {
-                var fileDir = Path.GetDirectoryName(componentStream.Location);
-                var normalizedFileDir = fileDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                this.CurrentScanRequest.DirectoryExclusionPredicate))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
 
-                // Include if this file is in or under any failed directory
-                // Use pre-normalized directories for efficient comparison
-                return normalizedDirs.Any(fd =>
-                    normalizedFileDir.Equals(fd, StringComparison.OrdinalIgnoreCase) ||
-                    normalizedFileDir.StartsWith(fd, StringComparison.OrdinalIgnoreCase));
-            })
-            .Select(componentStream =>
+            var fileDir = Path.GetDirectoryName(componentStream.Location);
+            var normalizedFileDir = fileDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+
+            // Include if this file is in or under any failed directory
+            // Use pre-normalized directories for efficient comparison
+            var isInFailedDirectory = normalizedDirs.Any(fd =>
+                normalizedFileDir.Equals(fd, StringComparison.OrdinalIgnoreCase) ||
+                normalizedFileDir.StartsWith(fd, StringComparison.OrdinalIgnoreCase));
+
+            if (!isInFailedDirectory)
             {
-                using var reader = new StreamReader(componentStream.Stream);
-                var content = reader.ReadToEnd();
-                return new ProcessRequest
+                continue;
+            }
+
+            using var reader = new StreamReader(componentStream.Stream);
+            var content = reader.ReadToEnd();
+            results.Add(new ProcessRequest
+            {
+                ComponentStream = new ComponentStream
                 {
-                    ComponentStream = new ComponentStream
-                    {
-                        Stream = new MemoryStream(Encoding.UTF8.GetBytes(content)),
-                        Location = componentStream.Location,
-                        Pattern = MavenManifest,
-                    },
-                    SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(componentStream.Location),
-                };
-            })
-            .ToList();
+                    Stream = new MemoryStream(Encoding.UTF8.GetBytes(content)),
+                    Location = componentStream.Location,
+                    Pattern = MavenManifest,
+                },
+                SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(componentStream.Location),
+            });
+        }
+
+        return results;
     }
 
     /// <summary>
@@ -732,13 +751,16 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     /// A pom.xml is considered nested if there's another pom.xml in a parent directory.
     /// </summary>
     /// <param name="componentStreams">The incoming process requests for pom.xml files.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Process requests for only root-level pom.xml files.</returns>
-    private IObservable<ProcessRequest> RemoveNestedPomXmls(IObservable<ProcessRequest> componentStreams)
+    private IObservable<ProcessRequest> RemoveNestedPomXmls(IObservable<ProcessRequest> componentStreams, CancellationToken cancellationToken)
     {
         return componentStreams
             .ToList()
             .SelectMany(allRequests =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // Build a list of all directories that contain a pom.xml, ordered by path length (shortest first).
                 // This ensures parent directories are checked before their children.
                 var pomDirectories = allRequests
@@ -747,9 +769,14 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     .OrderBy(d => d.Length)
                     .ToList();
 
-                return allRequests.Where(request =>
+                var filteredRequests = new List<ProcessRequest>();
+
+                foreach (var request in allRequests)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     var location = NormalizeDirectoryPath(Path.GetDirectoryName(request.ComponentStream.Location));
+                    var isNested = false;
 
                     foreach (var pomDirectory in pomDirectories)
                     {
@@ -763,13 +790,19 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                         if (location.StartsWith(pomDirectory, StringComparison.OrdinalIgnoreCase))
                         {
                             this.LogDebug($"Ignoring {MavenManifest} at {location}, as it has a parent {MavenManifest} at {pomDirectory}.");
-                            return false;
+                            isNested = true;
+                            break;
                         }
                     }
 
-                    this.LogDebug($"Discovered {request.ComponentStream.Location}.");
-                    return true;
-                });
+                    if (!isNested)
+                    {
+                        this.LogDebug($"Discovered {request.ComponentStream.Location}.");
+                        filteredRequests.Add(request);
+                    }
+                }
+
+                return filteredRequests;
             });
 
         // Normalizes a directory path by ensuring it ends with a directory separator.
