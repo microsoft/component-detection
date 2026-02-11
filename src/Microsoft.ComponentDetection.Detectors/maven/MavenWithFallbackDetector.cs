@@ -345,10 +345,10 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 }
             }
         },
-        new ExecutionDataflowBlockOptions
-        {
-            CancellationToken = cancellationToken,
-        });
+            new ExecutionDataflowBlockOptions
+            {
+                CancellationToken = cancellationToken,
+            });
 
         await this.RemoveNestedPomXmls(processRequests, cancellationToken).ForEachAsync(
             processRequest =>
