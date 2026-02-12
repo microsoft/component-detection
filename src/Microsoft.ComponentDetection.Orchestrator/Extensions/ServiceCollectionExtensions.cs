@@ -16,6 +16,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Filters;
 using Microsoft.ComponentDetection.Detectors.Maven;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.ComponentDetection.Detectors.NuGet;
+using Microsoft.ComponentDetection.Detectors.Paket;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.ComponentDetection.Detectors.Pnpm;
 using Microsoft.ComponentDetection.Detectors.Poetry;
@@ -125,6 +126,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, NuGetComponentDetector>();
         services.AddSingleton<IComponentDetector, NuGetPackagesConfigDetector>();
         services.AddSingleton<IComponentDetector, NuGetProjectModelProjectCentricComponentDetector>();
+
+        // Paket
+        services.AddSingleton<IComponentDetector, PaketComponentDetector>();
 
         // PIP
         services.AddSingleton<IPyPiClient, PyPiClient>();

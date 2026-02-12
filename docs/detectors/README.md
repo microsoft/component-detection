@@ -76,6 +76,12 @@
 | NuGetPackagesConfigDetector                      | Stable |
 | NuGetProjectModelProjectCentricComponentDetector | Stable |
 
+- [Paket](paket.md)
+
+| Detector              | Status |
+| --------------------- | ------ |
+| PaketComponentDetector | Stable |
+
 - [Pip](pip.md)
 
 | Detector                   | Status     |
