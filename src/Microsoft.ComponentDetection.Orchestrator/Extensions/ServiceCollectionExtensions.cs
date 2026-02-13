@@ -21,6 +21,7 @@ using Microsoft.ComponentDetection.Detectors.Pnpm;
 using Microsoft.ComponentDetection.Detectors.Poetry;
 using Microsoft.ComponentDetection.Detectors.Ruby;
 using Microsoft.ComponentDetection.Detectors.Rust;
+using Microsoft.ComponentDetection.Detectors.Sbt;
 using Microsoft.ComponentDetection.Detectors.Spdx;
 using Microsoft.ComponentDetection.Detectors.Swift;
 using Microsoft.ComponentDetection.Detectors.Uv;
@@ -115,6 +116,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMavenStyleDependencyGraphParserService, MavenStyleDependencyGraphParserService>();
         services.AddSingleton<IComponentDetector, MvnCliComponentDetector>();
         services.AddSingleton<IComponentDetector, MavenWithFallbackDetector>();
+
+        // SBT (Scala Build Tool)
+        services.AddSingleton<ISbtCommandService, SbtCommandService>();
+        services.AddSingleton<IComponentDetector, SbtComponentDetector>();
 
         // npm
         services.AddSingleton<IComponentDetector, NpmComponentDetector>();
