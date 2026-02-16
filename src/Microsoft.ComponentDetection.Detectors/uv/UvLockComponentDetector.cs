@@ -26,7 +26,7 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
 
     public override IList<string> SearchPatterns { get; } = ["uv.lock"];
 
-    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Pip];
+    public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Pip, ComponentType.Git];
 
     public override int Version => 1;
 
@@ -35,6 +35,40 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
     internal static bool IsRootPackage(UvPackage pck)
     {
         return pck.Source?.Virtual != null;
+    }
+
+    internal static (Uri RepositoryUrl, string CommitHash) ParseGitUrl(string gitUrl)
+    {
+        var uri = new Uri(gitUrl);
+        var repoUrl = new Uri(uri.GetLeftPart(UriPartial.Path));
+        var commitHash = uri.Fragment.TrimStart('#');
+        return (repoUrl, commitHash);
+    }
+
+    internal static HashSet<string> GetTransitivePackages(IEnumerable<string> roots, List<UvPackage> packages)
+    {
+        var lookup = packages.ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var queue = new Queue<string>(roots);
+
+        while (queue.Count > 0)
+        {
+            var name = queue.Dequeue();
+            if (!visited.Add(name))
+            {
+                continue;
+            }
+
+            if (lookup.TryGetValue(name, out var pkg))
+            {
+                foreach (var dep in pkg.Dependencies)
+                {
+                    queue.Enqueue(dep.Name);
+                }
+            }
+        }
+
+        return visited;
     }
 
     protected override Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
@@ -49,8 +83,8 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
             var uvLock = UvLock.Parse(file.Stream);
 
             var rootPackage = uvLock.Packages.FirstOrDefault(IsRootPackage);
-            var explicitPackages = new HashSet<string>();
-            var devPackages = new HashSet<string>();
+            var explicitPackages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var devRootNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             if (rootPackage != null)
             {
@@ -61,9 +95,16 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
 
                 foreach (var devDep in rootPackage.MetadataRequiresDev)
                 {
-                    devPackages.Add(devDep.Name);
+                    devRootNames.Add(devDep.Name);
                 }
             }
+
+            // Compute dev-only packages via transitive reachability analysis.
+            // A package is dev-only if it is reachable from dev roots but NOT from production roots.
+            var prodRoots = rootPackage?.Dependencies.Select(d => d.Name) ?? [];
+            var prodTransitive = GetTransitivePackages(prodRoots, uvLock.Packages);
+            var devTransitive = GetTransitivePackages(devRootNames, uvLock.Packages);
+            var devOnlyPackages = new HashSet<string>(devTransitive.Except(prodTransitive), StringComparer.OrdinalIgnoreCase);
 
             foreach (var pkg in uvLock.Packages)
             {
@@ -72,10 +113,21 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
                     continue;
                 }
 
-                var pipComponent = new PipComponent(pkg.Name, pkg.Version);
                 var isExplicit = explicitPackages.Contains(pkg.Name);
-                var isDev = devPackages.Contains(pkg.Name);
-                var detectedComponent = new DetectedComponent(pipComponent);
+                var isDev = devOnlyPackages.Contains(pkg.Name);
+
+                TypedComponent component;
+                if (pkg.Source?.Git != null)
+                {
+                    var (repoUrl, commitHash) = ParseGitUrl(pkg.Source.Git);
+                    component = new GitComponent(repoUrl, commitHash);
+                }
+                else
+                {
+                    component = new PipComponent(pkg.Name, pkg.Version);
+                }
+
+                var detectedComponent = new DetectedComponent(component);
                 singleFileComponentRecorder.RegisterUsage(detectedComponent, isDevelopmentDependency: isDev, isExplicitReferencedDependency: isExplicit);
 
                 foreach (var dep in pkg.Dependencies)
@@ -83,8 +135,8 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
                     var depPkg = uvLock.Packages.FirstOrDefault(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase));
                     if (depPkg != null)
                     {
-                        var depComponentWithVersion = new PipComponent(depPkg.Name, depPkg.Version);
-                        singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponentWithVersion), parentComponentId: pipComponent.Id);
+                        var depComponent = new PipComponent(depPkg.Name, depPkg.Version);
+                        singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponent), parentComponentId: component.Id, isDevelopmentDependency: isDev);
                     }
                     else
                     {
