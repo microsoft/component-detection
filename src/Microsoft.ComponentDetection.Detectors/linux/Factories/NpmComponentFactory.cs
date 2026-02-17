@@ -12,6 +12,9 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 public class NpmComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
+    public override ComponentType SupportedComponentType => ComponentType.Npm;
+
+    /// <inheritdoc/>
     public override IEnumerable<string> SupportedArtifactTypes => ["npm"];
 
     /// <inheritdoc/>
@@ -34,7 +37,8 @@ public class NpmComponentFactory : ArtifactComponentFactoryBase
             name: artifact.Name,
             version: artifact.Version,
             hash: hash,
-            author: author);
+            author: author
+        );
     }
 
     private static NpmAuthor GetNpmAuthorFromArtifact(ArtifactElement artifact)
