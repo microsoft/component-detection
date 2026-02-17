@@ -135,7 +135,16 @@ public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetec
                     var depPkg = uvLock.Packages.FirstOrDefault(p => p.Name.Equals(dep.Name, StringComparison.OrdinalIgnoreCase));
                     if (depPkg != null)
                     {
-                        var depComponent = new PipComponent(depPkg.Name, depPkg.Version);
+                        TypedComponent depComponent;
+                        if (depPkg.Source?.Git != null)
+                        {
+                            var (depRepoUrl, depCommitHash) = ParseGitUrl(depPkg.Source.Git);
+                            depComponent = new GitComponent(depRepoUrl, depCommitHash);
+                        }
+                        else
+                        {
+                            depComponent = new PipComponent(depPkg.Name, depPkg.Version);
+                        }
                         singleFileComponentRecorder.RegisterUsage(new DetectedComponent(depComponent), parentComponentId: component.Id, isDevelopmentDependency: isDev);
                     }
                     else
