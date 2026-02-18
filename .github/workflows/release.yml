@@ -41,7 +41,7 @@ jobs:
         run: dotnet publish --configuration Release --output ./bin --self-contained --runtime ${{ matrix.rid }} -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:DebugType=None -p:PublishTrimmed=false ./src/Microsoft.ComponentDetection
 
       - name: Publish CLI tool
-        uses: shogo82148/actions-upload-release-asset@59cbc563d11314e48122193f8fe5cdda62ea6cf9 # v1.9.1
+        uses: shogo82148/actions-upload-release-asset@8f6863c6c894ba46f9e676ef5cccec4752723c1e # v1.9.2
         continue-on-error: true
         with:
           upload_url: ${{ github.event.release.upload_url }}
