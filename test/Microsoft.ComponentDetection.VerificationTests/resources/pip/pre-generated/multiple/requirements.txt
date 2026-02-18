@@ -1,5 +1,5 @@
 artifacts-keyring==0.3.4
-certifi==2024.6.2
+certifi==2025.1.31
 charset-normalizer==3.3.2
 Cython==3.0.10
 jaraco.classes==3.4.0
@@ -9,4 +9,4 @@ keyring==25.2.1
 more-itertools==10.2.0
 numpy==1.26.4
 pywin32-ctypes==0.2.2
-requests==2.32.3
+requests==2.32.4

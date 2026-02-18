@@ -1,6 +1,6 @@
 module github.com/microsoft/component-detection
 
-go 1.22
+go 1.24.4
 
 require github.com/sirupsen/logrus v1.8.3
 
