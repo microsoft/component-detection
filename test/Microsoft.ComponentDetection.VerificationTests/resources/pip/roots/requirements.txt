@@ -4,7 +4,7 @@
 #
 #    pip-compile --strip-extras
 #
-azure-core==1.30.0
+azure-core==1.38.0
     # via
     #   azure-identity
     #   msrest
