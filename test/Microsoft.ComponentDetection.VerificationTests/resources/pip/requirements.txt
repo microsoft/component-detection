@@ -24,7 +24,7 @@ protobuf==5.29.4
 Pygments==2.19.1
 requests==2.32.3
 rich==14.0.0
-setuptools==78.1.0
+setuptools==78.1.1
 six==1.17.0
 tensorboard==2.19.0
 tensorboard-data-server==0.7.2

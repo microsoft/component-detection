@@ -1,5 +1,5 @@
 artifacts-keyring==0.3.4
-certifi==2024.6.2
+certifi==2025.1.31
 charset-normalizer==3.3.2
 Cython==3.0.10
 idna==3.7
