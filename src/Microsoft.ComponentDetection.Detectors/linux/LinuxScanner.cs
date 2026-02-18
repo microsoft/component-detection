@@ -24,12 +24,7 @@ public class LinuxScanner : ILinuxScanner
     private const string ScannerImage =
         "governancecontainerregistry.azurecr.io/syft:v1.37.0@sha256:48d679480c6d272c1801cf30460556959c01d4826795be31d4fd8b53750b7d91";
 
-    private static readonly IList<string> CmdParameters =
-    [
-        "--quiet",
-        "--output",
-        "json",
-    ];
+    private static readonly IList<string> CmdParameters = ["--quiet", "--output", "json"];
 
     private static readonly IList<string> ScopeAllLayersParameter = ["--scope", "all-layers"];
 
@@ -45,7 +40,7 @@ public class LinuxScanner : ILinuxScanner
     private readonly ILogger<LinuxScanner> logger;
     private readonly IEnumerable<IArtifactComponentFactory> componentFactories;
     private readonly IEnumerable<IArtifactFilter> artifactFilters;
-    private readonly Dictionary<string, IArtifactComponentFactory> factoryLookup;
+    private readonly Dictionary<string, IArtifactComponentFactory> artifactTypeToFactoryLookup;
     private readonly Dictionary<
         ComponentType,
         IArtifactComponentFactory
@@ -70,30 +65,17 @@ public class LinuxScanner : ILinuxScanner
         this.componentFactories = componentFactories;
         this.artifactFilters = artifactFilters;
 
-        // Build a lookup dictionary for quick factory access by artifact type
-        this.factoryLookup = [];
-        foreach (var factory in componentFactories)
-        {
-            foreach (var artifactType in factory.SupportedArtifactTypes)
-            {
-                this.factoryLookup[artifactType] = factory;
-            }
-        }
+        this.artifactTypeToFactoryLookup = componentFactories
+            .SelectMany(
+                f => f.SupportedArtifactTypes,
+                (factory, artifactType) => (artifactType, factory)
+            )
+            .ToDictionary(x => x.artifactType, x => x.factory);
 
-        // Build a lookup dictionary for component type to factory mapping
-        this.componentTypeToFactoryLookup = new Dictionary<ComponentType, IArtifactComponentFactory>
-        {
-            {
-                ComponentType.Linux,
-                componentFactories.FirstOrDefault(f => f is LinuxComponentFactory)
-            },
-            { ComponentType.Npm, componentFactories.FirstOrDefault(f => f is NpmComponentFactory) },
-            { ComponentType.Pip, componentFactories.FirstOrDefault(f => f is PipComponentFactory) },
-            {
-                ComponentType.NuGet,
-                componentFactories.FirstOrDefault(f => f is DotnetComponentFactory)
-            },
-        };
+        this.componentTypeToFactoryLookup = componentFactories.ToDictionary(
+            f => f.SupportedComponentType,
+            f => f
+        );
     }
 
     /// <inheritdoc/>
@@ -121,9 +103,9 @@ public class LinuxScanner : ILinuxScanner
             LinuxScannerScope.AllLayers => ScopeAllLayersParameter,
             LinuxScannerScope.Squashed => ScopeSquashedParameter,
             _ => throw new ArgumentOutOfRangeException(
-                    nameof(scope),
-                    $"Unsupported scope value: {scope}"
-                ),
+                nameof(scope),
+                $"Unsupported scope value: {scope}"
+            ),
         };
 
         using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
@@ -218,7 +200,7 @@ public class LinuxScanner : ILinuxScanner
 
             // Track unsupported artifact types for telemetry
             var unsupportedTypes = validArtifacts
-                .Where(a => !this.factoryLookup.ContainsKey(a.Type))
+                .Where(a => !this.artifactTypeToFactoryLookup.ContainsKey(a.Type))
                 .Select(a => a.Type)
                 .Distinct()
                 .ToList();
@@ -267,7 +249,7 @@ public class LinuxScanner : ILinuxScanner
         HashSet<IArtifactComponentFactory> enabledFactories
     )
     {
-        if (!this.factoryLookup.TryGetValue(artifact.Type, out var factory))
+        if (!this.artifactTypeToFactoryLookup.TryGetValue(artifact.Type, out var factory))
         {
             return (null, []);
         }
