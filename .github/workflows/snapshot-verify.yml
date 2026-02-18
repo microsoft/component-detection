@@ -25,6 +25,8 @@ jobs:
           egress-policy: audit
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Make release snapshot output directory
         run: mkdir ${{ github.workspace }}/release-output
@@ -51,8 +53,11 @@ jobs:
 
       - name: Download latest release snapshot
         working-directory: ${{ github.workspace }}/release-output
+        env:
+          DOWNLOAD_URL: ${{ steps.download-latest-release-snapshot.outputs.result }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -v -L -u octocat:${{ secrets.GITHUB_TOKEN }} -o output.zip "${{ steps.download-latest-release-snapshot.outputs.result }}"
+          curl -v -L -u "octocat:$GH_TOKEN" -o output.zip "$DOWNLOAD_URL"
           unzip output.zip
           rm output.zip
 
