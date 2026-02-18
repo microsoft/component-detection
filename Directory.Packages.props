@@ -27,8 +27,8 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
-    <PackageVersion Include="NuGet.ProjectModel" Version="7.0.1" />
-    <PackageVersion Include="NuGet.Versioning" Version="7.0.1" />
+    <PackageVersion Include="NuGet.ProjectModel" Version="7.3.0" />
+    <PackageVersion Include="NuGet.Versioning" Version="7.3.0" />
     <PackageVersion Include="packageurl-dotnet" Version="1.0.0" />
     <PackageVersion Include="Polly" Version="8.6.5" />
     <PackageVersion Include="SemanticVersioning" Version="2.0.2" />
