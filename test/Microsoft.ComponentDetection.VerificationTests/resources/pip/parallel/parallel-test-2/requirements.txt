@@ -11,4 +11,4 @@ more-itertools==10.2.0
 numpy==1.26.4
 pywin32-ctypes==0.2.2
 requests==2.32.3
-urllib3==2.6.0
+urllib3==2.6.3
