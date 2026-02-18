@@ -6,20 +6,20 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 
 /// <summary>
-/// Factory for creating <see cref="LinuxComponent"/> instances from system package artifacts (apk, deb, rpm).
+/// Factory for creating <see cref="RubyGemsComponent"/> instances from Ruby gem artifacts.
 /// </summary>
-public class LinuxComponentFactory : ArtifactComponentFactoryBase
+public class RubyGemsComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
-    public override ComponentType SupportedComponentType => ComponentType.Linux;
+    public override ComponentType SupportedComponentType => ComponentType.RubyGems;
 
     /// <inheritdoc/>
-    public override IEnumerable<string> SupportedArtifactTypes => ["apk", "deb", "rpm"];
+    public override IEnumerable<string> SupportedArtifactTypes => ["gem"];
 
     /// <inheritdoc/>
     public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
     {
-        if (artifact == null || distro == null)
+        if (artifact == null)
         {
             return null;
         }
@@ -29,16 +29,16 @@ public class LinuxComponentFactory : ArtifactComponentFactoryBase
             return null;
         }
 
-        var license = GetLicenseFromArtifact(artifact);
-        var supplier = GetAuthorFromArtifact(artifact);
+        // Syft may provide source as a string or as part of Dist
+        var source =
+            artifact.Metadata?.Source?.Dist?.Url
+            ?? artifact.Metadata?.Source?.String
+            ?? string.Empty;
 
-        return new LinuxComponent(
-            distribution: distro.Id,
-            release: distro.VersionId,
+        return new RubyGemsComponent(
             name: artifact.Name,
             version: artifact.Version,
-            license: license,
-            author: supplier
+            source: source
         );
     }
 }

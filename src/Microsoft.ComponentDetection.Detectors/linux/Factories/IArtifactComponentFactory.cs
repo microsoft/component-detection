@@ -11,6 +11,11 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 public interface IArtifactComponentFactory
 {
     /// <summary>
+    /// Gets the component type that this factory produces.
+    /// </summary>
+    public ComponentType SupportedComponentType { get; }
+
+    /// <summary>
     /// Gets the artifact types (e.g., "npm", "apk", "deb") that this factory can handle.
     /// </summary>
     /// <remarks>
