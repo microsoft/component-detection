@@ -149,7 +149,10 @@ public class LinuxContainerDetector(
     /// <returns>The <see cref="LinuxScannerScope"/> to use for scanning. Defaults to <see cref="DefaultScanScope"/> if not specified.</returns>
     private static LinuxScannerScope GetScanScope(IDictionary<string, string> detectorArgs)
     {
-        if (detectorArgs == null || !detectorArgs.TryGetValue(ScanScopeConfigKey, out var scopeValue))
+        if (
+            detectorArgs == null
+            || !detectorArgs.TryGetValue(ScanScopeConfigKey, out var scopeValue)
+        )
         {
             return DefaultScanScope;
         }
