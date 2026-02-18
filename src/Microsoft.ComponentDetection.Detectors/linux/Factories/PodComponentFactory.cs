@@ -6,15 +6,15 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 
 /// <summary>
-/// Factory for creating <see cref="PipComponent"/> instances from Python package artifacts.
+/// Factory for creating <see cref="PodComponent"/> instances from CocoaPods artifacts.
 /// </summary>
-public class PipComponentFactory : ArtifactComponentFactoryBase
+public class PodComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
-    public override ComponentType SupportedComponentType => ComponentType.Pip;
+    public override ComponentType SupportedComponentType => ComponentType.Pod;
 
     /// <inheritdoc/>
-    public override IEnumerable<string> SupportedArtifactTypes => ["python"];
+    public override IEnumerable<string> SupportedArtifactTypes => ["pod"];
 
     /// <inheritdoc/>
     public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
@@ -29,14 +29,8 @@ public class PipComponentFactory : ArtifactComponentFactoryBase
             return null;
         }
 
-        var author = GetAuthorFromArtifact(artifact);
-        var license = GetLicenseFromArtifact(artifact);
-
-        return new PipComponent(
-            name: artifact.Name,
-            version: artifact.Version,
-            author: author,
-            license: license
-        );
+        // Syft does not currently provide spec repo information directly
+        // but could be extracted from locations or other metadata if available
+        return new PodComponent(name: artifact.Name, version: artifact.Version);
     }
 }

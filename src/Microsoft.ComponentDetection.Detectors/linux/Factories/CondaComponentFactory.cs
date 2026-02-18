@@ -6,15 +6,15 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 
 /// <summary>
-/// Factory for creating <see cref="PipComponent"/> instances from Python package artifacts.
+/// Factory for creating <see cref="CondaComponent"/> instances from Conda package artifacts.
 /// </summary>
-public class PipComponentFactory : ArtifactComponentFactoryBase
+public class CondaComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
-    public override ComponentType SupportedComponentType => ComponentType.Pip;
+    public override ComponentType SupportedComponentType => ComponentType.Conda;
 
     /// <inheritdoc/>
-    public override IEnumerable<string> SupportedArtifactTypes => ["python"];
+    public override IEnumerable<string> SupportedArtifactTypes => ["conda"];
 
     /// <inheritdoc/>
     public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
@@ -29,14 +29,18 @@ public class PipComponentFactory : ArtifactComponentFactoryBase
             return null;
         }
 
-        var author = GetAuthorFromArtifact(artifact);
-        var license = GetLicenseFromArtifact(artifact);
+        // Syft provides conda metadata including build, channel, subdir, url, and md5
+        var metadata = artifact.Metadata;
 
-        return new PipComponent(
+        return new CondaComponent(
             name: artifact.Name,
             version: artifact.Version,
-            author: author,
-            license: license
+            build: metadata?.Build,
+            channel: metadata?.Channel,
+            subdir: metadata?.Subdir,
+            @namespace: null, // Syft doesn't provide namespace
+            url: metadata?.Url?.String,
+            md5: metadata?.Md5
         );
     }
 }
