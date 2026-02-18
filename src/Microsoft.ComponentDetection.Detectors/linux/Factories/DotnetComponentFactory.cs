@@ -11,6 +11,9 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 public class DotnetComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
+    public override ComponentType SupportedComponentType => ComponentType.NuGet;
+
+    /// <inheritdoc/>
     public override IEnumerable<string> SupportedArtifactTypes => ["dotnet"];
 
     /// <inheritdoc/>
