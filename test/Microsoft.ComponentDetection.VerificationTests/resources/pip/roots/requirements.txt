@@ -10,9 +10,9 @@ azure-core==1.38.0
     #   msrest
 azure-devops==7.1.0b4
     # via -r requirements.in
-azure-identity==1.16.0b1
+azure-identity==1.19.0
     # via -r requirements.in
-certifi==2024.2.2
+certifi==2025.1.31
     # via
     #   msrest
     #   requests
@@ -29,7 +29,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.42
     # via -r requirements.in
-idna==3.6
+idna==3.10
     # via requests
 isodate==0.6.1
     # via msrest
