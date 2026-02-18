@@ -6,20 +6,20 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 
 /// <summary>
-/// Factory for creating <see cref="LinuxComponent"/> instances from system package artifacts (apk, deb, rpm).
+/// Factory for creating <see cref="CargoComponent"/> instances from Rust crate artifacts.
 /// </summary>
-public class LinuxComponentFactory : ArtifactComponentFactoryBase
+public class CargoComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
-    public override ComponentType SupportedComponentType => ComponentType.Linux;
+    public override ComponentType SupportedComponentType => ComponentType.Cargo;
 
     /// <inheritdoc/>
-    public override IEnumerable<string> SupportedArtifactTypes => ["apk", "deb", "rpm"];
+    public override IEnumerable<string> SupportedArtifactTypes => ["rust-crate"];
 
     /// <inheritdoc/>
     public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
     {
-        if (artifact == null || distro == null)
+        if (artifact == null)
         {
             return null;
         }
@@ -29,16 +29,18 @@ public class LinuxComponentFactory : ArtifactComponentFactoryBase
             return null;
         }
 
+        var author = GetAuthorFromArtifact(artifact);
         var license = GetLicenseFromArtifact(artifact);
-        var supplier = GetAuthorFromArtifact(artifact);
 
-        return new LinuxComponent(
-            distribution: distro.Id,
-            release: distro.VersionId,
+        // Syft provides the source in metadata.Source
+        var source = artifact.Metadata?.Source?.String;
+
+        return new CargoComponent(
             name: artifact.Name,
             version: artifact.Version,
+            author: author,
             license: license,
-            author: supplier
+            source: source
         );
     }
 }

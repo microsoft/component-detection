@@ -13,6 +13,9 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 public abstract class ArtifactComponentFactoryBase : IArtifactComponentFactory
 {
     /// <inheritdoc/>
+    public abstract ComponentType SupportedComponentType { get; }
+
+    /// <inheritdoc/>
     public abstract IEnumerable<string> SupportedArtifactTypes { get; }
 
     /// <inheritdoc/>

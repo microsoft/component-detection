@@ -6,15 +6,15 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 
 /// <summary>
-/// Factory for creating <see cref="PipComponent"/> instances from Python package artifacts.
+/// Factory for creating <see cref="GoComponent"/> instances from Go module artifacts.
 /// </summary>
-public class PipComponentFactory : ArtifactComponentFactoryBase
+public class GoComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
-    public override ComponentType SupportedComponentType => ComponentType.Pip;
+    public override ComponentType SupportedComponentType => ComponentType.Go;
 
     /// <inheritdoc/>
-    public override IEnumerable<string> SupportedArtifactTypes => ["python"];
+    public override IEnumerable<string> SupportedArtifactTypes => ["go-module"];
 
     /// <inheritdoc/>
     public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
@@ -29,14 +29,14 @@ public class PipComponentFactory : ArtifactComponentFactoryBase
             return null;
         }
 
-        var author = GetAuthorFromArtifact(artifact);
-        var license = GetLicenseFromArtifact(artifact);
+        // Syft provides the h1 digest hash in metadata.H1Digest
+        var hash = artifact.Metadata?.H1Digest;
 
-        return new PipComponent(
-            name: artifact.Name,
-            version: artifact.Version,
-            author: author,
-            license: license
-        );
+        if (!string.IsNullOrWhiteSpace(hash))
+        {
+            return new GoComponent(name: artifact.Name, version: artifact.Version, hash: hash);
+        }
+
+        return new GoComponent(name: artifact.Name, version: artifact.Version);
     }
 }
