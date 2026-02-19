@@ -49,7 +49,7 @@
     <PackageVersion Include="System.Text.Json" Version="9.0.13" />
     <PackageVersion Include="System.Threading.Tasks.Dataflow" Version="8.0.1" />
     <PackageVersion Include="Tomlyn.Signed" Version="0.20.0" />
-    <PackageVersion Include="yamldotnet" Version="15.3.0" />
+    <PackageVersion Include="yamldotnet" Version="16.3.0" />
     <PackageVersion Include="Faker.net" Version="2.0.163" />
     <PackageVersion Include="Valleysoft.DockerfileModel" Version="1.2.0" />
     <!-- Fix security alerts -->
