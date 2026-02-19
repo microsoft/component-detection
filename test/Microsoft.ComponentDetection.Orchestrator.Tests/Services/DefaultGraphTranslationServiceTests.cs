@@ -41,6 +41,41 @@ public class DefaultGraphTranslationServiceTests
     }
 
     [TestMethod]
+    public void UnescapeComponentLocations()
+    {
+        // Arrange
+        var projectPath = "/my project/my project.csproj";
+
+        var singleFileComponentRecorder = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, projectPath));
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = new Dictionary<int, ContainerDetails>
+            {
+                {
+                    this.sampleContainerDetails.Id, this.sampleContainerDetails
+                },
+            },
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var detectedComponent = new DetectedComponent(new NuGetComponent("nugetComponent", "4.5.6"));
+        singleFileComponentRecorder.RegisterUsage(detectedComponent);
+
+        var settings = new ScanSettings { SourceDirectory = this.sourceDirectory };
+
+        // Act
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(processingResult, settings);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.ComponentsFound.Should().ContainSingle();
+
+        var resultComponent = result.ComponentsFound.Single();
+        resultComponent.LocationsFoundAt.Should().BeEquivalentTo([projectPath]);
+    }
+
+    [TestMethod]
     public void GenerateScanResultFromResult_WithCustomLocations()
     {
         var detectedFilePath = "/some/file/path";
