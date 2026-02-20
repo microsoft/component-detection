@@ -30,6 +30,7 @@ ComponentDetection/src/Microsoft.ComponentDetection.Loader/Properties/launchSett
 node_modules/
 dist/
 dist-nuget/
+.nuget/
 
 # Build results
 [Dd]ebug/
