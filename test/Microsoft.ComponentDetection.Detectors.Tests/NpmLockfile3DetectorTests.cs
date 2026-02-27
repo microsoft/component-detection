@@ -287,6 +287,82 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
     }
 
     [TestMethod]
+    public async Task TestNpmDetector_ResolvesDependencyFromAncestorPathV3Async()
+    {
+        var componentA = (Name: "componentA", Version: "1.0.0");
+        var componentB = (Name: "componentB", Version: "1.0.0");
+        var componentC = (Name: "componentC", Version: "1.0.0");
+
+        var packageLockJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 3,
+                ""requires"": true,
+                ""packages"": {{
+                    """": {{
+                        ""name"": ""test"",
+                        ""version"": ""0.0.0"",
+                        ""dependencies"": {{
+                            ""{0}"": ""{1}""
+                        }}
+                    }},
+                    ""node_modules/{0}"": {{
+                        ""version"": ""{1}"",
+                        ""resolved"": ""https://registry.npmjs.org/{0}/-/{0}-{1}.tgz"",
+                        ""integrity"": ""sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="",
+                        ""dependencies"": {{
+                            ""{2}"": ""{3}""
+                        }}
+                    }},
+                    ""node_modules/{0}/node_modules/{2}"": {{
+                        ""version"": ""{3}"",
+                        ""resolved"": ""https://registry.npmjs.org/{2}/-/{2}-{3}.tgz"",
+                        ""integrity"": ""sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="",
+                        ""dependencies"": {{
+                            ""{4}"": ""{5}""
+                        }}
+                    }},
+                    ""node_modules/{0}/node_modules/{4}"": {{
+                        ""version"": ""{5}"",
+                        ""resolved"": ""https://registry.npmjs.org/{4}/-/{4}-{5}.tgz"",
+                        ""integrity"": ""sha512-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=""
+                    }}
+                }}
+            }}";
+
+        var packageLockTemplate = string.Format(packageLockJson, componentA.Name, componentA.Version, componentB.Name, componentB.Version, componentC.Name, componentC.Version);
+
+        var packagejson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {{
+                    ""{0}"": ""{1}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(packagejson, componentA.Name, componentA.Version);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().HaveCount(3);
+
+        var componentAId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentA.Name)).Component.Id;
+        var componentBId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentB.Name)).Component.Id;
+        var componentCId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentC.Name)).Component.Id;
+
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        dependencyGraph.GetDependenciesForComponent(componentAId).Should().Contain(componentBId);
+        dependencyGraph.GetDependenciesForComponent(componentBId).Should().Contain(componentCId);
+    }
+
+    [TestMethod]
     public async Task TestNpmDetector_PackageLockWithoutPackagesObject_ShouldHandleGracefully()
     {
         // This test reproduces the NullReferenceException issue when package-lock.json doesn't contain a "packages" object
