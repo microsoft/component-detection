@@ -405,11 +405,15 @@ public class TypedComponentSerializationTests
 
         var json = JsonSerializer.Serialize(tc);
 
-        // These properties should not appear in JSON when null
-        json.Should().NotContain("licenses");
-        json.Should().NotContain("authorsInfo");
-        json.Should().NotContain("downloadUrl");
-        json.Should().NotContain("sourceUrl");
+        // These properties should not appear in JSON when null (verify structurally, not via substring)
+        using (var document = JsonDocument.Parse(json))
+        {
+            var root = document.RootElement;
+            root.TryGetProperty("licenses", out _).Should().BeFalse();
+            root.TryGetProperty("authorsInfo", out _).Should().BeFalse();
+            root.TryGetProperty("downloadUrl", out _).Should().BeFalse();
+            root.TryGetProperty("sourceUrl", out _).Should().BeFalse();
+        }
 
         // Component should still deserialize correctly
         var deserialized = JsonSerializer.Deserialize<TypedComponent>(json);
