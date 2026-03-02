@@ -52,10 +52,17 @@ public class ActorInfoTests
 
         var json = JsonSerializer.Serialize(actor);
 
-        json.Should().NotContain("email");
-        json.Should().NotContain("url");
-        json.Should().Contain("name");
-        json.Should().Contain("type");
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+
+        root.TryGetProperty("email", out _).Should().BeFalse();
+        root.TryGetProperty("url", out _).Should().BeFalse();
+
+        root.TryGetProperty("name", out var nameProperty).Should().BeTrue();
+        nameProperty.ValueKind.Should().Be(JsonValueKind.String);
+
+        root.TryGetProperty("type", out var typeProperty).Should().BeTrue();
+        typeProperty.ValueKind.Should().Be(JsonValueKind.String);
     }
 
     [TestMethod]
