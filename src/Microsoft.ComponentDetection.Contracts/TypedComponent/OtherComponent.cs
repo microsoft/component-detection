@@ -25,9 +25,6 @@ public class OtherComponent : TypedComponent
     [JsonPropertyName("version")]
     public string Version { get; set; }
 
-    [JsonPropertyName("downloadUrl")]
-    public Uri DownloadUrl { get; set; }
-
     [JsonPropertyName("hash")]
     public string Hash { get; set; }
 

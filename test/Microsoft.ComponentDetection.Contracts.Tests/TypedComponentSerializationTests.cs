@@ -358,4 +358,66 @@ public class TypedComponentSerializationTests
         cppSdkComponent.Name.Should().Be("SomeCppSdk");
         cppSdkComponent.Version.Should().Be("1.2.3");
     }
+
+    [TestMethod]
+    public void TypedComponent_Serialization_Properties_Roundtrip()
+    {
+        ActorInfo[] authorsInfo =
+        [
+            new ActorInfo { Name = "Test Author", Type = "Person" },
+            new ActorInfo { Name = "Test Org", Email = "info@test-org.example.com", Type = "Organization" },
+        ];
+
+        TypedComponent tc = new NuGetComponent("TestPackage", "13.0.4")
+        {
+            Licenses = ["MIT"],
+            AuthorsInfo = authorsInfo,
+            DownloadUrl = new Uri("https://www.example.com/api/v2/package/TestPackage/13.0.4"),
+            SourceUrl = new Uri("https://github.com/test-org/TestPackage"),
+        };
+
+        // Verify purl is present before serialization
+        tc.PackageUrl.ToString().Should().Be("pkg:nuget/TestPackage@13.0.4");
+
+        var json = JsonSerializer.Serialize(tc);
+
+        var deserialized = JsonSerializer.Deserialize<TypedComponent>(json);
+
+        deserialized.Should().BeOfType(typeof(NuGetComponent));
+        var nuget = (NuGetComponent)deserialized;
+        nuget.Name.Should().Be("TestPackage");
+        nuget.Version.Should().Be("13.0.4");
+        nuget.Licenses.Should().ContainSingle().Which.Should().Be("MIT");
+        nuget.AuthorsInfo.Should().HaveCount(2);
+        nuget.AuthorsInfo[0].Name.Should().Be("Test Author");
+        nuget.AuthorsInfo[0].Type.Should().Be("Person");
+        nuget.AuthorsInfo[1].Name.Should().Be("Test Org");
+        nuget.AuthorsInfo[1].Email.Should().Be("info@test-org.example.com");
+        nuget.DownloadUrl.Should().Be(new Uri("https://www.example.com/api/v2/package/TestPackage/13.0.4"));
+        nuget.SourceUrl.Should().Be(new Uri("https://github.com/test-org/TestPackage"));
+        nuget.PackageUrl.ToString().Should().Be("pkg:nuget/TestPackage@13.0.4");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Serialization_Properties_NullOmittedFromJson()
+    {
+        TypedComponent tc = new NpmComponent("lodash", "4.17.21");
+
+        var json = JsonSerializer.Serialize(tc);
+
+        // These properties should not appear in JSON when null
+        json.Should().NotContain("licenses");
+        json.Should().NotContain("authorsInfo");
+        json.Should().NotContain("downloadUrl");
+        json.Should().NotContain("sourceUrl");
+
+        // Component should still deserialize correctly
+        var deserialized = JsonSerializer.Deserialize<TypedComponent>(json);
+        deserialized.Should().BeOfType(typeof(NpmComponent));
+        var npm = (NpmComponent)deserialized;
+        npm.Licenses.Should().BeNull();
+        npm.AuthorsInfo.Should().BeNull();
+        npm.DownloadUrl.Should().BeNull();
+        npm.SourceUrl.Should().BeNull();
+    }
 }
