@@ -420,4 +420,33 @@ public class TypedComponentSerializationTests
         npm.DownloadUrl.Should().BeNull();
         npm.SourceUrl.Should().BeNull();
     }
+
+    [TestMethod]
+    public void TypedComponent_Deserialization_OldJsonWithoutNewProperties_BackwardCompatible()
+    {
+        // Simulates JSON produced by an older version of Component Detection that has no new properties
+        var oldJson = """
+            {
+                "type": "NuGet",
+                "name": "TestPackage",
+                "version": "1.0.0",
+                "authors": ["Test Author"],
+                "id": "TestPackage 1.0.0 - NuGet"
+            }
+            """;
+
+        var deserialized = JsonSerializer.Deserialize<TypedComponent>(oldJson);
+
+        deserialized.Should().BeOfType(typeof(NuGetComponent));
+        var nuget = (NuGetComponent)deserialized;
+        nuget.Name.Should().Be("TestPackage");
+        nuget.Version.Should().Be("1.0.0");
+        nuget.Authors.Should().ContainSingle().Which.Should().Be("Test Author");
+
+        // New properties should be null when absent from JSON
+        nuget.Licenses.Should().BeNull();
+        nuget.AuthorsInfo.Should().BeNull();
+        nuget.DownloadUrl.Should().BeNull();
+        nuget.SourceUrl.Should().BeNull();
+    }
 }
