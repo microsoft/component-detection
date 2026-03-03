@@ -4,11 +4,13 @@
 
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Opts into running tests via Microsoft Testing Platform instead of VSTest when using 'dotnet test'.
+         When migrating to .NET 10 SDK, this should be removed and opt-in should be done via global.json instead.
+         https://learn.microsoft.com/dotnet/core/testing/unit-testing-mstest-runner-intro#dotnet-test-integration -->
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
   </PropertyGroup>
 
   <ItemGroup Label="Package References">
-    <PackageReference Include="MSTest.TestFramework"/>
-    <PackageReference Include="MSTest.Analyzers "/>
     <PackageReference Include="Moq"/>
     <PackageReference Include="AwesomeAssertions"/>
     <PackageReference Include="Faker.net"/>
