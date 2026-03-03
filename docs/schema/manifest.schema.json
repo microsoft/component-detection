@@ -6,26 +6,26 @@
         "null"
       ],
       "properties": {
-        "Name": {
+        "name": {
           "type": [
             "string",
             "null"
           ]
         },
-        "Email": {
+        "email": {
           "type": [
             "string",
             "null"
           ]
         },
-        "Url": {
+        "url": {
           "type": [
             "string",
             "null"
           ],
           "format": "uri"
         },
-        "Type": {
+        "type": {
           "type": [
             "string",
             "null"
