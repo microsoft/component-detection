@@ -2,6 +2,7 @@
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 public class OtherComponent : TypedComponent
@@ -32,4 +33,14 @@ public class OtherComponent : TypedComponent
     public override ComponentType Type => ComponentType.Other;
 
     protected override string ComputeBaseId() => $"{this.Name} {this.Version} {this.DownloadUrl} - {this.Type}";
+
+    /// <summary>DownloadUrl is already part of the base identity for OtherComponent, so exclude it here.</summary>
+    /// <returns>Extended identity properties excluding DownloadUrl.</returns>
+    protected override IEnumerable<KeyValuePair<string, string>> GetExtendedIdProperties()
+    {
+        if (this.SourceUrl != null)
+        {
+            yield return new KeyValuePair<string, string>(nameof(this.SourceUrl), this.SourceUrl.ToString());
+        }
+    }
 }

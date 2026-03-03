@@ -4,6 +4,7 @@ namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -108,31 +109,34 @@ public abstract class TypedComponent
     /// <returns>The base identity string for this component.</returns>
     protected abstract string ComputeBaseId();
 
-    private string ComputeId()
+    /// <summary>
+    /// Returns optional properties to include in the extended component identity.
+    /// Subclasses may override to exclude properties already present in <see cref="ComputeBaseId"/>.
+    /// </summary>
+    /// <returns>Key-value pairs to append to the base identity.</returns>
+    protected virtual IEnumerable<KeyValuePair<string, string>> GetExtendedIdProperties()
     {
-        var baseId = this.ComputeBaseId();
-        if (this.DownloadUrl == null && this.SourceUrl == null)
+        if (this.DownloadUrl != null)
         {
-            return baseId;
-        }
-
-        var extended = baseId + " [";
-        var hasDownload = this.DownloadUrl != null;
-        if (hasDownload)
-        {
-            extended += $"{nameof(this.DownloadUrl)}:{this.DownloadUrl}";
+            yield return new KeyValuePair<string, string>(nameof(this.DownloadUrl), this.DownloadUrl.ToString());
         }
 
         if (this.SourceUrl != null)
         {
-            if (hasDownload)
-            {
-                extended += " ";
-            }
+            yield return new KeyValuePair<string, string>(nameof(this.SourceUrl), this.SourceUrl.ToString());
+        }
+    }
 
-            extended += $"{nameof(this.SourceUrl)}:{this.SourceUrl}";
+    private string ComputeId()
+    {
+        var baseId = this.ComputeBaseId();
+        var extras = this.GetExtendedIdProperties().ToList();
+
+        if (extras.Count == 0)
+        {
+            return baseId;
         }
 
-        return extended + "]";
+        return baseId + " [" + string.Join(" ", extras.Select(e => $"{e.Key}:{e.Value}")) + "]";
     }
 }

@@ -27,6 +27,11 @@ public class TypedComponentSerializationTests
         otherComponent.Version.Should().Be("1.2.3");
         otherComponent.DownloadUrl.Should().Be(new Uri("https://sampleurl.com"));
         otherComponent.Hash.Should().Be("SampleHash");
+
+        // OtherComponent includes DownloadUrl in its BaseId (it's a required identity field for Other).
+        // Since DownloadUrl is already part of BaseId, Id should not duplicate it.
+        otherComponent.BaseId.Should().Be("SomeOtherComponent 1.2.3 https://sampleurl.com/ - Other");
+        otherComponent.Id.Should().Be(otherComponent.BaseId, "DownloadUrl is already in BaseId, so Id should not append it again");
     }
 
     [TestMethod]
