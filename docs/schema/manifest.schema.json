@@ -31,13 +31,7 @@
             "null"
           ]
         }
-      },
-      "required": [
-        "Name",
-        "Email",
-        "Url",
-        "Type"
-      ]
+      }
     },
     "ContainerDetails": {
       "type": [
@@ -464,11 +458,7 @@
       "required": [
         "type",
         "id",
-        "packageUrl",
-        "licenses",
-        "authorsInfo",
-        "downloadUrl",
-        "sourceUrl"
+        "packageUrl"
       ]
     }
   },
