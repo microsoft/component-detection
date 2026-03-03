@@ -64,21 +64,25 @@ public abstract class TypedComponent
     public virtual PackageURL PackageUrl { get; }
 
     /// <summary>Gets or sets SPDX license expression(s) declared by the package author.</summary>
+    [JsonProperty("licenses", NullValueHandling = NullValueHandling.Ignore)]
     [SystemTextJson.JsonIgnore(Condition = SystemTextJson.JsonIgnoreCondition.WhenWritingNull)]
     [SystemTextJson.JsonPropertyName("licenses")]
     public virtual IList<string> Licenses { get; set; }
 
     /// <summary>Gets or sets structured author/creator identity (SPDX 3.0.1 originatedBy).</summary>
+    [JsonProperty("authorsInfo", NullValueHandling = NullValueHandling.Ignore)]
     [SystemTextJson.JsonIgnore(Condition = SystemTextJson.JsonIgnoreCondition.WhenWritingNull)]
     [SystemTextJson.JsonPropertyName("authorsInfo")]
     public virtual IList<ActorInfo> AuthorsInfo { get; set; }
 
     /// <summary>Gets or sets the direct download URL for the package binary.</summary>
+    [JsonProperty("downloadUrl", NullValueHandling = NullValueHandling.Ignore)]
     [SystemTextJson.JsonIgnore(Condition = SystemTextJson.JsonIgnoreCondition.WhenWritingNull)]
     [SystemTextJson.JsonPropertyName("downloadUrl")]
     public virtual Uri DownloadUrl { get; set; }
 
     /// <summary>Gets or sets the source code repository URL.</summary>
+    [JsonProperty("sourceUrl", NullValueHandling = NullValueHandling.Ignore)]
     [SystemTextJson.JsonIgnore(Condition = SystemTextJson.JsonIgnoreCondition.WhenWritingNull)]
     [SystemTextJson.JsonPropertyName("sourceUrl")]
     public virtual Uri SourceUrl { get; set; }
