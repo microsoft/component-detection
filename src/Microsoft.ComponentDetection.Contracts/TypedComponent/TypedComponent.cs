@@ -133,7 +133,7 @@ public abstract class TypedComponent
 
     private string ComputeId()
     {
-        var baseId = this.ComputeBaseId();
+        var baseId = this.baseId ?? this.ComputeBaseId();
         var extras = this.GetExtendedIdProperties().ToList();
 
         if (extras.Count == 0)
