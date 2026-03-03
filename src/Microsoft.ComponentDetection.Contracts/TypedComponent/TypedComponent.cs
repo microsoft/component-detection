@@ -19,9 +19,15 @@ using SystemTextJson = System.Text.Json.Serialization;
 [SystemTextJson.JsonConverter(typeof(TypedComponentSystemTextJsonConverter))] // System.Text.Json
 public abstract class TypedComponent
 {
+#pragma warning disable IDE0032 // Use auto property - backing fields needed for lazy ??= initialization
     [JsonIgnore] // Newtonsoft.Json
     [SystemTextJson.JsonIgnore] // System.Text.Json
     private string id;
+
+    [JsonIgnore] // Newtonsoft.Json
+    [SystemTextJson.JsonIgnore] // System.Text.Json
+    private string baseId;
+#pragma warning restore IDE0032
 
     internal TypedComponent()
     {
@@ -34,10 +40,24 @@ public abstract class TypedComponent
     [SystemTextJson.JsonIgnore] // System.Text.Json - type is handled by TypedComponentSystemTextJsonConverter
     public abstract ComponentType Type { get; }
 
-    /// <summary>Gets the id of the component.</summary>
+    /// <summary>
+    /// Gets the unique identifier for this component, incorporating both required identity fields
+    /// (e.g., name, version, type) and optional provenance metadata (download URL, source URL) when available.
+    /// When no optional metadata is present, this is identical to <see cref="BaseId"/>.
+    /// When optional metadata is present, the format is: <c>BaseId [optionalProp1:value1 optionalProp2:value2]</c>.
+    /// </summary>
     [JsonProperty("id")] // Newtonsoft.Json
     [SystemTextJson.JsonPropertyName("id")] // System.Text.Json
     public string Id => this.id ??= this.ComputeId();
+
+    /// <summary>
+    /// Gets the base identifier for this component, derived solely from required identity fields
+    /// (e.g., name, version, type). Use this when comparing components by package identity alone,
+    /// without considering provenance metadata such as download or source URLs.
+    /// </summary>
+    [JsonIgnore] // Newtonsoft.Json
+    [SystemTextJson.JsonIgnore] // System.Text.Json
+    public string BaseId => this.baseId ??= this.ComputeBaseId();
 
     [SystemTextJson.JsonPropertyName("packageUrl")]
     public virtual PackageURL PackageUrl { get; }
@@ -84,5 +104,35 @@ public abstract class TypedComponent
         return $"Property {propertyName} of component type {componentType} is required";
     }
 
-    protected abstract string ComputeId();
+    /// <summary>Computes the base identity string from required fields. Subclasses must implement this.</summary>
+    /// <returns>The base identity string for this component.</returns>
+    protected abstract string ComputeBaseId();
+
+    private string ComputeId()
+    {
+        var baseId = this.ComputeBaseId();
+        if (this.DownloadUrl == null && this.SourceUrl == null)
+        {
+            return baseId;
+        }
+
+        var extended = baseId + " [";
+        var hasDownload = this.DownloadUrl != null;
+        if (hasDownload)
+        {
+            extended += $"{nameof(this.DownloadUrl)}:{this.DownloadUrl}";
+        }
+
+        if (this.SourceUrl != null)
+        {
+            if (hasDownload)
+            {
+                extended += " ";
+            }
+
+            extended += $"{nameof(this.SourceUrl)}:{this.SourceUrl}";
+        }
+
+        return extended + "]";
+    }
 }

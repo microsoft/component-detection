@@ -453,4 +453,50 @@ public class TypedComponentSerializationTests
         nuget.DownloadUrl.Should().BeNull();
         nuget.SourceUrl.Should().BeNull();
     }
+
+    [TestMethod]
+    public void TypedComponent_Id_MatchesBaseId_WhenNoOptionalUrls()
+    {
+        var tc = new NuGetComponent("TestPackage", "1.0.0");
+
+        tc.Id.Should().Be(tc.BaseId);
+        tc.BaseId.Should().Be("TestPackage 1.0.0 - NuGet");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Id_IncludesDownloadUrl_WhenPresent()
+    {
+        var tc = new NuGetComponent("TestPackage", "1.0.0")
+        {
+            DownloadUrl = new Uri("https://example.com/package/1.0.0"),
+        };
+
+        tc.BaseId.Should().Be("TestPackage 1.0.0 - NuGet");
+        tc.Id.Should().Be("TestPackage 1.0.0 - NuGet [DownloadUrl:https://example.com/package/1.0.0]");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Id_IncludesSourceUrl_WhenPresent()
+    {
+        var tc = new NuGetComponent("TestPackage", "1.0.0")
+        {
+            SourceUrl = new Uri("https://github.com/test-org/TestPackage"),
+        };
+
+        tc.BaseId.Should().Be("TestPackage 1.0.0 - NuGet");
+        tc.Id.Should().Be("TestPackage 1.0.0 - NuGet [SourceUrl:https://github.com/test-org/TestPackage]");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Id_IncludesBothUrls_WhenPresent()
+    {
+        var tc = new NuGetComponent("TestPackage", "1.0.0")
+        {
+            DownloadUrl = new Uri("https://example.com/package/1.0.0"),
+            SourceUrl = new Uri("https://github.com/test-org/TestPackage"),
+        };
+
+        tc.BaseId.Should().Be("TestPackage 1.0.0 - NuGet");
+        tc.Id.Should().Be("TestPackage 1.0.0 - NuGet [DownloadUrl:https://example.com/package/1.0.0 SourceUrl:https://github.com/test-org/TestPackage]");
+    }
 }

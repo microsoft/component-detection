@@ -31,5 +31,5 @@ public class OtherComponent : TypedComponent
     [JsonIgnore]
     public override ComponentType Type => ComponentType.Other;
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} {this.DownloadUrl} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} {this.DownloadUrl} - {this.Type}";
 }
