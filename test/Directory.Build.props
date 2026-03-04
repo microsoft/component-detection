@@ -8,6 +8,8 @@
          When migrating to .NET 10 SDK, this should be removed and opt-in should be done via global.json instead.
          https://learn.microsoft.com/dotnet/core/testing/unit-testing-mstest-runner-intro#dotnet-test-integration -->
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- Shows the failed test output inline when using 'dotnet test' with Microsoft Testing Platform. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
   </PropertyGroup>
 
   <ItemGroup Label="Package References">
