@@ -12,8 +12,6 @@
         <PackageReference Include="Spectre.Console" />
         <PackageReference Include="Spectre.Console.Cli" />
         <PackageReference Include="Spectre.Console.Cli.Extensions.DependencyInjection" />
-        <PackageReference Include="System.Runtime.Loader" />
-        <PackageReference Include="System.Threading.Tasks.Dataflow" />
         <PackageReference Include="System.Reactive" />
     </ItemGroup>
 

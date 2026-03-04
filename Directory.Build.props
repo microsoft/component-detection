@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup Label="Build">
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
@@ -26,13 +26,15 @@
 
     <!-- MSTest analyzer for enabling parallelization. To be addressed later. -->
     <NoWarn>$(NoWarn);MSTEST0001</NoWarn>
+
+    <!-- New .NET 10 analyzer rules - to be addressed in follow-up PRs -->
+    <NoWarn>$(NoWarn);CA1515;CA1849;CA1872;CA1873;CA1874;CA2022;CA2024;CA2263;IDE0028;IDE0032;IDE0040;IDE0048;IDE0300;IDE0306;IDE0330;IDE0350</NoWarn>
   </PropertyGroup>
 
   <ItemGroup Label="Package References">
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="MinVer" PrivateAssets="all"/>
     <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all"/>
-    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
 </Project>

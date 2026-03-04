@@ -25,7 +25,6 @@
         <PackageReference Include="MSTest.Analyzers "/>
         <PackageReference Include="Newtonsoft.Json.Schema" />
         <PackageReference Include="packageurl-dotnet" />
-        <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,9 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup Label="Build">
-        <TargetFramework>netstandard2.0</TargetFramework>
-    </PropertyGroup>
-
     <ItemGroup>
         <InternalsVisibleTo Include="Microsoft.ComponentDetection.Contracts.Tests" />
     </ItemGroup>
@@ -12,9 +8,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="packageurl-dotnet" />
-        <PackageReference Include="System.Memory" />
         <PackageReference Include="System.Reactive" />
-        <PackageReference Include="System.Threading.Tasks.Dataflow" />
     </ItemGroup>
 
 </Project>

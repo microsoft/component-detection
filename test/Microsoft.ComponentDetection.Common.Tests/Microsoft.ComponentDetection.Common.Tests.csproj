@@ -8,7 +8,6 @@
       <PackageReference Include="Docker.DotNet" />
       <PackageReference Include="AwesomeAssertions.Analyzers" PrivateAssets="all" />
       <PackageReference Include="Microsoft.Extensions.Logging" />
-      <PackageReference Include="System.Threading.Tasks.Dataflow" />
       <PackageReference Include="MSTest.TestAdapter" />
       <PackageReference Include="Microsoft.NET.Test.Sdk" />
     </ItemGroup>

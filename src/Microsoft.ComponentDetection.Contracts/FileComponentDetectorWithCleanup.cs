@@ -48,10 +48,7 @@ public abstract class FileComponentDetectorWithCleanup : FileComponentDetector
         bool cleanupCreatedFiles,
         CancellationToken cancellationToken = default)
     {
-        if (process == null)
-        {
-            throw new ArgumentNullException(nameof(process));
-        }
+        ArgumentNullException.ThrowIfNull(process);
 
         // If there are no cleanup patterns, or the relevant file does not have a valid directory, run the process without even
         // determining the files that exist as there will be no subsequent cleanup process.

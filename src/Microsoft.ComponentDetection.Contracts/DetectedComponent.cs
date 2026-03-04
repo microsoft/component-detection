@@ -3,13 +3,14 @@ namespace Microsoft.ComponentDetection.Contracts;
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 
 /// <summary>A detected component, found during component detection scans. This is the container for all metadata gathered during detection.</summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 public class DetectedComponent
 {
-    private readonly object hashLock = new object();
+    private readonly Lock hashLock = new();
 
     /// <summary>Creates a new DetectedComponent.</summary>
     /// <param name="component">The typed component instance to base this detection on.</param>
