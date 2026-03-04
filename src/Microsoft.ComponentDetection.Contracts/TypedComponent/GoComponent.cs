@@ -43,7 +43,7 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
     [JsonIgnore]
     public override ComponentType Type => ComponentType.Go;
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 
     public override bool Equals(object obj)
     {

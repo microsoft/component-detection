@@ -1,5 +1,38 @@
 {
   "definitions": {
+    "ActorInfo": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "email": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
     "ContainerDetails": {
       "type": [
         "object",
@@ -118,8 +151,10 @@
               "Spdx",
               "Vcpkg",
               "DockerReference",
+              "Conan",
+              "Swift",
               "DotNet",
-              "Conan"
+              "CppSdk"
             ]
           }
         }
@@ -285,6 +320,15 @@
             "$ref": "#/definitions/TypedComponent"
           }
         },
+        "ancestralReferrers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/TypedComponent"
+          }
+        },
         "containerDetailIds": {
           "type": [
             "array",
@@ -308,6 +352,18 @@
               "type": "integer"
             }
           }
+        },
+        "targetFrameworks": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       },
       "required": [
@@ -317,8 +373,10 @@
         "isDevelopmentDependency",
         "dependencyScope",
         "topLevelReferrers",
+        "ancestralReferrers",
         "containerDetailIds",
-        "containerLayerIds"
+        "containerLayerIds",
+        "targetFrameworks"
       ]
     },
     "TypedComponent": {
@@ -346,8 +404,10 @@
             "Spdx",
             "Vcpkg",
             "DockerReference",
+            "Conan",
+            "Swift",
             "DotNet",
-            "Conan"
+            "CppSdk"
           ]
         },
         "id": {
@@ -358,6 +418,41 @@
         },
         "packageUrl": {
           "$ref": "#/definitions/PackageURL"
+        },
+        "licenses": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "authorsInfo": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ActorInfo"
+          }
+        },
+        "downloadUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "sourceUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
         }
       },
       "required": [
@@ -380,6 +475,15 @@
       }
     },
     "detectorsInScan": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/Detector"
+      }
+    },
+    "detectorsNotInScan": {
       "type": [
         "array",
         "null"
@@ -417,6 +521,7 @@
   "required": [
     "componentsFound",
     "detectorsInScan",
+    "detectorsNotInScan",
     "containerDetailsMap",
     "resultCode",
     "sourceDirectory"
