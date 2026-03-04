@@ -43,7 +43,7 @@ jobs:
       - name: Run tests
         # The '--' separator forwards options to the Microsoft Testing Platform runner.
         # After upgrading to .NET 10 SDK, these can be passed directly without '--'.
-        run: dotnet test --no-build --configuration Debug -- --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
+        run: dotnet test --no-build --configuration Debug -- --coverage --coverage-output-format cobertura
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
