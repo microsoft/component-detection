@@ -215,6 +215,9 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         // Multiple detected components for the same logical component id -- this happens when different files see the same component. This code should go away when we get all
         //  mutable data out of detected component -- we can just take any component.
         var firstComponent = enumerable.First();
+        HashSet<string> mergedLicenses = null;
+        HashSet<ActorInfo> mergedSuppliers = null;
+
         foreach (var nextComponent in enumerable.Skip(1))
         {
             foreach (var filePath in nextComponent.FilePaths ?? Enumerable.Empty<string>())
@@ -239,12 +242,28 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             }
 
             firstComponent.TargetFrameworks = MergeTargetFrameworks(firstComponent.TargetFrameworks, nextComponent.TargetFrameworks);
-            firstComponent.LicensesConcluded = firstComponent.LicensesConcluded == null ? nextComponent.LicensesConcluded
-                : nextComponent.LicensesConcluded == null ? firstComponent.LicensesConcluded
-                : firstComponent.LicensesConcluded.Union(nextComponent.LicensesConcluded, StringComparer.OrdinalIgnoreCase).ToList();
-            firstComponent.Suppliers = firstComponent.Suppliers == null ? nextComponent.Suppliers
-                : nextComponent.Suppliers == null ? firstComponent.Suppliers
-                : firstComponent.Suppliers.Union(nextComponent.Suppliers).ToList();
+
+            if (nextComponent.LicensesConcluded != null)
+            {
+                mergedLicenses ??= new HashSet<string>(firstComponent.LicensesConcluded ?? [], StringComparer.OrdinalIgnoreCase);
+                mergedLicenses.UnionWith(nextComponent.LicensesConcluded);
+            }
+
+            if (nextComponent.Suppliers != null)
+            {
+                mergedSuppliers ??= new HashSet<ActorInfo>(firstComponent.Suppliers ?? []);
+                mergedSuppliers.UnionWith(nextComponent.Suppliers);
+            }
+        }
+
+        if (mergedLicenses != null)
+        {
+            firstComponent.LicensesConcluded = mergedLicenses.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        if (mergedSuppliers != null)
+        {
+            firstComponent.Suppliers = mergedSuppliers.OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
         }
 
         return firstComponent;

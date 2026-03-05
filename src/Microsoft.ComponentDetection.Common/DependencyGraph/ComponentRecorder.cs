@@ -50,19 +50,36 @@ public class ComponentRecorder : IComponentRecorder
             {
                 // We pick a winner here -- any stateful props could get lost at this point.
                 var winningDetectedComponent = grouping.First();
+
+                HashSet<string> mergedLicenses = null;
+                HashSet<ActorInfo> mergedSuppliers = null;
+
                 foreach (var component in grouping.Skip(1))
                 {
                     winningDetectedComponent.ContainerDetailIds.UnionWith(component.ContainerDetailIds);
 
-                    // Defensive merge in case different file recorders set different values for the same component.
-                    // This would only be expected to differ if the same component was found in multiple locations with
-                    // different metadata, such as if a detector found license information from a build-time file.
-                    winningDetectedComponent.LicensesConcluded = winningDetectedComponent.LicensesConcluded == null ? component.LicensesConcluded
-                        : component.LicensesConcluded == null ? winningDetectedComponent.LicensesConcluded
-                        : winningDetectedComponent.LicensesConcluded.Union(component.LicensesConcluded, StringComparer.OrdinalIgnoreCase).ToList();
-                    winningDetectedComponent.Suppliers = winningDetectedComponent.Suppliers == null ? component.Suppliers
-                        : component.Suppliers == null ? winningDetectedComponent.Suppliers
-                        : winningDetectedComponent.Suppliers.Union(component.Suppliers).ToList();
+                    // Defensive: merge in case different file recorders set different values for the same component.
+                    if (component.LicensesConcluded != null)
+                    {
+                        mergedLicenses ??= new HashSet<string>(winningDetectedComponent.LicensesConcluded ?? [], StringComparer.OrdinalIgnoreCase);
+                        mergedLicenses.UnionWith(component.LicensesConcluded);
+                    }
+
+                    if (component.Suppliers != null)
+                    {
+                        mergedSuppliers ??= new HashSet<ActorInfo>(winningDetectedComponent.Suppliers ?? []);
+                        mergedSuppliers.UnionWith(component.Suppliers);
+                    }
+                }
+
+                if (mergedLicenses != null)
+                {
+                    winningDetectedComponent.LicensesConcluded = mergedLicenses.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+                }
+
+                if (mergedSuppliers != null)
+                {
+                    winningDetectedComponent.Suppliers = mergedSuppliers.OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
                 }
 
                 return winningDetectedComponent;
