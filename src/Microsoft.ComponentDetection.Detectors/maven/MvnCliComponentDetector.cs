@@ -287,8 +287,6 @@ public class MvnCliComponentDetector : FileComponentDetector
 
             var pomFile = processRequest.ComponentStream;
             var pomDir = Path.GetDirectoryName(pomFile.Location);
-            var depsFileName = this.mavenCommandService.BcdeMvnDependencyFileName;
-            var depsFilePath = Path.Combine(pomDir, depsFileName);
 
             // Generate dependency file using Maven CLI.
             var result = await this.mavenCommandService.GenerateDependenciesFileAsync(
@@ -301,6 +299,8 @@ public class MvnCliComponentDetector : FileComponentDetector
                 // We read the file here (rather than in MavenCommandService) to avoid
                 // unnecessary I/O for callers that scan for files later.
                 string depsFileContent = null;
+                var depsFileName = this.mavenCommandService.BcdeMvnDependencyFileName;
+                var depsFilePath = Path.Combine(pomDir, depsFileName);
                 if (this.fileUtilityService.Exists(depsFilePath))
                 {
                     depsFileContent = this.fileUtilityService.ReadAllText(depsFilePath);
@@ -376,9 +376,35 @@ public class MvnCliComponentDetector : FileComponentDetector
         // Determine detection method based on results
         this.DetermineDetectionMethod(cliSuccessCount, cliFailureCount);
 
-        this.LogDebug($"Maven CLI processing complete: {cliSuccessCount} succeeded, {cliFailureCount} failed out of {this.originalPomFiles.Count} root pom.xml files.");
+        this.LogDebug($"Maven CLI processing complete: {cliSuccessCount} succeeded, {cliFailureCount} failed out of {this.originalPomFiles.Count} root pom.xml files. Retrieving generated dependency graphs.");
 
-        return results.ToObservable();
+        // Use original MvnCliComponentDetector approach: scan entire source directory for ALL generated dependency files
+        // This ensures we find dependency files from submodules even if Maven CLI was only run on parent pom.xml
+        var allGeneratedDependencyFiles = this.ComponentStreamEnumerableFactory
+            .GetComponentStreams(
+                this.CurrentScanRequest.SourceDirectory,
+                [this.mavenCommandService.BcdeMvnDependencyFileName],
+                this.CurrentScanRequest.DirectoryExclusionPredicate)
+            .Select(componentStream =>
+            {
+                // Read and store content to avoid stream disposal issues
+                using var reader = new StreamReader(componentStream.Stream);
+                var content = reader.ReadToEnd();
+                return new ProcessRequest
+                {
+                    ComponentStream = new ComponentStream
+                    {
+                        Stream = new MemoryStream(Encoding.UTF8.GetBytes(content)),
+                        Location = componentStream.Location,
+                        Pattern = componentStream.Pattern,
+                    },
+                    SingleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(
+                        Path.Combine(Path.GetDirectoryName(componentStream.Location), MavenManifest)),
+                };
+            });
+
+        // Combine dependency files from CLI success with pom.xml files from CLI failures
+        return results.Concat(allGeneratedDependencyFiles).ToObservable();
     }
 
     protected override Task OnFileFoundAsync(
