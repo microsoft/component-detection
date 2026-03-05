@@ -262,6 +262,57 @@ public class DefaultGraphTranslationServiceTests
     }
 
     [TestMethod]
+    public void GenerateScanResultFromResult_SameDetectorMultipleRecorders_MergesFields()
+    {
+        // Two separate ComponentRecorders for the same detector, each detecting the same component.
+        // This exercises FlattenAndMergeComponents → MergeComponents (grouping by Component.Id + DetectedBy.Id).
+        var recorder1 = new ComponentRecorder(new Mock<ILogger>().Object);
+        var recorder2 = new ComponentRecorder(new Mock<ILogger>().Object);
+
+        var file1 = recorder1.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest1.json"));
+        var file2 = recorder2.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/manifest2.json"));
+
+        var comp1 = new DetectedComponent(new NpmComponent("shared-pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }],
+        };
+
+        var comp2 = new DetectedComponent(new NpmComponent("shared-pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["Apache-2.0"],
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }, new ActorInfo { Name = "Fabrikam", Type = "Organization" }],
+        };
+
+        file1.RegisterUsage(comp1);
+        file2.RegisterUsage(comp2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders =
+            [
+                (this.componentDetectorMock.Object, recorder1),
+                (this.componentDetectorMock.Object, recorder2),
+            ],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        // Same detector + same component ID → merged into one ScannedComponent
+        var scanned = result.ComponentsFound.Single();
+        scanned.LicensesConcluded.Should().HaveCount(2);
+        scanned.LicensesConcluded.Should().Contain("MIT");
+        scanned.LicensesConcluded.Should().Contain("Apache-2.0");
+
+        scanned.Suppliers.Should().HaveCount(2);
+        scanned.Suppliers.Should().Contain(s => s.Name == "Contoso");
+        scanned.Suppliers.Should().Contain(s => s.Name == "Fabrikam");
+    }
+
+    [TestMethod]
     public void GenerateScanResultFromResult_WithCustomLocations()
     {
         var detectedFilePath = "/some/file/path";
