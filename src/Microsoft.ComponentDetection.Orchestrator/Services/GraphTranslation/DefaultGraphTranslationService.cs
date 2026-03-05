@@ -71,38 +71,6 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         return left;
     }
 
-    private static IList<string> MergeLicensesConcluded(IList<string> left, IList<string> right)
-    {
-        if (left == null)
-        {
-            return right;
-        }
-
-        if (right == null)
-        {
-            return left;
-        }
-
-        return left.Union(right, StringComparer.OrdinalIgnoreCase).ToList();
-    }
-
-    private static IList<ActorInfo> MergeSuppliers(IList<ActorInfo> left, IList<ActorInfo> right)
-    {
-        if (left == null)
-        {
-            return right;
-        }
-
-        if (right == null)
-        {
-            return left;
-        }
-
-        var merged = new HashSet<ActorInfo>(left);
-        merged.UnionWith(right);
-        return merged.ToList();
-    }
-
     private void LogComponentScopeTelemetry(List<DetectedComponent> components)
     {
         using var record = new DetectedComponentScopeRecord();
@@ -271,8 +239,12 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             }
 
             firstComponent.TargetFrameworks = MergeTargetFrameworks(firstComponent.TargetFrameworks, nextComponent.TargetFrameworks);
-            firstComponent.LicensesConcluded = MergeLicensesConcluded(firstComponent.LicensesConcluded, nextComponent.LicensesConcluded);
-            firstComponent.Suppliers = MergeSuppliers(firstComponent.Suppliers, nextComponent.Suppliers);
+            firstComponent.LicensesConcluded = firstComponent.LicensesConcluded == null ? nextComponent.LicensesConcluded
+                : nextComponent.LicensesConcluded == null ? firstComponent.LicensesConcluded
+                : firstComponent.LicensesConcluded.Union(nextComponent.LicensesConcluded, StringComparer.OrdinalIgnoreCase).ToList();
+            firstComponent.Suppliers = firstComponent.Suppliers == null ? nextComponent.Suppliers
+                : nextComponent.Suppliers == null ? firstComponent.Suppliers
+                : firstComponent.Suppliers.Union(nextComponent.Suppliers).ToList();
         }
 
         return firstComponent;

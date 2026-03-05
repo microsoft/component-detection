@@ -53,8 +53,14 @@ public class ComponentRecorder : IComponentRecorder
                 foreach (var component in grouping.Skip(1))
                 {
                     winningDetectedComponent.ContainerDetailIds.UnionWith(component.ContainerDetailIds);
-                    winningDetectedComponent.LicensesConcluded = MergeLists(winningDetectedComponent.LicensesConcluded, component.LicensesConcluded);
-                    winningDetectedComponent.Suppliers = MergeActors(winningDetectedComponent.Suppliers, component.Suppliers);
+
+                    // Defensive: merge in case different file recorders set different values for the same component.
+                    winningDetectedComponent.LicensesConcluded = winningDetectedComponent.LicensesConcluded == null ? component.LicensesConcluded
+                        : component.LicensesConcluded == null ? winningDetectedComponent.LicensesConcluded
+                        : winningDetectedComponent.LicensesConcluded.Union(component.LicensesConcluded, StringComparer.OrdinalIgnoreCase).ToList();
+                    winningDetectedComponent.Suppliers = winningDetectedComponent.Suppliers == null ? component.Suppliers
+                        : component.Suppliers == null ? winningDetectedComponent.Suppliers
+                        : winningDetectedComponent.Suppliers.Union(component.Suppliers).ToList();
                 }
 
                 return winningDetectedComponent;
@@ -62,38 +68,6 @@ public class ComponentRecorder : IComponentRecorder
             .ToArray();
 
         return detectedComponents;
-    }
-
-    private static IList<string> MergeLists(IList<string> left, IList<string> right)
-    {
-        if (left == null)
-        {
-            return right;
-        }
-
-        if (right == null)
-        {
-            return left;
-        }
-
-        return left.Union(right, StringComparer.OrdinalIgnoreCase).ToList();
-    }
-
-    private static IList<ActorInfo> MergeActors(IList<ActorInfo> left, IList<ActorInfo> right)
-    {
-        if (left == null)
-        {
-            return right;
-        }
-
-        if (right == null)
-        {
-            return left;
-        }
-
-        var merged = new HashSet<ActorInfo>(left);
-        merged.UnionWith(right);
-        return merged.ToList();
     }
 
     public IEnumerable<string> GetSkippedComponents()
