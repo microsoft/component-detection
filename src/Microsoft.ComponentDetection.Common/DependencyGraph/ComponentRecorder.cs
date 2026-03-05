@@ -54,7 +54,9 @@ public class ComponentRecorder : IComponentRecorder
                 {
                     winningDetectedComponent.ContainerDetailIds.UnionWith(component.ContainerDetailIds);
 
-                    // Defensive: merge in case different file recorders set different values for the same component.
+                    // Defensive merge in case different file recorders set different values for the same component.
+                    // This would only be expected to differ if the same component was found in multiple locations with
+                    // different metadata, such as if a detector found license information from a build-time file.
                     winningDetectedComponent.LicensesConcluded = winningDetectedComponent.LicensesConcluded == null ? component.LicensesConcluded
                         : component.LicensesConcluded == null ? winningDetectedComponent.LicensesConcluded
                         : winningDetectedComponent.LicensesConcluded.Union(component.LicensesConcluded, StringComparer.OrdinalIgnoreCase).ToList();
