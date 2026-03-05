@@ -49,38 +49,31 @@ public class ActorInfo : IEquatable<ActorInfo>
             return true;
         }
 
-        return string.Equals(this.Name, other.Name, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(this.Email, other.Email, StringComparison.OrdinalIgnoreCase)
+        return string.Equals(this.Name, other.Name, StringComparison.Ordinal)
+            && string.Equals(this.Email, other.Email, StringComparison.Ordinal)
             && this.Url == other.Url
-            && string.Equals(this.Type, other.Type, StringComparison.OrdinalIgnoreCase);
+            && string.Equals(this.Type, other.Type, StringComparison.Ordinal);
     }
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => this.Equals(obj as ActorInfo);
 
     /// <summary>
-    /// Must be overridden because <see cref="Equals(ActorInfo)"/> is overridden.
-    /// The contract is: if two objects are equal, they must return the same hash code.
-    /// Without this override, hash-based collections (HashSet, Dictionary) would use
-    /// the default reference-based hash, causing equal-by-value actors to land in
-    /// different buckets and fail to deduplicate.
+    /// Included so that merge operations and collections that rely on hash codes (e.g., HashSet)
+    /// will operate on ActorInfo instances based on value equality rather than reference equality.
+    /// Uses multiply-and-add (seed 17, factor 31) with <see cref="StringComparer.Ordinal"/>
+    /// to stay consistent with the case-sensitive <see cref="Equals(ActorInfo)"/>.
     /// </summary>
-    /// <remarks>
-    /// Uses the multiply-and-add pattern (seed 17, factor 31) to combine field
-    /// hashes into a well-distributed value. <c>unchecked</c> allows intentional integer
-    /// overflow without throwing. Each field uses <see cref="StringComparer.OrdinalIgnoreCase"/>
-    /// to stay consistent with the case-insensitive equality in <see cref="Equals(ActorInfo)"/>.
-    /// </remarks>
     /// <returns>A hash code consistent with value-based equality.</returns>
     public override int GetHashCode()
     {
         unchecked
         {
             var hash = 17;
-            hash = (hash * 31) + StringComparer.OrdinalIgnoreCase.GetHashCode(this.Name ?? string.Empty);
-            hash = (hash * 31) + StringComparer.OrdinalIgnoreCase.GetHashCode(this.Email ?? string.Empty);
+            hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(this.Name ?? string.Empty);
+            hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(this.Email ?? string.Empty);
             hash = (hash * 31) + (this.Url?.GetHashCode() ?? 0);
-            hash = (hash * 31) + StringComparer.OrdinalIgnoreCase.GetHashCode(this.Type ?? string.Empty);
+            hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(this.Type ?? string.Empty);
             return hash;
         }
     }

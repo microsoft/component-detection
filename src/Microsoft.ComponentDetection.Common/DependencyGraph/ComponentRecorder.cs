@@ -48,11 +48,13 @@ public class ComponentRecorder : IComponentRecorder
             .GroupBy(x => x.Component.Id)
             .Select(grouping =>
             {
-                // We pick a winner here -- any stateful props could get lost at this point. Only stateful prop still outstanding is ContainerDetails.
+                // We pick a winner here -- any stateful props could get lost at this point.
                 var winningDetectedComponent = grouping.First();
                 foreach (var component in grouping.Skip(1))
                 {
                     winningDetectedComponent.ContainerDetailIds.UnionWith(component.ContainerDetailIds);
+                    winningDetectedComponent.LicensesConcluded = MergeLists(winningDetectedComponent.LicensesConcluded, component.LicensesConcluded);
+                    winningDetectedComponent.Suppliers = MergeActors(winningDetectedComponent.Suppliers, component.Suppliers);
                 }
 
                 return winningDetectedComponent;
@@ -60,6 +62,38 @@ public class ComponentRecorder : IComponentRecorder
             .ToArray();
 
         return detectedComponents;
+    }
+
+    private static IList<string> MergeLists(IList<string> left, IList<string> right)
+    {
+        if (left == null)
+        {
+            return right;
+        }
+
+        if (right == null)
+        {
+            return left;
+        }
+
+        return left.Union(right, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static IList<ActorInfo> MergeActors(IList<ActorInfo> left, IList<ActorInfo> right)
+    {
+        if (left == null)
+        {
+            return right;
+        }
+
+        if (right == null)
+        {
+            return left;
+        }
+
+        var merged = new HashSet<ActorInfo>(left);
+        merged.UnionWith(right);
+        return merged.ToList();
     }
 
     public IEnumerable<string> GetSkippedComponents()

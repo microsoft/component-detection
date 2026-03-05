@@ -89,13 +89,12 @@ public class ActorInfoTests
     }
 
     [TestMethod]
-    public void ActorInfo_Equals_CaseInsensitive_ReturnsTrue()
+    public void ActorInfo_Equals_CaseSensitive_DifferentCasing_ReturnsFalse()
     {
         var a = new ActorInfo { Name = "alice", Email = "ALICE@EXAMPLE.COM", Type = "person" };
         var b = new ActorInfo { Name = "Alice", Email = "alice@example.com", Type = "Person" };
 
-        a.Equals(b).Should().BeTrue();
-        a.GetHashCode().Should().Be(b.GetHashCode());
+        a.Equals(b).Should().BeFalse();
     }
 
     [TestMethod]
@@ -119,14 +118,16 @@ public class ActorInfoTests
     }
 
     [TestMethod]
-    public void ActorInfo_HashSet_DeduplicatesEquivalentEntries()
+    public void ActorInfo_HashSet_DeduplicatesExactMatches()
     {
         var a = new ActorInfo { Name = "Alice", Type = "Person" };
-        var b = new ActorInfo { Name = "alice", Type = "PERSON" };
-        var c = new ActorInfo { Name = "Bob", Type = "Organization" };
+        var b = new ActorInfo { Name = "Alice", Type = "Person" };
+        var c = new ActorInfo { Name = "alice", Type = "Person" };
+        var d = new ActorInfo { Name = "Bob", Type = "Organization" };
 
-        var set = new System.Collections.Generic.HashSet<ActorInfo> { a, b, c };
+        var set = new System.Collections.Generic.HashSet<ActorInfo> { a, b, c, d };
 
-        set.Should().HaveCount(2);
+        // a and b are identical — deduped. c differs in casing — kept separate.
+        set.Should().HaveCount(3);
     }
 }
