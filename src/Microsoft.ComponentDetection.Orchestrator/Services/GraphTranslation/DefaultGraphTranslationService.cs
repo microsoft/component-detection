@@ -71,6 +71,38 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         return left;
     }
 
+    private static IList<string> MergeLicensesConcluded(IList<string> left, IList<string> right)
+    {
+        if (left == null)
+        {
+            return right;
+        }
+
+        if (right == null)
+        {
+            return left;
+        }
+
+        return left.Union(right, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static IList<ActorInfo> MergeSuppliers(IList<ActorInfo> left, IList<ActorInfo> right)
+    {
+        if (left == null)
+        {
+            return right;
+        }
+
+        if (right == null)
+        {
+            return left;
+        }
+
+        var merged = new HashSet<ActorInfo>(left);
+        merged.UnionWith(right);
+        return merged.ToList();
+    }
+
     private void LogComponentScopeTelemetry(List<DetectedComponent> components)
     {
         using var record = new DetectedComponentScopeRecord();
@@ -239,6 +271,8 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             }
 
             firstComponent.TargetFrameworks = MergeTargetFrameworks(firstComponent.TargetFrameworks, nextComponent.TargetFrameworks);
+            firstComponent.LicensesConcluded = MergeLicensesConcluded(firstComponent.LicensesConcluded, nextComponent.LicensesConcluded);
+            firstComponent.Suppliers = MergeSuppliers(firstComponent.Suppliers, nextComponent.Suppliers);
         }
 
         return firstComponent;
@@ -316,6 +350,8 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             ContainerDetailIds = component.ContainerDetailIds,
             ContainerLayerIds = component.ContainerLayerIds,
             TargetFrameworks = component.TargetFrameworks?.ToHashSet(),
+            LicensesConcluded = component.LicensesConcluded,
+            Suppliers = component.Suppliers,
         };
     }
 }

@@ -77,4 +77,56 @@ public class ActorInfoTests
         deserialized.Email.Should().BeNull();
         deserialized.Type.Should().BeNull();
     }
+
+    [TestMethod]
+    public void ActorInfo_Equals_SameValues_ReturnsTrue()
+    {
+        var a = new ActorInfo { Name = "Alice", Email = "alice@example.com", Url = new Uri("https://example.com"), Type = "Person" };
+        var b = new ActorInfo { Name = "Alice", Email = "alice@example.com", Url = new Uri("https://example.com"), Type = "Person" };
+
+        a.Equals(b).Should().BeTrue();
+        a.GetHashCode().Should().Be(b.GetHashCode());
+    }
+
+    [TestMethod]
+    public void ActorInfo_Equals_CaseInsensitive_ReturnsTrue()
+    {
+        var a = new ActorInfo { Name = "alice", Email = "ALICE@EXAMPLE.COM", Type = "person" };
+        var b = new ActorInfo { Name = "Alice", Email = "alice@example.com", Type = "Person" };
+
+        a.Equals(b).Should().BeTrue();
+        a.GetHashCode().Should().Be(b.GetHashCode());
+    }
+
+    [TestMethod]
+    public void ActorInfo_Equals_DifferentValues_ReturnsFalse()
+    {
+        var a = new ActorInfo { Name = "Alice", Type = "Person" };
+        var b = new ActorInfo { Name = "Bob", Type = "Person" };
+
+        a.Equals(b).Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void ActorInfo_Equals_Null_ReturnsFalse()
+    {
+        var a = new ActorInfo { Name = "Alice" };
+        ActorInfo? nullActor = null;
+
+#pragma warning disable CA1508 // Avoid dead conditional code — intentionally testing null equality
+        a.Equals(nullActor).Should().BeFalse();
+#pragma warning restore CA1508
+    }
+
+    [TestMethod]
+    public void ActorInfo_HashSet_DeduplicatesEquivalentEntries()
+    {
+        var a = new ActorInfo { Name = "Alice", Type = "Person" };
+        var b = new ActorInfo { Name = "alice", Type = "PERSON" };
+        var c = new ActorInfo { Name = "Bob", Type = "Organization" };
+
+        var set = new System.Collections.Generic.HashSet<ActorInfo> { a, b, c };
+
+        set.Should().HaveCount(2);
+    }
 }

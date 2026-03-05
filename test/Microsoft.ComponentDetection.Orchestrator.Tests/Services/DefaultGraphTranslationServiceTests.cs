@@ -41,6 +41,113 @@ public class DefaultGraphTranslationServiceTests
     }
 
     [TestMethod]
+    public void GenerateScanResultFromResult_MergesLicensesConcluded()
+    {
+        var singleFileRecorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file2"));
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT", "Apache-2.0"],
+        };
+
+        singleFileRecorder1.RegisterUsage(component1);
+        singleFileRecorder2.RegisterUsage(component2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var merged = result.ComponentsFound.Single();
+        merged.LicensesConcluded.Should().BeEquivalentTo(["MIT", "Apache-2.0"]);
+    }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_MergesSuppliers()
+    {
+        var singleFileRecorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file2"));
+
+        var supplier1 = new ActorInfo { Name = "Contoso", Type = "Organization" };
+        var supplier2 = new ActorInfo { Name = "contoso", Type = "organization" };
+        var supplier3 = new ActorInfo { Name = "Fabrikam", Type = "Organization" };
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [supplier1],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [supplier2, supplier3],
+        };
+
+        singleFileRecorder1.RegisterUsage(component1);
+        singleFileRecorder2.RegisterUsage(component2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var merged = result.ComponentsFound.Single();
+
+        // supplier1 and supplier2 are case-insensitively equal, so should be deduped
+        merged.Suppliers.Should().HaveCount(2);
+        merged.Suppliers.Should().Contain(s => string.Equals(s.Name, "Contoso", System.StringComparison.OrdinalIgnoreCase));
+        merged.Suppliers.Should().Contain(s => s.Name == "Fabrikam");
+    }
+
+    [TestMethod]
+    public void GenerateScanResultFromResult_NullLicensesConcluded_PreservesNonNull()
+    {
+        var singleFileRecorder1 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file1"));
+        var singleFileRecorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file2"));
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = null,
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+        };
+
+        singleFileRecorder1.RegisterUsage(component1);
+        singleFileRecorder2.RegisterUsage(component2);
+
+        var processingResult = new DetectorProcessingResult
+        {
+            ResultCode = ProcessingResultCode.Success,
+            ContainersDetailsMap = [],
+            ComponentRecorders = [(this.componentDetectorMock.Object, this.componentRecorder)],
+        };
+
+        var result = this.serviceUnderTest.GenerateScanResultFromProcessingResult(
+            processingResult, new ScanSettings { SourceDirectory = this.sourceDirectory });
+
+        var merged = result.ComponentsFound.Single();
+        merged.LicensesConcluded.Should().BeEquivalentTo(["MIT"]);
+    }
+
+    [TestMethod]
     public void GenerateScanResultFromResult_WithCustomLocations()
     {
         var detectedFilePath = "/some/file/path";
