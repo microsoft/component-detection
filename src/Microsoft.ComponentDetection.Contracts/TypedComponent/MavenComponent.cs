@@ -33,5 +33,5 @@ public class MavenComponent : TypedComponent
     [JsonPropertyName("packageUrl")]
     public override PackageURL PackageUrl => new PackageURL("maven", this.GroupId, this.ArtifactId, this.Version, null, null);
 
-    protected override string ComputeId() => $"{this.GroupId} {this.ArtifactId} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.GroupId} {this.ArtifactId} {this.Version} - {this.Type}";
 }

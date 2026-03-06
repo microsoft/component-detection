@@ -68,7 +68,7 @@ public class VcpkgComponent : TypedComponent
         }
     }
 
-    protected override string ComputeId()
+    protected override string ComputeBaseId()
     {
         var componentLocationPrefix = string.Empty;
         if (!string.IsNullOrWhiteSpace(this.DownloadLocation) && !this.DownloadLocation.Trim().Equals("NONE", System.StringComparison.InvariantCultureIgnoreCase))

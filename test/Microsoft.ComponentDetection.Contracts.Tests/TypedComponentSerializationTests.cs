@@ -27,6 +27,11 @@ public class TypedComponentSerializationTests
         otherComponent.Version.Should().Be("1.2.3");
         otherComponent.DownloadUrl.Should().Be(new Uri("https://sampleurl.com"));
         otherComponent.Hash.Should().Be("SampleHash");
+
+        // OtherComponent includes DownloadUrl in its BaseId (it's a required identity field for Other).
+        // Since DownloadUrl is already part of BaseId, Id should not duplicate it.
+        otherComponent.BaseId.Should().Be("SomeOtherComponent 1.2.3 https://sampleurl.com/ - Other");
+        otherComponent.Id.Should().Be(otherComponent.BaseId, "DownloadUrl is already in BaseId, so Id should not append it again");
     }
 
     [TestMethod]
@@ -357,5 +362,146 @@ public class TypedComponentSerializationTests
         var cppSdkComponent = (CppSdkComponent)deserializedTC;
         cppSdkComponent.Name.Should().Be("SomeCppSdk");
         cppSdkComponent.Version.Should().Be("1.2.3");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Serialization_Properties_Roundtrip()
+    {
+        ActorInfo[] authorsInfo =
+        [
+            new ActorInfo { Name = "Test Author", Type = "Person" },
+            new ActorInfo { Name = "Test Org", Email = "info@test-org.example.com", Type = "Organization" },
+        ];
+
+        TypedComponent tc = new NuGetComponent("TestPackage", "13.0.4")
+        {
+            Licenses = ["MIT"],
+            AuthorsInfo = authorsInfo,
+            DownloadUrl = new Uri("https://www.example.com/api/v2/package/TestPackage/13.0.4"),
+            SourceUrl = new Uri("https://github.com/test-org/TestPackage"),
+        };
+
+        // Verify purl is present before serialization
+        tc.PackageUrl.ToString().Should().Be("pkg:nuget/TestPackage@13.0.4");
+
+        var json = JsonSerializer.Serialize(tc);
+
+        var deserialized = JsonSerializer.Deserialize<TypedComponent>(json);
+
+        deserialized.Should().BeOfType(typeof(NuGetComponent));
+        var nuget = (NuGetComponent)deserialized;
+        nuget.Name.Should().Be("TestPackage");
+        nuget.Version.Should().Be("13.0.4");
+        nuget.Licenses.Should().ContainSingle().Which.Should().Be("MIT");
+        nuget.AuthorsInfo.Should().HaveCount(2);
+        nuget.AuthorsInfo[0].Name.Should().Be("Test Author");
+        nuget.AuthorsInfo[0].Type.Should().Be("Person");
+        nuget.AuthorsInfo[1].Name.Should().Be("Test Org");
+        nuget.AuthorsInfo[1].Email.Should().Be("info@test-org.example.com");
+        nuget.DownloadUrl.Should().Be(new Uri("https://www.example.com/api/v2/package/TestPackage/13.0.4"));
+        nuget.SourceUrl.Should().Be(new Uri("https://github.com/test-org/TestPackage"));
+        nuget.PackageUrl.ToString().Should().Be("pkg:nuget/TestPackage@13.0.4");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Serialization_Properties_NullOmittedFromJson()
+    {
+        TypedComponent tc = new NpmComponent("lodash", "4.17.21");
+
+        var json = JsonSerializer.Serialize(tc);
+
+        // These properties should not appear in JSON when null (verify structurally, not via substring)
+        using (var document = JsonDocument.Parse(json))
+        {
+            var root = document.RootElement;
+            root.TryGetProperty("licenses", out _).Should().BeFalse();
+            root.TryGetProperty("authorsInfo", out _).Should().BeFalse();
+            root.TryGetProperty("downloadUrl", out _).Should().BeFalse();
+            root.TryGetProperty("sourceUrl", out _).Should().BeFalse();
+        }
+
+        // Component should still deserialize correctly
+        var deserialized = JsonSerializer.Deserialize<TypedComponent>(json);
+        deserialized.Should().BeOfType(typeof(NpmComponent));
+        var npm = (NpmComponent)deserialized;
+        npm.Licenses.Should().BeNull();
+        npm.AuthorsInfo.Should().BeNull();
+        npm.DownloadUrl.Should().BeNull();
+        npm.SourceUrl.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TypedComponent_Deserialization_OldJsonWithoutNewProperties_BackwardCompatible()
+    {
+        // Simulates JSON produced by an older version of Component Detection that has no new properties
+        var oldJson = """
+            {
+                "type": "NuGet",
+                "name": "TestPackage",
+                "version": "1.0.0",
+                "authors": ["Test Author"],
+                "id": "TestPackage 1.0.0 - NuGet"
+            }
+            """;
+
+        var deserialized = JsonSerializer.Deserialize<TypedComponent>(oldJson);
+
+        deserialized.Should().BeOfType(typeof(NuGetComponent));
+        var nuget = (NuGetComponent)deserialized;
+        nuget.Name.Should().Be("TestPackage");
+        nuget.Version.Should().Be("1.0.0");
+        nuget.Authors.Should().ContainSingle().Which.Should().Be("Test Author");
+
+        // New properties should be null when absent from JSON
+        nuget.Licenses.Should().BeNull();
+        nuget.AuthorsInfo.Should().BeNull();
+        nuget.DownloadUrl.Should().BeNull();
+        nuget.SourceUrl.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void TypedComponent_Id_MatchesBaseId_WhenNoOptionalUrls()
+    {
+        var tc = new NuGetComponent("TestPackage", "1.0.0");
+
+        tc.Id.Should().Be(tc.BaseId);
+        tc.BaseId.Should().Be("TestPackage 1.0.0 - NuGet");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Id_IncludesDownloadUrl_WhenPresent()
+    {
+        var tc = new NuGetComponent("TestPackage", "1.0.0")
+        {
+            DownloadUrl = new Uri("https://example.com/package/1.0.0"),
+        };
+
+        tc.BaseId.Should().Be("TestPackage 1.0.0 - NuGet");
+        tc.Id.Should().Be("TestPackage 1.0.0 - NuGet [DownloadUrl:https://example.com/package/1.0.0]");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Id_IncludesSourceUrl_WhenPresent()
+    {
+        var tc = new NuGetComponent("TestPackage", "1.0.0")
+        {
+            SourceUrl = new Uri("https://github.com/test-org/TestPackage"),
+        };
+
+        tc.BaseId.Should().Be("TestPackage 1.0.0 - NuGet");
+        tc.Id.Should().Be("TestPackage 1.0.0 - NuGet [SourceUrl:https://github.com/test-org/TestPackage]");
+    }
+
+    [TestMethod]
+    public void TypedComponent_Id_IncludesBothUrls_WhenPresent()
+    {
+        var tc = new NuGetComponent("TestPackage", "1.0.0")
+        {
+            DownloadUrl = new Uri("https://example.com/package/1.0.0"),
+            SourceUrl = new Uri("https://github.com/test-org/TestPackage"),
+        };
+
+        tc.BaseId.Should().Be("TestPackage 1.0.0 - NuGet");
+        tc.Id.Should().Be("TestPackage 1.0.0 - NuGet [DownloadUrl:https://example.com/package/1.0.0 SourceUrl:https://github.com/test-org/TestPackage]");
     }
 }
