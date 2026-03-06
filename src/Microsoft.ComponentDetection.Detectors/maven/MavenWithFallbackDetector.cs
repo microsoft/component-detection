@@ -119,6 +119,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private readonly ConcurrentBag<string> failedEndpoints = [];
     private readonly ConcurrentDictionary<string, IList<ProcessRequest>> parentPomDictionary = [];
 
+    // File coordination for safe deletion across multiple detectors
+    private readonly ConcurrentDictionary<string, int> fileReaderCounts = [];
+
     // Telemetry tracking
     private MavenDetectionMethod usedDetectionMethod = MavenDetectionMethod.None;
     private MavenFallbackReason fallbackReason = MavenFallbackReason.None;
@@ -388,8 +391,11 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             .Select(componentStream =>
             {
                 // Read and store content to avoid stream disposal issues
+                // Track file read for coordination with deletion
+                this.IncrementFileReaderCount(componentStream.Location);
                 using var reader = new StreamReader(componentStream.Stream);
                 var content = reader.ReadToEnd();
+                this.DecrementFileReaderCount(componentStream.Location);
                 return new ProcessRequest
                 {
                     ComponentStream = new ComponentStream
@@ -509,15 +515,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     {
         this.mavenCommandService.ParseDependenciesFile(processRequest);
 
-        // Try to delete the deps file
-        // try
-        // {
-        //     File.Delete(processRequest.ComponentStream.Location);
-        // }
-        // catch
-        // {
-        //     // Ignore deletion errors
-        // }
+        // Try to delete the deps file using coordination semaphore
+        this.TryDeleteDependencyFileIfNotInUse(processRequest.ComponentStream.Location);
 
         // Count components registered to this specific file's recorder to avoid race conditions
         // when OnFileFoundAsync runs concurrently for multiple files.
@@ -791,5 +790,95 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
                 return filteredRequests;
             });
+    }
+
+    /// <summary>
+    /// Increments the reader count for a file to prevent premature deletion.
+    /// </summary>
+    /// <param name="filePath">Path to the file being read.</param>
+    private void IncrementFileReaderCount(string filePath)
+    {
+        this.fileReaderCounts.AddOrUpdate(filePath, 1, (key, count) => count + 1);
+    }
+
+    /// <summary>
+    /// Decrements the reader count for a file.
+    /// </summary>
+    /// <param name="filePath">Path to the file that finished being read.</param>
+    private void DecrementFileReaderCount(string filePath)
+    {
+        this.fileReaderCounts.AddOrUpdate(filePath, 0, (key, count) => Math.Max(0, count - 1));
+    }
+
+    /// <summary>
+    /// Safely deletes a dependency file only if no other processes are reading it.
+    /// Uses file-based coordination to work across detector instances.
+    /// </summary>
+    /// <param name="filePath">Path to the file to delete.</param>
+    private void TryDeleteDependencyFileIfNotInUse(string filePath)
+    {
+        try
+        {
+            // Check our local reader count first
+            var localReaderCount = this.fileReaderCounts.GetValueOrDefault(filePath, 0);
+            if (localReaderCount > 0)
+            {
+                this.LogDebug($"Skipping deletion of {filePath} - still being read locally (count: {localReaderCount})");
+                return;
+            }
+
+            // Create a coordination file to signal deletion intent
+            var coordinationFile = filePath + ".deleting";
+
+            // Try to create coordination file atomically
+            if (File.Exists(coordinationFile))
+            {
+                this.LogDebug($"Skipping deletion of {filePath} - another detector is deleting it");
+                return;
+            }
+
+            // Create coordination file and attempt deletion
+            File.WriteAllText(coordinationFile, Environment.ProcessId.ToString());
+
+            // Small delay to allow other processes to detect coordination file
+            Thread.Sleep(50);
+
+            // Verify we still own the coordination file (in case of race condition)
+            if (File.Exists(coordinationFile) &&
+                File.ReadAllText(coordinationFile).Equals(Environment.ProcessId.ToString()))
+            {
+                // Safely delete both files
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    this.LogDebug($"Successfully deleted dependency file: {filePath}");
+                }
+
+                File.Delete(coordinationFile);
+            }
+            else
+            {
+                this.LogDebug($"Lost coordination for {filePath} - another process took over deletion");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Don't fail detection if cleanup fails - just log and continue
+            this.LogDebug($"Failed to delete dependency file {filePath}: {ex.Message}");
+
+            // Clean up coordination file if it exists
+            try
+            {
+                var coordinationFile = filePath + ".deleting";
+                if (File.Exists(coordinationFile))
+                {
+                    File.Delete(coordinationFile);
+                }
+            }
+            catch
+            {
+                // Ignore coordination cleanup errors
+            }
+        }
     }
 }

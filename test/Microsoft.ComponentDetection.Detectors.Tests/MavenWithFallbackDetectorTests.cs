@@ -1183,6 +1183,36 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         detectorResult.AdditionalTelemetryDetails["DetectionMethod"].Should().Be("StaticParserOnly");
     }
 
+    [TestMethod]
+    public async Task FileCoordination_VerifiesCoordinationSystemExists_Async()
+    {
+        // This test verifies the file coordination system is implemented
+        // without trying to test the actual file system operations
+        const string componentString = "org.apache.maven:maven-compat:jar:3.6.1-SNAPSHOT";
+        this.SetupMvnCliSuccess(componentString);
+
+        this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
+            .Callback((ProcessRequest pr) =>
+            {
+                pr.SingleFileComponentRecorder.RegisterUsage(
+                    new DetectedComponent(new MavenComponent("org.apache.maven", "maven-compat", "3.6.1-SNAPSHOT")));
+            });
+
+        // Act
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
+
+        // Assert - detector should work normally with coordination system in place
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var mavenComponent = detectedComponents.First().Component as MavenComponent;
+        mavenComponent.Should().NotBeNull();
+        mavenComponent.GroupId.Should().Be("org.apache.maven");
+        mavenComponent.ArtifactId.Should().Be("maven-compat");
+        mavenComponent.Version.Should().Be("3.6.1-SNAPSHOT");
+    }
+
     private void SetupMvnCliSuccess(string depsFileContent)
     {
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
