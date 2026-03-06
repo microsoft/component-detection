@@ -226,6 +226,54 @@ public class ComponentRecorderTests
     }
 
     [TestMethod]
+    public void GetDetectedComponents_SameComponentAcrossFiles_LicensesConcludedWithNullEntry_DoesNotThrow()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("file2.json");
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT", null],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = [null, "Apache-2.0"],
+        };
+
+        recorder1.RegisterUsage(component1);
+        recorder2.RegisterUsage(component2);
+
+        var result = this.componentRecorder.GetDetectedComponents().Single();
+        result.LicensesConcluded.Should().Contain("MIT");
+        result.LicensesConcluded.Should().Contain("Apache-2.0");
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_SameComponentAcrossFiles_SuppliersWithNullEntry_DoesNotThrow()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("file2.json");
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }, null],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [null, new ActorInfo { Name = "Fabrikam", Type = "Organization" }],
+        };
+
+        recorder1.RegisterUsage(component1);
+        recorder2.RegisterUsage(component2);
+
+        var result = this.componentRecorder.GetDetectedComponents().Single();
+        result.Suppliers.Should().Contain(s => s != null && s.Name == "Contoso");
+        result.Suppliers.Should().Contain(s => s != null && s.Name == "Fabrikam");
+    }
+
+    [TestMethod]
     public void GetDetectedComponents_SameComponentAcrossThreeFiles_MergesAllFields()
     {
         var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");

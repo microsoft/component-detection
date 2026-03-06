@@ -74,12 +74,12 @@ public class ComponentRecorder : IComponentRecorder
 
                 if (mergedLicenses != null)
                 {
-                    winningDetectedComponent.LicensesConcluded = mergedLicenses.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+                    winningDetectedComponent.LicensesConcluded = mergedLicenses.Where(x => x != null).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
                 }
 
                 if (mergedSuppliers != null)
                 {
-                    winningDetectedComponent.Suppliers = mergedSuppliers.OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
+                    winningDetectedComponent.Suppliers = mergedSuppliers.Where(s => s != null).OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
                 }
 
                 return winningDetectedComponent;

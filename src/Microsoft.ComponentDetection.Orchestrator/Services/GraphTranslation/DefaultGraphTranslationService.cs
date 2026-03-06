@@ -258,12 +258,12 @@ public class DefaultGraphTranslationService : IGraphTranslationService
 
         if (mergedLicenses != null)
         {
-            firstComponent.LicensesConcluded = mergedLicenses.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+            firstComponent.LicensesConcluded = mergedLicenses.Where(x => x != null).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
         if (mergedSuppliers != null)
         {
-            firstComponent.Suppliers = mergedSuppliers.OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
+            firstComponent.Suppliers = mergedSuppliers.Where(s => s != null).OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
         }
 
         return firstComponent;
