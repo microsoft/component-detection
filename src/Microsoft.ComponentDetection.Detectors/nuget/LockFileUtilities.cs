@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using global::NuGet.Frameworks;
 using global::NuGet.Packaging.Core;
 using global::NuGet.ProjectModel;
 using global::NuGet.Versioning;
@@ -246,19 +247,31 @@ public static class LockFileUtilities
 
     /// <summary>
     /// Registers PackageDownload dependencies from the lock file.
-    /// PackageDownload is always a development dependency since its usage does not make it part of the application.
     /// </summary>
     /// <param name="singleFileComponentRecorder">The component recorder to register with.</param>
     /// <param name="lockFile">The lock file containing PackageDownload references.</param>
-    public static void RegisterPackageDownloads(ISingleFileComponentRecorder singleFileComponentRecorder, LockFile lockFile)
+    /// <param name="isDevelopmentDependency">
+    /// Optional callback to determine if a package download is a development dependency.
+    /// Parameters are (packageName, targetFramework). Defaults to always returning true since
+    /// PackageDownload usage does not make it part of the application.
+    /// </param>
+    public static void RegisterPackageDownloads(
+        ISingleFileComponentRecorder singleFileComponentRecorder,
+        LockFile lockFile,
+        Func<string, NuGetFramework?, bool>? isDevelopmentDependency = null)
     {
         if (lockFile.PackageSpec?.TargetFrameworks == null)
         {
             return;
         }
 
+        // Default: PackageDownload is always a development dependency
+        isDevelopmentDependency ??= (_, _) => true;
+
         foreach (var framework in lockFile.PackageSpec.TargetFrameworks)
         {
+            var tfm = framework.FrameworkName;
+
             foreach (var packageDownload in framework.DownloadDependencies)
             {
                 if (packageDownload?.Name is null || packageDownload?.VersionRange?.MinVersion is null)
@@ -268,13 +281,12 @@ public static class LockFileUtilities
 
                 var libraryComponent = new DetectedComponent(new NuGetComponent(packageDownload.Name, packageDownload.VersionRange.MinVersion.ToNormalizedString()));
 
-                // PackageDownload is always a development dependency since its usage does not make it part of the application
                 singleFileComponentRecorder.RegisterUsage(
                     libraryComponent,
                     isExplicitReferencedDependency: true,
                     parentComponentId: null,
-                    isDevelopmentDependency: true,
-                    targetFramework: framework.FrameworkName?.GetShortFolderName());
+                    isDevelopmentDependency: isDevelopmentDependency(packageDownload.Name, tfm),
+                    targetFramework: tfm?.GetShortFolderName());
             }
         }
     }

@@ -9,7 +9,9 @@ using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
+using global::NuGet.Frameworks;
 using global::NuGet.ProjectModel;
+using Microsoft.Build.Framework;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -144,6 +146,39 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Determines whether a project should be classified as development-only.
+    /// A project is development-only if IsTestProject=true, IsShipping=false, or IsDevelopment=true.
+    /// </summary>
+    private static bool IsDevelopmentOnlyProject(MSBuildProjectInfo projectInfo) =>
+        projectInfo.IsTestProject == true ||
+        projectInfo.IsShipping == false ||
+        projectInfo.IsDevelopment == true;
+
+    /// <summary>
+    /// Gets the IsDevelopmentDependency metadata override for a package from the specified items.
+    /// </summary>
+    /// <param name="items">The item dictionary to check (e.g., PackageReference or PackageDownload).</param>
+    /// <param name="packageName">The package name to look up.</param>
+    /// <returns>
+    /// True if explicitly marked as a development dependency,
+    /// false if explicitly marked as NOT a development dependency,
+    /// null if no explicit override is set or the package is not in the items.
+    /// </returns>
+    private static bool? GetDevelopmentDependencyOverride(IDictionary<string, ITaskItem> items, string packageName)
+    {
+        if (items.TryGetValue(packageName, out var item))
+        {
+            var metadataValue = item.GetMetadata("IsDevelopmentDependency");
+            if (!string.IsNullOrEmpty(metadataValue))
+            {
+                return string.Equals(metadataValue, "true", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        return null;
     }
 
     private void ProcessBinlogFile(ProcessRequest processRequest)
@@ -358,8 +393,10 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// - Navigates dependency graph via NavigateAndRegister
     /// - Registers PackageDownload dependencies
     ///
-    /// The enhancement is that we can mark all dependencies of test projects as dev dependencies
-    /// based on the IsTestProject property from the binlog.
+    /// Enhancements from binlog:
+    /// - If project sets IsTestProject=true, IsShipping=false, or IsDevelopment=true,
+    ///   all dependencies are marked as development dependencies.
+    /// - Per-package IsDevelopmentDependency metadata overrides are applied transitively.
     /// </remarks>
     private void ProcessLockFileWithProjectInfo(LockFile lockFile, MSBuildProjectInfo projectInfo)
     {
@@ -376,34 +413,98 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(
             lockFile.PackageSpec?.RestoreMetadata?.ProjectPath ?? projectInfo.ProjectPath ?? string.Empty);
 
+        // Get the project info for the target framework (use inner build if available)
+        MSBuildProjectInfo GetProjectInfoForTarget(LockFileTarget target)
+        {
+            if (target.TargetFramework != null)
+            {
+                var innerBuild = projectInfo.InnerBuilds.FirstOrDefault(
+                    ib => !string.IsNullOrEmpty(ib.TargetFramework) &&
+                          NuGetFramework.Parse(ib.TargetFramework).Equals(target.TargetFramework));
+                if (innerBuild != null)
+                {
+                    return innerBuild;
+                }
+            }
+
+            return projectInfo;
+        }
+
         foreach (var target in lockFile.Targets)
         {
+            var targetProjectInfo = GetProjectInfoForTarget(target);
             var frameworkReferences = LockFileUtilities.GetFrameworkReferences(lockFile, target);
             var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework, frameworkReferences, target);
 
-            // Same logic as NuGetProjectModelProjectCentricComponentDetector.IsFrameworkOrDevelopmentDependency
+            // Base logic: check if library is a framework component or dev dependency in lock file
             bool IsFrameworkOrDevDependency(LockFileTargetLibrary library) =>
                 frameworkPackages.Any(fp => fp.IsAFrameworkComponent(library.Name, library.Version)) ||
                 LockFileUtilities.IsADevelopmentDependency(library, lockFile);
 
-            // Enhancement: Apply test project classification - all dependencies of test projects are dev dependencies
-            bool IsDevelopmentDependencyWithClassification(LockFileTargetLibrary library) =>
-                projectInfo.IsTestProject == true || IsFrameworkOrDevDependency(library);
-
-            foreach (var library in explicitReferencedDependencies.Select(x => target.GetTargetLibrary(x!.Name)).Where(x => x != null))
+            foreach (var dependency in explicitReferencedDependencies)
             {
+                var library = target.GetTargetLibrary(dependency!.Name);
+                if (library?.Name == null)
+                {
+                    continue;
+                }
+
+                // Combine project-level and per-package overrides into a single value.
+                // When set, this applies transitively to all dependencies of this package.
+                var devDependencyOverride = IsDevelopmentOnlyProject(targetProjectInfo)
+                    ? true
+                    : GetDevelopmentDependencyOverride(targetProjectInfo.PackageReference, library.Name);
+
                 LockFileUtilities.NavigateAndRegister(
                     target,
                     explicitlyReferencedComponentIds,
                     singleFileComponentRecorder,
-                    library!,
+                    library,
                     null,
-                    IsDevelopmentDependencyWithClassification);
+                    devDependencyOverride.HasValue ? _ => devDependencyOverride.Value : IsFrameworkOrDevDependency);
             }
         }
 
-        // Register PackageDownload dependencies (same as NuGetProjectModelProjectCentricComponentDetector)
-        LockFileUtilities.RegisterPackageDownloads(singleFileComponentRecorder, lockFile);
+        // Register PackageDownload dependencies with dev-dependency overrides
+        LockFileUtilities.RegisterPackageDownloads(
+            singleFileComponentRecorder,
+            lockFile,
+            (packageName, framework) => this.IsPackageDownloadDevDependency(packageName, framework, projectInfo));
+    }
+
+    /// <summary>
+    /// Determines if a PackageDownload is a development dependency based on project info.
+    /// </summary>
+    private bool IsPackageDownloadDevDependency(string packageName, NuGetFramework? framework, MSBuildProjectInfo projectInfo)
+    {
+        // Get the project info for this framework (use inner build if available)
+        var targetProjectInfo = projectInfo;
+        if (framework != null)
+        {
+            var innerBuild = projectInfo.InnerBuilds.FirstOrDefault(
+                ib => !string.IsNullOrEmpty(ib.TargetFramework) &&
+                      NuGetFramework.Parse(ib.TargetFramework).Equals(framework));
+            if (innerBuild != null)
+            {
+                targetProjectInfo = innerBuild;
+            }
+        }
+
+        // Project-level override: all deps are dev deps
+        if (IsDevelopmentOnlyProject(targetProjectInfo))
+        {
+            return true;
+        }
+
+        // Check for explicit item metadata override
+        var devOverride = GetDevelopmentDependencyOverride(targetProjectInfo.PackageDownload, packageName);
+        if (devOverride.HasValue)
+        {
+            return devOverride.Value;
+        }
+
+        // Default: PackageDownload is a dev dependency
+        return true;
     }
 
     /// <summary>
