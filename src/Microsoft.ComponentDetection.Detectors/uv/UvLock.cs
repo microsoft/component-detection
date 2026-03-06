@@ -84,6 +84,7 @@ public class UvLock
                 {
                     Registry = sourceTable.TryGetValue("registry", out var regObj) && regObj is string reg ? reg : null,
                     Virtual = sourceTable.TryGetValue("virtual", out var virtObj) && virtObj is string virt ? virt : null,
+                    Git = sourceTable.TryGetValue("git", out var gitObj) && gitObj is string git ? git : null,
                 };
                 uvPackage.Source = source;
             }
@@ -133,9 +134,12 @@ public class UvLock
 
         if (metadataTable.TryGetValue("requires-dev", out var requiresDevObj) && requiresDevObj is TomlTable requiresDevTable)
         {
-            if (requiresDevTable.TryGetValue("dev", out var devObj) && devObj is TomlArray devArr)
+            foreach (var kvp in requiresDevTable)
             {
-                uvPackage.MetadataRequiresDev = ParseDependenciesArray(devArr);
+                if (kvp.Value is TomlArray groupArr)
+                {
+                    uvPackage.MetadataRequiresDev.AddRange(ParseDependenciesArray(groupArr));
+                }
             }
         }
     }
