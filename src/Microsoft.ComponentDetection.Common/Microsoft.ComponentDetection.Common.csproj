@@ -1,6 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.Common.Tests" />
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.Orchestrator" />
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.Detectors" />
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.TestsUtilities" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Docker.DotNet" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="System.Reactive" />

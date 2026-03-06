@@ -1,18 +1,16 @@
 #nullable disable
+
+namespace Microsoft.ComponentDetection.Common.DependencyGraph;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
-
-[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Common.Tests")]
-
-namespace Microsoft.ComponentDetection.Common.DependencyGraph;
 
 internal class DependencyGraph : IDependencyGraph
 {

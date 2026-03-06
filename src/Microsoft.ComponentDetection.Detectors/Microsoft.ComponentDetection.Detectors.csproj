@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.Orchestrator" />
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.Detectors.Tests" />
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.TestsUtilities" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="DotNet.Glob" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="morelinq" />
