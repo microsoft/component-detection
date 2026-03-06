@@ -97,8 +97,7 @@ public class MvnCliComponentDetector : FileComponentDetector
     {
         this.mavenCommandService.ParseDependenciesFile(processRequest);
 
-        File.Delete(processRequest.ComponentStream.Location);
-
+        // File.Delete(processRequest.ComponentStream.Location);
         await Task.CompletedTask;
     }
 
