@@ -26,9 +26,11 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDetector>
+public class DotNetComponentDetectorTests
 {
     private static readonly string RootDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:" : @"/";
+
+    private readonly DetectorTestUtilityBuilder<DotNetComponentDetector> detectorTestUtility = new();
 
     private readonly Mock<ILogger<DotNetComponentDetector>> mockLogger = new();
 
@@ -53,7 +55,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
     /// </summary>
     public DotNetComponentDetectorTests()
     {
-        this.DetectorTestUtility.AddServiceMock(this.mockLogger)
+        this.detectorTestUtility.AddServiceMock(this.mockLogger)
                                 .AddServiceMock(this.mockCommandLineInvocationService)
                                 .AddServiceMock(this.mockDirectoryUtilityService)
                                 .AddServiceMock(this.mockFileUtilityService)
@@ -240,7 +242,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
     [TestMethod]
     public async Task TestDotNetDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.ExecuteDetectorAsync();
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         componentRecorder.GetDetectedComponents().Should().BeEmpty();
@@ -256,7 +258,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
         this.SetCommandResult(-1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -290,7 +292,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
         this.SetCommandResult(-1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -322,7 +324,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
         this.SetCommandResult(-1); // force reading from file instead of dotnet --version
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -353,7 +355,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
         this.SetCommandResult(-1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -376,7 +378,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
         this.SetCommandResult(0, "8.0.808");
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -400,7 +402,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
         this.SetCommandResult(-1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -424,7 +426,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
         this.SetCommandResult((c, d) => throw new InvalidOperationException());
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -446,7 +448,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(projectPath, null);
         this.SetCommandResult(0, "86.75.309");
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -467,7 +469,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(projectPath, null);
         this.SetCommandResult(-1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -490,7 +492,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddDirectory(outputPath);
         this.SetCommandResult(-1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -511,7 +513,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(projectPath, null);
         this.SetCommandResult(0, "1.2.3");
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -563,7 +565,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(applicationOutputPath, "Release", "net8.0", "application.dll"), applicationAssemblyStream);
         this.AddFile(Path.Combine(applicationOutputPath, "Release", "net4.8", "application.exe"), applicationAssemblyStream);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(libraryAssetsPath, libraryAssets)
             .WithFile(applicationAssetsPath, applicationAssets)
             .ExecuteDetectorAsync();
@@ -602,7 +604,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
         this.AddFile(Path.Combine(applicationOutputPath, "Release", "net4.8", "application.exe"), applicationAssemblyStream);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(applicationAssetsPath, applicationAssets)
             .ExecuteDetectorAsync();
 
@@ -639,7 +641,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(libraryOutputPath, "Release", "net6.0", "library.dll"), libraryAssemblyStream);
         this.AddFile(Path.Combine(libraryOutputPath, "Release", "netstandard2.0", "library.dll"), libraryAssemblyStream);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(libraryAssetsPath, libraryAssets)
             .ExecuteDetectorAsync();
 
@@ -674,7 +676,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
             };
         });
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("project.assets.json", projectAssets)
             .ExecuteDetectorAsync();
 
@@ -730,7 +732,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         this.AddFile(Path.Combine(libraryOutputPath, "Release", "net6.0", "library.dll"), libraryAssemblyStream);
         this.AddFile(Path.Combine(libraryOutputPath, "Release", "netstandard2.0", "library.dll"), libraryAssemblyStream);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(libraryAssetsPath, libraryAssets)
             .ExecuteDetectorAsync();
 

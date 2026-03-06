@@ -9,7 +9,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="NpmComponent"/> instances from npm package artifacts.
 /// </summary>
-public class NpmComponentFactory : ArtifactComponentFactoryBase
+internal class NpmComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.Npm;

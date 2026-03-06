@@ -17,7 +17,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class NuGetComponentDetector : FileComponentDetector
+internal class NuGetComponentDetector : FileComponentDetector
 {
     private static readonly IEnumerable<string> LowConfidencePackages = ["Newtonsoft.Json"];
 

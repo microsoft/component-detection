@@ -13,7 +13,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Conan.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+internal class ConanLockComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     public ConanLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,

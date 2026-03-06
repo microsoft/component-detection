@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 /// <param name="linuxScanner">The Linux scanner service.</param>
 /// <param name="dockerService">The Docker service.</param>
 /// <param name="logger">The logger.</param>
-public class LinuxApplicationLayerDetector(
+internal class LinuxApplicationLayerDetector(
     ILinuxScanner linuxScanner,
     IDockerService dockerService,
     ILogger<LinuxApplicationLayerDetector> logger
