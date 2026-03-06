@@ -39,6 +39,11 @@ dotnet_diagnostic.CA1062.severity = none
 # https://docs.microsoft.com/en-us/visualstudio/code-quality/ca1707
 dotnet_diagnostic.CA1707.severity = none
 
+# CA1812: Avoid uninstantiated internal classes
+# Justification: Test classes may use internal types via InternalsVisibleTo
+# https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1812
+dotnet_diagnostic.CA1812.severity = none
+
 # FAA0001: AwesomeAssertions analyzer suggestions
 # Justification: Suppress style suggestions that would be treated as errors
 # https://awesomeassertions.org/tips/

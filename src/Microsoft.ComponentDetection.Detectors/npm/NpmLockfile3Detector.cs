@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class NpmLockfile3Detector : NpmLockfileDetectorBase
+internal class NpmLockfile3Detector : NpmLockfileDetectorBase
 {
     private static readonly string NodeModules = NpmComponentUtilities.NodeModules;
 

@@ -15,7 +15,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
 using Microsoft.Extensions.Logging;
 
-public class YarnLockComponentDetector : FileComponentDetector
+internal class YarnLockComponentDetector : FileComponentDetector
 {
     private readonly IYarnLockFileFactory yarnLockFileFactory;
 

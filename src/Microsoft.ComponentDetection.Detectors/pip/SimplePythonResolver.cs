@@ -15,7 +15,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using MoreLinq;
 
-public class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
+internal class SimplePythonResolver : PythonResolverBase, ISimplePythonResolver
 {
     private static readonly Regex VersionRegex = new(@"-((\d+)((\.)\w+((\+|\.)\w*)*)*)(.tar|-)", RegexOptions.Compiled);
 

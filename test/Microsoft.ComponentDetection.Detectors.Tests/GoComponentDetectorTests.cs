@@ -21,8 +21,10 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class GoComponentDetectorTests : BaseDetectorTest<GoComponentDetector>
+public class GoComponentDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<GoComponentDetector> detectorTestUtility = new();
+
     private readonly Mock<ICommandLineInvocationService> commandLineMock;
     private readonly Mock<IEnvironmentVariableService> envVarService;
     private readonly Mock<IFileUtilityService> fileUtilityServiceMock;
@@ -42,15 +44,15 @@ public class GoComponentDetectorTests : BaseDetectorTest<GoComponentDetector>
 
         this.commandLineMock.Setup(x => x.CanCommandBeLocatedAsync("go", null, It.IsAny<DirectoryInfo>(), It.IsAny<string[]>()))
             .ReturnsAsync(false);
-        this.DetectorTestUtility.AddServiceMock(this.commandLineMock);
+        this.detectorTestUtility.AddServiceMock(this.commandLineMock);
         this.envVarService = new Mock<IEnvironmentVariableService>();
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(true);
-        this.DetectorTestUtility.AddServiceMock(this.envVarService);
+        this.detectorTestUtility.AddServiceMock(this.envVarService);
         this.fileUtilityServiceMock = new Mock<IFileUtilityService>();
-        this.DetectorTestUtility.AddServiceMock(this.fileUtilityServiceMock);
+        this.detectorTestUtility.AddServiceMock(this.fileUtilityServiceMock);
         this.mockLogger = new Mock<ILogger<GoComponentDetector>>();
-        this.DetectorTestUtility.AddServiceMock(this.mockLogger);
-        this.DetectorTestUtility.AddServiceMock(this.mockParserFactory);
+        this.detectorTestUtility.AddServiceMock(this.mockLogger);
+        this.detectorTestUtility.AddServiceMock(this.mockParserFactory);
     }
 
     private void SetupMockGoModParser()
@@ -92,7 +94,7 @@ require (
 )";
 
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -119,7 +121,7 @@ require (
     github.com/kr/pretty v0.1.0 // indirect
 )";
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -148,7 +150,7 @@ github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 )";
 
         this.SetupActualGoSumParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.sum", goSum)
             .ExecuteDetectorAsync();
 
@@ -185,7 +187,7 @@ require (
 )";
 
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -223,7 +225,7 @@ require (
     github.com/Azure/go-autorest v10.15.2+incompatible
 )";
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod1)
             .WithFile("go.mod", goMod2, fileLocation: Path.Join(Path.GetTempPath(), "another-location", "go.mod"))
             .ExecuteDetectorAsync();
@@ -250,7 +252,7 @@ four score and seven bugs ago
 $#26^#25%4";
 
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", invalidGoMod)
             .ExecuteDetectorAsync();
 
@@ -274,7 +276,7 @@ github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5y
 
         this.SetupActualGoModParser();
         this.SetupActualGoSumParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .WithFile("go.mod", goMod, ["go.mod"])
             .WithFile("go.sum", goSum)
@@ -306,7 +308,7 @@ require (
 )";
 
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -332,7 +334,7 @@ github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d/go.mod h1:ZZM
 )";
 
         this.SetupActualGoSumParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.sum", goSum)
             .ExecuteDetectorAsync();
 
@@ -358,7 +360,7 @@ replace (
 )
 ";
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -464,7 +466,7 @@ replace some-package v1.2.3 => some-package v1.2.4
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -516,7 +518,7 @@ require (
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -569,7 +571,7 @@ github.com/prometheus/client_golang@v1.12.1 github.com/prometheus/common@v0.32.1
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
 
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -631,7 +633,7 @@ replace a v1.5.0 => {localPath}
         this.fileUtilityServiceMock.Setup(fs => fs.Exists(It.IsAny<string>()))
             .Returns(true);
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -690,7 +692,7 @@ replace github v1.5.0 => ./module
             .Returns(true);
 
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -744,7 +746,7 @@ replace github v1.5.0 => github v1.18
 
         this.envVarService.Setup(x => x.IsEnvironmentVariableValueTrue("DisableGoCliScan")).Returns(false);
         this.SetupActualGoModParser();
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -802,7 +804,7 @@ replace github v1.5.0 => github v1.18
         })
         .Verifiable();
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -831,7 +833,7 @@ replace github v1.5.0 => github v1.18
             StdOut = "go version go1.10.6 windows/amd64",
         });
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", goMod)
             .ExecuteDetectorAsync();
 
@@ -863,7 +865,7 @@ replace github v1.5.0 => github v1.18
             StdOut = "go version go1.10.6 windows/amd64",
         });
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", string.Empty)
             .ExecuteDetectorAsync();
 
@@ -892,7 +894,7 @@ replace github v1.5.0 => github v1.18
 
         // Setup go sum parser to succeed
         this.mockGoSumParser.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.sum", string.Empty)
             .ExecuteDetectorAsync();
 
@@ -916,7 +918,7 @@ replace github v1.5.0 => github v1.18
         // Setup go sum parser to succeed
         goSumParserMock.Setup(p => p.ParseAsync(It.IsAny<ISingleFileComponentRecorder>(), It.IsAny<IComponentStream>(), It.IsAny<GoGraphTelemetryRecord>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.sum", string.Empty)
             .ExecuteDetectorAsync();
 
@@ -935,7 +937,7 @@ replace github v1.5.0 => github v1.18
         this.commandLineMock.Setup(x => x.ExecuteCommandAsync("go", null, null, default, It.Is<string[]>(p => p.SequenceEqual(new List<string> { "version" }.ToArray()))))
         .Throws(new InvalidOperationException("Failed to execute go version"));
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", string.Empty)
             .ExecuteDetectorAsync();
 
@@ -1005,7 +1007,7 @@ replace github v1.5.0 => github v1.18
             });
 
         var root = Path.Combine("C:", "root");
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "go.mod"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))
@@ -1048,7 +1050,7 @@ replace github v1.5.0 => github v1.18
                 };
             });
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "go.mod"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))
@@ -1101,7 +1103,7 @@ replace github v1.5.0 => github v1.18
                 return true;
             });
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "go.mod"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))
@@ -1141,7 +1143,7 @@ replace github v1.5.0 => github v1.18
                 processedFiles.Add(file.Location);
             });
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "go.mod"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))
@@ -1189,7 +1191,7 @@ replace github v1.5.0 => github v1.18
                 return file.Location != Path.Combine(root, "a", "go.sum");
             });
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("go.sum", string.Empty, fileLocation: Path.Combine(root, "a", "go.sum"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "a", "go.mod"))
             .WithFile("go.mod", string.Empty, fileLocation: Path.Combine(root, "a", "b", "go.mod"))

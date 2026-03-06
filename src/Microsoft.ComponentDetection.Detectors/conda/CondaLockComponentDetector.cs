@@ -14,7 +14,7 @@ using Microsoft.ComponentDetection.Detectors.CondaLock.Contracts;
 using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization;
 
-public class CondaLockComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+internal class CondaLockComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     public CondaLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,

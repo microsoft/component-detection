@@ -13,7 +13,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class GoCLIParser : IGoParser
+internal class GoCLIParser : IGoParser
 {
     private readonly ILogger logger;
     private readonly IFileUtilityService fileUtilityService;
