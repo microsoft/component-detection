@@ -80,7 +80,7 @@ public class DefaultGraphTranslationServiceTests
         var singleFileRecorder2 = this.componentRecorder.CreateSingleFileComponentRecorder(Path.Join(this.sourceDirectory.FullName, "/file2"));
 
         var supplier1 = new ActorInfo { Name = "Contoso", Type = "Organization" };
-        var supplier2 = new ActorInfo { Name = "Contoso", Type = "Organization" };
+        var supplier2 = new ActorInfo { Name = "contoso", Type = "organization" };
         var supplier3 = new ActorInfo { Name = "Fabrikam", Type = "Organization" };
 
         var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
@@ -108,9 +108,9 @@ public class DefaultGraphTranslationServiceTests
 
         var merged = result.ComponentsFound.Single();
 
-        // Exact duplicate "Contoso"/"Organization" is deduped; "Fabrikam" is kept
+        // "Contoso"/"Organization" and "contoso"/"organization" are equal (case-insensitive); "Fabrikam" is kept
         merged.Suppliers.Should().HaveCount(2);
-        merged.Suppliers.Should().Contain(s => s.Name == "Contoso");
+        merged.Suppliers.Should().Contain(s => string.Equals(s.Name, "Contoso", System.StringComparison.OrdinalIgnoreCase));
         merged.Suppliers.Should().Contain(s => s.Name == "Fabrikam");
     }
 

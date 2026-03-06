@@ -49,10 +49,10 @@ public class ActorInfo : IEquatable<ActorInfo>
             return true;
         }
 
-        return string.Equals(this.Name, other.Name, StringComparison.Ordinal)
-            && string.Equals(this.Email, other.Email, StringComparison.Ordinal)
+        return string.Equals(this.Name, other.Name, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(this.Email, other.Email, StringComparison.OrdinalIgnoreCase)
             && this.Url == other.Url
-            && string.Equals(this.Type, other.Type, StringComparison.Ordinal);
+            && string.Equals(this.Type, other.Type, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <inheritdoc/>
@@ -61,8 +61,8 @@ public class ActorInfo : IEquatable<ActorInfo>
     /// <summary>
     /// Included so that merge operations and collections that rely on hash codes (e.g., HashSet)
     /// will operate on ActorInfo instances based on value equality rather than reference equality.
-    /// Uses multiply-and-add (seed 17, factor 31) with <see cref="StringComparer.Ordinal"/>
-    /// to stay consistent with the case-sensitive <see cref="Equals(ActorInfo)"/>.
+    /// Uses multiply-and-add (seed 17, factor 31) with <see cref="StringComparer.OrdinalIgnoreCase"/>
+    /// to stay consistent with the case-insensitive <see cref="Equals(ActorInfo)"/>.
     /// </summary>
     /// <returns>A hash code consistent with value-based equality.</returns>
     public override int GetHashCode()
@@ -70,10 +70,10 @@ public class ActorInfo : IEquatable<ActorInfo>
         unchecked
         {
             var hash = 17;
-            hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(this.Name ?? string.Empty);
-            hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(this.Email ?? string.Empty);
+            hash = (hash * 31) + StringComparer.OrdinalIgnoreCase.GetHashCode(this.Name ?? string.Empty);
+            hash = (hash * 31) + StringComparer.OrdinalIgnoreCase.GetHashCode(this.Email ?? string.Empty);
             hash = (hash * 31) + (this.Url?.GetHashCode() ?? 0);
-            hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(this.Type ?? string.Empty);
+            hash = (hash * 31) + StringComparer.OrdinalIgnoreCase.GetHashCode(this.Type ?? string.Empty);
             return hash;
         }
     }

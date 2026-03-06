@@ -189,7 +189,7 @@ public class ComponentRecorderTests
 
         var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
         {
-            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }, new ActorInfo { Name = "Fabrikam", Type = "Organization" }],
+            Suppliers = [new ActorInfo { Name = "contoso", Type = "organization" }, new ActorInfo { Name = "Fabrikam", Type = "Organization" }],
         };
 
         recorder1.RegisterUsage(component1);
@@ -197,9 +197,9 @@ public class ComponentRecorderTests
 
         var result = this.componentRecorder.GetDetectedComponents().Single();
 
-        // Exact duplicate "Contoso"/"Organization" is deduped; "Fabrikam" is kept
+        // "Contoso"/"Organization" and "contoso"/"organization" are equal (case-insensitive); "Fabrikam" is kept
         result.Suppliers.Should().HaveCount(2);
-        result.Suppliers.Should().Contain(s => s.Name == "Contoso");
+        result.Suppliers.Should().Contain(s => string.Equals(s.Name, "Contoso", System.StringComparison.OrdinalIgnoreCase));
         result.Suppliers.Should().Contain(s => s.Name == "Fabrikam");
     }
 
