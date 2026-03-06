@@ -15,7 +15,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.Extensions.Logging;
 
-public class DockerService : IDockerService
+internal class DockerService : IDockerService
 {
     // Base image annotations from ADO dockerTask
     private const string BaseImageRefAnnotation = "image.base.ref.name";

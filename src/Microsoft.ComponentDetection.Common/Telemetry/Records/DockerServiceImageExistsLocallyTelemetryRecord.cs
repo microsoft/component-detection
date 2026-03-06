@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class DockerServiceImageExistsLocallyTelemetryRecord : BaseDetectionTelemetryRecord
+internal class DockerServiceImageExistsLocallyTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "DockerServiceImageExistsLocally";
 

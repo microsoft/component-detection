@@ -11,7 +11,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
-using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.Extensions.Logging;
@@ -25,7 +24,7 @@ public class PyPiClientTests
     private readonly PyPiClient pypiClient;
 
     public PyPiClientTests() => this.pypiClient = new PyPiClient(
-            new EnvironmentVariableService(),
+            new Mock<IEnvironmentVariableService>().Object,
             new Mock<ILogger<PyPiClient>>().Object);
 
     [TestMethod]
