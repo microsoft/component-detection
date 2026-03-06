@@ -5,7 +5,7 @@ using System.Linq;
 using CommandLine;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 
-public class ArgumentHelper : IArgumentHelper
+internal class ArgumentHelper : IArgumentHelper
 {
     private readonly IEnumerable<ScanSettings> argumentSets;
 

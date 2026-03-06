@@ -15,7 +15,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.Extensions.Logging;
 
-public class DefaultGraphTranslationService : IGraphTranslationService
+internal class DefaultGraphTranslationService : IGraphTranslationService
 {
     private readonly ILogger<DefaultGraphTranslationService> logger;
 
