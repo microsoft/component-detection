@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.Orchestrator.Tests" />
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection" />
+        <InternalsVisibleTo Include="Microsoft.ComponentDetection.TestsUtilities" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="CommandLineParser" />
         <PackageReference Include="DotNet.Glob" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />

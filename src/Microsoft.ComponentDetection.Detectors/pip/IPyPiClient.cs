@@ -1,4 +1,7 @@
 #nullable disable
+
+namespace Microsoft.ComponentDetection.Detectors.Pip;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,7 +10,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading;
@@ -17,10 +19,6 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Polly;
-
-[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Detectors.Tests")]
-
-namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 public interface IPyPiClient
 {
