@@ -6,7 +6,7 @@ NuGet Detection depends on the following to successfully run:
 
 - One or more `*.nuspec`, `*.nupkg`, `*.packages.config`, or `.*csproj` files.
 - The files each NuGet detector searches for:  
-    - [The `NuGet` detector looks for `*.nupkg`, `*.nuspec`, `nuget.config`, `paket.lock`][1]
+    - [The `NuGet` detector looks for `*.nupkg`, `*.nuspec`, `nuget.config`][1]
     - [The `NuGetPackagesConfig` detector looks for `packages.config`][2]
     - [The `NuGetProjectCentric` detector looks for `project.assets.json`][3]
 
