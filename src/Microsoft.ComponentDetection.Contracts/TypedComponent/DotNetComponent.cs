@@ -38,7 +38,10 @@ public class DotNetComponent : TypedComponent
     public string TargetFramework { get; set; }
 
     /// <summary>
-    /// Project type: application, library.  Null in the case of global.json or if no project output could be discovered.
+    /// Project type: application, library, application-selfcontained, library-selfcontained.
+    /// Null in the case of global.json or if no project output could be discovered.
+    /// The "-selfcontained" suffix is appended when the project bundles the .NET runtime
+    /// (i.e. the target framework has a runtime package download matching a framework reference).
     /// </summary>
     [JsonPropertyName("projectType")]
     public string ProjectType { get; set; }

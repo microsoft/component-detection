@@ -24,6 +24,14 @@ and have unreported vulnerabilities.  `TargetFramework` is determined from the `
 the type of the project is determined by locating the project's output assembly in a subdirectory of the 
 output path and reading the PE COFF header's characteristics for `IMAGE_FILE_EXECUTABLE_IMAGE`[2].
 
+The `ProjectType` value is further qualified with a `-selfcontained` suffix (e.g. `application-selfcontained`
+or `library-selfcontained`) when the project is detected as self-contained.  A project is considered 
+self-contained when its `project.assets.json` indicates that a framework reference (e.g. 
+`Microsoft.NETCore.App`) has a corresponding runtime package download (e.g. 
+`Microsoft.NETCore.App.Runtime.*`) listed in the target framework's `downloadDependencies`.  Self-contained 
+applications bundle the .NET runtime and are responsible for servicing it, so this distinction is important 
+for vulnerability tracking.
+
 [1]: https://learn.microsoft.com/en-us/dotnet/core/tools/global-json
 [2]: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#characteristics
 
@@ -33,4 +41,4 @@ If the `dotnet` executable is not on the path the detector may fail to locate th
 project.  The detector will fallback to parsing the `global.json` in this case if it is present.
 Detection of the output type is done by locating the output assembly under the output path specified in 
 `project.assets.json`.  Some build systems may place project intermediates in a different location.  In this
-case the project type will be reported as `unknown`.
+case the project type will be reported as `unknown` and the `-selfcontained` suffix will not be appended.

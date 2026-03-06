@@ -10,6 +10,7 @@ using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using global::NuGet.Frameworks;
 using global::NuGet.ProjectModel;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -201,11 +202,11 @@ public class DotNetComponentDetector : FileComponentDetector
         var componentReporter = this.ComponentRecorder.CreateSingleFileComponentRecorder(projectPath);
         foreach (var target in lockFile.Targets ?? [])
         {
-            var targetFramework = target.TargetFramework?.GetShortFolderName();
+            var targetFramework = target.TargetFramework;
             var isSelfContained = this.IsSelfContained(lockFile.PackageSpec, targetFramework);
             var targetTypeWithSelfContained = this.GetTargetTypeWithSelfContained(targetType, isSelfContained);
 
-            componentReporter.RegisterUsage(new DetectedComponent(new DotNetComponent(sdkVersion, targetFramework, targetTypeWithSelfContained)));
+            componentReporter.RegisterUsage(new DetectedComponent(new DotNetComponent(sdkVersion, targetFramework?.GetShortFolderName(), targetTypeWithSelfContained)));
         }
     }
 
@@ -249,14 +250,14 @@ public class DotNetComponentDetector : FileComponentDetector
         return peReader.PEHeaders.IsExe;
     }
 
-    private bool IsSelfContained(global::NuGet.ProjectModel.PackageSpec packageSpec, string? targetFramework)
+    private bool IsSelfContained(PackageSpec packageSpec, NuGetFramework? targetFramework)
     {
-        if (packageSpec?.TargetFrameworks == null || string.IsNullOrWhiteSpace(targetFramework))
+        if (packageSpec?.TargetFrameworks == null || targetFramework == null)
         {
             return false;
         }
 
-        var targetFrameworkInfo = packageSpec.TargetFrameworks.FirstOrDefault(tf => tf.FrameworkName?.GetShortFolderName() == targetFramework);
+        var targetFrameworkInfo = packageSpec.TargetFrameworks.FirstOrDefault(tf => tf.FrameworkName == targetFramework);
         if (targetFrameworkInfo == null)
         {
             return false;
