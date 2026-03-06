@@ -66,7 +66,7 @@ jobs:
           --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff --DirectoryExclusionList "**/pip/parallel/**;**/pip/roots/**;**/pip/pre-generated/**;**/pip/fallback/**;**/pip/index-removal/**;**/pip/simple-extras/**;**/pip/pytestresultpkg/**"
 
       - name: Upload output folder
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: release-snapshot-output-${{ matrix.os }}
           path: ${{ github.workspace }}/output
