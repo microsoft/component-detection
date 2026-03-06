@@ -148,7 +148,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Maven];
 
-    public override int Version => 1;
+    public override int Version => 2;
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
 
