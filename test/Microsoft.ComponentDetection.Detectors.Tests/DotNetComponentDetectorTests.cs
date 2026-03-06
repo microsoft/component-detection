@@ -367,8 +367,11 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
     }
 
     [TestMethod]
-    public async Task TestDotNetDetectorGlobalJsonRollForward_ReturnsSDKVersion()
+    public async Task TestDotNetDetectorGlobalJsonRollForward_DoesNotRegisterAgainstGlobalJson()
     {
+        // When dotnet resolves a different SDK version than declared in global.json (roll-forward),
+        // the component should NOT be registered against global.json because the user would need to
+        // change their build environment, not global.json.
         var projectPath = Path.Combine(RootDir, "path", "to", "project");
         var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
         var globalJson = GlobalJson("8.0.100");
@@ -383,11 +386,38 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "8.0.808 net8.0 unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "8.0.100 unknown unknown - DotNet").Should().BeEmpty();
+        discoveredComponents.Where(component => component.Component.Id == "8.0.808 unknown unknown - DotNet").Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorGlobalJsonMatchingVersion_RegistersAgainstGlobalJson()
+    {
+        // When dotnet resolves the same SDK version as declared in global.json,
+        // the component SHOULD be registered against global.json.
+        var projectPath = Path.Combine(RootDir, "path", "to", "project");
+        var projectAssets = ProjectAssets("projectName", "does-not-exist", projectPath, "net8.0");
+        var globalJson = GlobalJson("8.0.100");
+        this.AddFile(projectPath, null);
+        this.AddFile(Path.Combine(RootDir, "path", "global.json"), globalJson);
+        this.SetCommandResult(0, "8.0.100");
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("project.assets.json", projectAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().HaveCount(2);
 
         var discoveredComponents = detectedComponents.ToArray();
-        discoveredComponents.Where(component => component.Component.Id == "8.0.808 unknown unknown - DotNet").Should().ContainSingle();
-        discoveredComponents.Where(component => component.Component.Id == "8.0.808 net8.0 unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "8.0.100 unknown unknown - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "8.0.100 net8.0 unknown - DotNet").Should().ContainSingle();
     }
 
     [TestMethod]

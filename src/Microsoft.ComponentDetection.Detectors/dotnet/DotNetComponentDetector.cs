@@ -274,18 +274,44 @@ public class DotNetComponentDetector : FileComponentDetector
 
         if (this.fileUtilityService.Exists(globalJsonPath))
         {
-            sdkVersion = await this.RunDotNetVersionAsync(projectDirectory, cancellationToken);
-
-            if (string.IsNullOrWhiteSpace(sdkVersion))
+            // Read the version declared in global.json first
+            string? globalJsonVersion = null;
+            using (var globalJsonDoc = await JsonDocument.ParseAsync(this.fileUtilityService.MakeFileStream(globalJsonPath), cancellationToken: cancellationToken, options: this.jsonDocumentOptions).ConfigureAwait(false))
             {
-                var globalJson = await JsonDocument.ParseAsync(this.fileUtilityService.MakeFileStream(globalJsonPath), cancellationToken: cancellationToken, options: this.jsonDocumentOptions).ConfigureAwait(false);
-                if (globalJson.RootElement.TryGetProperty("sdk", out var sdk))
+                if (globalJsonDoc.RootElement.TryGetProperty("sdk", out var sdk))
                 {
                     if (sdk.TryGetProperty("version", out var version))
                     {
-                        sdkVersion = version.GetString();
+                        globalJsonVersion = version.GetString();
                     }
                 }
+            }
+
+            // Try to get the version actually resolved by the SDK
+            var resolvedVersion = await this.RunDotNetVersionAsync(projectDirectory, cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(resolvedVersion))
+            {
+                sdkVersion = resolvedVersion;
+
+                // Only register against global.json when the resolved version matches what global.json declares.
+                // If there is a mismatch (e.g. roll-forward selected a newer SDK), the component should not be
+                // attributed to global.json because changing that file would not fix the reported version.
+                if (!string.IsNullOrWhiteSpace(globalJsonVersion) &&
+                    !sdkVersion.Equals(globalJsonVersion, StringComparison.OrdinalIgnoreCase))
+                {
+                    this.Logger.LogInformation(
+                        "Resolved SDK version {ResolvedVersion} does not match global.json version {GlobalJsonVersion} in {GlobalJsonPath}. Not registering component against global.json.",
+                        resolvedVersion,
+                        globalJsonVersion,
+                        globalJsonPath);
+                    return sdkVersion;
+                }
+            }
+            else
+            {
+                // dotnet --version failed; fall back to the version declared in global.json
+                sdkVersion = globalJsonVersion;
             }
 
             if (!string.IsNullOrWhiteSpace(sdkVersion))
