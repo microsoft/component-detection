@@ -151,7 +151,7 @@ public class ComponentDetectionIntegrationTests
                         rightDependencies.Should().Contain(leftDependency, $"Component dependency {leftDependency} for component {leftComponent} was not in the {rightGraphName} dependency graph.");
                     }
 
-                    leftDependencies.Should().BeEquivalentTo(rightDependencies, $"{rightGraphName} has the following components that were not found in {leftGraphName}, please verify this is expected behavior. {System.Text.Json.JsonSerializer.Serialize(rightDependencies.Except(leftDependencies))}");
+                    leftDependencies.Should().BeEquivalentTo(rightDependencies, $"{rightGraphName} has the following components that were not found in {leftGraphName}, please verify this is expected behavior. {JsonSerializer.Serialize(rightDependencies.Except(leftDependencies))}");
                 }
             }
         }
@@ -172,6 +172,9 @@ public class ComponentDetectionIntegrationTests
     [TestMethod]
     public void CheckDetectorsRunTimesAndCounts()
     {
+        // List of detectors that were intentionally removed
+        var expectedRemovedDetectors = new HashSet<string> { "MavenWithFallback" };
+
         // makes sure that all detectors have the same number of components found.
         // if some are lost, error.
         // if some are new, check if version of detector is updated. if it isn't error
@@ -183,7 +186,9 @@ public class ComponentDetectionIntegrationTests
             var oldMatches = Regex.Matches(this.oldLogFileContents, regexPattern);
             var newMatches = Regex.Matches(this.newLogFileContents, regexPattern);
 
-            newMatches.Should().HaveCountGreaterThanOrEqualTo(oldMatches.Count, "A detector was lost, make sure this was intentional.");
+            // Account for expected removed detectors
+            var expectedMatchCount = oldMatches.Count - expectedRemovedDetectors.Count;
+            newMatches.Should().HaveCountGreaterThanOrEqualTo(expectedMatchCount, "A detector was lost, make sure this was intentional.");
 
             var detectorTimes = new Dictionary<string, float>();
             var detectorCounts = new Dictionary<string, int>();
@@ -196,6 +201,13 @@ public class ComponentDetectionIntegrationTests
                 else
                 {
                     var detectorId = match.Groups[2].Value;
+
+                    // Skip expected removed detectors
+                    if (expectedRemovedDetectors.Contains(detectorId))
+                    {
+                        continue;
+                    }
+
                     detectorTimes.Add(detectorId, float.Parse(match.Groups[3].Value));
                     detectorCounts.Add(detectorId, int.Parse(match.Groups[4].Value));
                 }
@@ -231,6 +243,9 @@ public class ComponentDetectionIntegrationTests
 
     private void ProcessDetectorVersions()
     {
+        // List of detectors that were intentionally removed
+        var expectedRemovedDetectors = new HashSet<string> { "MavenWithFallback" };
+
         var oldDetectors = this.oldScanResult.DetectorsInScan;
         var newDetectors = this.newScanResult.DetectorsInScan;
         this.bumpedDetectorVersions = [];
@@ -240,7 +255,11 @@ public class ComponentDetectionIntegrationTests
 
             if (newDetector == null)
             {
-                newDetector.Should().NotBeNull($"the detector {cd.DetectorId} was lost, verify this is expected behavior");
+                if (!expectedRemovedDetectors.Contains(cd.DetectorId))
+                {
+                    newDetector.Should().NotBeNull($"the detector {cd.DetectorId} was lost, verify this is expected behavior");
+                }
+
                 continue;
             }
 
