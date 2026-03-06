@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Detects NuGet packages in packages.config files.
 /// </summary>
-public sealed class NuGetPackagesConfigDetector : FileComponentDetector
+internal sealed class NuGetPackagesConfigDetector : FileComponentDetector
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="NuGetPackagesConfigDetector"/> class.

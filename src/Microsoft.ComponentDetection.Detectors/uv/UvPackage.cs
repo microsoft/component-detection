@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Detectors.Uv;
 
 using System.Collections.Generic;
 
-public class UvPackage
+internal class UvPackage
 {
     public required string Name { get; init; }
 

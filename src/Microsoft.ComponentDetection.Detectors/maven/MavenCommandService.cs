@@ -10,7 +10,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.Extensions.Logging;
 
-public class MavenCommandService : IMavenCommandService
+internal class MavenCommandService : IMavenCommandService
 {
     private const string DetectorLogPrefix = "MvnCli detector";
     internal const string MvnCLIFileLevelTimeoutSecondsEnvVar = "MvnCLIFileLevelTimeoutSeconds";

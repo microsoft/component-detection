@@ -10,8 +10,10 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
-public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesConfigDetector>
+public class NuGetPackagesConfigDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<NuGetPackagesConfigDetector> detectorTestUtility = new();
+
     [TestMethod]
     public async Task Should_WorkAsync()
     {
@@ -23,7 +25,7 @@ public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesCo
                     <package id=""NLog"" version=""4.3.10"" targetFramework=""{targetFramework}"" />
                 </packages>";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("packages.config", packagesConfig)
             .ExecuteDetectorAsync();
 
@@ -51,7 +53,7 @@ public class NuGetPackagesConfigDetectorTests : BaseDetectorTest<NuGetPackagesCo
                     <package id=""jQuery"" version=""3.1.1"" targetFramework=""net46"" />
                     <package id=""NLog"" version=""
                  </packages>";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("packages.config", packagesConfig)
             .ExecuteDetectorAsync();
 

@@ -27,7 +27,7 @@ public interface IPyPiClient
     Task<PythonProject> GetProjectAsync(PipDependencySpecification spec);
 }
 
-public sealed class PyPiClient : IPyPiClient, IDisposable
+internal sealed class PyPiClient : IPyPiClient, IDisposable
 {
     // Values used for cache creation
     private const long CACHEINTERVALSECONDS = 180;

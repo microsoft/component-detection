@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Detects Swift Package Manager components.
 /// </summary>
-public class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+internal class SwiftResolvedComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     // We are only interested in packages coming from remote sources such as git
     // The Package Kind is not an enum because the Swift Package Manager contract does not specify the possible values.

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// Engines is typically an object mapping engine names to version ranges,
 /// but can occasionally be an array of strings in malformed package.json files.
 /// </summary>
-public sealed class PackageJsonEnginesConverter : JsonConverter<IDictionary<string, string>?>
+internal sealed class PackageJsonEnginesConverter : JsonConverter<IDictionary<string, string>?>
 {
     /// <inheritdoc />
     public override IDictionary<string, string>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
