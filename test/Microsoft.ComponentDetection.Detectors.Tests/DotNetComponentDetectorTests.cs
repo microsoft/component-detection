@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -32,6 +32,14 @@ using Moq;
 public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDetector>
 {
     private static readonly string RootDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:" : @"/";
+
+    /// <summary>
+    /// The short NuGet TFM (e.g. "net8.0") that the test assembly itself targets.
+    /// Used by real-restore tests so they don't break when the SDK drops an older framework.
+    /// </summary>
+    private static readonly string CurrentTfm = NuGetFramework.Parse(
+        Assembly.GetExecutingAssembly().GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>().FrameworkName)
+        .GetShortFolderName();
 
     private readonly Mock<ILogger<DotNetComponentDetector>> mockLogger = new();
 
@@ -208,7 +216,22 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
             outputPath += Path.DirectorySeparatorChar;
         }
 
-        lockFile.Targets = targetFrameworks.Select(tfm => new LockFileTarget() { TargetFramework = NuGetFramework.Parse(tfm) }).ToList();
+        var targets = new List<LockFileTarget>();
+        foreach (var tfm in targetFrameworks)
+        {
+            var framework = NuGetFramework.Parse(tfm);
+            var isSelfContained = selfContainedTargetFrameworks != null && selfContainedTargetFrameworks.Contains(tfm);
+
+            targets.Add(new LockFileTarget { TargetFramework = framework });
+
+            // Self-contained projects have an additional RID-qualified target in their assets file
+            if (isSelfContained)
+            {
+                targets.Add(new LockFileTarget { TargetFramework = framework, RuntimeIdentifier = "win-x64" });
+            }
+        }
+
+        lockFile.Targets = targets;
         lockFile.PackageSpec = new()
         {
             RestoreMetadata = new()
@@ -226,15 +249,13 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
             var tfi = new TargetFrameworkInformation
             {
                 FrameworkName = NuGetFramework.Parse(tfm),
-                FrameworkReferences = new HashSet<FrameworkDependency>
-                {
+                FrameworkReferences =
+                [
                     new FrameworkDependency("Microsoft.NETCore.App", FrameworkDependencyFlags.All),
-                },
+                ],
                 DownloadDependencies = isSelfContained
-                    ? ImmutableArray.Create(
-                        new DownloadDependency("Microsoft.NETCore.App.Ref", new VersionRange(new NuGetVersion("8.0.0"))),
-                        new DownloadDependency("Microsoft.NETCore.App.Runtime.win-x64", new VersionRange(new NuGetVersion("8.0.0"))))
-                    : ImmutableArray<DownloadDependency>.Empty,
+                    ? [new DownloadDependency("Microsoft.NETCore.App.Ref", new VersionRange(new NuGetVersion("8.0.0"))), new DownloadDependency("Microsoft.NETCore.App.Runtime.win-x64", new VersionRange(new NuGetVersion("8.0.0")))]
+                    : [],
             };
 
             lockFile.PackageSpec.TargetFrameworks.Add(tfi);
@@ -272,6 +293,56 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         }
 
         return stream;
+    }
+
+    /// <summary>
+    /// Writes a .csproj (with isolation files so the repo's build config doesn't interfere),
+    /// runs <c>dotnet restore</c>, and returns the path to the generated <c>project.assets.json</c>.
+    /// The caller is responsible for cleaning up <paramref name="projectDir"/> if desired.
+    /// </summary>
+    private static string RestoreProjectAndGetAssetsPath(string projectDir, string csproj)
+    {
+        Directory.CreateDirectory(projectDir);
+
+        // Isolation files so the test project is not affected by the repo's
+        // Directory.Build.props / .targets / Directory.Packages.props.
+        File.WriteAllText(Path.Combine(projectDir, "Directory.Build.props"), "<Project/>");
+        File.WriteAllText(Path.Combine(projectDir, "Directory.Build.targets"), "<Project/>");
+        File.WriteAllText(Path.Combine(projectDir, "Directory.Packages.props"), "<Project/>");
+
+        // Minimal source file so restore doesn't complain.
+        File.WriteAllText(Path.Combine(projectDir, "Program.cs"), "return;");
+
+        // The project definition supplied by the test.
+        var csprojPath = Path.Combine(projectDir, "test.csproj");
+        File.WriteAllText(csprojPath, csproj);
+
+        var psi = new ProcessStartInfo("dotnet", $"restore \"{csprojPath}\"")
+        {
+            WorkingDirectory = projectDir,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+
+        using var process = Process.Start(psi);
+        process.WaitForExit(60_000);
+
+        if (process.ExitCode != 0)
+        {
+            var stderr = process.StandardError.ReadToEnd();
+            var stdout = process.StandardOutput.ReadToEnd();
+            throw new InvalidOperationException(
+                $"dotnet restore failed (exit {process.ExitCode}).\nstdout:\n{stdout}\nstderr:\n{stderr}");
+        }
+
+        var assetsPath = Path.Combine(projectDir, "obj", "project.assets.json");
+        if (!File.Exists(assetsPath))
+        {
+            throw new FileNotFoundException("project.assets.json was not generated by dotnet restore.", assetsPath);
+        }
+
+        return assetsPath;
     }
 
     [TestMethod]
@@ -786,99 +857,249 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
     [TestMethod]
     public async Task TestDotNetDetectorSelfContainedWithSelfContainedProperty()
     {
-        var globalJson = GlobalJson("4.5.6");
-        var globalJsonDir = Path.Combine(RootDir, "path");
-        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+        // Emit a self-contained .csproj, restore it, and use the real project.assets.json.
+        var projectDir = Path.Combine(Path.GetTempPath(), "cd-test-selfcontained-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var csproj = $"""
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>{CurrentTfm}</TargetFramework>
+                    <OutputType>Exe</OutputType>
+                    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+                    <SelfContained>true</SelfContained>
+                  </PropertyGroup>
+                </Project>
+                """;
 
-        this.SetCommandResult(0, "4.5.6");
+            var assetsPath = RestoreProjectAndGetAssetsPath(projectDir, csproj);
 
-        var applicationProjectName = "application";
-        var applicationProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{applicationProjectName}.csproj");
-        this.AddFile(applicationProjectPath, null);
-        var applicationOutputPath = Path.Combine(Path.GetDirectoryName(applicationProjectPath), "obj");
-        var applicationAssetsPath = Path.Combine(applicationOutputPath, "project.assets.json");
+            // Parse the restored assets file to extract paths the detector will use.
+            var lockFileFormat = new LockFileFormat();
+            var lockFile = lockFileFormat.Read(assetsPath);
+            var projectPath = lockFile.PackageSpec.RestoreMetadata.ProjectPath;
 
-        // Self-contained project (simulates SelfContained=true): net8.0 has runtime downloads
-        var applicationAssets = ProjectAssetsWithSelfContained("application", applicationOutputPath, applicationProjectPath, new HashSet<string> { "net8.0" }, "net8.0");
-        var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
-        this.AddFile(Path.Combine(applicationOutputPath, "Release", "net8.0", "application.dll"), applicationAssemblyStream);
+            // Trim trailing separator so mock filesystem paths are consistent.
+            // The detector will fall back to projectAssetsDirectory (derived from the
+            // stream location, which has no trailing sep) for EnumerateFiles.
+            var outputPath = Path.TrimEndingDirectorySeparator(lockFile.PackageSpec.RestoreMetadata.OutputPath);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile(applicationAssetsPath, applicationAssets)
-            .ExecuteDetectorAsync();
+            // Verify the restored assets have a RID-qualified target (e.g. net8.0/win-x64).
+            lockFile.Targets.Should().Contain(t => t.RuntimeIdentifier != null, "self-contained restore should produce a RID-qualified target");
 
-        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            var globalJson = GlobalJson("4.5.6");
+            this.AddFile(Path.Combine(Path.GetDirectoryName(projectDir), "global.json"), globalJson);
+            this.SetCommandResult(0, "4.5.6");
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        var discoveredComponents = detectedComponents.ToArray();
-        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application-selfcontained - DotNet").Should().ContainSingle();
+            this.AddFile(projectPath, null);
+
+            var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
+            this.AddFile(Path.Combine(outputPath, "Release", CurrentTfm, "test.dll"), applicationAssemblyStream);
+
+            var assetsContent = await File.ReadAllTextAsync(assetsPath);
+
+            var (scanResult, componentRecorder) = await this.DetectorTestUtility
+                .WithFile(assetsPath, assetsContent)
+                .ExecuteDetectorAsync();
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+            var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+
+            // Both the plain TFM and RID-qualified targets map to the same framework.
+            // The detector should report application-selfcontained for this framework.
+            discoveredComponents.Where(component => component.Component.Id == $"4.5.6 {CurrentTfm} application-selfcontained - DotNet").Should().ContainSingle();
+        }
+        finally
+        {
+            if (Directory.Exists(projectDir))
+            {
+                Directory.Delete(projectDir, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorSelfContainedLibrary()
+    {
+        // A library can also be self-contained when it sets SelfContained + RuntimeIdentifier.
+        var projectDir = Path.Combine(Path.GetTempPath(), "cd-test-selfcontained-lib-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var csproj = $"""
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>{CurrentTfm}</TargetFramework>
+                    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+                    <SelfContained>true</SelfContained>
+                  </PropertyGroup>
+                </Project>
+                """;
+
+            var assetsPath = RestoreProjectAndGetAssetsPath(projectDir, csproj);
+
+            var lockFileFormat = new LockFileFormat();
+            var lockFile = lockFileFormat.Read(assetsPath);
+            var projectPath = lockFile.PackageSpec.RestoreMetadata.ProjectPath;
+            var outputPath = Path.TrimEndingDirectorySeparator(lockFile.PackageSpec.RestoreMetadata.OutputPath);
+
+            // Self-contained library should also have a RID-qualified target.
+            lockFile.Targets.Should().Contain(t => t.RuntimeIdentifier != null, "self-contained restore should produce a RID-qualified target");
+
+            var globalJson = GlobalJson("4.5.6");
+            this.AddFile(Path.Combine(Path.GetDirectoryName(projectDir), "global.json"), globalJson);
+            this.SetCommandResult(0, "4.5.6");
+
+            this.AddFile(projectPath, null);
+
+            var libraryAssemblyStream = File.OpenRead(typeof(DotNetComponent).Assembly.Location);
+            this.AddFile(Path.Combine(outputPath, "Release", CurrentTfm, "test.dll"), libraryAssemblyStream);
+
+            var assetsContent = await File.ReadAllTextAsync(assetsPath);
+
+            var (scanResult, componentRecorder) = await this.DetectorTestUtility
+                .WithFile(assetsPath, assetsContent)
+                .ExecuteDetectorAsync();
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+            var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+            discoveredComponents.Where(component => component.Component.Id == $"4.5.6 {CurrentTfm} library-selfcontained - DotNet").Should().ContainSingle();
+        }
+        finally
+        {
+            if (Directory.Exists(projectDir))
+            {
+                Directory.Delete(projectDir, recursive: true);
+            }
+        }
     }
 
     [TestMethod]
     public async Task TestDotNetDetectorSelfContainedWithPublishAot()
     {
-        var globalJson = GlobalJson("4.5.6");
-        var globalJsonDir = Path.Combine(RootDir, "path");
-        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+        // PublishAot also causes runtime download dependencies in the assets file.
+        var projectDir = Path.Combine(Path.GetTempPath(), "cd-test-aot-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var csproj = $"""
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>{CurrentTfm}</TargetFramework>
+                    <OutputType>Exe</OutputType>
+                    <PublishAot>true</PublishAot>
+                  </PropertyGroup>
+                </Project>
+                """;
 
-        this.SetCommandResult(0, "4.5.6");
+            var assetsPath = RestoreProjectAndGetAssetsPath(projectDir, csproj);
 
-        var applicationProjectName = "application";
-        var applicationProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{applicationProjectName}.csproj");
-        this.AddFile(applicationProjectPath, null);
-        var applicationOutputPath = Path.Combine(Path.GetDirectoryName(applicationProjectPath), "obj");
-        var applicationAssetsPath = Path.Combine(applicationOutputPath, "project.assets.json");
+            var lockFileFormat = new LockFileFormat();
+            var lockFile = lockFileFormat.Read(assetsPath);
+            var projectPath = lockFile.PackageSpec.RestoreMetadata.ProjectPath;
+            var outputPath = Path.TrimEndingDirectorySeparator(lockFile.PackageSpec.RestoreMetadata.OutputPath);
 
-        // PublishAot project also results in runtime downloads in the assets file
-        var applicationAssets = ProjectAssetsWithSelfContained("application", applicationOutputPath, applicationProjectPath, new HashSet<string> { "net8.0" }, "net8.0");
-        var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
-        this.AddFile(Path.Combine(applicationOutputPath, "Release", "net8.0", "application.dll"), applicationAssemblyStream);
+            // PublishAot projects should have download dependencies for the runtime in their assets.
+            var tfmInfo = lockFile.PackageSpec.TargetFrameworks
+                .FirstOrDefault(tf => tf.FrameworkName == NuGetFramework.Parse(CurrentTfm));
+            tfmInfo.Should().NotBeNull();
+            tfmInfo.DownloadDependencies.Should().Contain(
+                dd => dd.Name.StartsWith("Microsoft.NETCore.App.Runtime", StringComparison.OrdinalIgnoreCase),
+                "PublishAot should trigger a runtime package download");
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile(applicationAssetsPath, applicationAssets)
-            .ExecuteDetectorAsync();
+            var globalJson = GlobalJson("4.5.6");
+            this.AddFile(Path.Combine(Path.GetDirectoryName(projectDir), "global.json"), globalJson);
+            this.SetCommandResult(0, "4.5.6");
 
-        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            this.AddFile(projectPath, null);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        var discoveredComponents = detectedComponents.ToArray();
-        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application-selfcontained - DotNet").Should().ContainSingle();
+            var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
+            this.AddFile(Path.Combine(outputPath, "Release", CurrentTfm, "test.dll"), applicationAssemblyStream);
+
+            var assetsContent = await File.ReadAllTextAsync(assetsPath);
+
+            var (scanResult, componentRecorder) = await this.DetectorTestUtility
+                .WithFile(assetsPath, assetsContent)
+                .ExecuteDetectorAsync();
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+            var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+            discoveredComponents.Where(component => component.Component.Id == $"4.5.6 {CurrentTfm} application-selfcontained - DotNet").Should().ContainSingle();
+        }
+        finally
+        {
+            if (Directory.Exists(projectDir))
+            {
+                Directory.Delete(projectDir, recursive: true);
+            }
+        }
     }
 
     [TestMethod]
     public async Task TestDotNetDetectorNotSelfContained()
     {
-        var globalJson = GlobalJson("4.5.6");
-        var globalJsonDir = Path.Combine(RootDir, "path");
-        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+        // Framework-dependent app — no RuntimeIdentifier, no SelfContained.
+        var projectDir = Path.Combine(Path.GetTempPath(), "cd-test-fdd-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var csproj = $"""
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>{CurrentTfm}</TargetFramework>
+                    <OutputType>Exe</OutputType>
+                  </PropertyGroup>
+                </Project>
+                """;
 
-        this.SetCommandResult(0, "4.5.6");
+            var assetsPath = RestoreProjectAndGetAssetsPath(projectDir, csproj);
 
-        var applicationProjectName = "application";
-        var applicationProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{applicationProjectName}.csproj");
-        this.AddFile(applicationProjectPath, null);
-        var applicationOutputPath = Path.Combine(Path.GetDirectoryName(applicationProjectPath), "obj");
-        var applicationAssetsPath = Path.Combine(applicationOutputPath, "project.assets.json");
+            var lockFileFormat = new LockFileFormat();
+            var lockFile = lockFileFormat.Read(assetsPath);
+            var projectPath = lockFile.PackageSpec.RestoreMetadata.ProjectPath;
+            var outputPath = Path.TrimEndingDirectorySeparator(lockFile.PackageSpec.RestoreMetadata.OutputPath);
 
-        // Non-self-contained: no runtime downloads
-        var applicationAssets = ProjectAssets("application", applicationOutputPath, applicationProjectPath, "net8.0");
-        var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
-        this.AddFile(Path.Combine(applicationOutputPath, "Release", "net8.0", "application.dll"), applicationAssemblyStream);
+            // Framework-dependent should NOT have RID-qualified targets.
+            lockFile.Targets.Should().NotContain(
+                t => t.RuntimeIdentifier != null,
+                "framework-dependent restore should not produce RID-qualified targets");
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
-            .WithFile(applicationAssetsPath, applicationAssets)
-            .ExecuteDetectorAsync();
+            var globalJson = GlobalJson("4.5.6");
+            this.AddFile(Path.Combine(Path.GetDirectoryName(projectDir), "global.json"), globalJson);
+            this.SetCommandResult(0, "4.5.6");
 
-        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            this.AddFile(projectPath, null);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        var discoveredComponents = detectedComponents.ToArray();
-        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application - DotNet").Should().ContainSingle();
+            var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
+            this.AddFile(Path.Combine(outputPath, "Release", CurrentTfm, "test.dll"), applicationAssemblyStream);
+
+            var assetsContent = await File.ReadAllTextAsync(assetsPath);
+
+            var (scanResult, componentRecorder) = await this.DetectorTestUtility
+                .WithFile(assetsPath, assetsContent)
+                .ExecuteDetectorAsync();
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+            var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
+            discoveredComponents.Where(component => component.Component.Id == $"4.5.6 {CurrentTfm} application - DotNet").Should().ContainSingle();
+        }
+        finally
+        {
+            if (Directory.Exists(projectDir))
+            {
+                Directory.Delete(projectDir, recursive: true);
+            }
+        }
     }
 
     [TestMethod]
     public async Task TestDotNetDetectorMultiTargetWithMixedSelfContained()
     {
+        // NuGet restore applies RuntimeIdentifier globally in cross-targeting, so a real
+        // restore can't produce per-TFM mixed self-contained/framework-dependent targets.
+        // Use the synthetic helper which correctly models per-TFM download dependencies
+        // and RID-qualified targets.
         var globalJson = GlobalJson("4.5.6");
         var globalJsonDir = Path.Combine(RootDir, "path");
         this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
@@ -891,7 +1112,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         var applicationOutputPath = Path.Combine(Path.GetDirectoryName(applicationProjectPath), "obj");
         var applicationAssetsPath = Path.Combine(applicationOutputPath, "project.assets.json");
 
-        // Multi-target: net8.0 is self-contained, net6.0 is not
+        // Multi-target: net8.0 is self-contained (has runtime downloads + RID target), net6.0 is not
         var applicationAssets = ProjectAssetsWithSelfContained("application", applicationOutputPath, applicationProjectPath, new HashSet<string> { "net8.0" }, "net8.0", "net6.0");
         var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
         this.AddFile(Path.Combine(applicationOutputPath, "Release", "net8.0", "application.dll"), applicationAssemblyStream);
@@ -903,8 +1124,7 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
-        var detectedComponents = componentRecorder.GetDetectedComponents();
-        var discoveredComponents = detectedComponents.ToArray();
+        var discoveredComponents = componentRecorder.GetDetectedComponents().ToArray();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application-selfcontained - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net6.0 application - DotNet").Should().ContainSingle();
     }
