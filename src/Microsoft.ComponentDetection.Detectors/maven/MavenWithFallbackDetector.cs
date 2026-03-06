@@ -275,7 +275,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         IObservable<ProcessRequest> processRequests,
         CancellationToken cancellationToken)
     {
-        var results = new ConcurrentBag<ProcessRequest>();
+        var results = new ConcurrentQueue<ProcessRequest>();
         var failedDirectories = new ConcurrentBag<string>();
         var cliSuccessCount = 0;
         var cliFailureCount = 0;
@@ -367,7 +367,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     foreach (var request in staticParsingRequests)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        results.Add(request);
+                        results.Enqueue(request);
                     }
                 }
             }
