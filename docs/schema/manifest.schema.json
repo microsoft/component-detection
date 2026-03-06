@@ -364,6 +364,27 @@
               "null"
             ]
           }
+        },
+        "licensesConcluded": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "suppliers": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ActorInfo"
+          }
         }
       },
       "required": [

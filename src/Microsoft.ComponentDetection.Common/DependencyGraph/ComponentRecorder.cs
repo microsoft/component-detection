@@ -48,11 +48,38 @@ public class ComponentRecorder : IComponentRecorder
             .GroupBy(x => x.Component.Id)
             .Select(grouping =>
             {
-                // We pick a winner here -- any stateful props could get lost at this point. Only stateful prop still outstanding is ContainerDetails.
+                // We pick a winner here -- any stateful props could get lost at this point.
                 var winningDetectedComponent = grouping.First();
+
+                HashSet<string> mergedLicenses = null;
+                HashSet<ActorInfo> mergedSuppliers = null;
+
                 foreach (var component in grouping.Skip(1))
                 {
                     winningDetectedComponent.ContainerDetailIds.UnionWith(component.ContainerDetailIds);
+
+                    // Defensive: merge in case different file recorders set different values for the same component.
+                    if (component.LicensesConcluded != null)
+                    {
+                        mergedLicenses ??= new HashSet<string>(winningDetectedComponent.LicensesConcluded ?? [], StringComparer.OrdinalIgnoreCase);
+                        mergedLicenses.UnionWith(component.LicensesConcluded);
+                    }
+
+                    if (component.Suppliers != null)
+                    {
+                        mergedSuppliers ??= new HashSet<ActorInfo>(winningDetectedComponent.Suppliers ?? []);
+                        mergedSuppliers.UnionWith(component.Suppliers);
+                    }
+                }
+
+                if (mergedLicenses != null)
+                {
+                    winningDetectedComponent.LicensesConcluded = mergedLicenses.Where(x => x != null).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+                }
+
+                if (mergedSuppliers != null)
+                {
+                    winningDetectedComponent.Suppliers = mergedSuppliers.Where(s => s != null).OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
                 }
 
                 return winningDetectedComponent;

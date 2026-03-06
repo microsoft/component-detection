@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts.Tests;
 
+using System;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -265,5 +266,104 @@ public class ScanResultSerializationTests
             scannedComponent.Component.Should().BeNull();
             scannedComponent.DetectorId.Should().NotBeNullOrEmpty();
         }
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_WithLicensesConcludedAndSuppliers_RoundTrips()
+    {
+        this.scanResultUnderTest.ComponentsFound =
+        [
+            new ScannedComponent
+            {
+                Component = new NpmComponent("TestComponent", "1.0.0"),
+                DetectorId = "TestDetector",
+                LocationsFoundAt = ["some/path"],
+                LicensesConcluded = ["MIT", "Apache-2.0"],
+                Suppliers =
+                [
+                    new ActorInfo { Name = "Contoso", Type = "Organization" },
+                    new ActorInfo { Name = "Alice", Email = "alice@contoso.com", Type = "Person" },
+                ],
+            },
+        ];
+
+        var serializedResult = JsonSerializer.Serialize(this.scanResultUnderTest);
+        var actual = JsonSerializer.Deserialize<ScanResult>(serializedResult);
+
+        var component = actual.ComponentsFound.First();
+        component.LicensesConcluded.Should().BeEquivalentTo(["MIT", "Apache-2.0"]);
+        component.Suppliers.Should().HaveCount(2);
+        component.Suppliers.First().Name.Should().Be("Contoso");
+        component.Suppliers.First().Type.Should().Be("Organization");
+        component.Suppliers.Last().Email.Should().Be("alice@contoso.com");
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_WithoutNewFields_StillDeserializes()
+    {
+        var scanResultJson = """
+            {
+                "resultCode": "Success",
+                "sourceDirectory": "D:\\test",
+                "componentsFound": [
+                    {
+                        "detectorId": "NpmDetector",
+                        "component": {
+                            "type": "Npm",
+                            "name": "OldComponent",
+                            "version": "1.0.0"
+                        },
+                        "locationsFoundAt": ["path"]
+                    }
+                ],
+                "detectorsInScan": []
+            }
+            """;
+
+        var result = JsonSerializer.Deserialize<ScanResult>(scanResultJson);
+
+        var component = result.ComponentsFound.First();
+        component.DetectorId.Should().Be("NpmDetector");
+        component.LicensesConcluded.Should().BeNull();
+        component.Suppliers.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_NullNewFields_OmittedFromJson()
+    {
+        var serializedResult = JsonSerializer.Serialize(this.scanResultUnderTest);
+        var json = JsonNode.Parse(serializedResult);
+        var foundComponent = json["componentsFound"][0];
+
+        foundComponent["licensesConcluded"].Should().BeNull();
+        foundComponent["suppliers"].Should().BeNull();
+    }
+
+    [TestMethod]
+    public void ScanResultSerialization_PopulatedNewFields_ExpectedJsonFormat()
+    {
+        this.scanResultUnderTest.ComponentsFound =
+        [
+            new ScannedComponent
+            {
+                Component = new NpmComponent("TestComponent", "1.0.0"),
+                DetectorId = "TestDetector",
+                LocationsFoundAt = ["some/path"],
+                LicensesConcluded = ["MIT"],
+                Suppliers =
+                [
+                    new ActorInfo { Name = "Contoso", Type = "Organization", Url = new Uri("https://contoso.com") },
+                ],
+            },
+        ];
+
+        var serializedResult = JsonSerializer.Serialize(this.scanResultUnderTest);
+        var json = JsonNode.Parse(serializedResult);
+        var foundComponent = json["componentsFound"][0];
+
+        foundComponent["licensesConcluded"][0].GetValue<string>().Should().Be("MIT");
+        foundComponent["suppliers"][0]["name"].GetValue<string>().Should().Be("Contoso");
+        foundComponent["suppliers"][0]["type"].GetValue<string>().Should().Be("Organization");
+        foundComponent["suppliers"][0]["url"].GetValue<string>().Should().Be("https://contoso.com");
     }
 }
