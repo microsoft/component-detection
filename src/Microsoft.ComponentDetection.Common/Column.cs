@@ -1,7 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Common;
 
-public class Column
+internal class Column
 {
     public int Width { get; set; }
 

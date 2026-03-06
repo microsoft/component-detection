@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class PypiMaxRetriesReachedTelemetryRecord : BaseDetectionTelemetryRecord
+internal class PypiMaxRetriesReachedTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "PypiMaxRetriesReached";
 

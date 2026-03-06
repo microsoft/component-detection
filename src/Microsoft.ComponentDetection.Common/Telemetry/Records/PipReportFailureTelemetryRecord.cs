@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class PipReportFailureTelemetryRecord : BaseDetectionTelemetryRecord
+internal class PipReportFailureTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "PipReportFailure";
 
