@@ -14,7 +14,7 @@ using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 
 /// <inheritdoc/>
-public class CommandLineInvocationService : ICommandLineInvocationService
+internal class CommandLineInvocationService : ICommandLineInvocationService
 {
     private readonly IDictionary<string, string> commandLocatableCache = new ConcurrentDictionary<string, string>();
 

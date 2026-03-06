@@ -9,7 +9,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
-using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Detectors.Pip;
 using Microsoft.Extensions.Logging;
@@ -50,7 +49,7 @@ public class SimplePyPiClientTests
         var pythonProject = this.SampleValidApiJsonResponse("boto3", "0.0.1");
         var mockHandler = this.MockHttpMessageHandler(pythonProject, HttpStatusCode.OK);
 
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
         var action = async () => await simplePypiClient.GetSimplePypiProjectAsync(pythonSpecs);
 
         await action.Should().NotThrowAsync();
@@ -74,7 +73,7 @@ public class SimplePyPiClientTests
         };
 
         var mockHandler = this.MockHttpMessageHandler(JsonSerializer.Serialize(pythonProject), HttpStatusCode.OK);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () =>
         {
@@ -108,7 +107,7 @@ public class SimplePyPiClientTests
         };
 
         var mockHandler = this.MockHttpMessageHandler(sampleApiResponse, HttpStatusCode.OK);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var actualResult = await simplePypiClient.GetSimplePypiProjectAsync(pythonSpecs);
         actualResult.Should().BeEquivalentTo(expectedResult);
@@ -120,7 +119,7 @@ public class SimplePyPiClientTests
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"], Name = "randomName" };
 
         var mockHandler = this.MockHttpMessageHandler("404 Not Found", HttpStatusCode.NotFound);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () => await simplePypiClient.GetSimplePypiProjectAsync(pythonSpecs);
 
@@ -134,7 +133,7 @@ public class SimplePyPiClientTests
 
         var content = "<!DOCTYPE html><body>\r\n\t<h1>Links for boto3</h1>\r\n\t<a\r\n\t\thref=\"some link\">boto3-0.0.1-py2.py3-none-any.whl</a><br /></html>";
         var mockHandler = this.MockHttpMessageHandler(content, HttpStatusCode.OK);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () => await simplePypiClient.GetSimplePypiProjectAsync(pythonSpecs);
 
@@ -147,7 +146,7 @@ public class SimplePyPiClientTests
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
 
         var mockHandler = this.MockHttpMessageHandler(string.Empty, HttpStatusCode.InternalServerError);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () => await simplePypiClient.GetSimplePypiProjectAsync(pythonSpecs);
 
@@ -166,7 +165,7 @@ public class SimplePyPiClientTests
     {
         var pythonSpecs = new PipDependencySpecification { DependencySpecifiers = ["==1.0.0"] };
         var mockHandler = this.MockHttpMessageHandler("some content", HttpStatusCode.MultipleChoices);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () => await simplePypiClient.GetSimplePypiProjectAsync(pythonSpecs);
         await action.Should().NotThrowAsync();
@@ -186,7 +185,7 @@ public class SimplePyPiClientTests
         var pythonProject = this.SampleValidApiJsonResponse("boto3", "0.0.1");
 
         var mockHandler = this.MockHttpMessageHandler(pythonProject, HttpStatusCode.OK);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () => await simplePypiClient.GetSimplePypiProjectAsync(pythonSpecs);
 
@@ -265,7 +264,7 @@ public class SimplePyPiClientTests
     public async Task FetchPackageFileStream_DuplicateEntries_CallsGetAsync_OnceAsync()
     {
         var mockHandler = this.MockHttpMessageHandler(string.Empty, HttpStatusCode.OK);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () => await simplePypiClient.FetchPackageFileStreamAsync(new Uri($"https://testurl"));
 
@@ -284,7 +283,7 @@ public class SimplePyPiClientTests
     public async Task FetchPackageFileStream_DifferentEntries_CallsGetAsync_TwiceAsync()
     {
         var mockHandler = this.MockHttpMessageHandler(string.Empty, HttpStatusCode.OK);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () => await simplePypiClient.FetchPackageFileStreamAsync(new Uri($"https://{Guid.NewGuid()}"));
 
@@ -303,7 +302,7 @@ public class SimplePyPiClientTests
     public async Task FetchPackageFileStream_UnableToRetrievePackageAsync()
     {
         var mockHandler = this.MockHttpMessageHandler(string.Empty, HttpStatusCode.InternalServerError);
-        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<EnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
+        var simplePypiClient = this.CreateSimplePypiClient(mockHandler.Object, new Mock<IEnvironmentVariableService>().Object, new Mock<ILogger<SimplePyPiClient>>().Object);
 
         var action = async () => { return await simplePypiClient.FetchPackageFileStreamAsync(new Uri($"https://{Guid.NewGuid()}")); };
 

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-public class TabularStringFormat
+internal class TabularStringFormat
 {
     public const char DefaultVerticalLineChar = '|';
     public const char DefaultHorizontalLineChar = '_';
