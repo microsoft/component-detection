@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -14,7 +15,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using global::NuGet.Frameworks;
+using global::NuGet.LibraryModel;
 using global::NuGet.ProjectModel;
+using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.DotNet;
@@ -182,6 +185,19 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
 
     private static string ProjectAssets(string projectName, string outputPath, string projectPath, params string[] targetFrameworks)
     {
+        return ProjectAssetsWithSelfContained(projectName, outputPath, projectPath, selfContainedTargetFrameworks: null, targetFrameworks);
+    }
+
+    /// <summary>
+    /// Creates a project assets JSON string for testing, with optional self-contained configuration.
+    /// </summary>
+    /// <param name="projectName">Name of the project.</param>
+    /// <param name="outputPath">Output path for the project.</param>
+    /// <param name="projectPath">Path to the project file.</param>
+    /// <param name="selfContainedTargetFrameworks">Set of target frameworks that should be configured as self-contained. If null, none are self-contained.</param>
+    /// <param name="targetFrameworks">Target frameworks for the project.</param>
+    private static string ProjectAssetsWithSelfContained(string projectName, string outputPath, string projectPath, ISet<string> selfContainedTargetFrameworks, params string[] targetFrameworks)
+    {
         LockFileFormat format = new();
         LockFile lockFile = new();
         using var textWriter = new StringWriter();
@@ -202,6 +218,27 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
                 ProjectPath = projectPath,
             },
         };
+
+        foreach (var tfm in targetFrameworks)
+        {
+            var isSelfContained = selfContainedTargetFrameworks != null && selfContainedTargetFrameworks.Contains(tfm);
+
+            var tfi = new TargetFrameworkInformation
+            {
+                FrameworkName = NuGetFramework.Parse(tfm),
+                FrameworkReferences = new HashSet<FrameworkDependency>
+                {
+                    new FrameworkDependency("Microsoft.NETCore.App", FrameworkDependencyFlags.All),
+                },
+                DownloadDependencies = isSelfContained
+                    ? ImmutableArray.Create(
+                        new DownloadDependency("Microsoft.NETCore.App.Ref", new VersionRange(new NuGetVersion("8.0.0"))),
+                        new DownloadDependency("Microsoft.NETCore.App.Runtime.win-x64", new VersionRange(new NuGetVersion("8.0.0"))))
+                    : ImmutableArray<DownloadDependency>.Empty,
+            };
+
+            lockFile.PackageSpec.TargetFrameworks.Add(tfi);
+        }
 
         format.Write(textWriter, lockFile);
         return textWriter.ToString();
@@ -744,5 +781,131 @@ public class DotNetComponentDetectorTests : BaseDetectorTest<DotNetComponentDete
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 library - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 net6.0 library - DotNet").Should().ContainSingle();
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 netstandard2.0 library - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorSelfContainedWithSelfContainedProperty()
+    {
+        var globalJson = GlobalJson("4.5.6");
+        var globalJsonDir = Path.Combine(RootDir, "path");
+        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+
+        this.SetCommandResult(0, "4.5.6");
+
+        var applicationProjectName = "application";
+        var applicationProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{applicationProjectName}.csproj");
+        this.AddFile(applicationProjectPath, null);
+        var applicationOutputPath = Path.Combine(Path.GetDirectoryName(applicationProjectPath), "obj");
+        var applicationAssetsPath = Path.Combine(applicationOutputPath, "project.assets.json");
+
+        // Self-contained project (simulates SelfContained=true): net8.0 has runtime downloads
+        var applicationAssets = ProjectAssetsWithSelfContained("application", applicationOutputPath, applicationProjectPath, new HashSet<string> { "net8.0" }, "net8.0");
+        var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
+        this.AddFile(Path.Combine(applicationOutputPath, "Release", "net8.0", "application.dll"), applicationAssemblyStream);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(applicationAssetsPath, applicationAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application-selfcontained - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorSelfContainedWithPublishAot()
+    {
+        var globalJson = GlobalJson("4.5.6");
+        var globalJsonDir = Path.Combine(RootDir, "path");
+        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+
+        this.SetCommandResult(0, "4.5.6");
+
+        var applicationProjectName = "application";
+        var applicationProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{applicationProjectName}.csproj");
+        this.AddFile(applicationProjectPath, null);
+        var applicationOutputPath = Path.Combine(Path.GetDirectoryName(applicationProjectPath), "obj");
+        var applicationAssetsPath = Path.Combine(applicationOutputPath, "project.assets.json");
+
+        // PublishAot project also results in runtime downloads in the assets file
+        var applicationAssets = ProjectAssetsWithSelfContained("application", applicationOutputPath, applicationProjectPath, new HashSet<string> { "net8.0" }, "net8.0");
+        var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
+        this.AddFile(Path.Combine(applicationOutputPath, "Release", "net8.0", "application.dll"), applicationAssemblyStream);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(applicationAssetsPath, applicationAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application-selfcontained - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorNotSelfContained()
+    {
+        var globalJson = GlobalJson("4.5.6");
+        var globalJsonDir = Path.Combine(RootDir, "path");
+        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+
+        this.SetCommandResult(0, "4.5.6");
+
+        var applicationProjectName = "application";
+        var applicationProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{applicationProjectName}.csproj");
+        this.AddFile(applicationProjectPath, null);
+        var applicationOutputPath = Path.Combine(Path.GetDirectoryName(applicationProjectPath), "obj");
+        var applicationAssetsPath = Path.Combine(applicationOutputPath, "project.assets.json");
+
+        // Non-self-contained: no runtime downloads
+        var applicationAssets = ProjectAssets("application", applicationOutputPath, applicationProjectPath, "net8.0");
+        var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
+        this.AddFile(Path.Combine(applicationOutputPath, "Release", "net8.0", "application.dll"), applicationAssemblyStream);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(applicationAssetsPath, applicationAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application - DotNet").Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestDotNetDetectorMultiTargetWithMixedSelfContained()
+    {
+        var globalJson = GlobalJson("4.5.6");
+        var globalJsonDir = Path.Combine(RootDir, "path");
+        this.AddFile(Path.Combine(globalJsonDir, "global.json"), globalJson);
+
+        this.SetCommandResult(0, "4.5.6");
+
+        var applicationProjectName = "application";
+        var applicationProjectPath = Path.Combine(RootDir, "path", "to", "project", $"{applicationProjectName}.csproj");
+        this.AddFile(applicationProjectPath, null);
+        var applicationOutputPath = Path.Combine(Path.GetDirectoryName(applicationProjectPath), "obj");
+        var applicationAssetsPath = Path.Combine(applicationOutputPath, "project.assets.json");
+
+        // Multi-target: net8.0 is self-contained, net6.0 is not
+        var applicationAssets = ProjectAssetsWithSelfContained("application", applicationOutputPath, applicationProjectPath, new HashSet<string> { "net8.0" }, "net8.0", "net6.0");
+        var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
+        this.AddFile(Path.Combine(applicationOutputPath, "Release", "net8.0", "application.dll"), applicationAssemblyStream);
+        this.AddFile(Path.Combine(applicationOutputPath, "Release", "net6.0", "application.dll"), applicationAssemblyStream);
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile(applicationAssetsPath, applicationAssets)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var discoveredComponents = detectedComponents.ToArray();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net8.0 application-selfcontained - DotNet").Should().ContainSingle();
+        discoveredComponents.Where(component => component.Component.Id == "4.5.6 net6.0 application - DotNet").Should().ContainSingle();
     }
 }

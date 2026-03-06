@@ -202,8 +202,10 @@ public class DotNetComponentDetector : FileComponentDetector
         foreach (var target in lockFile.Targets ?? [])
         {
             var targetFramework = target.TargetFramework?.GetShortFolderName();
+            var isSelfContained = this.IsSelfContained(lockFile.PackageSpec, targetFramework);
+            var targetTypeWithSelfContained = this.GetTargetTypeWithSelfContained(targetType, isSelfContained);
 
-            componentReporter.RegisterUsage(new DetectedComponent(new DotNetComponent(sdkVersion, targetFramework, targetType)));
+            componentReporter.RegisterUsage(new DetectedComponent(new DotNetComponent(sdkVersion, targetFramework, targetTypeWithSelfContained)));
         }
     }
 
@@ -245,6 +247,51 @@ public class DotNetComponentDetector : FileComponentDetector
 
         // despite the name `IsExe` this is actually based of the CoffHeader Characteristics
         return peReader.PEHeaders.IsExe;
+    }
+
+    private bool IsSelfContained(global::NuGet.ProjectModel.PackageSpec packageSpec, string? targetFramework)
+    {
+        if (packageSpec?.TargetFrameworks == null || string.IsNullOrWhiteSpace(targetFramework))
+        {
+            return false;
+        }
+
+        var targetFrameworkInfo = packageSpec.TargetFrameworks.FirstOrDefault(tf => tf.FrameworkName?.GetShortFolderName() == targetFramework);
+        if (targetFrameworkInfo == null)
+        {
+            return false;
+        }
+
+        var frameworkReferences = targetFrameworkInfo.FrameworkReferences;
+        var packageDownloads = targetFrameworkInfo.DownloadDependencies;
+
+        if (frameworkReferences == null || frameworkReferences.Count == 0 || packageDownloads.IsDefaultOrEmpty)
+        {
+            return false;
+        }
+
+        foreach (var frameworkRef in frameworkReferences)
+        {
+            var frameworkName = frameworkRef.Name;
+            var hasRuntimeDownload = packageDownloads.Any(pd => pd.Name.StartsWith($"{frameworkName}.Runtime", StringComparison.OrdinalIgnoreCase));
+
+            if (hasRuntimeDownload)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private string? GetTargetTypeWithSelfContained(string? targetType, bool isSelfContained)
+    {
+        if (string.IsNullOrWhiteSpace(targetType))
+        {
+            return targetType;
+        }
+
+        return isSelfContained ? $"{targetType}-selfcontained" : targetType;
     }
 
     /// <summary>
