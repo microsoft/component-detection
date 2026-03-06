@@ -7,7 +7,7 @@ using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
 /// <inheritdoc />
-public class YarnBerryTypeConverter : IYamlTypeConverter
+internal class YarnBerryTypeConverter : IYamlTypeConverter
 {
     private static readonly IDeserializer Deserializer = new DeserializerBuilder().Build();
 
