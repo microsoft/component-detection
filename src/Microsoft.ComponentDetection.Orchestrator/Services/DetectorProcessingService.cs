@@ -22,7 +22,7 @@ using Microsoft.Extensions.Logging;
 using Spectre.Console;
 using static System.Environment;
 
-public class DetectorProcessingService : IDetectorProcessingService
+internal class DetectorProcessingService : IDetectorProcessingService
 {
     private const int DefaultMaxDetectionThreads = 5;
     private const int ExperimentalTimeoutSeconds = 240; // 4 minutes

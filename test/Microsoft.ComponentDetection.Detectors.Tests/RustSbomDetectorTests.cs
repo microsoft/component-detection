@@ -21,8 +21,10 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class RustSbomDetectorTests : BaseDetectorTest<RustSbomDetector>
+public class RustSbomDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<RustSbomDetector> detectorTestUtility = new();
+
     private readonly Mock<IRustMetadataContextBuilder> mockMetadataContextBuilder;
     private readonly Mock<IRustCliParser> mockCliParser;
     private readonly Mock<IRustCargoLockParser> mockCargoLockParser;
@@ -238,20 +240,20 @@ public class RustSbomDetectorTests : BaseDetectorTest<RustSbomDetector>
 
         this.pathUtilityService = new PathUtilityService(new Mock<ILogger<PathUtilityService>>().Object);
 
-        this.DetectorTestUtility.AddService(this.pathUtilityService);
-        this.DetectorTestUtility.AddService(this.mockMetadataContextBuilder.Object);
-        this.DetectorTestUtility.AddService(this.mockCliParser.Object);
-        this.DetectorTestUtility.AddService(this.mockCargoLockParser.Object);
-        this.DetectorTestUtility.AddService(this.mockSbomParser.Object);
+        this.detectorTestUtility.AddService(this.pathUtilityService);
+        this.detectorTestUtility.AddService(this.mockMetadataContextBuilder.Object);
+        this.detectorTestUtility.AddService(this.mockCliParser.Object);
+        this.detectorTestUtility.AddService(this.mockCargoLockParser.Object);
+        this.detectorTestUtility.AddService(this.mockSbomParser.Object);
     }
 
     [TestMethod]
     public async Task TestGraphIsCorrectAsync()
     {
         // Use real parser for this test
-        this.DetectorTestUtility.AddService<IRustSbomParser>(new RustSbomParser(new Mock<ILogger<RustSbomParser>>().Object));
+        this.detectorTestUtility.AddService<IRustSbomParser>(new RustSbomParser(new Mock<ILogger<RustSbomParser>>().Object));
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("main.exe.cargo-sbom.json", this.testSbom)
             .ExecuteDetectorAsync();
 
@@ -282,9 +284,9 @@ public class RustSbomDetectorTests : BaseDetectorTest<RustSbomDetector>
     public async Task TestGraphIsCorrectWithGitDeps()
     {
         // Use real parser for this test
-        this.DetectorTestUtility.AddService<IRustSbomParser>(new RustSbomParser(new Mock<ILogger<RustSbomParser>>().Object));
+        this.detectorTestUtility.AddService<IRustSbomParser>(new RustSbomParser(new Mock<ILogger<RustSbomParser>>().Object));
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("main.exe.cargo-sbom.json", this.testSbomWithGitDeps)
             .ExecuteDetectorAsync();
 
@@ -356,7 +358,7 @@ public class RustSbomDetectorTests : BaseDetectorTest<RustSbomDetector>
                 })
             .ReturnsAsync(1);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("test.cargo-sbom.json", sbomContent)
             .WithFile("Cargo.toml", "[package]\nname = \"test\"\nversion = \"1.0.0\"")
             .ExecuteDetectorAsync();
@@ -408,7 +410,7 @@ public class RustSbomDetectorTests : BaseDetectorTest<RustSbomDetector>
                 })
             .ReturnsAsync(1);
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .WithFile("z.cargo-sbom.json", sbomContent, fileLocation: sbom2)
             .WithFile("a.cargo-sbom.json", sbomContent, fileLocation: sbom1)
             .ExecuteDetectorAsync();
@@ -466,7 +468,7 @@ exclude = [""tests/*""]
                 (stream, recorder, token) => lockCallCount++)
             .ReturnsAsync(2);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .AddService(mockFileUtilityService.Object)
             .WithFile("Cargo.lock", cargoLockContent, fileLocation: rootLock)
             .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: rootToml)
@@ -524,7 +526,7 @@ exclude = [""tests/*""]
         // Create a new mock logger to capture warnings
         var mockLoggerForDetector = new Mock<ILogger<RustSbomDetector>>();
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .AddServiceMock(mockLoggerForDetector)
             .WithFile("Cargo.toml", cargoTomlContent, fileLocation: tomlPath)
             .ExecuteDetectorAsync();
@@ -615,7 +617,7 @@ exclude = [""tests/*""]
                 })
             .ReturnsAsync(new IRustCliParser.ParseResult { Success = true });
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .WithFile("Cargo.toml", "[package]\nname = \"root\"", fileLocation: rootToml)
             .WithFile("Cargo.lock", "[[package]]\nname = \"root\"", fileLocation: rootLock)
             .ExecuteDetectorAsync();
@@ -689,7 +691,7 @@ exclude = [""tests/*""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new IRustCliParser.ParseResult { Success = true });
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .WithFile("Cargo.toml", "[package]\nname = \"test\"", fileLocation: toml1)
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: lock1)
             .ExecuteDetectorAsync();
@@ -751,7 +753,7 @@ members = [""member1""]
 ";
 
         // Process files in order: lock first (marks directory as visited), then workspace TOML
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: workspaceLock)
             .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: workspaceToml)
             .ExecuteDetectorAsync();
@@ -811,7 +813,7 @@ members = [""member1""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.toml", "[package]\nname = \"working\"", fileLocation: workingToml)
             .WithFile("Cargo.toml", "[package]\nname = \"failed\"", fileLocation: failedToml)
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: workingLock)
@@ -858,7 +860,7 @@ members = [""member1""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.toml", "[package]\nname = \"test\"")
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"")
             .ExecuteDetectorAsync();
@@ -892,7 +894,7 @@ members = [""member1""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("test.cargo-sbom.json", sbomContent)
             .WithFile("Cargo.toml", "[package]\nname = \"test\"")
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"")
@@ -929,7 +931,7 @@ members = [""member1""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"")
             .ExecuteDetectorAsync();
 
@@ -956,7 +958,7 @@ members = [""member1""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .WithFile("test.cargo-sbom.json", sbomContent)
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"")
             .WithFile("Cargo.toml", "[package]\nname = \"test\"")
@@ -1029,7 +1031,7 @@ version = ""1.0.0""
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new IRustCliParser.ParseResult { Success = true });
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .AddService(mockFileUtilityService.Object)
             .WithFile("Cargo.toml", tomlContent, fileLocation: workspaceToml)
             .ExecuteDetectorAsync();
@@ -1063,7 +1065,7 @@ version = ""1.0.0""
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .AddService(mockFileUtilityService.Object)
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: lockFile)
             .ExecuteDetectorAsync();
@@ -1105,7 +1107,7 @@ default-members = [""member1"", ""member2""]
                 (stream, recorder, token) => lockCallCount++)
             .ReturnsAsync(2);
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .AddService(mockFileUtilityService.Object)
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: rootLock)
             .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: rootToml)
@@ -1143,7 +1145,7 @@ default-members = [""member1"", ""member2""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .AddService(mockFileUtilityService.Object)
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: rootLock)
             .WithFile("Cargo.toml", invalidTomlContent, fileLocation: rootToml)
@@ -1207,7 +1209,7 @@ default-members = [""member1"", ""member2""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .AddService(mockFileUtilityService.Object)
             .WithFile("Cargo.toml", "[workspace]\nmembers = []", fileLocation: workspaceToml)
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: workspaceLock)
@@ -1230,7 +1232,7 @@ default-members = [""member1"", ""member2""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("test.cargo-sbom.json", sbomContent)
             .ExecuteDetectorAsync();
 
@@ -1280,7 +1282,7 @@ default-members = [""member1"", ""member2""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .WithFile("Cargo.toml", "[package]\nname = \"test\"", fileLocation: tomlFile)
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: lockFile)
             .ExecuteDetectorAsync();
@@ -1306,7 +1308,7 @@ default-members = [""member1"", ""member2""]
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((int?)null);
 
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Cargo.lock", "[[package]]\nname = \"test\"", fileLocation: lockFile)
             .ExecuteDetectorAsync();
 
@@ -1348,7 +1350,7 @@ exclude = [""examples/*""]
                 (stream, recorder, token) => processedFiles.Add(stream.Location))
             .ReturnsAsync(2);
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .AddService(mockFileUtilityService.Object)
             .WithFile("Cargo.lock", "[[package]]\nname = \"root\"", fileLocation: rootLock)
             .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: rootToml)
@@ -1401,7 +1403,7 @@ members = [""*""]
                 (stream, recorder, token) => processedFiles.Add(stream.Location))
             .ReturnsAsync(2);
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .AddService(mockFileUtilityService.Object)
             .WithFile("Cargo.lock", "[[package]]\nname = \"root\"", fileLocation: rootLock)
             .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: rootToml)
@@ -1448,7 +1450,7 @@ members = [""member1"", ""examples/*""]
                 (stream, recorder, token) => processedFiles.Add(stream.Location))
             .ReturnsAsync(2);
 
-        await this.DetectorTestUtility
+        await this.detectorTestUtility
             .AddService(mockFileUtilityService.Object)
             .WithFile("Cargo.lock", "[[package]]\nname = \"root\"", fileLocation: rootLock)
             .WithFile("Cargo.toml", workspaceTomlContent, fileLocation: rootToml)

@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="CargoComponent"/> instances from Rust crate artifacts.
 /// </summary>
-public class CargoComponentFactory : ArtifactComponentFactoryBase
+internal class CargoComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.Cargo;

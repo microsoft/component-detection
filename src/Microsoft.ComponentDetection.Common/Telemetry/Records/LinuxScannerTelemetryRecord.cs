@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class LinuxScannerTelemetryRecord : BaseDetectionTelemetryRecord
+internal class LinuxScannerTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "LinuxScannerTelemetry";
 

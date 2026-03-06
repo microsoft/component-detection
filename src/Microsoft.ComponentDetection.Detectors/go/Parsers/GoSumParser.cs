@@ -10,7 +10,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class GoSumParser : IGoParser
+internal class GoSumParser : IGoParser
 {
     private static readonly Regex GoSumRegex = new(
         @"(?<name>.*)\s+(?<version>.*?)(/go\.mod)?\s+(?<hash>.*)",

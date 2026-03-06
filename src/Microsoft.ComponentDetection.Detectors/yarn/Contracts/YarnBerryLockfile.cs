@@ -9,7 +9,7 @@ using YamlDotNet.Serialization;
 /// There is no official documentation for the format of the yarn.lock file.
 /// This is based on the source code of https://github.com/yarnpkg/berry/blob/master/packages/yarnpkg-core/sources/Project.ts.
 /// </summary>
-public sealed record YarnBerryLockfile
+internal sealed record YarnBerryLockfile
 {
     /// <summary>
     /// Gets the metadata of the yarn.lock file.

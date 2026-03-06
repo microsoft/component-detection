@@ -12,7 +12,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class NpmComponentDetector : FileComponentDetector
+internal class NpmComponentDetector : FileComponentDetector
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

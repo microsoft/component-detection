@@ -40,4 +40,14 @@ public class ScannedComponent
 
     [JsonPropertyName("targetFrameworks")]
     public ISet<string> TargetFrameworks { get; set; }
+
+    [JsonProperty("licensesConcluded", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("licensesConcluded")]
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IList<string> LicensesConcluded { get; set; }
+
+    [JsonProperty("suppliers", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("suppliers")]
+    [System.Text.Json.Serialization.JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IList<TypedComponent.ActorInfo> Suppliers { get; set; }
 }

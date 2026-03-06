@@ -39,7 +39,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class RubyComponentDetector : FileComponentDetector
+internal class RubyComponentDetector : FileComponentDetector
 {
     private static readonly Regex HeadingRegex = new Regex("^[A-Z ]+$", RegexOptions.Compiled);
     private static readonly Regex DependencyDefinitionRegex = new Regex("^ {4}[A-Za-z-]+", RegexOptions.Compiled);
