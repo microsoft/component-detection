@@ -7,7 +7,7 @@ using YamlDotNet.Serialization;
 /// Represents an entry in the yarn.lock file for yarn v2+ (berry).
 /// There is no official documentation for the format of the yarn.lock file.
 /// </summary>
-public sealed record YarnBerryLockfileEntry
+internal sealed record YarnBerryLockfileEntry
 {
     /// <summary>
     /// The version of the package, if available.

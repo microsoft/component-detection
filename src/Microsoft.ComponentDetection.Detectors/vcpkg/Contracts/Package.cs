@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 
 using System.Text.Json.Serialization;
 
-public class Package
+internal class Package
 {
     [JsonPropertyName("SPDXID")]
     public string SPDXID { get; set; }
