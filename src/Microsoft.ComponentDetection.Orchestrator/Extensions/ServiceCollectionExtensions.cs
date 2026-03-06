@@ -73,6 +73,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IExperimentConfiguration, SimplePipExperiment>();
         services.AddSingleton<IExperimentConfiguration, UvLockDetectorExperiment>();
         services.AddSingleton<IExperimentConfiguration, LinuxApplicationLayerExperiment>();
+        services.AddSingleton<IExperimentConfiguration, MSBuildBinaryLogExperiment>();
 
         // Detectors
         // CocoaPods
@@ -131,6 +132,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IComponentDetector, NuGetComponentDetector>();
         services.AddSingleton<IComponentDetector, NuGetPackagesConfigDetector>();
         services.AddSingleton<IComponentDetector, NuGetProjectModelProjectCentricComponentDetector>();
+        services.AddSingleton<IComponentDetector, MSBuildBinaryLogComponentDetector>();
 
         // PIP
         services.AddSingleton<IPyPiClient, PyPiClient>();
