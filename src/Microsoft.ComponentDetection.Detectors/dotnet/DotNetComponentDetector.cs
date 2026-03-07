@@ -203,7 +203,7 @@ public class DotNetComponentDetector : FileComponentDetector
         foreach (var target in lockFile.Targets ?? [])
         {
             var targetFramework = target.TargetFramework;
-            var isSelfContained = this.IsSelfContained(lockFile.PackageSpec, targetFramework);
+            var isSelfContained = this.IsSelfContained(lockFile.PackageSpec, targetFramework, target);
             var targetTypeWithSelfContained = this.GetTargetTypeWithSelfContained(targetType, isSelfContained);
 
             componentReporter.RegisterUsage(new DetectedComponent(new DotNetComponent(sdkVersion, targetFramework?.GetShortFolderName(), targetTypeWithSelfContained)));
@@ -250,8 +250,16 @@ public class DotNetComponentDetector : FileComponentDetector
         return peReader.PEHeaders.IsExe;
     }
 
-    private bool IsSelfContained(PackageSpec packageSpec, NuGetFramework? targetFramework)
+    private bool IsSelfContained(PackageSpec packageSpec, NuGetFramework? targetFramework, LockFileTarget target)
     {
+        // PublishAot projects reference Microsoft.DotNet.ILCompiler, which implies
+        // native AOT compilation and therefore a self-contained deployment.
+        if (target?.Libraries != null &&
+            target.Libraries.Any(lib => "Microsoft.DotNet.ILCompiler".Equals(lib.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
         if (packageSpec?.TargetFrameworks == null || targetFramework == null)
         {
             return false;

@@ -26,11 +26,15 @@ output path and reading the PE COFF header's characteristics for `IMAGE_FILE_EXE
 
 The `ProjectType` value is further qualified with a `-selfcontained` suffix (e.g. `application-selfcontained`
 or `library-selfcontained`) when the project is detected as self-contained.  A project is considered 
-self-contained when its `project.assets.json` indicates that a framework reference (e.g. 
-`Microsoft.NETCore.App`) has a corresponding runtime package download (e.g. 
-`Microsoft.NETCore.App.Runtime.*`) listed in the target framework's `downloadDependencies`.  Self-contained 
-applications bundle the .NET runtime and are responsible for servicing it, so this distinction is important 
-for vulnerability tracking.
+self-contained when either:
+- Its `project.assets.json` indicates that a framework reference (e.g. `Microsoft.NETCore.App`) has a 
+  corresponding runtime package download (e.g. `Microsoft.NETCore.App.Runtime.*`) listed in the target 
+  framework's `downloadDependencies`.  This covers `SelfContained=true` scenarios.
+- The target references `Microsoft.DotNet.ILCompiler`, which indicates native AOT compilation 
+  (`PublishAot=true`) and therefore an implicitly self-contained deployment.
+
+Self-contained applications bundle the .NET runtime and are responsible for servicing it, so this 
+distinction is important for vulnerability tracking.
 
 [1]: https://learn.microsoft.com/en-us/dotnet/core/tools/global-json
 [2]: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#characteristics
