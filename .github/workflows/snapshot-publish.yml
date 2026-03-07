@@ -10,9 +10,13 @@ on:
     branches:
       - main
   schedule:
+    # GitHub cron schedules run in UTC; this runs at 06:00 UTC, Monday–Friday.
     - cron: '0 6 * * 1-5'
   workflow_dispatch:
 
+concurrency:
+  group: snapshot-publish
+  cancel-in-progress: true
 permissions:
   contents: read
 
