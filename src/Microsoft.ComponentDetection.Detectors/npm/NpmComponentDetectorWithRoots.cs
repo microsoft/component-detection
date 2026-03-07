@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
+internal class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

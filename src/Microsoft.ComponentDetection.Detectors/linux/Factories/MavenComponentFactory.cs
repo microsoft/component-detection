@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="MavenComponent"/> instances from Java archive artifacts.
 /// </summary>
-public class MavenComponentFactory : ArtifactComponentFactoryBase
+internal class MavenComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.Maven;

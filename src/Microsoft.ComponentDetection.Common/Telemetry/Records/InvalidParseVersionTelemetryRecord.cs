@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class InvalidParseVersionTelemetryRecord : BaseDetectionTelemetryRecord
+internal class InvalidParseVersionTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "InvalidParseVersion";
 

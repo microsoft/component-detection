@@ -5,7 +5,7 @@ using System.IO;
 using Microsoft.ComponentDetection.Contracts;
 
 /// <inheritdoc />
-public class DirectoryUtilityService : IDirectoryUtilityService
+internal class DirectoryUtilityService : IDirectoryUtilityService
 {
     /// <inheritdoc />
     public void Delete(string path, bool recursive) => Directory.Delete(path, recursive);

@@ -16,7 +16,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Microsoft.Extensions.Logging;
 
-public class VcpkgComponentDetector : FileComponentDetector
+internal class VcpkgComponentDetector : FileComponentDetector
 {
     private const string VcpkgInstalledFolder = "vcpkg_installed";
     private const string ManifestInfoFile = "manifest-info.json";

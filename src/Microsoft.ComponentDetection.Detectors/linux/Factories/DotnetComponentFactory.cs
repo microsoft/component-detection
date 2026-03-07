@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="NuGetComponent"/> instances from .NET package artifacts.
 /// </summary>
-public class DotnetComponentFactory : ArtifactComponentFactoryBase
+internal class DotnetComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.NuGet;

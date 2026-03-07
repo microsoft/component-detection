@@ -21,7 +21,7 @@ using Tomlyn.Model;
 /// <summary>
 /// A unified Rust detector that orchestrates SBOM, CLI, and Crate parsing.
 /// </summary>
-public class RustSbomDetector : FileComponentDetector
+internal class RustSbomDetector : FileComponentDetector
 {
     private const string CargoTomlFileName = "Cargo.toml";
     private const string CargoLockFileName = "Cargo.lock";

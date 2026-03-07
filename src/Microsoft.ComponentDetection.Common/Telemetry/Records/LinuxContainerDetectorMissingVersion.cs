@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class LinuxContainerDetectorMissingVersion : BaseDetectionTelemetryRecord
+internal class LinuxContainerDetectorMissingVersion : BaseDetectionTelemetryRecord
 {
     public override string RecordName { get; } = "MissingVersion";
 

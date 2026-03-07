@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="PipComponent"/> instances from Python package artifacts.
 /// </summary>
-public class PipComponentFactory : ArtifactComponentFactoryBase
+internal class PipComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.Pip;
