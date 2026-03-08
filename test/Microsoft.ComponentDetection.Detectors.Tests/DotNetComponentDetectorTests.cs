@@ -901,9 +901,14 @@ public class DotNetComponentDetectorTests
 
             this.AddFile(projectPath, null);
 
-            var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location);
-            this.AddFile(Path.Combine(outputPath, "Release", CurrentTfm, "test.dll"), applicationAssemblyStream);
+            using (var applicationAssemblyStream = File.OpenRead(Assembly.GetEntryAssembly().Location))
+            {
+                var memoryStream = new MemoryStream();
+                applicationAssemblyStream.CopyTo(memoryStream);
+                memoryStream.Position = 0;
 
+                this.AddFile(Path.Combine(outputPath, "Release", CurrentTfm, "test.dll"), memoryStream);
+            }
             var assetsContent = await File.ReadAllTextAsync(assetsPath);
 
             var (scanResult, componentRecorder) = await this.detectorTestUtility
