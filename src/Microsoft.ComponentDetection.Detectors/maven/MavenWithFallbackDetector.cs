@@ -117,10 +117,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     // Track Maven CLI errors for analysis
     private readonly ConcurrentBag<string> mavenCliErrors = [];
     private readonly ConcurrentBag<string> failedEndpoints = [];
-    private readonly ConcurrentDictionary<string, IList<ProcessRequest>> parentPomDictionary = [];
-
-    // File coordination for safe deletion across multiple detectors
-    private readonly ConcurrentDictionary<string, int> fileReaderCounts = [];
 
     // Telemetry tracking
     private MavenDetectionMethod usedDetectionMethod = MavenDetectionMethod.None;
@@ -223,9 +219,13 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             return processRequests;
         }
 
+        // Create per-scan dictionary to track nested pom.xml mappings
+        // This prevents state accumulation across scans since detectors are singletons
+        var parentPomDictionary = new ConcurrentDictionary<string, IList<ProcessRequest>>(StringComparer.OrdinalIgnoreCase);
+
         // Run Maven CLI detection on all pom.xml files
         // Returns deps files for CLI successes, pom.xml files for CLI failures
-        return await this.RunMavenCliDetectionAsync(processRequests, cancellationToken);
+        return await this.RunMavenCliDetectionAsync(processRequests, parentPomDictionary, cancellationToken);
     }
 
     /// <summary>
@@ -272,10 +272,12 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     /// If CLI fails, all pom.xml files under that directory are added for static parsing fallback.
     /// </summary>
     /// <param name="processRequests">The incoming process requests.</param>
+    /// <param name="parentPomDictionary">Dictionary to track nested pom.xml mappings for fallback scenarios.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>An observable of process requests (deps files for CLI success, pom.xml for CLI failure).</returns>
     private async Task<IObservable<ProcessRequest>> RunMavenCliDetectionAsync(
         IObservable<ProcessRequest> processRequests,
+        ConcurrentDictionary<string, IList<ProcessRequest>> parentPomDictionary,
         CancellationToken cancellationToken)
     {
         var results = new ConcurrentQueue<ProcessRequest>();
@@ -309,16 +311,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
             if (result.Success)
             {
-                // CLI succeeded - read the generated deps file
-                // We read the file here (rather than in MavenCommandService) to avoid
-                // unnecessary I/O for callers like MvnCliComponentDetector that scan for files later.
-                string depsFileContent = null;
+                // CLI succeeded - verify deps file was generated
+                // Use existence check to avoid redundant I/O (file will be read during directory scan)
                 if (this.fileUtilityService.Exists(depsFilePath))
-                {
-                    depsFileContent = this.fileUtilityService.ReadAllText(depsFilePath);
-                }
-
-                if (!string.IsNullOrEmpty(depsFileContent))
                 {
                     Interlocked.Increment(ref cliSuccessCount);
                 }
@@ -327,7 +322,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     // CLI reported success but deps file is missing - treat as failure
                     Interlocked.Increment(ref cliFailureCount);
                     failedDirectories.Add(pomDir);
-                    this.LogWarning($"Maven CLI succeeded but deps file not found or empty: {depsFilePath}");
+                    this.LogWarning($"Maven CLI succeeded but deps file not found: {depsFilePath}");
                 }
             }
             else
@@ -348,7 +343,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 CancellationToken = cancellationToken,
             });
 
-        await this.RemoveNestedPomXmls(processRequests, cancellationToken).ForEachAsync(
+        await this.RemoveNestedPomXmls(processRequests, parentPomDictionary, cancellationToken).ForEachAsync(
             processRequest =>
             {
                 processPomFile.Post(processRequest);
@@ -365,8 +360,10 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var normalizedFailedDir = NormalizeDirectoryPath(failedDir);
-                if (this.parentPomDictionary.TryGetValue(normalizedFailedDir, out var staticParsingRequests))
+                if (parentPomDictionary.TryGetValue(normalizedFailedDir, out var staticParsingRequests))
                 {
+                    // Note: staticParsingRequests is already in parent-first order due to the sorted processing
+                    // during dictionary building in RemoveNestedPomXmls
                     foreach (var request in staticParsingRequests)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
@@ -392,10 +389,10 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             {
                 // Read and store content to avoid stream disposal issues
                 // Track file read for coordination with deletion
-                this.IncrementFileReaderCount(componentStream.Location);
+                this.mavenCommandService.RegisterFileReader(componentStream.Location);
                 using var reader = new StreamReader(componentStream.Stream);
                 var content = reader.ReadToEnd();
-                this.DecrementFileReaderCount(componentStream.Location);
+                this.mavenCommandService.UnregisterFileReader(componentStream.Location);
                 return new ProcessRequest
                 {
                     ComponentStream = new ComponentStream
@@ -448,8 +445,17 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         if (pattern == this.mavenCommandService.BcdeMvnDependencyFileName)
         {
-            // Process MvnCli result
-            this.ProcessMvnCliResult(processRequest);
+            // Process MvnCli result - register as reader and cleanup when done
+            var depsFilePath = processRequest.ComponentStream.Location;
+            this.mavenCommandService.RegisterFileReader(depsFilePath);
+            try
+            {
+                this.ProcessMvnCliResult(processRequest);
+            }
+            finally
+            {
+                this.mavenCommandService.UnregisterFileReader(depsFilePath);
+            }
         }
         else
         {
@@ -514,9 +520,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private void ProcessMvnCliResult(ProcessRequest processRequest)
     {
         this.mavenCommandService.ParseDependenciesFile(processRequest);
-
-        // Try to delete the deps file using coordination semaphore
-        this.TryDeleteDependencyFileIfNotInUse(processRequest.ComponentStream.Location);
 
         // Count components registered to this specific file's recorder to avoid race conditions
         // when OnFileFoundAsync runs concurrently for multiple files.
@@ -721,9 +724,13 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     /// A pom.xml is considered nested if there's another pom.xml in a parent directory.
     /// </summary>
     /// <param name="componentStreams">The incoming process requests for pom.xml files.</param>
+    /// <param name="parentPomDictionary">Dictionary to populate with nested pom.xml mappings for fallback scenarios.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>Process requests for only root-level pom.xml files.</returns>
-    private IObservable<ProcessRequest> RemoveNestedPomXmls(IObservable<ProcessRequest> componentStreams, CancellationToken cancellationToken)
+    private IObservable<ProcessRequest> RemoveNestedPomXmls(
+        IObservable<ProcessRequest> componentStreams,
+        ConcurrentDictionary<string, IList<ProcessRequest>> parentPomDictionary,
+        CancellationToken cancellationToken)
     {
         return componentStreams
             .ToList()
@@ -731,9 +738,17 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                // Sort all requests by path depth (parent-first) to ensure deterministic processing order.
+                // This is critical for fallback static parsing where parent POMs must be processed before children
+                // to ensure proper property resolution and inheritance.
+                var sortedRequests = allRequests
+                    .OrderBy(r => NormalizeDirectoryPath(Path.GetDirectoryName(r.ComponentStream.Location)).Length)
+                    .ThenBy(r => r.ComponentStream.Location, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
                 // Build a list of all directories that contain a pom.xml, ordered by path length (shortest first).
                 // This ensures parent directories are checked before their children.
-                var pomDirectories = allRequests
+                var pomDirectories = sortedRequests
                     .Select(r => NormalizeDirectoryPath(Path.GetDirectoryName(r.ComponentStream.Location)))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(d => d.Length)
@@ -741,7 +756,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
                 var filteredRequests = new List<ProcessRequest>();
 
-                foreach (var request in allRequests)
+                foreach (var request in sortedRequests)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -761,7 +776,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                         {
                             this.LogDebug($"Ignoring {MavenManifest} at {location}, as it has a parent {MavenManifest} at {pomDirectory}.");
                             isNested = true;
-                            this.parentPomDictionary.AddOrUpdate(
+                            parentPomDictionary.AddOrUpdate(
                                 pomDirectory,
                                 [request],
                                 (key, existingList) =>
@@ -776,7 +791,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     if (!isNested)
                     {
                         this.LogDebug($"Discovered {request.ComponentStream.Location}.");
-                        this.parentPomDictionary.AddOrUpdate(
+                        parentPomDictionary.AddOrUpdate(
                                 NormalizeDirectoryPath(Path.GetDirectoryName(request.ComponentStream.Location)),
                                 [request],
                                 (key, existingList) =>
@@ -790,95 +805,5 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
                 return filteredRequests;
             });
-    }
-
-    /// <summary>
-    /// Increments the reader count for a file to prevent premature deletion.
-    /// </summary>
-    /// <param name="filePath">Path to the file being read.</param>
-    private void IncrementFileReaderCount(string filePath)
-    {
-        this.fileReaderCounts.AddOrUpdate(filePath, 1, (key, count) => count + 1);
-    }
-
-    /// <summary>
-    /// Decrements the reader count for a file.
-    /// </summary>
-    /// <param name="filePath">Path to the file that finished being read.</param>
-    private void DecrementFileReaderCount(string filePath)
-    {
-        this.fileReaderCounts.AddOrUpdate(filePath, 0, (key, count) => Math.Max(0, count - 1));
-    }
-
-    /// <summary>
-    /// Safely deletes a dependency file only if no other processes are reading it.
-    /// Uses file-based coordination to work across detector instances.
-    /// </summary>
-    /// <param name="filePath">Path to the file to delete.</param>
-    private void TryDeleteDependencyFileIfNotInUse(string filePath)
-    {
-        try
-        {
-            // Check our local reader count first
-            var localReaderCount = this.fileReaderCounts.GetValueOrDefault(filePath, 0);
-            if (localReaderCount > 0)
-            {
-                this.LogDebug($"Skipping deletion of {filePath} - still being read locally (count: {localReaderCount})");
-                return;
-            }
-
-            // Create a coordination file to signal deletion intent
-            var coordinationFile = filePath + ".deleting";
-
-            // Try to create coordination file atomically
-            if (File.Exists(coordinationFile))
-            {
-                this.LogDebug($"Skipping deletion of {filePath} - another detector is deleting it");
-                return;
-            }
-
-            // Create coordination file and attempt deletion
-            File.WriteAllText(coordinationFile, Environment.ProcessId.ToString());
-
-            // Small delay to allow other processes to detect coordination file
-            Thread.Sleep(50);
-
-            // Verify we still own the coordination file (in case of race condition)
-            if (File.Exists(coordinationFile) &&
-                File.ReadAllText(coordinationFile).Equals(Environment.ProcessId.ToString()))
-            {
-                // Safely delete both files
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                    this.LogDebug($"Successfully deleted dependency file: {filePath}");
-                }
-
-                File.Delete(coordinationFile);
-            }
-            else
-            {
-                this.LogDebug($"Lost coordination for {filePath} - another process took over deletion");
-            }
-        }
-        catch (Exception ex)
-        {
-            // Don't fail detection if cleanup fails - just log and continue
-            this.LogDebug($"Failed to delete dependency file {filePath}: {ex.Message}");
-
-            // Clean up coordination file if it exists
-            try
-            {
-                var coordinationFile = filePath + ".deleting";
-                if (File.Exists(coordinationFile))
-                {
-                    File.Delete(coordinationFile);
-                }
-            }
-            catch
-            {
-                // Ignore coordination cleanup errors
-            }
-        }
     }
 }
