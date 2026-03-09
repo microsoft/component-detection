@@ -25,11 +25,6 @@ internal class RustCargoLockParser : IRustCargoLockParser
         @"^(?<packageName>[^ ]+)(?: (?<version>[^ ]+))?(?: \((?<source>[^()]*)\))?$",
         RegexOptions.Compiled);
 
-    private static readonly TomlModelOptions TomlOptions = new TomlModelOptions
-    {
-        IgnoreMissingProperties = true,
-    };
-
     private readonly ILogger<RustCargoLockParser> logger;
 
     /// <summary>
@@ -56,7 +51,7 @@ internal class RustCargoLockParser : IRustCargoLockParser
         {
             using var reader = new StreamReader(componentStream.Stream);
             var content = await reader.ReadToEndAsync(cancellationToken);
-            var cargoLock = Toml.ToModel<CargoLock>(content, options: TomlOptions);
+            var cargoLock = TomlSerializer.Deserialize<CargoLock>(content);
             this.ProcessCargoLock(cargoLock, singleFileComponentRecorder, componentStream);
             return cargoLock.Version;
         }
