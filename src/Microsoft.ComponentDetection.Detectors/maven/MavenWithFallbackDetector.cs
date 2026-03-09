@@ -388,11 +388,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             .Select(componentStream =>
             {
                 // Read and store content to avoid stream disposal issues
-                // Track file read for coordination with deletion
-                this.mavenCommandService.RegisterFileReader(componentStream.Location);
+                // Note: Cleanup coordination is handled in OnFileFoundAsync to avoid duplicate work
                 using var reader = new StreamReader(componentStream.Stream);
                 var content = reader.ReadToEnd();
-                this.mavenCommandService.UnregisterFileReader(componentStream.Location);
                 return new ProcessRequest
                 {
                     ComponentStream = new ComponentStream
