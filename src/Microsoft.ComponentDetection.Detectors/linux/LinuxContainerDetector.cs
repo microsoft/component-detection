@@ -20,7 +20,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Detector for Linux container images.
 /// </summary>
-internal class LinuxContainerDetector(
+public class LinuxContainerDetector(
     ILinuxScanner linuxScanner,
     IDockerService dockerService,
     ILogger<LinuxContainerDetector> logger

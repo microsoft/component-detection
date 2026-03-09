@@ -16,7 +16,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-internal class PodComponentDetector : FileComponentDetector
+public class PodComponentDetector : FileComponentDetector
 {
     public PodComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,

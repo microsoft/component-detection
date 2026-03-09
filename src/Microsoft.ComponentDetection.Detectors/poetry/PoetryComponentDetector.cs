@@ -14,7 +14,7 @@ using Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 using Microsoft.Extensions.Logging;
 using Tomlyn;
 
-internal class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
+public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     public PoetryComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,

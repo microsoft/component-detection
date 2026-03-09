@@ -15,7 +15,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 using Valleysoft.DockerfileModel;
 
-internal class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
+public class DockerfileComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IEnvironmentVariableService envVarService;

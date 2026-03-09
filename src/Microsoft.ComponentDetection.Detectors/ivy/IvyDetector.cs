@@ -38,7 +38,7 @@ using Microsoft.Extensions.Logging;
 /// The file written out by the custom Ant task is a simple JSON file representing a series of calls to be made to
 /// the <see cref="ISingleFileComponentRecorder.RegisterUsage(DetectedComponent, bool, string, bool?, DependencyScope?, string)"/> method.
 /// </remarks>
-internal class IvyDetector : FileComponentDetector, IExperimentalDetector
+public class IvyDetector : FileComponentDetector, IExperimentalDetector
 {
     internal const string PrimaryCommand = "ant.bat";
 

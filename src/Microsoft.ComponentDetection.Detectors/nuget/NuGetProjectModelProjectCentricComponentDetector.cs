@@ -15,7 +15,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-internal class NuGetProjectModelProjectCentricComponentDetector : FileComponentDetector
+public class NuGetProjectModelProjectCentricComponentDetector : FileComponentDetector
 {
     public const string ProjectDependencyType = "project";
 

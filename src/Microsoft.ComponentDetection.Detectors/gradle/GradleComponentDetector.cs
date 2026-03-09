@@ -13,7 +13,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-internal class GradleComponentDetector : FileComponentDetector, IComponentDetector
+public class GradleComponentDetector : FileComponentDetector, IComponentDetector
 {
     private const string DevConfigurationsEnvVar = "CD_GRADLE_DEV_CONFIGURATIONS";
     private const string DevLockfilesEnvVar = "CD_GRADLE_DEV_LOCKFILES";
