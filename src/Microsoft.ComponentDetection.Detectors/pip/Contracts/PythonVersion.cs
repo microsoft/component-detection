@@ -8,7 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-internal class PythonVersion : IComparable<PythonVersion>
+public class PythonVersion : IComparable<PythonVersion>
 {
     // This is a light C# port of the python version capture regex described here:
     // https://www.python.org/dev/peps/pep-0440/#appendix-b-parsing-version-strings-with-regular-expressions
