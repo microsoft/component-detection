@@ -10,7 +10,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-internal class UvLockComponentDetector : FileComponentDetector, IExperimentalDetector
+public class UvLockComponentDetector : FileComponentDetector, IExperimentalDetector
 {
     public UvLockComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,

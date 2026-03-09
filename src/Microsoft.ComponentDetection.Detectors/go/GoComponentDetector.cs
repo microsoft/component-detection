@@ -16,7 +16,7 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-internal class GoComponentDetector : FileComponentDetector
+public class GoComponentDetector : FileComponentDetector
 {
     private readonly HashSet<string> projectRoots = [];
 
