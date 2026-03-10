@@ -484,7 +484,7 @@ public class LinuxContainerDetectorTests
             this.mockSyftLinuxScanner.Verify(
                 scanner =>
                     scanner.GetSyftOutputAsync(
-                        It.IsAny<string>(),
+                        It.Is<string>(s => s.StartsWith("oci-dir:")),
                         It.Is<IList<string>>(binds =>
                             binds.Count == 1 && binds[0].Contains(ociDir)),
                         It.IsAny<LinuxScannerScope>(),

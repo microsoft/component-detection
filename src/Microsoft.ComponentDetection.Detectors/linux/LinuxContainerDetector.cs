@@ -245,7 +245,7 @@ public class LinuxContainerDetector(
     /// Resolves an image by doing one of the following:
     /// * For Docker images, resolve the reference by pulling (if needed) and inspecting it.
     ///   Adds the result to the processedImages dictionary for deduplication.
-    /// * For local images, verify the path exists and  adds the reference to a concurrent
+    /// * For local images, verify the path exists and adds the reference to a concurrent
     ///   set for tracking which images to scan in phase 2.
     /// </summary>
     private async Task ResolveImageAsync(

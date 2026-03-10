@@ -52,7 +52,7 @@ public interface IDockerService
     /// <summary>
     /// Creates and runs a container with the given image and command.
     /// </summary>
-    /// <param name="image">The image to inspect.</param>
+    /// <param name="image">The image to run.</param>
     /// <param name="command">The command to run in the container.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A tuple of stdout and stderr from the container.</returns>
@@ -61,7 +61,7 @@ public interface IDockerService
     /// <summary>
     /// Creates and runs a container with the given image, command, and additional volume binds.
     /// </summary>
-    /// <param name="image">The image to inspect.</param>
+    /// <param name="image">The image to run.</param>
     /// <param name="command">The command to run in the container.</param>
     /// <param name="additionalBinds">Additional volume bind mounts to add to the container (e.g., "/host/path:/container/path:ro").</param>
     /// <param name="cancellationToken">The cancellation token.</param>

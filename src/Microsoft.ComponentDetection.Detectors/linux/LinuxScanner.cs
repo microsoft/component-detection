@@ -87,7 +87,12 @@ internal class LinuxScanner : ILinuxScanner
         CancellationToken cancellationToken = default
     )
     {
-        var stdout = await this.RunSyftAsync(imageHash, scope, additionalBinds: [], cancellationToken);
+        using var record = new LinuxScannerTelemetryRecord
+        {
+            ImageToScan = imageHash,
+            ScannerVersion = ScannerImage,
+        };
+        var stdout = await this.RunSyftAsync(record, imageHash, scope, additionalBinds: [], cancellationToken);
 
         try
         {
@@ -96,6 +101,7 @@ internal class LinuxScanner : ILinuxScanner
         }
         catch (Exception e)
         {
+            record.FailedDeserializingScannerOutput = e.ToString();
             this.logger.LogError(e, "Failed to deserialize Syft output for image {ImageHash}", imageHash);
             return [];
         }
@@ -109,8 +115,22 @@ internal class LinuxScanner : ILinuxScanner
         CancellationToken cancellationToken = default
     )
     {
-        var stdout = await this.RunSyftAsync(syftSource, scope, additionalBinds, cancellationToken);
-        return SyftOutput.FromJson(stdout);
+        using var record = new LinuxScannerTelemetryRecord
+        {
+            ImageToScan = syftSource,
+            ScannerVersion = ScannerImage,
+        };
+        var stdout = await this.RunSyftAsync(record, syftSource, scope, additionalBinds, cancellationToken);
+        try
+        {
+            return SyftOutput.FromJson(stdout);
+        }
+        catch (Exception e)
+        {
+            record.FailedDeserializingScannerOutput = e.ToString();
+            this.logger.LogError(e, "Failed to deserialize Syft output for source {SyftSource}", syftSource);
+            throw;
+        }
     }
 
     /// <inheritdoc/>
@@ -218,17 +238,12 @@ internal class LinuxScanner : ILinuxScanner
     /// Runs the Syft scanner container and returns the stdout output.
     /// </summary>
     private async Task<string> RunSyftAsync(
+        LinuxScannerTelemetryRecord record,
         string syftSource,
         LinuxScannerScope scope,
         IList<string> additionalBinds,
         CancellationToken cancellationToken)
     {
-        using var record = new LinuxScannerTelemetryRecord
-        {
-            ImageToScan = syftSource,
-            ScannerVersion = ScannerImage,
-        };
-
         var acquired = false;
         var stdout = string.Empty;
         var stderr = string.Empty;
