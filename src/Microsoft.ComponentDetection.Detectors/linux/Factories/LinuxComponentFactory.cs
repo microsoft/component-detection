@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="LinuxComponent"/> instances from system package artifacts (apk, deb, rpm).
 /// </summary>
-public class LinuxComponentFactory : ArtifactComponentFactoryBase
+internal class LinuxComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.Linux;

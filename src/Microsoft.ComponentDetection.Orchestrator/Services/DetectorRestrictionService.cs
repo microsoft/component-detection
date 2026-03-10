@@ -7,7 +7,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Orchestrator.Exceptions;
 using Microsoft.Extensions.Logging;
 
-public class DetectorRestrictionService : IDetectorRestrictionService
+internal class DetectorRestrictionService : IDetectorRestrictionService
 {
     private readonly IList<string> oldDetectorIds = ["MSLicenseDevNpm", "MSLicenseDevNpmList", "MSLicenseNpm", "MSLicenseNpmList"];
     private readonly string newDetectorId = "NpmWithRoots";

@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="PodComponent"/> instances from CocoaPods artifacts.
 /// </summary>
-public class PodComponentFactory : ArtifactComponentFactoryBase
+internal class PodComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.Pod;

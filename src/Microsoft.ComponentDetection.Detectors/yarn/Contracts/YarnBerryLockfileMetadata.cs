@@ -6,7 +6,7 @@ using YamlDotNet.Serialization;
 /// <summary>
 /// Represents the metadata of the yarn.lock file for yarn v2+.
 /// </summary>
-public sealed record YarnBerryLockfileMetadata
+internal sealed record YarnBerryLockfileMetadata
 {
     /// <summary>
     /// Gets the version of the yarn.lock file.

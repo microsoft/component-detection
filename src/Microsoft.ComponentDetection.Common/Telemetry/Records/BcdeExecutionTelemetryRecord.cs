@@ -5,7 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-public class BcdeExecutionTelemetryRecord : BaseDetectionTelemetryRecord
+internal class BcdeExecutionTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "BcdeExecution";
 

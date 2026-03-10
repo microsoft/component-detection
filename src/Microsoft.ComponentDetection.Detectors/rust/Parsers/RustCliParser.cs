@@ -18,7 +18,7 @@ using static Microsoft.ComponentDetection.Detectors.Rust.IRustCliParser;
 /// Parser for Cargo.toml files using cargo metadata command or cached metadata,
 /// with optional ownership-aware component registration.
 /// </summary>
-public class RustCliParser : IRustCliParser
+internal class RustCliParser : IRustCliParser
 {
     private readonly ICommandLineInvocationService cliService;
     private readonly IEnvironmentVariableService envVarService;

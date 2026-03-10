@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class DockerServiceTryPullImageTelemetryRecord : BaseDetectionTelemetryRecord
+internal class DockerServiceTryPullImageTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "DockerServiceTryPullImage";
 

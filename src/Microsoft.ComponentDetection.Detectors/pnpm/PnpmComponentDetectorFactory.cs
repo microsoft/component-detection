@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging;
 /// Factory responsible for constructing the proper <see cref="IPnpmDetector"/> and recording its dependency
 /// graph based on the file found during file component detection.
 /// </summary>
-public class PnpmComponentDetectorFactory : FileComponentDetector
+internal class PnpmComponentDetectorFactory : FileComponentDetector
 {
     /// <summary>
     /// The maximum version of the report specification that this detector can handle.

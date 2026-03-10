@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
 using System.Net;
 
-public class PypiRetryTelemetryRecord : BaseDetectionTelemetryRecord
+internal class PypiRetryTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "PypiRetry";
 

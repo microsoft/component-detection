@@ -12,7 +12,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
-public class GoModParser : IGoParser
+internal class GoModParser : IGoParser
 {
     private const string StartString = "require ";
     private readonly ILogger logger;

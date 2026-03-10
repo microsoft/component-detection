@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
 
 // We may want to consider breaking this class into Win/Mac/Linux variants if it gets bigger
-public class PathUtilityService : IPathUtilityService
+internal class PathUtilityService : IPathUtilityService
 {
     public const uint CreationDispositionRead = 0x3;
 

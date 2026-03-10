@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 [DebuggerDisplay("{Name}")]
-public class DirectoryItemFacadeOptimized
+internal class DirectoryItemFacadeOptimized
 {
     public string Name { get; set; }
 

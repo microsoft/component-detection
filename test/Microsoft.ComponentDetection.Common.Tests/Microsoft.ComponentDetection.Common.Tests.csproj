@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="MSTest.Sdk">
 
     <ItemGroup Label="Project References">
         <ProjectReference Include="..\Microsoft.ComponentDetection.TestsUtilities\Microsoft.ComponentDetection.TestsUtilities.csproj" />
@@ -9,8 +9,6 @@
       <PackageReference Include="AwesomeAssertions.Analyzers" PrivateAssets="all" />
       <PackageReference Include="Microsoft.Extensions.Logging" />
       <PackageReference Include="System.Threading.Tasks.Dataflow" />
-      <PackageReference Include="MSTest.TestAdapter" />
-      <PackageReference Include="Microsoft.NET.Test.Sdk" />
     </ItemGroup>
 
     <ItemGroup>

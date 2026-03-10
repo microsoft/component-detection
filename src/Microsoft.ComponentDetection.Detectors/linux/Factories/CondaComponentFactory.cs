@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="CondaComponent"/> instances from Conda package artifacts.
 /// </summary>
-public class CondaComponentFactory : ArtifactComponentFactoryBase
+internal class CondaComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.Conda;

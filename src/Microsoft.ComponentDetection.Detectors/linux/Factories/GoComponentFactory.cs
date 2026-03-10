@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="GoComponent"/> instances from Go module artifacts.
 /// </summary>
-public class GoComponentFactory : ArtifactComponentFactoryBase
+internal class GoComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.Go;

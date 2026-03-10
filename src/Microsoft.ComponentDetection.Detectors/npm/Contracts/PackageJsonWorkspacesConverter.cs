@@ -11,7 +11,7 @@ using System.Text.Json.Serialization;
 /// - An array of glob patterns: ["packages/*"]
 /// - An object with a packages field: { "packages": ["packages/*"] }.
 /// </summary>
-public sealed class PackageJsonWorkspacesConverter : JsonConverter<IList<string>?>
+internal sealed class PackageJsonWorkspacesConverter : JsonConverter<IList<string>?>
 {
     /// <inheritdoc />
     public override IList<string>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

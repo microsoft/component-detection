@@ -19,7 +19,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Scanner for Linux container layers using Syft.
 /// </summary>
-public class LinuxScanner : ILinuxScanner
+internal class LinuxScanner : ILinuxScanner
 {
     private const string ScannerImage =
         "governancecontainerregistry.azurecr.io/syft:v1.37.0@sha256:48d679480c6d272c1801cf30460556959c01d4826795be31d4fd8b53750b7d91";

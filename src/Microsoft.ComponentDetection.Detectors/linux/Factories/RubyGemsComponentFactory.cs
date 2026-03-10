@@ -8,7 +8,7 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="RubyGemsComponent"/> instances from Ruby gem artifacts.
 /// </summary>
-public class RubyGemsComponentFactory : ArtifactComponentFactoryBase
+internal class RubyGemsComponentFactory : ArtifactComponentFactoryBase
 {
     /// <inheritdoc/>
     public override ComponentType SupportedComponentType => ComponentType.RubyGems;

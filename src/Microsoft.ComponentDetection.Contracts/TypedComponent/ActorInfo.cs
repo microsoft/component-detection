@@ -11,7 +11,7 @@ using SystemTextJson = System.Text.Json.Serialization;
 /// Aligned with SPDX 3.0.1 Agent subclasses.
 /// </summary>
 [JsonObject(MemberSerialization.OptOut, NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-public class ActorInfo
+public class ActorInfo : IEquatable<ActorInfo>
 {
     [SystemTextJson.JsonPropertyName("name")]
     [SystemTextJson.JsonIgnore(Condition = SystemTextJson.JsonIgnoreCondition.WhenWritingNull)]
@@ -35,4 +35,46 @@ public class ActorInfo
     [SystemTextJson.JsonIgnore(Condition = SystemTextJson.JsonIgnoreCondition.WhenWritingNull)]
     [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
     public string? Type { get; set; }
+
+    /// <inheritdoc/>
+    public bool Equals(ActorInfo? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        return string.Equals(this.Name, other.Name, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(this.Email, other.Email, StringComparison.OrdinalIgnoreCase)
+            && this.Url == other.Url
+            && string.Equals(this.Type, other.Type, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => this.Equals(obj as ActorInfo);
+
+    /// <summary>
+    /// Included so that merge operations and collections that rely on hash codes (e.g., HashSet)
+    /// will operate on ActorInfo instances based on value equality rather than reference equality.
+    /// Uses multiply-and-add (seed 17, factor 31) with <see cref="StringComparer.OrdinalIgnoreCase"/>
+    /// to stay consistent with the case-insensitive <see cref="Equals(ActorInfo)"/>.
+    /// </summary>
+    /// <returns>A hash code consistent with value-based equality.</returns>
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hash = 17;
+            hash = (hash * 31) + StringComparer.OrdinalIgnoreCase.GetHashCode(this.Name ?? string.Empty);
+            hash = (hash * 31) + StringComparer.OrdinalIgnoreCase.GetHashCode(this.Email ?? string.Empty);
+            hash = (hash * 31) + (this.Url?.GetHashCode() ?? 0);
+            hash = (hash * 31) + StringComparer.OrdinalIgnoreCase.GetHashCode(this.Type ?? string.Empty);
+            return hash;
+        }
+    }
 }
