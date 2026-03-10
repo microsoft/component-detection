@@ -43,9 +43,15 @@ internal class BinLogProcessor : IBinLogProcessor
                 if (e?.BuildEventContext?.EvaluationId >= 0 &&
                     e is ProjectEvaluationFinishedEventArgs projectEvalArgs)
                 {
-                    var projectInfo = new MSBuildProjectInfo();
+                    // Reuse existing project info if one was created during evaluation
+                    // (e.g., from EnvironmentVariableReadEventArgs or PropertyInitialValueSetEventArgs)
+                    if (!projectInfoByEvaluationId.TryGetValue(e.BuildEventContext.EvaluationId, out var projectInfo))
+                    {
+                        projectInfo = new MSBuildProjectInfo();
+                        projectInfoByEvaluationId[e.BuildEventContext.EvaluationId] = projectInfo;
+                    }
+
                     this.PopulateFromEvaluation(projectEvalArgs, projectInfo);
-                    projectInfoByEvaluationId[e.BuildEventContext.EvaluationId] = projectInfo;
                 }
             };
 
@@ -263,6 +269,13 @@ internal class BinLogProcessor : IBinLogProcessor
                 projectInfo.TrySetProperty(propertyInitialValueSet.PropertyName, propertyInitialValueSet.PropertyValue);
                 break;
 
+            // Environment variable reads during evaluation - MSBuild promotes env vars to properties
+            case EnvironmentVariableReadEventArgs envVarRead when
+                !string.IsNullOrEmpty(envVarRead.EnvironmentVariableName) &&
+                MSBuildProjectInfo.IsPropertyOfInterest(envVarRead.EnvironmentVariableName):
+                projectInfo.TrySetProperty(envVarRead.EnvironmentVariableName, envVarRead.Message ?? string.Empty);
+                break;
+
             // Task parameter events which can contain item arrays for add/remove/update
             case TaskParameterEventArgs taskParameter when
                 MSBuildProjectInfo.IsItemTypeOfInterest(taskParameter.ItemType) &&
@@ -286,18 +299,28 @@ internal class BinLogProcessor : IBinLogProcessor
     {
         projectInfo = null!;
 
-        if (args?.BuildEventContext?.ProjectInstanceId == null || args.BuildEventContext.ProjectInstanceId < 0)
+        // Try ProjectInstanceId first (available during build/target execution)
+        if (args?.BuildEventContext?.ProjectInstanceId >= 0 &&
+            projectInstanceToEvaluationMap.TryGetValue(args.BuildEventContext.ProjectInstanceId, out var evaluationId) &&
+            projectInfoByEvaluationId.TryGetValue(evaluationId, out projectInfo!))
         {
-            return false;
+            return true;
         }
 
-        if (!projectInstanceToEvaluationMap.TryGetValue(args.BuildEventContext.ProjectInstanceId, out var evaluationId) ||
-            !projectInfoByEvaluationId.TryGetValue(evaluationId, out projectInfo!))
+        // Fall back to EvaluationId (available during evaluation, before ProjectStarted)
+        if (args?.BuildEventContext?.EvaluationId >= 0)
         {
-            return false;
+            if (!projectInfoByEvaluationId.TryGetValue(args.BuildEventContext.EvaluationId, out projectInfo!))
+            {
+                // Create lazily for evaluation-time events that fire before ProjectEvaluationFinished
+                projectInfo = new MSBuildProjectInfo();
+                projectInfoByEvaluationId[args.BuildEventContext.EvaluationId] = projectInfo;
+            }
+
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     /// <summary>

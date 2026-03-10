@@ -149,6 +149,13 @@ internal class MSBuildProjectInfo
     public static bool IsItemTypeOfInterest(string itemType) => ItemDictionaries.ContainsKey(itemType);
 
     /// <summary>
+    /// Determines whether the specified property name is one that this class captures.
+    /// </summary>
+    /// <param name="propertyName">The MSBuild property name.</param>
+    /// <returns>True if the property is of interest; otherwise, false.</returns>
+    public static bool IsPropertyOfInterest(string propertyName) => PropertySetters.ContainsKey(propertyName);
+
+    /// <summary>
     /// Sets a property value if it is one of the properties of interest.
     /// </summary>
     /// <param name="propertyName">The MSBuild property name.</param>
