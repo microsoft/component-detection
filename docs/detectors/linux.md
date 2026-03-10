@@ -19,7 +19,7 @@ Supported image reference formats are:
 
 #### Name and Tag/Digest
 
-Images in the local Docker daemon or a remote registry can be referenced by name and tag or digest. For example, `ubuntu:16.04`. Remove images will be pulled if they are not present locally.
+Images in the local Docker daemon or a remote registry can be referenced by name and tag or digest. For example, `ubuntu:16.04`. Remote images will be pulled if they are not present locally.
 
 #### Digest Only
 
