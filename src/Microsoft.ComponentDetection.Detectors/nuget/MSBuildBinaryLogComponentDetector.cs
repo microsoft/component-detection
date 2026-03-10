@@ -84,6 +84,24 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         this.Logger = logger;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MSBuildBinaryLogComponentDetector"/> class
+    /// with an explicit <see cref="IBinLogProcessor"/> for testing.
+    /// </summary>
+    internal MSBuildBinaryLogComponentDetector(
+        IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
+        IObservableDirectoryWalkerFactory walkerFactory,
+        IFileUtilityService fileUtilityService,
+        IBinLogProcessor binLogProcessor,
+        ILogger<MSBuildBinaryLogComponentDetector> logger)
+    {
+        this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
+        this.Scanner = walkerFactory;
+        this.binLogProcessor = binLogProcessor;
+        this.fileUtilityService = fileUtilityService;
+        this.Logger = logger;
+    }
+
     /// <inheritdoc />
     public override string Id => "MSBuildBinaryLog";
 
@@ -181,6 +199,71 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         return null;
     }
 
+    /// <summary>
+    /// Determines if a project is self-contained using MSBuild properties from the binlog.
+    /// Reads the SelfContained and PublishAot properties directly.
+    /// </summary>
+    private static bool IsSelfContainedFromProjectInfo(MSBuildProjectInfo projectInfo) =>
+        projectInfo.SelfContained == true || projectInfo.PublishAot == true;
+
+    /// <summary>
+    /// Determines if a project is self-contained by inspecting the lock file.
+    /// This is the same heuristic used by DotNetComponentDetector:
+    /// 1. Check for Microsoft.DotNet.ILCompiler in target libraries (indicates PublishAot).
+    /// 2. Check for runtime download dependencies matching framework references (indicates SelfContained).
+    /// </summary>
+    private static bool IsSelfContainedFromLockFile(PackageSpec? packageSpec, NuGetFramework? targetFramework, LockFileTarget target)
+    {
+        // PublishAot projects reference Microsoft.DotNet.ILCompiler
+        if (target.Libraries.Any(lib => "Microsoft.DotNet.ILCompiler".Equals(lib.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        if (packageSpec?.TargetFrameworks == null || targetFramework == null)
+        {
+            return false;
+        }
+
+        var targetFrameworkInfo = packageSpec.TargetFrameworks.FirstOrDefault(tf => tf.FrameworkName == targetFramework);
+        if (targetFrameworkInfo == null)
+        {
+            return false;
+        }
+
+        var frameworkReferences = targetFrameworkInfo.FrameworkReferences;
+        var packageDownloads = targetFrameworkInfo.DownloadDependencies;
+
+        if (frameworkReferences == null || frameworkReferences.Count == 0 || packageDownloads.IsDefaultOrEmpty)
+        {
+            return false;
+        }
+
+        foreach (var frameworkRef in frameworkReferences)
+        {
+            if (packageDownloads.Any(pd => pd.Name.StartsWith($"{frameworkRef.Name}.Runtime", StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Appends "-selfcontained" suffix to the project type when the project is self-contained.
+    /// Matches DotNetComponentDetector's GetTargetTypeWithSelfContained behavior.
+    /// </summary>
+    private static string? GetTargetTypeWithSelfContained(string? targetType, bool isSelfContained)
+    {
+        if (string.IsNullOrWhiteSpace(targetType))
+        {
+            return targetType;
+        }
+
+        return isSelfContained ? $"{targetType}-selfcontained" : targetType;
+    }
+
     private void ProcessBinlogFile(ProcessRequest processRequest)
     {
         var binlogPath = processRequest.ComponentStream.Location;
@@ -201,8 +284,16 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
             foreach (var projectInfo in projectInfos)
             {
                 this.IndexProjectInfo(projectInfo, assetsFilesFound);
-                this.RegisterDotNetComponent(projectInfo);
                 this.LogMissingAssetsWarnings(projectInfo);
+            }
+
+            // Register DotNet components for projects that won't have lock files
+            // (projects with lock files get DotNet registration in ProcessLockFileWithProjectInfo
+            //  where we can combine binlog and lock-file self-contained heuristics)
+            foreach (var projectInfo in projectInfos.Where(
+                pi => string.IsNullOrEmpty(pi.ProjectAssetsFile) || !this.fileUtilityService.Exists(pi.ProjectAssetsFile)))
+            {
+                this.RegisterDotNetComponent(projectInfo);
             }
 
             // Log summary warning if no assets files were found
@@ -264,8 +355,12 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     ///
     /// For target type (application/library), we use the OutputType property from the binlog
     /// which is equivalent to what DotNetComponentDetector determines by inspecting the PE headers.
+    ///
+    /// When a lock file is available, self-contained detection uses both binlog properties
+    /// (SelfContained, PublishAot) and the lock file heuristic (ILCompiler in libraries,
+    /// runtime download dependencies matching framework references) for comprehensive coverage.
     /// </remarks>
-    private void RegisterDotNetComponent(MSBuildProjectInfo projectInfo)
+    private void RegisterDotNetComponent(MSBuildProjectInfo projectInfo, LockFile? lockFile = null)
     {
         if (string.IsNullOrEmpty(projectInfo.NETCoreSdkVersion) || string.IsNullOrEmpty(projectInfo.ProjectPath))
         {
@@ -285,7 +380,35 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
                 : "library";
         }
 
-        // Get target frameworks - equivalent to iterating lockFile.Targets in DotNetComponentDetector
+        // Primary self-contained check from binlog properties (SelfContained, PublishAot)
+        var isSelfContainedFromBinlog = IsSelfContainedFromProjectInfo(projectInfo);
+
+        if (lockFile != null)
+        {
+            // When lock file is available, check per-target self-contained
+            // combining binlog properties and lock file heuristics
+            foreach (var target in lockFile.Targets)
+            {
+                var isSelfContained = isSelfContainedFromBinlog ||
+                    IsSelfContainedFromLockFile(lockFile.PackageSpec, target.TargetFramework, target);
+                var projectType = GetTargetTypeWithSelfContained(targetType, isSelfContained);
+                var frameworkName = target.TargetFramework?.GetShortFolderName();
+
+                singleFileComponentRecorder.RegisterUsage(
+                    new DetectedComponent(new DotNetComponent(projectInfo.NETCoreSdkVersion, frameworkName, projectType)));
+            }
+
+            // If no targets in lock file, fall through to binlog-only registration below
+            if (lockFile.Targets.Count > 0)
+            {
+                return;
+            }
+        }
+
+        // Binlog-only path: no lock file available or no targets in lock file
+        var projectTypeFromBinlog = GetTargetTypeWithSelfContained(targetType, isSelfContainedFromBinlog);
+
+        // Get target frameworks from binlog properties
         var targetFrameworks = new List<string>();
         if (!string.IsNullOrEmpty(projectInfo.TargetFramework))
         {
@@ -297,20 +420,19 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         }
 
         // Register a DotNet component for each target framework
-        // This matches DotNetComponentDetector's loop over lockFile.Targets
         if (targetFrameworks.Count > 0)
         {
             foreach (var framework in targetFrameworks)
             {
-                var dotNetComponent = new DotNetComponent(projectInfo.NETCoreSdkVersion, framework, targetType);
-                singleFileComponentRecorder.RegisterUsage(new DetectedComponent(dotNetComponent));
+                singleFileComponentRecorder.RegisterUsage(
+                    new DetectedComponent(new DotNetComponent(projectInfo.NETCoreSdkVersion, framework, projectTypeFromBinlog)));
             }
         }
         else
         {
             // No target framework info available, register with just SDK version
-            var dotNetComponent = new DotNetComponent(projectInfo.NETCoreSdkVersion, targetFramework: null, targetType);
-            singleFileComponentRecorder.RegisterUsage(new DetectedComponent(dotNetComponent));
+            singleFileComponentRecorder.RegisterUsage(
+                new DetectedComponent(new DotNetComponent(projectInfo.NETCoreSdkVersion, targetFramework: null, projectTypeFromBinlog)));
         }
     }
 
@@ -470,6 +592,9 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
             singleFileComponentRecorder,
             lockFile,
             (packageName, framework) => this.IsPackageDownloadDevDependency(packageName, framework, projectInfo));
+
+        // Register DotNet component with combined binlog + lock file self-contained detection
+        this.RegisterDotNetComponent(projectInfo, lockFile);
     }
 
     /// <summary>

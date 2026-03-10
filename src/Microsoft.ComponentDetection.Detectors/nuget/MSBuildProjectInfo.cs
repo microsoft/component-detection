@@ -21,6 +21,7 @@ internal class MSBuildProjectInfo
         [nameof(IsTestProject)] = (info, value) => info.IsTestProject = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase),
         [nameof(NETCoreSdkVersion)] = (info, value) => info.NETCoreSdkVersion = value,
         [nameof(OutputType)] = (info, value) => info.OutputType = value,
+        [nameof(PublishAot)] = (info, value) => info.PublishAot = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase),
         [nameof(ProjectAssetsFile)] = (info, value) =>
         {
             if (!string.IsNullOrEmpty(value))
@@ -79,6 +80,12 @@ internal class MSBuildProjectInfo
     public string? OutputType { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether this project uses native AOT compilation.
+    /// Corresponds to the MSBuild PublishAot property.
+    /// </summary>
+    public bool? PublishAot { get; set; }
+
+    /// <summary>
     /// Gets or sets the .NET Core SDK version used to build the project.
     /// Corresponds to the MSBuild NETCoreSdkVersion property.
     /// </summary>
@@ -129,8 +136,10 @@ internal class MSBuildProjectInfo
 
     /// <summary>
     /// Gets a value indicating whether this is an outer build of a multi-targeted project.
+    /// The outer build has TargetFrameworks set but TargetFramework is empty (it dispatches to inner builds).
+    /// Inner builds have both TargetFrameworks and TargetFramework set.
     /// </summary>
-    public bool IsOuterBuild => !string.IsNullOrEmpty(this.TargetFrameworks);
+    public bool IsOuterBuild => !string.IsNullOrEmpty(this.TargetFrameworks) && string.IsNullOrEmpty(this.TargetFramework);
 
     /// <summary>
     /// Determines whether the specified item type is one that this class captures.
@@ -189,5 +198,53 @@ internal class MSBuildProjectInfo
 
         var dictionary = getDictionary(this);
         return dictionary.Remove(itemSpec);
+    }
+
+    /// <summary>
+    /// Merges another project info into this one, forming a superset.
+    /// Properties from <paramref name="other"/> override null values in this instance.
+    /// Boolean properties use logical OR (true wins).
+    /// Items from <paramref name="other"/> are added if not already present.
+    /// </summary>
+    /// <param name="other">The other project info to merge from.</param>
+    public void MergeWith(MSBuildProjectInfo other)
+    {
+        // Merge boolean properties: true wins (if either says true, result is true)
+        this.IsDevelopment = MergeBool(this.IsDevelopment, other.IsDevelopment);
+        this.IsPackable = MergeBool(this.IsPackable, other.IsPackable);
+        this.IsShipping = MergeBool(this.IsShipping, other.IsShipping);
+        this.IsTestProject = MergeBool(this.IsTestProject, other.IsTestProject);
+        this.PublishAot = MergeBool(this.PublishAot, other.PublishAot);
+        this.SelfContained = MergeBool(this.SelfContained, other.SelfContained);
+
+        // Merge string properties: prefer non-null/non-empty
+        this.OutputType ??= other.OutputType;
+        this.NETCoreSdkVersion ??= other.NETCoreSdkVersion;
+        this.ProjectAssetsFile ??= other.ProjectAssetsFile;
+        this.TargetFramework ??= other.TargetFramework;
+        this.TargetFrameworks ??= other.TargetFrameworks;
+
+        // Merge items: add items from other that are not already present
+        MergeItems(this.PackageReference, other.PackageReference);
+        MergeItems(this.PackageDownload, other.PackageDownload);
+    }
+
+    private static bool? MergeBool(bool? existing, bool? incoming)
+    {
+        if (existing == true || incoming == true)
+        {
+            return true;
+        }
+
+        return existing ?? incoming;
+    }
+
+    private static void MergeItems(IDictionary<string, ITaskItem> target, IDictionary<string, ITaskItem> source)
+    {
+        foreach (var kvp in source)
+        {
+            // TryAdd: only add if not already present (existing items win)
+            target.TryAdd(kvp.Key, kvp.Value);
+        }
     }
 }

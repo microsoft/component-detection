@@ -3,6 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Logging.StructuredLogger;
 using Microsoft.Extensions.Logging;
@@ -133,12 +134,45 @@ internal class BinLogProcessor : IBinLogProcessor
         }
         else if (!existing.IsOuterBuild && !projectInfo.IsOuterBuild && !string.IsNullOrEmpty(projectInfo.TargetFramework))
         {
-            // Both are inner builds (no outer build seen yet) - add to InnerBuilds of the first one
-            // The first one acts as a placeholder until we see an outer build
-            existing.InnerBuilds.Add(projectInfo);
+            // Both are single-TFM builds - check if they share the same TFM
+            if (string.Equals(existing.TargetFramework, projectInfo.TargetFramework, StringComparison.OrdinalIgnoreCase))
+            {
+                // Same project, same TFM (e.g. build + publish) - merge as superset
+                existing.MergeWith(projectInfo);
+            }
+            else
+            {
+                // Different TFMs (no outer build seen yet) - add to InnerBuilds of the first one
+                // The first one acts as a placeholder until we see an outer build
+                existing.InnerBuilds.Add(projectInfo);
+            }
         }
+        else if (existing.IsOuterBuild && projectInfo.IsOuterBuild)
+        {
+            // Both are outer builds (e.g. build + publish of a multi-targeted project)
+            // Merge inner builds: for matching TFMs, merge; for new TFMs, add
+            foreach (var newInner in projectInfo.InnerBuilds)
+            {
+                var matchingInner = existing.InnerBuilds.FirstOrDefault(
+                    ib => string.Equals(ib.TargetFramework, newInner.TargetFramework, StringComparison.OrdinalIgnoreCase));
+                if (matchingInner != null)
+                {
+                    matchingInner.MergeWith(newInner);
+                }
+                else
+                {
+                    existing.InnerBuilds.Add(newInner);
+                }
+            }
 
-        // Otherwise: duplicate builds currently ignored.
+            // Merge the outer build properties/items too
+            existing.MergeWith(projectInfo);
+        }
+        else
+        {
+            // Fallback: merge properties/items as superset
+            existing.MergeWith(projectInfo);
+        }
     }
 
     /// <summary>
@@ -188,22 +222,17 @@ internal class BinLogProcessor : IBinLogProcessor
         // Extract items
         if (projectEvalArgs?.Items != null)
         {
-            // Items is an IEnumerable that contains item groups
-            // Each item group has an ItemType (Key) and Items collection (Value)
-            foreach (var itemGroup in projectEvalArgs.Items)
+            // Items is a flat IList<DictionaryEntry> where each entry has:
+            //   Key = item type (string, e.g., "PackageReference")
+            //   Value = single ITaskItem (TaskItemData from binlog deserialization)
+            foreach (var itemEntry in projectEvalArgs.Items)
             {
-                if (itemGroup is DictionaryEntry entry &&
+                if (itemEntry is DictionaryEntry entry &&
                     entry.Key is string itemType &&
                     MSBuildProjectInfo.IsItemTypeOfInterest(itemType) &&
-                    entry.Value is IEnumerable<object> groupItems)
+                    entry.Value is ITaskItem taskItem)
                 {
-                    foreach (var item in groupItems)
-                    {
-                        if (item is ITaskItem taskItem)
-                        {
-                            projectInfo.TryAddOrUpdateItem(itemType, taskItem);
-                        }
-                    }
+                    projectInfo.TryAddOrUpdateItem(itemType, taskItem);
                 }
             }
         }
