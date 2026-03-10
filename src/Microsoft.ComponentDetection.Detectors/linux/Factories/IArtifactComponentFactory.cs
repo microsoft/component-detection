@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux.Factories;
 
 using System.Collections.Generic;
@@ -30,5 +29,5 @@ public interface IArtifactComponentFactory
     /// <param name="artifact">The artifact element from Syft output.</param>
     /// <param name="distro">The distribution information from Syft output.</param>
     /// <returns>A TypedComponent instance, or null if the artifact cannot be processed.</returns>
-    public TypedComponent CreateComponent(ArtifactElement artifact, Distro distro);
+    public TypedComponent? CreateComponent(ArtifactElement artifact, Distro distro);
 }
