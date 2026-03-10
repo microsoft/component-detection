@@ -1018,7 +1018,7 @@ public class LinuxScannerTests
 
         var entry = result.First();
         entry.DockerLayer.Should().NotBeNull();
-        entry.DockerLayer.DiffId.Should().Be("unknown");
+        entry.DockerLayer.DiffId.Should().Be(string.Empty);
         entry.DockerLayer.LayerIndex.Should().Be(0);
         entry.DockerLayer.IsBaseImage.Should().BeFalse();
 

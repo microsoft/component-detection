@@ -25,12 +25,12 @@ Images in the local Docker daemon or a remote registry can be referenced by name
 
 Images already present in the local Docker daemon can be referenced by just a digest. For example, `sha256:56bab49eef2ef07505f6a1b0d5bd3a601dfc3c76ad4460f24c91d6fa298369ab`.
 
-#### OCI Layout
+#### OCI Images
 
-Images present on the filesystem in an [OCI Layout format](https://specs.opencontainers.org/image-spec/image-layout/) can be referenced by file path. This input type supports both directories and tar archive files.
+Images present on the filesystem as either an [OCI layout directory](https://specs.opencontainers.org/image-spec/image-layout/) or an OCI image archive (tarball) can be referenced by file path.
 
-- For directories, use the prefix `oci-dir:` followed by the path to the directory, e.g. `oci-dir:/path/to/image`
-- For tar archives, use the prefix `oci-archive:` followed by the path to the archive file, e.g. `oci-archive:/path/to/image.tar`
+- For OCI image layout directories, use the prefix `oci-dir:` followed by the path to the directory, e.g. `oci-dir:/path/to/image`
+- For OCI image archives (tarballs), use the prefix `oci-archive:` followed by the path to the archive file, e.g. `oci-archive:/path/to/image.tar`
 
 ### Scanner Scope
 

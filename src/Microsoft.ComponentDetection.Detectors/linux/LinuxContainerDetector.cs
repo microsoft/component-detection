@@ -357,7 +357,7 @@ public class LinuxContainerDetector(
                     LayerIndex = layer.LayerIndex,
                     IsBaseImage = layer.LayerIndex < baseImageLayerCount,
                 }
-            );
+            ).ToList();
 
             var enabledComponentTypes = this.GetEnabledComponentTypes();
             var layers = await this.linuxScanner.ScanLinuxAsync(
@@ -463,7 +463,7 @@ public class LinuxContainerDetector(
             containerDetails.Layers = sourceMetadata?.Layers?
                 .Select((layer, index) => new DockerLayer
                 {
-                    DiffId = layer.Digest,
+                    DiffId = layer.Digest ?? string.Empty,
                     LayerIndex = index,
                 })
                 .ToList() ?? [];
@@ -491,7 +491,7 @@ public class LinuxContainerDetector(
                     LayerIndex = layer.LayerIndex,
                     IsBaseImage = layer.LayerIndex < baseImageLayerCount,
                 }
-            );
+            ).ToList();
 
             // Process components from the same Syft output
             var enabledComponentTypes = this.GetEnabledComponentTypes();

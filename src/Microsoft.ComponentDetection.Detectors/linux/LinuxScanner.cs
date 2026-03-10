@@ -243,7 +243,7 @@ internal class LinuxScanner : ILinuxScanner
                 Components = allComponents,
                 DockerLayer = new DockerLayer()
                 {
-                    DiffId = "unknown",
+                    DiffId = string.Empty,
                     LayerIndex = 0,
                     IsBaseImage = false,
                 },
