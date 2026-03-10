@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 using System;
@@ -196,6 +195,7 @@ internal class LinuxScanner : ILinuxScanner
                     this.CreateComponentWithLayers(artifact, syftOutput.Distro, enabledFactories)
                 )
                 .Where(result => result.Component != null)
+                .Select(result => (Component: result.Component!, result.LayerIds))
                 .ToList();
 
             // Track unsupported artifact types for telemetry
@@ -239,11 +239,11 @@ internal class LinuxScanner : ILinuxScanner
         catch (Exception e)
         {
             record.FailedDeserializingScannerOutput = e.ToString();
-            return null;
+            return [];
         }
     }
 
-    private (TypedComponent Component, IEnumerable<string> LayerIds) CreateComponentWithLayers(
+    private (TypedComponent? Component, IEnumerable<string> LayerIds) CreateComponentWithLayers(
         ArtifactElement artifact,
         Distro distro,
         HashSet<IArtifactComponentFactory> enabledFactories

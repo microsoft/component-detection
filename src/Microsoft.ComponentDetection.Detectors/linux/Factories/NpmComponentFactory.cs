@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux.Factories;
 
 using System.Collections.Generic;
@@ -18,7 +17,7 @@ internal class NpmComponentFactory : ArtifactComponentFactoryBase
     public override IEnumerable<string> SupportedArtifactTypes => ["npm"];
 
     /// <inheritdoc/>
-    public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
+    public override TypedComponent? CreateComponent(ArtifactElement artifact, Distro distro)
     {
         if (artifact == null)
         {
@@ -41,7 +40,7 @@ internal class NpmComponentFactory : ArtifactComponentFactoryBase
         );
     }
 
-    private static NpmAuthor GetNpmAuthorFromArtifact(ArtifactElement artifact)
+    private static NpmAuthor? GetNpmAuthorFromArtifact(ArtifactElement artifact)
     {
         var authorString = artifact.Metadata?.Author;
         if (!string.IsNullOrWhiteSpace(authorString))
@@ -52,7 +51,7 @@ internal class NpmComponentFactory : ArtifactComponentFactoryBase
         return null;
     }
 
-    private static string GetHashFromArtifact(ArtifactElement artifact)
+    private static string? GetHashFromArtifact(ArtifactElement artifact)
     {
         if (!string.IsNullOrWhiteSpace(artifact.Metadata?.Integrity))
         {

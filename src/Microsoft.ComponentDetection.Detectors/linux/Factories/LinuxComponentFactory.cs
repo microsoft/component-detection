@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux.Factories;
 
 using System.Collections.Generic;
@@ -17,7 +16,7 @@ internal class LinuxComponentFactory : ArtifactComponentFactoryBase
     public override IEnumerable<string> SupportedArtifactTypes => ["apk", "deb", "rpm"];
 
     /// <inheritdoc/>
-    public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
+    public override TypedComponent? CreateComponent(ArtifactElement artifact, Distro distro)
     {
         if (artifact == null || distro == null)
         {

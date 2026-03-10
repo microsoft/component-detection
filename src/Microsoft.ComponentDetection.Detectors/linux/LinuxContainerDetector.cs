@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 using System;
@@ -40,7 +39,7 @@ public class LinuxContainerDetector(
 
     /// <inheritdoc/>
     public IEnumerable<string> Categories =>
-        [Enum.GetName(typeof(DetectorClass), DetectorClass.Linux)];
+        [Enum.GetName(typeof(DetectorClass), DetectorClass.Linux)!];
 
     /// <inheritdoc/>
     public IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Linux];
@@ -226,8 +225,7 @@ public class LinuxContainerDetector(
                 )
                 {
                     throw new InvalidUserInputException(
-                        $"Container image {image} could not be found locally and could not be pulled. Verify the image is either available locally or can be pulled from a registry.",
-                        null
+                        $"Container image {image} could not be found locally and could not be pulled. Verify the image is either available locally or can be pulled from a registry."
                     );
                 }
 
