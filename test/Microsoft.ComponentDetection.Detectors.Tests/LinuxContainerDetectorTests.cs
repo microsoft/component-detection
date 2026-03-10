@@ -676,7 +676,6 @@ public class LinuxContainerDetectorTests
 
             await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
 
-            // Verify the bind mount path was passed as-is (not lowercased)
             this.mockSyftLinuxScanner.Verify(
                 scanner =>
                     scanner.GetSyftOutputAsync(

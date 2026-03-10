@@ -92,12 +92,13 @@ internal class LinuxScanner : ILinuxScanner
             ImageToScan = imageHash,
             ScannerVersion = ScannerImage,
         };
-        var stdout = await this.RunSyftAsync(record, imageHash, scope, additionalBinds: [], cancellationToken);
+        using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
+        var stdout = await this.RunSyftAsync(imageHash, scope, additionalBinds: [], record, syftTelemetryRecord, cancellationToken);
 
         try
         {
             var syftOutput = SyftOutput.FromJson(stdout);
-            return this.ProcessSyftOutput(syftOutput, containerLayers, enabledComponentTypes);
+            return this.ProcessSyftOutputWithTelemetry(syftOutput, containerLayers, enabledComponentTypes, syftTelemetryRecord);
         }
         catch (Exception e)
         {
@@ -120,7 +121,8 @@ internal class LinuxScanner : ILinuxScanner
             ImageToScan = syftSource,
             ScannerVersion = ScannerImage,
         };
-        var stdout = await this.RunSyftAsync(record, syftSource, scope, additionalBinds, cancellationToken);
+        using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
+        var stdout = await this.RunSyftAsync(syftSource, scope, additionalBinds, record, syftTelemetryRecord, cancellationToken);
         try
         {
             return SyftOutput.FromJson(stdout);
@@ -138,6 +140,16 @@ internal class LinuxScanner : ILinuxScanner
         SyftOutput syftOutput,
         IEnumerable<DockerLayer> containerLayers,
         ISet<ComponentType> enabledComponentTypes)
+    {
+        using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
+        return this.ProcessSyftOutputWithTelemetry(syftOutput, containerLayers, enabledComponentTypes, syftTelemetryRecord);
+    }
+
+    private IEnumerable<LayerMappedLinuxComponents> ProcessSyftOutputWithTelemetry(
+        SyftOutput syftOutput,
+        IEnumerable<DockerLayer> containerLayers,
+        ISet<ComponentType> enabledComponentTypes,
+        LinuxScannerSyftTelemetryRecord syftTelemetryRecord)
     {
         // Apply artifact filters (e.g., Mariner 2.0 workaround)
         var validArtifacts = syftOutput.Artifacts.AsEnumerable();
@@ -183,6 +195,11 @@ internal class LinuxScanner : ILinuxScanner
                 string.Join(", ", unsupportedTypes)
             );
         }
+
+        // Track detected components in telemetry
+        syftTelemetryRecord.Components = JsonSerializer.Serialize(
+            componentsWithLayers.Select(c => c.Component.Id)
+        );
 
         // Build a layer dictionary from the provided container layers and map components.
         var knownLayers = containerLayers.ToList();
@@ -238,10 +255,11 @@ internal class LinuxScanner : ILinuxScanner
     /// Runs the Syft scanner container and returns the stdout output.
     /// </summary>
     private async Task<string> RunSyftAsync(
-        LinuxScannerTelemetryRecord record,
         string syftSource,
         LinuxScannerScope scope,
         IList<string> additionalBinds,
+        LinuxScannerTelemetryRecord record,
+        LinuxScannerSyftTelemetryRecord syftTelemetryRecord,
         CancellationToken cancellationToken)
     {
         var acquired = false;
@@ -257,8 +275,6 @@ internal class LinuxScanner : ILinuxScanner
                 $"Unsupported scope value: {scope}"
             ),
         };
-
-        using var syftTelemetryRecord = new LinuxScannerSyftTelemetryRecord();
 
         try
         {
