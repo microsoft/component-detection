@@ -87,9 +87,145 @@ internal class LinuxScanner : ILinuxScanner
         CancellationToken cancellationToken = default
     )
     {
+        var stdout = await this.RunSyftAsync(imageHash, scope, additionalBinds: [], cancellationToken);
+
+        try
+        {
+            var syftOutput = SyftOutput.FromJson(stdout);
+            return this.ProcessSyftOutput(syftOutput, containerLayers, enabledComponentTypes);
+        }
+        catch (Exception e)
+        {
+            this.logger.LogError(e, "Failed to deserialize Syft output for image {ImageHash}", imageHash);
+            return [];
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<SyftOutput> GetSyftOutputAsync(
+        string syftSource,
+        IList<string> additionalBinds,
+        LinuxScannerScope scope,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var stdout = await this.RunSyftAsync(syftSource, scope, additionalBinds, cancellationToken);
+        return SyftOutput.FromJson(stdout);
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<LayerMappedLinuxComponents> ProcessSyftOutput(
+        SyftOutput syftOutput,
+        IEnumerable<DockerLayer> containerLayers,
+        ISet<ComponentType> enabledComponentTypes)
+    {
+        // Apply artifact filters (e.g., Mariner 2.0 workaround)
+        var validArtifacts = syftOutput.Artifacts.AsEnumerable();
+        foreach (var filter in this.artifactFilters)
+        {
+            validArtifacts = filter.Filter(validArtifacts, syftOutput.Distro);
+        }
+
+        // Build a set of enabled factories based on requested component types
+        var enabledFactories = new HashSet<IArtifactComponentFactory>();
+        foreach (var componentType in enabledComponentTypes)
+        {
+            if (
+                this.componentTypeToFactoryLookup.TryGetValue(componentType, out var factory)
+                && factory != null
+            )
+            {
+                enabledFactories.Add(factory);
+            }
+        }
+
+        // Create components using only enabled factories
+        var componentsWithLayers = validArtifacts
+            .DistinctBy(artifact => (artifact.Name, artifact.Version, artifact.Type))
+            .Select(artifact =>
+                this.CreateComponentWithLayers(artifact, syftOutput.Distro, enabledFactories)
+            )
+            .Where(result => result.Component != null)
+            .Select(result => (Component: result.Component!, result.LayerIds))
+            .ToList();
+
+        // Track unsupported artifact types for telemetry
+        var unsupportedTypes = validArtifacts
+            .Where(a => !this.artifactTypeToFactoryLookup.ContainsKey(a.Type))
+            .Select(a => a.Type)
+            .Distinct()
+            .ToList();
+
+        if (unsupportedTypes.Count > 0)
+        {
+            this.logger.LogDebug(
+                "Encountered unsupported artifact types: {UnsupportedTypes}",
+                string.Join(", ", unsupportedTypes)
+            );
+        }
+
+        // Build a layer dictionary from the provided container layers and map components.
+        var knownLayers = containerLayers.ToList();
+
+        if (knownLayers.Count > 0)
+        {
+            var layerDictionary = knownLayers
+                .DistinctBy(layer => layer.DiffId)
+                .ToDictionary(layer => layer.DiffId, _ => new List<TypedComponent>());
+
+            foreach (var (component, layers) in componentsWithLayers)
+            {
+                foreach (var layer in layers)
+                {
+                    if (layerDictionary.TryGetValue(layer, out var componentList))
+                    {
+                        componentList.Add(component);
+                    }
+                }
+            }
+
+            return layerDictionary.Select(kvp => new LayerMappedLinuxComponents
+            {
+                Components = kvp.Value,
+                DockerLayer = knownLayers.First(layer => layer.DiffId == kvp.Key),
+            });
+        }
+
+        // No container layers provided — return all components under a single
+        // entry with no layer information rather than silently dropping them.
+        var allComponents = componentsWithLayers.Select(c => c.Component).ToList();
+        if (allComponents.Count == 0)
+        {
+            return [];
+        }
+
+        return
+        [
+            new LayerMappedLinuxComponents
+            {
+                Components = allComponents,
+                DockerLayer = new DockerLayer()
+                {
+                    DiffId = "unknown",
+                    LayerIndex = 0,
+                    IsBaseImage = false,
+                },
+            },
+        ];
+    }
+
+    /// <summary>
+    /// Runs the Syft scanner container and returns the stdout output.
+    /// </summary>
+    private async Task<string> RunSyftAsync(
+        string syftSource,
+        LinuxScannerScope scope,
+        IList<string> additionalBinds,
+        CancellationToken cancellationToken)
+    {
         using var record = new LinuxScannerTelemetryRecord
         {
-            ImageToScan = imageHash,
+            ImageToScan = syftSource,
             ScannerVersion = ScannerImage,
         };
 
@@ -116,13 +252,14 @@ internal class LinuxScanner : ILinuxScanner
             {
                 try
                 {
-                    var command = new List<string> { imageHash }
+                    var command = new List<string> { syftSource }
                         .Concat(CmdParameters)
                         .Concat(scopeParameters)
                         .ToList();
                     (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(
                         ScannerImage,
                         command,
+                        additionalBinds,
                         cancellationToken
                     );
                 }
@@ -137,8 +274,8 @@ internal class LinuxScanner : ILinuxScanner
             {
                 record.SemaphoreFailure = true;
                 this.logger.LogWarning(
-                    "Failed to enter the container semaphore for image {ImageHash}",
-                    imageHash
+                    "Failed to enter the container semaphore for image {SyftSource}",
+                    syftSource
                 );
             }
         }
@@ -160,87 +297,7 @@ internal class LinuxScanner : ILinuxScanner
             );
         }
 
-        var layerDictionary = containerLayers
-            .DistinctBy(layer => layer.DiffId)
-            .ToDictionary(layer => layer.DiffId, _ => new List<TypedComponent>());
-
-        try
-        {
-            var syftOutput = SyftOutput.FromJson(stdout);
-
-            // Apply artifact filters (e.g., Mariner 2.0 workaround)
-            var validArtifacts = syftOutput.Artifacts.AsEnumerable();
-            foreach (var filter in this.artifactFilters)
-            {
-                validArtifacts = filter.Filter(validArtifacts, syftOutput.Distro);
-            }
-
-            // Build a set of enabled factories based on requested component types
-            var enabledFactories = new HashSet<IArtifactComponentFactory>();
-            foreach (var componentType in enabledComponentTypes)
-            {
-                if (
-                    this.componentTypeToFactoryLookup.TryGetValue(componentType, out var factory)
-                    && factory != null
-                )
-                {
-                    enabledFactories.Add(factory);
-                }
-            }
-
-            // Create components using only enabled factories
-            var componentsWithLayers = validArtifacts
-                .DistinctBy(artifact => (artifact.Name, artifact.Version, artifact.Type))
-                .Select(artifact =>
-                    this.CreateComponentWithLayers(artifact, syftOutput.Distro, enabledFactories)
-                )
-                .Where(result => result.Component != null)
-                .Select(result => (Component: result.Component!, result.LayerIds))
-                .ToList();
-
-            // Track unsupported artifact types for telemetry
-            var unsupportedTypes = validArtifacts
-                .Where(a => !this.artifactTypeToFactoryLookup.ContainsKey(a.Type))
-                .Select(a => a.Type)
-                .Distinct()
-                .ToList();
-
-            if (unsupportedTypes.Count > 0)
-            {
-                this.logger.LogDebug(
-                    "Encountered unsupported artifact types: {UnsupportedTypes}",
-                    string.Join(", ", unsupportedTypes)
-                );
-            }
-
-            // Map components to layers
-            foreach (var (component, layers) in componentsWithLayers)
-            {
-                layers.ToList().ForEach(layer => layerDictionary[layer].Add(component));
-            }
-
-            var layerMappedLinuxComponents = layerDictionary.Select(kvp =>
-            {
-                (var layerId, var components) = kvp;
-                return new LayerMappedLinuxComponents
-                {
-                    Components = components,
-                    DockerLayer = containerLayers.First(layer => layer.DiffId == layerId),
-                };
-            });
-
-            // Track detected components in telemetry
-            syftTelemetryRecord.Components = JsonSerializer.Serialize(
-                componentsWithLayers.Select(c => c.Component.Id)
-            );
-
-            return layerMappedLinuxComponents;
-        }
-        catch (Exception e)
-        {
-            record.FailedDeserializingScannerOutput = e.ToString();
-            return [];
-        }
+        return stdout;
     }
 
     private (TypedComponent? Component, IEnumerable<string> LayerIds) CreateComponentWithLayers(
