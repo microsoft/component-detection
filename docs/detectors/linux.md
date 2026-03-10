@@ -49,3 +49,4 @@ For example:
 ## Known limitations
 
 - Windows container scanning is not supported
+- Multiplatform images are not supported
