@@ -76,8 +76,11 @@ public class MvnCliComponentDetector : FileComponentDetector
             {
                 // The file stream is going to be disposed after the iteration is finished
                 // so is necessary to read the content and keep it in memory, for further processing.
+                // Register as reader for coordination with file deletion
+                this.mavenCommandService.RegisterFileReader(componentStream.Location);
                 using var reader = new StreamReader(componentStream.Stream);
                 var content = reader.ReadToEnd();
+                this.mavenCommandService.UnregisterFileReader(componentStream.Location);
                 return new ProcessRequest
                 {
                     ComponentStream = new ComponentStream
@@ -95,9 +98,18 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
-        this.mavenCommandService.ParseDependenciesFile(processRequest);
-
-        File.Delete(processRequest.ComponentStream.Location);
+        // Register as reader to coordinate with other detectors
+        var depsFilePath = processRequest.ComponentStream.Location;
+        this.mavenCommandService.RegisterFileReader(depsFilePath);
+        try
+        {
+            this.mavenCommandService.ParseDependenciesFile(processRequest);
+        }
+        finally
+        {
+            // Unregister and attempt coordinated cleanup
+            this.mavenCommandService.UnregisterFileReader(depsFilePath);
+        }
 
         await Task.CompletedTask;
     }
