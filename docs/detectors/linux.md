@@ -11,6 +11,27 @@ Linux detection depends on the following:
 Linux package detection is performed by running [Syft](https://github.com/anchore/syft) and parsing the output.
 The output contains the package name, version, and the layer of the container in which it was found.
 
+### Supported Input Types
+
+The Linux detector runs on container images passed under the `--DockerImagesToScan` flag.
+
+Supported image reference formats are:
+
+#### Name and Tag/Digest
+
+Images in the local Docker daemon or a remote registry can be referenced by name and tag or digest. For example, `ubuntu:16.04`. Remove images will be pulled if they are not present locally.
+
+#### Digest Only
+
+Images already present in the local Docker daemon can be referenced by just a digest. For example, `sha256:56bab49eef2ef07505f6a1b0d5bd3a601dfc3c76ad4460f24c91d6fa298369ab`.
+
+#### OCI Layout
+
+Images present on the filesystem in an [OCI Layout format](https://specs.opencontainers.org/image-spec/image-layout/) can be referenced by file path. This input type supports both directories and tar archive files.
+
+- For directories, use the prefix `oci-dir:` followed by the path to the directory, e.g. `oci-dir:/path/to/image`
+- For tar archives, use the prefix `oci-archive:` followed by the path to the archive file, e.g. `oci-archive:/path/to/image.tar`
+
 ### Scanner Scope
 
 By default, this detector invokes Syft with the `all-layers` scanning scope (i.e. the Syft argument `--scope all-layers`).
