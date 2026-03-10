@@ -1,4 +1,3 @@
-#nullable enable
 namespace Microsoft.ComponentDetection.Detectors.Npm.Contracts;
 
 using System.Collections.Generic;
@@ -81,6 +80,7 @@ internal sealed record PackageLockV2Package
     public string? License { get; init; }
 
     [JsonPropertyName("engines")]
+    [JsonConverter(typeof(PackageJsonEnginesConverter))]
     public IDictionary<string, string>? Engines { get; init; }
 
     [JsonPropertyName("dependencies")]

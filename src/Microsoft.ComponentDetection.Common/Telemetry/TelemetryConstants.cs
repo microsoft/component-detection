@@ -1,9 +1,6 @@
-using System;
-using System.Runtime.CompilerServices;
-
-[assembly: InternalsVisibleTo("Microsoft.ComponentDetection.Orchestrator")]
-
 namespace Microsoft.ComponentDetection.Common.Telemetry;
+
+using System;
 
 public static class TelemetryConstants
 {

@@ -1,10 +1,11 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Npm;
@@ -17,8 +18,10 @@ using static Microsoft.ComponentDetection.Detectors.Tests.Utilities.TestUtilityE
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
+public class NpmLockfile3DetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<NpmLockfile3Detector> detectorTestUtility = new();
+
     private readonly string packageLockJsonFileName = "package-lock.json";
     private readonly string packageJsonFileName = "package.json";
     private readonly List<string> packageJsonSearchPattern = ["package.json"];
@@ -28,7 +31,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
     public NpmLockfile3DetectorTests()
     {
         this.mockPathUtilityService = new Mock<IPathUtilityService>();
-        this.DetectorTestUtility.AddServiceMock(this.mockPathUtilityService);
+        this.detectorTestUtility.AddServiceMock(this.mockPathUtilityService);
     }
 
     [TestMethod]
@@ -40,7 +43,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
         var (packageLockName, packageLockContents, packageLockPath) = NpmTestUtilities.GetWellFormedPackageLock3(this.packageLockJsonFileName, componentName0, version0);
         var (packageJsonName, packageJsonContents, packageJsonPath) = NpmTestUtilities.GetPackageJsonOneRoot(componentName0, version0);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(packageJsonName, packageJsonContents, this.packageJsonSearchPattern, fileLocation: packageJsonPath)
             .ExecuteDetectorAsync();
@@ -79,7 +82,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -133,7 +136,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -186,7 +189,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var packageJsonTemplate = string.Format(packagejson, componentName0, version0, componentName1, version1);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(packageLockName, packageLockContents, this.packageLockJsonSearchPatterns, fileLocation: packageLockPath)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -265,7 +268,7 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
 
         var packageJsonTemplate = string.Format(packagejson, componentA.Name, componentA.Version);
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
             .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
             .ExecuteDetectorAsync();
@@ -283,5 +286,316 @@ public class NpmLockfile3DetectorTests : BaseDetectorTest<NpmLockfile3Detector>
         dependencyGraph.GetDependenciesForComponent(componentAId).Should().ContainSingle();
         dependencyGraph.GetDependenciesForComponent(componentAId).Should().Contain(componentBId);
         dependencyGraph.GetDependenciesForComponent(componentBId).Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockWithoutPackagesObject_ShouldHandleGracefully()
+    {
+        // This test reproduces the NullReferenceException issue when package-lock.json doesn't contain a "packages" object
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0"",
+                ""lockfileVersion"": 3
+            }";
+
+        var packageJsonContents = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0""
+            }";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        // The detector should handle the missing "packages" object gracefully without throwing
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty(); // No dependencies should be detected
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockMissingPackagesButPackageJsonHasDependencies_ShouldHandleGracefully()
+    {
+        // This test reproduces a more specific scenario where package.json has dependencies but package-lock.json is missing packages
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0"",
+                ""lockfileVersion"": 3
+            }";
+
+        var packageJsonContents = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0"",
+                ""dependencies"": {
+                    ""lodash"": ""^4.17.21""
+                }
+            }";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        // The detector should handle the missing "packages" object gracefully without throwing
+        // This may result in processing failure but should not throw NullReferenceException
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty(); // No dependencies should be detected since packages is missing
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_PackageLockMissingPackagesProperty_ShouldNotThrowNullReferenceException()
+    {
+        // This test reproduces the exact NullReferenceException scenario from the issue:
+        // package-lock.json doesn't contain a "packages" property at all
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0"",
+                ""lockfileVersion"": 3
+            }";
+
+        var packageJsonContents = @"{
+                ""name"": ""test"",
+                ""version"": ""1.0.0""
+            }";
+
+        // Before the fix, this would throw a NullReferenceException because
+        // packageLockJToken["packages"] returns null, and calling .Children<JProperty>() on null throws
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonContents, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        // The detector should handle the missing "packages" property gracefully without throwing
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().BeEmpty(); // No dependencies should be detected since packages is missing
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_SameComponentWithDifferentParents_BothPathsRecordedAsync()
+    {
+        // This test verifies that if we have both a->b->c and a->c dependency paths,
+        // both relationships are recorded (c appears twice with different parents)
+        var componentA = (Name: "componentA", Version: "1.0.0");
+        var componentB = (Name: "componentB", Version: "1.0.0");
+        var componentC = (Name: "componentC", Version: "1.0.0");
+
+        var packageLockJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 3,
+                ""requires"": true,
+                ""packages"": {{
+                    """": {{
+                        ""name"": ""test"",
+                        ""version"": ""0.0.0"",
+                        ""dependencies"": {{
+                            ""{0}"": ""{1}""
+                        }}
+                    }},
+                    ""node_modules/{0}"": {{
+                        ""version"": ""{1}"",
+                        ""resolved"": ""https://registry.npmjs.org/{0}/-/{0}-{1}.tgz"",
+                        ""integrity"": ""sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="",
+                        ""dependencies"": {{
+                            ""{2}"": ""{3}"",
+                            ""{4}"": ""{5}""
+                        }}
+                    }},
+                    ""node_modules/{2}"": {{
+                        ""version"": ""{3}"",
+                        ""resolved"": ""https://registry.npmjs.org/{2}/-/{2}-{3}.tgz"",
+                        ""integrity"": ""sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="",
+                        ""dependencies"": {{
+                            ""{4}"": ""{5}""
+                        }}
+                    }},
+                    ""node_modules/{4}"": {{
+                        ""version"": ""{5}"",
+                        ""resolved"": ""https://registry.npmjs.org/{4}/-/{4}-{5}.tgz"",
+                        ""integrity"": ""sha512-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=""
+                    }}
+                }}
+            }}";
+
+        var packageLockTemplate = string.Format(
+            packageLockJson,
+            componentA.Name,
+            componentA.Version,
+            componentB.Name,
+            componentB.Version,
+            componentC.Name,
+            componentC.Version);
+
+        var packageJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {{
+                    ""{0}"": ""{1}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(
+            packageJson,
+            componentA.Name,
+            componentA.Version);
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(3);
+
+        // Get component IDs
+        var componentAId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentA.Name)).Component.Id;
+        var componentBId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentB.Name)).Component.Id;
+        var componentCId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentC.Name)).Component.Id;
+
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        // Verify a->b and a->c relationships exist
+        var aDependencies = dependencyGraph.GetDependenciesForComponent(componentAId);
+        aDependencies.Should().HaveCount(2);
+        aDependencies.Should().Contain(componentBId);
+        aDependencies.Should().Contain(componentCId);
+
+        // Verify b->c relationship exists
+        var bDependencies = dependencyGraph.GetDependenciesForComponent(componentBId);
+        bDependencies.Should().HaveCount(1);
+        bDependencies.Should().Contain(componentCId);
+
+        // Verify c has no dependencies
+        var cDependencies = dependencyGraph.GetDependenciesForComponent(componentCId);
+        cDependencies.Should().BeEmpty();
+
+        // Verify that c appears as a child of both a and b
+        var parentsOfC = dependencyGraph.GetAncestors(componentCId);
+        parentsOfC.Should().HaveCount(2);
+        parentsOfC.Should().Contain(componentAId);
+        parentsOfC.Should().Contain(componentBId);
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_CircularDependency_HandledGracefullyAsync()
+    {
+        // This test verifies that circular dependencies (a->b->c->a) are handled without infinite loops
+        // NPM can have circular dependencies in rare cases with peer dependencies or symlinks
+        var componentA = (Name: "componentA", Version: "1.0.0");
+        var componentB = (Name: "componentB", Version: "1.0.0");
+        var componentC = (Name: "componentC", Version: "1.0.0");
+
+        var packageLockJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 3,
+                ""requires"": true,
+                ""packages"": {{
+                    """": {{
+                        ""name"": ""test"",
+                        ""version"": ""0.0.0"",
+                        ""dependencies"": {{
+                            ""{0}"": ""{1}""
+                        }}
+                    }},
+                    ""node_modules/{0}"": {{
+                        ""version"": ""{1}"",
+                        ""resolved"": ""https://registry.npmjs.org/{0}/-/{0}-{1}.tgz"",
+                        ""integrity"": ""sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="",
+                        ""dependencies"": {{
+                            ""{2}"": ""{3}""
+                        }}
+                    }},
+                    ""node_modules/{2}"": {{
+                        ""version"": ""{3}"",
+                        ""resolved"": ""https://registry.npmjs.org/{2}/-/{2}-{3}.tgz"",
+                        ""integrity"": ""sha512-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="",
+                        ""dependencies"": {{
+                            ""{4}"": ""{5}""
+                        }}
+                    }},
+                    ""node_modules/{4}"": {{
+                        ""version"": ""{5}"",
+                        ""resolved"": ""https://registry.npmjs.org/{4}/-/{4}-{5}.tgz"",
+                        ""integrity"": ""sha512-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="",
+                        ""dependencies"": {{
+                            ""{0}"": ""{1}""
+                        }}
+                    }}
+                }}
+            }}";
+
+        var packageLockTemplate = string.Format(
+            packageLockJson,
+            componentA.Name,
+            componentA.Version,
+            componentB.Name,
+            componentB.Version,
+            componentC.Name,
+            componentC.Version);
+
+        var packageJson = @"{{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {{
+                    ""{0}"": ""{1}""
+                }}
+            }}";
+
+        var packageJsonTemplate = string.Format(
+            packageJson,
+            componentA.Name,
+            componentA.Version);
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockTemplate, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJsonTemplate, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        // The detector should handle circular dependencies gracefully without hanging or throwing
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(3);
+
+        // Get component IDs
+        var componentAId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentA.Name)).Component.Id;
+        var componentBId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentB.Name)).Component.Id;
+        var componentCId = detectedComponents.First(c => ((NpmComponent)c.Component).Name.Equals(componentC.Name)).Component.Id;
+
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        // Verify the circular dependency chain is recorded
+        // A depends on B
+        var aDependencies = dependencyGraph.GetDependenciesForComponent(componentAId);
+        aDependencies.Should().Contain(componentBId);
+
+        // B depends on C
+        var bDependencies = dependencyGraph.GetDependenciesForComponent(componentBId);
+        bDependencies.Should().Contain(componentCId);
+
+        // C depends on A (circular)
+        var cDependencies = dependencyGraph.GetDependenciesForComponent(componentCId);
+        cDependencies.Should().Contain(componentAId);
+
+        // Verify all three components are properly registered
+        componentRecorder.AssertAllExplicitlyReferencedComponents<NpmComponent>(
+            componentAId,
+            parentComponent => parentComponent.Name == componentA.Name);
+
+        // B should be a transitive dependency of A (which is explicitly referenced)
+        componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
+            componentBId,
+            parentComponent => parentComponent.Name == componentA.Name).Should().BeTrue();
+
+        // C should also be a transitive dependency of A (reachable via A->B->C)
+        // Even with the circular dependency C->A, C is still reachable from the explicitly referenced A
+        componentRecorder.IsDependencyOfExplicitlyReferencedComponents<NpmComponent>(
+            componentCId,
+            parentComponent => parentComponent.Name == componentA.Name).Should().BeTrue();
     }
 }

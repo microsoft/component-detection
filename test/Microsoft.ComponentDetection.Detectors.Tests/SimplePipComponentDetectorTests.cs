@@ -1,11 +1,13 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Pip;
@@ -14,7 +16,6 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
 
 [TestClass]
 public class SimplePipComponentDetectorTests : BaseDetectorTest<SimplePipComponentDetector>
@@ -290,12 +291,12 @@ public class SimplePipComponentDetectorTests : BaseDetectorTest<SimplePipCompone
 
             recordedDeps.Should().HaveCount(
                 expectedDeps.Length,
-                $"Count missmatch of expected dependencies ({JsonConvert.SerializeObject(expectedDeps)}) and recorded dependencies ({JsonConvert.SerializeObject(recordedDeps)}) for `{componentId}`!");
+                $"Count missmatch of expected dependencies ({JsonSerializer.Serialize(expectedDeps)}) and recorded dependencies ({JsonSerializer.Serialize(recordedDeps)}) for `{componentId}`!");
 
             foreach (var expectedDep in expectedDeps)
             {
                 recordedDeps.Should().Contain(
-                    expectedDep, $"Expected `{expectedDep}` in the list of dependencies for `{componentId}` but only recorded: {JsonConvert.SerializeObject(recordedDeps)}");
+                    expectedDep, $"Expected `{expectedDep}` in the list of dependencies for `{componentId}` but only recorded: {JsonSerializer.Serialize(recordedDeps)}");
             }
         }
     }

@@ -1,10 +1,11 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Conan;
@@ -15,8 +16,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockComponentDetector>
+public class ConanLockComponentDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<ConanLockComponentDetector> detectorTestUtility = new();
+
     private readonly string testConanLockString = @"{
  ""graph_lock"": {
   ""nodes"": {
@@ -137,7 +140,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
     [TestMethod]
     public async Task TestGraphIsCorrectAsync()
     {
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Conan.lock", this.testConanLockString)
             .ExecuteDetectorAsync();
 
@@ -179,7 +182,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
     [TestMethod]
     public async Task TestDetectionForConanLockFileWithNullValuesForRootNodeAsync()
     {
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Conan.lock", this.testConanLockStringWithNullValueForRootNode)
             .ExecuteDetectorAsync();
 
@@ -193,7 +196,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
     [TestMethod]
     public async Task TestConanDetectorAsync()
     {
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("Conan.lock", this.testConanLockString)
             .ExecuteDetectorAsync();
 
@@ -249,7 +252,7 @@ public class ConanLockComponentDetectorTests : BaseDetectorTest<ConanLockCompone
     [TestMethod]
     public async Task TestConanDetector_SupportNoDependenciesAsync()
     {
-        var (result, componentRecorder) = await this.DetectorTestUtility
+        var (result, componentRecorder) = await this.detectorTestUtility
             .WithFile("conan.lock", this.testConanLockNoDependenciesString)
             .ExecuteDetectorAsync();
 

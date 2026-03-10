@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts;
 
 using System;
@@ -124,9 +125,9 @@ public abstract class FileComponentDetector : IComponentDetector
                 MaxDegreeOfParallelism = threadsToUse,
             });
 
-        var preprocessedObserbable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
+        var preprocessedObservable = await this.OnPrepareDetectionAsync(processRequests, detectorArgs, cancellationToken);
 
-        await preprocessedObserbable.ForEachAsync(processRequest => processor.Post(processRequest));
+        await preprocessedObservable.ForEachAsync(processRequest => processor.Post(processRequest));
 
         processor.Complete();
 

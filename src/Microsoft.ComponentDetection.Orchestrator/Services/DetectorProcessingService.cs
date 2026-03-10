@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Services;
 
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNet.Globbing;
@@ -17,11 +19,10 @@ using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Spectre.Console;
 using static System.Environment;
 
-public class DetectorProcessingService : IDetectorProcessingService
+internal class DetectorProcessingService : IDetectorProcessingService
 {
     private const int DefaultMaxDetectionThreads = 5;
     private const int ExperimentalTimeoutSeconds = 240; // 4 minutes
@@ -30,21 +31,26 @@ public class DetectorProcessingService : IDetectorProcessingService
     private readonly IObservableDirectoryWalkerFactory scanner;
     private readonly ILogger<DetectorProcessingService> logger;
     private readonly IExperimentService experimentService;
+    private readonly IAnsiConsole console;
 
     public DetectorProcessingService(
         IObservableDirectoryWalkerFactory scanner,
         IExperimentService experimentService,
-        ILogger<DetectorProcessingService> logger)
+        ILogger<DetectorProcessingService> logger,
+        IAnsiConsole console = null)
     {
         this.scanner = scanner;
         this.experimentService = experimentService;
         this.logger = logger;
+        this.console = console ?? AnsiConsole.Console;
     }
 
+    /// <inheritdoc/>
     public async Task<DetectorProcessingResult> ProcessDetectorsAsync(
         ScanSettings settings,
         IEnumerable<IComponentDetector> detectors,
-        DetectorRestrictions detectorRestrictions)
+        DetectorRestrictions detectorRestrictions,
+        CancellationToken cancellationToken = default)
     {
         using var scope = this.logger.BeginScope("Processing detectors");
         this.logger.LogInformation($"Finding components...");
@@ -112,7 +118,7 @@ public class DetectorProcessingService : IDetectorProcessingService
                     resultCode = result.ResultCode;
                     containerDetails = result.ContainerDetails;
 
-                    record.AdditionalTelemetryDetails = result.AdditionalTelemetryDetails != null ? JsonConvert.SerializeObject(result.AdditionalTelemetryDetails) : null;
+                    record.AdditionalTelemetryDetails = result.AdditionalTelemetryDetails != null ? JsonSerializer.Serialize(result.AdditionalTelemetryDetails) : null;
                     record.IsExperimental = isExperimentalDetector;
                     record.DetectorId = detector.Id;
                     record.DetectedComponentCount = detectedComponents.Count();
@@ -381,7 +387,7 @@ public class DetectorProcessingService : IDetectorProcessingService
             providerElapsedTime.Sum(x => x.Value.ComponentsFoundCount).ToString(),
             providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount).ToString());
 
-        AnsiConsole.Write(table);
+        this.console.Write(table);
 
         var tsf = new TabularStringFormat(
         [

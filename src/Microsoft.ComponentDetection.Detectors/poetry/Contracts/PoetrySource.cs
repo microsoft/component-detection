@@ -1,8 +1,9 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Poetry.Contracts;
 
 using System.Runtime.Serialization;
 
-public class PoetrySource
+internal class PoetrySource
 {
     [DataMember(Name = "type")]
     public string Type { get; set; }
