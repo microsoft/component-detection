@@ -22,7 +22,7 @@ internal class MavenCommandService : IMavenCommandService
 
     /// <summary>
     /// Per-location semaphores to prevent concurrent Maven CLI executions for the same pom.xml.
-    /// This allows multiple detectors (e.g., MvnCliComponentDetector and MavenWithFallbackDetector)
+    /// This allows the MvnCliComponentDetector
     /// to safely share the same output file without race conditions.
     /// </summary>
     private readonly ConcurrentDictionary<string, SemaphoreSlim> locationLocks = new();
@@ -74,7 +74,7 @@ internal class MavenCommandService : IMavenCommandService
         }
 
         // Use semaphore to prevent concurrent Maven CLI executions for the same pom.xml.
-        // This allows MvnCliComponentDetector and MavenWithFallbackDetector to safely share the output file.
+        // This allows the MvnCliComponentDetector to reuse any existing output file.
         var semaphore = this.locationLocks.GetOrAdd(pomFile.Location, _ => new SemaphoreSlim(1, 1));
 
         await semaphore.WaitAsync(cancellationToken);
