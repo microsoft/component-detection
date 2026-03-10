@@ -275,12 +275,12 @@ public class LinuxContainerDetector(
         }
         catch (Exception e)
         {
-            this.logger.LogWarning(e, "Processing of image {ContainerImage} (kind {ImageType}) failed", imageRef.Reference, imageRef.Kind);
-            RecordImageDetectionFailure(e, imageRef.Reference);
+            this.logger.LogWarning(e, "Processing of image {ContainerImage} (kind {ImageType}) failed", imageRef.OriginalInput, imageRef.Kind);
+            RecordImageDetectionFailure(e, imageRef.OriginalInput);
 
             var singleFileComponentRecorder =
-                componentRecorder.CreateSingleFileComponentRecorder(imageRef.Reference);
-            singleFileComponentRecorder.RegisterPackageParseFailure(imageRef.Reference);
+                componentRecorder.CreateSingleFileComponentRecorder(imageRef.OriginalInput);
+            singleFileComponentRecorder.RegisterPackageParseFailure(imageRef.OriginalInput);
         }
     }
 

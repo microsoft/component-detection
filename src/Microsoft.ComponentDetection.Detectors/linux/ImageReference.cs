@@ -56,20 +56,32 @@ internal class ImageReference
     {
         if (input.StartsWith(OciDirPrefix, StringComparison.OrdinalIgnoreCase))
         {
+            var path = input[OciDirPrefix.Length..];
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentException($"Input with '{OciDirPrefix}' prefix must include a path.", nameof(input));
+            }
+
             return new ImageReference
             {
                 OriginalInput = input,
-                Reference = input[OciDirPrefix.Length..],
+                Reference = path,
                 Kind = ImageReferenceKind.OciLayout,
             };
         }
 
         if (input.StartsWith(OciArchivePrefix, StringComparison.OrdinalIgnoreCase))
         {
+            var path = input[OciArchivePrefix.Length..];
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentException($"Input with '{OciArchivePrefix}' prefix must include a path.", nameof(input));
+            }
+
             return new ImageReference
             {
                 OriginalInput = input,
-                Reference = input[OciArchivePrefix.Length..],
+                Reference = path,
                 Kind = ImageReferenceKind.OciArchive,
             };
         }

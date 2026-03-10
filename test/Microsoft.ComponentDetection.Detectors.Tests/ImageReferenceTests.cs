@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.Linux;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -70,6 +71,24 @@ public class ImageReferenceTests
     }
 
     [TestMethod]
+    public void Parse_OciDir_ErrorsOnEmptyPath()
+    {
+        var act = () => ImageReference.Parse("oci-dir:");
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("Input with 'oci-dir:' prefix must include a path.*")
+            .WithParameterName("input");
+    }
+
+    [TestMethod]
+    public void Parse_OciDir_ErrorsOnWhitespaceOnlyPath()
+    {
+        var act = () => ImageReference.Parse("oci-dir:   ");
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("Input with 'oci-dir:' prefix must include a path.*")
+            .WithParameterName("input");
+    }
+
+    [TestMethod]
     public void Parse_OciArchive_ReturnsOciArchiveKind()
     {
         var result = ImageReference.Parse("oci-archive:/path/to/image.tar");
@@ -97,5 +116,23 @@ public class ImageReferenceTests
         result.Kind.Should().Be(ImageReferenceKind.OciArchive);
         result.OriginalInput.Should().Be("OCI-ARCHIVE:/path/to/image.tar");
         result.Reference.Should().Be("/path/to/image.tar");
+    }
+
+    [TestMethod]
+    public void Parse_OciArchive_ErrorsOnEmptyPath()
+    {
+        var act = () => ImageReference.Parse("oci-archive:");
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("Input with 'oci-archive:' prefix must include a path.*")
+            .WithParameterName("input");
+    }
+
+    [TestMethod]
+    public void Parse_OciArchive_ErrorsOnWhitespaceOnlyPath()
+    {
+        var act = () => ImageReference.Parse("oci-archive:   ");
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("Input with 'oci-archive:' prefix must include a path.*")
+            .WithParameterName("input");
     }
 }
