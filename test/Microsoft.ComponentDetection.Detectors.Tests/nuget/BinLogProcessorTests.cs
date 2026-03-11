@@ -29,9 +29,37 @@ public class BinLogProcessorTests
         this.testDir = Path.Combine(Path.GetTempPath(), "BinLogProcessorTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(this.testDir);
 
-        // Pin the SDK version so temp projects use the same SDK as the workspace
-        var globalJson = """{ "sdk": { "version": "8.0.100", "rollForward": "latestFeature" } }""";
-        WriteFile(this.testDir, "global.json", globalJson);
+        // Copy the workspace global.json so temp projects use the same SDK as the repo.
+        // This avoids hardcoding a version that may not be installed in CI/dev machines.
+        var workspaceGlobalJson = FindWorkspaceGlobalJsonPath();
+        if (workspaceGlobalJson != null)
+        {
+            File.Copy(workspaceGlobalJson, Path.Combine(this.testDir, "global.json"));
+        }
+    }
+
+    private static string? FindWorkspaceGlobalJsonPath()
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+
+        while (!string.IsNullOrEmpty(currentDirectory))
+        {
+            var candidate = Path.Combine(currentDirectory, "global.json");
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            var parent = Directory.GetParent(currentDirectory)?.FullName;
+            if (parent == currentDirectory)
+            {
+                break;
+            }
+
+            currentDirectory = parent;
+        }
+
+        return null;
     }
 
     [TestCleanup]

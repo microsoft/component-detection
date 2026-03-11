@@ -283,17 +283,25 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
 
     private void IndexProjectInfo(MSBuildProjectInfo projectInfo, List<string> assetsFilesFound)
     {
-        // Store the project info for later use when processing assets files
+        // Store the project info for later use when processing assets files.
+        // Use AddOrUpdate+MergeWith so that multiple binlogs for the same project
+        // (e.g., build and publish passes) form a superset rather than keeping only the first.
         var projectPath = projectInfo.ProjectPath;
         if (!string.IsNullOrEmpty(projectPath))
         {
-            this.projectInfoByProjectPath.TryAdd(projectPath, projectInfo);
+            this.projectInfoByProjectPath.AddOrUpdate(
+                projectPath,
+                _ => projectInfo,
+                (_, existing) => existing.MergeWith(projectInfo));
         }
 
         // Also index by assets file path for direct lookup
         if (!string.IsNullOrEmpty(projectInfo.ProjectAssetsFile))
         {
-            this.projectInfoByAssetsFile.TryAdd(projectInfo.ProjectAssetsFile, projectInfo);
+            this.projectInfoByAssetsFile.AddOrUpdate(
+                projectInfo.ProjectAssetsFile,
+                _ => projectInfo,
+                (_, existing) => existing.MergeWith(projectInfo));
             assetsFilesFound.Add(projectInfo.ProjectAssetsFile);
         }
     }
@@ -438,7 +446,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
             if (projectInfo != null)
             {
                 // We have binlog info, use enhanced processing
-                this.ProcessLockFileWithProjectInfo(lockFile, projectInfo);
+                this.ProcessLockFileWithProjectInfo(lockFile, projectInfo, assetsFilePath);
             }
             else
             {
@@ -490,13 +498,16 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     ///   all dependencies are marked as development dependencies.
     /// - Per-package IsDevelopmentDependency metadata overrides are applied transitively.
     /// </remarks>
-    private void ProcessLockFileWithProjectInfo(LockFile lockFile, MSBuildProjectInfo projectInfo)
+    private void ProcessLockFileWithProjectInfo(LockFile lockFile, MSBuildProjectInfo projectInfo, string assetsFilePath)
     {
         var (explicitReferencedDependencies, explicitlyReferencedComponentIds) = LockFileUtilities.ResolveExplicitDependencies(lockFile, this.Logger);
 
-        // Use project path from RestoreMetadata (consistent with NuGetProjectModelProjectCentricComponentDetector)
-        var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(
-            lockFile.PackageSpec?.RestoreMetadata?.ProjectPath ?? projectInfo.ProjectPath ?? string.Empty);
+        // Use project path from RestoreMetadata (consistent with NuGetProjectModelProjectCentricComponentDetector).
+        // If no project path is available, fall back to the assets file path to avoid collisions.
+        var recorderLocation = lockFile.PackageSpec?.RestoreMetadata?.ProjectPath
+            ?? projectInfo.ProjectPath
+            ?? assetsFilePath;
+        var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(recorderLocation);
 
         // Get the project info for the target framework (use inner build if available)
         MSBuildProjectInfo GetProjectInfoForTarget(LockFileTarget target)

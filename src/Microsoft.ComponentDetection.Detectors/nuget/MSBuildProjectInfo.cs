@@ -209,14 +209,19 @@ internal class MSBuildProjectInfo
 
     /// <summary>
     /// Merges another project info into this one, forming a superset.
-    /// Properties from <paramref name="other"/> override null values in this instance.
-    /// Boolean properties use logical OR (true wins).
+    /// This is used when the same project is seen multiple times (e.g., build + publish passes).
+    /// In practice, property values are not expected to differ across passes for the same project
+    /// and target framework — the merge fills in any values that were not set rather than overriding.
+    /// Boolean properties use logical OR (any true value is sufficient to classify the project).
     /// Items from <paramref name="other"/> are added if not already present.
     /// </summary>
     /// <param name="other">The other project info to merge from.</param>
-    public void MergeWith(MSBuildProjectInfo other)
+    /// <returns>This instance for fluent chaining.</returns>
+    public MSBuildProjectInfo MergeWith(MSBuildProjectInfo other)
     {
-        // Merge boolean properties: true wins (if either says true, result is true)
+        // Merge boolean properties: true wins. For all classification booleans (IsTestProject,
+        // IsDevelopment, IsShipping, etc.), if any pass reports true it is sufficient to classify
+        // the project accordingly. These values are not expected to differ across passes.
         this.IsDevelopment = MergeBool(this.IsDevelopment, other.IsDevelopment);
         this.IsPackable = MergeBool(this.IsPackable, other.IsPackable);
         this.IsShipping = MergeBool(this.IsShipping, other.IsShipping);
@@ -224,7 +229,8 @@ internal class MSBuildProjectInfo
         this.PublishAot = MergeBool(this.PublishAot, other.PublishAot);
         this.SelfContained = MergeBool(this.SelfContained, other.SelfContained);
 
-        // Merge string properties: prefer non-null/non-empty
+        // Merge string properties: fill in unset values only.
+        // These are not expected to differ across passes for the same project/TFM.
         this.OutputType ??= other.OutputType;
         this.NETCoreSdkVersion ??= other.NETCoreSdkVersion;
         this.ProjectAssetsFile ??= other.ProjectAssetsFile;
@@ -234,6 +240,8 @@ internal class MSBuildProjectInfo
         // Merge items: add items from other that are not already present
         MergeItems(this.PackageReference, other.PackageReference);
         MergeItems(this.PackageDownload, other.PackageDownload);
+
+        return this;
     }
 
     private static bool? MergeBool(bool? existing, bool? incoming)

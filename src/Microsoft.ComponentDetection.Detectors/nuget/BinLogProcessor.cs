@@ -135,8 +135,18 @@ internal class BinLogProcessor : IBinLogProcessor
         }
         else if (existing.IsOuterBuild && !projectInfo.IsOuterBuild && !string.IsNullOrEmpty(projectInfo.TargetFramework))
         {
-            // Existing is outer, new is inner - add new as inner build
-            existing.InnerBuilds.Add(projectInfo);
+            // Existing is outer, new is inner - de-duplicate by TargetFramework
+            var matchingInner = existing.InnerBuilds.FirstOrDefault(
+                ib => string.Equals(ib.TargetFramework, projectInfo.TargetFramework, StringComparison.OrdinalIgnoreCase));
+            if (matchingInner != null)
+            {
+                // Same TFM seen again (e.g., build + publish pass) - merge
+                matchingInner.MergeWith(projectInfo);
+            }
+            else
+            {
+                existing.InnerBuilds.Add(projectInfo);
+            }
         }
         else if (!existing.IsOuterBuild && !projectInfo.IsOuterBuild && !string.IsNullOrEmpty(projectInfo.TargetFramework))
         {
