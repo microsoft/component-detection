@@ -72,7 +72,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        var components = recorder.GetDetectedComponents();
+        var components = recorder.GetDetectedComponents().Where(c => c.Component is NuGetComponent).ToList();
         components.Should().HaveCount(1);
 
         var nuget = (NuGetComponent)components.Single().Component;
@@ -90,7 +90,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        var components = recorder.GetDetectedComponents();
+        var components = recorder.GetDetectedComponents().Where(c => c.Component is NuGetComponent).ToList();
         components.Should().HaveCount(2);
 
         var graphs = recorder.GetDependencyGraphsByLocation();
@@ -128,7 +128,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             .ExecuteDetectorAsync();
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
-        var components = recorder.GetDetectedComponents();
+        var components = recorder.GetDetectedComponents().Where(c => c.Component is NuGetComponent).ToList();
         components.Should().HaveCount(1);
         ((NuGetComponent)components.Single().Component).Name.Should().Be("Newtonsoft.Json");
     }
@@ -144,6 +144,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
 
         result.ResultCode.Should().Be(ProcessingResultCode.Success);
         var download = recorder.GetDetectedComponents()
+            .Where(c => c.Component is NuGetComponent)
             .Single(c => ((NuGetComponent)c.Component).Name == "Microsoft.Net.Compilers.Toolset");
         recorder.GetEffectiveDevDependencyValue(download.Component.Id).Should().BeTrue();
     }
