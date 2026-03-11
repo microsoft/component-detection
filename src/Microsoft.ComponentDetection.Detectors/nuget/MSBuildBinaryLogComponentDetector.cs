@@ -57,13 +57,23 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     private readonly DotNetProjectInfoProvider projectInfoProvider;
     private readonly LockFileFormat lockFileFormat = new();
 
-    // Track which assets files have been processed to avoid duplicate processing
-    private readonly ConcurrentDictionary<string, bool> processedAssetsFiles = new(StringComparer.OrdinalIgnoreCase);
-
-    // Store project information extracted from binlogs keyed by project path
-    private readonly ConcurrentDictionary<string, MSBuildProjectInfo> projectInfoByProjectPath = new(StringComparer.OrdinalIgnoreCase);
-
-    // Store project information extracted from binlogs keyed by assets file path
+    /// <summary>
+    /// Stores project information extracted from binlogs, keyed by assets file path.
+    /// </summary>
+    /// <remarks>
+    /// All binlog files are processed before any assets files (guaranteed by <see cref="OnPrepareDetectionAsync"/>),
+    /// so by the time an assets file is processed this dictionary contains the merged superset of project
+    /// info from every binlog that referenced that project. This is intentional: a repository may produce
+    /// separate binlogs for different build passes (e.g., build vs. publish). Properties like
+    /// <see cref="MSBuildProjectInfo.SelfContained"/> or <see cref="MSBuildProjectInfo.PublishAot"/> are
+    /// typically only set in the publish pass, so merging ensures those properties are available when
+    /// processing the shared <c>project.assets.json</c>.
+    ///
+    /// Memory impact: each <see cref="MSBuildProjectInfo"/> is roughly 15–16 KB (including inner builds
+    /// and PackageReference/PackageDownload dictionaries). A repository with 100K projects would use
+    /// approximately 1.5 GB for project info storage alone — significant but proportional to the
+    /// multi-GB binlog files that such a repository would produce.
+    /// </remarks>
     private readonly ConcurrentDictionary<string, MSBuildProjectInfo> projectInfoByAssetsFile = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -257,15 +267,6 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
                 this.LogMissingAssetsWarnings(projectInfo);
             }
 
-            // Register DotNet components for projects that won't have lock files
-            // (projects with lock files get DotNet registration in ProcessLockFileWithProjectInfo
-            //  where we can combine binlog and lock-file self-contained heuristics)
-            foreach (var projectInfo in projectInfos.Where(
-                pi => string.IsNullOrEmpty(pi.ProjectAssetsFile) || !this.fileUtilityService.Exists(pi.ProjectAssetsFile)))
-            {
-                this.RegisterDotNetComponent(projectInfo);
-            }
-
             // Log summary warning if no assets files were found
             if (assetsFilesFound.Count == 0 && projectInfos.Count > 0)
             {
@@ -283,19 +284,9 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
 
     private void IndexProjectInfo(MSBuildProjectInfo projectInfo, List<string> assetsFilesFound)
     {
-        // Store the project info for later use when processing assets files.
+        // Index by assets file path for lookup when processing lock files.
         // Use AddOrUpdate+MergeWith so that multiple binlogs for the same project
         // (e.g., build and publish passes) form a superset rather than keeping only the first.
-        var projectPath = projectInfo.ProjectPath;
-        if (!string.IsNullOrEmpty(projectPath))
-        {
-            this.projectInfoByProjectPath.AddOrUpdate(
-                projectPath,
-                _ => projectInfo,
-                (_, existing) => existing.MergeWith(projectInfo));
-        }
-
-        // Also index by assets file path for direct lookup
         if (!string.IsNullOrEmpty(projectInfo.ProjectAssetsFile))
         {
             this.projectInfoByAssetsFile.AddOrUpdate(
@@ -418,13 +409,6 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     {
         var assetsFilePath = processRequest.ComponentStream.Location;
 
-        // Check if this assets file was already processed
-        if (this.processedAssetsFiles.ContainsKey(assetsFilePath))
-        {
-            this.Logger.LogDebug("Assets file already processed: {AssetsFile}", assetsFilePath);
-            return;
-        }
-
         try
         {
             var lockFile = this.lockFileFormat.Read(processRequest.ComponentStream.Stream, assetsFilePath);
@@ -438,10 +422,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
             }
 
             // Try to find matching binlog info
-            var projectInfo = this.FindProjectInfoForAssetsFile(assetsFilePath, lockFile);
-
-            // Mark as processed
-            this.processedAssetsFiles.TryAdd(assetsFilePath, true);
+            var projectInfo = this.FindProjectInfoForAssetsFile(assetsFilePath);
 
             if (projectInfo != null)
             {
@@ -464,23 +445,10 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         }
     }
 
-    private MSBuildProjectInfo? FindProjectInfoForAssetsFile(string assetsFilePath, LockFile lockFile)
+    private MSBuildProjectInfo? FindProjectInfoForAssetsFile(string assetsFilePath)
     {
-        // Try to find by assets file path first
-        if (this.projectInfoByAssetsFile.TryGetValue(assetsFilePath, out var infoByAssets))
-        {
-            return infoByAssets;
-        }
-
-        // Try to find by project path from the lock file
-        var projectPath = lockFile.PackageSpec?.RestoreMetadata?.ProjectPath;
-        if (!string.IsNullOrEmpty(projectPath) &&
-            this.projectInfoByProjectPath.TryGetValue(projectPath, out var infoByProject))
-        {
-            return infoByProject;
-        }
-
-        return null;
+        this.projectInfoByAssetsFile.TryGetValue(assetsFilePath, out var projectInfo);
+        return projectInfo;
     }
 
     /// <summary>

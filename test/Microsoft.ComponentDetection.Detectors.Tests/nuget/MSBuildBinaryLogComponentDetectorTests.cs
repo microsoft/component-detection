@@ -470,6 +470,138 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     }
 
     // ================================================================
+    // Multi-binlog merge tests – verify that project info from multiple
+    // binlogs (e.g., build + publish) is merged before assets processing.
+    // This is intentional: a repo may produce separate binlogs for build
+    // and publish passes. The detector merges them via AddOrUpdate+MergeWith
+    // so that properties like SelfContained (only set during publish) are
+    // available when processing the shared project.assets.json.
+    // ================================================================
+    [TestMethod]
+    public async Task MultipleBinlogs_BuildThenPublishSelfContained_MergedAsSelfContained()
+    {
+        // First binlog: normal build — SelfContained is not set
+        var buildInfo = CreateProjectInfo();
+        buildInfo.NETCoreSdkVersion = "8.0.100";
+        buildInfo.OutputType = "Exe";
+
+        // Second binlog: publish self-contained — SelfContained = true
+        var publishInfo = CreateProjectInfo();
+        publishInfo.NETCoreSdkVersion = "8.0.100";
+        publishInfo.OutputType = "Exe";
+        publishInfo.SelfContained = true;
+
+        var assetsJson = SimpleAssetsJson("Newtonsoft.Json", "13.0.1");
+
+        var binlogs = new Dictionary<string, IReadOnlyList<MSBuildProjectInfo>>
+        {
+            [@"C:\test\build.binlog"] = [buildInfo],
+            [@"C:\test\publish.binlog"] = [publishInfo],
+        };
+
+        var (result, recorder) = await ExecuteWithMultipleBinlogsAsync(binlogs, assetsJson);
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // The merged project info should have SelfContained=true from the publish binlog
+        var dotNet = recorder.GetDetectedComponents()
+            .Where(c => c.Component is DotNetComponent)
+            .Select(c => (DotNetComponent)c.Component)
+            .Single();
+        dotNet.ProjectType.Should().Be("application-selfcontained");
+    }
+
+    [TestMethod]
+    public async Task MultipleBinlogs_BuildThenPublishNotSelfContained_MergedAsNotSelfContained()
+    {
+        // Both binlogs: normal build — SelfContained is not set in either
+        var buildInfo = CreateProjectInfo();
+        buildInfo.NETCoreSdkVersion = "8.0.100";
+        buildInfo.OutputType = "Exe";
+
+        var publishInfo = CreateProjectInfo();
+        publishInfo.NETCoreSdkVersion = "8.0.100";
+        publishInfo.OutputType = "Exe";
+
+        var assetsJson = SimpleAssetsJson("Newtonsoft.Json", "13.0.1");
+
+        var binlogs = new Dictionary<string, IReadOnlyList<MSBuildProjectInfo>>
+        {
+            [@"C:\test\build.binlog"] = [buildInfo],
+            [@"C:\test\publish.binlog"] = [publishInfo],
+        };
+
+        var (result, recorder) = await ExecuteWithMultipleBinlogsAsync(binlogs, assetsJson);
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var dotNet = recorder.GetDetectedComponents()
+            .Where(c => c.Component is DotNetComponent)
+            .Select(c => (DotNetComponent)c.Component)
+            .Single();
+        dotNet.ProjectType.Should().Be("application");
+    }
+
+    [TestMethod]
+    public async Task MultipleBinlogs_BuildThenPublishAot_MergedAsSelfContained()
+    {
+        // First binlog: normal build
+        var buildInfo = CreateProjectInfo();
+        buildInfo.NETCoreSdkVersion = "8.0.100";
+        buildInfo.OutputType = "Exe";
+
+        // Second binlog: publish with AOT
+        var publishInfo = CreateProjectInfo();
+        publishInfo.NETCoreSdkVersion = "8.0.100";
+        publishInfo.OutputType = "Exe";
+        publishInfo.PublishAot = true;
+
+        var assetsJson = SimpleAssetsJson("Newtonsoft.Json", "13.0.1");
+
+        var binlogs = new Dictionary<string, IReadOnlyList<MSBuildProjectInfo>>
+        {
+            [@"C:\test\build.binlog"] = [buildInfo],
+            [@"C:\test\publish.binlog"] = [publishInfo],
+        };
+
+        var (result, recorder) = await ExecuteWithMultipleBinlogsAsync(binlogs, assetsJson);
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var dotNet = recorder.GetDetectedComponents()
+            .Where(c => c.Component is DotNetComponent)
+            .Select(c => (DotNetComponent)c.Component)
+            .Single();
+        dotNet.ProjectType.Should().Be("application-selfcontained");
+    }
+
+    [TestMethod]
+    public async Task MultipleBinlogs_MergesTestProjectFlag_AllDepsAreDev()
+    {
+        // First binlog: normal build — IsTestProject not set
+        var buildInfo = CreateProjectInfo();
+
+        // Second binlog: test invocation — IsTestProject = true
+        var testInfo = CreateProjectInfo();
+        testInfo.IsTestProject = true;
+
+        var assetsJson = SimpleAssetsJson("Newtonsoft.Json", "13.0.1");
+
+        var binlogs = new Dictionary<string, IReadOnlyList<MSBuildProjectInfo>>
+        {
+            [@"C:\test\build.binlog"] = [buildInfo],
+            [@"C:\test\test.binlog"] = [testInfo],
+        };
+
+        var (result, recorder) = await ExecuteWithMultipleBinlogsAsync(binlogs, assetsJson);
+
+        result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var component = recorder.GetDetectedComponents().Single(c => c.Component is NuGetComponent);
+        recorder.GetEffectiveDevDependencyValue(component.Component.Id).Should().BeTrue();
+    }
+
+    // ================================================================
     // Helpers – project info construction
     // ================================================================
     private static MSBuildProjectInfo CreateProjectInfo(
@@ -548,6 +680,75 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             CreateProcessRequest(recorder, binlogPath, "fake-binlog-content"),
             CreateProcessRequest(recorder, assetsLocation, assetsJson),
         };
+
+        walkerMock
+            .Setup(x => x.GetFilteredComponentStreamObservable(
+                It.IsAny<DirectoryInfo>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IComponentRecorder>()))
+            .Returns(requests.ToObservable());
+
+        var scanRequest = new ScanRequest(
+            new DirectoryInfo(Path.GetTempPath()),
+            null,
+            null,
+            new Dictionary<string, string>(),
+            null,
+            recorder,
+            sourceFileRoot: new DirectoryInfo(Path.GetTempPath()));
+
+        var result = await detector.ExecuteDetectorAsync(scanRequest);
+        return (result, recorder);
+    }
+
+    /// <summary>
+    /// Executes the detector with multiple binlog files, each returning its own set of project infos.
+    /// This exercises the merge path: when two binlogs reference the same project (same assets file),
+    /// their MSBuildProjectInfo instances are merged via AddOrUpdate+MergeWith before the assets file
+    /// is processed. For example, a normal build binlog + a publish-self-contained binlog should
+    /// produce a merged MSBuildProjectInfo with SelfContained=true.
+    /// </summary>
+    private static async Task<(IndividualDetectorScanResult Result, IComponentRecorder Recorder)> ExecuteWithMultipleBinlogsAsync(
+        Dictionary<string, IReadOnlyList<MSBuildProjectInfo>> binlogProjectInfos,
+        string assetsJson,
+        string assetsLocation = AssetsFilePath)
+    {
+        var binLogProcessorMock = new Mock<IBinLogProcessor>();
+        foreach (var (binlogPath, projectInfos) in binlogProjectInfos)
+        {
+            binLogProcessorMock
+                .Setup(x => x.ExtractProjectInfo(binlogPath))
+                .Returns(projectInfos);
+        }
+
+        var walkerMock = new Mock<IObservableDirectoryWalkerFactory>();
+        var streamFactoryMock = new Mock<IComponentStreamEnumerableFactory>();
+        var commandLineInvocationMock = new Mock<ICommandLineInvocationService>();
+        var directoryUtilityMock = new Mock<IDirectoryUtilityService>();
+        var fileUtilityMock = new Mock<IFileUtilityService>();
+        fileUtilityMock.Setup(x => x.Exists(It.IsAny<string>())).Returns(true);
+        var pathUtilityMock = new Mock<IPathUtilityService>();
+        pathUtilityMock.Setup(x => x.NormalizePath(It.IsAny<string>())).Returns<string>(p => p);
+        pathUtilityMock.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns<string>(p => Path.GetDirectoryName(p) ?? string.Empty);
+        var loggerMock = new Mock<ILogger<MSBuildBinaryLogComponentDetector>>();
+
+        var detector = new MSBuildBinaryLogComponentDetector(
+            streamFactoryMock.Object,
+            walkerMock.Object,
+            commandLineInvocationMock.Object,
+            directoryUtilityMock.Object,
+            fileUtilityMock.Object,
+            pathUtilityMock.Object,
+            binLogProcessorMock.Object,
+            loggerMock.Object);
+
+        var recorder = new ComponentRecorder();
+
+        // Build process requests: one per binlog file, then the assets file
+        var requests = binlogProjectInfos.Keys
+            .Select(binlogPath => CreateProcessRequest(recorder, binlogPath, "fake-binlog-content"))
+            .Append(CreateProcessRequest(recorder, assetsLocation, assetsJson))
+            .ToArray();
 
         walkerMock
             .Setup(x => x.GetFilteredComponentStreamObservable(
