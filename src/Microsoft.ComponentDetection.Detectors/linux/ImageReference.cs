@@ -44,7 +44,7 @@ internal class ImageReference
 
     /// <summary>
     /// Gets the cleaned reference string with any scheme prefix removed.
-    /// For Docker images, this is lowercased. For OCI paths, case is preserved.
+    /// For Docker images, this is lowercased. For file paths, case is preserved.
     /// </summary>
     public required string Reference { get; init; }
 
