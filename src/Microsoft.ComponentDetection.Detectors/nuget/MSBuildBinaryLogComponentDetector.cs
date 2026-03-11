@@ -76,6 +76,9 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// </remarks>
     private readonly ConcurrentDictionary<string, MSBuildProjectInfo> projectInfoByAssetsFile = new(StringComparer.OrdinalIgnoreCase);
 
+    // Source directory passed to BinLogProcessor for path rebasing.
+    private string? sourceDirectory;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MSBuildBinaryLogComponentDetector"/> class.
     /// </summary>
@@ -153,6 +156,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// <inheritdoc />
     public override Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
     {
+        this.sourceDirectory = request.SourceDirectory.FullName;
         this.projectInfoProvider.Initialize(request.SourceDirectory.FullName, request.SourceFileRoot?.FullName);
         return base.ExecuteDetectorAsync(request, cancellationToken);
     }
@@ -253,7 +257,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         {
             this.Logger.LogDebug("Processing binlog file: {BinlogPath}", binlogPath);
 
-            var projectInfos = this.binLogProcessor.ExtractProjectInfo(binlogPath);
+            var projectInfos = this.binLogProcessor.ExtractProjectInfo(binlogPath, this.sourceDirectory);
 
             if (projectInfos.Count == 0)
             {
@@ -445,6 +449,10 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         }
     }
 
+    /// <summary>
+    /// Finds the <see cref="MSBuildProjectInfo"/> associated with the given assets file path.
+    /// Paths are already rebased to the scanning machine by <see cref="IBinLogProcessor"/>.
+    /// </summary>
     private MSBuildProjectInfo? FindProjectInfoForAssetsFile(string assetsFilePath)
     {
         this.projectInfoByAssetsFile.TryGetValue(assetsFilePath, out var projectInfo);
@@ -471,7 +479,9 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         var (explicitReferencedDependencies, explicitlyReferencedComponentIds) = LockFileUtilities.ResolveExplicitDependencies(lockFile, this.Logger);
 
         // Use project path from RestoreMetadata (consistent with NuGetProjectModelProjectCentricComponentDetector).
-        // If no project path is available, fall back to the assets file path to avoid collisions.
+        // BinLogProcessor has already rebased projectInfo.ProjectPath to the scanning machine.
+        // RestoreMetadata.ProjectPath comes from the lock file which is on the same machine as the assets file.
+        // Fall back to the assets file path to avoid collisions when no project path is available.
         var recorderLocation = lockFile.PackageSpec?.RestoreMetadata?.ProjectPath
             ?? projectInfo.ProjectPath
             ?? assetsFilePath;

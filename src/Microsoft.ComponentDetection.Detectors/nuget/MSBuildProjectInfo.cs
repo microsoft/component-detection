@@ -11,36 +11,38 @@ using Microsoft.Build.Framework;
 internal class MSBuildProjectInfo
 {
     /// <summary>
-    /// Maps MSBuild property names to their setter actions.
+    /// Maps MSBuild property names to their metadata.
     /// </summary>
-    private static readonly Dictionary<string, Action<MSBuildProjectInfo, string>> PropertySetters = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, PropertyInfo> Properties = new(StringComparer.OrdinalIgnoreCase)
     {
-        [nameof(IsDevelopment)] = (info, value) => info.IsDevelopment = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase),
-        [nameof(IsPackable)] = (info, value) => info.IsPackable = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase),
-        [nameof(IsShipping)] = (info, value) => info.IsShipping = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase),
-        [nameof(IsTestProject)] = (info, value) => info.IsTestProject = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase),
-        [nameof(NETCoreSdkVersion)] = (info, value) => info.NETCoreSdkVersion = value,
-        [nameof(OutputType)] = (info, value) => info.OutputType = value,
-        [nameof(PublishAot)] = (info, value) => info.PublishAot = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase),
-        [nameof(ProjectAssetsFile)] = (info, value) =>
-        {
-            if (!string.IsNullOrEmpty(value))
+        [nameof(IsDevelopment)] = new((info, value) => info.IsDevelopment = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)),
+        [nameof(IsPackable)] = new((info, value) => info.IsPackable = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)),
+        [nameof(IsShipping)] = new((info, value) => info.IsShipping = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)),
+        [nameof(IsTestProject)] = new((info, value) => info.IsTestProject = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)),
+        [nameof(NETCoreSdkVersion)] = new((info, value) => info.NETCoreSdkVersion = value),
+        [nameof(OutputType)] = new((info, value) => info.OutputType = value),
+        [nameof(PublishAot)] = new((info, value) => info.PublishAot = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)),
+        [nameof(ProjectAssetsFile)] = new(
+            (info, value) =>
             {
-                info.ProjectAssetsFile = value;
-            }
-        },
-        [nameof(SelfContained)] = (info, value) => info.SelfContained = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase),
-        [nameof(TargetFramework)] = (info, value) => info.TargetFramework = value,
-        [nameof(TargetFrameworks)] = (info, value) => info.TargetFrameworks = value,
+                if (!string.IsNullOrEmpty(value))
+                {
+                    info.ProjectAssetsFile = value;
+                }
+            },
+            IsPath: true),
+        [nameof(SelfContained)] = new((info, value) => info.SelfContained = string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)),
+        [nameof(TargetFramework)] = new((info, value) => info.TargetFramework = value),
+        [nameof(TargetFrameworks)] = new((info, value) => info.TargetFrameworks = value),
     };
 
     /// <summary>
-    /// Maps MSBuild item type names to their dictionary accessor.
+    /// Maps MSBuild item type names to their metadata.
     /// </summary>
-    private static readonly Dictionary<string, Func<MSBuildProjectInfo, IDictionary<string, ITaskItem>>> ItemDictionaries = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, ItemInfo> Items = new(StringComparer.OrdinalIgnoreCase)
     {
-        [nameof(PackageReference)] = info => info.PackageReference,
-        [nameof(PackageDownload)] = info => info.PackageDownload,
+        [nameof(PackageReference)] = new(info => info.PackageReference),
+        [nameof(PackageDownload)] = new(info => info.PackageDownload),
     };
 
     /// <summary>
@@ -145,15 +147,37 @@ internal class MSBuildProjectInfo
     /// Determines whether the specified item type is one that this class captures.
     /// </summary>
     /// <param name="itemType">The MSBuild item type.</param>
+    /// <param name="isPath">When true, the item's ItemSpec is a filesystem path that may need rebasing.</param>
     /// <returns>True if the item type is of interest; otherwise, false.</returns>
-    public static bool IsItemTypeOfInterest(string itemType) => ItemDictionaries.ContainsKey(itemType);
+    public static bool IsItemTypeOfInterest(string itemType, out bool isPath)
+    {
+        if (Items.TryGetValue(itemType, out var info))
+        {
+            isPath = info.IsPath;
+            return true;
+        }
+
+        isPath = false;
+        return false;
+    }
 
     /// <summary>
     /// Determines whether the specified property name is one that this class captures.
     /// </summary>
     /// <param name="propertyName">The MSBuild property name.</param>
+    /// <param name="isPath">When true, the property value is a filesystem path that may need rebasing.</param>
     /// <returns>True if the property is of interest; otherwise, false.</returns>
-    public static bool IsPropertyOfInterest(string propertyName) => PropertySetters.ContainsKey(propertyName);
+    public static bool IsPropertyOfInterest(string propertyName, out bool isPath)
+    {
+        if (Properties.TryGetValue(propertyName, out var info))
+        {
+            isPath = info.IsPath;
+            return true;
+        }
+
+        isPath = false;
+        return false;
+    }
 
     /// <summary>
     /// Sets a property value if it is one of the properties of interest.
@@ -163,9 +187,9 @@ internal class MSBuildProjectInfo
     /// <returns>True if the property was set; otherwise, false.</returns>
     public bool TrySetProperty(string propertyName, string value)
     {
-        if (PropertySetters.TryGetValue(propertyName, out var setter))
+        if (Properties.TryGetValue(propertyName, out var info))
         {
-            setter(this, value);
+            info.Setter(this, value);
             return true;
         }
 
@@ -180,12 +204,12 @@ internal class MSBuildProjectInfo
     /// <returns>True if the item was added or updated; otherwise, false.</returns>
     public bool TryAddOrUpdateItem(string itemType, ITaskItem item)
     {
-        if (item == null || !ItemDictionaries.TryGetValue(itemType, out var getDictionary))
+        if (item == null || !Items.TryGetValue(itemType, out var itemInfo))
         {
             return false;
         }
 
-        var dictionary = getDictionary(this);
+        var dictionary = itemInfo.GetDictionary(this);
         dictionary[item.ItemSpec] = item;
         return true;
     }
@@ -198,12 +222,12 @@ internal class MSBuildProjectInfo
     /// <returns>True if the item was removed; otherwise, false.</returns>
     public bool TryRemoveItem(string itemType, string itemSpec)
     {
-        if (!ItemDictionaries.TryGetValue(itemType, out var getDictionary))
+        if (!Items.TryGetValue(itemType, out var info))
         {
             return false;
         }
 
-        var dictionary = getDictionary(this);
+        var dictionary = info.GetDictionary(this);
         return dictionary.Remove(itemSpec);
     }
 
@@ -262,4 +286,14 @@ internal class MSBuildProjectInfo
             target.TryAdd(kvp.Key, kvp.Value);
         }
     }
+
+    /// <summary>
+    /// Metadata for a tracked MSBuild property: its setter and whether its value is a filesystem path.
+    /// </summary>
+    private record PropertyInfo(Action<MSBuildProjectInfo, string> Setter, bool IsPath = false);
+
+    /// <summary>
+    /// Metadata for a tracked MSBuild item type: its dictionary accessor and whether its ItemSpec is a filesystem path.
+    /// </summary>
+    private record ItemInfo(Func<MSBuildProjectInfo, IDictionary<string, ITaskItem>> GetDictionary, bool IsPath = false);
 }

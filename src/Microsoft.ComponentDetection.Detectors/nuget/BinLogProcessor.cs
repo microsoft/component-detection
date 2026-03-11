@@ -3,9 +3,11 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Logging.StructuredLogger;
+using Microsoft.ComponentDetection.Detectors.DotNet;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -22,10 +24,18 @@ internal class BinLogProcessor : IBinLogProcessor
     public BinLogProcessor(Microsoft.Extensions.Logging.ILogger logger) => this.logger = logger;
 
     /// <inheritdoc />
-    public IReadOnlyList<MSBuildProjectInfo> ExtractProjectInfo(string binlogPath)
+    public IReadOnlyList<MSBuildProjectInfo> ExtractProjectInfo(string binlogPath, string? sourceDirectory = null)
     {
         // Maps project path to the primary MSBuildProjectInfo for that project
         var projectInfoByPath = new Dictionary<string, MSBuildProjectInfo>(StringComparer.OrdinalIgnoreCase);
+
+        // Pre-compute source directory info for path rebasing.
+        // When the binlog was built on a different machine, BinLogFilePath (recorded at the start
+        // of the log) lets us derive the root substitution. The rebasePath function is set once
+        // the BinLogFilePath message is seen and is applied inline to all path-valued properties.
+        var normalizedSourceDir = PathRebasingUtility.NormalizeDirectory(sourceDirectory);
+        var binlogDir = PathRebasingUtility.NormalizeDirectory(Path.GetDirectoryName(binlogPath));
+        Func<string, string>? rebasePath = null;
 
         try
         {
@@ -51,7 +61,7 @@ internal class BinLogProcessor : IBinLogProcessor
                         projectInfoByEvaluationId[e.BuildEventContext.EvaluationId] = projectInfo;
                     }
 
-                    this.PopulateFromEvaluation(projectEvalArgs, projectInfo);
+                    this.PopulateFromEvaluation(projectEvalArgs, projectInfo, rebasePath);
                 }
             };
 
@@ -67,7 +77,37 @@ internal class BinLogProcessor : IBinLogProcessor
                     if (!string.IsNullOrEmpty(e.ProjectFile) &&
                         projectInfoByEvaluationId.TryGetValue(e.BuildEventContext.EvaluationId, out var projectInfo))
                     {
-                        projectInfo.ProjectPath = e.ProjectFile;
+                        projectInfo.ProjectPath = rebasePath != null ? rebasePath(e.ProjectFile) : e.ProjectFile;
+                    }
+                }
+            };
+
+            // Hook into message events to capture BinLogFilePath from the initial build messages.
+            // MSBuild's BinaryLogger writes "BinLogFilePath=<path>" as a BuildMessageEventArgs
+            // with SenderName "BinaryLogger" at the start of the log. This arrives before any
+            // evaluation or project events, so we can compute the rebase function here and apply
+            // it to all subsequent path-valued properties.
+            // https://github.com/dotnet/msbuild/blob/7d73e8e9074fe9a4420e38cd22d45645b28a11f7/src/Build/Logging/BinaryLogger/BinaryLogger.cs#L473
+            reader.MessageRaised += (sender, e) =>
+            {
+                if (rebasePath == null &&
+                    binlogDir != null &&
+                    normalizedSourceDir != null &&
+                    e is BuildMessageEventArgs msg &&
+                    msg.SenderName == "BinaryLogger" &&
+                    msg.Message != null &&
+                    msg.Message.StartsWith("BinLogFilePath=", StringComparison.Ordinal))
+                {
+                    var originalBinLogFilePath = msg.Message["BinLogFilePath=".Length..];
+                    var originalBinlogDir = PathRebasingUtility.NormalizeDirectory(Path.GetDirectoryName(originalBinLogFilePath));
+                    var rebaseRoot = PathRebasingUtility.GetRebaseRoot(normalizedSourceDir, binlogDir, originalBinlogDir);
+                    if (rebaseRoot != null)
+                    {
+                        this.logger.LogDebug(
+                            "Rebasing binlog paths from build-machine root '{RebaseRoot}' to scan-machine root '{SourceDirectory}'",
+                            rebaseRoot,
+                            normalizedSourceDir);
+                        rebasePath = path => PathRebasingUtility.RebasePath(path, rebaseRoot, normalizedSourceDir!);
                     }
                 }
             };
@@ -75,7 +115,7 @@ internal class BinLogProcessor : IBinLogProcessor
             // Hook into any event to capture property reassignments and item changes during build
             reader.AnyEventRaised += (sender, e) =>
             {
-                this.HandleBuildEvent(e, projectInstanceToEvaluationMap, projectInfoByEvaluationId);
+                this.HandleBuildEvent(e, projectInstanceToEvaluationMap, projectInfoByEvaluationId, rebasePath);
             };
 
             // Hook into project finished to collect final project info and establish hierarchy
@@ -194,7 +234,7 @@ internal class BinLogProcessor : IBinLogProcessor
     /// <summary>
     /// Populates project info from evaluation results (properties and items).
     /// </summary>
-    private void PopulateFromEvaluation(ProjectEvaluationFinishedEventArgs projectEvalArgs, MSBuildProjectInfo projectInfo)
+    private void PopulateFromEvaluation(ProjectEvaluationFinishedEventArgs projectEvalArgs, MSBuildProjectInfo projectInfo, Func<string, string>? rebasePath)
     {
         // Extract properties
         if (projectEvalArgs?.Properties != null)
@@ -205,7 +245,7 @@ internal class BinLogProcessor : IBinLogProcessor
             {
                 foreach (var kvp in propertiesDict)
                 {
-                    projectInfo.TrySetProperty(kvp.Key, kvp.Value);
+                    this.SetPropertyWithRebase(projectInfo, kvp.Key, kvp.Value, rebasePath);
                 }
             }
             else
@@ -229,7 +269,7 @@ internal class BinLogProcessor : IBinLogProcessor
 
                     if (!string.IsNullOrEmpty(key))
                     {
-                        projectInfo.TrySetProperty(key, value ?? string.Empty);
+                        this.SetPropertyWithRebase(projectInfo, key, value ?? string.Empty, rebasePath);
                     }
                 }
             }
@@ -245,9 +285,15 @@ internal class BinLogProcessor : IBinLogProcessor
             {
                 if (itemEntry is DictionaryEntry entry &&
                     entry.Key is string itemType &&
-                    MSBuildProjectInfo.IsItemTypeOfInterest(itemType) &&
+                    MSBuildProjectInfo.IsItemTypeOfInterest(itemType, out var isPath) &&
                     entry.Value is ITaskItem taskItem)
                 {
+                    if (isPath && rebasePath != null)
+                    {
+                        // Rebase the item spec if it's a path
+                        taskItem.ItemSpec = rebasePath(taskItem.ItemSpec);
+                    }
+
                     projectInfo.TryAddOrUpdateItem(itemType, taskItem);
                 }
             }
@@ -260,7 +306,8 @@ internal class BinLogProcessor : IBinLogProcessor
     private void HandleBuildEvent(
         BuildEventArgs? args,
         Dictionary<int, int> projectInstanceToEvaluationMap,
-        Dictionary<int, MSBuildProjectInfo> projectInfoByEvaluationId)
+        Dictionary<int, MSBuildProjectInfo> projectInfoByEvaluationId,
+        Func<string, string>? rebasePath)
     {
         if (!this.TryGetProjectInfo(args, projectInstanceToEvaluationMap, projectInfoByEvaluationId, out var projectInfo))
         {
@@ -271,26 +318,24 @@ internal class BinLogProcessor : IBinLogProcessor
         {
             // Property reassignments (when a property value changes during the build)
             case PropertyReassignmentEventArgs propertyReassignment:
-                projectInfo.TrySetProperty(propertyReassignment.PropertyName, propertyReassignment.NewValue);
+                this.SetPropertyWithRebase(projectInfo, propertyReassignment.PropertyName, propertyReassignment.NewValue, rebasePath);
                 break;
 
             // Initial property value set events
             case PropertyInitialValueSetEventArgs propertyInitialValueSet:
-                projectInfo.TrySetProperty(propertyInitialValueSet.PropertyName, propertyInitialValueSet.PropertyValue);
+                this.SetPropertyWithRebase(projectInfo, propertyInitialValueSet.PropertyName, propertyInitialValueSet.PropertyValue, rebasePath);
                 break;
 
             // Environment variable reads during evaluation - MSBuild promotes env vars to properties
             case EnvironmentVariableReadEventArgs envVarRead when
-                !string.IsNullOrEmpty(envVarRead.EnvironmentVariableName) &&
-                MSBuildProjectInfo.IsPropertyOfInterest(envVarRead.EnvironmentVariableName):
-                projectInfo.TrySetProperty(envVarRead.EnvironmentVariableName, envVarRead.Message ?? string.Empty);
+                !string.IsNullOrEmpty(envVarRead.EnvironmentVariableName):
+                this.SetPropertyWithRebase(projectInfo, envVarRead.EnvironmentVariableName, envVarRead.Message ?? string.Empty, rebasePath);
                 break;
 
             // Task parameter events which can contain item arrays for add/remove/update
             case TaskParameterEventArgs taskParameter when
-                MSBuildProjectInfo.IsItemTypeOfInterest(taskParameter.ItemType) &&
                 taskParameter.Items is IList<ITaskItem> taskItems:
-                this.ProcessTaskParameterItems(taskParameter.Kind, taskParameter.ItemType, taskItems, projectInfo);
+                this.ProcessTaskParameterItems(taskParameter.Kind, taskParameter.ItemType, taskItems, projectInfo, rebasePath);
                 break;
 
             default:
@@ -340,13 +385,20 @@ internal class BinLogProcessor : IBinLogProcessor
         TaskParameterMessageKind kind,
         string itemType,
         IList<ITaskItem> items,
-        MSBuildProjectInfo projectInfo)
+        MSBuildProjectInfo projectInfo,
+        Func<string, string>? rebasePath)
     {
+        if (!MSBuildProjectInfo.IsItemTypeOfInterest(itemType, out var isPath))
+        {
+            return;
+        }
+
         if (kind == TaskParameterMessageKind.RemoveItem)
         {
             foreach (var item in items)
             {
-                projectInfo.TryRemoveItem(itemType, item.ItemSpec);
+                var itemSpec = isPath && rebasePath != null ? rebasePath(item.ItemSpec) : item.ItemSpec;
+                projectInfo.TryRemoveItem(itemType, itemSpec);
             }
         }
         else if (kind == TaskParameterMessageKind.TaskInput ||
@@ -355,10 +407,34 @@ internal class BinLogProcessor : IBinLogProcessor
         {
             foreach (var item in items)
             {
+                if (isPath && rebasePath != null)
+                {
+                    // Rebase the item spec if it's a path
+                    item.ItemSpec = rebasePath(item.ItemSpec);
+                }
+
                 projectInfo.TryAddOrUpdateItem(itemType, item);
             }
         }
 
         // SkippedTargetInputs and SkippedTargetOutputs are informational and don't modify items
+    }
+
+    /// <summary>
+    /// Sets a property on a project info, rebasing the value first if it is a path property.
+    /// </summary>
+    private void SetPropertyWithRebase(MSBuildProjectInfo projectInfo, string propertyName, string value, Func<string, string>? rebasePath)
+    {
+        if (!MSBuildProjectInfo.IsPropertyOfInterest(propertyName, out var isPath))
+        {
+            return;
+        }
+
+        if (isPath && rebasePath != null && !string.IsNullOrEmpty(value))
+        {
+            value = rebasePath(value);
+        }
+
+        projectInfo.TrySetProperty(propertyName, value);
     }
 }

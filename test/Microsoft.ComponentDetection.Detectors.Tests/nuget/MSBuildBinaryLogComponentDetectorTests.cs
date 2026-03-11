@@ -649,7 +649,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     {
         var binLogProcessorMock = new Mock<IBinLogProcessor>();
         binLogProcessorMock
-            .Setup(x => x.ExtractProjectInfo(binlogPath))
+            .Setup(x => x.ExtractProjectInfo(binlogPath, It.IsAny<string?>()))
             .Returns(projectInfos);
 
         var walkerMock = new Mock<IObservableDirectoryWalkerFactory>();
@@ -717,7 +717,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
         foreach (var (binlogPath, projectInfos) in binlogProjectInfos)
         {
             binLogProcessorMock
-                .Setup(x => x.ExtractProjectInfo(binlogPath))
+                .Setup(x => x.ExtractProjectInfo(binlogPath, It.IsAny<string?>()))
                 .Returns(projectInfos);
         }
 

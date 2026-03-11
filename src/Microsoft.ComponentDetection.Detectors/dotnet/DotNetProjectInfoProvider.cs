@@ -128,22 +128,8 @@ internal class DotNetProjectInfoProvider
         }
     }
 
-    private static string TrimAllEndingDirectorySeparators(string path)
-    {
-        string last;
-
-        do
-        {
-            last = path;
-            path = Path.TrimEndingDirectorySeparator(last);
-        }
-        while (!ReferenceEquals(last, path));
-
-        return path;
-    }
-
     [return: NotNullIfNotNull(nameof(path))]
-    private string? NormalizeDirectory(string? path) => string.IsNullOrEmpty(path) ? path : TrimAllEndingDirectorySeparators(this.pathUtilityService.NormalizePath(path));
+    private string? NormalizeDirectory(string? path) => PathRebasingUtility.NormalizeDirectory(path);
 
     /// <summary>
     /// Given a path under sourceDirectory, and the same path in another filesystem,
@@ -154,35 +140,17 @@ internal class DotNetProjectInfoProvider
     /// <returns>Portion of <paramref name="rebasePath"/> that corresponds to root, or null if it can not be rebased.</returns>
     internal string? GetRootRebasePath(string sourceDirectoryBasedPath, string? rebasePath)
     {
-        if (string.IsNullOrEmpty(rebasePath) || string.IsNullOrEmpty(this.sourceDirectory) || string.IsNullOrEmpty(sourceDirectoryBasedPath))
+        var result = PathRebasingUtility.GetRebaseRoot(this.sourceDirectory, sourceDirectoryBasedPath, rebasePath);
+
+        if (result != null)
         {
-            return null;
+            this.logger.LogDebug(
+                "Rebasing paths from {RebasePath} to {SourceDirectoryBasedPath}",
+                rebasePath,
+                sourceDirectoryBasedPath);
         }
 
-        // sourceDirectory is normalized, normalize others
-        sourceDirectoryBasedPath = this.NormalizeDirectory(sourceDirectoryBasedPath);
-        rebasePath = this.NormalizeDirectory(rebasePath);
-
-        // nothing to do if the paths are the same
-        if (rebasePath.Equals(sourceDirectoryBasedPath, StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        // find the relative path under sourceDirectory.
-        var sourceDirectoryRelativePath = this.NormalizeDirectory(Path.GetRelativePath(this.sourceDirectory!, sourceDirectoryBasedPath));
-
-        this.logger.LogDebug("Attempting to rebase {RebasePath} to {SourceDirectoryBasedPath} using relative {SourceDirectoryRelativePath}", rebasePath, sourceDirectoryBasedPath, sourceDirectoryRelativePath);
-
-        // if the rebase path has the same relative portion, then we have a replacement.
-        if (rebasePath.EndsWith(sourceDirectoryRelativePath))
-        {
-            return rebasePath[..^sourceDirectoryRelativePath.Length];
-        }
-
-        // The path didn't have a common relative path, it might have been copied from a completely different location since it was built.
-        // We cannot rebase the paths.
-        return null;
+        return result;
     }
 
     internal string? GetProjectType(string projectOutputPath, string projectName)
