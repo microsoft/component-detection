@@ -21,6 +21,11 @@ internal enum ImageReferenceKind
     /// An OCI archive (tarball) file on disk (e.g., "oci-archive:/path/to/image.tar").
     /// </summary>
     OciArchive,
+
+    /// <summary>
+    /// A Docker archive (tarball) file on disk created by "docker save" (e.g., "docker-archive:/path/to/image.tar").
+    /// </summary>
+    DockerArchive,
 }
 
 /// <summary>
@@ -30,6 +35,7 @@ internal class ImageReference
 {
     private const string OciDirPrefix = "oci-dir:";
     private const string OciArchivePrefix = "oci-archive:";
+    private const string DockerArchivePrefix = "docker-archive:";
 
     /// <summary>
     /// Gets the original input string as provided by the user.
@@ -83,6 +89,22 @@ internal class ImageReference
                 OriginalInput = input,
                 Reference = path,
                 Kind = ImageReferenceKind.OciArchive,
+            };
+        }
+
+        if (input.StartsWith(DockerArchivePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var path = input[DockerArchivePrefix.Length..];
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentException($"Input with '{DockerArchivePrefix}' prefix must include a path.", nameof(input));
+            }
+
+            return new ImageReference
+            {
+                OriginalInput = input,
+                Reference = path,
+                Kind = ImageReferenceKind.DockerArchive,
             };
         }
 
