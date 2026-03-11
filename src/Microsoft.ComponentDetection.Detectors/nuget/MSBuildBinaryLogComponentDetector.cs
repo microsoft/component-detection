@@ -15,6 +15,7 @@ using Microsoft.Build.Framework;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.DotNet;
 using Microsoft.Extensions.Logging;
 using Task = System.Threading.Tasks.Task;
 
@@ -53,6 +54,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
 {
     private readonly IBinLogProcessor binLogProcessor;
     private readonly IFileUtilityService fileUtilityService;
+    private readonly DotNetProjectInfoProvider projectInfoProvider;
     private readonly LockFileFormat lockFileFormat = new();
 
     // Track which assets files have been processed to avoid duplicate processing
@@ -69,12 +71,18 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// </summary>
     /// <param name="componentStreamEnumerableFactory">Factory for creating component streams.</param>
     /// <param name="walkerFactory">Factory for directory walking.</param>
+    /// <param name="commandLineInvocationService">Service for command line invocation.</param>
+    /// <param name="directoryUtilityService">Service for directory operations.</param>
     /// <param name="fileUtilityService">Service for file operations.</param>
+    /// <param name="pathUtilityService">Service for path operations.</param>
     /// <param name="logger">Logger for diagnostic messages.</param>
     public MSBuildBinaryLogComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        IDirectoryUtilityService directoryUtilityService,
         IFileUtilityService fileUtilityService,
+        IPathUtilityService pathUtilityService,
         ILogger<MSBuildBinaryLogComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
@@ -82,6 +90,12 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         this.binLogProcessor = new BinLogProcessor(logger);
         this.fileUtilityService = fileUtilityService;
         this.Logger = logger;
+        this.projectInfoProvider = new DotNetProjectInfoProvider(
+            commandLineInvocationService,
+            directoryUtilityService,
+            fileUtilityService,
+            pathUtilityService,
+            logger);
     }
 
     /// <summary>
@@ -91,7 +105,10 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     internal MSBuildBinaryLogComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
+        ICommandLineInvocationService commandLineInvocationService,
+        IDirectoryUtilityService directoryUtilityService,
         IFileUtilityService fileUtilityService,
+        IPathUtilityService pathUtilityService,
         IBinLogProcessor binLogProcessor,
         ILogger<MSBuildBinaryLogComponentDetector> logger)
     {
@@ -100,6 +117,12 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         this.binLogProcessor = binLogProcessor;
         this.fileUtilityService = fileUtilityService;
         this.Logger = logger;
+        this.projectInfoProvider = new DotNetProjectInfoProvider(
+            commandLineInvocationService,
+            directoryUtilityService,
+            fileUtilityService,
+            pathUtilityService,
+            logger);
     }
 
     /// <inheritdoc />
@@ -116,6 +139,13 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
 
     /// <inheritdoc />
     public override int Version { get; } = 1;
+
+    /// <inheritdoc />
+    public override Task<IndividualDetectorScanResult> ExecuteDetectorAsync(ScanRequest request, CancellationToken cancellationToken = default)
+    {
+        this.projectInfoProvider.Initialize(request.SourceDirectory.FullName, request.SourceFileRoot?.FullName);
+        return base.ExecuteDetectorAsync(request, cancellationToken);
+    }
 
     /// <inheritdoc />
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
@@ -147,7 +177,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     }
 
     /// <inheritdoc />
-    protected override Task OnFileFoundAsync(
+    protected override async Task OnFileFoundAsync(
         ProcessRequest processRequest,
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
@@ -160,10 +190,8 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         }
         else if (processRequest.ComponentStream.Location.EndsWith("project.assets.json", StringComparison.OrdinalIgnoreCase))
         {
-            this.ProcessAssetsFile(processRequest);
+            await this.ProcessAssetsFileAsync(processRequest, cancellationToken);
         }
-
-        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -205,64 +233,6 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// </summary>
     private static bool IsSelfContainedFromProjectInfo(MSBuildProjectInfo projectInfo) =>
         projectInfo.SelfContained == true || projectInfo.PublishAot == true;
-
-    /// <summary>
-    /// Determines if a project is self-contained by inspecting the lock file.
-    /// This is the same heuristic used by DotNetComponentDetector:
-    /// 1. Check for Microsoft.DotNet.ILCompiler in target libraries (indicates PublishAot).
-    /// 2. Check for runtime download dependencies matching framework references (indicates SelfContained).
-    /// </summary>
-    private static bool IsSelfContainedFromLockFile(PackageSpec? packageSpec, NuGetFramework? targetFramework, LockFileTarget target)
-    {
-        // PublishAot projects reference Microsoft.DotNet.ILCompiler
-        if (target.Libraries.Any(lib => "Microsoft.DotNet.ILCompiler".Equals(lib.Name, StringComparison.OrdinalIgnoreCase)))
-        {
-            return true;
-        }
-
-        if (packageSpec?.TargetFrameworks == null || targetFramework == null)
-        {
-            return false;
-        }
-
-        var targetFrameworkInfo = packageSpec.TargetFrameworks.FirstOrDefault(tf => tf.FrameworkName == targetFramework);
-        if (targetFrameworkInfo == null)
-        {
-            return false;
-        }
-
-        var frameworkReferences = targetFrameworkInfo.FrameworkReferences;
-        var packageDownloads = targetFrameworkInfo.DownloadDependencies;
-
-        if (frameworkReferences == null || frameworkReferences.Count == 0 || packageDownloads.IsDefaultOrEmpty)
-        {
-            return false;
-        }
-
-        foreach (var frameworkRef in frameworkReferences)
-        {
-            if (packageDownloads.Any(pd => pd.Name.StartsWith($"{frameworkRef.Name}.Runtime", StringComparison.OrdinalIgnoreCase)))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Appends "-selfcontained" suffix to the project type when the project is self-contained.
-    /// Matches DotNetComponentDetector's GetTargetTypeWithSelfContained behavior.
-    /// </summary>
-    private static string? GetTargetTypeWithSelfContained(string? targetType, bool isSelfContained)
-    {
-        if (string.IsNullOrWhiteSpace(targetType))
-        {
-            return targetType;
-        }
-
-        return isSelfContained ? $"{targetType}-selfcontained" : targetType;
-    }
 
     private void ProcessBinlogFile(ProcessRequest processRequest)
     {
@@ -390,8 +360,8 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
             foreach (var target in lockFile.Targets)
             {
                 var isSelfContained = isSelfContainedFromBinlog ||
-                    IsSelfContainedFromLockFile(lockFile.PackageSpec, target.TargetFramework, target);
-                var projectType = GetTargetTypeWithSelfContained(targetType, isSelfContained);
+                    LockFileUtilities.IsSelfContainedFromLockFile(lockFile.PackageSpec, target.TargetFramework, target);
+                var projectType = LockFileUtilities.GetTargetTypeWithSelfContained(targetType, isSelfContained);
                 var frameworkName = target.TargetFramework?.GetShortFolderName();
 
                 singleFileComponentRecorder.RegisterUsage(
@@ -406,7 +376,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         }
 
         // Binlog-only path: no lock file available or no targets in lock file
-        var projectTypeFromBinlog = GetTargetTypeWithSelfContained(targetType, isSelfContainedFromBinlog);
+        var projectTypeFromBinlog = LockFileUtilities.GetTargetTypeWithSelfContained(targetType, isSelfContainedFromBinlog);
 
         // Get target frameworks from binlog properties
         var targetFrameworks = new List<string>();
@@ -436,7 +406,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         }
     }
 
-    private void ProcessAssetsFile(ProcessRequest processRequest)
+    private async Task ProcessAssetsFileAsync(ProcessRequest processRequest, CancellationToken cancellationToken)
     {
         var assetsFilePath = processRequest.ComponentStream.Location;
 
@@ -473,11 +443,11 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
             else
             {
                 // Fallback to standard processing without binlog info
-                // This matches NuGetProjectModelProjectCentricComponentDetector's behavior exactly
+                // This matches NuGetProjectModelProjectCentricComponentDetector + DotNetComponentDetector behavior
                 this.Logger.LogDebug(
                     "No binlog information found for assets file: {AssetsFile}. Using fallback processing.",
                     assetsFilePath);
-                this.ProcessLockFileFallback(lockFile, assetsFilePath);
+                await this.ProcessLockFileFallbackAsync(lockFile, assetsFilePath, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -522,14 +492,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// </remarks>
     private void ProcessLockFileWithProjectInfo(LockFile lockFile, MSBuildProjectInfo projectInfo)
     {
-        var explicitReferencedDependencies = LockFileUtilities.GetTopLevelLibraries(lockFile)
-            .Select(x => LockFileUtilities.GetLibraryComponentWithDependencyLookup(lockFile.Libraries, x.Name, x.Version, x.VersionRange, this.Logger))
-            .Where(x => x != null)
-            .ToList();
-
-        var explicitlyReferencedComponentIds = explicitReferencedDependencies
-            .Select(x => new NuGetComponent(x!.Name, x.Version.ToNormalizedString()).Id)
-            .ToHashSet();
+        var (explicitReferencedDependencies, explicitlyReferencedComponentIds) = LockFileUtilities.ResolveExplicitDependencies(lockFile, this.Logger);
 
         // Use project path from RestoreMetadata (consistent with NuGetProjectModelProjectCentricComponentDetector)
         var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(
@@ -565,7 +528,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
 
             foreach (var dependency in explicitReferencedDependencies)
             {
-                var library = target.GetTargetLibrary(dependency!.Name);
+                var library = target.GetTargetLibrary(dependency.Name);
                 if (library?.Name == null)
                 {
                     continue;
@@ -639,44 +602,14 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// This method exactly matches NuGetProjectModelProjectCentricComponentDetector's behavior
     /// to ensure no loss of information when binlog data is not available.
     /// </remarks>
-    private void ProcessLockFileFallback(LockFile lockFile, string location)
+    private async Task ProcessLockFileFallbackAsync(LockFile lockFile, string location, CancellationToken cancellationToken)
     {
-        var explicitReferencedDependencies = LockFileUtilities.GetTopLevelLibraries(lockFile)
-            .Select(x => LockFileUtilities.GetLibraryComponentWithDependencyLookup(lockFile.Libraries, x.Name, x.Version, x.VersionRange, this.Logger))
-            .Where(x => x != null)
-            .ToList();
-
-        var explicitlyReferencedComponentIds = explicitReferencedDependencies
-            .Select(x => new NuGetComponent(x!.Name, x.Version.ToNormalizedString()).Id)
-            .ToHashSet();
-
-        // Use project path from RestoreMetadata (consistent with NuGetProjectModelProjectCentricComponentDetector)
         var projectPath = lockFile.PackageSpec?.RestoreMetadata?.ProjectPath ?? location;
         var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(projectPath);
+        LockFileUtilities.ProcessLockFile(lockFile, singleFileComponentRecorder, this.Logger);
 
-        foreach (var target in lockFile.Targets)
-        {
-            var frameworkReferences = LockFileUtilities.GetFrameworkReferences(lockFile, target);
-            var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework, frameworkReferences, target);
-
-            // Same logic as NuGetProjectModelProjectCentricComponentDetector.IsFrameworkOrDevelopmentDependency
-            bool IsFrameworkOrDevDependency(LockFileTargetLibrary library) =>
-                frameworkPackages.Any(fp => fp.IsAFrameworkComponent(library.Name, library.Version)) ||
-                LockFileUtilities.IsADevelopmentDependency(library, lockFile);
-
-            foreach (var library in explicitReferencedDependencies.Select(x => target.GetTargetLibrary(x!.Name)).Where(x => x != null))
-            {
-                LockFileUtilities.NavigateAndRegister(
-                    target,
-                    explicitlyReferencedComponentIds,
-                    singleFileComponentRecorder,
-                    library!,
-                    null,
-                    IsFrameworkOrDevDependency);
-            }
-        }
-
-        // Register PackageDownload dependencies (same as NuGetProjectModelProjectCentricComponentDetector)
-        LockFileUtilities.RegisterPackageDownloads(singleFileComponentRecorder, lockFile);
+        // Register DotNet components (SDK version, target framework, project type)
+        // This matches DotNetComponentDetector's behavior for the fallback path
+        await this.projectInfoProvider.RegisterDotNetComponentsAsync(lockFile, location, this.ComponentRecorder, cancellationToken);
     }
 }

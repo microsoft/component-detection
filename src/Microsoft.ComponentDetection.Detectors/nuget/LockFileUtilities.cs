@@ -12,6 +12,9 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.Extensions.Logging;
 
+// LockFileUtilities also includes self-contained detection helpers shared by
+// DotNetComponentDetector and MSBuildBinaryLogComponentDetector.
+
 /// <summary>
 /// Shared utility methods for processing NuGet lock files (project.assets.json).
 /// Used by both NuGetProjectModelProjectCentricComponentDetector and MSBuildBinaryLogComponentDetector.
@@ -176,7 +179,7 @@ public static class LockFileUtilities
         {
             matchingLibrary = matchingLibraryNames.First();
             var versionString = versionRange != null ? versionRange.ToNormalizedString() : version?.ToString();
-            logger?.LogDebug(
+            logger?.LogWarning(
                 "Couldn't satisfy lookup for {Version}. Falling back to first found component for {MatchingLibraryName}, resolving to version {MatchingLibraryVersion}.",
                 versionString,
                 matchingLibrary.Name,
@@ -289,5 +292,136 @@ public static class LockFileUtilities
                     targetFramework: tfm?.GetShortFolderName());
             }
         }
+    }
+
+    /// <summary>
+    /// Resolves the top-level (explicit) dependencies from a lock file into actual library entries
+    /// and builds the set of component IDs for those dependencies.
+    /// </summary>
+    /// <param name="lockFile">The lock file to analyze.</param>
+    /// <param name="logger">Optional logger for warning messages.</param>
+    /// <returns>A tuple of the resolved library list and their component ID set.</returns>
+    internal static (List<LockFileLibrary> Libraries, HashSet<string> ComponentIds) ResolveExplicitDependencies(
+        LockFile lockFile,
+        ILogger? logger = null)
+    {
+        var libraries = new List<LockFileLibrary>();
+        foreach (var lib in GetTopLevelLibraries(lockFile))
+        {
+            var resolved = GetLibraryComponentWithDependencyLookup(lockFile.Libraries, lib.Name, lib.Version, lib.VersionRange, logger);
+            if (resolved != null)
+            {
+                libraries.Add(resolved);
+            }
+            else
+            {
+                logger?.LogWarning(
+                    "Could not resolve top-level dependency {DependencyName}. The project.assets.json may be malformed.",
+                    lib.Name);
+            }
+        }
+
+        var componentIds = libraries
+            .Select(x => new NuGetComponent(x.Name, x.Version.ToNormalizedString()).Id)
+            .ToHashSet();
+
+        return (libraries, componentIds);
+    }
+
+    /// <summary>
+    /// Processes a lock file using the standard project-centric approach:
+    /// resolves explicit dependencies, walks the dependency graph for each target,
+    /// and registers PackageDownload dependencies.
+    /// </summary>
+    /// <param name="lockFile">The lock file to process.</param>
+    /// <param name="singleFileComponentRecorder">The component recorder to register with.</param>
+    /// <param name="logger">Optional logger for warning messages.</param>
+    internal static void ProcessLockFile(
+        LockFile lockFile,
+        ISingleFileComponentRecorder singleFileComponentRecorder,
+        ILogger? logger = null)
+    {
+        var (explicitReferencedDependencies, explicitlyReferencedComponentIds) = ResolveExplicitDependencies(lockFile, logger);
+
+        foreach (var target in lockFile.Targets)
+        {
+            var frameworkReferences = GetFrameworkReferences(lockFile, target);
+            var frameworkPackages = FrameworkPackages.GetFrameworkPackages(target.TargetFramework, frameworkReferences, target);
+
+            bool IsFrameworkOrDevelopmentDependency(LockFileTargetLibrary library) =>
+                frameworkPackages.Any(fp => fp.IsAFrameworkComponent(library.Name, library.Version)) ||
+                IsADevelopmentDependency(library, lockFile);
+
+            foreach (var library in explicitReferencedDependencies.Select(x => target.GetTargetLibrary(x.Name)).Where(x => x != null))
+            {
+                NavigateAndRegister(target, explicitlyReferencedComponentIds, singleFileComponentRecorder, library!, null, IsFrameworkOrDevelopmentDependency);
+            }
+        }
+
+        RegisterPackageDownloads(singleFileComponentRecorder, lockFile);
+    }
+
+    /// <summary>
+    /// Determines if a project is self-contained by inspecting the lock file.
+    /// Checks for Microsoft.DotNet.ILCompiler in target libraries (indicates PublishAot)
+    /// and runtime download dependencies matching framework references (indicates SelfContained).
+    /// </summary>
+    /// <param name="packageSpec">The package spec from the lock file.</param>
+    /// <param name="targetFramework">The target framework to check.</param>
+    /// <param name="target">The lock file target containing library information.</param>
+    /// <returns>True if the project appears to be self-contained.</returns>
+    public static bool IsSelfContainedFromLockFile(PackageSpec? packageSpec, NuGetFramework? targetFramework, LockFileTarget target)
+    {
+        // PublishAot projects reference Microsoft.DotNet.ILCompiler
+        if (target?.Libraries != null &&
+            target.Libraries.Any(lib => "Microsoft.DotNet.ILCompiler".Equals(lib.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        if (packageSpec?.TargetFrameworks == null || targetFramework == null)
+        {
+            return false;
+        }
+
+        var targetFrameworkInfo = packageSpec.TargetFrameworks.FirstOrDefault(tf => tf.FrameworkName == targetFramework);
+        if (targetFrameworkInfo == null)
+        {
+            return false;
+        }
+
+        var frameworkReferences = targetFrameworkInfo.FrameworkReferences;
+        var packageDownloads = targetFrameworkInfo.DownloadDependencies;
+
+        if (frameworkReferences == null || frameworkReferences.Count == 0 || packageDownloads.IsDefaultOrEmpty)
+        {
+            return false;
+        }
+
+        foreach (var frameworkRef in frameworkReferences)
+        {
+            if (packageDownloads.Any(pd => pd.Name.StartsWith($"{frameworkRef.Name}.Runtime", StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Appends "-selfcontained" suffix to the project type when the project is self-contained.
+    /// </summary>
+    /// <param name="targetType">The base target type (e.g., "application" or "library").</param>
+    /// <param name="isSelfContained">Whether the project is self-contained.</param>
+    /// <returns>The target type with optional "-selfcontained" suffix.</returns>
+    public static string? GetTargetTypeWithSelfContained(string? targetType, bool isSelfContained)
+    {
+        if (string.IsNullOrWhiteSpace(targetType))
+        {
+            return targetType;
+        }
+
+        return isSelfContained ? $"{targetType}-selfcontained" : targetType;
     }
 }

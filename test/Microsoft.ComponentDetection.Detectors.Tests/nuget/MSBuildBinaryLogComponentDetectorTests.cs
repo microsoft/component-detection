@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.Build.Framework;
@@ -32,13 +33,29 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     private const string AssetsFilePath = @"C:\test\obj\project.assets.json";
     private const string BinlogFilePath = @"C:\test\build.binlog";
 
+    private readonly Mock<ICommandLineInvocationService> commandLineInvocationServiceMock;
     private readonly Mock<IFileUtilityService> fileUtilityServiceMock;
+    private readonly Mock<IPathUtilityService> pathUtilityServiceMock;
 
     public MSBuildBinaryLogComponentDetectorTests()
     {
+        this.commandLineInvocationServiceMock = new Mock<ICommandLineInvocationService>();
+        this.commandLineInvocationServiceMock
+            .Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<IEnumerable<string>>(), It.IsAny<DirectoryInfo>(), It.IsAny<CancellationToken>(), It.IsAny<string[]>()))
+            .ReturnsAsync(new CommandLineExecutionResult { ExitCode = 1 });
+
         this.fileUtilityServiceMock = new Mock<IFileUtilityService>();
         this.fileUtilityServiceMock.Setup(x => x.Exists(It.IsAny<string>())).Returns(true);
-        this.DetectorTestUtility.AddServiceMock(this.fileUtilityServiceMock);
+        this.fileUtilityServiceMock.Setup(x => x.Exists(It.Is<string>(p => p.EndsWith("global.json")))).Returns(false);
+
+        this.pathUtilityServiceMock = new Mock<IPathUtilityService>();
+        this.pathUtilityServiceMock.Setup(x => x.NormalizePath(It.IsAny<string>())).Returns<string>(p => p);
+        this.pathUtilityServiceMock.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns<string>(p => Path.GetDirectoryName(p) ?? string.Empty);
+
+        this.DetectorTestUtility
+            .AddServiceMock(this.commandLineInvocationServiceMock)
+            .AddServiceMock(this.fileUtilityServiceMock)
+            .AddServiceMock(this.pathUtilityServiceMock);
     }
 
     // ================================================================
@@ -504,14 +521,22 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
 
         var walkerMock = new Mock<IObservableDirectoryWalkerFactory>();
         var streamFactoryMock = new Mock<IComponentStreamEnumerableFactory>();
+        var commandLineInvocationMock = new Mock<ICommandLineInvocationService>();
+        var directoryUtilityMock = new Mock<IDirectoryUtilityService>();
         var fileUtilityMock = new Mock<IFileUtilityService>();
         fileUtilityMock.Setup(x => x.Exists(It.IsAny<string>())).Returns(true);
+        var pathUtilityMock = new Mock<IPathUtilityService>();
+        pathUtilityMock.Setup(x => x.NormalizePath(It.IsAny<string>())).Returns<string>(p => p);
+        pathUtilityMock.Setup(x => x.GetParentDirectory(It.IsAny<string>())).Returns<string>(p => Path.GetDirectoryName(p) ?? string.Empty);
         var loggerMock = new Mock<ILogger<MSBuildBinaryLogComponentDetector>>();
 
         var detector = new MSBuildBinaryLogComponentDetector(
             streamFactoryMock.Object,
             walkerMock.Object,
+            commandLineInvocationMock.Object,
+            directoryUtilityMock.Object,
             fileUtilityMock.Object,
+            pathUtilityMock.Object,
             binLogProcessorMock.Object,
             loggerMock.Object);
 
