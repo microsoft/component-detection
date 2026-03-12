@@ -79,13 +79,30 @@ internal static class PathRebasingUtility
     /// <param name="path">The absolute path to rebase (from the build artifact).</param>
     /// <param name="originalRoot">The root prefix from the build artifact (as returned by <see cref="GetRebaseRoot"/>).</param>
     /// <param name="newRoot">The root on the scanning machine (typically sourceDirectory).</param>
-    /// <returns>The rebased path under <paramref name="newRoot"/>.</returns>
+    /// <returns>
+    /// The rebased path under <paramref name="newRoot"/>, or the normalized input
+    /// unchanged when it is not rooted or not under <paramref name="originalRoot"/>.
+    /// </returns>
     internal static string RebasePath(string path, string originalRoot, string newRoot)
     {
         var normalizedPath = NormalizeDirectory(path)!;
+
+        if (!Path.IsPathRooted(normalizedPath))
+        {
+            return normalizedPath;
+        }
+
         var normalizedOriginal = NormalizeDirectory(originalRoot)!;
         var normalizedNew = NormalizeDirectory(newRoot)!;
         var relative = Path.GetRelativePath(normalizedOriginal, normalizedPath);
+
+        // If the path is outside the original root the relative result will start
+        // with ".." or remain rooted (Windows cross-drive). Return unchanged.
+        if (Path.IsPathRooted(relative) || relative.StartsWith("..", StringComparison.Ordinal))
+        {
+            return normalizedPath;
+        }
+
         return NormalizePath(Path.Combine(normalizedNew, relative));
     }
 
