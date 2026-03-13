@@ -696,4 +696,112 @@ public class NpmDetectorWithRootsTests
         var detectedComponents = componentRecorder.GetDetectedComponents();
         detectedComponents.Should().BeEmpty(); // No dependencies should be detected since dependencies is missing
     }
+
+    [TestMethod]
+    public async Task TestNpmDetector_V1Lockfile_AliasedScopedPackages_UsesRealNameAsync()
+    {
+        // In v1/v2 lockfiles, aliased packages have a version field like "npm:@scope/name@version"
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 1,
+                ""dependencies"": {
+                    ""js-yaml"": {
+                        ""version"": ""npm:@zkochan/js-yaml@0.0.9"",
+                        ""resolved"": ""https://registry.npmjs.org/@zkochan/js-yaml/-/js-yaml-0.0.9.tgz"",
+                        ""integrity"": ""sha512-nAEMjKcB1LDrMyYnjNsDkxoewI2aexrwlT3UJeL+nlbd64FEQNmKgPGAYIieaLVgtpRiHE9OL6/rmHLlstQwnQ==""
+                    },
+                    ""ramda"": {
+                        ""version"": ""npm:@pnpm/ramda@0.28.1"",
+                        ""resolved"": ""https://registry.npmjs.org/@pnpm/ramda/-/ramda-0.28.1.tgz"",
+                        ""integrity"": ""sha512-W86pkk7P9PAfARThHaD4fIjJ8QJUGMB2OhlCFsrueciPqlYZvDg/w62BmRm7PghVQcxGLbYoPN4+iykzP+0jRQ==""
+                    }
+                }
+            }";
+
+        var packageJson = @"{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {
+                    ""js-yaml"": ""npm:@zkochan/js-yaml@0.0.9"",
+                    ""ramda"": ""npm:@pnpm/ramda@0.28.1""
+                }
+            }";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJson, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(2);
+
+        // Verify the real scoped package names are used, not the alias names
+        var jsYaml = detectedComponents.First(c => ((NpmComponent)c.Component).Name == "@zkochan/js-yaml");
+        ((NpmComponent)jsYaml.Component).Version.Should().Be("0.0.9");
+
+        var ramda = detectedComponents.First(c => ((NpmComponent)c.Component).Name == "@pnpm/ramda");
+        ((NpmComponent)ramda.Component).Version.Should().Be("0.28.1");
+
+        // Ensure the alias names are NOT used
+        detectedComponents.Should().NotContain(c => ((NpmComponent)c.Component).Name == "js-yaml");
+        detectedComponents.Should().NotContain(c => ((NpmComponent)c.Component).Name == "ramda");
+    }
+
+    [TestMethod]
+    public async Task TestNpmDetector_V1Lockfile_AliasedScopedPackageAsTransitiveDependency_UsesRealNameAsync()
+    {
+        // Tests that aliased scoped packages are correctly detected as transitive dependencies in v1/v2 lockfiles
+        var packageLockJson = @"{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""lockfileVersion"": 1,
+                ""dependencies"": {
+                    ""my-package"": {
+                        ""version"": ""1.0.0"",
+                        ""resolved"": ""https://registry.npmjs.org/my-package/-/my-package-1.0.0.tgz"",
+                        ""integrity"": ""sha512-nAEMjKcB1LDrMyYnjNsDkxoewI2aexrwlT3UJeL+nlbd64FEQNmKgPGAYIieaLVgtpRiHE9OL6/rmHLlstQwnQ=="",
+                        ""requires"": {
+                            ""js-yaml"": ""npm:@zkochan/js-yaml@0.0.9""
+                        }
+                    },
+                    ""js-yaml"": {
+                        ""version"": ""npm:@zkochan/js-yaml@0.0.9"",
+                        ""resolved"": ""https://registry.npmjs.org/@zkochan/js-yaml/-/js-yaml-0.0.9.tgz"",
+                        ""integrity"": ""sha512-W86pkk7P9PAfARThHaD4fIjJ8QJUGMB2OhlCFsrueciPqlYZvDg/w62BmRm7PghVQcxGLbYoPN4+iykzP+0jRQ==""
+                    }
+                }
+            }";
+
+        var packageJson = @"{
+                ""name"": ""test"",
+                ""version"": ""0.0.0"",
+                ""dependencies"": {
+                    ""my-package"": ""1.0.0""
+                }
+            }";
+
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
+            .WithFile(this.packageLockJsonFileName, packageLockJson, this.packageLockJsonSearchPatterns)
+            .WithFile(this.packageJsonFileName, packageJson, this.packageJsonSearchPattern)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().HaveCount(2);
+
+        // The aliased transitive dependency should use the real scoped name
+        var jsYaml = detectedComponents.First(c => ((NpmComponent)c.Component).Name == "@zkochan/js-yaml");
+        ((NpmComponent)jsYaml.Component).Version.Should().Be("0.0.9");
+
+        // The alias name should NOT be present
+        detectedComponents.Should().NotContain(c => ((NpmComponent)c.Component).Name == "js-yaml");
+
+        // my-package should be detected normally
+        var myPackage = detectedComponents.First(c => ((NpmComponent)c.Component).Name == "my-package");
+        ((NpmComponent)myPackage.Component).Version.Should().Be("1.0.0");
+    }
 }
