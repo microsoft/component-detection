@@ -203,7 +203,7 @@ internal class MavenCommandService : IMavenCommandService
 
     /// <summary>
     /// Attempts to delete a dependency file if no detectors are currently using it.
-    /// Uses cross-process coordination to prevent race conditions with other instances.
+    /// Uses atomic counter operations for thread-safe coordination.
     /// </summary>
     /// <param name="dependencyFilePath">The path to the dependency file to delete.</param>
     /// <param name="detectorId">The identifier of the detector requesting the deletion.</param>
@@ -211,47 +211,27 @@ internal class MavenCommandService : IMavenCommandService
     {
         var detector = detectorId ?? "Unknown";
 
-        // Check if any local readers are using the file
-        if (this.fileReaderCounts.TryGetValue(dependencyFilePath, out var count) && count > 0)
+        // Atomically check if any readers are using the file
+        var shouldDelete = false;
+        this.fileReaderCounts.AddOrUpdate(
+            dependencyFilePath,
+            0,
+            (key, count) =>
+            {
+                shouldDelete = count == 0;
+                return count;
+            });
+
+        if (!shouldDelete)
         {
-            this.logger.LogDebug("{DetectorId}: Skipping deletion of {DependencyFilePath} - {Count} local readers still active", detector, dependencyFilePath, count);
+            var currentCount = this.fileReaderCounts.TryGetValue(dependencyFilePath, out var count) ? count : 0;
+            this.logger.LogDebug("{DetectorId}: Skipping deletion of {DependencyFilePath} - {Count} readers still active", detector, dependencyFilePath, currentCount);
             return;
         }
 
-        var coordinationFile = dependencyFilePath + ".deleting";
-
+        // Safe to delete - no readers are using the file
         try
         {
-            // Try to create coordination file atomically with our process ID
-            var processId = Environment.ProcessId.ToString();
-
-            // Use FileMode.CreateNew to ensure atomic creation (fails if file exists)
-            using (var fs = new FileStream(coordinationFile, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-            using (var writer = new StreamWriter(fs))
-            {
-                writer.Write(processId);
-            }
-
-            this.logger.LogDebug("{DetectorId}: Created coordination file {CoordinationFile} for process {ProcessId}", detector, coordinationFile, processId);
-
-            // Give other processes a chance to create their coordination files if needed
-            Thread.Sleep(50);
-
-            // Verify we still own the coordination (another process might have deleted and recreated it)
-            if (!File.Exists(coordinationFile))
-            {
-                this.logger.LogDebug("{DetectorId}: Coordination file {CoordinationFile} was deleted by another process", detector, coordinationFile);
-                return;
-            }
-
-            var coordinationContent = File.ReadAllText(coordinationFile).Trim();
-            if (coordinationContent != processId)
-            {
-                this.logger.LogDebug("{DetectorId}: Coordination file {CoordinationFile} was taken over by process {OtherProcessId}, aborting deletion", detector, coordinationFile, coordinationContent);
-                return;
-            }
-
-            // We own the coordination - proceed with deletion
             if (File.Exists(dependencyFilePath))
             {
                 File.Delete(dependencyFilePath);
@@ -262,34 +242,9 @@ internal class MavenCommandService : IMavenCommandService
                 this.logger.LogDebug("{DetectorId}: Dependency file {DependencyFilePath} was already deleted", detector, dependencyFilePath);
             }
         }
-        catch (IOException ex) when (ex.Message.Contains("already exists") || ex.HResult == -2147024816)
-        {
-            // Another process is handling deletion (File already exists)
-            this.logger.LogDebug("{DetectorId}: Another process is already coordinating deletion of {DependencyFilePath}", detector, dependencyFilePath);
-        }
         catch (Exception ex)
         {
-            this.logger.LogWarning(ex, "{DetectorId}: Failed to coordinate deletion of dependency file {DependencyFilePath}", detector, dependencyFilePath);
-        }
-        finally
-        {
-            // Clean up our coordination file
-            try
-            {
-                if (File.Exists(coordinationFile))
-                {
-                    var coordinationContent = File.ReadAllText(coordinationFile).Trim();
-                    if (coordinationContent == Environment.ProcessId.ToString())
-                    {
-                        File.Delete(coordinationFile);
-                        this.logger.LogDebug("{DetectorId}: Cleaned up coordination file {CoordinationFile}", detector, coordinationFile);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogDebug(ex, "{DetectorId}: Failed to clean up coordination file {CoordinationFile}, will be cleaned up later", detector, coordinationFile);
-            }
+            this.logger.LogWarning(ex, "{DetectorId}: Failed to delete dependency file {DependencyFilePath}", detector, dependencyFilePath);
         }
     }
 }

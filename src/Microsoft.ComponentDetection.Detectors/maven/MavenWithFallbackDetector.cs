@@ -526,8 +526,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var filePath = file.Location;
 
-        this.Logger.LogDebug("FallbackMaven: Processing pom.xml: {FilePath}", filePath);
-
         try
         {
             var document = new XmlDocument();
