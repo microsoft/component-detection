@@ -76,8 +76,16 @@ internal class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
         while (topLevelDependencies.Count > 0)
         {
             var (name, lockDependency, _) = topLevelDependencies.Dequeue();
+            var version = lockDependency.Version;
 
-            var component = this.CreateComponent(name, lockDependency.Version, lockDependency.Integrity);
+            // Handle npm aliases like "npm:@zkochan/js-yaml@0.0.9"
+            if (NpmComponentUtilities.TryParseNpmAlias(version, out var realName, out var realVersion))
+            {
+                name = realName;
+                version = realVersion;
+            }
+
+            var component = this.CreateComponent(name, version, lockDependency.Integrity);
             if (component is null)
             {
                 continue;
@@ -96,8 +104,16 @@ internal class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
             while (subQueue.Count > 0)
             {
                 var (subName, subDependency, parentComponent) = subQueue.Dequeue();
+                var subVersion = subDependency.Version;
 
-                var subComponent = this.CreateComponent(subName, subDependency.Version, subDependency.Integrity);
+                // Handle npm aliases like "npm:@zkochan/js-yaml@0.0.9"
+                if (NpmComponentUtilities.TryParseNpmAlias(subVersion, out var realSubName, out var realSubVersion))
+                {
+                    subName = realSubName;
+                    subVersion = realSubVersion;
+                }
+
+                var subComponent = this.CreateComponent(subName, subVersion, subDependency.Integrity);
                 if (subComponent is null || previouslyAddedComponents.Contains(subComponent.Id))
                 {
                     continue;
