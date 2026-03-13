@@ -32,10 +32,6 @@ Images present on the filesystem as either an [OCI layout directory](https://spe
 - For OCI image layout directories, use the prefix `oci-dir:` followed by the path to the directory, e.g. `oci-dir:/path/to/image`
 - For OCI image archives (tarballs), use the prefix `oci-archive:` followed by the path to the archive file, e.g. `oci-archive:/path/to/image.tar`
 
-#### Docker Archives
-
-Images saved to disk via `docker save` can be referenced using the `docker-archive:` prefix followed by the path to the tarball, e.g. `docker-archive:/path/to/image.tar`.
-
 ### Scanner Scope
 
 By default, this detector invokes Syft with the `all-layers` scanning scope (i.e. the Syft argument `--scope all-layers`).
