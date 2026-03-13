@@ -184,18 +184,13 @@ internal class DockerService : IDockerService
 
     public async Task<(string Stdout, string Stderr)> CreateAndRunContainerAsync(string image, IList<string> command, CancellationToken cancellationToken = default)
     {
-        return await this.CreateAndRunContainerAsync(image, command, additionalBinds: null, cancellationToken);
-    }
-
-    public async Task<(string Stdout, string Stderr)> CreateAndRunContainerAsync(string image, IList<string> command, IList<string> additionalBinds, CancellationToken cancellationToken = default)
-    {
         using var record = new DockerServiceTelemetryRecord
         {
             Image = image,
             Command = JsonSerializer.Serialize(command),
         };
         await this.TryPullImageAsync(image, cancellationToken);
-        var container = await CreateContainerAsync(image, command, additionalBinds, cancellationToken);
+        var container = await CreateContainerAsync(image, command, cancellationToken);
         record.Container = JsonSerializer.Serialize(container);
         var stream = await AttachContainerAsync(container.ID, cancellationToken);
         await StartContainerAsync(container.ID, cancellationToken);
@@ -209,20 +204,8 @@ internal class DockerService : IDockerService
     private static async Task<CreateContainerResponse> CreateContainerAsync(
         string image,
         IList<string> command,
-        IList<string> additionalBinds,
         CancellationToken cancellationToken = default)
     {
-        var binds = new List<string>
-        {
-            $"{Path.GetTempPath()}:/tmp",
-            "/var/run/docker.sock:/var/run/docker.sock",
-        };
-
-        if (additionalBinds != null)
-        {
-            binds.AddRange(additionalBinds);
-        }
-
         var parameters = new CreateContainerParameters
         {
             Image = image,
@@ -238,7 +221,11 @@ internal class DockerService : IDockerService
                 [
                     "no-new-privileges",
                 ],
-                Binds = binds,
+                Binds =
+                [
+                    $"{Path.GetTempPath()}:/tmp",
+                    "/var/run/docker.sock:/var/run/docker.sock",
+                ],
             },
         };
         return await Client.Containers.CreateContainerAsync(parameters, cancellationToken);
@@ -274,11 +261,5 @@ internal class DockerService : IDockerService
     private static int GetContainerId()
     {
         return Interlocked.Increment(ref incrementingContainerId);
-    }
-
-    /// <inheritdoc/>
-    public ContainerDetails GetEmptyContainerDetails()
-    {
-        return new ContainerDetails { Id = GetContainerId() };
     }
 }
