@@ -186,6 +186,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             this.LogWarning($"OnPrepareDetectionAsync timed out after {PrepareDetectionTimeout.TotalMinutes} minutes. Falling back to static pom.xml parsing.");
             this.Telemetry["TimedOut"] = "true";
             this.fallbackReason = MavenFallbackReason.OtherMvnCliFailure;
+            this.usedDetectionMethod = MavenDetectionMethod.Mixed;
             return processRequests;
         }
         catch (Exception ex)
@@ -194,6 +195,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             this.LogWarning($"OnPrepareDetectionAsync failed with unexpected error: {ex.Message}. Falling back to static pom.xml parsing.");
             this.Telemetry["PrepareDetectionError"] = ex.GetType().Name;
             this.fallbackReason = MavenFallbackReason.OtherMvnCliFailure;
+            this.usedDetectionMethod = MavenDetectionMethod.Mixed;
             return processRequests;
         }
     }
@@ -524,7 +526,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
         var filePath = file.Location;
 
-        this.Logger.LogWarning("FallbackMaven: Processing pom.xml: {FilePath}", filePath);
+        this.Logger.LogDebug("FallbackMaven: Processing pom.xml: {FilePath}", filePath);
 
         try
         {
@@ -533,11 +535,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
             lock (this.documentsLoaded)
             {
-                var wasAdded = this.documentsLoaded.TryAdd(file.Location, document);
-                if (wasAdded)
-                {
-                    this.Logger.LogWarning("FallbackMaven: Added document to shared dictionary: {FilePath} (Total docs: {Count})", file.Location, this.documentsLoaded.Count);
-                }
+                this.documentsLoaded.TryAdd(file.Location, document);
             }
 
             var namespaceManager = new XmlNamespaceManager(document.NameTable);
@@ -575,7 +573,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     {
                         var component = new MavenComponent(groupId, artifactId, versionString);
                         var detectedComponent = new DetectedComponent(component);
-                        this.Logger.LogWarning("FallbackMaven: Registering component: {ComponentName}@{ComponentVersion} from file: {FileName}", component.Id, component.Version, Path.GetFileName(filePath));
                         singleFileComponentRecorder.RegisterUsage(detectedComponent);
                         componentsFoundInFile++;
                     }
@@ -597,7 +594,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 }
             }
 
-            this.Logger.LogWarning("FallbackMaven: File {FileName} contributed {ComponentCount} components", Path.GetFileName(filePath), componentsFoundInFile);
             Interlocked.Add(ref this.staticParserComponentCount, componentsFoundInFile);
         }
         catch (Exception e)
@@ -675,7 +671,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         lock (this.documentsLoaded)
         {
-            this.Logger.LogWarning("FallbackMaven: Variable resolution for {Variable} searching through {Count} loaded documents from: {Paths}", variable, this.documentsLoaded.Count, string.Join(", ", this.documentsLoaded.Keys.Select(Path.GetFileName)));
             foreach (var pathDocumentPair in this.documentsLoaded)
             {
                 var path = pathDocumentPair.Key;
@@ -683,7 +678,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 result = this.FindVariableInDocument(document, path, variable);
                 if (result != null)
                 {
-                    this.Logger.LogWarning("FallbackMaven: Variable {Variable} resolved from document: {Path}", variable, Path.GetFileName(path));
                     return result;
                 }
             }

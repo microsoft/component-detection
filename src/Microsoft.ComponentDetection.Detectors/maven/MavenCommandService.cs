@@ -70,7 +70,7 @@ internal class MavenCommandService : IMavenCommandService
         var depsFilePath = Path.Combine(pomDir, this.BcdeMvnDependencyFileName);
 
         // Register as file reader immediately to prevent premature cleanup
-        this.RegisterFileReader(depsFilePath, "GenerationStep");
+        this.RegisterFileReader(depsFilePath);
 
         // Check the cache before acquiring the semaphore to allow fast-path returns
         // even when cancellation has been requested.
@@ -175,13 +175,11 @@ internal class MavenCommandService : IMavenCommandService
     /// This prevents premature deletion by other detectors.
     /// </summary>
     /// <param name="dependencyFilePath">The path to the dependency file being read.</param>
-    /// <param name="detectorId">The identifier of the detector registering the file reader.</param>
-    public void RegisterFileReader(string dependencyFilePath, string detectorId = null)
+    public void RegisterFileReader(string dependencyFilePath)
     {
         this.fileReaderCounts.AddOrUpdate(dependencyFilePath, 1, (key, count) => count + 1);
         this.logger.LogDebug(
-            "{DetectorId}: Registered file reader for {DependencyFilePath}, count: {Count}",
-            detectorId ?? "Unknown",
+            "Registered file reader for {DependencyFilePath}, count: {Count}",
             dependencyFilePath,
             this.fileReaderCounts[dependencyFilePath]);
     }

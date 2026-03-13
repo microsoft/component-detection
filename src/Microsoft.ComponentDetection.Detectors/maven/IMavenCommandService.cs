@@ -20,8 +20,7 @@ public interface IMavenCommandService
     /// This prevents premature deletion by other detectors.
     /// </summary>
     /// <param name="dependencyFilePath">The path to the dependency file being read.</param>
-    /// <param name="detectorId">The identifier of the detector registering the file reader.</param>
-    void RegisterFileReader(string dependencyFilePath, string detectorId = null);
+    void RegisterFileReader(string dependencyFilePath);
 
     /// <summary>
     /// Unregisters a detector's active reading of a dependency file and attempts cleanup.
