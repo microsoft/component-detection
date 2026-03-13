@@ -264,7 +264,6 @@ public class LinuxContainerDetector(
                     break;
                 case ImageReferenceKind.OciLayout:
                 case ImageReferenceKind.OciArchive:
-                case ImageReferenceKind.DockerArchive:
                     var fullPath = this.ValidateLocalImagePath(imageRef);
                     localImages.TryAdd(fullPath, imageRef.Kind);
                     break;
@@ -310,21 +309,16 @@ public class LinuxContainerDetector(
     }
 
     /// <summary>
-    /// Validates that a local image path exists on disk. Throws a <see cref="FileNotFoundException"/> if it does not.
-    /// For OCI layouts, checks for a directory. For OCI archives and Docker archives, checks for a file.
+    /// Validates that a local image path exists on disk. Throws a FileNotFoundException if it does not.
+    /// For OCI layouts, checks for a directory. For OCI archives, checks for a file.
     /// Returns the full path to the local image if validation succeeds.
     /// </summary>
     private string ValidateLocalImagePath(ImageReference imageRef)
     {
         var path = Path.GetFullPath(imageRef.Reference);
-        var exists = imageRef.Kind switch
-        {
-            ImageReferenceKind.OciLayout => Directory.Exists(path),
-            ImageReferenceKind.OciArchive => System.IO.File.Exists(path),
-            ImageReferenceKind.DockerArchive => System.IO.File.Exists(path),
-            ImageReferenceKind.DockerImage or _ => throw new InvalidOperationException(
-                $"ValidateLocalImagePath does not support image kind '{imageRef.Kind}'."),
-        };
+        var exists = imageRef.Kind == ImageReferenceKind.OciLayout
+            ? Directory.Exists(path)
+            : System.IO.File.Exists(path);
 
         if (!exists)
         {
@@ -414,11 +408,6 @@ public class LinuxContainerDetector(
                 hostPathToBind = Path.GetDirectoryName(localImagePath)
                     ?? throw new InvalidOperationException($"Could not determine parent directory for OCI archive path '{localImagePath}'.");
                 syftContainerPath = $"oci-archive:{LocalImageMountPoint}/{Path.GetFileName(localImagePath)}";
-                break;
-            case ImageReferenceKind.DockerArchive:
-                hostPathToBind = Path.GetDirectoryName(localImagePath)
-                    ?? throw new InvalidOperationException($"Could not determine parent directory for Docker archive path '{localImagePath}'.");
-                syftContainerPath = $"docker-archive:{LocalImageMountPoint}/{Path.GetFileName(localImagePath)}";
                 break;
             case ImageReferenceKind.DockerImage:
             default:
