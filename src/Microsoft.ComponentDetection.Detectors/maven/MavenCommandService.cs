@@ -69,6 +69,9 @@ internal class MavenCommandService : IMavenCommandService
         var pomDir = Path.GetDirectoryName(pomFile.Location);
         var depsFilePath = Path.Combine(pomDir, this.BcdeMvnDependencyFileName);
 
+        // Register as file reader immediately to prevent premature cleanup
+        this.RegisterFileReader(depsFilePath, "GenerationStep");
+
         // Check the cache before acquiring the semaphore to allow fast-path returns
         // even when cancellation has been requested.
         if (this.completedLocations.TryGetValue(pomFile.Location, out var cachedResult)
@@ -154,6 +157,7 @@ internal class MavenCommandService : IMavenCommandService
         else
         {
             this.logger.LogDebug("{DetectorPrefix}: Execution of \"dependency:tree\" on {PomFileLocation} completed successfully", DetectorLogPrefix, pomFile.Location);
+
             return new MavenCliResult(true, null);
         }
     }
@@ -171,9 +175,15 @@ internal class MavenCommandService : IMavenCommandService
     /// This prevents premature deletion by other detectors.
     /// </summary>
     /// <param name="dependencyFilePath">The path to the dependency file being read.</param>
-    public void RegisterFileReader(string dependencyFilePath)
+    /// <param name="detectorId">The identifier of the detector registering the file reader.</param>
+    public void RegisterFileReader(string dependencyFilePath, string detectorId = null)
     {
         this.fileReaderCounts.AddOrUpdate(dependencyFilePath, 1, (key, count) => count + 1);
+        this.logger.LogDebug(
+            "{DetectorId}: Registered file reader for {DependencyFilePath}, count: {Count}",
+            detectorId ?? "Unknown",
+            dependencyFilePath,
+            this.fileReaderCounts[dependencyFilePath]);
     }
 
     /// <summary>
@@ -181,10 +191,16 @@ internal class MavenCommandService : IMavenCommandService
     /// If no other detectors are reading the file, it will be safely deleted.
     /// </summary>
     /// <param name="dependencyFilePath">The path to the dependency file that was being read.</param>
-    public void UnregisterFileReader(string dependencyFilePath)
+    /// <param name="detectorId">The identifier of the detector unregistering the file reader.</param>
+    public void UnregisterFileReader(string dependencyFilePath, string detectorId = null)
     {
         this.fileReaderCounts.AddOrUpdate(dependencyFilePath, 0, (key, count) => Math.Max(0, count - 1));
-        this.TryDeleteDependencyFileIfNotInUse(dependencyFilePath);
+        this.logger.LogDebug(
+            "{DetectorId}: Unregistered file reader for {DependencyFilePath}, count: {Count}",
+            detectorId ?? "Unknown",
+            dependencyFilePath,
+            this.fileReaderCounts.TryGetValue(dependencyFilePath, out var currentCount) ? currentCount : 0);
+        this.TryDeleteDependencyFileIfNotInUse(dependencyFilePath, detectorId);
     }
 
     /// <summary>
@@ -192,12 +208,15 @@ internal class MavenCommandService : IMavenCommandService
     /// Uses cross-process coordination to prevent race conditions with other instances.
     /// </summary>
     /// <param name="dependencyFilePath">The path to the dependency file to delete.</param>
-    private void TryDeleteDependencyFileIfNotInUse(string dependencyFilePath)
+    /// <param name="detectorId">The identifier of the detector requesting the deletion.</param>
+    private void TryDeleteDependencyFileIfNotInUse(string dependencyFilePath, string detectorId = null)
     {
+        var detector = detectorId ?? "Unknown";
+
         // Check if any local readers are using the file
         if (this.fileReaderCounts.TryGetValue(dependencyFilePath, out var count) && count > 0)
         {
-            this.logger.LogDebug("Skipping deletion of {DependencyFilePath} - {Count} local readers still active", dependencyFilePath, count);
+            this.logger.LogDebug("{DetectorId}: Skipping deletion of {DependencyFilePath} - {Count} local readers still active", detector, dependencyFilePath, count);
             return;
         }
 
@@ -215,7 +234,7 @@ internal class MavenCommandService : IMavenCommandService
                 writer.Write(processId);
             }
 
-            this.logger.LogDebug("Created coordination file {CoordinationFile} for process {ProcessId}", coordinationFile, processId);
+            this.logger.LogDebug("{DetectorId}: Created coordination file {CoordinationFile} for process {ProcessId}", detector, coordinationFile, processId);
 
             // Give other processes a chance to create their coordination files if needed
             Thread.Sleep(50);
@@ -223,14 +242,14 @@ internal class MavenCommandService : IMavenCommandService
             // Verify we still own the coordination (another process might have deleted and recreated it)
             if (!File.Exists(coordinationFile))
             {
-                this.logger.LogDebug("Coordination file {CoordinationFile} was deleted by another process", coordinationFile);
+                this.logger.LogDebug("{DetectorId}: Coordination file {CoordinationFile} was deleted by another process", detector, coordinationFile);
                 return;
             }
 
             var coordinationContent = File.ReadAllText(coordinationFile).Trim();
             if (coordinationContent != processId)
             {
-                this.logger.LogDebug("Coordination file {CoordinationFile} was taken over by process {OtherProcessId}, aborting deletion", coordinationFile, coordinationContent);
+                this.logger.LogDebug("{DetectorId}: Coordination file {CoordinationFile} was taken over by process {OtherProcessId}, aborting deletion", detector, coordinationFile, coordinationContent);
                 return;
             }
 
@@ -238,21 +257,21 @@ internal class MavenCommandService : IMavenCommandService
             if (File.Exists(dependencyFilePath))
             {
                 File.Delete(dependencyFilePath);
-                this.logger.LogDebug("Successfully deleted dependency file {DependencyFilePath}", dependencyFilePath);
+                this.logger.LogDebug("{DetectorId}: Successfully deleted dependency file {DependencyFilePath}", detector, dependencyFilePath);
             }
             else
             {
-                this.logger.LogDebug("Dependency file {DependencyFilePath} was already deleted", dependencyFilePath);
+                this.logger.LogDebug("{DetectorId}: Dependency file {DependencyFilePath} was already deleted", detector, dependencyFilePath);
             }
         }
         catch (IOException ex) when (ex.Message.Contains("already exists") || ex.HResult == -2147024816)
         {
             // Another process is handling deletion (File already exists)
-            this.logger.LogDebug("Another process is already coordinating deletion of {DependencyFilePath}", dependencyFilePath);
+            this.logger.LogDebug("{DetectorId}: Another process is already coordinating deletion of {DependencyFilePath}", detector, dependencyFilePath);
         }
         catch (Exception ex)
         {
-            this.logger.LogWarning(ex, "Failed to coordinate deletion of dependency file {DependencyFilePath}", dependencyFilePath);
+            this.logger.LogWarning(ex, "{DetectorId}: Failed to coordinate deletion of dependency file {DependencyFilePath}", detector, dependencyFilePath);
         }
         finally
         {
@@ -265,13 +284,13 @@ internal class MavenCommandService : IMavenCommandService
                     if (coordinationContent == Environment.ProcessId.ToString())
                     {
                         File.Delete(coordinationFile);
-                        this.logger.LogDebug("Cleaned up coordination file {CoordinationFile}", coordinationFile);
+                        this.logger.LogDebug("{DetectorId}: Cleaned up coordination file {CoordinationFile}", detector, coordinationFile);
                     }
                 }
             }
             catch (Exception ex)
             {
-                this.logger.LogDebug(ex, "Failed to clean up coordination file {CoordinationFile}, will be cleaned up later", coordinationFile);
+                this.logger.LogDebug(ex, "{DetectorId}: Failed to clean up coordination file {CoordinationFile}, will be cleaned up later", detector, coordinationFile);
             }
         }
     }
