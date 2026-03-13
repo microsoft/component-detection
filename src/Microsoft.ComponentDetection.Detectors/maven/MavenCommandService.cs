@@ -192,18 +192,22 @@ internal class MavenCommandService : IMavenCommandService
     /// <param name="detectorId">The identifier of the detector unregistering the file reader.</param>
     public void UnregisterFileReader(string dependencyFilePath, string detectorId = null)
     {
-        this.fileReaderCounts.AddOrUpdate(dependencyFilePath, 0, (key, count) => Math.Max(0, count - 1));
+        var newCount = this.fileReaderCounts.AddOrUpdate(dependencyFilePath, 0, (key, count) => Math.Max(0, count - 1));
         this.logger.LogDebug(
             "{DetectorId}: Unregistered file reader for {DependencyFilePath}, count: {Count}",
             detectorId ?? "Unknown",
             dependencyFilePath,
-            this.fileReaderCounts.TryGetValue(dependencyFilePath, out var currentCount) ? currentCount : 0);
-        this.TryDeleteDependencyFileIfNotInUse(dependencyFilePath, detectorId);
+            newCount);
+
+        // If no readers remain, attempt cleanup
+        if (newCount == 0)
+        {
+            this.TryDeleteDependencyFileIfNotInUse(dependencyFilePath, detectorId);
+        }
     }
 
     /// <summary>
     /// Attempts to delete a dependency file if no detectors are currently using it.
-    /// Uses atomic counter operations for thread-safe coordination.
     /// </summary>
     /// <param name="dependencyFilePath">The path to the dependency file to delete.</param>
     /// <param name="detectorId">The identifier of the detector requesting the deletion.</param>
@@ -211,25 +215,7 @@ internal class MavenCommandService : IMavenCommandService
     {
         var detector = detectorId ?? "Unknown";
 
-        // Atomically check if any readers are using the file
-        var shouldDelete = false;
-        this.fileReaderCounts.AddOrUpdate(
-            dependencyFilePath,
-            0,
-            (key, count) =>
-            {
-                shouldDelete = count == 0;
-                return count;
-            });
-
-        if (!shouldDelete)
-        {
-            var currentCount = this.fileReaderCounts.TryGetValue(dependencyFilePath, out var count) ? count : 0;
-            this.logger.LogDebug("{DetectorId}: Skipping deletion of {DependencyFilePath} - {Count} readers still active", detector, dependencyFilePath, currentCount);
-            return;
-        }
-
-        // Safe to delete - no readers are using the file
+        // Safe to delete - no readers are using the file (count was already verified to be 0)
         try
         {
             if (File.Exists(dependencyFilePath))
