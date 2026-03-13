@@ -1127,4 +1127,121 @@ public class LinuxContainerDetectorTests
             System.IO.File.Delete(ociArchive);
         }
     }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_DockerArchiveImage_DetectsComponentsAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+
+        // Create a temp file to act as the Docker archive
+        var dockerArchiveDir = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
+        var dockerArchiveName = "test-docker-archive-" + Guid.NewGuid().ToString("N") + ".tar";
+        var dockerArchive = Path.Combine(dockerArchiveDir, dockerArchiveName);
+        await System.IO.File.WriteAllBytesAsync(dockerArchive, []);
+
+        try
+        {
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [$"docker-archive:{dockerArchive}"],
+                componentRecorder
+            );
+
+            var syftOutputJson = """
+                {
+                    "distro": { "id": "ubuntu", "versionID": "22.04" },
+                    "artifacts": [],
+                    "source": {
+                        "id": "sha256:abc",
+                        "name": "/local-image",
+                        "type": "image",
+                        "version": "sha256:abc",
+                        "metadata": {
+                            "userInput": "/local-image",
+                            "imageID": "sha256:dockerarchiveimg",
+                            "tags": ["myapp:v2"],
+                            "repoDigests": [],
+                            "layers": [
+                                { "digest": "sha256:dockerlayer1", "size": 50000 },
+                                { "digest": "sha256:dockerlayer2", "size": 60000 }
+                            ],
+                            "labels": {}
+                        }
+                    }
+                }
+                """;
+            var syftOutput = SyftOutput.FromJson(syftOutputJson);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(syftOutput);
+
+            var layerMappedComponents = new[]
+            {
+                new LayerMappedLinuxComponents
+                {
+                    DockerLayer = new DockerLayer { DiffId = "sha256:dockerlayer1", LayerIndex = 0 },
+                    Components = [new LinuxComponent("ubuntu", "22.04", "libc6", "2.35-0ubuntu3")],
+                },
+            };
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns(layerMappedComponents);
+
+            var linuxContainerDetector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            scanResult.ContainerDetails.Should().ContainSingle();
+
+            var containerDetails = scanResult.ContainerDetails.First();
+            containerDetails.ImageId.Should().Be("sha256:dockerarchiveimg");
+            containerDetails.Tags.Should().ContainSingle().Which.Should().Be("myapp:v2");
+
+            var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+            detectedComponents.Should().ContainSingle();
+            var detectedComponent = detectedComponents.First();
+            detectedComponent.Component.Id.Should().Contain("libc6");
+            detectedComponent.ContainerLayerIds.Keys.Should().ContainSingle();
+            var containerId = detectedComponent.ContainerLayerIds.Keys.First();
+            detectedComponent.ContainerLayerIds[containerId].Should().BeEquivalentTo([0]);
+
+            // Verify GetSyftOutputAsync was called with docker-archive: prefix
+            this.mockSyftLinuxScanner.Verify(
+                scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.Is<string>(s => s.StartsWith("docker-archive:") && s.Contains(dockerArchiveName)),
+                        It.Is<IList<string>>(binds =>
+                            binds.Count == 1 && binds[0].Contains(dockerArchiveDir)),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
+        }
+        finally
+        {
+            System.IO.File.Delete(dockerArchive);
+        }
+    }
 }
