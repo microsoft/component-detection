@@ -13,6 +13,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// <summary>
 /// Integration tests for <see cref="BinLogProcessor"/> that build real MSBuild projects
 /// to produce binlog files, then parse them to verify extracted project information.
+/// Excluded from default local test runs via <c>TestCategory("Integration")</c>;
+/// see <c>test/Directory.Build.props</c>.
 /// </summary>
 [TestClass]
 [TestCategory("Integration")]

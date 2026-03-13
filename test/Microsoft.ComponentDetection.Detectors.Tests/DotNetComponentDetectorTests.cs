@@ -862,7 +862,12 @@ public class DotNetComponentDetectorTests
         discoveredComponents.Where(component => component.Component.Id == "4.5.6 netstandard2.0 library - DotNet").Should().ContainSingle();
     }
 
+    // The following tests call RestoreProjectAndGetAssetsPathAsync which spawns a real
+    // 'dotnet restore' process, making them slow and environment-dependent.  They are
+    // tagged as Integration so they are excluded from default local test runs
+    // (see test/Directory.Build.props).
     [TestMethod]
+    [TestCategory("Integration")]
     public async Task TestDotNetDetectorSelfContainedWithSelfContainedProperty()
     {
         // Emit a self-contained .csproj, restore it, and use the real project.assets.json.
@@ -934,6 +939,7 @@ public class DotNetComponentDetectorTests
     }
 
     [TestMethod]
+    [TestCategory("Integration")]
     public async Task TestDotNetDetectorSelfContainedLibrary()
     {
         // A library can also be self-contained when it sets SelfContained + RuntimeIdentifier.
@@ -990,6 +996,7 @@ public class DotNetComponentDetectorTests
     }
 
     [TestMethod]
+    [TestCategory("Integration")]
     public async Task TestDotNetDetectorSelfContainedWithPublishAot()
     {
         // PublishAot implies native AOT compilation (self-contained).
@@ -1050,6 +1057,7 @@ public class DotNetComponentDetectorTests
     }
 
     [TestMethod]
+    [TestCategory("Integration")]
     public async Task TestDotNetDetectorNotSelfContained()
     {
         // Framework-dependent app — no RuntimeIdentifier, no SelfContained.
