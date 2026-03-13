@@ -52,26 +52,9 @@ public interface IDockerService
     /// <summary>
     /// Creates and runs a container with the given image and command.
     /// </summary>
-    /// <param name="image">The image to run.</param>
+    /// <param name="image">The image to inspect.</param>
     /// <param name="command">The command to run in the container.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A tuple of stdout and stderr from the container.</returns>
     Task<(string Stdout, string Stderr)> CreateAndRunContainerAsync(string image, IList<string> command, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Creates and runs a container with the given image, command, and additional volume binds.
-    /// </summary>
-    /// <param name="image">The image to run.</param>
-    /// <param name="command">The command to run in the container.</param>
-    /// <param name="additionalBinds">Additional volume bind mounts to add to the container (e.g., "/host/path:/container/path:ro").</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A tuple of stdout and stderr from the container.</returns>
-    Task<(string Stdout, string Stderr)> CreateAndRunContainerAsync(string image, IList<string> command, IList<string> additionalBinds, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Creates an empty <see cref="ContainerDetails"/> with a unique ID assigned.
-    /// Used for image types where details are not obtained from Docker inspect (e.g., OCI layout images).
-    /// </summary>
-    /// <returns>A <see cref="ContainerDetails"/> with only the <see cref="ContainerDetails.Id"/> populated.</returns>
-    ContainerDetails GetEmptyContainerDetails();
 }
