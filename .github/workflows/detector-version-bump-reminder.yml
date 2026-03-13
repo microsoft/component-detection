@@ -16,7 +16,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2
+      - uses: mshick/add-pr-comment@7c1a3a3e5a072270dc21c0639df39ca11e860b2b # v3.5.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           message: |
