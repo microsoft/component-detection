@@ -26,11 +26,6 @@ public class RustSbomDetector : FileComponentDetector
     private const string CargoTomlFileName = "Cargo.toml";
     private const string CargoLockFileName = "Cargo.lock";
 
-    private static readonly TomlModelOptions TomlOptions = new TomlModelOptions
-    {
-        IgnoreMissingProperties = true,
-    };
-
     private readonly IPathUtilityService pathUtilityService;
     private readonly IRustSbomParser sbomParser;
     private readonly IRustCliParser cliParser;
@@ -561,7 +556,7 @@ public class RustSbomDetector : FileComponentDetector
         try
         {
             var content = this.fileUtilityService.ReadAllText(cargoTomlPath);
-            var tomlTable = Toml.ToModel(content, options: TomlOptions);
+            var tomlTable = TomlSerializer.Deserialize<TomlTable>(content);
 
             // Check if it has a [workspace] section but no [package] section
             var hasWorkspace = tomlTable.ContainsKey("workspace");
@@ -728,7 +723,7 @@ public class RustSbomDetector : FileComponentDetector
         try
         {
             var content = this.fileUtilityService.ReadAllText(cargoTomlPath);
-            var tomlTable = Toml.ToModel(content, options: TomlOptions);
+            var tomlTable = TomlSerializer.Deserialize<TomlTable>(content);
 
             if (tomlTable.ContainsKey("workspace") && tomlTable["workspace"] is TomlTable workspaceTable)
             {

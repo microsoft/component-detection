@@ -16,7 +16,7 @@ internal class UvLock
     {
         using var reader = new StreamReader(tomlStream);
         var tomlContent = reader.ReadToEnd();
-        var model = Toml.ToModel(tomlContent);
+        var model = TomlSerializer.Deserialize<TomlTable>(tomlContent);
         return new UvLock
         {
             Packages = ParsePackagesFromModel(model),

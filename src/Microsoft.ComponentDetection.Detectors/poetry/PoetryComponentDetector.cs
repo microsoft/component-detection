@@ -43,11 +43,7 @@ public class PoetryComponentDetector : FileComponentDetector, IExperimentalDetec
         this.Logger.LogDebug("Found Poetry lockfile {PoetryLockFile}", poetryLockFile);
 
         var reader = new StreamReader(poetryLockFile.Stream);
-        var options = new TomlModelOptions
-        {
-            IgnoreMissingProperties = true,
-        };
-        var poetryLock = Toml.ToModel<PoetryLock>(await reader.ReadToEndAsync(cancellationToken), options: options);
+        var poetryLock = TomlSerializer.Deserialize<PoetryLock>(await reader.ReadToEndAsync(cancellationToken));
 
         if (poetryLock.Metadata != null && poetryLock.Metadata.TryGetValue("lock-version", out var lockVersion))
         {
