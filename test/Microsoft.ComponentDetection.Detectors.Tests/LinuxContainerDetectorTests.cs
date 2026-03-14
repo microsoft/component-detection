@@ -12,6 +12,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Linux;
+using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -61,6 +62,8 @@ public class LinuxContainerDetectorTests
                     Layers = [],
                 }
             );
+        this.mockDockerService.Setup(service => service.GetEmptyContainerDetails())
+            .Returns(() => new ContainerDetails { Id = 100 });
 
         this.mockLogger = new Mock<ILogger>();
         this.mockLinuxContainerDetectorLogger = new Mock<ILogger<LinuxContainerDetector>>();
@@ -373,5 +376,755 @@ public class LinuxContainerDetectorTests
                 }
             );
         await this.TestLinuxContainerDetectorAsync();
+    }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_OciLayoutImage_DetectsComponentsAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+
+        // Create a temp directory to act as the OCI layout path
+        var ociDir = Path.Combine(Path.GetTempPath(), "test-oci-layout-" + Guid.NewGuid().ToString("N")).TrimEnd(Path.DirectorySeparatorChar);
+        Directory.CreateDirectory(ociDir);
+
+        try
+        {
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [$"oci-dir:{ociDir}"],
+                componentRecorder
+            );
+
+            // Build a SyftOutput with source metadata containing layers, labels, tags
+            var syftOutputJson = """
+                {
+                    "distro": { "id": "azurelinux", "versionID": "3.0" },
+                    "artifacts": [],
+                    "source": {
+                        "id": "sha256:abc",
+                        "name": "/oci-image",
+                        "type": "image",
+                        "version": "sha256:abc",
+                        "metadata": {
+                            "userInput": "/oci-image",
+                            "imageID": "sha256:ociimage123",
+                            "tags": ["myregistry.io/myimage:latest"],
+                            "repoDigests": [],
+                            "layers": [
+                                { "digest": "sha256:layer1", "size": 40000 },
+                                { "digest": "sha256:layer2", "size": 50000 }
+                            ],
+                            "labels": {
+                                "image.base.ref.name": "mcr.microsoft.com/azurelinux/base/core:3.0",
+                                "image.base.digest": "sha256:basedigest"
+                            }
+                        }
+                    }
+                }
+                """;
+            var syftOutput = SyftOutput.FromJson(syftOutputJson);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(syftOutput);
+
+            var layerMappedComponents = new[]
+            {
+                new LayerMappedLinuxComponents
+                {
+                    DockerLayer = new DockerLayer { DiffId = "sha256:layer1", LayerIndex = 0 },
+                    Components = [new LinuxComponent("azurelinux", "3.0", "bash", "5.2.15")],
+                },
+            };
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns(layerMappedComponents);
+
+            var linuxContainerDetector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            scanResult.ContainerDetails.Should().ContainSingle();
+
+            var containerDetails = scanResult.ContainerDetails.First();
+            containerDetails.ImageId.Should().Be("sha256:ociimage123");
+            containerDetails.BaseImageRef.Should().Be("mcr.microsoft.com/azurelinux/base/core:3.0");
+            containerDetails.BaseImageDigest.Should().Be("sha256:basedigest");
+            containerDetails.Tags.Should().ContainSingle().Which.Should().Be("myregistry.io/myimage:latest");
+
+            var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+            detectedComponents.Should().ContainSingle();
+            var detectedComponent = detectedComponents.First();
+            detectedComponent.Component.Id.Should().Contain("bash");
+            detectedComponent.ContainerLayerIds.Keys.Should().ContainSingle();
+            var containerId = detectedComponent.ContainerLayerIds.Keys.First();
+            detectedComponent.ContainerLayerIds[containerId].Should().BeEquivalentTo([0]); // Layer index from SyftOutput
+
+            // Verify GetSyftOutputAsync was called (not ScanLinuxAsync)
+            this.mockSyftLinuxScanner.Verify(
+                scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.Is<string>(s => s.StartsWith("oci-dir:")),
+                        It.Is<IList<string>>(binds =>
+                            binds.Count == 1 && binds[0].Contains(ociDir)),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
+
+            // Verify Docker inspect was NOT called for OCI images
+            this.mockDockerService.Verify(
+                service =>
+                    service.InspectImageAsync(ociDir, It.IsAny<CancellationToken>()),
+                Times.Never
+            );
+
+            // Verify ProcessSyftOutput was called with the correct layers
+            this.mockSyftLinuxScanner.Verify(
+                scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.Is<IEnumerable<DockerLayer>>(layers =>
+                            layers.Count() == 2 &&
+                            layers.First().DiffId == "sha256:layer1" &&
+                            layers.Last().DiffId == "sha256:layer2"
+                        ),
+                        It.IsAny<ISet<ComponentType>>()
+                    ),
+                Times.Once
+            );
+        }
+        finally
+        {
+            Directory.Delete(ociDir, true);
+        }
+    }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_OciLayoutImage_DoesNotLowercasePathAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+
+        // Create a temp directory with mixed case
+        var ociDir = Path.Combine(Path.GetTempPath(), "TestOciLayout-" + Guid.NewGuid().ToString("N")).TrimEnd(Path.DirectorySeparatorChar);
+        Directory.CreateDirectory(ociDir);
+
+        try
+        {
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [$"oci-dir:{ociDir}"],
+                componentRecorder
+            );
+
+            var syftOutputJson = """
+                {
+                    "distro": { "id": "test", "versionID": "1.0" },
+                    "artifacts": [],
+                    "source": {
+                        "id": "sha256:abc",
+                        "name": "/oci-image",
+                        "type": "image",
+                        "version": "sha256:abc",
+                        "metadata": {
+                            "userInput": "/oci-image",
+                            "imageID": "sha256:img",
+                            "layers": [],
+                            "labels": {}
+                        }
+                    }
+                }
+                """;
+            var syftOutput = SyftOutput.FromJson(syftOutputJson);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(syftOutput);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns([]);
+
+            var linuxContainerDetector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+            // Verify the bind mount path was passed as-is (not lowercased)
+            this.mockSyftLinuxScanner.Verify(
+                scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.Is<string>(s => s.StartsWith("oci-dir:")),
+                        It.Is<IList<string>>(binds =>
+                            binds.Count == 1 && binds[0].Contains(ociDir)),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
+        }
+        finally
+        {
+            Directory.Delete(ociDir, true);
+        }
+    }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_OciLayoutImage_NormalizesPathAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+
+        // Create a temp directory with mixed case
+        var ociDir = Path.Combine(Path.GetTempPath(), "test-oci-layout-" + Guid.NewGuid().ToString("N")).TrimEnd(Path.DirectorySeparatorChar);
+        Directory.CreateDirectory(ociDir);
+
+        var ociDirWithExtraComponents = Path.Combine(Path.GetDirectoryName(ociDir)!, ".", "random", "..", Path.GetFileName(ociDir));
+
+        try
+        {
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [$"oci-dir:{ociDirWithExtraComponents}"],
+                componentRecorder
+            );
+
+            var syftOutputJson = """
+                {
+                    "distro": { "id": "test", "versionID": "1.0" },
+                    "artifacts": [],
+                    "source": {
+                        "id": "sha256:abc",
+                        "name": "/oci-image",
+                        "type": "image",
+                        "version": "sha256:abc",
+                        "metadata": {
+                            "userInput": "/oci-image",
+                            "imageID": "sha256:img",
+                            "layers": [],
+                            "labels": {}
+                        }
+                    }
+                }
+                """;
+            var syftOutput = SyftOutput.FromJson(syftOutputJson);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(syftOutput);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns([]);
+
+            var linuxContainerDetector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+            this.mockSyftLinuxScanner.Verify(
+                scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.Is<string>(s => s.StartsWith("oci-dir:")),
+                        It.Is<IList<string>>(binds =>
+                            binds.Count == 1 && binds[0].Contains(ociDir) && !binds[0].Contains(ociDirWithExtraComponents)),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
+        }
+        finally
+        {
+            Directory.Delete(ociDir, true);
+        }
+    }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_MixedDockerAndOciImages_BothProcessedAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+
+        var ociDir = Path.Combine(Path.GetTempPath(), "test-oci-mixed-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(ociDir);
+
+        try
+        {
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [NodeLatestImage, $"oci-dir:{ociDir}"],
+                componentRecorder
+            );
+
+            var syftOutputJson = """
+                {
+                    "distro": { "id": "azurelinux", "versionID": "3.0" },
+                    "artifacts": [],
+                    "source": {
+                        "id": "sha256:abc",
+                        "name": "/oci-image",
+                        "type": "image",
+                        "version": "sha256:abc",
+                        "metadata": {
+                            "userInput": "/oci-image",
+                            "imageID": "sha256:ociimg",
+                            "tags": [],
+                            "repoDigests": [],
+                            "layers": [
+                                { "digest": "sha256:ocilayer1", "size": 10000 }
+                            ],
+                            "labels": {}
+                        }
+                    }
+                }
+                """;
+            var syftOutput = SyftOutput.FromJson(syftOutputJson);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(syftOutput);
+
+            var ociLayerMappedComponents = new[]
+            {
+                new LayerMappedLinuxComponents
+                {
+                    DockerLayer = new DockerLayer { DiffId = "sha256:ocilayer1", LayerIndex = 0 },
+                    Components = [new LinuxComponent("azurelinux", "3.0", "curl", "8.0")],
+                },
+            };
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns(ociLayerMappedComponents);
+
+            var linuxContainerDetector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+            // Both Docker and OCI images should have results
+            scanResult.ContainerDetails.Should().HaveCount(2);
+
+            var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+            detectedComponents.Should().HaveCount(2);
+        }
+        finally
+        {
+            Directory.Delete(ociDir, true);
+        }
+    }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_OciLayoutImage_NoMetadata_DetectsComponentsAsync()
+    {
+        // Ensure that if Syft output for an OCI image is missing metadata, we can still detect components and associate them with the correct container and layers.
+        var componentRecorder = new ComponentRecorder();
+
+        var ociDir = Path.Combine(Path.GetTempPath(), "test-oci-no-meta-" + Guid.NewGuid().ToString("N")).TrimEnd(Path.DirectorySeparatorChar);
+        Directory.CreateDirectory(ociDir);
+
+        try
+        {
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [$"oci-dir:{ociDir}"],
+                componentRecorder
+            );
+
+            // Syft output with no source metadata at all
+            var syftOutputJson = """
+                {
+                    "distro": { "id": "azurelinux", "versionID": "3.0" },
+                    "artifacts": [],
+                    "source": {
+                        "id": "sha256:abc",
+                        "name": "/oci-image",
+                        "type": "image",
+                        "version": "sha256:abc"
+                    }
+                }
+                """;
+            var syftOutput = SyftOutput.FromJson(syftOutputJson);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(syftOutput);
+
+            var layerMappedComponents = new[]
+            {
+                new LayerMappedLinuxComponents
+                {
+                    DockerLayer = new DockerLayer { DiffId = "unknown", LayerIndex = 0 },
+                    Components = [new LinuxComponent("azurelinux", "3.0", "curl", "8.0.0")],
+                },
+            };
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns(layerMappedComponents);
+
+            var linuxContainerDetector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            scanResult.ContainerDetails.Should().ContainSingle();
+
+            var containerDetails = scanResult.ContainerDetails.First();
+
+            // When metadata is missing, ImageId falls back to the OCI path
+            containerDetails.ImageId.Should().Be(Path.GetFullPath(ociDir));
+            containerDetails.Tags.Should().BeEmpty();
+            containerDetails.BaseImageRef.Should().BeEmpty();
+            containerDetails.BaseImageDigest.Should().BeEmpty();
+
+            var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+            detectedComponents.Should().ContainSingle();
+            var detectedComponent = detectedComponents.First();
+            detectedComponent.Component.Id.Should().Contain("curl");
+            detectedComponent.ContainerLayerIds.Keys.Should().ContainSingle();
+            var containerId = detectedComponent.ContainerLayerIds.Keys.First();
+            detectedComponent.ContainerLayerIds[containerId].Should().BeEquivalentTo([0]); // Layer index from SyftOutput
+
+            // Verify ProcessSyftOutput was called with empty layers
+            this.mockSyftLinuxScanner.Verify(
+                scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.Is<IEnumerable<DockerLayer>>(layers => !layers.Any()),
+                        It.IsAny<ISet<ComponentType>>()
+                    ),
+                Times.Once
+            );
+        }
+        finally
+        {
+            Directory.Delete(ociDir, true);
+        }
+    }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_OciLayoutImage_IncompatibleMetadata_DetectsComponentsAsync()
+    {
+        // Ensure that if Syft output contains metadata with an incompatible schema,
+        // scanning still works as if no metadata were provided.
+        var componentRecorder = new ComponentRecorder();
+
+        var ociDir = Path.Combine(Path.GetTempPath(), "test-oci-bad-meta-" + Guid.NewGuid().ToString("N")).TrimEnd(Path.DirectorySeparatorChar);
+        Directory.CreateDirectory(ociDir);
+
+        try
+        {
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [$"oci-dir:{ociDir}"],
+                componentRecorder
+            );
+
+            // Syft output with incompatible metadata (layers is a string, not an array)
+            var syftOutputJson = """
+                {
+                    "distro": { "id": "azurelinux", "versionID": "3.0" },
+                    "artifacts": [],
+                    "source": {
+                        "id": "sha256:abc",
+                        "name": "/oci-image",
+                        "type": "image",
+                        "version": "sha256:abc",
+                        "metadata": {
+                            "imageID": 12345,
+                            "layers": "not-an-array",
+                            "tags": "also-not-an-array"
+                        }
+                    }
+                }
+                """;
+            var syftOutput = SyftOutput.FromJson(syftOutputJson);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(syftOutput);
+
+            var layerMappedComponents = new[]
+            {
+                new LayerMappedLinuxComponents
+                {
+                    DockerLayer = new DockerLayer { DiffId = "unknown", LayerIndex = 0 },
+                    Components = [new LinuxComponent("azurelinux", "3.0", "zlib", "1.2.13")],
+                },
+            };
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns(layerMappedComponents);
+
+            var linuxContainerDetector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            scanResult.ContainerDetails.Should().ContainSingle();
+
+            var containerDetails = scanResult.ContainerDetails.First();
+
+            // Incompatible metadata is treated like missing metadata — ImageId falls back to path
+            containerDetails.ImageId.Should().Be(Path.GetFullPath(ociDir));
+            containerDetails.Tags.Should().BeEmpty();
+            containerDetails.BaseImageRef.Should().BeEmpty();
+            containerDetails.BaseImageDigest.Should().BeEmpty();
+
+            var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+            detectedComponents.Should().ContainSingle();
+            var detectedComponent = detectedComponents.First();
+            detectedComponent.Component.Id.Should().Contain("zlib");
+            detectedComponent.ContainerLayerIds.Keys.Should().ContainSingle();
+            var containerId = detectedComponent.ContainerLayerIds.Keys.First();
+            detectedComponent.ContainerLayerIds[containerId].Should().BeEquivalentTo([0]);
+        }
+        finally
+        {
+            Directory.Delete(ociDir, true);
+        }
+    }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_OciArchiveImage_DetectsComponentsAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+
+        // Create a temp file to act as the OCI archive
+        var ociArchiveDir = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
+        var ociArchiveName = "test-oci-archive-" + Guid.NewGuid().ToString("N") + ".tar";
+        var ociArchive = Path.Combine(ociArchiveDir, ociArchiveName);
+        await System.IO.File.WriteAllBytesAsync(ociArchive, []);
+
+        try
+        {
+            var scanRequest = new ScanRequest(
+                new DirectoryInfo(Path.GetTempPath()),
+                (_, __) => false,
+                this.mockLogger.Object,
+                null,
+                [$"oci-archive:{ociArchive}"],
+                componentRecorder
+            );
+
+            var syftOutputJson = """
+                {
+                    "distro": { "id": "azurelinux", "versionID": "3.0" },
+                    "artifacts": [],
+                    "source": {
+                        "id": "sha256:abc",
+                        "name": "/oci-image",
+                        "type": "image",
+                        "version": "sha256:abc",
+                        "metadata": {
+                            "userInput": "/oci-image",
+                            "imageID": "sha256:archiveimg",
+                            "tags": ["myregistry.io/archived:v1"],
+                            "repoDigests": [],
+                            "layers": [
+                                { "digest": "sha256:archivelayer1", "size": 30000 },
+                                { "digest": "sha256:archivelayer2", "size": 40000 }
+                            ],
+                            "labels": {}
+                        }
+                    }
+                }
+                """;
+            var syftOutput = SyftOutput.FromJson(syftOutputJson);
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.IsAny<string>(),
+                        It.IsAny<IList<string>>(),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    )
+                )
+                .ReturnsAsync(syftOutput);
+
+            var layerMappedComponents = new[]
+            {
+                new LayerMappedLinuxComponents
+                {
+                    DockerLayer = new DockerLayer { DiffId = "sha256:archivelayer2", LayerIndex = 1 },
+                    Components = [new LinuxComponent("azurelinux", "3.0", "openssl", "3.1.0")],
+                },
+            };
+
+            this.mockSyftLinuxScanner.Setup(scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.IsAny<IEnumerable<DockerLayer>>(),
+                        It.IsAny<ISet<ComponentType>>()
+                    )
+                )
+                .Returns(layerMappedComponents);
+
+            var linuxContainerDetector = new LinuxContainerDetector(
+                this.mockSyftLinuxScanner.Object,
+                this.mockDockerService.Object,
+                this.mockLinuxContainerDetectorLogger.Object
+            );
+
+            var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+            scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+            scanResult.ContainerDetails.Should().ContainSingle();
+
+            var containerDetails = scanResult.ContainerDetails.First();
+            containerDetails.ImageId.Should().Be("sha256:archiveimg");
+            containerDetails.Tags.Should().ContainSingle().Which.Should().Be("myregistry.io/archived:v1");
+
+            var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+            detectedComponents.Should().ContainSingle();
+            var detectedComponent = detectedComponents.First();
+            detectedComponent.Component.Id.Should().Contain("openssl");
+            detectedComponent.ContainerLayerIds.Keys.Should().ContainSingle();
+            var containerId = detectedComponent.ContainerLayerIds.Keys.First();
+            detectedComponent.ContainerLayerIds[containerId].Should().BeEquivalentTo([1]); // Layer index from SyftOutput
+
+            // Verify GetSyftOutputAsync was called with oci-archive: prefix
+            this.mockSyftLinuxScanner.Verify(
+                scanner =>
+                    scanner.GetSyftOutputAsync(
+                        It.Is<string>(s => s.StartsWith("oci-archive:") && s.Contains(ociArchiveName)),
+                        It.Is<IList<string>>(binds =>
+                            binds.Count == 1 && binds[0].Contains(ociArchiveDir)),
+                        It.IsAny<LinuxScannerScope>(),
+                        It.IsAny<CancellationToken>()
+                    ),
+                Times.Once
+            );
+
+            // Verify ProcessSyftOutput was called with the correct layers
+            this.mockSyftLinuxScanner.Verify(
+                scanner =>
+                    scanner.ProcessSyftOutput(
+                        It.IsAny<SyftOutput>(),
+                        It.Is<IEnumerable<DockerLayer>>(layers =>
+                            layers.Count() == 2 &&
+                            layers.First().DiffId == "sha256:archivelayer1" &&
+                            layers.Last().DiffId == "sha256:archivelayer2"
+                        ),
+                        It.IsAny<ISet<ComponentType>>()
+                    ),
+                Times.Once
+            );
+        }
+        finally
+        {
+            System.IO.File.Delete(ociArchive);
+        }
     }
 }
