@@ -6,6 +6,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Shows the failed test output inline when using 'dotnet test' with Microsoft Testing Platform. -->
     <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <!-- Exclude slow integration tests by default.  CI overrides this (see build.yml). -->
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --filter TestCategory!=Integration</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
   <ItemGroup Label="Package References">
