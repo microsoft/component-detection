@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux.Factories;
 
 using System.Collections.Generic;
@@ -19,14 +18,14 @@ public abstract class ArtifactComponentFactoryBase : IArtifactComponentFactory
     public abstract IEnumerable<string> SupportedArtifactTypes { get; }
 
     /// <inheritdoc/>
-    public abstract TypedComponent CreateComponent(ArtifactElement artifact, Distro distro);
+    public abstract TypedComponent? CreateComponent(ArtifactElement artifact, Distro distro);
 
     /// <summary>
     /// Extracts license information from the artifact, checking both metadata and top-level licenses array.
     /// </summary>
     /// <param name="artifact">The artifact element from Syft output.</param>
     /// <returns>A comma-separated string of license values, or null if no licenses are found.</returns>
-    protected static string GetLicenseFromArtifact(ArtifactElement artifact)
+    protected static string? GetLicenseFromArtifact(ArtifactElement artifact)
     {
         // First try metadata.License which may be a string
         var license = artifact.Metadata?.License?.String;
@@ -50,7 +49,7 @@ public abstract class ArtifactComponentFactoryBase : IArtifactComponentFactory
     /// </summary>
     /// <param name="artifact">The artifact element from Syft output.</param>
     /// <returns>The author or maintainer string, or null if neither is found.</returns>
-    protected static string GetAuthorFromArtifact(ArtifactElement artifact)
+    protected static string? GetAuthorFromArtifact(ArtifactElement artifact)
     {
         var author = artifact.Metadata?.Author;
         if (!string.IsNullOrEmpty(author))

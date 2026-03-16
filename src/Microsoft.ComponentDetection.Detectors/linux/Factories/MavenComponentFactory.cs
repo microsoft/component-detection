@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux.Factories;
 
 using System.Collections.Generic;
@@ -17,7 +16,7 @@ internal class MavenComponentFactory : ArtifactComponentFactoryBase
     public override IEnumerable<string> SupportedArtifactTypes => ["java-archive"];
 
     /// <inheritdoc/>
-    public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
+    public override TypedComponent? CreateComponent(ArtifactElement artifact, Distro distro)
     {
         if (artifact == null)
         {
@@ -59,7 +58,7 @@ internal class MavenComponentFactory : ArtifactComponentFactoryBase
     /// Attempts to parse groupId and artifactId from a name in the format "groupId:artifactId"
     /// or similar Maven coordinate notation.
     /// </summary>
-    private static bool TryParseFromName(string name, out string groupId, out string artifactId)
+    private static bool TryParseFromName(string name, out string? groupId, out string? artifactId)
     {
         groupId = null;
         artifactId = null;

@@ -698,11 +698,11 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             {
                 // MvnCli processes root and generates deps for all modules
                 pr.SingleFileComponentRecorder.RegisterUsage(
-                    new DetectedComponent(new MavenComponent("com.test", "parent-app", "1.0.0")));
+                    new DetectedComponent(new MavenComponent("org.projecta", "dep-from-root-a", "1.0.0")));
                 pr.SingleFileComponentRecorder.RegisterUsage(
-                    new DetectedComponent(new MavenComponent("com.test", "module-a", "1.0.0")));
+                    new DetectedComponent(new MavenComponent("org.projecta", "dep-from-nested-a", "1.0.0")));
                 pr.SingleFileComponentRecorder.RegisterUsage(
-                    new DetectedComponent(new MavenComponent("com.test", "module-b", "1.0.0")));
+                    new DetectedComponent(new MavenComponent("org.projecta", "dep-from-submodule-a", "1.0.0")));
             });
 
         // Root pom.xml content (doesn't matter for this test, just needs to exist)
@@ -737,6 +737,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         var (detectorResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("pom.xml", rootPomContent)
             .WithFile("module-a/pom.xml", moduleAPomContent)
+            .WithFile(BcdeMvnFileName, "com.test:parent-app:jar:1.0.0", [BcdeMvnFileName])
             .ExecuteDetectorAsync();
 
         // Assert
@@ -846,20 +847,23 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(true);
 
         // MvnCli runs: projectA succeeds, projectB fails
-        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.Is<ProcessRequest>(pr => pr.ComponentStream.Location.Contains("projectA")), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MavenCliResult(true, null));
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.Is<ProcessRequest>(pr => pr.ComponentStream.Location.Contains("projectB")), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(false, "Maven CLI failed for projectB"));
 
         // Setup file utility: projectA has deps file, projectB does not
-        this.fileUtilityServiceMock.Setup(x => x.Exists(It.Is<string>(s => s.EndsWith(BcdeMvnFileName))))
-            .Returns((string path) => path.Contains("projectA"));
-        this.fileUtilityServiceMock.Setup(x => x.ReadAllText(It.Is<string>(s => s.EndsWith(BcdeMvnFileName) && s.Contains("projectA"))))
-            .Returns("com.projecta:app-a:jar:1.0.0");
+        this.fileUtilityServiceMock.Setup(x => x.Exists(It.IsAny<string>()))
+            .Returns((string path) => path.Contains("projectA") && path.EndsWith(BcdeMvnFileName));
+        this.fileUtilityServiceMock.Setup(x => x.ReadAllText(It.IsAny<string>()))
+            .Returns((string path) => path.Contains("projectA") && path.EndsWith(BcdeMvnFileName) ? "com.projecta:app-a:jar:1.0.0\ncom.projecta:module-a1:jar:1.0.0" : string.Empty);
 
+        // Setup parsing: projectA deps file parsing
         this.mavenCommandServiceMock.Setup(x => x.ParseDependenciesFile(It.IsAny<ProcessRequest>()))
             .Callback((ProcessRequest pr) =>
             {
-                // Only register components for projectA's bcde.mvndeps
-                if (pr.ComponentStream.Location.Contains("projectA"))
+                // Only register components when processing the projectA dependency file
+                if (pr.ComponentStream.Location.Contains("projectA") && pr.ComponentStream.Location.EndsWith(BcdeMvnFileName))
                 {
                     pr.SingleFileComponentRecorder.RegisterUsage(
                         new DetectedComponent(new MavenComponent("com.projecta", "app-a", "1.0.0")));
@@ -931,6 +935,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .WithFile("projectA/module-a1/pom.xml", projectAModulePomContent)
             .WithFile("projectB/pom.xml", projectBPomContent)
             .WithFile("projectB/module-b1/pom.xml", projectBModulePomContent)
+            .WithFile(BcdeMvnFileName, "com.projecta:app-a:jar:1.0.0", [BcdeMvnFileName], $"projectA/{BcdeMvnFileName}")
             .ExecuteDetectorAsync();
 
         // Assert
@@ -1066,10 +1071,125 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         detectorResult.AdditionalTelemetryDetails.Should().NotContainKey("FailedEndpoints");
     }
 
+    [TestMethod]
+    public async Task WhenAuthenticationFailsAndParentChildPropertiesUsed_MaintainsCorrectOrderingDuringFallback_Async()
+    {
+        // Arrange
+        const string parentPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.yammer.veritas</groupId>
+    <artifactId>veritas-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <mockito.version>4.11.0</mockito.version>
+        <jackson.version>2.21.1</jackson.version>
+    </properties>
+
+    <modules>
+        <module>veritas-api</module>
+    </modules>
+
+    <repositories>
+        <repository>
+            <id>yammer-artifacts</id>
+            <name>yammer-artifacts</name>
+            <url>https://pkgs.dev.azure.com/yammer/_packaging/yammer-artifacts/maven/v1</url>
+        </repository>
+    </repositories>
+</project>";
+
+        const string childPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <parent>
+        <artifactId>veritas-parent</artifactId>
+        <groupId>com.yammer.veritas</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>veritas-api</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        // Setup Maven CLI to fail with authentication error (401 Unauthorized)
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(true);
+
+        this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MavenCliResult(false, "status code: 401, reason phrase: Unauthorized"));
+
+        // Act - Test with parent and child POM structure
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", parentPomContent)
+            .WithFile("veritas-api/pom.xml", childPomContent)
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // Should fall back to static parsing after authentication failure
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        // Should detect all 3 property-based dependencies from child POM
+        // This verifies that parent properties were correctly resolved during fallback
+        detectedComponents.Should().HaveCount(3);
+
+        var mavenComponents = detectedComponents.Where(x => x.Component is MavenComponent).ToList();
+        mavenComponents.Should().HaveCount(3);
+
+        // Verify each property-based dependency was resolved with correct version from parent
+        var commonsLang3 = mavenComponents.FirstOrDefault(x =>
+            ((MavenComponent)x.Component).ArtifactId == "commons-lang3");
+        commonsLang3.Should().NotBeNull();
+        ((MavenComponent)commonsLang3.Component).Version.Should().Be("3.18.0");
+
+        var mockitoCore = mavenComponents.FirstOrDefault(x =>
+            ((MavenComponent)x.Component).ArtifactId == "mockito-core");
+        mockitoCore.Should().NotBeNull();
+        ((MavenComponent)mockitoCore.Component).Version.Should().Be("4.11.0");
+
+        var jacksonCore = mavenComponents.FirstOrDefault(x =>
+            ((MavenComponent)x.Component).ArtifactId == "jackson-core");
+        jacksonCore.Should().NotBeNull();
+        ((MavenComponent)jacksonCore.Component).Version.Should().Be("2.21.1");
+
+        // Verify telemetry shows authentication failure
+        detectorResult.AdditionalTelemetryDetails.Should().ContainKey("FallbackReason");
+        detectorResult.AdditionalTelemetryDetails["FallbackReason"].Should().Be("AuthenticationFailure");
+
+        // Should have method showing mixed detection was used (CLI failed but fallback succeeded)
+        detectorResult.AdditionalTelemetryDetails.Should().ContainKey("DetectionMethod");
+        detectorResult.AdditionalTelemetryDetails["DetectionMethod"].Should().Be("Mixed");
+    }
+
     private void SetupMvnCliSuccess(string depsFileContent)
     {
         this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
             .ReturnsAsync(true);
+
+        this.mavenCommandServiceMock.Setup(x => x.BcdeMvnDependencyFileName)
+            .Returns(BcdeMvnFileName);
 
         // Setup for 3-parameter version (used by MavenWithFallbackDetector)
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
@@ -1083,8 +1203,7 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .Returns(depsFileContent);
 
         // Use a valid minimal pom.xml - the actual content doesn't matter for MvnCli success path
-        // since components come from the mocked ParseDependenciesFile, but using valid XML
-        // makes the test more robust against future changes that might read/validate the pom.
+        // since components come from the generated dependency file
         const string validPomXml = @"<?xml version=""1.0"" encoding=""UTF-8""?>
 <project xmlns=""http://maven.apache.org/POM/4.0.0"">
     <modelVersion>4.0.0</modelVersion>
@@ -1094,5 +1213,8 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
 </project>";
 
         this.DetectorTestUtility.WithFile("pom.xml", validPomXml);
+
+        // Add the dependency file that Maven CLI would have generated
+        this.DetectorTestUtility.WithFile(BcdeMvnFileName, depsFileContent, [BcdeMvnFileName]);
     }
 }

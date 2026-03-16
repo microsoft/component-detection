@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux;
 
 using System;
@@ -27,16 +26,16 @@ public class LinuxApplicationLayerDetector(
     /// <inheritdoc/>
     public new IEnumerable<string> Categories =>
         [
-            Enum.GetName(typeof(DetectorClass), DetectorClass.Linux),
-            Enum.GetName(typeof(DetectorClass), DetectorClass.Cargo),
-            Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods),
-            Enum.GetName(typeof(DetectorClass), DetectorClass.Conda),
-            Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod),
-            Enum.GetName(typeof(DetectorClass), DetectorClass.Maven),
-            Enum.GetName(typeof(DetectorClass), DetectorClass.Npm),
-            Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet),
-            Enum.GetName(typeof(DetectorClass), DetectorClass.Pip),
-            Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems),
+            Enum.GetName(typeof(DetectorClass), DetectorClass.Linux)!,
+            Enum.GetName(typeof(DetectorClass), DetectorClass.Cargo)!,
+            Enum.GetName(typeof(DetectorClass), DetectorClass.CocoaPods)!,
+            Enum.GetName(typeof(DetectorClass), DetectorClass.Conda)!,
+            Enum.GetName(typeof(DetectorClass), DetectorClass.GoMod)!,
+            Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)!,
+            Enum.GetName(typeof(DetectorClass), DetectorClass.Npm)!,
+            Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)!,
+            Enum.GetName(typeof(DetectorClass), DetectorClass.Pip)!,
+            Enum.GetName(typeof(DetectorClass), DetectorClass.RubyGems)!,
         ];
 
     /// <inheritdoc/>
