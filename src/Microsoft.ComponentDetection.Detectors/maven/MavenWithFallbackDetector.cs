@@ -109,7 +109,10 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private readonly IMavenCommandService mavenCommandService;
     private readonly IEnvironmentVariableService envVarService;
     private readonly IFileUtilityService fileUtilityService;
-    private readonly Dictionary<string, XmlDocument> documentsLoaded = [];
+
+    // Two-pass static parsing: collect variables first, then resolve components
+    private readonly ConcurrentDictionary<string, string> collectedVariables = new();
+    private readonly ConcurrentQueue<PendingComponent> pendingComponents = new();
 
     // Track original pom.xml files for potential fallback
     private readonly ConcurrentBag<ProcessRequest> originalPomFiles = [];
@@ -466,6 +469,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
     protected override Task OnDetectionFinishedAsync()
     {
+        // Second pass: resolve all pending components with collected variables
+        this.ResolvePendingComponents();
+
         // Record telemetry
         this.Telemetry["DetectionMethod"] = this.usedDetectionMethod.ToString();
         this.Telemetry["FallbackReason"] = this.fallbackReason.ToString();
@@ -474,6 +480,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         this.Telemetry["TotalComponentCount"] = (this.mvnCliComponentCount + this.staticParserComponentCount).ToString();
         this.Telemetry["MavenCliAvailable"] = this.mavenCliAvailable.ToString();
         this.Telemetry["OriginalPomFileCount"] = this.originalPomFiles.Count.ToString();
+        this.Telemetry["CollectedVariableCount"] = this.collectedVariables.Count.ToString();
+        this.Telemetry["PendingComponentCount"] = this.pendingComponents.Count.ToString();
 
         if (!this.failedEndpoints.IsEmpty)
         {
@@ -536,16 +544,15 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             var document = new XmlDocument();
             document.Load(file.Stream);
 
-            lock (this.documentsLoaded)
-            {
-                this.documentsLoaded.TryAdd(file.Location, document);
-            }
-
+            // Single XML parsing pass: create namespace manager once
             var namespaceManager = new XmlNamespaceManager(document.NameTable);
             namespaceManager.AddNamespace(ProjNamespace, MavenXmlNamespace);
 
+            // First pass: collect all variables from this document (efficient single pass)
+            this.CollectVariablesFromDocument(document, namespaceManager, filePath);
+
+            // First pass: collect dependencies (may have unresolved variables)
             var dependencyList = document.SelectNodes(DependencyNode, namespaceManager);
-            var componentsFoundInFile = 0;
 
             foreach (XmlNode dependency in dependencyList)
             {
@@ -561,31 +568,24 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 if (version != null && !version.InnerText.Contains(','))
                 {
                     var versionRef = version.InnerText.Trim('[', ']');
-                    string versionString;
 
                     if (versionRef.StartsWith("${"))
                     {
-                        versionString = this.ResolveVersion(versionRef, document, file.Location);
+                        // Store for second-pass resolution
+                        this.pendingComponents.Enqueue(new PendingComponent(
+                            groupId,
+                            artifactId,
+                            versionRef,
+                            singleFileComponentRecorder,
+                            filePath));
                     }
                     else
                     {
-                        versionString = versionRef;
-                    }
-
-                    if (!versionString.StartsWith("${"))
-                    {
-                        var component = new MavenComponent(groupId, artifactId, versionString);
+                        // Direct version - register immediately
+                        var component = new MavenComponent(groupId, artifactId, versionRef);
                         var detectedComponent = new DetectedComponent(component);
                         singleFileComponentRecorder.RegisterUsage(detectedComponent);
-                        componentsFoundInFile++;
-                    }
-                    else
-                    {
-                        this.Logger.LogDebug(
-                            "Version string {Version} for component {Group}/{Artifact} is invalid or unsupported and a component will not be recorded.",
-                            versionString,
-                            groupId,
-                            artifactId);
+                        Interlocked.Increment(ref this.staticParserComponentCount);
                     }
                 }
                 else
@@ -596,12 +596,59 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                         artifactId);
                 }
             }
-
-            Interlocked.Add(ref this.staticParserComponentCount, componentsFoundInFile);
         }
         catch (Exception e)
         {
             this.Logger.LogError(e, "Failed to read file {Path}", filePath);
+        }
+    }
+
+    /// <summary>
+    /// Collects all variable definitions from a POM document during the first pass.
+    /// Optimized to reuse XmlNamespaceManager and minimize XPath queries.
+    /// </summary>
+    /// <param name="document">The XML document to scan for variables.</param>
+    /// <param name="namespaceManager">Pre-configured namespace manager to reuse.</param>
+    /// <param name="filePath">The file path for logging purposes.</param>
+    private void CollectVariablesFromDocument(XmlDocument document, XmlNamespaceManager namespaceManager, string filePath)
+    {
+        try
+        {
+            // Collect properties variables (single XPath query)
+            var propertiesNode = document.SelectSingleNode("//proj:properties", namespaceManager);
+            if (propertiesNode != null)
+            {
+                foreach (XmlNode propertyNode in propertiesNode.ChildNodes)
+                {
+                    if (propertyNode.NodeType == XmlNodeType.Element && !string.IsNullOrWhiteSpace(propertyNode.InnerText))
+                    {
+                        var variableName = propertyNode.Name;
+                        var variableValue = propertyNode.InnerText;
+                        this.collectedVariables.TryAdd(variableName, variableValue);
+                        this.LogDebug($"Collected variable {variableName}={variableValue} from {filePath}");
+                    }
+                }
+            }
+
+            // Collect common project-level variables with optimized single query
+            // Use XPath union to get all common variables in one query
+            var commonVariablesNodes = document.SelectNodes("//proj:version | //proj:groupId | //proj:artifactId | //proj:revision", namespaceManager);
+            if (commonVariablesNodes != null)
+            {
+                foreach (XmlNode node in commonVariablesNodes)
+                {
+                    if (!string.IsNullOrWhiteSpace(node.InnerText))
+                    {
+                        var variableName = node.LocalName; // Get the element name (version, groupId, etc.)
+                        this.collectedVariables.TryAdd(variableName, node.InnerText);
+                        this.LogDebug($"Collected project variable {variableName}={node.InnerText} from {filePath}");
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogError(e, "Failed to collect variables from file {Path}", filePath);
         }
     }
 
@@ -649,72 +696,82 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         this.LogWarning(guidance.ToString());
     }
 
-    private string ResolveVersion(string versionString, XmlDocument currentDocument, string currentDocumentFileLocation)
+    /// <summary>
+    /// Second pass: resolve all pending components using collected variables.
+    /// This ensures variables defined in any POM file can be used by components in any other POM file.
+    /// </summary>
+    private void ResolvePendingComponents()
     {
-        var returnedVersionString = versionString;
-        var match = VersionRegex.Match(versionString);
+        var resolvedCount = 0;
+        var skippedCount = 0;
+
+        while (this.pendingComponents.TryDequeue(out var pendingComponent))
+        {
+            try
+            {
+                var resolvedVersion = this.ResolveVersionFromCollectedVariables(pendingComponent.VersionTemplate);
+                if (!resolvedVersion.StartsWith("${"))
+                {
+                    var component = new MavenComponent(pendingComponent.GroupId, pendingComponent.ArtifactId, resolvedVersion);
+                    var detectedComponent = new DetectedComponent(component);
+                    pendingComponent.Recorder.RegisterUsage(detectedComponent);
+                    Interlocked.Increment(ref this.staticParserComponentCount);
+                    resolvedCount++;
+
+                    this.LogDebug($"Resolved component {pendingComponent.GroupId}/{pendingComponent.ArtifactId}:{resolvedVersion} from {pendingComponent.FilePath}");
+                }
+                else
+                {
+                    skippedCount++;
+                    this.Logger.LogDebug(
+                        "Version string {Version} for component {Group}/{Artifact} could not be resolved and a component will not be recorded. File: {File}",
+                        resolvedVersion,
+                        pendingComponent.GroupId,
+                        pendingComponent.ArtifactId,
+                        pendingComponent.FilePath);
+                }
+            }
+            catch (Exception e)
+            {
+                skippedCount++;
+                this.Logger.LogError(
+                    e,
+                    "Failed to resolve pending component {Group}/{Artifact} from {File}",
+                    pendingComponent.GroupId,
+                    pendingComponent.ArtifactId,
+                    pendingComponent.FilePath);
+            }
+        }
+
+        this.LogInfo($"Second pass completed: {resolvedCount} components resolved, {skippedCount} skipped due to unresolved variables");
+    }
+
+    /// <summary>
+    /// Resolves a version template using the collected variables dictionary.
+    /// This is more efficient than scanning all documents for each variable resolution.
+    /// </summary>
+    /// <param name="versionTemplate">The version template with variables (e.g., "${revision}").</param>
+    /// <returns>The resolved version string, or the original template if variables cannot be resolved.</returns>
+    private string ResolveVersionFromCollectedVariables(string versionTemplate)
+    {
+        var resolvedVersion = versionTemplate;
+        var match = VersionRegex.Match(versionTemplate);
 
         if (match.Success)
         {
             var variable = match.Groups[1].Captures[0].ToString();
-            var replacement = this.ReplaceVariable(variable, currentDocument, currentDocumentFileLocation);
-            returnedVersionString = versionString.Replace("${" + variable + "}", replacement);
-        }
-
-        return returnedVersionString;
-    }
-
-    private string ReplaceVariable(string variable, XmlDocument currentDocument, string currentDocumentFileLocation)
-    {
-        var result = this.FindVariableInDocument(currentDocument, currentDocumentFileLocation, variable);
-        if (result != null)
-        {
-            return result;
-        }
-
-        lock (this.documentsLoaded)
-        {
-            foreach (var pathDocumentPair in this.documentsLoaded)
+            if (this.collectedVariables.TryGetValue(variable, out var replacement))
             {
-                var path = pathDocumentPair.Key;
-                var document = pathDocumentPair.Value;
-                result = this.FindVariableInDocument(document, path, variable);
-                if (result != null)
-                {
-                    return result;
-                }
+                resolvedVersion = versionTemplate.Replace("${" + variable + "}", replacement);
+                this.LogDebug($"Resolved variable {variable} to {replacement} in version {versionTemplate}");
+            }
+            else
+            {
+                this.LogDebug($"Variable {variable} not found in collected variables for version {versionTemplate}");
             }
         }
 
-        return $"${{{variable}}}";
-    }
-
-    private string FindVariableInDocument(XmlDocument document, string path, string variable)
-    {
-        try
-        {
-            var namespaceManager = new XmlNamespaceManager(document.NameTable);
-            namespaceManager.AddNamespace(ProjNamespace, MavenXmlNamespace);
-
-            var nodeListProject = document.SelectNodes($"//proj:{variable}", namespaceManager);
-            var nodeListProperties = document.SelectNodes($"//proj:properties/proj:{variable}", namespaceManager);
-
-            if (nodeListProject.Count != 0)
-            {
-                return nodeListProject.Item(0).InnerText;
-            }
-
-            if (nodeListProperties.Count != 0)
-            {
-                return nodeListProperties.Item(0).InnerText;
-            }
-        }
-        catch (Exception e)
-        {
-            this.Logger.LogError(e, "Failed to read file {Path}", path);
-        }
-
-        return null;
+        return resolvedVersion;
     }
 
     /// <summary>
