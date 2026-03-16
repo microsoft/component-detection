@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.NuGet;
@@ -24,6 +25,8 @@ public class BinLogProcessorTests
     private string testDir = null!;
 
     public BinLogProcessorTests() => this.processor = new BinLogProcessor(NullLogger.Instance);
+
+    private static string CurrentRid => RuntimeInformation.RuntimeIdentifier;
 
     [TestInitialize]
     public void TestInitialize()
@@ -502,13 +505,13 @@ public class BinLogProcessorTests
         var projectDir = Path.Combine(this.testDir, "SelfContained");
         Directory.CreateDirectory(projectDir);
 
-        var content = """
+        var content = $"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
                 <TargetFramework>net8.0</TargetFramework>
                 <OutputType>Exe</OutputType>
                 <SelfContained>true</SelfContained>
-                <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+                <RuntimeIdentifier>{CurrentRid}</RuntimeIdentifier>
               </PropertyGroup>
             </Project>
             """;
@@ -795,12 +798,12 @@ public class BinLogProcessorTests
         WriteMinimalProgram(appDir);
 
         // Orchestrator: restore, build, then restore with SelfContained (all in one binlog)
-        var orchestratorContent = """
+        var orchestratorContent = $"""
             <Project>
               <Target Name="BuildAndPublish">
-                <MSBuild Projects="App\App.csproj" Targets="Restore" />
-                <MSBuild Projects="App\App.csproj" Targets="Build" Properties="UseAppHost=false" />
-                <MSBuild Projects="App\App.csproj" Targets="Restore" Properties="SelfContained=true;RuntimeIdentifier=win-x64" />
+                <MSBuild Projects="App/App.csproj" Targets="Restore" />
+                <MSBuild Projects="App/App.csproj" Targets="Build" Properties="UseAppHost=false" />
+                <MSBuild Projects="App/App.csproj" Targets="Restore" Properties="SelfContained=true;RuntimeIdentifier={CurrentRid}" />
               </Target>
             </Project>
             """;
@@ -848,12 +851,12 @@ public class BinLogProcessorTests
 
         // First build (not self-contained), then publish (self-contained), both into same binlog
         // We use an orchestrator project that invokes MSBuild twice
-        var orchestratorContent = """
+        var orchestratorContent = $"""
             <Project>
               <Target Name="BuildAndPublish">
                 <MSBuild Projects="App.csproj" Targets="Restore" />
                 <MSBuild Projects="App.csproj" Targets="Build" Properties="UseAppHost=false" />
-                <MSBuild Projects="App.csproj" Targets="Restore" Properties="SelfContained=true;RuntimeIdentifier=win-x64" />
+                <MSBuild Projects="App.csproj" Targets="Restore" Properties="SelfContained=true;RuntimeIdentifier={CurrentRid}" />
               </Target>
             </Project>
             """;
@@ -1422,12 +1425,12 @@ public class BinLogProcessorTests
         WriteMinimalProgram(appDir);
 
         // Orchestrator: restore, build, then restore with SelfContained (all in one binlog)
-        var orchestratorContent = """
+        var orchestratorContent = $"""
             <Project>
               <Target Name="BuildThenRestore">
-                <MSBuild Projects="App\App.csproj" Targets="Restore" />
-                <MSBuild Projects="App\App.csproj" Targets="Build" Properties="UseAppHost=false" />
-                <MSBuild Projects="App\App.csproj" Targets="Restore" Properties="SelfContained=true;RuntimeIdentifier=win-x64" />
+                <MSBuild Projects="App/App.csproj" Targets="Restore" />
+                <MSBuild Projects="App/App.csproj" Targets="Build" Properties="UseAppHost=false" />
+                <MSBuild Projects="App/App.csproj" Targets="Restore" Properties="SelfContained=true;RuntimeIdentifier={CurrentRid}" />
               </Target>
             </Project>
             """;
@@ -1564,7 +1567,7 @@ public class BinLogProcessorTests
         WriteMinimalProgram(projectDir);
 
         var binlogPath = Path.Combine(projectDir, "build.binlog");
-        await RunDotNetAsync(projectDir, $"msbuild AotAndSC.csproj -t:Restore -bl:\"{binlogPath}\" /p:SelfContained=true /p:RuntimeIdentifier=win-x64");
+        await RunDotNetAsync(projectDir, $"msbuild AotAndSC.csproj -t:Restore -bl:\"{binlogPath}\" /p:SelfContained=true /p:RuntimeIdentifier={CurrentRid}");
 
         var results = this.processor.ExtractProjectInfo(binlogPath);
 
