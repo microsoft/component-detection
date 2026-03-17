@@ -47,12 +47,24 @@ internal class BinLogProcessor : IBinLogProcessor
             // Maps project instance ID to evaluation ID
             var projectInstanceToEvaluationMap = new Dictionary<int, int>();
 
+            // Diagnostic counters
+            var statusEventCount = 0;
+            var evalFinishedCount = 0;
+            var projectStartedCount = 0;
+            var projectStartedSkippedCount = 0;
+            var projectFinishedCount = 0;
+            var projectFinishedAddedCount = 0;
+            var anyEventCount = 0;
+
             // Hook into status events to capture property evaluations
             reader.StatusEventRaised += (sender, e) =>
             {
+                statusEventCount++;
                 if (e?.BuildEventContext?.EvaluationId >= 0 &&
                     e is ProjectEvaluationFinishedEventArgs projectEvalArgs)
                 {
+                    evalFinishedCount++;
+
                     // Reuse existing project info if one was created during evaluation
                     // (e.g., from EnvironmentVariableReadEventArgs or PropertyInitialValueSetEventArgs)
                     if (!projectInfoByEvaluationId.TryGetValue(e.BuildEventContext.EvaluationId, out var projectInfo))
@@ -68,6 +80,7 @@ internal class BinLogProcessor : IBinLogProcessor
             // Hook into project started to map project instance to evaluation and capture project path
             reader.ProjectStarted += (sender, e) =>
             {
+                projectStartedCount++;
                 if (e?.BuildEventContext?.EvaluationId >= 0 &&
                     e?.BuildEventContext?.ProjectInstanceId >= 0)
                 {
@@ -79,6 +92,15 @@ internal class BinLogProcessor : IBinLogProcessor
                     {
                         projectInfo.ProjectPath = rebasePath != null ? rebasePath(e.ProjectFile) : e.ProjectFile;
                     }
+                }
+                else
+                {
+                    projectStartedSkippedCount++;
+                    this.logger.LogDebug(
+                        "ProjectStarted skipped: EvalId={EvalId}, InstanceId={InstanceId}, File={File}",
+                        e?.BuildEventContext?.EvaluationId,
+                        e?.BuildEventContext?.ProjectInstanceId,
+                        e?.ProjectFile);
                 }
             };
 
@@ -115,22 +137,41 @@ internal class BinLogProcessor : IBinLogProcessor
             // Hook into any event to capture property reassignments and item changes during build
             reader.AnyEventRaised += (sender, e) =>
             {
+                anyEventCount++;
                 this.HandleBuildEvent(e, projectInstanceToEvaluationMap, projectInfoByEvaluationId, rebasePath);
             };
 
             // Hook into project finished to collect final project info and establish hierarchy
             reader.ProjectFinished += (sender, e) =>
             {
+                projectFinishedCount++;
                 if (e?.BuildEventContext?.ProjectInstanceId >= 0 &&
                     projectInstanceToEvaluationMap.TryGetValue(e.BuildEventContext.ProjectInstanceId, out var evaluationId) &&
                     projectInfoByEvaluationId.TryGetValue(evaluationId, out var projectInfo) &&
                     !string.IsNullOrEmpty(projectInfo.ProjectPath))
                 {
+                    projectFinishedAddedCount++;
                     this.AddOrMergeProjectInfo(projectInfo, projectInfoByPath);
                 }
             };
 
             reader.Replay(binlogPath);
+
+            this.logger.LogDebug(
+                "Binlog replay complete: StatusEvents={StatusEvents}, EvalFinished={EvalFinished}, " +
+                "ProjectStarted={ProjectStarted} (skipped={ProjectStartedSkipped}), " +
+                "ProjectFinished={ProjectFinished} (added={ProjectFinishedAdded}), " +
+                "AnyEvents={AnyEvents}, EvalMapSize={EvalMapSize}, InstanceMapSize={InstanceMapSize}, Results={Results}",
+                statusEventCount,
+                evalFinishedCount,
+                projectStartedCount,
+                projectStartedSkippedCount,
+                projectFinishedCount,
+                projectFinishedAddedCount,
+                anyEventCount,
+                projectInfoByEvaluationId.Count,
+                projectInstanceToEvaluationMap.Count,
+                projectInfoByPath.Count);
         }
         catch (Exception ex)
         {
