@@ -41,6 +41,12 @@ internal class BinLogProcessor : IBinLogProcessor
         {
             var reader = new BinLogReader();
 
+            reader.OnException += ex =>
+                this.logger.LogWarning(ex, "BinLogReader.OnException during replay");
+
+            reader.RecoverableReadError += args =>
+                this.logger.LogDebug("BinLogReader.RecoverableReadError: {Message}", args.ErrorType);
+
             // Maps evaluation ID to MSBuildProjectInfo being populated
             var projectInfoByEvaluationId = new Dictionary<int, MSBuildProjectInfo>();
 
