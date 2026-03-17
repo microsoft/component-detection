@@ -28,12 +28,20 @@ public class BinLogProcessorTests
 
     public BinLogProcessorTests() => this.processor = new BinLogProcessor(this.logger);
 
+    public TestContext TestContext { get; set; } = null!;
+
     private static string CurrentRid => RuntimeInformation.RuntimeIdentifier;
 
     [TestInitialize]
     public void TestInitialize()
     {
-        this.testDir = Path.Combine(Path.GetTempPath(), "BinLogProcessorTests", Guid.NewGuid().ToString("N"));
+        // Use test name as directory so binlogs are easy to find after failures.
+        this.testDir = Path.Combine(Path.GetTempPath(), "BinLogProcessorTests", this.TestContext.TestName!);
+        if (Directory.Exists(this.testDir))
+        {
+            Directory.Delete(this.testDir, recursive: true);
+        }
+
         Directory.CreateDirectory(this.testDir);
 
         // Copy the workspace global.json so temp projects use the same SDK as the repo.
@@ -76,6 +84,12 @@ public class BinLogProcessorTests
     [TestCleanup]
     public void TestCleanup()
     {
+        if (this.TestContext.CurrentTestOutcome != UnitTestOutcome.Passed)
+        {
+            Console.WriteLine($"[DIAG] Test failed — preserving test artifacts at: {this.testDir}");
+            return;
+        }
+
         try
         {
             if (Directory.Exists(this.testDir))
