@@ -55,11 +55,21 @@ internal class BinLogProcessor : IBinLogProcessor
             var projectFinishedCount = 0;
             var projectFinishedAddedCount = 0;
             var anyEventCount = 0;
+            var firstEventTypes = new List<string>(10);
 
             // Hook into status events to capture property evaluations
             reader.StatusEventRaised += (sender, e) =>
             {
                 statusEventCount++;
+                if (statusEventCount <= 3)
+                {
+                    this.logger.LogDebug(
+                        "StatusEvent[{Index}]: Type={Type}, EvalId={EvalId}",
+                        statusEventCount,
+                        e?.GetType().FullName,
+                        e?.BuildEventContext?.EvaluationId);
+                }
+
                 if (e?.BuildEventContext?.EvaluationId >= 0 &&
                     e is ProjectEvaluationFinishedEventArgs projectEvalArgs)
                 {
@@ -138,6 +148,11 @@ internal class BinLogProcessor : IBinLogProcessor
             reader.AnyEventRaised += (sender, e) =>
             {
                 anyEventCount++;
+                if (firstEventTypes.Count < 10)
+                {
+                    firstEventTypes.Add(e?.GetType().Name ?? "null");
+                }
+
                 this.HandleBuildEvent(e, projectInstanceToEvaluationMap, projectInfoByEvaluationId, rebasePath);
             };
 
@@ -161,7 +176,8 @@ internal class BinLogProcessor : IBinLogProcessor
                 "Binlog replay complete: StatusEvents={StatusEvents}, EvalFinished={EvalFinished}, " +
                 "ProjectStarted={ProjectStarted} (skipped={ProjectStartedSkipped}), " +
                 "ProjectFinished={ProjectFinished} (added={ProjectFinishedAdded}), " +
-                "AnyEvents={AnyEvents}, EvalMapSize={EvalMapSize}, InstanceMapSize={InstanceMapSize}, Results={Results}",
+                "AnyEvents={AnyEvents}, EvalMapSize={EvalMapSize}, InstanceMapSize={InstanceMapSize}, Results={Results}, " +
+                "FirstEventTypes=[{FirstEventTypes}]",
                 statusEventCount,
                 evalFinishedCount,
                 projectStartedCount,
@@ -171,7 +187,8 @@ internal class BinLogProcessor : IBinLogProcessor
                 anyEventCount,
                 projectInfoByEvaluationId.Count,
                 projectInstanceToEvaluationMap.Count,
-                projectInfoByPath.Count);
+                projectInfoByPath.Count,
+                string.Join(", ", firstEventTypes));
         }
         catch (Exception ex)
         {

@@ -43,6 +43,10 @@ public class BinLogProcessorTests
         {
             File.Copy(workspaceGlobalJson, Path.Combine(this.testDir, "global.json"));
         }
+
+        this.logger.Clear();
+        var globalJsonStatus = workspaceGlobalJson ?? "NOT FOUND";
+        this.logger.Log(LogLevel.Information, default, $"TestInit: cwd={Directory.GetCurrentDirectory()}, globalJson={globalJsonStatus}, testDir={this.testDir}", null, (s, _) => s);
     }
 
     private static string? FindWorkspaceGlobalJsonPath()
@@ -1600,12 +1604,16 @@ public class BinLogProcessorTests
 
     private static async Task<string> BuildProjectAsync(string projectDir, string projectFile)
     {
+        // Log SDK version for diagnostics (helps identify version mismatches on CI)
+        var sdkVersionResult = await RunProcessCaptureAsync(projectDir, "dotnet", "--version");
+        Console.WriteLine($"[DIAG] dotnet --version in {projectDir}: {sdkVersionResult.Trim()}");
+
         var binlogPath = Path.Combine(projectDir, "build.binlog");
         await RunDotNetAsync(projectDir, $"build \"{projectFile}\" -bl:\"{binlogPath}\" /p:UseAppHost=false");
 
         if (!File.Exists(binlogPath))
         {
-            throw new InvalidOperationException($"Build did not produce binlog at: {binlogPath}");
+            throw new InvalidOperationException($"Build did not produce binlog at: {binlogPath}. SDK={sdkVersionResult.Trim()}");
         }
 
         Console.WriteLine($"[DIAG] Built binlog: {binlogPath} ({new FileInfo(binlogPath).Length} bytes)");
@@ -1616,6 +1624,27 @@ public class BinLogProcessorTests
     {
         // dotnet build already includes restore by default, no need for separate restore
         await RunProcessAsync(workingDirectory, "dotnet", arguments);
+    }
+
+    private static async Task<string> RunProcessCaptureAsync(string workingDirectory, string fileName, string arguments)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = fileName,
+            Arguments = arguments,
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        using var process = Process.Start(psi)
+            ?? throw new InvalidOperationException($"Failed to start: {fileName} {arguments}");
+
+        var stdout = await process.StandardOutput.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        return stdout;
     }
 
     private static async Task RunProcessAsync(string workingDirectory, string fileName, string arguments)
@@ -1714,6 +1743,14 @@ public class BinLogProcessorTests
             lock (this.messages)
             {
                 return this.messages.Count == 0 ? "(none)" : string.Join("; ", this.messages);
+            }
+        }
+
+        public void Clear()
+        {
+            lock (this.messages)
+            {
+                this.messages.Clear();
             }
         }
     }
