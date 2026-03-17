@@ -38,7 +38,7 @@ public class NpmLockfile3Detector : NpmLockfileDetectorBase
 
     public override string Id => "NpmLockfile3";
 
-    public override int Version => 3;
+    public override int Version => 4;
 
     protected override bool IsSupportedLockfileVersion(int lockfileVersion) => lockfileVersion == 3;
 
