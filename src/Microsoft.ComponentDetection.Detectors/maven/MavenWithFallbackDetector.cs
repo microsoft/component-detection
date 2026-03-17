@@ -159,7 +159,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private static string NormalizeDirectoryPath(string path) =>
             path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
 
-    private void LogDebug(string message) =>
+    private void LogDebugWithId(string message) =>
         this.Logger.LogDebug("{DetectorId}: {Message}", this.Id, message);
 
     private void LogInfo(string message) =>
@@ -265,7 +265,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             return false;
         }
 
-        this.LogDebug("Maven CLI is available. Running MvnCli detection.");
+        this.LogDebugWithId("Maven CLI is available. Running MvnCli detection.");
         return true;
     }
 
@@ -379,7 +379,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         // Determine detection method based on results
         this.DetermineDetectionMethod(cliSuccessCount, cliFailureCount);
 
-        this.LogDebug($"Maven CLI processing complete: {cliSuccessCount} succeeded, {cliFailureCount} failed out of {this.originalPomFiles.Count} root pom.xml files. Retrieving generated dependency graphs.");
+        this.LogDebugWithId($"Maven CLI processing complete: {cliSuccessCount} succeeded, {cliFailureCount} failed out of {this.originalPomFiles.Count} root pom.xml files. Retrieving generated dependency graphs.");
 
         // Use comprehensive directory scanning after Maven CLI execution to find all generated dependency files
         // This ensures we find dependency files from submodules even if Maven CLI was only run on parent pom.xml
@@ -421,7 +421,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         if (cliFailureCount == 0 && cliSuccessCount > 0)
         {
             this.usedDetectionMethod = MavenDetectionMethod.MvnCliOnly;
-            this.LogDebug("All pom.xml files processed successfully with Maven CLI.");
+            this.LogDebugWithId("All pom.xml files processed successfully with Maven CLI.");
         }
         else if (cliSuccessCount == 0 && cliFailureCount > 0)
         {
@@ -446,17 +446,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         if (pattern == this.mavenCommandService.BcdeMvnDependencyFileName)
         {
-            // Process MvnCli result - register as reader and cleanup when done
-            var depsFilePath = processRequest.ComponentStream.Location;
-            this.mavenCommandService.RegisterFileReader(depsFilePath);
-            try
-            {
-                this.ProcessMvnCliResult(processRequest);
-            }
-            finally
-            {
-                this.mavenCommandService.UnregisterFileReader(depsFilePath);
-            }
+            // Process MvnCli result
+            this.ProcessMvnCliResult(processRequest);
         }
         else
         {
@@ -625,7 +616,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                         var variableName = propertyNode.Name;
                         var variableValue = propertyNode.InnerText;
                         this.collectedVariables.TryAdd(variableName, variableValue);
-                        this.LogDebug($"Collected variable {variableName}={variableValue} from {filePath}");
                     }
                 }
             }
@@ -641,7 +631,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     {
                         var variableName = node.LocalName; // Get the element name (version, groupId, etc.)
                         this.collectedVariables.TryAdd(variableName, node.InnerText);
-                        this.LogDebug($"Collected project variable {variableName}={node.InnerText} from {filePath}");
                     }
                 }
             }
@@ -717,8 +706,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     pendingComponent.Recorder.RegisterUsage(detectedComponent);
                     Interlocked.Increment(ref this.staticParserComponentCount);
                     resolvedCount++;
-
-                    this.LogDebug($"Resolved component {pendingComponent.GroupId}/{pendingComponent.ArtifactId}:{resolvedVersion} from {pendingComponent.FilePath}");
                 }
                 else
                 {
@@ -763,11 +750,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             if (this.collectedVariables.TryGetValue(variable, out var replacement))
             {
                 resolvedVersion = versionTemplate.Replace("${" + variable + "}", replacement);
-                this.LogDebug($"Resolved variable {variable} to {replacement} in version {versionTemplate}");
-            }
-            else
-            {
-                this.LogDebug($"Variable {variable} not found in collected variables for version {versionTemplate}");
             }
         }
 
@@ -829,7 +811,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
                         if (location.StartsWith(pomDirectory, StringComparison.OrdinalIgnoreCase))
                         {
-                            this.LogDebug($"Ignoring {MavenManifest} at {location}, as it has a parent {MavenManifest} at {pomDirectory}.");
+                            this.LogDebugWithId($"Ignoring {MavenManifest} at {location}, as it has a parent {MavenManifest} at {pomDirectory}.");
                             isNested = true;
                             parentPomDictionary.AddOrUpdate(
                                 pomDirectory,
@@ -845,7 +827,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
                     if (!isNested)
                     {
-                        this.LogDebug($"Discovered {request.ComponentStream.Location}.");
+                        this.LogDebugWithId($"Discovered {request.ComponentStream.Location}.");
                         parentPomDictionary.AddOrUpdate(
                                 NormalizeDirectoryPath(Path.GetDirectoryName(request.ComponentStream.Location)),
                                 [request],

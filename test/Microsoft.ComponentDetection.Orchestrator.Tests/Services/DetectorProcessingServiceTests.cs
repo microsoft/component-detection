@@ -658,4 +658,191 @@ public class DetectorProcessingServiceTests
 
         return mockCommandDetector;
     }
+
+    [TestMethod]
+    public async Task ProcessDetectorsAsync_WithMavenDetectors_ShouldCleanupMavenFilesAfterAllDetectorsFinish()
+    {
+        // Arrange - Create a temporary directory with mock Maven dependency files
+        var tempDir = Path.Combine(Path.GetTempPath(), $"maven_cleanup_test_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+
+        var testFile1 = Path.Combine(tempDir, "test1.mvndeps");
+        var testFile2 = Path.Combine(tempDir, "subdir", "test2.mvndeps");
+        var nonMavenFile = Path.Combine(tempDir, "regular.txt");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(testFile2));
+        await File.WriteAllTextAsync(testFile1, "maven dependency content 1");
+        await File.WriteAllTextAsync(testFile2, "maven dependency content 2");
+        await File.WriteAllTextAsync(nonMavenFile, "regular file content");
+
+        try
+        {
+            var tempDirInfo = new DirectoryInfo(tempDir);
+            var scanSettings = new ScanSettings
+            {
+                SourceDirectory = tempDirInfo,
+                DetectorArgs = new Dictionary<string, string>(),
+                CleanupCreatedFiles = true,
+            };
+
+            // Create mock Maven detectors
+            var mvnCliDetectorMock = new Mock<IComponentDetector>();
+            mvnCliDetectorMock.SetupAllProperties();
+            mvnCliDetectorMock.SetupGet(x => x.Id).Returns("MvnCli");
+            mvnCliDetectorMock.SetupGet(x => x.Categories).Returns(["Maven"]);
+            mvnCliDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new IndividualDetectorScanResult { ResultCode = ProcessingResultCode.Success });
+
+            var mavenWithFallbackDetectorMock = new Mock<IComponentDetector>();
+            mavenWithFallbackDetectorMock.SetupAllProperties();
+            mavenWithFallbackDetectorMock.SetupGet(x => x.Id).Returns("MavenWithFallback");
+            mavenWithFallbackDetectorMock.SetupGet(x => x.Categories).Returns(["Maven"]);
+            mavenWithFallbackDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new IndividualDetectorScanResult { ResultCode = ProcessingResultCode.Success });
+
+            var detectors = new List<IComponentDetector> { mvnCliDetectorMock.Object, mavenWithFallbackDetectorMock.Object, };
+
+            // Verify files exist before running detectors
+            File.Exists(testFile1).Should().BeTrue("Maven dependency file 1 should exist before cleanup");
+            File.Exists(testFile2).Should().BeTrue("Maven dependency file 2 should exist before cleanup");
+            File.Exists(nonMavenFile).Should().BeTrue("Non-Maven file should exist before cleanup");
+
+            // Act
+            var result = await this.serviceUnderTest.ProcessDetectorsAsync(scanSettings, detectors, new DetectorRestrictions());
+
+            // Assert
+            result.Should().NotBeNull();
+            result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+            // Maven dependency files should be cleaned up
+            File.Exists(testFile1).Should().BeFalse("Maven dependency file 1 should be cleaned up");
+            File.Exists(testFile2).Should().BeFalse("Maven dependency file 2 should be cleaned up");
+
+            // Non-Maven files should remain
+            File.Exists(nonMavenFile).Should().BeTrue("Non-Maven files should not be cleaned up");
+
+            // Verify both detectors were executed
+            mvnCliDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+            mavenWithFallbackDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+        finally
+        {
+            // Cleanup test directory
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task ProcessDetectorsAsync_WithoutMavenDetectors_ShouldNotCleanupMavenFiles()
+    {
+        // Arrange - Create a temporary directory with mock Maven dependency files
+        var tempDir = Path.Combine(Path.GetTempPath(), $"maven_cleanup_test_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+
+        var testFile = Path.Combine(tempDir, "test.mvndeps");
+        await File.WriteAllTextAsync(testFile, "maven dependency content");
+
+        try
+        {
+            var tempDirInfo = new DirectoryInfo(tempDir);
+            var scanSettings = new ScanSettings
+            {
+                SourceDirectory = tempDirInfo,
+                DetectorArgs = new Dictionary<string, string>(),
+                CleanupCreatedFiles = true,
+            };
+
+            // Create mock non-Maven detector
+            var npmDetectorMock = new Mock<IComponentDetector>();
+            npmDetectorMock.SetupAllProperties();
+            npmDetectorMock.SetupGet(x => x.Id).Returns("Npm");
+            npmDetectorMock.SetupGet(x => x.Categories).Returns(["Npm"]);
+            npmDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new IndividualDetectorScanResult { ResultCode = ProcessingResultCode.Success });
+
+            var detectors = new List<IComponentDetector> { npmDetectorMock.Object, };
+
+            // Verify file exists before running detectors
+            File.Exists(testFile).Should().BeTrue("Maven dependency file should exist before processing");
+
+            // Act
+            var result = await this.serviceUnderTest.ProcessDetectorsAsync(scanSettings, detectors, new DetectorRestrictions());
+
+            // Assert
+            result.Should().NotBeNull();
+            result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+            // Maven dependency file should NOT be cleaned up when no Maven detectors are present
+            File.Exists(testFile).Should().BeTrue("Maven dependency file should remain when no Maven detectors are running");
+
+            // Verify detector was executed
+            npmDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+        finally
+        {
+            // Cleanup test directory
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task ProcessDetectorsAsync_OnlyOneMavenDetector_ShouldStillCleanupMavenFiles()
+    {
+        // Arrange - Create a temporary directory with mock Maven dependency files
+        var tempDir = Path.Combine(Path.GetTempPath(), $"maven_cleanup_test_{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+        var testFile = Path.Combine(tempDir, "test.mvndeps");
+        await File.WriteAllTextAsync(testFile, "maven dependency content");
+
+        try
+        {
+            var tempDirInfo = new DirectoryInfo(tempDir);
+            var scanSettings = new ScanSettings
+            {
+                SourceDirectory = tempDirInfo,
+                DetectorArgs = new Dictionary<string, string>(),
+                CleanupCreatedFiles = true,
+            };
+
+            // Create mock Maven detector (only one)
+            var mvnCliDetectorMock = new Mock<IComponentDetector>();
+            mvnCliDetectorMock.SetupAllProperties();
+            mvnCliDetectorMock.SetupGet(x => x.Id).Returns("MvnCli");
+            mvnCliDetectorMock.SetupGet(x => x.Categories).Returns(["Maven"]);
+            mvnCliDetectorMock.Setup(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new IndividualDetectorScanResult { ResultCode = ProcessingResultCode.Success });
+
+            var detectors = new List<IComponentDetector> { mvnCliDetectorMock.Object, };
+
+            // Verify file exists before running detectors
+            File.Exists(testFile).Should().BeTrue("Maven dependency file should exist before cleanup");
+
+            // Act
+            var result = await this.serviceUnderTest.ProcessDetectorsAsync(scanSettings, detectors, new DetectorRestrictions());
+
+            // Assert
+            result.Should().NotBeNull();
+            result.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+            // Maven dependency file should be cleaned up even with only one Maven detector
+            File.Exists(testFile).Should().BeFalse("Maven dependency file should be cleaned up");
+
+            // Verify detector was executed
+            mvnCliDetectorMock.Verify(x => x.ExecuteDetectorAsync(It.IsAny<ScanRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+        finally
+        {
+            // Cleanup test directory
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+    }
 }

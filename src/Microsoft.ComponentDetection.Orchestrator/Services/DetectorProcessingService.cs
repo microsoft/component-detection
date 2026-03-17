@@ -160,6 +160,9 @@ internal class DetectorProcessingService : IDetectorProcessingService
         var results = await Task.WhenAll(scanTasks);
         await this.experimentService.FinishAsync();
 
+        // Clean up Maven CLI temporary files after all detectors have finished
+        await this.CleanupMavenFilesAsync(settings.SourceDirectory, detectors);
+
         var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
         var totalElapsedTime = stopwatch.Elapsed.TotalSeconds;
@@ -420,6 +423,57 @@ internal class DetectorProcessingService : IDetectorProcessingService
         foreach (var line in tsf.GenerateString(rows).Split(new[] { NewLine }, StringSplitOptions.None))
         {
             this.logger.LogInformation("{DetectionTimeLine}", line);
+        }
+    }
+
+    /// <summary>
+    /// Cleans up Maven CLI temporary files after all detectors have finished.
+    /// This prevents race conditions between MvnCliComponentDetector and MavenWithFallbackDetector.
+    /// </summary>
+    private async Task CleanupMavenFilesAsync(DirectoryInfo sourceDirectory, IEnumerable<IComponentDetector> detectors)
+    {
+        // Only clean up if Maven detectors are running
+        var mavenDetectorIds = new[] { "MvnCli", "MavenWithFallback" };
+        var hasMavenDetectors = detectors.Any(d => mavenDetectorIds.Contains(d.Id));
+
+        if (!hasMavenDetectors)
+        {
+            return;
+        }
+
+        try
+        {
+            var searchPattern = "*.mvndeps"; // Simple file pattern for Directory.GetFiles
+
+            this.logger.LogDebug("Starting Maven CLI cleanup in directory: {SourceDirectory}", sourceDirectory.FullName);
+
+            await Task.Run(() =>
+            {
+                // Search recursively for Maven CLI dependency files
+                var filesToClean = Directory.GetFiles(sourceDirectory.FullName, searchPattern, SearchOption.AllDirectories);
+
+                foreach (var file in filesToClean)
+                {
+                    try
+                    {
+                        File.Delete(file);
+                        this.logger.LogDebug("Cleaned up Maven CLI file: {File}", file);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogDebug(ex, "Failed to clean up Maven CLI file: {File}", file);
+                    }
+                }
+
+                if (filesToClean.Length > 0)
+                {
+                    this.logger.LogDebug("Maven CLI cleanup completed. Removed {Count} files.", filesToClean.Length);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogWarning(ex, "Maven CLI cleanup failed for directory: {SourceDirectory}", sourceDirectory.FullName);
         }
     }
 }
