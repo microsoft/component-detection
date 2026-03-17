@@ -36,7 +36,7 @@ internal class NpmComponentDetectorWithRoots : NpmLockfileDetectorBase
 
     public override string Id => "NpmWithRoots";
 
-    public override int Version => 3;
+    public override int Version => 4;
 
     protected override bool IsSupportedLockfileVersion(int lockfileVersion) => lockfileVersion != 3;
 
