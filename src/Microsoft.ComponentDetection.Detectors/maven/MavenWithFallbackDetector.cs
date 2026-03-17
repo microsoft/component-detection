@@ -112,11 +112,11 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private readonly Dictionary<string, XmlDocument> documentsLoaded = [];
 
     // Track original pom.xml files for potential fallback
-    private readonly ConcurrentBag<ProcessRequest> originalPomFiles = [];
+    private readonly ConcurrentQueue<ProcessRequest> originalPomFiles = [];
 
     // Track Maven CLI errors for analysis
-    private readonly ConcurrentBag<string> mavenCliErrors = [];
-    private readonly ConcurrentBag<string> failedEndpoints = [];
+    private readonly ConcurrentQueue<string> mavenCliErrors = [];
+    private readonly ConcurrentQueue<string> failedEndpoints = [];
 
     // Telemetry tracking
     private MavenDetectionMethod usedDetectionMethod = MavenDetectionMethod.None;
@@ -185,8 +185,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             // Timeout occurred (not user cancellation)
             this.LogWarning($"OnPrepareDetectionAsync timed out after {PrepareDetectionTimeout.TotalMinutes} minutes. Falling back to static pom.xml parsing.");
             this.Telemetry["TimedOut"] = "true";
-            this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
             this.fallbackReason = MavenFallbackReason.OtherMvnCliFailure;
+            this.usedDetectionMethod = MavenDetectionMethod.Mixed;
             return processRequests;
         }
         catch (Exception ex)
@@ -194,8 +194,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             // Unexpected error - log and fall back to static parsing
             this.LogWarning($"OnPrepareDetectionAsync failed with unexpected error: {ex.Message}. Falling back to static pom.xml parsing.");
             this.Telemetry["PrepareDetectionError"] = ex.GetType().Name;
-            this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
             this.fallbackReason = MavenFallbackReason.OtherMvnCliFailure;
+            this.usedDetectionMethod = MavenDetectionMethod.Mixed;
             return processRequests;
         }
     }
@@ -281,7 +281,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         CancellationToken cancellationToken)
     {
         var results = new ConcurrentQueue<ProcessRequest>();
-        var failedDirectories = new ConcurrentBag<string>();
+        var failedDirectories = new ConcurrentQueue<string>();
         var cliSuccessCount = 0;
         var cliFailureCount = 0;
 
@@ -295,7 +295,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             cancellationToken.ThrowIfCancellationRequested();
 
             // Store original pom.xml for telemetry
-            this.originalPomFiles.Add(processRequest);
+            this.originalPomFiles.Enqueue(processRequest);
 
             var pomFile = processRequest.ComponentStream;
             var pomDir = Path.GetDirectoryName(pomFile.Location);
@@ -315,13 +315,14 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 // Use existence check to avoid redundant I/O (file will be read during directory scan)
                 if (this.fileUtilityService.Exists(depsFilePath))
                 {
+                    // File reader registration is now handled in GenerateDependenciesFileAsync
                     Interlocked.Increment(ref cliSuccessCount);
                 }
                 else
                 {
                     // CLI reported success but deps file is missing - treat as failure
                     Interlocked.Increment(ref cliFailureCount);
-                    failedDirectories.Add(pomDir);
+                    failedDirectories.Enqueue(pomDir);
                     this.LogWarning($"Maven CLI succeeded but deps file not found: {depsFilePath}");
                 }
             }
@@ -329,12 +330,12 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             {
                 // CLI failed - track directory for nested pom.xml scanning
                 Interlocked.Increment(ref cliFailureCount);
-                failedDirectories.Add(pomDir);
+                failedDirectories.Enqueue(pomDir);
 
                 // Capture error output for later analysis
                 if (!string.IsNullOrWhiteSpace(result.ErrorOutput))
                 {
-                    this.mavenCliErrors.Add(result.ErrorOutput);
+                    this.mavenCliErrors.Enqueue(result.ErrorOutput);
                 }
             }
         },
@@ -420,13 +421,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             this.usedDetectionMethod = MavenDetectionMethod.MvnCliOnly;
             this.LogDebug("All pom.xml files processed successfully with Maven CLI.");
         }
-        else if (cliSuccessCount == 0 && cliFailureCount > 0)
-        {
-            this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
-            this.LogWarning("Maven CLI failed for all pom.xml files. Using static parsing fallback.");
-            this.AnalyzeMvnCliFailure();
-        }
-        else if (cliSuccessCount > 0 && cliFailureCount > 0)
+        else if (cliFailureCount > 0)
         {
             this.usedDetectionMethod = MavenDetectionMethod.Mixed;
             this.LogWarning($"Maven CLI failed for {cliFailureCount} pom.xml files. Using mixed detection.");
@@ -443,16 +438,16 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         if (pattern == this.mavenCommandService.BcdeMvnDependencyFileName)
         {
-            // Process MvnCli result - register as reader and cleanup when done
+            // Process MvnCli result - file reader already registered at generation step
             var depsFilePath = processRequest.ComponentStream.Location;
-            this.mavenCommandService.RegisterFileReader(depsFilePath);
             try
             {
                 this.ProcessMvnCliResult(processRequest);
             }
             finally
             {
-                this.mavenCommandService.UnregisterFileReader(depsFilePath);
+                // Unregister file reader after processing to allow cleanup
+                this.mavenCommandService.UnregisterFileReader(depsFilePath, this.Id);
             }
         }
         else
@@ -503,7 +498,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             // Extract failed endpoints from error messages
             foreach (var endpoint in this.mavenCliErrors.SelectMany(this.ExtractFailedEndpoints))
             {
-                this.failedEndpoints.Add(endpoint);
+                this.failedEndpoints.Enqueue(endpoint);
             }
 
             this.LogAuthErrorGuidance();

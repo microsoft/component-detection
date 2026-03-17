@@ -1178,9 +1178,9 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
         detectorResult.AdditionalTelemetryDetails.Should().ContainKey("FallbackReason");
         detectorResult.AdditionalTelemetryDetails["FallbackReason"].Should().Be("AuthenticationFailure");
 
-        // Should have method showing static parser was used
+        // Should have method showing mixed detection was used (CLI failed but fallback succeeded)
         detectorResult.AdditionalTelemetryDetails.Should().ContainKey("DetectionMethod");
-        detectorResult.AdditionalTelemetryDetails["DetectionMethod"].Should().Be("StaticParserOnly");
+        detectorResult.AdditionalTelemetryDetails["DetectionMethod"].Should().Be("Mixed");
     }
 
     private void SetupMvnCliSuccess(string depsFileContent)
