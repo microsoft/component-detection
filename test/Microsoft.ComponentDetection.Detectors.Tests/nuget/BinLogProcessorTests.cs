@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests.NuGet;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -8,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.NuGet;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
@@ -21,10 +22,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestCategory("Integration")]
 public class BinLogProcessorTests
 {
+    private readonly CapturingLogger logger = new();
     private readonly BinLogProcessor processor;
     private string testDir = null!;
 
-    public BinLogProcessorTests() => this.processor = new BinLogProcessor(NullLogger.Instance);
+    public BinLogProcessorTests() => this.processor = new BinLogProcessor(this.logger);
 
     private static string CurrentRid => RuntimeInformation.RuntimeIdentifier;
 
@@ -106,7 +108,14 @@ public class BinLogProcessorTests
         var binlogPath = await BuildProjectAsync(projectDir, "SingleTarget.csproj");
         var results = this.processor.ExtractProjectInfo(binlogPath);
 
-        results.Should().NotBeEmpty();
+        // Build diagnostic context that appears in assertion failure messages
+        var binlogSize = new FileInfo(binlogPath).Length;
+        var projectPaths = string.Join(", ", results.Select(r => $"'{r.ProjectPath}'"));
+        var logMessages = this.logger.GetMessages();
+        var diag = $"binlog='{binlogPath}' ({binlogSize} bytes), results.Count={results.Count}, " +
+                   $"projectPaths=[{projectPaths}], logMessages=[{logMessages}]";
+
+        results.Should().NotBeEmpty(diag);
 
         var projectInfo = results.First(p =>
             p.ProjectPath != null &&
@@ -1599,6 +1608,7 @@ public class BinLogProcessorTests
             throw new InvalidOperationException($"Build did not produce binlog at: {binlogPath}");
         }
 
+        Console.WriteLine($"[DIAG] Built binlog: {binlogPath} ({new FileInfo(binlogPath).Length} bytes)");
         return binlogPath;
     }
 
@@ -1670,6 +1680,41 @@ public class BinLogProcessorTests
         {
             throw new InvalidOperationException(
                 $"Process exited with code {process.ExitCode}.\nCommand: {fileName} {arguments}\nStdout:\n{stdout}\nStderr:\n{stderr}");
+        }
+    }
+
+    /// <summary>
+    /// Logger that captures messages so they can be included in assertion failure output.
+    /// </summary>
+    private sealed class CapturingLogger : ILogger
+    {
+        private readonly List<string> messages = [];
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            var msg = $"[{logLevel}] {formatter(state, exception)}";
+            if (exception != null)
+            {
+                msg += $"\n{exception}";
+            }
+
+            lock (this.messages)
+            {
+                this.messages.Add(msg);
+            }
+        }
+
+        public string GetMessages()
+        {
+            lock (this.messages)
+            {
+                return this.messages.Count == 0 ? "(none)" : string.Join("; ", this.messages);
+            }
         }
     }
 }
