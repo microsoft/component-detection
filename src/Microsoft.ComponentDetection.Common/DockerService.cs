@@ -248,6 +248,15 @@ internal class DockerService : IDockerService
 
             // Cancellation was requested - kill the container to unblock the read
             await RemoveContainerAsync(containerId, CancellationToken.None);
+
+            // Observe the readTask without blocking - just swallow any exceptions
+            // We can't await it because it may still be stuck at OS level
+            _ = readTask.ContinueWith(
+                t => { /* swallow exception */ },
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
+
             cancellationToken.ThrowIfCancellationRequested();
         }
 
@@ -266,32 +275,40 @@ internal class DockerService : IDockerService
             Command = JsonSerializer.Serialize(command),
         };
 
-        var parameters = new CreateContainerParameters
+        try
         {
-            Image = image,
-            Cmd = command,
-            NetworkDisabled = true,
-            HostConfig = new HostConfig
+            var parameters = new CreateContainerParameters
             {
-                CapDrop =
-                [
-                    "all",
-                ],
-                SecurityOpt =
-                [
-                    "no-new-privileges",
-                ],
-                Binds =
-                [
-                    $"{Path.GetTempPath()}:/tmp",
-                    "/var/run/docker.sock:/var/run/docker.sock",
-                ],
-            },
-        };
+                Image = image,
+                Cmd = command,
+                NetworkDisabled = true,
+                HostConfig = new HostConfig
+                {
+                    CapDrop =
+                    [
+                        "all",
+                    ],
+                    SecurityOpt =
+                    [
+                        "no-new-privileges",
+                    ],
+                    Binds =
+                    [
+                        $"{Path.GetTempPath()}:/tmp",
+                        "/var/run/docker.sock:/var/run/docker.sock",
+                    ],
+                },
+            };
 
-        var response = await Client.Containers.CreateContainerAsync(parameters, cancellationToken);
-        record.ContainerId = response.ID;
-        return response;
+            var response = await Client.Containers.CreateContainerAsync(parameters, cancellationToken);
+            record.ContainerId = response.ID;
+            return response;
+        }
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static async Task<MultiplexedStream> AttachContainerAsync(string containerId, CancellationToken cancellationToken = default)
@@ -302,13 +319,21 @@ internal class DockerService : IDockerService
             ContainerId = containerId,
         };
 
-        var parameters = new ContainerAttachParameters
+        try
         {
-            Stdout = true,
-            Stderr = true,
-            Stream = true,
-        };
-        return await Client.Containers.AttachContainerAsync(containerId, false, parameters, cancellationToken);
+            var parameters = new ContainerAttachParameters
+            {
+                Stdout = true,
+                Stderr = true,
+                Stream = true,
+            };
+            return await Client.Containers.AttachContainerAsync(containerId, false, parameters, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static async Task StartContainerAsync(string containerId, CancellationToken cancellationToken = default)
@@ -319,8 +344,16 @@ internal class DockerService : IDockerService
             ContainerId = containerId,
         };
 
-        var parameters = new ContainerStartParameters();
-        await Client.Containers.StartContainerAsync(containerId, parameters, cancellationToken);
+        try
+        {
+            var parameters = new ContainerStartParameters();
+            await Client.Containers.StartContainerAsync(containerId, parameters, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static async Task RemoveContainerAsync(string containerId, CancellationToken cancellationToken = default)
@@ -331,12 +364,24 @@ internal class DockerService : IDockerService
             ContainerId = containerId,
         };
 
-        var parameters = new ContainerRemoveParameters
+        try
         {
-            Force = true,
-            RemoveVolumes = true,
-        };
-        await Client.Containers.RemoveContainerAsync(containerId, parameters, cancellationToken);
+            var parameters = new ContainerRemoveParameters
+            {
+                Force = true,
+                RemoveVolumes = true,
+            };
+            await Client.Containers.RemoveContainerAsync(containerId, parameters, cancellationToken);
+        }
+        catch (DockerContainerNotFoundException)
+        {
+            // Container already removed - this is expected during cleanup
+        }
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static int GetContainerId()
