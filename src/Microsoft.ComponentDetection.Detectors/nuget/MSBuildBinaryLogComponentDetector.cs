@@ -3,10 +3,8 @@ namespace Microsoft.ComponentDetection.Detectors.NuGet;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Reactive.Threading.Tasks;
 using System.Threading;
 using System.Threading.Tasks;
 using global::NuGet.Frameworks;
@@ -167,27 +165,30 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
-        // Collect all requests and sort them so binlogs are processed first
-        // This ensures we have project info available when processing assets files
-        var allRequests = await processRequests.ToList().ToTask(cancellationToken);
+        // Process binlogs inline as they arrive (synchronous) and buffer only assets files.
+        // This avoids materializing the entire observable into memory while still ensuring
+        // all binlog project info is available before any assets file is processed.
+        var assetsRequests = new List<ProcessRequest>();
+        var binlogCount = 0;
 
-        this.Logger.LogDebug("Preparing detection: collected {Count} files", allRequests.Count);
+        await processRequests.ForEachAsync(
+            request =>
+            {
+                if (request.ComponentStream.Location.EndsWith(".binlog", StringComparison.OrdinalIgnoreCase))
+                {
+                    this.ProcessBinlogFile(request);
+                    binlogCount++;
+                }
+                else if (request.ComponentStream.Location.EndsWith("project.assets.json", StringComparison.OrdinalIgnoreCase))
+                {
+                    assetsRequests.Add(request);
+                }
+            },
+            cancellationToken);
 
-        // Separate binlogs and assets files
-        var binlogRequests = allRequests
-            .Where(r => r.ComponentStream.Location.EndsWith(".binlog", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        this.Logger.LogDebug("Processed {BinlogCount} binlog files, found {AssetsCount} assets files", binlogCount, assetsRequests.Count);
 
-        var assetsRequests = allRequests
-            .Where(r => r.ComponentStream.Location.EndsWith("project.assets.json", StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        this.Logger.LogDebug("Found {BinlogCount} binlog files and {AssetsCount} assets files", binlogRequests.Count, assetsRequests.Count);
-
-        // Return binlogs first, then assets files
-        var orderedRequests = binlogRequests.Concat(assetsRequests);
-
-        return orderedRequests.ToObservable();
+        return assetsRequests.ToObservable();
     }
 
     /// <inheritdoc />
@@ -196,13 +197,8 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
-        var fileExtension = Path.GetExtension(processRequest.ComponentStream.Location);
-
-        if (fileExtension.Equals(".binlog", StringComparison.OrdinalIgnoreCase))
-        {
-            this.ProcessBinlogFile(processRequest);
-        }
-        else if (processRequest.ComponentStream.Location.EndsWith("project.assets.json", StringComparison.OrdinalIgnoreCase))
+        // Binlogs are already processed in OnPrepareDetectionAsync; only assets files reach here.
+        if (processRequest.ComponentStream.Location.EndsWith("project.assets.json", StringComparison.OrdinalIgnoreCase))
         {
             await this.ProcessAssetsFileAsync(processRequest, cancellationToken);
         }
@@ -606,5 +602,12 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         // Register DotNet components (SDK version, target framework, project type)
         // This matches DotNetComponentDetector's behavior for the fallback path
         await this.projectInfoProvider.RegisterDotNetComponentsAsync(lockFile, location, this.ComponentRecorder, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    protected override Task OnDetectionFinishedAsync()
+    {
+        this.projectInfoByAssetsFile.Clear();
+        return Task.CompletedTask;
     }
 }

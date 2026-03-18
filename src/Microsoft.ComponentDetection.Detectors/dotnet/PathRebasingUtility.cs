@@ -17,6 +17,13 @@ using System.IO;
 internal static class PathRebasingUtility
 {
     /// <summary>
+    /// OS-aware string comparison for filesystem paths.
+    /// Case-insensitive on Windows, case-sensitive on Linux/macOS.
+    /// </summary>
+    internal static readonly StringComparison PathComparison =
+        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+    /// <summary>
     /// Normalizes a path by replacing backslashes with forward slashes.
     /// Windows accepts <c>/</c> as a separator, so forward-slash normalization works everywhere.
     /// </summary>
@@ -54,7 +61,7 @@ internal static class PathRebasingUtility
         artifactPath = NormalizeDirectory(artifactPath)!;
 
         // Nothing to do if the paths are the same (no rebasing needed).
-        if (artifactPath.Equals(sourceDirectoryBasedPath, StringComparison.OrdinalIgnoreCase))
+        if (artifactPath.Equals(sourceDirectoryBasedPath, PathComparison))
         {
             return null;
         }
@@ -65,7 +72,7 @@ internal static class PathRebasingUtility
         // If the artifact path has the same relative portion, extract the root prefix.
         // Use case-insensitive comparison: Windows paths are case-insensitive, and on
         // Linux the paths will naturally have consistent casing.
-        if (artifactPath.EndsWith(sourceDirectoryRelativePath, StringComparison.OrdinalIgnoreCase))
+        if (artifactPath.EndsWith(sourceDirectoryRelativePath, PathComparison))
         {
             return artifactPath[..^sourceDirectoryRelativePath.Length];
         }
@@ -142,7 +149,7 @@ internal static class PathRebasingUtility
         foreach (var kvp in dictionary)
         {
             var normalizedKey = NormalizePath(kvp.Key);
-            if (normalizedKey.EndsWith(relativePath, StringComparison.OrdinalIgnoreCase))
+            if (normalizedKey.EndsWith(relativePath, PathComparison))
             {
                 // Derive the build-machine root from this match.
                 rebaseRoot = normalizedKey[..^relativePath.Length];
