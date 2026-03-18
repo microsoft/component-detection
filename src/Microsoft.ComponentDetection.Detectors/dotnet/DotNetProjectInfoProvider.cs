@@ -237,6 +237,7 @@ internal class DotNetProjectInfoProvider
 
             if (!string.IsNullOrWhiteSpace(sdkVersion))
             {
+                this.sdkVersionCache[projectDirectory] = sdkVersion;
                 var globalJsonComponent = new DetectedComponent(new DotNetComponent(sdkVersion));
                 var recorder = componentRecorder.CreateSingleFileComponentRecorder(globalJsonPath);
                 recorder.RegisterUsage(globalJsonComponent, isExplicitReferencedDependency: true);

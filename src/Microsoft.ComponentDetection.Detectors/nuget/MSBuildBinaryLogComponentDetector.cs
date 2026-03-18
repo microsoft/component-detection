@@ -169,7 +169,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     {
         // Collect all requests and sort them so binlogs are processed first
         // This ensures we have project info available when processing assets files
-        var allRequests = await processRequests.ToList();
+        var allRequests = await processRequests.ToList().ToTask(cancellationToken);
 
         this.Logger.LogDebug("Preparing detection: collected {Count} files", allRequests.Count);
 
@@ -291,10 +291,12 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         // Index by assets file path for lookup when processing lock files.
         // Use AddOrUpdate+MergeWith so that multiple binlogs for the same project
         // (e.g., build and publish passes) form a superset rather than keeping only the first.
+        // Normalize to forward slashes so lookup from OS-native ComponentStream.Location matches.
         if (!string.IsNullOrEmpty(projectInfo.ProjectAssetsFile))
         {
+            var normalizedAssetsPath = PathRebasingUtility.NormalizePath(projectInfo.ProjectAssetsFile);
             this.projectInfoByAssetsFile.AddOrUpdate(
-                projectInfo.ProjectAssetsFile,
+                normalizedAssetsPath,
                 _ => projectInfo,
                 (_, existing) => existing.MergeWith(projectInfo));
             assetsFilesFound.Add(projectInfo.ProjectAssetsFile);
@@ -455,7 +457,11 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// </summary>
     private MSBuildProjectInfo? FindProjectInfoForAssetsFile(string assetsFilePath)
     {
-        this.projectInfoByAssetsFile.TryGetValue(assetsFilePath, out var projectInfo);
+        // Normalize to forward slashes for consistent lookup.
+        // BinLogProcessor stores keys with forward slashes, but ComponentStream.Location
+        // uses OS-native separators (backslashes on Windows).
+        var normalizedPath = PathRebasingUtility.NormalizePath(assetsFilePath);
+        this.projectInfoByAssetsFile.TryGetValue(normalizedPath, out var projectInfo);
         return projectInfo;
     }
 

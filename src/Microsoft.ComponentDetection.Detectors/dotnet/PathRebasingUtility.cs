@@ -54,7 +54,7 @@ internal static class PathRebasingUtility
         artifactPath = NormalizeDirectory(artifactPath)!;
 
         // Nothing to do if the paths are the same (no rebasing needed).
-        if (artifactPath.Equals(sourceDirectoryBasedPath, StringComparison.Ordinal))
+        if (artifactPath.Equals(sourceDirectoryBasedPath, StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
@@ -63,7 +63,9 @@ internal static class PathRebasingUtility
         var sourceDirectoryRelativePath = NormalizeDirectory(Path.GetRelativePath(sourceDirectory, sourceDirectoryBasedPath))!;
 
         // If the artifact path has the same relative portion, extract the root prefix.
-        if (artifactPath.EndsWith(sourceDirectoryRelativePath, StringComparison.Ordinal))
+        // Use case-insensitive comparison: Windows paths are case-insensitive, and on
+        // Linux the paths will naturally have consistent casing.
+        if (artifactPath.EndsWith(sourceDirectoryRelativePath, StringComparison.OrdinalIgnoreCase))
         {
             return artifactPath[..^sourceDirectoryRelativePath.Length];
         }
