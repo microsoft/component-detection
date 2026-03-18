@@ -63,9 +63,6 @@ internal class MavenCommandService : IMavenCommandService
         var pomDir = Path.GetDirectoryName(pomFile.Location);
         var depsFilePath = Path.Combine(pomDir, this.BcdeMvnDependencyFileName);
 
-        // Register as file reader immediately to prevent premature cleanup
-        this.RegisterFileReader(depsFilePath);
-
         // Check the cache before acquiring the semaphore to allow fast-path returns
         // even when cancellation has been requested.
         if (this.completedLocations.TryGetValue(pomFile.Location, out var cachedResult)
