@@ -39,13 +39,20 @@ internal class BinLogProcessor : IBinLogProcessor
 
         try
         {
+            // Workaround: ensure StructuredLogger's resource strings are loaded
+            // before replay. Some binlogs lack the CurrentUICulture message that
+            // triggers Strings.Initialize(), leaving format strings null and causing
+            // Replay() to silently abort. Fixed upstream:
+            // https://github.com/KirillOsenkov/MSBuildStructuredLog/issues/936
+            Strings.Initialize();
+
             var reader = new BinLogReader();
 
+            // Surface errors that BinLogReader catches internally during Replay().
+            // Without this handler, exceptions from Read() are silently swallowed
+            // and replay stops early, producing truncated results.
             reader.OnException += ex =>
-                this.logger.LogWarning(ex, "BinLogReader.OnException during replay");
-
-            reader.RecoverableReadError += args =>
-                this.logger.LogDebug("BinLogReader.RecoverableReadError: {Message}", args.ErrorType);
+                this.logger.LogWarning(ex, "BinLogReader encountered an error during replay of {BinlogPath}", binlogPath);
 
             // Maps evaluation ID to MSBuildProjectInfo being populated
             var projectInfoByEvaluationId = new Dictionary<int, MSBuildProjectInfo>();
@@ -53,36 +60,12 @@ internal class BinLogProcessor : IBinLogProcessor
             // Maps project instance ID to evaluation ID
             var projectInstanceToEvaluationMap = new Dictionary<int, int>();
 
-            // Diagnostic counters
-            var statusEventCount = 0;
-            var evalFinishedCount = 0;
-            var projectStartedCount = 0;
-            var projectStartedSkippedCount = 0;
-            var projectFinishedCount = 0;
-            var projectFinishedAddedCount = 0;
-            var anyEventCount = 0;
-            var firstEventTypes = new List<string>(10);
-
             // Hook into status events to capture property evaluations
             reader.StatusEventRaised += (sender, e) =>
             {
-                statusEventCount++;
-                if (statusEventCount <= 3)
-                {
-                    this.logger.LogDebug(
-                        "StatusEvent[{Index}]: Type={Type}, EvalId={EvalId}",
-                        statusEventCount,
-                        e?.GetType().FullName,
-                        e?.BuildEventContext?.EvaluationId);
-                }
-
                 if (e?.BuildEventContext?.EvaluationId >= 0 &&
                     e is ProjectEvaluationFinishedEventArgs projectEvalArgs)
                 {
-                    evalFinishedCount++;
-
-                    // Reuse existing project info if one was created during evaluation
-                    // (e.g., from EnvironmentVariableReadEventArgs or PropertyInitialValueSetEventArgs)
                     if (!projectInfoByEvaluationId.TryGetValue(e.BuildEventContext.EvaluationId, out var projectInfo))
                     {
                         projectInfo = new MSBuildProjectInfo();
@@ -96,36 +79,22 @@ internal class BinLogProcessor : IBinLogProcessor
             // Hook into project started to map project instance to evaluation and capture project path
             reader.ProjectStarted += (sender, e) =>
             {
-                projectStartedCount++;
                 if (e?.BuildEventContext?.EvaluationId >= 0 &&
                     e?.BuildEventContext?.ProjectInstanceId >= 0)
                 {
                     projectInstanceToEvaluationMap[e.BuildEventContext.ProjectInstanceId] = e.BuildEventContext.EvaluationId;
 
-                    // Set the project path on the MSBuildProjectInfo
                     if (!string.IsNullOrEmpty(e.ProjectFile) &&
                         projectInfoByEvaluationId.TryGetValue(e.BuildEventContext.EvaluationId, out var projectInfo))
                     {
                         projectInfo.ProjectPath = rebasePath != null ? rebasePath(e.ProjectFile) : e.ProjectFile;
                     }
                 }
-                else
-                {
-                    projectStartedSkippedCount++;
-                    this.logger.LogDebug(
-                        "ProjectStarted skipped: EvalId={EvalId}, InstanceId={InstanceId}, File={File}",
-                        e?.BuildEventContext?.EvaluationId,
-                        e?.BuildEventContext?.ProjectInstanceId,
-                        e?.ProjectFile);
-                }
             };
 
             // Hook into message events to capture BinLogFilePath from the initial build messages.
             // MSBuild's BinaryLogger writes "BinLogFilePath=<path>" as a BuildMessageEventArgs
-            // with SenderName "BinaryLogger" at the start of the log. This arrives before any
-            // evaluation or project events, so we can compute the rebase function here and apply
-            // it to all subsequent path-valued properties.
-            // https://github.com/dotnet/msbuild/blob/7d73e8e9074fe9a4420e38cd22d45645b28a11f7/src/Build/Logging/BinaryLogger/BinaryLogger.cs#L473
+            // with SenderName "BinaryLogger" at the start of the log.
             reader.MessageRaised += (sender, e) =>
             {
                 if (rebasePath == null &&
@@ -153,52 +122,27 @@ internal class BinLogProcessor : IBinLogProcessor
             // Hook into any event to capture property reassignments and item changes during build
             reader.AnyEventRaised += (sender, e) =>
             {
-                anyEventCount++;
-                if (firstEventTypes.Count < 10)
-                {
-                    firstEventTypes.Add(e?.GetType().Name ?? "null");
-                }
-
                 this.HandleBuildEvent(e, projectInstanceToEvaluationMap, projectInfoByEvaluationId, rebasePath);
             };
 
             // Hook into project finished to collect final project info and establish hierarchy
             reader.ProjectFinished += (sender, e) =>
             {
-                projectFinishedCount++;
                 if (e?.BuildEventContext?.ProjectInstanceId >= 0 &&
                     projectInstanceToEvaluationMap.TryGetValue(e.BuildEventContext.ProjectInstanceId, out var evaluationId) &&
                     projectInfoByEvaluationId.TryGetValue(evaluationId, out var projectInfo) &&
                     !string.IsNullOrEmpty(projectInfo.ProjectPath))
                 {
-                    projectFinishedAddedCount++;
                     this.AddOrMergeProjectInfo(projectInfo, projectInfoByPath);
                 }
             };
 
             reader.Replay(binlogPath);
-
-            this.logger.LogDebug(
-                "Binlog replay complete: StatusEvents={StatusEvents}, EvalFinished={EvalFinished}, " +
-                "ProjectStarted={ProjectStarted} (skipped={ProjectStartedSkipped}), " +
-                "ProjectFinished={ProjectFinished} (added={ProjectFinishedAdded}), " +
-                "AnyEvents={AnyEvents}, EvalMapSize={EvalMapSize}, InstanceMapSize={InstanceMapSize}, Results={Results}, " +
-                "FirstEventTypes=[{FirstEventTypes}]",
-                statusEventCount,
-                evalFinishedCount,
-                projectStartedCount,
-                projectStartedSkippedCount,
-                projectFinishedCount,
-                projectFinishedAddedCount,
-                anyEventCount,
-                projectInfoByEvaluationId.Count,
-                projectInstanceToEvaluationMap.Count,
-                projectInfoByPath.Count,
-                string.Join(", ", firstEventTypes));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            this.logger.LogWarning(ex, "Error parsing binlog: {BinlogPath}", binlogPath);
+            // Expected for missing, locked, or inaccessible binlog files.
+            this.logger.LogWarning(ex, "Could not read binlog: {BinlogPath}", binlogPath);
         }
 
         return [.. projectInfoByPath.Values];

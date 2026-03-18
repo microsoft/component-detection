@@ -17,6 +17,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// to produce binlog files, then parse them to verify extracted project information.
 /// Excluded from default local test runs via <c>TestCategory("Integration")</c>;
 /// see <c>test/Directory.Build.props</c>.
+/// <para>
+/// <b>Diagnosing failures:</b> When a test fails, its artifacts (project files and
+/// <c>.binlog</c> files) are copied to the <c>TestResults</c> directory under a
+/// subdirectory named after the test. In CI, these are uploaded as pipeline artifacts.
+/// Inspect <c>.binlog</c> files with
+/// <see href="https://msbuildlog.com/">MSBuild Structured Log Viewer</see>.
+/// Logger output captured during the test is included in assertion failure messages.
+/// </para>
 /// </summary>
 [TestClass]
 [TestCategory("Integration")]
@@ -53,8 +61,6 @@ public class BinLogProcessorTests
         }
 
         this.logger.Clear();
-        var globalJsonStatus = workspaceGlobalJson ?? "NOT FOUND";
-        this.logger.Log(LogLevel.Information, default, $"TestInit: cwd={Directory.GetCurrentDirectory()}, globalJson={globalJsonStatus}, testDir={this.testDir}", null, (s, _) => s);
     }
 
     private static string? FindWorkspaceGlobalJsonPath()
@@ -86,8 +92,17 @@ public class BinLogProcessorTests
     {
         if (this.TestContext.CurrentTestOutcome != UnitTestOutcome.Passed)
         {
-            Console.WriteLine($"[DIAG] Test failed — preserving test artifacts at: {this.testDir}");
-            return;
+            // Copy artifacts to TestResults for CI upload, then still clean up temp.
+            try
+            {
+                var destDir = Path.Combine(this.TestContext.TestResultsDirectory!, nameof(BinLogProcessorTests), this.TestContext.TestName!);
+                CopyDirectory(this.testDir, destDir);
+                Console.WriteLine($"Test artifacts copied to: {destDir}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to copy test artifacts: {ex.Message}");
+            }
         }
 
         try
@@ -126,14 +141,8 @@ public class BinLogProcessorTests
         var binlogPath = await BuildProjectAsync(projectDir, "SingleTarget.csproj");
         var results = this.processor.ExtractProjectInfo(binlogPath);
 
-        // Build diagnostic context that appears in assertion failure messages
-        var binlogSize = new FileInfo(binlogPath).Length;
-        var projectPaths = string.Join(", ", results.Select(r => $"'{r.ProjectPath}'"));
-        var logMessages = this.logger.GetMessages();
-        var diag = $"binlog='{binlogPath}' ({binlogSize} bytes), results.Count={results.Count}, " +
-                   $"projectPaths=[{projectPaths}], logMessages=[{logMessages}]";
-
-        results.Should().NotBeEmpty(diag);
+        results.Should().NotBeEmpty(
+            $"binlog='{binlogPath}' ({new FileInfo(binlogPath).Length} bytes), log=[{this.logger.GetMessages()}]");
 
         var projectInfo = results.First(p =>
             p.ProjectPath != null &&
@@ -1606,6 +1615,21 @@ public class BinLogProcessorTests
         projectInfo.SelfContained.Should().Be(true);
     }
 
+    private static void CopyDirectory(string sourceDir, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            File.Copy(file, Path.Combine(destDir, Path.GetFileName(file)), overwrite: true);
+        }
+
+        foreach (var dir in Directory.GetDirectories(sourceDir))
+        {
+            CopyDirectory(dir, Path.Combine(destDir, Path.GetFileName(dir)));
+        }
+    }
+
     private static void WriteFile(string directory, string fileName, string content)
     {
         File.WriteAllText(Path.Combine(directory, fileName), content);
@@ -1618,47 +1642,20 @@ public class BinLogProcessorTests
 
     private static async Task<string> BuildProjectAsync(string projectDir, string projectFile)
     {
-        // Log SDK version for diagnostics (helps identify version mismatches on CI)
-        var sdkVersionResult = await RunProcessCaptureAsync(projectDir, "dotnet", "--version");
-        Console.WriteLine($"[DIAG] dotnet --version in {projectDir}: {sdkVersionResult.Trim()}");
-
         var binlogPath = Path.Combine(projectDir, "build.binlog");
         await RunDotNetAsync(projectDir, $"build \"{projectFile}\" -bl:\"{binlogPath}\" /p:UseAppHost=false");
 
         if (!File.Exists(binlogPath))
         {
-            throw new InvalidOperationException($"Build did not produce binlog at: {binlogPath}. SDK={sdkVersionResult.Trim()}");
+            throw new InvalidOperationException($"Build did not produce binlog at: {binlogPath}");
         }
 
-        Console.WriteLine($"[DIAG] Built binlog: {binlogPath} ({new FileInfo(binlogPath).Length} bytes)");
         return binlogPath;
     }
 
     private static async Task RunDotNetAsync(string workingDirectory, string arguments)
     {
-        // dotnet build already includes restore by default, no need for separate restore
         await RunProcessAsync(workingDirectory, "dotnet", arguments);
-    }
-
-    private static async Task<string> RunProcessCaptureAsync(string workingDirectory, string fileName, string arguments)
-    {
-        var psi = new ProcessStartInfo
-        {
-            FileName = fileName,
-            Arguments = arguments,
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-
-        using var process = Process.Start(psi)
-            ?? throw new InvalidOperationException($"Failed to start: {fileName} {arguments}");
-
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        return stdout;
     }
 
     private static async Task RunProcessAsync(string workingDirectory, string fileName, string arguments)
