@@ -435,6 +435,240 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
     }
 
     [TestMethod]
+    public async Task StaticParser_ResolvesVariableFromPreviousFile_Async()
+    {
+        // Arrange - Test case 1: Variable defined in first file, referenced in second file
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(false);
+
+        var firstPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0.0</version>
+    <properties>
+        <commons.version>3.12.0</commons.version>
+    </properties>
+</project>";
+
+        var secondPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>child</artifactId>
+    <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        // Act
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", firstPomContent)
+            .WithFile("module/pom.xml", secondPomContent)
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var mavenComponent = detectedComponents.First().Component as MavenComponent;
+        mavenComponent.Should().NotBeNull();
+        mavenComponent.GroupId.Should().Be("org.apache.commons");
+        mavenComponent.ArtifactId.Should().Be("commons-lang3");
+        mavenComponent.Version.Should().Be("3.12.0");
+    }
+
+    [TestMethod]
+    public async Task StaticParser_BackfillsVariableFromLaterFile_Async()
+    {
+        // Arrange - Test case 2: Variable referenced in first file, defined in second file
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(false);
+
+        var firstPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>child</artifactId>
+    <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        var secondPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0.0</version>
+    <properties>
+        <commons.version>3.13.0</commons.version>
+    </properties>
+</project>";
+
+        // Act
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("module/pom.xml", firstPomContent)
+            .WithFile("pom.xml", secondPomContent)
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var mavenComponent = detectedComponents.First().Component as MavenComponent;
+        mavenComponent.Should().NotBeNull();
+        mavenComponent.GroupId.Should().Be("org.apache.commons");
+        mavenComponent.ArtifactId.Should().Be("commons-lang3");
+        mavenComponent.Version.Should().Be("3.13.0");
+    }
+
+    [TestMethod]
+    public async Task StaticParser_LocalVariableDefinitionTakesPriority_Async()
+    {
+        // Arrange - Test case 3: Variable defined in both files, local definition has priority
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(false);
+
+        var firstPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0.0</version>
+    <properties>
+        <commons.version>3.11.0</commons.version>
+    </properties>
+</project>";
+
+        var secondPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>child</artifactId>
+    <version>1.0.0</version>
+    <properties>
+        <commons.version>3.14.0</commons.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        // Act
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", firstPomContent)
+            .WithFile("module/pom.xml", secondPomContent)
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var mavenComponent = detectedComponents.First().Component as MavenComponent;
+        mavenComponent.Should().NotBeNull();
+        mavenComponent.GroupId.Should().Be("org.apache.commons");
+        mavenComponent.ArtifactId.Should().Be("commons-lang3");
+
+        // Should use the local definition (3.14.0) instead of parent definition (3.11.0)
+        mavenComponent.Version.Should().Be("3.14.0");
+    }
+
+    [TestMethod]
+    public async Task StaticParser_OutOfOrderProcessing_RespectsAncestorPriority_Async()
+    {
+        // Arrange - Test processing order independence for ancestor priority
+        // This test simulates the scenario where files are processed out of natural hierarchy order:
+        // grandparent → child → parent (instead of grandparent → parent → child)
+        // The child should still get the parent's variable value, not the grandparent's
+        this.mavenCommandServiceMock.Setup(x => x.MavenCLIExistsAsync())
+            .ReturnsAsync(false);
+
+        var grandparentPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>grandparent</artifactId>
+    <version>1.0.0</version>
+    <properties>
+        <commons.version>3.10.0</commons.version>
+    </properties>
+</project>";
+
+        var parentPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0.0</version>
+    <properties>
+        <commons.version>3.11.0</commons.version>
+    </properties>
+</project>";
+
+        var childPomContent = @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<project xmlns=""http://maven.apache.org/POM/4.0.0"">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>child</artifactId>
+    <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons.version}</version>
+        </dependency>
+    </dependencies>
+</project>";
+
+        // Act - Process files in out-of-order sequence: grandparent → child → parent
+        // This tests that deferred variable resolution correctly handles ancestor priority
+        // regardless of processing order
+        var (detectorResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("pom.xml", grandparentPomContent) // Processed 1st: defines commons.version = 3.10.0
+            .WithFile("parent/child/pom.xml", childPomContent) // Processed 2nd: references ${commons.version}
+            .WithFile("parent/pom.xml", parentPomContent) // Processed 3rd: defines commons.version = 3.11.0
+            .ExecuteDetectorAsync();
+
+        // Assert
+        detectorResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        detectedComponents.Should().ContainSingle();
+
+        var mavenComponent = detectedComponents.First().Component as MavenComponent;
+        mavenComponent.Should().NotBeNull();
+        mavenComponent.GroupId.Should().Be("org.apache.commons");
+        mavenComponent.ArtifactId.Should().Be("commons-lang3");
+
+        // Should resolve to parent's version (3.11.0) since parent is the closest ancestor to child,
+        // NOT grandparent's version (3.10.0), even though grandparent was processed first.
+        // This validates that deferred resolution correctly implements Maven's ancestor priority rules.
+        mavenComponent.Version.Should().Be("3.11.0");
+    }
+
+    [TestMethod]
     public async Task WhenNoPomXmlFiles_ReturnsSuccessWithNoComponents_Async()
     {
         // Arrange

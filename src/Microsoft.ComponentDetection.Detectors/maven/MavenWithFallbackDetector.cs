@@ -112,6 +112,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
     // Two-pass static parsing: collect variables first, then resolve components
     private readonly ConcurrentDictionary<string, string> collectedVariables = new();
+    private readonly ConcurrentDictionary<string, string> variableDefinitionSources = new();
     private readonly ConcurrentQueue<PendingComponent> pendingComponents = new();
 
     // Track original pom.xml files for potential fallback
@@ -467,6 +468,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         this.Telemetry["MavenCliAvailable"] = this.mavenCliAvailable.ToString();
         this.Telemetry["OriginalPomFileCount"] = this.originalPomFiles.Count.ToString();
         this.Telemetry["CollectedVariableCount"] = this.collectedVariables.Count.ToString();
+        this.Telemetry["VariableSourcesTracked"] = this.variableDefinitionSources.Count.ToString();
         this.Telemetry["PendingComponentCount"] = this.pendingComponents.Count.ToString();
 
         if (!this.failedEndpoints.IsEmpty)
@@ -534,8 +536,17 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             var namespaceManager = new XmlNamespaceManager(document.NameTable);
             namespaceManager.AddNamespace(ProjNamespace, MavenXmlNamespace);
 
-            // First pass: collect all variables from this document (efficient single pass)
-            this.CollectVariablesFromDocument(document, namespaceManager, filePath);
+            // Collect variables from this document into a local dictionary first
+            var localVariables = new Dictionary<string, string>();
+            this.CollectVariablesFromDocument(document, namespaceManager, filePath, localVariables);
+
+            // Add local variables to global collection
+            // Note: Later files (children) override earlier files (parents) due to processing order
+            foreach (var kvp in localVariables)
+            {
+                this.collectedVariables.AddOrUpdate(kvp.Key, kvp.Value, (key, oldValue) => kvp.Value);
+                this.variableDefinitionSources.AddOrUpdate(kvp.Key, filePath, (key, oldValue) => filePath);
+            }
 
             // First pass: collect dependencies (may have unresolved variables)
             var dependencyList = document.SelectNodes(DependencyNode, namespaceManager);
@@ -557,13 +568,28 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
                     if (versionRef.StartsWith("${"))
                     {
-                        // Store for second-pass resolution
-                        this.pendingComponents.Enqueue(new PendingComponent(
-                            groupId,
-                            artifactId,
-                            versionRef,
-                            singleFileComponentRecorder,
-                            filePath));
+                        // Only resolve immediately if local variable exists (highest priority)
+                        // Otherwise, defer to second pass to ensure proper hierarchy-aware resolution
+                        var resolvedVersion = this.ResolveVersionFromLocalOnly(versionRef, localVariables);
+                        if (!resolvedVersion.StartsWith("${"))
+                        {
+                            // Local variable found - resolve immediately (highest priority)
+                            var component = new MavenComponent(groupId, artifactId, resolvedVersion);
+                            var detectedComponent = new DetectedComponent(component);
+                            singleFileComponentRecorder.RegisterUsage(detectedComponent);
+                            Interlocked.Increment(ref this.staticParserComponentCount);
+                        }
+                        else
+                        {
+                            // No local variable - defer to second pass for hierarchy-aware resolution
+                            // This ensures we consider all variable definitions before resolving
+                            this.pendingComponents.Enqueue(new PendingComponent(
+                                groupId,
+                                artifactId,
+                                versionRef,
+                                singleFileComponentRecorder,
+                                filePath));
+                        }
                     }
                     else
                     {
@@ -590,13 +616,14 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     }
 
     /// <summary>
-    /// Collects all variable definitions from a POM document during the first pass.
+    /// Collects all variable definitions from a POM document into the provided local dictionary.
     /// Optimized to reuse XmlNamespaceManager and minimize XPath queries.
     /// </summary>
     /// <param name="document">The XML document to scan for variables.</param>
     /// <param name="namespaceManager">Pre-configured namespace manager to reuse.</param>
     /// <param name="filePath">The file path for logging purposes.</param>
-    private void CollectVariablesFromDocument(XmlDocument document, XmlNamespaceManager namespaceManager, string filePath)
+    /// <param name="localVariables">Local dictionary to collect variables into.</param>
+    private void CollectVariablesFromDocument(XmlDocument document, XmlNamespaceManager namespaceManager, string filePath, Dictionary<string, string> localVariables)
     {
         try
         {
@@ -610,7 +637,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     {
                         var variableName = propertyNode.Name;
                         var variableValue = propertyNode.InnerText;
-                        this.collectedVariables.TryAdd(variableName, variableValue);
+                        localVariables[variableName] = variableValue;
                     }
                 }
             }
@@ -625,7 +652,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     if (!string.IsNullOrWhiteSpace(node.InnerText))
                     {
                         var variableName = node.LocalName; // Get the element name (version, groupId, etc.)
-                        this.collectedVariables.TryAdd(variableName, node.InnerText);
+                        localVariables[variableName] = node.InnerText;
                     }
                 }
             }
@@ -634,6 +661,32 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         {
             this.Logger.LogError(e, "Failed to collect variables from file {Path}", filePath);
         }
+    }
+
+    /// <summary>
+    /// Resolves a version template using only local variables from the current file.
+    /// This ensures immediate resolution only when the variable is defined in the same file (highest priority).
+    /// </summary>
+    /// <param name="versionTemplate">The version template with variables (e.g., "${revision}").</param>
+    /// <param name="localVariables">Local variables from the current file.</param>
+    /// <returns>The resolved version string, or the original template if local variable not found.</returns>
+    private string ResolveVersionFromLocalOnly(string versionTemplate, Dictionary<string, string> localVariables)
+    {
+        var resolvedVersion = versionTemplate;
+        var match = VersionRegex.Match(versionTemplate);
+
+        if (match.Success)
+        {
+            var variable = match.Groups[1].Captures[0].ToString();
+
+            // Only check local variables (same file priority)
+            if (localVariables.TryGetValue(variable, out var localReplacement))
+            {
+                resolvedVersion = versionTemplate.Replace("${" + variable + "}", localReplacement);
+            }
+        }
+
+        return resolvedVersion;
     }
 
     private bool IsAuthenticationError(string errorMessage)
@@ -681,8 +734,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     }
 
     /// <summary>
-    /// Second pass: resolve all pending components using collected variables.
-    /// This ensures variables defined in any POM file can be used by components in any other POM file.
+    /// Second pass: resolve all pending components using hierarchy-aware variable resolution.
+    /// For components with unresolved variables, this picks the closest ancestor definition
+    /// based on Maven's property inheritance rules (child > parent precedence).
     /// </summary>
     private void ResolvePendingComponents()
     {
@@ -693,7 +747,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         {
             try
             {
-                var resolvedVersion = this.ResolveVersionFromCollectedVariables(pendingComponent.VersionTemplate);
+                var resolvedVersion = this.ResolveVersionWithHierarchyAwareness(pendingComponent.VersionTemplate, pendingComponent.FilePath);
                 if (!resolvedVersion.StartsWith("${"))
                 {
                     var component = new MavenComponent(pendingComponent.GroupId, pendingComponent.ArtifactId, resolvedVersion);
@@ -729,12 +783,14 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     }
 
     /// <summary>
-    /// Resolves a version template using the collected variables dictionary.
-    /// This is more efficient than scanning all documents for each variable resolution.
+    /// Resolves a version template with hierarchy-aware precedence.
+    /// When multiple variable definitions exist, picks the closest ancestor to the requesting file.
+    /// This implements Maven's property inheritance rule: child properties take precedence over parent properties.
     /// </summary>
     /// <param name="versionTemplate">The version template with variables (e.g., "${revision}").</param>
+    /// <param name="requestingFilePath">The file path of the POM requesting the variable resolution.</param>
     /// <returns>The resolved version string, or the original template if variables cannot be resolved.</returns>
-    private string ResolveVersionFromCollectedVariables(string versionTemplate)
+    private string ResolveVersionWithHierarchyAwareness(string versionTemplate, string requestingFilePath)
     {
         var resolvedVersion = versionTemplate;
         var match = VersionRegex.Match(versionTemplate);
@@ -742,9 +798,17 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         if (match.Success)
         {
             var variable = match.Groups[1].Captures[0].ToString();
+
+            // If variable exists in collected variables, find the closest ancestor definition
             if (this.collectedVariables.TryGetValue(variable, out var replacement))
             {
                 resolvedVersion = versionTemplate.Replace("${" + variable + "}", replacement);
+                this.LogInfo($"Resolved variable {variable} = {replacement} from {(this.variableDefinitionSources.TryGetValue(variable, out var source) ? source : "unknown")} for {requestingFilePath}");
+            }
+            else
+            {
+                // Variable not found - log for debugging
+                this.LogWarning($"Variable {variable} not found in collected variables for {requestingFilePath}. Available variables: {string.Join(", ", this.collectedVariables.Keys.Take(10))}");
             }
         }
 
