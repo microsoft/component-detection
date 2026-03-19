@@ -246,16 +246,11 @@ internal class DockerService : IDockerService
         {
             record.WasCancelled = true;
 
-            // Cancellation was requested - kill the container to unblock the read
-            await RemoveContainerAsync(containerId, CancellationToken.None);
+            // Dispose the stream to unblock any pending read operation
+            stream.Dispose();
 
-            // Observe the readTask without blocking - just swallow any exceptions
-            // We can't await it because it may still be stuck at OS level
-            _ = readTask.ContinueWith(
-                t => { /* swallow exception */ },
-                CancellationToken.None,
-                TaskContinuationOptions.OnlyOnFaulted,
-                TaskScheduler.Default);
+            // Remove the container for cleanup
+            await RemoveContainerAsync(containerId, CancellationToken.None);
 
             cancellationToken.ThrowIfCancellationRequested();
         }
