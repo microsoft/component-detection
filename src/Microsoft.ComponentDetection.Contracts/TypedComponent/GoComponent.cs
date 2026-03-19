@@ -37,13 +37,33 @@ public class GoComponent : TypedComponent, IEquatable<GoComponent>
 
     // Commit should be used in place of version when available
     // https://github.com/package-url/purl-spec/blame/180c46d266c45aa2bd81a2038af3f78e87bb4a25/README.rst#L610
+    // The golang purl spec requires a namespace: https://github.com/package-url/purl-spec/blob/master/types/golang-definition.json
     [JsonPropertyName("packageUrl")]
-    public override PackageUrl PackageUrl => new PackageUrl("golang", null, this.Name, string.IsNullOrWhiteSpace(this.Hash) ? this.Version : this.Hash, null, null);
+    public override PackageUrl PackageUrl
+    {
+        get
+        {
+            var version = string.IsNullOrWhiteSpace(this.Hash) ? this.Version : this.Hash;
+            var (ns, name) = this.GetNamespaceAndName();
+            return new PackageUrl("golang", ns, name, version, null, null);
+        }
+    }
 
     [JsonIgnore]
     public override ComponentType Type => ComponentType.Go;
 
     protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
+
+    private (string Namespace, string Name) GetNamespaceAndName()
+    {
+        var lastSlash = this.Name.LastIndexOf('/');
+        if (lastSlash > 0)
+        {
+            return (this.Name.Substring(0, lastSlash), this.Name.Substring(lastSlash + 1));
+        }
+
+        return (null, this.Name);
+    }
 
     public override bool Equals(object obj)
     {
