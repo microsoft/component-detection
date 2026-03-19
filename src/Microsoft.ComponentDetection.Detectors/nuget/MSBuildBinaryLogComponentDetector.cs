@@ -59,18 +59,14 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// Stores project information extracted from binlogs, keyed by assets file path.
     /// </summary>
     /// <remarks>
-    /// All binlog files are processed before any assets files (guaranteed by <see cref="OnPrepareDetectionAsync"/>),
-    /// so by the time an assets file is processed this dictionary contains the merged superset of project
-    /// info from every binlog that referenced that project. This is intentional: a repository may produce
-    /// separate binlogs for different build passes (e.g., build vs. publish). Properties like
-    /// <see cref="MSBuildProjectInfo.SelfContained"/> or <see cref="MSBuildProjectInfo.PublishAot"/> are
-    /// typically only set in the publish pass, so merging ensures those properties are available when
-    /// processing the shared <c>project.assets.json</c>.
-    ///
-    /// Memory impact: each <see cref="MSBuildProjectInfo"/> is roughly 15–16 KB (including inner builds
-    /// and PackageReference/PackageDownload dictionaries). A repository with 100K projects would use
-    /// approximately 1.5 GB for project info storage alone — significant but proportional to the
-    /// multi-GB binlog files that such a repository would produce.
+    /// All binlog files are processed eagerly in <see cref="OnPrepareDetectionAsync"/> before
+    /// any assets file reaches <see cref="OnFileFoundAsync"/>, so this dictionary is fully
+    /// populated by the time assets files are processed. When multiple binlogs reference the
+    /// same project (e.g., build and publish passes), their info is merged via
+    /// <see cref="MSBuildProjectInfo.MergeWith"/> so that properties like
+    /// <see cref="MSBuildProjectInfo.SelfContained"/> or <see cref="MSBuildProjectInfo.PublishAot"/>
+    /// (typically only set in the publish pass) are available when processing the shared
+    /// <c>project.assets.json</c>.
     /// </remarks>
     private readonly ConcurrentDictionary<string, MSBuildProjectInfo> projectInfoByAssetsFile = new(StringComparer.OrdinalIgnoreCase);
 
@@ -143,7 +139,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)!];
 
     /// <inheritdoc />
-    public override IList<string> SearchPatterns { get; } = ["*.binlog", "project.assets.json"];
+    public override IList<string> SearchPatterns { get; } = ["project.assets.json"];
 
     /// <inheritdoc />
     public override IEnumerable<ComponentType> SupportedComponentTypes { get; } = [ComponentType.NuGet, ComponentType.DotNet];
@@ -160,49 +156,38 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     }
 
     /// <inheritdoc />
-    protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
+    protected override Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests,
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
-        // Process binlogs inline as they arrive (synchronous) and buffer only assets files.
-        // This avoids materializing the entire observable into memory while still ensuring
-        // all binlog project info is available before any assets file is processed.
-        var assetsRequests = new List<ProcessRequest>();
-        var binlogCount = 0;
+        // Phase 1: Eagerly discover and process all binlog files.
+        // This completes before OnPrepareDetectionAsync returns, guaranteeing all project info
+        // is indexed before any assets file reaches OnFileFoundAsync.
+        var binlogStreams = this.ComponentStreamEnumerableFactory.GetComponentStreams(
+            this.CurrentScanRequest.SourceDirectory,
+            ["*.binlog"],
+            this.CurrentScanRequest.DirectoryExclusionPredicate);
 
-        await processRequests.ForEachAsync(
-            request =>
-            {
-                if (request.ComponentStream.Location.EndsWith(".binlog", StringComparison.OrdinalIgnoreCase))
-                {
-                    this.ProcessBinlogFile(request);
-                    binlogCount++;
-                }
-                else if (request.ComponentStream.Location.EndsWith("project.assets.json", StringComparison.OrdinalIgnoreCase))
-                {
-                    assetsRequests.Add(request);
-                }
-            },
-            cancellationToken);
+        foreach (var stream in binlogStreams)
+        {
+            this.ProcessBinlogFile(stream.Location);
+        }
 
-        this.Logger.LogDebug("Processed {BinlogCount} binlog files, found {AssetsCount} assets files", binlogCount, assetsRequests.Count);
-
-        return assetsRequests.ToObservable();
+        // Phase 2: Return the original observable unchanged.
+        // SearchPatterns only includes project.assets.json, so the observable already
+        // contains only assets files — no filtering needed.
+        return Task.FromResult(processRequests);
     }
 
     /// <inheritdoc />
-    protected override async Task OnFileFoundAsync(
+    protected override Task OnFileFoundAsync(
         ProcessRequest processRequest,
         IDictionary<string, string> detectorArgs,
-        CancellationToken cancellationToken = default)
-    {
-        // Binlogs are already processed in OnPrepareDetectionAsync; only assets files reach here.
-        if (processRequest.ComponentStream.Location.EndsWith("project.assets.json", StringComparison.OrdinalIgnoreCase))
-        {
-            await this.ProcessAssetsFileAsync(processRequest, cancellationToken);
-        }
-    }
+        CancellationToken cancellationToken = default) =>
+
+        // Only assets files reach here; binlogs are processed in OnPrepareDetectionAsync.
+        this.ProcessAssetsFileAsync(processRequest, cancellationToken);
 
     /// <summary>
     /// Determines whether a project should be classified as development-only.
@@ -238,15 +223,42 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     }
 
     /// <summary>
+    /// Maps the MSBuild OutputType property to "application" or "library".
+    /// Returns <c>null</c> for empty/unknown values rather than guessing.
+    /// </summary>
+    private static string? GetTargetType(string? outputType)
+    {
+        if (string.IsNullOrEmpty(outputType))
+        {
+            return null;
+        }
+
+        // https://learn.microsoft.com/dotnet/csharp/language-reference/compiler-options/output#outputtype
+        if (outputType.Equals("Exe", StringComparison.OrdinalIgnoreCase) ||
+            outputType.Equals("WinExe", StringComparison.OrdinalIgnoreCase) ||
+            outputType.Equals("AppContainerExe", StringComparison.OrdinalIgnoreCase))
+        {
+            return "application";
+        }
+
+        if (outputType.Equals("Library", StringComparison.OrdinalIgnoreCase) ||
+            outputType.Equals("Module", StringComparison.OrdinalIgnoreCase))
+        {
+            return "library";
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Determines if a project is self-contained using MSBuild properties from the binlog.
     /// Reads the SelfContained and PublishAot properties directly.
     /// </summary>
     private static bool IsSelfContainedFromProjectInfo(MSBuildProjectInfo projectInfo) =>
         projectInfo.SelfContained == true || projectInfo.PublishAot == true;
 
-    private void ProcessBinlogFile(ProcessRequest processRequest)
+    private void ProcessBinlogFile(string binlogPath)
     {
-        var binlogPath = processRequest.ComponentStream.Location;
         var assetsFilesFound = new List<string>();
 
         try
@@ -340,16 +352,11 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
 
         var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(projectInfo.ProjectPath);
 
-        // Determine target type from OutputType property
-        // This is equivalent to DotNetComponentDetector's IsApplication check via PE headers
-        string? targetType = null;
-        if (!string.IsNullOrEmpty(projectInfo.OutputType))
-        {
-            targetType = projectInfo.OutputType.Equals("Exe", StringComparison.OrdinalIgnoreCase) ||
-                        projectInfo.OutputType.Equals("WinExe", StringComparison.OrdinalIgnoreCase)
-                ? "application"
-                : "library";
-        }
+        // Determine target type from OutputType property.
+        // Known application types: Exe, WinExe, AppContainerExe
+        // Known library types: Library, Module
+        // Unknown values are left as null (don't assume).
+        var targetType = GetTargetType(projectInfo.OutputType);
 
         // Primary self-contained check from binlog properties (SelfContained, PublishAot)
         var isSelfContainedFromBinlog = IsSelfContainedFromProjectInfo(projectInfo);

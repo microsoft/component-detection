@@ -675,18 +675,23 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
 
         var recorder = new ComponentRecorder();
 
-        var requests = new[]
-        {
-            CreateProcessRequest(recorder, binlogPath, "fake-binlog-content"),
-            CreateProcessRequest(recorder, assetsLocation, assetsJson),
-        };
+        // Binlogs are discovered via ComponentStreamEnumerableFactory in OnPrepareDetectionAsync.
+        streamFactoryMock
+            .Setup(x => x.GetComponentStreams(
+                It.IsAny<DirectoryInfo>(),
+                It.Is<IEnumerable<string>>(p => p.Any(s => s == "*.binlog")),
+                It.IsAny<ExcludeDirectoryPredicate>(),
+                It.IsAny<bool>()))
+            .Returns([CreateComponentStream(binlogPath)]);
 
+        // Walker observable only returns assets files (SearchPatterns = ["project.assets.json"]).
+        var assetsRequest = CreateProcessRequest(recorder, assetsLocation, assetsJson);
         walkerMock
             .Setup(x => x.GetFilteredComponentStreamObservable(
                 It.IsAny<DirectoryInfo>(),
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IComponentRecorder>()))
-            .Returns(requests.ToObservable());
+            .Returns(new[] { assetsRequest }.ToObservable());
 
         var scanRequest = new ScanRequest(
             new DirectoryInfo(Path.GetTempPath()),
@@ -744,18 +749,26 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
 
         var recorder = new ComponentRecorder();
 
-        // Build process requests: one per binlog file, then the assets file
-        var requests = binlogProjectInfos.Keys
-            .Select(binlogPath => CreateProcessRequest(recorder, binlogPath, "fake-binlog-content"))
-            .Append(CreateProcessRequest(recorder, assetsLocation, assetsJson))
+        // Binlogs are discovered via ComponentStreamEnumerableFactory in OnPrepareDetectionAsync.
+        var binlogStreams = binlogProjectInfos.Keys
+            .Select(CreateComponentStream)
             .ToArray();
+        streamFactoryMock
+            .Setup(x => x.GetComponentStreams(
+                It.IsAny<DirectoryInfo>(),
+                It.Is<IEnumerable<string>>(p => p.Any(s => s == "*.binlog")),
+                It.IsAny<ExcludeDirectoryPredicate>(),
+                It.IsAny<bool>()))
+            .Returns(binlogStreams);
 
+        // Walker observable only returns assets files (SearchPatterns = ["project.assets.json"]).
+        var assetsRequest = CreateProcessRequest(recorder, assetsLocation, assetsJson);
         walkerMock
             .Setup(x => x.GetFilteredComponentStreamObservable(
                 It.IsAny<DirectoryInfo>(),
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IComponentRecorder>()))
-            .Returns(requests.ToObservable());
+            .Returns(new[] { assetsRequest }.ToObservable());
 
         var scanRequest = new ScanRequest(
             new DirectoryInfo(Path.GetTempPath()),
@@ -783,6 +796,14 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             SingleFileComponentRecorder = recorder.CreateSingleFileComponentRecorder(location),
             ComponentStream = mockStream.Object,
         };
+    }
+
+    private static IComponentStream CreateComponentStream(string location)
+    {
+        var mock = new Mock<IComponentStream>();
+        mock.SetupGet(x => x.Location).Returns(location);
+        mock.SetupGet(x => x.Pattern).Returns(Path.GetFileName(location));
+        return mock.Object;
     }
 
     /// <summary>
