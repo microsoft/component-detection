@@ -49,21 +49,21 @@ public class VcpkgComponent : TypedComponent
     public override ComponentType Type => ComponentType.Vcpkg;
 
     [JsonPropertyName("packageUrl")]
-    public override PackageURL PackageUrl
+    public override PackageUrl PackageUrl
     {
         get
         {
             if (this.PortVersion > 0)
             {
-                return new PackageURL($"pkg:vcpkg/{this.Name}@{this.Version}?port_version={this.PortVersion}");
+                return new PackageUrl($"pkg:vcpkg/{this.Name}@{this.Version}?port_version={this.PortVersion}");
             }
             else if (this.Version != null)
             {
-                return new PackageURL($"pkg:vcpkg/{this.Name}@{this.Version}");
+                return new PackageUrl($"pkg:vcpkg/{this.Name}@{this.Version}");
             }
             else
             {
-                return new PackageURL($"pkg:vcpkg/{this.Name}");
+                return new PackageUrl($"pkg:vcpkg/{this.Name}");
             }
         }
     }
