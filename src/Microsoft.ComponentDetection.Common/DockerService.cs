@@ -249,6 +249,14 @@ internal class DockerService : IDockerService
             // Dispose the stream to unblock any pending read operation
             stream.Dispose();
 
+            // Observe the readTask to prevent unobserved task exceptions
+            // The task will likely fault due to the disposed stream
+            _ = readTask.ContinueWith(
+                static _ => { },
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+
             // Remove the container for cleanup
             await RemoveContainerAsync(containerId, CancellationToken.None);
 
