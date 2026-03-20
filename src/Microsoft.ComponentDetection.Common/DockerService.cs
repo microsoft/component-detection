@@ -207,15 +207,12 @@ internal class DockerService : IDockerService
             record.Stdout = stdout;
             record.Stderr = stderr;
 
-            await RemoveContainerAsync(container.ID, CancellationToken.None);
-
             return (stdout, stderr);
         }
-        catch (OperationCanceledException)
+        finally
         {
-            // Ensure container is removed on cancellation
+            // Best-effort container cleanup; RemoveContainerAsync already handles not-found.
             await RemoveContainerAsync(container.ID, CancellationToken.None);
-            throw;
         }
     }
 
@@ -257,9 +254,7 @@ internal class DockerService : IDockerService
                 TaskContinuationOptions.OnlyOnFaulted,
                 TaskScheduler.Default);
 
-            // Remove the container for cleanup
-            await RemoveContainerAsync(containerId, CancellationToken.None);
-
+            // Caller is responsible for container cleanup via finally block
             cancellationToken.ThrowIfCancellationRequested();
         }
 
