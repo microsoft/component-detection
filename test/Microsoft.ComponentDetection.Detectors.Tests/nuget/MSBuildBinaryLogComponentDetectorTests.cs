@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests.NuGet;
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -602,6 +603,21 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     }
 
     // ================================================================
+    // Cancellation
+    // ================================================================
+    [TestMethod]
+    public void PreCancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var processor = new BinLogProcessor(new Mock<ILogger<MSBuildBinaryLogComponentDetector>>().Object);
+        var act = () => processor.ExtractProjectInfo("any.binlog", cancellationToken: cts.Token);
+
+        act.Should().Throw<OperationCanceledException>();
+    }
+
+    // ================================================================
     // Helpers – project info construction
     // ================================================================
     private static MSBuildProjectInfo CreateProjectInfo(
@@ -649,7 +665,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     {
         var binLogProcessorMock = new Mock<IBinLogProcessor>();
         binLogProcessorMock
-            .Setup(x => x.ExtractProjectInfo(binlogPath, It.IsAny<string?>()))
+            .Setup(x => x.ExtractProjectInfo(binlogPath, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Returns(projectInfos);
 
         var walkerMock = new Mock<IObservableDirectoryWalkerFactory>();
@@ -722,7 +738,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
         foreach (var (binlogPath, projectInfos) in binlogProjectInfos)
         {
             binLogProcessorMock
-                .Setup(x => x.ExtractProjectInfo(binlogPath, It.IsAny<string?>()))
+                .Setup(x => x.ExtractProjectInfo(binlogPath, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
                 .Returns(projectInfos);
         }
 

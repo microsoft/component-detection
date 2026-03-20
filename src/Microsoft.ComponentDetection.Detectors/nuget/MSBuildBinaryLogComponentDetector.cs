@@ -171,7 +171,8 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
 
         foreach (var stream in binlogStreams)
         {
-            this.ProcessBinlogFile(stream.Location);
+            cancellationToken.ThrowIfCancellationRequested();
+            this.ProcessBinlogFile(stream.Location, cancellationToken);
         }
 
         // Phase 2: Return the original observable unchanged.
@@ -223,6 +224,25 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     }
 
     /// <summary>
+    /// Finds the inner build matching the given target framework, or returns the outer project info.
+    /// </summary>
+    private static MSBuildProjectInfo GetInnerBuildOrDefault(MSBuildProjectInfo projectInfo, NuGetFramework? framework)
+    {
+        if (framework != null)
+        {
+            var innerBuild = projectInfo.InnerBuilds.FirstOrDefault(
+                ib => !string.IsNullOrEmpty(ib.TargetFramework) &&
+                      NuGetFramework.Parse(ib.TargetFramework).Equals(framework));
+            if (innerBuild != null)
+            {
+                return innerBuild;
+            }
+        }
+
+        return projectInfo;
+    }
+
+    /// <summary>
     /// Maps the MSBuild OutputType property to "application" or "library".
     /// Returns <c>null</c> for empty/unknown values rather than guessing.
     /// </summary>
@@ -257,7 +277,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     private static bool IsSelfContainedFromProjectInfo(MSBuildProjectInfo projectInfo) =>
         projectInfo.SelfContained == true || projectInfo.PublishAot == true;
 
-    private void ProcessBinlogFile(string binlogPath)
+    private void ProcessBinlogFile(string binlogPath, CancellationToken cancellationToken)
     {
         var assetsFilesFound = new List<string>();
 
@@ -265,7 +285,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         {
             this.Logger.LogDebug("Processing binlog file: {BinlogPath}", binlogPath);
 
-            var projectInfos = this.binLogProcessor.ExtractProjectInfo(binlogPath, this.sourceDirectory);
+            var projectInfos = this.binLogProcessor.ExtractProjectInfo(binlogPath, this.sourceDirectory, cancellationToken);
 
             if (projectInfos.Count == 0)
             {
@@ -497,21 +517,8 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
         var singleFileComponentRecorder = this.ComponentRecorder.CreateSingleFileComponentRecorder(recorderLocation);
 
         // Get the project info for the target framework (use inner build if available)
-        MSBuildProjectInfo GetProjectInfoForTarget(LockFileTarget target)
-        {
-            if (target.TargetFramework != null)
-            {
-                var innerBuild = projectInfo.InnerBuilds.FirstOrDefault(
-                    ib => !string.IsNullOrEmpty(ib.TargetFramework) &&
-                          NuGetFramework.Parse(ib.TargetFramework).Equals(target.TargetFramework));
-                if (innerBuild != null)
-                {
-                    return innerBuild;
-                }
-            }
-
-            return projectInfo;
-        }
+        MSBuildProjectInfo GetProjectInfoForTarget(LockFileTarget target) =>
+            GetInnerBuildOrDefault(projectInfo, target.TargetFramework);
 
         foreach (var target in lockFile.Targets)
         {
@@ -563,18 +570,7 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperim
     /// </summary>
     private bool IsPackageDownloadDevDependency(string packageName, NuGetFramework? framework, MSBuildProjectInfo projectInfo)
     {
-        // Get the project info for this framework (use inner build if available)
-        var targetProjectInfo = projectInfo;
-        if (framework != null)
-        {
-            var innerBuild = projectInfo.InnerBuilds.FirstOrDefault(
-                ib => !string.IsNullOrEmpty(ib.TargetFramework) &&
-                      NuGetFramework.Parse(ib.TargetFramework).Equals(framework));
-            if (innerBuild != null)
-            {
-                targetProjectInfo = innerBuild;
-            }
-        }
+        var targetProjectInfo = GetInnerBuildOrDefault(projectInfo, framework);
 
         // Project-level override: all deps are dev deps
         if (IsDevelopmentOnlyProject(targetProjectInfo))

@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Logging.StructuredLogger;
 using Microsoft.ComponentDetection.Detectors.DotNet;
@@ -24,8 +25,10 @@ internal class BinLogProcessor : IBinLogProcessor
     public BinLogProcessor(Microsoft.Extensions.Logging.ILogger logger) => this.logger = logger;
 
     /// <inheritdoc />
-    public IReadOnlyList<MSBuildProjectInfo> ExtractProjectInfo(string binlogPath, string? sourceDirectory = null)
+    public IReadOnlyList<MSBuildProjectInfo> ExtractProjectInfo(string binlogPath, string? sourceDirectory = null, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         // Maps project path to the primary MSBuildProjectInfo for that project
         var projectInfoByPath = new Dictionary<string, MSBuildProjectInfo>(StringComparer.OrdinalIgnoreCase);
 
@@ -137,7 +140,9 @@ internal class BinLogProcessor : IBinLogProcessor
                 }
             };
 
-            reader.Replay(binlogPath);
+            var progress = new Progress();
+            progress.Updated += _ => cancellationToken.ThrowIfCancellationRequested();
+            reader.Replay(binlogPath, progress);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

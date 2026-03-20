@@ -1,6 +1,7 @@
 namespace Microsoft.ComponentDetection.Detectors.NuGet;
 
 using System.Collections.Generic;
+using System.Threading;
 
 /// <summary>
 /// Interface for processing MSBuild binary log files to extract project information.
@@ -19,6 +20,7 @@ internal interface IBinLogProcessor
     /// The source directory on the scanning machine, used to rebase paths when the binlog
     /// was produced on a different machine. May be <c>null</c> to skip rebasing.
     /// </param>
+    /// <param name="cancellationToken">Token to cancel binlog replay.</param>
     /// <returns>Collection of project information extracted from the binlog, with paths rebased.</returns>
-    IReadOnlyList<MSBuildProjectInfo> ExtractProjectInfo(string binlogPath, string? sourceDirectory = null);
+    IReadOnlyList<MSBuildProjectInfo> ExtractProjectInfo(string binlogPath, string? sourceDirectory = null, CancellationToken cancellationToken = default);
 }

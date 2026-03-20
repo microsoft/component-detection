@@ -245,7 +245,8 @@ internal class MSBuildProjectInfo
     {
         // Merge boolean properties: true wins. For all classification booleans (IsTestProject,
         // IsDevelopment, IsShipping, etc.), if any pass reports true it is sufficient to classify
-        // the project accordingly. These values are not expected to differ across passes.
+        // the project accordingly. These values are not expected to differ across passes, if they
+        // do we want true value to win.
         this.IsDevelopment = MergeBool(this.IsDevelopment, other.IsDevelopment);
         this.IsPackable = MergeBool(this.IsPackable, other.IsPackable);
         this.IsShipping = MergeBool(this.IsShipping, other.IsShipping);
