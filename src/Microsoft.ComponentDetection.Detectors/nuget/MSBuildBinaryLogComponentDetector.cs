@@ -48,7 +48,7 @@ using Task = System.Threading.Tasks.Task;
 /// - Fallback mode: When no binlog info is available, falls back to standard NuGet detection.
 /// </para>
 /// </remarks>
-public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IExperimentalDetector
+public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     private readonly IBinLogProcessor binLogProcessor;
     private readonly IFileUtilityService fileUtilityService;
