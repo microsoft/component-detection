@@ -36,7 +36,7 @@ public class NpmComponent : TypedComponent
     public override ComponentType Type => ComponentType.Npm;
 
     [JsonPropertyName("packageUrl")]
-    public override PackageURL PackageUrl => new PackageURL("npm", null, this.Name, this.Version, null, null);
+    public override PackageUrl PackageUrl => new PackageUrl("npm", null, this.Name, this.Version, null, null);
 
     protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 }
