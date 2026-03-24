@@ -45,7 +45,7 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
 
     /// <inheritdoc />
     public override IEnumerable<string> Categories =>
-        [Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)];
+        [Enum.GetName(typeof(DetectorClass), DetectorClass.NuGet)!];
 
     /// <inheritdoc />
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.NuGet];
@@ -66,13 +66,15 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
             // 6-space indented lines are dependency specifications (version constraints) of the parent
             // package; they are NOT resolved versions. The actual resolved version for each dependency
             // will appear as its own 4-space entry elsewhere in the file.
-            // Limitation: without cross-referencing paket.dependencies, we cannot distinguish between
-            // direct and transitive dependencies. All 4-space packages are registered as explicit for now.
+            // Limitation: without cross-referencing paket.dependencies, we cannot perfectly distinguish
+            // between direct and transitive dependencies. We initially register all 4-space resolved packages,
+            // then use the dependency graph to approximate: packages that appear as dependencies of other
+            // packages are marked as transitive, and the rest are treated as explicit.
             var resolvedPackages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var dependencyRelationships = new List<(string ParentName, string DependencyName)>();
 
             var currentSection = string.Empty;
-            string currentPackageName = null;
+            string? currentPackageName = null;
 
             while (await reader.ReadLineAsync(cancellationToken) is { } line)
             {
@@ -108,8 +110,17 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
                     currentPackageName = packageMatch.Groups[1].Value;
                     var currentPackageVersion = packageMatch.Groups[2].Value;
 
-                    // Use TryAdd so the first occurrence wins (in case of multiple groups)
-                    resolvedPackages.TryAdd(currentPackageName, currentPackageVersion);
+                    // TryAdd keeps the first occurrence. If the same package appears in multiple GROUPs
+                    // with different versions, only the first is registered. This is a known simplification;
+                    // full GROUP-aware tracking could be added in a future iteration.
+                    if (!resolvedPackages.TryAdd(currentPackageName, currentPackageVersion))
+                    {
+                        this.Logger.LogDebug(
+                            "Duplicate package {PackageName} found with version {Version}; keeping previously resolved version {ExistingVersion}",
+                            currentPackageName,
+                            currentPackageVersion,
+                            resolvedPackages[currentPackageName]);
+                    }
                     continue;
                 }
 
@@ -159,6 +170,7 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
         catch (Exception e) when (e is IOException or InvalidOperationException)
         {
             this.Logger.LogWarning(e, "Failed to read paket.lock file {File}", processRequest.ComponentStream.Location);
+            processRequest.SingleFileComponentRecorder.RegisterPackageParseFailure(processRequest.ComponentStream.Location);
         }
     }
 }

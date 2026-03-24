@@ -1,5 +1,6 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
+using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
@@ -60,6 +61,23 @@ public class PaketComponentDetectorTests : BaseDetectorTest<PaketComponentDetect
 
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Windsor 3.3.0"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Core 3.3.0"));
+
+        // Validate dependency graph
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        // Castle.Windsor is a root (not a dependency of anything)
+        dependencyGraph.IsComponentExplicitlyReferenced("Castle.Windsor 3.3.0 - NuGet").Should().BeTrue();
+
+        // Castle.Core is a dependency of Castle.Windsor, so it's transitive
+        dependencyGraph.IsComponentExplicitlyReferenced("Castle.Core 3.3.0 - NuGet").Should().BeFalse();
+
+        // Castle.Windsor depends on Castle.Core
+        dependencyGraph.GetDependenciesForComponent("Castle.Windsor 3.3.0 - NuGet")
+            .Should().Contain("Castle.Core 3.3.0 - NuGet");
+
+        // Castle.Core is a leaf
+        dependencyGraph.GetDependenciesForComponent("Castle.Core 3.3.0 - NuGet")
+            .Should().BeEmpty();
     }
 
     [TestMethod]
@@ -98,6 +116,26 @@ public class PaketComponentDetectorTests : BaseDetectorTest<PaketComponentDetect
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Core 2.2.5"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Interfaces 2.2.5"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Linq 2.2.5"));
+
+        // Validate dependency graph edges
+        var dependencyGraph = componentRecorder.GetDependencyGraphsByLocation().Values.First();
+
+        // Rx-Main depends on Rx-Interfaces, Rx-Core, and Rx-Linq
+        dependencyGraph.GetDependenciesForComponent("Rx-Main 2.2.5 - NuGet")
+            .Should().BeEquivalentTo(["Rx-Interfaces 2.2.5 - NuGet", "Rx-Core 2.2.5 - NuGet", "Rx-Linq 2.2.5 - NuGet"]);
+
+        // Rx-Core depends on Rx-Interfaces
+        dependencyGraph.GetDependenciesForComponent("Rx-Core 2.2.5 - NuGet")
+            .Should().BeEquivalentTo(["Rx-Interfaces 2.2.5 - NuGet"]);
+
+        // Castle.Windsor depends on Castle.Core
+        dependencyGraph.GetDependenciesForComponent("Castle.Windsor 3.3.0 - NuGet")
+            .Should().BeEquivalentTo(["Castle.Core 3.3.0 - NuGet"]);
+
+        // Explicit roots: Castle.Windsor and Rx-Main (not depended on by anything)
+        var explicitRoots = dependencyGraph.GetAllExplicitlyReferencedComponents();
+        explicitRoots.Should().Contain("Castle.Windsor 3.3.0 - NuGet");
+        explicitRoots.Should().Contain("Rx-Main 2.2.5 - NuGet");
     }
 
     [TestMethod]
