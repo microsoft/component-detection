@@ -109,7 +109,19 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private readonly IMavenCommandService mavenCommandService;
     private readonly IEnvironmentVariableService envVarService;
     private readonly IFileUtilityService fileUtilityService;
-    private readonly Dictionary<string, XmlDocument> documentsLoaded = [];
+
+    // Two-pass static parsing: collect variables first, then resolve components
+    private readonly ConcurrentDictionary<string, string> collectedVariables = new();
+    private readonly ConcurrentQueue<PendingComponent> pendingComponents = new();
+
+    // Track Maven parent-child relationships for proper variable resolution
+    private readonly ConcurrentDictionary<string, string> mavenParentChildRelationships = new();
+
+    // Track processed Maven projects by coordinates (groupId:artifactId -> file path)
+    private readonly ConcurrentDictionary<string, string> processedMavenProjects = new();
+
+    // Track files that couldn't establish parent relationships during first pass (for second pass re-evaluation)
+    private readonly ConcurrentQueue<(string FilePath, string ParentGroupId, string ParentArtifactId)> unresolvedParentRelationships = new();
 
     // Track original pom.xml files for potential fallback
     private readonly ConcurrentQueue<ProcessRequest> originalPomFiles = [];
@@ -118,11 +130,19 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private readonly ConcurrentQueue<string> mavenCliErrors = [];
     private readonly ConcurrentQueue<string> failedEndpoints = [];
 
+    /// <summary>
+    /// Cache for parent POM lookups to avoid repeated file system operations.
+    /// Key: current file path, Value: parent POM path or empty string if not found.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, string> parentPomCache = new();
+
     // Telemetry tracking
     private MavenDetectionMethod usedDetectionMethod = MavenDetectionMethod.None;
     private MavenFallbackReason fallbackReason = MavenFallbackReason.None;
     private int mvnCliComponentCount;
     private int staticParserComponentCount;
+    private int unresolvedVariableCount;
+    private int pendingComponentCountBeforeResolution;
     private bool mavenCliAvailable;
 
     public MavenWithFallbackDetector(
@@ -141,7 +161,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         this.Logger = logger;
     }
 
-    public override string Id => "MavenWithFallback";
+    public override string Id => MavenConstants.MavenWithFallbackDetectorId;
 
     public override IList<string> SearchPatterns => [MavenManifest];
 
@@ -153,23 +173,102 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
     // Normalizes a directory path by ensuring it ends with a directory separator.
     // This prevents false matches like "C:\foo" matching "C:\foobar".
-    private static string NormalizeDirectoryPath(string path) =>
-            path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+    private static string NormalizeDirectoryPath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return path;
+        }
 
-    private void LogDebug(string message) =>
+        var lastChar = path[^1];
+        return lastChar == Path.DirectorySeparatorChar || lastChar == Path.AltDirectorySeparatorChar
+            ? path
+            : path + Path.DirectorySeparatorChar;
+    }
+
+    private static bool IsAuthenticationError(string errorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(errorMessage))
+        {
+            return false;
+        }
+
+        // Use ReadOnlySpan for more efficient string searching
+        var messageSpan = errorMessage.AsSpan();
+        foreach (var pattern in AuthErrorPatterns)
+        {
+            if (messageSpan.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void LogDebugWithId(string message) =>
         this.Logger.LogDebug("{DetectorId}: {Message}", this.Id, message);
-
-    private void LogInfo(string message) =>
-        this.Logger.LogInformation("{DetectorId}: {Message}", this.Id, message);
 
     private void LogWarning(string message) =>
         this.Logger.LogWarning("{DetectorId}: {Message}", this.Id, message);
+
+    /// <summary>
+    /// Resets all per-scan state to prevent stale data from leaking between scans.
+    /// This is critical because detectors are registered as singletons.
+    /// </summary>
+    private void ResetScanState()
+    {
+        // Clear all concurrent collections
+        this.collectedVariables.Clear();
+        this.mavenParentChildRelationships.Clear();
+        this.processedMavenProjects.Clear();
+        this.parentPomCache.Clear();
+
+        // Drain all concurrent queues
+        while (this.pendingComponents.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        while (this.unresolvedParentRelationships.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        while (this.originalPomFiles.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        while (this.mavenCliErrors.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        while (this.failedEndpoints.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        // Reset telemetry counters and flags
+        this.usedDetectionMethod = MavenDetectionMethod.None;
+        this.fallbackReason = MavenFallbackReason.None;
+        this.mvnCliComponentCount = 0;
+        this.staticParserComponentCount = 0;
+        this.unresolvedVariableCount = 0;
+        this.pendingComponentCountBeforeResolution = 0;
+        this.mavenCliAvailable = false;
+    }
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests,
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
+        // Reset all per-scan state to prevent stale data from previous scans
+        // This is critical because detectors are registered as singletons
+        this.ResetScanState();
+
         // Wrap the entire method in a try-catch with timeout to protect against hangs.
         // OnPrepareDetectionAsync doesn't have the same guardrails as OnFileFoundAsync,
         // so we need to be extra careful in this experimental detector.
@@ -236,7 +335,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     {
         if (this.envVarService.IsEnvironmentVariableValueTrue(DisableMvnCliEnvVar))
         {
-            this.LogInfo($"MvnCli detection disabled via {DisableMvnCliEnvVar} environment variable. Using static pom.xml parsing only.");
+            this.LogDebugWithId($"MvnCli detection disabled via {DisableMvnCliEnvVar} environment variable. Using static pom.xml parsing only.");
             this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
             this.fallbackReason = MavenFallbackReason.MvnCliDisabledByUser;
             this.mavenCliAvailable = false;
@@ -256,13 +355,13 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         if (!this.mavenCliAvailable)
         {
-            this.LogInfo("Maven CLI not found in PATH. Will use static pom.xml parsing only.");
+            this.LogDebugWithId("Maven CLI not found in PATH. Will use static pom.xml parsing only.");
             this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
             this.fallbackReason = MavenFallbackReason.MavenCliNotAvailable;
             return false;
         }
 
-        this.LogDebug("Maven CLI is available. Running MvnCli detection.");
+        this.LogDebugWithId("Maven CLI is available. Running MvnCli detection.");
         return true;
     }
 
@@ -377,7 +476,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         // Determine detection method based on results
         this.DetermineDetectionMethod(cliSuccessCount, cliFailureCount);
 
-        this.LogDebug($"Maven CLI processing complete: {cliSuccessCount} succeeded, {cliFailureCount} failed out of {this.originalPomFiles.Count} root pom.xml files. Retrieving generated dependency graphs.");
+        this.LogDebugWithId($"Maven CLI processing complete: {cliSuccessCount} succeeded, {cliFailureCount} failed out of {this.originalPomFiles.Count} root pom.xml files. Retrieving generated dependency graphs.");
 
         // Use comprehensive directory scanning after Maven CLI execution to find all generated dependency files
         // This ensures we find dependency files from submodules even if Maven CLI was only run on parent pom.xml
@@ -419,7 +518,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         if (cliFailureCount == 0 && cliSuccessCount > 0)
         {
             this.usedDetectionMethod = MavenDetectionMethod.MvnCliOnly;
-            this.LogDebug("All pom.xml files processed successfully with Maven CLI.");
+            this.LogDebugWithId("All pom.xml files processed successfully with Maven CLI.");
         }
         else if (cliFailureCount > 0)
         {
@@ -438,17 +537,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         if (pattern == this.mavenCommandService.BcdeMvnDependencyFileName)
         {
-            // Process MvnCli result - file reader already registered at generation step
-            var depsFilePath = processRequest.ComponentStream.Location;
-            try
-            {
-                this.ProcessMvnCliResult(processRequest);
-            }
-            finally
-            {
-                // Unregister file reader after processing to allow cleanup
-                this.mavenCommandService.UnregisterFileReader(depsFilePath, this.Id);
-            }
+            // Process MvnCli result
+            this.ProcessMvnCliResult(processRequest);
         }
         else
         {
@@ -461,24 +551,39 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
     protected override Task OnDetectionFinishedAsync()
     {
-        // Record telemetry
-        this.Telemetry["DetectionMethod"] = this.usedDetectionMethod.ToString();
-        this.Telemetry["FallbackReason"] = this.fallbackReason.ToString();
-        this.Telemetry["MvnCliComponentCount"] = this.mvnCliComponentCount.ToString();
-        this.Telemetry["StaticParserComponentCount"] = this.staticParserComponentCount.ToString();
+        // Second pass: resolve any parent relationships that couldn't be resolved during first pass
+        // This handles cases where parent POM was processed after child POM
+        this.ResolveUnresolvedParentRelationships();
+
+        // Third pass: resolve all pending components with collected variables and complete hierarchy
+        this.ResolvePendingComponents();
+
+        // Record telemetry - cache string conversions
+        var detectionMethodStr = this.usedDetectionMethod.ToString();
+        var fallbackReasonStr = this.fallbackReason.ToString();
+        var mvnCliCountStr = this.mvnCliComponentCount.ToString();
+        var staticCountStr = this.staticParserComponentCount.ToString();
+
+        this.Telemetry["DetectionMethod"] = detectionMethodStr;
+        this.Telemetry["FallbackReason"] = fallbackReasonStr;
+        this.Telemetry["MvnCliComponentCount"] = mvnCliCountStr;
+        this.Telemetry["StaticParserComponentCount"] = staticCountStr;
         this.Telemetry["TotalComponentCount"] = (this.mvnCliComponentCount + this.staticParserComponentCount).ToString();
         this.Telemetry["MavenCliAvailable"] = this.mavenCliAvailable.ToString();
         this.Telemetry["OriginalPomFileCount"] = this.originalPomFiles.Count.ToString();
+        this.Telemetry["CollectedVariableCount"] = this.collectedVariables.Count.ToString();
+        this.Telemetry["PendingComponentCount"] = this.pendingComponentCountBeforeResolution.ToString();
+        this.Telemetry["UnresolvedVariableCount"] = this.unresolvedVariableCount.ToString();
 
         if (!this.failedEndpoints.IsEmpty)
         {
             this.Telemetry["FailedEndpoints"] = string.Join(";", this.failedEndpoints.Distinct().Take(10));
         }
 
-        this.LogInfo($"Detection completed. Method: {this.usedDetectionMethod}, " +
-                     $"FallbackReason: {this.fallbackReason}, " +
-                     $"MvnCli components: {this.mvnCliComponentCount}, " +
-                     $"Static parser components: {this.staticParserComponentCount}");
+        this.LogDebugWithId($"Detection completed. Method: {detectionMethodStr}, " +
+                     $"FallbackReason: {fallbackReasonStr}, " +
+                     $"MvnCli components: {mvnCliCountStr}, " +
+                     $"Static parser components: {staticCountStr}");
 
         return Task.CompletedTask;
     }
@@ -489,7 +594,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private void AnalyzeMvnCliFailure()
     {
         // Check if any recorded errors indicate authentication failure
-        var hasAuthError = this.mavenCliErrors.Any(this.IsAuthenticationError);
+        var hasAuthError = this.mavenCliErrors.Any(IsAuthenticationError);
 
         if (hasAuthError)
         {
@@ -531,16 +636,35 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             var document = new XmlDocument();
             document.Load(file.Stream);
 
-            lock (this.documentsLoaded)
-            {
-                this.documentsLoaded.TryAdd(file.Location, document);
-            }
-
+            // Single XML parsing pass: create namespace manager once
             var namespaceManager = new XmlNamespaceManager(document.NameTable);
             namespaceManager.AddNamespace(ProjNamespace, MavenXmlNamespace);
 
+            // Collect variables from this document into a local dictionary first
+            var localVariables = new Dictionary<string, string>();
+            this.CollectVariablesFromDocument(document, namespaceManager, filePath, localVariables);
+
+            // Batch add local variables to global collection for better performance
+            // Key format: "filePath::variableName" enables Maven hierarchy-aware lookup
+            if (localVariables.Count > 0)
+            {
+                var keyBuilder = new StringBuilder(filePath.Length + 64); // Pre-allocate capacity
+                var filePathWithSeparator = filePath + "::";
+
+                foreach (var (variableName, variableValue) in localVariables)
+                {
+                    keyBuilder.Clear();
+                    keyBuilder.Append(filePathWithSeparator).Append(variableName);
+                    var key = keyBuilder.ToString();
+
+                    this.collectedVariables.AddOrUpdate(key, variableValue, (_, _) => variableValue);
+                }
+
+                this.Logger.LogDebug("MavenWithFallback: Collected {Count} variables from {File}", localVariables.Count, Path.GetFileName(filePath));
+            }
+
+            // First pass: collect dependencies (may have unresolved variables)
             var dependencyList = document.SelectNodes(DependencyNode, namespaceManager);
-            var componentsFoundInFile = 0;
 
             foreach (XmlNode dependency in dependencyList)
             {
@@ -556,31 +680,39 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 if (version != null && !version.InnerText.Contains(','))
                 {
                     var versionRef = version.InnerText.Trim('[', ']');
-                    string versionString;
 
                     if (versionRef.StartsWith("${"))
                     {
-                        versionString = this.ResolveVersion(versionRef, document, file.Location);
+                        // Only resolve immediately if local variable exists (highest priority)
+                        // Otherwise, defer to second pass to ensure proper hierarchy-aware resolution
+                        var resolvedVersion = this.ResolveVersionFromLocalOnly(versionRef, localVariables);
+                        if (!resolvedVersion.StartsWith("${"))
+                        {
+                            // Local variable found - resolve immediately (highest priority)
+                            var component = new MavenComponent(groupId, artifactId, resolvedVersion);
+                            var detectedComponent = new DetectedComponent(component);
+                            singleFileComponentRecorder.RegisterUsage(detectedComponent);
+                            Interlocked.Increment(ref this.staticParserComponentCount);
+                        }
+                        else
+                        {
+                            // No local variable - defer to second pass for hierarchy-aware resolution
+                            // This ensures we consider all variable definitions before resolving
+                            this.pendingComponents.Enqueue(new PendingComponent(
+                                groupId,
+                                artifactId,
+                                versionRef,
+                                singleFileComponentRecorder,
+                                filePath));
+                        }
                     }
                     else
                     {
-                        versionString = versionRef;
-                    }
-
-                    if (!versionString.StartsWith("${"))
-                    {
-                        var component = new MavenComponent(groupId, artifactId, versionString);
+                        // Direct version - register immediately
+                        var component = new MavenComponent(groupId, artifactId, versionRef);
                         var detectedComponent = new DetectedComponent(component);
                         singleFileComponentRecorder.RegisterUsage(detectedComponent);
-                        componentsFoundInFile++;
-                    }
-                    else
-                    {
-                        this.Logger.LogDebug(
-                            "Version string {Version} for component {Group}/{Artifact} is invalid or unsupported and a component will not be recorded.",
-                            versionString,
-                            groupId,
-                            artifactId);
+                        Interlocked.Increment(ref this.staticParserComponentCount);
                     }
                 }
                 else
@@ -591,8 +723,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                         artifactId);
                 }
             }
-
-            Interlocked.Add(ref this.staticParserComponentCount, componentsFoundInFile);
         }
         catch (Exception e)
         {
@@ -600,15 +730,267 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         }
     }
 
-    private bool IsAuthenticationError(string errorMessage)
+    /// <summary>
+    /// Collects all variable definitions from a POM document into the provided local dictionary.
+    /// Optimized to reuse XmlNamespaceManager and minimize XPath queries.
+    /// </summary>
+    /// <param name="document">The XML document to scan for variables.</param>
+    /// <param name="namespaceManager">Pre-configured namespace manager to reuse.</param>
+    /// <param name="filePath">The file path for logging purposes.</param>
+    /// <param name="localVariables">Local dictionary to collect variables into.</param>
+    private void CollectVariablesFromDocument(XmlDocument document, XmlNamespaceManager namespaceManager, string filePath, Dictionary<string, string> localVariables)
     {
-        if (string.IsNullOrWhiteSpace(errorMessage))
+        try
         {
-            return false;
+            // Query project coordinates once - used for both variable collection and project tracking
+            var projectGroupIdNode = document.SelectSingleNode("/proj:project/proj:groupId", namespaceManager);
+            var projectArtifactIdNode = document.SelectSingleNode("/proj:project/proj:artifactId", namespaceManager);
+            var projectVersionNode = document.SelectSingleNode("/proj:project/proj:version", namespaceManager);
+
+            // Track this project by Maven coordinates for parent resolution (reuses queried nodes)
+            this.TrackMavenProjectCoordinates(document, namespaceManager, filePath, projectGroupIdNode, projectArtifactIdNode);
+
+            // Parse Maven parent relationship to build proper hierarchy
+            this.ParseMavenParentRelationship(document, namespaceManager, filePath);
+
+            // Collect properties variables from ALL properties sections (handles malformed XML with multiple <properties>)
+            var propertiesNodes = document.SelectNodes("//proj:properties", namespaceManager);
+            if (propertiesNodes?.Count > 0)
+            {
+                if (propertiesNodes.Count > 1)
+                {
+                    this.Logger.LogDebug("MavenWithFallback: Found {Count} properties sections in {File}", propertiesNodes.Count, Path.GetFileName(filePath));
+                }
+
+                foreach (XmlNode propertiesNode in propertiesNodes)
+                {
+                    foreach (XmlNode propertyNode in propertiesNode.ChildNodes)
+                    {
+                        if (propertyNode.NodeType == XmlNodeType.Element && !string.IsNullOrWhiteSpace(propertyNode.InnerText))
+                        {
+                            // Later properties sections override earlier ones (last wins - Maven behavior)
+                            localVariables[propertyNode.Name] = propertyNode.InnerText;
+                        }
+                    }
+                }
+            }
+
+            // Collect project-level variables from already-queried nodes
+            if (projectVersionNode != null && !string.IsNullOrWhiteSpace(projectVersionNode.InnerText))
+            {
+                localVariables["version"] = projectVersionNode.InnerText;
+                localVariables["project.version"] = projectVersionNode.InnerText;
+            }
+
+            if (projectGroupIdNode != null && !string.IsNullOrWhiteSpace(projectGroupIdNode.InnerText))
+            {
+                localVariables["groupId"] = projectGroupIdNode.InnerText;
+                localVariables["project.groupId"] = projectGroupIdNode.InnerText;
+            }
+
+            if (projectArtifactIdNode != null && !string.IsNullOrWhiteSpace(projectArtifactIdNode.InnerText))
+            {
+                localVariables["artifactId"] = projectArtifactIdNode.InnerText;
+                localVariables["project.artifactId"] = projectArtifactIdNode.InnerText;
+            }
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogError(e, "Failed to collect variables from file {Path}", filePath);
+        }
+    }
+
+    /// <summary>
+    /// Parses Maven parent relationship from pom.xml to build proper inheritance hierarchy.
+    /// This is needed for Maven-compliant variable resolution that respects parent-child relationships.
+    /// </summary>
+    /// <param name="document">The XML document to parse.</param>
+    /// <param name="namespaceManager">XML namespace manager for Maven POM.</param>
+    /// <param name="currentFilePath">Current pom.xml file path.</param>
+    private void ParseMavenParentRelationship(XmlDocument document, XmlNamespaceManager namespaceManager, string currentFilePath)
+    {
+        try
+        {
+            // Query parent element once and access children directly (more efficient than union XPath)
+            var parentNode = document.SelectSingleNode("/proj:project/proj:parent", namespaceManager);
+
+            if (parentNode != null)
+            {
+                var parentGroupId = parentNode["groupId"]?.InnerText;
+                var parentArtifactId = parentNode["artifactId"]?.InnerText;
+
+                if (!string.IsNullOrWhiteSpace(parentArtifactId))
+                {
+                    // Try to find parent pom.xml file by searching processed files for matching artifactId
+                    // This works if parent was processed before child
+                    var parentPath = this.FindParentPomByArtifactId(parentGroupId, parentArtifactId, currentFilePath);
+                    if (!string.IsNullOrEmpty(parentPath))
+                    {
+                        this.mavenParentChildRelationships[currentFilePath] = parentPath;
+                        this.Logger.LogDebug(
+                            "MavenWithFallback: Parsed parent relationship: {Child} → {Parent}",
+                            Path.GetFileName(currentFilePath),
+                            Path.GetFileName(parentPath));
+                    }
+                    else
+                    {
+                        // Parent not found yet - queue for second pass resolution after all files are processed
+                        this.unresolvedParentRelationships.Enqueue((currentFilePath, parentGroupId, parentArtifactId));
+                        this.Logger.LogDebug(
+                            "MavenWithFallback: Queued unresolved parent relationship for {Child} → {ParentArtifactId}",
+                            Path.GetFileName(currentFilePath),
+                            parentArtifactId);
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogError(e, "Failed to parse parent relationship from {FilePath}", currentFilePath);
+        }
+    }
+
+    /// <summary>
+    /// Finds parent pom.xml file path by Maven coordinates (groupId:artifactId).
+    /// First searches by coordinates among processed projects, then falls back to directory traversal.
+    /// </summary>
+    /// <param name="parentGroupId">Parent groupId to match.</param>
+    /// <param name="parentArtifactId">Parent artifactId to match.</param>
+    /// <param name="currentFilePath">Current file path to start searching from.</param>
+    /// <returns>Parent pom.xml file path, or empty string if not found.</returns>
+    private string FindParentPomByArtifactId(string parentGroupId, string parentArtifactId, string currentFilePath)
+    {
+        // Use cache to avoid repeated operations for the same file
+        return this.parentPomCache.GetOrAdd(currentFilePath, filePath =>
+        {
+            try
+            {
+                // First, try to find by Maven coordinates (handles sibling projects)
+                if (!string.IsNullOrWhiteSpace(parentArtifactId))
+                {
+                    var coordinateKey = string.IsNullOrWhiteSpace(parentGroupId)
+                        ? parentArtifactId
+                        : $"{parentGroupId}:{parentArtifactId}";
+
+                    if (this.processedMavenProjects.TryGetValue(coordinateKey, out var coordinateBasedPath))
+                    {
+                        this.Logger.LogDebug(
+                            "MavenWithFallback: Found parent {ParentCoordinate} at {Path} for {Child}",
+                            coordinateKey,
+                            Path.GetFileName(coordinateBasedPath),
+                            Path.GetFileName(filePath));
+                        return coordinateBasedPath;
+                    }
+                }
+
+                // Fallback: Maven convention parent directory search
+                var currentDir = Path.GetDirectoryName(filePath);
+                var parentDir = Path.GetDirectoryName(currentDir);
+
+                // Track visited directories to prevent infinite loops from circular directory structures
+                var visitedDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                while (!string.IsNullOrEmpty(parentDir))
+                {
+                    // Prevent infinite loops from circular directory references or file system anomalies
+                    if (!visitedDirectories.Add(parentDir))
+                    {
+                        this.Logger.LogDebug(
+                            "MavenWithFallback: Circular directory reference detected while searching for parent POM, breaking at {Directory}",
+                            parentDir);
+                        break;
+                    }
+
+                    var parentPomPath = Path.Combine(parentDir, "pom.xml");
+                    if (this.fileUtilityService.Exists(parentPomPath) &&
+                        !string.Equals(parentPomPath, filePath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return parentPomPath;
+                    }
+
+                    var nextParentDir = Path.GetDirectoryName(parentDir);
+                    if (string.Equals(nextParentDir, parentDir, StringComparison.OrdinalIgnoreCase))
+                    {
+                        break; // Reached file system root
+                    }
+
+                    parentDir = nextParentDir;
+                }
+
+                return string.Empty; // Not found
+            }
+            catch (Exception ex)
+            {
+                this.Logger.LogDebug(ex, "Error finding parent POM for {FilePath}", Path.GetFileName(filePath));
+                return string.Empty;
+            }
+        });
+    }
+
+    /// <summary>
+    /// Tracks a Maven project by its coordinates to enable coordinate-based parent resolution.
+    /// </summary>
+    /// <param name="document">The XML document to parse.</param>
+    /// <param name="namespaceManager">XML namespace manager for Maven POM.</param>
+    /// <param name="filePath">Current pom.xml file path.</param>
+    /// <param name="groupIdNode">Pre-queried groupId node (can be null).</param>
+    /// <param name="artifactIdNode">Pre-queried artifactId node (can be null).</param>
+    private void TrackMavenProjectCoordinates(XmlDocument document, XmlNamespaceManager namespaceManager, string filePath, XmlNode groupIdNode, XmlNode artifactIdNode)
+    {
+        try
+        {
+            // If project doesn't have its own groupId, try to get it from parent
+            groupIdNode ??= document.SelectSingleNode("/proj:project/proj:parent/proj:groupId", namespaceManager);
+
+            if (artifactIdNode != null && !string.IsNullOrWhiteSpace(artifactIdNode.InnerText))
+            {
+                var groupId = groupIdNode?.InnerText;
+                var artifactId = artifactIdNode.InnerText;
+
+                // Store with both artifactId-only and groupId:artifactId keys for flexible lookup
+                this.processedMavenProjects.TryAdd(artifactId, filePath);
+                if (!string.IsNullOrWhiteSpace(groupId))
+                {
+                    this.processedMavenProjects.TryAdd($"{groupId}:{artifactId}", filePath);
+                }
+
+                this.Logger.LogDebug(
+                    "MavenWithFallback: Tracked project {GroupId}:{ArtifactId} at {Path}",
+                    groupId ?? "(inherited)",
+                    artifactId,
+                    Path.GetFileName(filePath));
+            }
+        }
+        catch (Exception e)
+        {
+            this.Logger.LogDebug(e, "Failed to track Maven project coordinates from {Path}", filePath);
+        }
+    }
+
+    /// <summary>
+    /// Resolves a version template using only local variables from the current file.
+    /// This ensures immediate resolution only when the variable is defined in the same file (highest priority).
+    /// </summary>
+    /// <param name="versionTemplate">The version template with variables (e.g., "${revision}").</param>
+    /// <param name="localVariables">Local variables from the current file.</param>
+    /// <returns>The resolved version string, or the original template if local variable not found.</returns>
+    private string ResolveVersionFromLocalOnly(string versionTemplate, Dictionary<string, string> localVariables)
+    {
+        var resolvedVersion = versionTemplate;
+        var match = VersionRegex.Match(versionTemplate);
+
+        if (match.Success)
+        {
+            var variable = match.Groups[1].Captures[0].ToString();
+
+            // Only check local variables (same file priority)
+            if (localVariables.TryGetValue(variable, out var localReplacement))
+            {
+                resolvedVersion = versionTemplate.Replace("${" + variable + "}", localReplacement);
+            }
         }
 
-        return AuthErrorPatterns.Any(pattern =>
-            errorMessage.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+        return resolvedVersion;
     }
 
     private IEnumerable<string> ExtractFailedEndpoints(string errorMessage)
@@ -644,72 +1026,221 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         this.LogWarning(guidance.ToString());
     }
 
-    private string ResolveVersion(string versionString, XmlDocument currentDocument, string currentDocumentFileLocation)
+    /// <summary>
+    /// Resolves parent relationships that couldn't be established during first pass.
+    /// This handles cases where the parent POM was processed after the child POM.
+    /// </summary>
+    private void ResolveUnresolvedParentRelationships()
     {
-        var returnedVersionString = versionString;
-        var match = VersionRegex.Match(versionString);
+        var resolvedCount = 0;
+        var unresolvedCount = 0;
+
+        while (this.unresolvedParentRelationships.TryDequeue(out var unresolvedRelationship))
+        {
+            var (filePath, parentGroupId, parentArtifactId) = unresolvedRelationship;
+
+            // Skip if already resolved (could happen if resolved via directory traversal during first pass)
+            if (this.mavenParentChildRelationships.ContainsKey(filePath))
+            {
+                continue;
+            }
+
+            // Clear the cache entry so we can try again with the now-complete processedMavenProjects
+            this.parentPomCache.TryRemove(filePath, out _);
+
+            // Try to find parent by coordinates now that all files have been processed
+            var parentPath = this.FindParentPomByCoordinatesOnly(parentGroupId, parentArtifactId, filePath);
+            if (!string.IsNullOrEmpty(parentPath))
+            {
+                this.mavenParentChildRelationships[filePath] = parentPath;
+                resolvedCount++;
+                this.Logger.LogDebug(
+                    "MavenWithFallback: Resolved deferred parent relationship: {Child} → {Parent}",
+                    Path.GetFileName(filePath),
+                    Path.GetFileName(parentPath));
+            }
+            else
+            {
+                unresolvedCount++;
+                this.Logger.LogDebug(
+                    "MavenWithFallback: Could not resolve parent {ParentGroupId}:{ParentArtifactId} for {Child}",
+                    parentGroupId ?? "(null)",
+                    parentArtifactId,
+                    Path.GetFileName(filePath));
+            }
+        }
+
+        if (resolvedCount > 0 || unresolvedCount > 0)
+        {
+            this.LogDebugWithId($"Second pass (parent resolution) completed: {resolvedCount} deferred parent relationships resolved, {unresolvedCount} remain unresolved");
+        }
+    }
+
+    /// <summary>
+    /// Finds parent POM by Maven coordinates only (no directory traversal).
+    /// Used for deferred parent resolution after all files have been processed.
+    /// </summary>
+    private string FindParentPomByCoordinatesOnly(string parentGroupId, string parentArtifactId, string currentFilePath)
+    {
+        if (string.IsNullOrWhiteSpace(parentArtifactId))
+        {
+            return string.Empty;
+        }
+
+        // Try with full coordinates first
+        if (!string.IsNullOrWhiteSpace(parentGroupId))
+        {
+            var fullCoordinateKey = $"{parentGroupId}:{parentArtifactId}";
+            if (this.processedMavenProjects.TryGetValue(fullCoordinateKey, out var fullCoordinatePath) &&
+                !string.Equals(fullCoordinatePath, currentFilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return fullCoordinatePath;
+            }
+        }
+
+        // Try with artifactId only
+        if (this.processedMavenProjects.TryGetValue(parentArtifactId, out var artifactIdPath) &&
+            !string.Equals(artifactIdPath, currentFilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return artifactIdPath;
+        }
+
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Third pass: resolve all pending components using hierarchy-aware variable resolution.
+    /// For components with unresolved variables, this picks the closest ancestor definition
+    /// based on Maven's property inheritance rules (child > parent precedence).
+    /// </summary>
+    private void ResolvePendingComponents()
+    {
+        // Capture count before draining for accurate telemetry
+        this.pendingComponentCountBeforeResolution = this.pendingComponents.Count;
+
+        var resolvedCount = 0;
+        var skippedCount = 0;
+
+        while (this.pendingComponents.TryDequeue(out var pendingComponent))
+        {
+            try
+            {
+                var resolvedVersion = this.ResolveVersionWithHierarchyAwareness(pendingComponent.VersionTemplate, pendingComponent.FilePath);
+                if (!resolvedVersion.StartsWith("${"))
+                {
+                    var component = new MavenComponent(pendingComponent.GroupId, pendingComponent.ArtifactId, resolvedVersion);
+                    var detectedComponent = new DetectedComponent(component);
+                    pendingComponent.Recorder.RegisterUsage(detectedComponent);
+                    Interlocked.Increment(ref this.staticParserComponentCount);
+                    resolvedCount++;
+                }
+                else
+                {
+                    skippedCount++;
+                    this.Logger.LogDebug(
+                        "Version string {Version} for component {Group}/{Artifact} could not be resolved and a component will not be recorded. File: {File}",
+                        resolvedVersion,
+                        pendingComponent.GroupId,
+                        pendingComponent.ArtifactId,
+                        pendingComponent.FilePath);
+                }
+            }
+            catch (Exception e)
+            {
+                skippedCount++;
+                this.Logger.LogError(
+                    e,
+                    "Failed to resolve pending component {Group}/{Artifact} from {File}",
+                    pendingComponent.GroupId,
+                    pendingComponent.ArtifactId,
+                    pendingComponent.FilePath);
+            }
+        }
+
+        this.LogDebugWithId($"Third pass (variable resolution) completed: {resolvedCount} components resolved, {skippedCount} skipped due to unresolved variables");
+    }
+
+    /// <summary>
+    /// Resolves a version template with hierarchy-aware precedence.
+    /// When multiple variable definitions exist, picks the closest ancestor to the requesting file.
+    /// This implements Maven's property inheritance rule: child properties take precedence over parent properties.
+    /// </summary>
+    /// <param name="versionTemplate">The version template with variables (e.g., "${revision}").</param>
+    /// <param name="requestingFilePath">The file path of the POM requesting the variable resolution.</param>
+    /// <returns>The resolved version string, or the original template if variables cannot be resolved.</returns>
+    private string ResolveVersionWithHierarchyAwareness(string versionTemplate, string requestingFilePath)
+    {
+        var resolvedVersion = versionTemplate;
+        var match = VersionRegex.Match(versionTemplate);
 
         if (match.Success)
         {
             var variable = match.Groups[1].Captures[0].ToString();
-            var replacement = this.ReplaceVariable(variable, currentDocument, currentDocumentFileLocation);
-            returnedVersionString = versionString.Replace("${" + variable + "}", replacement);
+
+            // Use Maven-compliant hierarchy search: current → parent → grandparent
+            var foundValue = this.FindVariableInMavenHierarchy(variable, requestingFilePath);
+            if (foundValue != null)
+            {
+                resolvedVersion = versionTemplate.Replace("${" + variable + "}", foundValue.Value.Value);
+            }
+            else
+            {
+                // Variable not found in Maven hierarchy - log at debug level since unresolved
+                // properties are common (profiles, external parents, etc.) and aggregate count in telemetry
+                Interlocked.Increment(ref this.unresolvedVariableCount);
+                this.Logger.LogDebug(
+                    "{DetectorId}: Variable {Variable} not found in Maven hierarchy for {File}",
+                    this.Id,
+                    variable,
+                    Path.GetFileName(requestingFilePath));
+            }
         }
 
-        return returnedVersionString;
+        return resolvedVersion;
     }
 
-    private string ReplaceVariable(string variable, XmlDocument currentDocument, string currentDocumentFileLocation)
+    /// <summary>
+    /// Finds a variable value using Maven-compliant hierarchy search.
+    /// Searches in order: current file → parent → grandparent (stops at first match).
+    /// </summary>
+    /// <param name="variable">Variable name to find.</param>
+    /// <param name="requestingFilePath">The pom.xml file requesting the variable.</param>
+    /// <returns>Variable value and source file, or null if not found in hierarchy.</returns>
+    private (string Value, string SourceFile)? FindVariableInMavenHierarchy(string variable, string requestingFilePath)
     {
-        var result = this.FindVariableInDocument(currentDocument, currentDocumentFileLocation, variable);
-        if (result != null)
-        {
-            return result;
-        }
+        var currentFile = requestingFilePath;
+        var visitedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var keyBuilder = new StringBuilder(256); // Pre-allocate for typical path lengths
 
-        lock (this.documentsLoaded)
+        // Walk up Maven parent hierarchy until variable found or no more parents
+        while (!string.IsNullOrEmpty(currentFile))
         {
-            foreach (var pathDocumentPair in this.documentsLoaded)
+            // Prevent infinite loops from circular parent references
+            if (!visitedFiles.Add(currentFile))
             {
-                var path = pathDocumentPair.Key;
-                var document = pathDocumentPair.Value;
-                result = this.FindVariableInDocument(document, path, variable);
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-        }
-
-        return $"${{{variable}}}";
-    }
-
-    private string FindVariableInDocument(XmlDocument document, string path, string variable)
-    {
-        try
-        {
-            var namespaceManager = new XmlNamespaceManager(document.NameTable);
-            namespaceManager.AddNamespace(ProjNamespace, MavenXmlNamespace);
-
-            var nodeListProject = document.SelectNodes($"//proj:{variable}", namespaceManager);
-            var nodeListProperties = document.SelectNodes($"//proj:properties/proj:{variable}", namespaceManager);
-
-            if (nodeListProject.Count != 0)
-            {
-                return nodeListProject.Item(0).InnerText;
+                this.Logger.LogDebug(
+                    "{DetectorId}: Circular parent reference detected while resolving variable {Variable}, breaking at {File}",
+                    this.Id,
+                    variable,
+                    Path.GetFileName(currentFile));
+                break;
             }
 
-            if (nodeListProperties.Count != 0)
+            // Check if this file has the variable definition using StringBuilder for efficiency
+            keyBuilder.Clear();
+            keyBuilder.Append(currentFile).Append("::").Append(variable);
+            var variableKey = keyBuilder.ToString();
+
+            if (this.collectedVariables.TryGetValue(variableKey, out var value))
             {
-                return nodeListProperties.Item(0).InnerText;
+                return (value, currentFile);
             }
-        }
-        catch (Exception e)
-        {
-            this.Logger.LogError(e, "Failed to read file {Path}", path);
+
+            // Move to Maven parent (not directory parent)
+            this.mavenParentChildRelationships.TryGetValue(currentFile, out currentFile);
         }
 
-        return null;
+        return null; // Variable not found in Maven hierarchy
     }
 
     /// <summary>
@@ -739,14 +1270,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     .ThenBy(r => r.ComponentStream.Location, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
-                // Build a list of all directories that contain a pom.xml, ordered by path length (shortest first).
-                // This ensures parent directories are checked before their children.
-                var pomDirectories = sortedRequests
-                    .Select(r => NormalizeDirectoryPath(Path.GetDirectoryName(r.ComponentStream.Location)))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(d => d.Length)
-                    .ToList();
-
+                // Use a HashSet of root directories for O(1) lookup instead of O(n) list iteration
+                var rootPomDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var filteredRequests = new List<ProcessRequest>();
 
                 foreach (var request in sortedRequests)
@@ -754,23 +1279,21 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     cancellationToken.ThrowIfCancellationRequested();
 
                     var location = NormalizeDirectoryPath(Path.GetDirectoryName(request.ComponentStream.Location));
+
+                    // Check if any ancestor directory is already a root POM directory
+                    // Walk up the directory tree (O(depth) instead of O(n))
                     var isNested = false;
+                    var parentDir = Path.GetDirectoryName(location.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
 
-                    foreach (var pomDirectory in pomDirectories)
+                    while (!string.IsNullOrEmpty(parentDir))
                     {
-                        if (pomDirectory.Length >= location.Length)
+                        var normalizedParent = NormalizeDirectoryPath(parentDir);
+                        if (rootPomDirectories.Contains(normalizedParent))
                         {
-                            // Since the list is ordered by length, if the pomDirectory is longer than
-                            // or equal to the location, there are no possible parent directories left.
-                            break;
-                        }
-
-                        if (location.StartsWith(pomDirectory, StringComparison.OrdinalIgnoreCase))
-                        {
-                            this.LogDebug($"Ignoring {MavenManifest} at {location}, as it has a parent {MavenManifest} at {pomDirectory}.");
+                            this.LogDebugWithId($"Ignoring {MavenManifest} at {location}, as it has a parent {MavenManifest} at {normalizedParent}.");
                             isNested = true;
                             parentPomDictionary.AddOrUpdate(
-                                pomDirectory,
+                                normalizedParent,
                                 [request],
                                 (key, existingList) =>
                                 {
@@ -779,19 +1302,28 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                                 });
                             break;
                         }
+
+                        var nextParent = Path.GetDirectoryName(parentDir);
+                        if (string.Equals(nextParent, parentDir, StringComparison.OrdinalIgnoreCase))
+                        {
+                            break; // Reached root
+                        }
+
+                        parentDir = nextParent;
                     }
 
                     if (!isNested)
                     {
-                        this.LogDebug($"Discovered {request.ComponentStream.Location}.");
+                        this.LogDebugWithId($"Discovered {request.ComponentStream.Location}.");
+                        rootPomDirectories.Add(location);
                         parentPomDictionary.AddOrUpdate(
-                                NormalizeDirectoryPath(Path.GetDirectoryName(request.ComponentStream.Location)),
-                                [request],
-                                (key, existingList) =>
-                                {
-                                    existingList.Add(request);
-                                    return existingList;
-                                });
+                            location,
+                            [request],
+                            (key, existingList) =>
+                            {
+                                existingList.Add(request);
+                                return existingList;
+                            });
                         filteredRequests.Add(request);
                     }
                 }

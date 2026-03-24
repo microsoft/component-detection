@@ -33,12 +33,6 @@ internal class MavenCommandService : IMavenCommandService
     /// </summary>
     private readonly ConcurrentDictionary<string, MavenCliResult> completedLocations = new();
 
-    /// <summary>
-    /// Tracks the number of active readers for each dependency file.
-    /// Used for safe file cleanup coordination between detectors.
-    /// </summary>
-    private readonly ConcurrentDictionary<string, int> fileReaderCounts = new();
-
     private readonly ICommandLineInvocationService commandLineInvocationService;
     private readonly IMavenStyleDependencyGraphParserService parserService;
     private readonly IEnvironmentVariableService envVarService;
@@ -56,7 +50,7 @@ internal class MavenCommandService : IMavenCommandService
         this.logger = logger;
     }
 
-    public string BcdeMvnDependencyFileName => "bcde.mvndeps";
+    public string BcdeMvnDependencyFileName => MavenConstants.BcdeMvnDependencyFileName;
 
     public async Task<bool> MavenCLIExistsAsync()
     {
@@ -68,9 +62,6 @@ internal class MavenCommandService : IMavenCommandService
         var pomFile = processRequest.ComponentStream;
         var pomDir = Path.GetDirectoryName(pomFile.Location);
         var depsFilePath = Path.Combine(pomDir, this.BcdeMvnDependencyFileName);
-
-        // Register as file reader immediately to prevent premature cleanup
-        this.RegisterFileReader(depsFilePath);
 
         // Check the cache before acquiring the semaphore to allow fast-path returns
         // even when cancellation has been requested.
@@ -168,69 +159,5 @@ internal class MavenCommandService : IMavenCommandService
 
         var lines = sr.ReadToEnd().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
         this.parserService.Parse(lines, processRequest.SingleFileComponentRecorder);
-    }
-
-    /// <summary>
-    /// Registers that a detector is actively reading a dependency file.
-    /// This prevents premature deletion by other detectors.
-    /// </summary>
-    /// <param name="dependencyFilePath">The path to the dependency file being read.</param>
-    public void RegisterFileReader(string dependencyFilePath)
-    {
-        this.fileReaderCounts.AddOrUpdate(dependencyFilePath, 1, (key, count) => count + 1);
-        this.logger.LogDebug(
-            "Registered file reader for {DependencyFilePath}, count: {Count}",
-            dependencyFilePath,
-            this.fileReaderCounts[dependencyFilePath]);
-    }
-
-    /// <summary>
-    /// Unregisters a detector's active reading of a dependency file and attempts cleanup.
-    /// If no other detectors are reading the file, it will be safely deleted.
-    /// </summary>
-    /// <param name="dependencyFilePath">The path to the dependency file that was being read.</param>
-    /// <param name="detectorId">The identifier of the detector unregistering the file reader.</param>
-    public void UnregisterFileReader(string dependencyFilePath, string detectorId = null)
-    {
-        var newCount = this.fileReaderCounts.AddOrUpdate(dependencyFilePath, 0, (key, count) => Math.Max(0, count - 1));
-        this.logger.LogDebug(
-            "{DetectorId}: Unregistered file reader for {DependencyFilePath}, count: {Count}",
-            detectorId ?? "Unknown",
-            dependencyFilePath,
-            newCount);
-
-        // If no readers remain, attempt cleanup
-        if (newCount == 0)
-        {
-            this.TryDeleteDependencyFileIfNotInUse(dependencyFilePath, detectorId);
-        }
-    }
-
-    /// <summary>
-    /// Attempts to delete a dependency file if no detectors are currently using it.
-    /// </summary>
-    /// <param name="dependencyFilePath">The path to the dependency file to delete.</param>
-    /// <param name="detectorId">The identifier of the detector requesting the deletion.</param>
-    private void TryDeleteDependencyFileIfNotInUse(string dependencyFilePath, string detectorId = null)
-    {
-        var detector = detectorId ?? "Unknown";
-
-        // Safe to delete - no readers are using the file (count was already verified to be 0)
-        try
-        {
-            if (File.Exists(dependencyFilePath))
-            {
-                File.Delete(dependencyFilePath);
-                this.logger.LogDebug("{DetectorId}: Successfully deleted dependency file {DependencyFilePath}", detector, dependencyFilePath);
-            }
-            else
-            {
-                this.logger.LogDebug("{DetectorId}: Dependency file {DependencyFilePath} was already deleted", detector, dependencyFilePath);
-            }
-        }
-        catch (Exception ex)
-        {
-            this.logger.LogWarning(ex, "{DetectorId}: Failed to delete dependency file {DependencyFilePath}", detector, dependencyFilePath);
-        }
     }
 }
