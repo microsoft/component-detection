@@ -141,6 +141,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private MavenFallbackReason fallbackReason = MavenFallbackReason.None;
     private int mvnCliComponentCount;
     private int staticParserComponentCount;
+    private int unresolvedVariableCount;
+    private int pendingComponentCountBeforeResolution;
     private bool mavenCliAvailable;
 
     public MavenWithFallbackDetector(
@@ -207,9 +209,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private void LogDebugWithId(string message) =>
         this.Logger.LogDebug("{DetectorId}: {Message}", this.Id, message);
 
-    private void LogInfo(string message) =>
-        this.Logger.LogInformation("{DetectorId}: {Message}", this.Id, message);
-
     private void LogWarning(string message) =>
         this.Logger.LogWarning("{DetectorId}: {Message}", this.Id, message);
 
@@ -256,6 +255,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         this.fallbackReason = MavenFallbackReason.None;
         this.mvnCliComponentCount = 0;
         this.staticParserComponentCount = 0;
+        this.unresolvedVariableCount = 0;
+        this.pendingComponentCountBeforeResolution = 0;
         this.mavenCliAvailable = false;
     }
 
@@ -334,7 +335,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     {
         if (this.envVarService.IsEnvironmentVariableValueTrue(DisableMvnCliEnvVar))
         {
-            this.LogInfo($"MvnCli detection disabled via {DisableMvnCliEnvVar} environment variable. Using static pom.xml parsing only.");
+            this.LogDebugWithId($"MvnCli detection disabled via {DisableMvnCliEnvVar} environment variable. Using static pom.xml parsing only.");
             this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
             this.fallbackReason = MavenFallbackReason.MvnCliDisabledByUser;
             this.mavenCliAvailable = false;
@@ -354,7 +355,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         if (!this.mavenCliAvailable)
         {
-            this.LogInfo("Maven CLI not found in PATH. Will use static pom.xml parsing only.");
+            this.LogDebugWithId("Maven CLI not found in PATH. Will use static pom.xml parsing only.");
             this.usedDetectionMethod = MavenDetectionMethod.StaticParserOnly;
             this.fallbackReason = MavenFallbackReason.MavenCliNotAvailable;
             return false;
@@ -571,14 +572,15 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         this.Telemetry["MavenCliAvailable"] = this.mavenCliAvailable.ToString();
         this.Telemetry["OriginalPomFileCount"] = this.originalPomFiles.Count.ToString();
         this.Telemetry["CollectedVariableCount"] = this.collectedVariables.Count.ToString();
-        this.Telemetry["PendingComponentCount"] = this.pendingComponents.Count.ToString();
+        this.Telemetry["PendingComponentCount"] = this.pendingComponentCountBeforeResolution.ToString();
+        this.Telemetry["UnresolvedVariableCount"] = this.unresolvedVariableCount.ToString();
 
         if (!this.failedEndpoints.IsEmpty)
         {
             this.Telemetry["FailedEndpoints"] = string.Join(";", this.failedEndpoints.Distinct().Take(10));
         }
 
-        this.LogInfo($"Detection completed. Method: {detectionMethodStr}, " +
+        this.LogDebugWithId($"Detection completed. Method: {detectionMethodStr}, " +
                      $"FallbackReason: {fallbackReasonStr}, " +
                      $"MvnCli components: {mvnCliCountStr}, " +
                      $"Static parser components: {staticCountStr}");
@@ -1070,7 +1072,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         if (resolvedCount > 0 || unresolvedCount > 0)
         {
-            this.LogInfo($"Resolved {resolvedCount} deferred parent relationships, {unresolvedCount} remain unresolved");
+            this.LogDebugWithId($"Second pass (parent resolution) completed: {resolvedCount} deferred parent relationships resolved, {unresolvedCount} remain unresolved");
         }
     }
 
@@ -1113,6 +1115,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     /// </summary>
     private void ResolvePendingComponents()
     {
+        // Capture count before draining for accurate telemetry
+        this.pendingComponentCountBeforeResolution = this.pendingComponents.Count;
+
         var resolvedCount = 0;
         var skippedCount = 0;
 
@@ -1152,7 +1157,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             }
         }
 
-        this.LogInfo($"Second pass completed: {resolvedCount} components resolved, {skippedCount} skipped due to unresolved variables");
+        this.LogDebugWithId($"Third pass (variable resolution) completed: {resolvedCount} components resolved, {skippedCount} skipped due to unresolved variables");
     }
 
     /// <summary>
@@ -1180,9 +1185,12 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             }
             else
             {
-                // Variable not found in Maven hierarchy - log for debugging
-                this.Logger.LogWarning(
-                    "MavenWithFallback: Variable {Variable} not found in Maven hierarchy for {File}",
+                // Variable not found in Maven hierarchy - log at debug level since unresolved
+                // properties are common (profiles, external parents, etc.) and aggregate count in telemetry
+                Interlocked.Increment(ref this.unresolvedVariableCount);
+                this.Logger.LogDebug(
+                    "{DetectorId}: Variable {Variable} not found in Maven hierarchy for {File}",
+                    this.Id,
                     variable,
                     Path.GetFileName(requestingFilePath));
             }
@@ -1210,8 +1218,9 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             // Prevent infinite loops from circular parent references
             if (!visitedFiles.Add(currentFile))
             {
-                this.Logger.LogWarning(
-                    "MavenWithFallback: Circular parent reference detected while resolving variable {Variable}, breaking at {File}",
+                this.Logger.LogDebug(
+                    "{DetectorId}: Circular parent reference detected while resolving variable {Variable}, breaking at {File}",
+                    this.Id,
                     variable,
                     Path.GetFileName(currentFile));
                 break;

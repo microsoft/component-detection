@@ -492,23 +492,33 @@ internal class DetectorProcessingService : IDetectorProcessingService
                         return false;
                     }
 
-                    var directoryPath = entry.ToFullPath();
-                    var realPath = directoryPath;
-
-                    // Check if this is a symlink (reparse point) and resolve to real path
-                    if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    try
                     {
-                        realPath = this.pathUtilityService.ResolvePhysicalPath(directoryPath);
+                        var directoryPath = entry.ToFullPath();
+                        var realPath = directoryPath;
 
-                        // If we can't resolve the path, skip this directory
-                        if (string.IsNullOrEmpty(realPath))
+                        // Check if this is a symlink (reparse point) and resolve to real path
+                        if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
                         {
-                            return false;
-                        }
-                    }
+                            realPath = this.pathUtilityService.ResolvePhysicalPath(directoryPath);
 
-                    // Only recurse if we haven't visited this real path before
-                    return visitedDirectories.TryAdd(realPath, true);
+                            // If we can't resolve the path, skip this directory
+                            if (string.IsNullOrEmpty(realPath))
+                            {
+                                return false;
+                            }
+                        }
+
+                        // Only recurse if we haven't visited this real path before
+                        return visitedDirectories.TryAdd(realPath, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        // If symlink resolution fails (broken/inaccessible symlink), skip this directory
+                        // and continue cleanup to avoid aborting the entire enumeration
+                        this.logger.LogDebug(ex, "Skipping directory due to symlink resolution failure: {Directory}", entry.ToFullPath());
+                        return false;
+                    }
                 },
             };
 
