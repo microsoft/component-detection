@@ -169,6 +169,8 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
         }
         catch (Exception e) when (e is IOException or InvalidOperationException)
         {
+            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
+            singleFileComponentRecorder.RegisterPackageParseFailure(processRequest.ComponentStream.Location);
             this.Logger.LogWarning(e, "Failed to read paket.lock file {File}", processRequest.ComponentStream.Location);
             processRequest.SingleFileComponentRecorder.RegisterPackageParseFailure(processRequest.ComponentStream.Location);
         }
