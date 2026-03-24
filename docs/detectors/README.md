@@ -78,9 +78,9 @@
 
 - [Paket](paket.md)
 
-| Detector              | Status |
-| --------------------- | ------ |
-| PaketComponentDetector | Stable |
+| Detector              | Status     |
+| --------------------- | ---------- |
+| PaketComponentDetector | DefaultOff |
 
 - [Pip](pip.md)
 

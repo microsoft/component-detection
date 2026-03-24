@@ -15,10 +15,11 @@ using Microsoft.Extensions.Logging;
 /// Detects NuGet packages in paket.lock files.
 /// Paket is a dependency manager for .NET that provides better control over package dependencies.
 /// </summary>
-public sealed class PaketComponentDetector : FileComponentDetector
+// TODO: Promote to default-on (remove IDefaultOffComponentDetector) once validated in real-world usage.
+public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffComponentDetector
 {
     private static readonly Regex PackageLineRegex = new(@"^\s{4}(\S+)\s+\(([^\)]+)\)", RegexOptions.Compiled);
-    private static readonly Regex DependencyLineRegex = new(@"^\s{6}(\S+)\s+\((.+)\)", RegexOptions.Compiled);
+    private static readonly Regex DependencyLineRegex = new(@"^\s{6}(\S+)\s+\(([^)]+)\)", RegexOptions.Compiled);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PaketComponentDetector"/> class.
@@ -60,10 +61,18 @@ public sealed class PaketComponentDetector : FileComponentDetector
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             using var reader = new StreamReader(processRequest.ComponentStream.Stream);
 
+            // First pass: collect all resolved packages and their dependency relationships.
+            // In paket.lock, 4-space indented lines are resolved packages with pinned versions.
+            // 6-space indented lines are dependency specifications (version constraints) of the parent
+            // package; they are NOT resolved versions. The actual resolved version for each dependency
+            // will appear as its own 4-space entry elsewhere in the file.
+            // Limitation: without cross-referencing paket.dependencies, we cannot distinguish between
+            // direct and transitive dependencies. All 4-space packages are registered as explicit for now.
+            var resolvedPackages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var dependencyRelationships = new List<(string ParentName, string DependencyName)>();
+
             var currentSection = string.Empty;
             string currentPackageName = null;
-            string currentPackageVersion = null;
-            DetectedComponent currentComponent = null;
 
             while (await reader.ReadLineAsync(cancellationToken) is { } line)
             {
@@ -72,13 +81,11 @@ public sealed class PaketComponentDetector : FileComponentDetector
                     continue;
                 }
 
-                // Check if this is a section header (e.g., NUGET, GITHUB, HTTP)
+                // Check if this is a section header (e.g., NUGET, GITHUB, HTTP, GROUP)
                 if (!line.StartsWith(' ') && line.Trim().Length > 0)
                 {
                     currentSection = line.Trim();
                     currentPackageName = null;
-                    currentPackageVersion = null;
-                    currentComponent = null;
                     continue;
                 }
 
@@ -94,43 +101,58 @@ public sealed class PaketComponentDetector : FileComponentDetector
                     continue;
                 }
 
-                // Check if this is a package line (4 spaces indentation)
+                // Check if this is a package line (4 spaces indentation) - these are resolved packages
                 var packageMatch = PackageLineRegex.Match(line);
                 if (packageMatch.Success)
                 {
                     currentPackageName = packageMatch.Groups[1].Value;
-                    currentPackageVersion = packageMatch.Groups[2].Value;
+                    var currentPackageVersion = packageMatch.Groups[2].Value;
 
-                    currentComponent = new DetectedComponent(
-                        new NuGetComponent(currentPackageName, currentPackageVersion));
-
-                    singleFileComponentRecorder.RegisterUsage(
-                        currentComponent,
-                        isExplicitReferencedDependency: true);
-
+                    // Use TryAdd so the first occurrence wins (in case of multiple groups)
+                    resolvedPackages.TryAdd(currentPackageName, currentPackageVersion);
                     continue;
                 }
 
-                // Check if this is a dependency line (6 spaces indentation)
+                // Check if this is a dependency line (6 spaces indentation) - these are version constraints
                 var dependencyMatch = DependencyLineRegex.Match(line);
-                if (dependencyMatch.Success && currentComponent != null)
+                if (dependencyMatch.Success && currentPackageName != null)
                 {
                     var dependencyName = dependencyMatch.Groups[1].Value;
-                    var dependencyVersionSpec = dependencyMatch.Groups[2].Value;
+                    dependencyRelationships.Add((currentPackageName, dependencyName));
+                }
+            }
 
-                    // Extract the actual version from the version specification
-                    // Version specs can be like ">= 3.3.0" or "1.2.10"
-                    var versionMatch = Regex.Match(dependencyVersionSpec, @"[\d\.]+");
-                    if (versionMatch.Success)
-                    {
-                        var dependencyComponent = new DetectedComponent(
-                            new NuGetComponent(dependencyName, versionMatch.Value));
+            // Build a set of package names that appear as dependencies of other packages
+            var transitiveDependencyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (_, dependencyName) in dependencyRelationships)
+            {
+                transitiveDependencyNames.Add(dependencyName);
+            }
 
-                        singleFileComponentRecorder.RegisterUsage(
-                            dependencyComponent,
-                            isExplicitReferencedDependency: false,
-                            parentComponentId: currentComponent.Component.Id);
-                    }
+            // Register all resolved packages
+            foreach (var (name, version) in resolvedPackages)
+            {
+                var component = new DetectedComponent(new NuGetComponent(name, version));
+                singleFileComponentRecorder.RegisterUsage(
+                    component,
+                    isExplicitReferencedDependency: !transitiveDependencyNames.Contains(name));
+            }
+
+            // Register parent-child relationships using the dependency specifications
+            foreach (var (parentName, dependencyName) in dependencyRelationships)
+            {
+                if (resolvedPackages.ContainsKey(dependencyName) && resolvedPackages.ContainsKey(parentName))
+                {
+                    var parentVersion = resolvedPackages[parentName];
+                    var parentComponentId = new NuGetComponent(parentName, parentVersion).Id;
+
+                    var depVersion = resolvedPackages[dependencyName];
+                    var depComponent = new DetectedComponent(new NuGetComponent(dependencyName, depVersion));
+
+                    singleFileComponentRecorder.RegisterUsage(
+                        depComponent,
+                        isExplicitReferencedDependency: false,
+                        parentComponentId: parentComponentId);
                 }
             }
         }

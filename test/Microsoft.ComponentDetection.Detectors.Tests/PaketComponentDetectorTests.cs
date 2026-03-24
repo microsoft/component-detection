@@ -1,9 +1,9 @@
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
-using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
+using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Paket;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -30,16 +30,36 @@ public class PaketComponentDetectorTests : BaseDetectorTest<PaketComponentDetect
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
+        // Only 3 resolved packages (4-space lines), not 5 (which would include 6-space dependency specs)
         detectedComponents.Should().HaveCount(3);
 
-        var castleCore = detectedComponents.Single(c => c.Component.Id.Contains("Castle.Core 3.3.0"));
-        castleCore.Should().NotBeNull();
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Core 3.3.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("log4net 1.2.10"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Core-log4net 3.3.0"));
+    }
 
-        var log4net = detectedComponents.Single(c => c.Component.Id.Contains("log4net 1.2.10"));
-        log4net.Should().NotBeNull();
+    [TestMethod]
+    public async Task TestPaketDetector_DependencyRelationshipsAreBuilt()
+    {
+        var paketLock = @"NUGET
+  remote: https://nuget.org/api/v2
+    Castle.Core (3.3.0)
+    Castle.Windsor (3.3.0)
+      Castle.Core (>= 3.3.0)
+";
 
-        var castleCoreLog4Net = detectedComponents.Single(c => c.Component.Id.Contains("Castle.Core-log4net 3.3.0"));
-        castleCoreLog4Net.Should().NotBeNull();
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        // Only 2 resolved packages
+        detectedComponents.Should().HaveCount(2);
+
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Windsor 3.3.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Core 3.3.0"));
     }
 
     [TestMethod]
@@ -47,8 +67,15 @@ public class PaketComponentDetectorTests : BaseDetectorTest<PaketComponentDetect
     {
         var paketLock = @"NUGET
   remote: https://nuget.org/api/v2
+    Castle.Core (3.3.0)
     Castle.Windsor (3.3.0)
       Castle.Core (>= 3.3.0)
+    Rx-Core (2.2.5)
+      Rx-Interfaces (>= 2.2.5)
+    Rx-Interfaces (2.2.5)
+    Rx-Linq (2.2.5)
+      Rx-Interfaces (>= 2.2.5)
+      Rx-Core (>= 2.2.5)
     Rx-Main (2.2.5)
       Rx-Interfaces (>= 2.2.5)
       Rx-Core (>= 2.2.5)
@@ -62,13 +89,15 @@ public class PaketComponentDetectorTests : BaseDetectorTest<PaketComponentDetect
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        detectedComponents.Should().HaveCountGreaterThanOrEqualTo(2);
+        // 6 resolved packages
+        detectedComponents.Should().HaveCount(6);
 
-        var castleWindsor = detectedComponents.Single(c => c.Component.Id.Contains("Castle.Windsor 3.3.0"));
-        castleWindsor.Should().NotBeNull();
-
-        var rxMain = detectedComponents.Single(c => c.Component.Id.Contains("Rx-Main 2.2.5"));
-        rxMain.Should().NotBeNull();
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Windsor 3.3.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Core 3.3.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Main 2.2.5"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Core 2.2.5"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Interfaces 2.2.5"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Linq 2.2.5"));
     }
 
     [TestMethod]
@@ -112,12 +141,19 @@ public class PaketComponentDetectorTests : BaseDetectorTest<PaketComponentDetect
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        detectedComponents.Should().HaveCountGreaterThanOrEqualTo(11);
+        // 11 resolved packages (4-space lines only)
+        detectedComponents.Should().HaveCount(11);
 
-        // Verify some key packages
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Core 3.3.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Core-log4net 3.3.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.LoggingFacility 3.3.0"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Windsor 3.3.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Castle.Windsor-log4net 3.3.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Core 2.2.5"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Interfaces 2.2.5"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Linq 2.2.5"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-Main 2.2.5"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Rx-PlatformServices 2.2.5"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("log4net 1.2.10"));
     }
 
@@ -182,7 +218,7 @@ GITHUB
     }
 
     [TestMethod]
-    public async Task TestPaketDetector_VersionWithBuildMetadata()
+    public async Task TestPaketDetector_VersionWithPreReleaseAndBuildMetadata()
     {
         var paketLock = @"NUGET
   remote: https://api.nuget.org/v3/index.json
@@ -212,6 +248,10 @@ GITHUB
       PackageC (< 3.0.0)
       PackageD (~> 1.5)
       PackageE (1.2.3)
+    PackageB (2.1.0)
+    PackageC (2.9.0)
+    PackageD (1.5.3)
+    PackageE (1.2.3)
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -221,8 +261,13 @@ GITHUB
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        detectedComponents.Should().HaveCountGreaterThanOrEqualTo(1);
+        // All 5 resolved packages should be detected with their actual resolved versions
+        detectedComponents.Should().HaveCount(5);
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("PackageA 1.0.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("PackageB 2.1.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("PackageC 2.9.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("PackageD 1.5.3"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("PackageE 1.2.3"));
     }
 
     [TestMethod]
@@ -252,9 +297,9 @@ GITHUB
 NUGET
   remote: https://api.nuget.org/v3/index.json
     FSharp.Core (8.0.200)
+    Microsoft.Extensions.DependencyInjection.Abstractions (8.0.1)
     Microsoft.Extensions.Logging.Abstractions (8.0.1)
       Microsoft.Extensions.DependencyInjection.Abstractions (>= 8.0.1)
-    Microsoft.Extensions.DependencyInjection.Abstractions (8.0.1)
     Newtonsoft.Json (13.0.3)
 ";
 
@@ -265,7 +310,7 @@ NUGET
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        detectedComponents.Should().HaveCountGreaterThanOrEqualTo(4);
+        detectedComponents.Should().HaveCount(4);
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Core 8.0.200"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Microsoft.Extensions.Logging.Abstractions 8.0.1"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Microsoft.Extensions.DependencyInjection.Abstractions 8.0.1"));
@@ -297,8 +342,8 @@ NUGET
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Should detect packages from both groups
-        detectedComponents.Should().HaveCountGreaterThanOrEqualTo(3);
+        // FSharp.Core appears in both groups; TryAdd keeps the first occurrence (9.0.300)
+        detectedComponents.Should().HaveCount(3);
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Core"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Newtonsoft.Json 13.0.3"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Azure.Core 1.46.1"));
@@ -312,6 +357,8 @@ NUGET
     Azure.Core (1.46.1) - restriction: || (&& (>= net462) (>= netstandard2.0)) (>= net8.0)
       Microsoft.Bcl.AsyncInterfaces (>= 8.0) - restriction: || (>= net462) (>= netstandard2.0)
       System.Memory.Data (>= 6.0.1) - restriction: || (>= net462) (>= netstandard2.0)
+    Microsoft.Bcl.AsyncInterfaces (8.0.0)
+    System.Memory.Data (6.0.1)
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -321,9 +368,11 @@ NUGET
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Should detect the main package and its dependencies despite restrictions
-        detectedComponents.Should().HaveCountGreaterThanOrEqualTo(1);
+        // All 3 resolved packages detected with correct versions
+        detectedComponents.Should().HaveCount(3);
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Azure.Core 1.46.1"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Microsoft.Bcl.AsyncInterfaces 8.0.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("System.Memory.Data 6.0.1"));
     }
 
     [TestMethod]
@@ -373,8 +422,8 @@ NUGET
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Should detect packages regardless of STORAGE directive
-        detectedComponents.Should().HaveCountGreaterThanOrEqualTo(2);
+        // Should detect 2 resolved packages regardless of STORAGE directive
+        detectedComponents.Should().HaveCount(2);
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Core 9.0.303"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Oxpecker 1.3"));
     }
@@ -386,6 +435,8 @@ NUGET
 RESTRICTION: == net6.0
 NUGET
   remote: https://api.nuget.org/v3/index.json
+    Fake.Core.CommandLineParsing (6.1.3)
+    Fake.Core.Context (6.1.3)
     Fake.Core.Target (6.1.3)
       Fake.Core.CommandLineParsing (>= 6.1.3)
       Fake.Core.Context (>= 6.1.3)
@@ -399,10 +450,13 @@ NUGET
     FSharp.Data (6.6)
       FSharp.Core (>= 6.0.1) - restriction: >= netstandard2.0
       FSharp.Data.Csv.Core (>= 6.6) - restriction: >= netstandard2.0
+    FSharp.Data.Csv.Core (6.6)
+    Microsoft.AspNetCore.Http.Connections (1.2)
     Microsoft.AspNetCore.SignalR (1.2)
       Microsoft.AspNetCore.Http.Connections (>= 1.2) - restriction: >= netstandard2.0
     Serilog (4.2) - restriction: || (>= net462) (>= netstandard2.0)
       System.Diagnostics.DiagnosticSource (>= 8.0.1) - restriction: || (&& (>= net462) (< netstandard2.0)) (&& (< net462) (< net6.0) (>= netstandard2.0)) (>= net471)
+    System.Diagnostics.DiagnosticSource (8.0.1)
 
 GROUP Test
 NUGET
@@ -410,6 +464,7 @@ NUGET
     NUnit (4.3.2)
       System.Memory (>= 4.6) - restriction: >= net462
     NUnit3TestAdapter (5.0)
+    System.Memory (4.6)
 ";
 
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
@@ -419,13 +474,41 @@ NUGET
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Should detect packages from all groups with various restriction formats
-        detectedComponents.Should().HaveCountGreaterThanOrEqualTo(6);
+        // Should detect all resolved packages from all groups
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Fake.Core.Target 6.1.3"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Fake.Core.CommandLineParsing 6.1.3"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Fake.Core.Context 6.1.3"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Data 6.6"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Data.Csv.Core 6.6"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Microsoft.AspNetCore.SignalR 1.2"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("Microsoft.AspNetCore.Http.Connections 1.2"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Serilog 4.2"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("System.Diagnostics.DiagnosticSource 8.0.1"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("NUnit 4.3.2"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("NUnit3TestAdapter 5.0"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("System.Memory 4.6"));
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_UnresolvedDependencyIsIgnored()
+    {
+        // If a 6-space dependency doesn't have a corresponding 4-space resolved entry,
+        // it should be silently ignored (not registered with a fake version from the constraint)
+        var paketLock = @"NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PackageA (1.0.0)
+      NonExistentPackage (>= 2.0.0)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        // Only the resolved package should be detected, not the unresolved dependency
+        detectedComponents.Should().ContainSingle(c => c.Component.Id.Contains("PackageA 1.0.0"));
+        detectedComponents.Should().NotContain(c => ((NuGetComponent)c.Component).Name == "NonExistentPackage");
     }
 }

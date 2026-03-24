@@ -55,6 +55,8 @@ The detector:
 
 ## Known Limitations
 
+- This detector is currently **DefaultOff** and must be explicitly enabled
 - Only NuGet dependencies from the `NUGET` section are detected
 - GitHub, HTTP, and Git dependencies are not currently supported
+- Without cross-referencing the `paket.dependencies` file, the detector cannot reliably distinguish between direct and transitive dependencies; it uses the dependency graph within the lock file to approximate this
 - The detector assumes the lock file format follows the standard Paket conventions
