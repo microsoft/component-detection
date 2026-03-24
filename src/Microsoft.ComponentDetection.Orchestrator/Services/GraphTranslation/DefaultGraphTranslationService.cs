@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Services.GraphTranslation;
 
 using System;
@@ -14,7 +15,7 @@ using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.Extensions.Logging;
 
-public class DefaultGraphTranslationService : IGraphTranslationService
+internal class DefaultGraphTranslationService : IGraphTranslationService
 {
     private readonly ILogger<DefaultGraphTranslationService> logger;
 
@@ -214,6 +215,9 @@ public class DefaultGraphTranslationService : IGraphTranslationService
         // Multiple detected components for the same logical component id -- this happens when different files see the same component. This code should go away when we get all
         //  mutable data out of detected component -- we can just take any component.
         var firstComponent = enumerable.First();
+        HashSet<string> mergedLicenses = null;
+        HashSet<ActorInfo> mergedSuppliers = null;
+
         foreach (var nextComponent in enumerable.Skip(1))
         {
             foreach (var filePath in nextComponent.FilePaths ?? Enumerable.Empty<string>())
@@ -238,6 +242,28 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             }
 
             firstComponent.TargetFrameworks = MergeTargetFrameworks(firstComponent.TargetFrameworks, nextComponent.TargetFrameworks);
+
+            if (nextComponent.LicensesConcluded != null)
+            {
+                mergedLicenses ??= new HashSet<string>(firstComponent.LicensesConcluded ?? [], StringComparer.OrdinalIgnoreCase);
+                mergedLicenses.UnionWith(nextComponent.LicensesConcluded);
+            }
+
+            if (nextComponent.Suppliers != null)
+            {
+                mergedSuppliers ??= new HashSet<ActorInfo>(firstComponent.Suppliers ?? []);
+                mergedSuppliers.UnionWith(nextComponent.Suppliers);
+            }
+        }
+
+        if (mergedLicenses != null)
+        {
+            firstComponent.LicensesConcluded = mergedLicenses.Where(x => x != null).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        if (mergedSuppliers != null)
+        {
+            firstComponent.Suppliers = mergedSuppliers.Where(s => s != null).OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
         }
 
         return firstComponent;
@@ -315,6 +341,8 @@ public class DefaultGraphTranslationService : IGraphTranslationService
             ContainerDetailIds = component.ContainerDetailIds,
             ContainerLayerIds = component.ContainerLayerIds,
             TargetFrameworks = component.TargetFrameworks?.ToHashSet(),
+            LicensesConcluded = component.LicensesConcluded,
+            Suppliers = component.Suppliers,
         };
     }
 }

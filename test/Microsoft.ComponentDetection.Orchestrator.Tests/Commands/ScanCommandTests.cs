@@ -1,9 +1,11 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Commands;
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
@@ -40,10 +42,10 @@ public class ScanCommandTests
     {
         var settings = new ScanSettings { Output = "output" };
 
-        var result = await this.command.ExecuteAsync(null, settings);
+        var result = await this.command.ExecuteAsync(null, settings, CancellationToken.None);
 
         this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
-        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
+        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings, CancellationToken.None), Times.Once);
         this.fileWritingServiceMock.Verify(x => x.ResolveFilePath(It.IsAny<string>()), Times.Once);
         this.fileWritingServiceMock.Verify(x => x.AppendToFile(It.IsAny<string>(), It.IsAny<ScanResult>()));
         result.Should().Be(0);
@@ -54,10 +56,10 @@ public class ScanCommandTests
     {
         var settings = new ScanSettings { Output = "output", ManifestFile = new FileInfo("manifest.json") };
 
-        var result = await this.command.ExecuteAsync(null, settings);
+        var result = await this.command.ExecuteAsync(null, settings, CancellationToken.None);
 
         this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
-        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
+        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings, CancellationToken.None), Times.Once);
         this.fileWritingServiceMock.Verify(x => x.WriteFile(It.Is<FileInfo>(x => x == settings.ManifestFile), It.IsAny<ScanResult>()));
 
         result.Should().Be(0);
@@ -71,10 +73,10 @@ public class ScanCommandTests
         await using var tw = new StreamWriter(ms);
         Console.SetOut(tw);
 
-        var result = await this.command.ExecuteAsync(null, settings);
+        var result = await this.command.ExecuteAsync(null, settings, CancellationToken.None);
 
         this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
-        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
+        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings, CancellationToken.None), Times.Once);
         this.fileWritingServiceMock.Verify(x => x.ResolveFilePath(It.IsAny<string>()), Times.Once);
         this.fileWritingServiceMock.Verify(x => x.AppendToFile(It.IsAny<string>(), It.IsAny<ScanResult>()));
 
@@ -94,7 +96,7 @@ public class ScanCommandTests
         var result = await this.command.ExecuteScanCommandAsync(settings);
 
         this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
-        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
+        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings, CancellationToken.None), Times.Once);
         this.fileWritingServiceMock.Verify(x => x.ResolveFilePath(It.IsAny<string>()), Times.Once);
         this.fileWritingServiceMock.Verify(x => x.AppendToFile(It.IsAny<string>(), It.IsAny<ScanResult>()));
 
@@ -110,7 +112,7 @@ public class ScanCommandTests
         var result = await this.command.ExecuteScanCommandAsync(settings);
 
         this.fileWritingServiceMock.Verify(x => x.Init(settings.Output), Times.Once);
-        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings), Times.Once);
+        this.scanExecutionServiceMock.Verify(x => x.ExecuteScanAsync(settings, CancellationToken.None), Times.Once);
         this.fileWritingServiceMock.Verify(x => x.WriteFile(It.Is<FileInfo>(x => x == settings.ManifestFile), It.IsAny<ScanResult>()));
     }
 }

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -591,7 +592,7 @@ public class RustCliParserTests
         var registrations = recorder.Invocations.Where(i => i.Method.Name == "RegisterUsage").ToList();
 
         // Should have registrations with proper parent relationships
-        registrations.Should().HaveCountGreaterOrEqualTo(3);
+        registrations.Should().HaveCountGreaterThanOrEqualTo(3);
 
         // Verify at least one registration has a parent component ID
         registrations.Should().Contain(r => r.Arguments[2] != null && !string.IsNullOrEmpty((string)r.Arguments[2]));
@@ -613,7 +614,7 @@ public class RustCliParserTests
       "resolve": {
         "root":"root 1.0.0",
         "nodes":[
-          { "id":"root 1.0.0", "deps":[ 
+          { "id":"root 1.0.0", "deps":[
               { "pkg":"depA 1.0.0", "dep_kinds":[{"kind":"build"}] },
               { "pkg":"depB 1.0.0", "dep_kinds":[{"kind":"build"}] }
           ] },
@@ -646,7 +647,7 @@ public class RustCliParserTests
         var sharedRegistrations = registrations.Where(r =>
             ((CargoComponent)((DetectedComponent)r.Arguments[0]).Component).Name == "shared").ToList();
 
-        sharedRegistrations.Should().HaveCountGreaterOrEqualTo(1);
+        sharedRegistrations.Should().HaveCountGreaterThanOrEqualTo(1);
     }
 
     [TestMethod]
@@ -726,7 +727,7 @@ public class RustCliParserTests
       "resolve": {
         "root":"root 1.0.0",
         "nodes":[
-          { "id":"root 1.0.0", "deps":[ 
+          { "id":"root 1.0.0", "deps":[
               { "pkg":"devDep 1.0.0", "dep_kinds":[{"kind":"dev"}] },
               { "pkg":"buildDep 1.0.0", "dep_kinds":[{"kind":"build"}] },
               { "pkg":"normalDep 1.0.0", "dep_kinds":[{"kind":null}] }
@@ -1001,7 +1002,7 @@ public class RustCliParserTests
         result.Success.Should().BeTrue();
 
         // Should use fallback for childA since owners set is empty
-        fallback.Invocations.Count(i => i.Method.Name == "RegisterUsage").Should().BeGreaterOrEqualTo(1);
+        fallback.Invocations.Count(i => i.Method.Name == "RegisterUsage").Should().BeGreaterThanOrEqualTo(1);
     }
 
     [TestMethod]

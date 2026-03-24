@@ -9,8 +9,14 @@ on:
   push:
     branches:
       - main
+  schedule:
+    # GitHub cron schedules run in UTC; this runs at 06:00 UTC, Monday–Friday.
+    - cron: '0 6 * * 1-5'
   workflow_dispatch:
 
+concurrency:
+  group: snapshot-publish
+  cancel-in-progress: true
 permissions:
   contents: read
 
@@ -23,17 +29,24 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
 
       - run: dotnet restore
 
       - name: Setup Python
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
-          python-version: '3.10'
+          python-version: "3.14"
 
       - name: Install Apache Ivy
         if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -56,10 +69,10 @@ jobs:
         run:
           dotnet run scan --Verbosity Verbose --SourceDirectory ${{ github.workspace }}/test/Microsoft.ComponentDetection.VerificationTests/resources --Output ${{ github.workspace }}/output
           --DockerImagesToScan "docker.io/library/debian@sha256:9b0e3056b8cd8630271825665a0613cc27829d6a24906dc0122b3b4834312f7d,mcr.microsoft.com/cbl-mariner/base/core@sha256:c1bc83a3d385eccbb2f7f7da43a726c697e22a996f693a407c35ac7b4387cd59,docker.io/library/alpine@sha256:1304f174557314a7ed9eddb4eab12fed12cb0cd9809e4c28f29af86979a3c870"
-          --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff --DirectoryExclusionList "**/pip/parallel/**;**/pip/roots/**;**/pip/pre-generated/**"
+          --DetectorArgs DockerReference=EnableIfDefaultOff,SPDX22SBOM=EnableIfDefaultOff --DirectoryExclusionList "**/pip/parallel/**;**/pip/roots/**;**/pip/pre-generated/**;**/pip/fallback/**;**/pip/index-removal/**;**/pip/simple-extras/**;**/pip/pytestresultpkg/**"
 
       - name: Upload output folder
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: release-snapshot-output-${{ matrix.os }}
           path: ${{ github.workspace }}/output

@@ -4,16 +4,22 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using global::NuGet.Versioning;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
+using Microsoft.ComponentDetection.Detectors.Npm.Contracts;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 public static class NpmComponentUtilities
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        AllowTrailingCommas = true,
+        PropertyNameCaseInsensitive = true,
+    };
+
     private static readonly Regex UnsafeCharactersRegex = new Regex(
         @"[?<>#%{}|`'^\\~\[\]""\s\x7f]|[\x00-\x1f]|[\x80-\xff]",
         RegexOptions.Compiled);
@@ -21,9 +27,8 @@ public static class NpmComponentUtilities
     public static readonly string NodeModules = "node_modules";
     public static readonly string LockFile3EnvFlag = "CD_LOCKFILE_V3_ENABLED";
 
-    public static void TraverseAndRecordComponents(JProperty currentDependency, ISingleFileComponentRecorder singleFileComponentRecorder, TypedComponent component, TypedComponent explicitReferencedDependency, string parentComponentId = null)
+    public static void TraverseAndRecordComponents(bool isDevDependency, ISingleFileComponentRecorder singleFileComponentRecorder, TypedComponent component, TypedComponent explicitReferencedDependency, string? parentComponentId = null)
     {
-        var isDevDependency = currentDependency.Value["dev"] is JValue devJValue && (bool)devJValue;
         AddOrUpdateDetectedComponent(singleFileComponentRecorder, component, isDevDependency, parentComponentId, isExplicitReferencedDependency: string.Equals(component.Id, explicitReferencedDependency.Id));
     }
 
@@ -31,7 +36,7 @@ public static class NpmComponentUtilities
         ISingleFileComponentRecorder singleFileComponentRecorder,
         TypedComponent component,
         bool isDevDependency,
-        string parentComponentId = null,
+        string? parentComponentId = null,
         bool isExplicitReferencedDependency = false)
     {
         var newComponent = new DetectedComponent(component);
@@ -39,45 +44,48 @@ public static class NpmComponentUtilities
         return singleFileComponentRecorder.GetComponent(component.Id);
     }
 
-    public static TypedComponent GetTypedComponent(JProperty currentDependency, string npmRegistryHost, ILogger logger)
+    public static TypedComponent? GetTypedComponent(string name, string? version, string? hash, string npmRegistryHost, ILogger logger)
     {
-        var name = GetModuleName(currentDependency.Name);
+        var moduleName = GetModuleName(name);
 
-        var version = currentDependency.Value["version"]?.ToString();
-        var hash = currentDependency.Value["integrity"]?.ToString(); // https://docs.npmjs.com/configuring-npm/package-lock-json.html#integrity
-
-        if (!IsPackageNameValid(name))
+        if (!IsPackageNameValid(moduleName))
         {
-            logger.LogInformation("The package name {PackageName} is invalid or unsupported and a component will not be recorded.", name);
+            logger.LogInformation("The package name {PackageName} is invalid or unsupported and a component will not be recorded.", moduleName);
             return null;
         }
 
-        if (!SemanticVersion.TryParse(version, out var result) && !TryParseNpmVersion(npmRegistryHost, name, version, out result))
+        if (version is null || (!SemanticVersion.TryParse(version, out var result) && !TryParseNpmVersion(npmRegistryHost, moduleName, version, out result)))
         {
-            logger.LogInformation("Version string {ComponentVersion} for component {ComponentName} is invalid or unsupported and a component will not be recorded.", version, name);
+            logger.LogInformation("Version string {ComponentVersion} for component {ComponentName} is invalid or unsupported and a component will not be recorded.", version, moduleName);
             return null;
         }
 
-        version = result.ToString();
-        TypedComponent component = new NpmComponent(name, version, hash);
+        var versionString = result!.ToString();
+        TypedComponent component = new NpmComponent(moduleName, versionString, hash);
         return component;
     }
 
-    public static bool TryParseNpmVersion(string npmRegistryHost, string packageName, string versionString, out SemanticVersion version)
+    public static bool TryParseNpmVersion(
+        string npmRegistryHost,
+        string packageName,
+        string? versionString,
+        out SemanticVersion? version
+    )
     {
-        if (Uri.TryCreate(versionString, UriKind.Absolute, out var parsedUri))
+        if (
+            versionString is not null
+            && Uri.TryCreate(versionString, UriKind.Absolute, out var parsedUri)
+            && string.Equals(npmRegistryHost, parsedUri.Host, StringComparison.OrdinalIgnoreCase)
+        )
         {
-            if (string.Equals(npmRegistryHost, parsedUri.Host, StringComparison.OrdinalIgnoreCase))
-            {
-                return TryParseNpmRegistryVersion(packageName, parsedUri, out version);
-            }
+            return TryParseNpmRegistryVersion(packageName, parsedUri, out version);
         }
 
         version = null;
         return false;
     }
 
-    public static bool TryParseNpmRegistryVersion(string packageName, Uri versionString, out SemanticVersion version)
+    public static bool TryParseNpmRegistryVersion(string packageName, Uri versionString, out SemanticVersion? version)
     {
         try
         {
@@ -97,32 +105,60 @@ public static class NpmComponentUtilities
     {
         yarnWorkspaces = [];
 
-        using var file = new StreamReader(stream);
-        using var reader = new JsonTextReader(file);
-
-        IDictionary<string, string> dependencies = new Dictionary<string, string>();
-        IDictionary<string, string> devDependencies = new Dictionary<string, string>();
-
-        var o = JToken.ReadFrom(reader);
-
-        if (o["private"] != null && o["private"].Value<bool>() && o["workspaces"] != null)
+        var packageJson = JsonSerializer.Deserialize<PackageJson>(stream, JsonOptions);
+        if (packageJson is null)
         {
-            if (o["workspaces"] is JArray)
-            {
-                yarnWorkspaces = o["workspaces"].Values<string>().ToList();
-            }
-            else if (o["workspaces"] is JObject && o["workspaces"]["packages"] != null && o["workspaces"]["packages"] is JArray)
-            {
-                yarnWorkspaces = o["workspaces"]["packages"].Values<string>().ToList();
-            }
+            return new Dictionary<string, IDictionary<string, bool>>();
         }
 
-        dependencies = PullDependenciesFromJToken(o, "dependencies");
-        dependencies = dependencies.Concat(PullDependenciesFromJToken(o, "optionalDependencies")).ToDictionary(x => x.Key, x => x.Value);
-        devDependencies = PullDependenciesFromJToken(o, "devDependencies");
+        if (packageJson.Private == true && packageJson.Workspaces is not null)
+        {
+            yarnWorkspaces = packageJson.Workspaces.ToList();
+        }
 
-        var returnedDependencies = AttachDevInformationToDependencies(dependencies, false);
+        var dependencies = packageJson.Dependencies ?? new Dictionary<string, string>();
+        var optionalDependencies = packageJson.OptionalDependencies ?? new Dictionary<string, string>();
+        var devDependencies = packageJson.DevDependencies ?? new Dictionary<string, string>();
+
+        var allDependencies = dependencies.Concat(optionalDependencies).ToDictionary(x => x.Key, x => x.Value);
+
+        var returnedDependencies = AttachDevInformationToDependencies(allDependencies, false);
         return returnedDependencies.Concat(AttachDevInformationToDependencies(devDependencies, true)).GroupBy(x => x.Key).ToDictionary(x => x.Key, x => x.First().Value);
+    }
+
+    /// <summary>
+    /// Tries to parse an npm alias specifier of the form <c>npm:@scope/name@version</c> or <c>npm:name@version</c>.
+    /// This format appears in the <c>version</c> field of v1/v2 lockfile <c>dependencies</c> entries when a package is aliased.
+    /// </summary>
+    /// <param name="versionField">The version field value from the lockfile dependency entry.</param>
+    /// <param name="packageName">When this method returns <c>true</c>, contains the real package name (e.g. <c>@zkochan/js-yaml</c>).</param>
+    /// <param name="version">When this method returns <c>true</c>, contains the version string (e.g. <c>0.0.9</c>).</param>
+    /// <returns><c>true</c> if the value was a valid npm alias specifier; otherwise <c>false</c>.</returns>
+    public static bool TryParseNpmAlias(string? versionField, out string packageName, out string version)
+    {
+        packageName = string.Empty;
+        version = string.Empty;
+
+        if (versionField is null || !versionField.StartsWith("npm:", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Remove "npm:" prefix → e.g. "@zkochan/js-yaml@0.0.9" or "ramda@0.28.1"
+        var specifier = versionField[4..];
+
+        // Find the last '@' that separates name from version.
+        // For scoped packages like "@scope/name@version", the first '@' is part of the scope.
+        var lastAtIndex = specifier.LastIndexOf('@');
+        if (lastAtIndex <= 0)
+        {
+            return false;
+        }
+
+        packageName = specifier[..lastAtIndex];
+        version = specifier[(lastAtIndex + 1)..];
+
+        return packageName.Length > 0 && version.Length > 0;
     }
 
     /// <summary>
@@ -141,6 +177,19 @@ public static class NpmComponentUtilities
         }
 
         return name;
+    }
+
+    internal static bool IsPackageNameValid(string name)
+    {
+        if (Uri.TryCreate(name, UriKind.Absolute, out _))
+        {
+            return false;
+        }
+
+        return !(name.Length >= 214
+                 || name.StartsWith('.')
+                 || name.StartsWith('_')
+                 || UnsafeCharactersRegex.IsMatch(name));
     }
 
     private static IDictionary<string, IDictionary<string, bool>> AttachDevInformationToDependencies(IDictionary<string, string> dependencies, bool isDev)
@@ -165,29 +214,5 @@ public static class NpmComponentUtilities
         }
 
         return returnedDependencies;
-    }
-
-    private static IDictionary<string, string> PullDependenciesFromJToken(JToken jObject, string dependencyType)
-    {
-        IDictionary<string, JToken> dependencyJObject = new Dictionary<string, JToken>();
-        if (jObject[dependencyType] != null)
-        {
-            dependencyJObject = (JObject)jObject[dependencyType];
-        }
-
-        return dependencyJObject.ToDictionary(x => x.Key, x => (string)x.Value);
-    }
-
-    private static bool IsPackageNameValid(string name)
-    {
-        if (Uri.TryCreate(name, UriKind.Absolute, out _))
-        {
-            return false;
-        }
-
-        return !(name.Length >= 214
-                 || name.StartsWith('.')
-                 || name.StartsWith('_')
-                 || UnsafeCharactersRegex.IsMatch(name));
     }
 }

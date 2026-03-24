@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System;
@@ -6,7 +7,7 @@ using System.IO;
 using Microsoft.ComponentDetection.Contracts;
 using YamlDotNet.Serialization;
 
-public abstract class PnpmParsingUtilitiesBase<T>
+internal abstract class PnpmParsingUtilitiesBase<T>
 where T : PnpmYaml
 {
     public T DeserializePnpmYamlFile(string fileContent)

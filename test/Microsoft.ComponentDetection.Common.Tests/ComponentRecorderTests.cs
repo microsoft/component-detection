@@ -1,8 +1,10 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Collections.Generic;
-using FluentAssertions;
+using System.Linq;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
@@ -147,6 +149,204 @@ public class ComponentRecorderTests
 
         detectedComponents.Should().NotBeNull();
         detectedComponents.Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_SameComponentAcrossFiles_MergesLicensesConcluded()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("file2.json");
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT", "Apache-2.0"],
+        };
+
+        recorder1.RegisterUsage(component1);
+        recorder2.RegisterUsage(component2);
+
+        var result = this.componentRecorder.GetDetectedComponents().Single();
+        result.LicensesConcluded.Should().HaveCount(2);
+        result.LicensesConcluded.Should().Contain("MIT");
+        result.LicensesConcluded.Should().Contain("Apache-2.0");
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_SameComponentAcrossFiles_MergesSuppliers()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("file2.json");
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [new ActorInfo { Name = "contoso", Type = "organization" }, new ActorInfo { Name = "Fabrikam", Type = "Organization" }],
+        };
+
+        recorder1.RegisterUsage(component1);
+        recorder2.RegisterUsage(component2);
+
+        var result = this.componentRecorder.GetDetectedComponents().Single();
+
+        // "Contoso"/"Organization" and "contoso"/"organization" are equal (case-insensitive); "Fabrikam" is kept
+        result.Suppliers.Should().HaveCount(2);
+        result.Suppliers.Should().Contain(s => string.Equals(s.Name, "Contoso", System.StringComparison.OrdinalIgnoreCase));
+        result.Suppliers.Should().Contain(s => s.Name == "Fabrikam");
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_SameComponentAcrossFiles_OneHasNullFields_PreservesNonNull()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("file2.json");
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"));
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }],
+        };
+
+        recorder1.RegisterUsage(component1);
+        recorder2.RegisterUsage(component2);
+
+        var result = this.componentRecorder.GetDetectedComponents().Single();
+        result.LicensesConcluded.Should().ContainSingle().Which.Should().Be("MIT");
+        result.Suppliers.Should().ContainSingle().Which.Name.Should().Be("Contoso");
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_SameComponentAcrossFiles_LicensesConcludedWithNullEntry_DoesNotThrow()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("file2.json");
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT", null],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = [null, "Apache-2.0"],
+        };
+
+        recorder1.RegisterUsage(component1);
+        recorder2.RegisterUsage(component2);
+
+        var result = this.componentRecorder.GetDetectedComponents().Single();
+        result.LicensesConcluded.Should().Contain("MIT");
+        result.LicensesConcluded.Should().Contain("Apache-2.0");
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_SameComponentAcrossFiles_SuppliersWithNullEntry_DoesNotThrow()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("file2.json");
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [new ActorInfo { Name = "Contoso", Type = "Organization" }, null],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            Suppliers = [null, new ActorInfo { Name = "Fabrikam", Type = "Organization" }],
+        };
+
+        recorder1.RegisterUsage(component1);
+        recorder2.RegisterUsage(component2);
+
+        var result = this.componentRecorder.GetDetectedComponents().Single();
+        result.Suppliers.Should().Contain(s => s != null && s.Name == "Contoso");
+        result.Suppliers.Should().Contain(s => s != null && s.Name == "Fabrikam");
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_SameComponentAcrossThreeFiles_MergesAllFields()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("file2.json");
+        var recorder3 = this.componentRecorder.CreateSingleFileComponentRecorder("file3.json");
+
+        var component1 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+            Suppliers = [new ActorInfo { Name = "Alice", Type = "Person" }],
+        };
+
+        var component2 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["Apache-2.0"],
+            Suppliers = [new ActorInfo { Name = "Bob", Type = "Person" }],
+        };
+
+        var component3 = new DetectedComponent(new NpmComponent("pkg", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT", "GPL-3.0"],
+            Suppliers = [new ActorInfo { Name = "Alice", Type = "Person" }, new ActorInfo { Name = "Contoso", Type = "Organization" }],
+        };
+
+        recorder1.RegisterUsage(component1);
+        recorder2.RegisterUsage(component2);
+        recorder3.RegisterUsage(component3);
+
+        var result = this.componentRecorder.GetDetectedComponents().Single();
+
+        result.LicensesConcluded.Should().HaveCount(3);
+        result.LicensesConcluded.Should().Contain("MIT");
+        result.LicensesConcluded.Should().Contain("Apache-2.0");
+        result.LicensesConcluded.Should().Contain("GPL-3.0");
+
+        // "Alice"/"Person" appears in file1 and file3 — should be deduped
+        result.Suppliers.Should().HaveCount(3);
+        result.Suppliers.Should().Contain(s => s.Name == "Alice");
+        result.Suppliers.Should().Contain(s => s.Name == "Bob");
+        result.Suppliers.Should().Contain(s => s.Name == "Contoso");
+    }
+
+    [TestMethod]
+    public void GetDetectedComponents_DifferentComponentsAcrossFiles_FieldsNotMixed()
+    {
+        var recorder1 = this.componentRecorder.CreateSingleFileComponentRecorder("file1.json");
+        var recorder2 = this.componentRecorder.CreateSingleFileComponentRecorder("file2.json");
+
+        var componentA = new DetectedComponent(new NpmComponent("pkg-a", "1.0.0"))
+        {
+            LicensesConcluded = ["MIT"],
+            Suppliers = [new ActorInfo { Name = "Alice", Type = "Person" }],
+        };
+
+        var componentB = new DetectedComponent(new NpmComponent("pkg-b", "2.0.0"))
+        {
+            LicensesConcluded = ["GPL-3.0"],
+            Suppliers = [new ActorInfo { Name = "Bob", Type = "Person" }],
+        };
+
+        recorder1.RegisterUsage(componentA);
+        recorder2.RegisterUsage(componentB);
+
+        var results = this.componentRecorder.GetDetectedComponents().ToList();
+        results.Should().HaveCount(2);
+
+        var resultA = results.Single(c => ((NpmComponent)c.Component).Name == "pkg-a");
+        resultA.LicensesConcluded.Should().BeEquivalentTo(["MIT"]);
+        resultA.Suppliers.Should().ContainSingle().Which.Name.Should().Be("Alice");
+
+        var resultB = results.Single(c => ((NpmComponent)c.Component).Name == "pkg-b");
+        resultB.LicensesConcluded.Should().BeEquivalentTo(["GPL-3.0"]);
+        resultB.Suppliers.Should().ContainSingle().Which.Name.Should().Be("Bob");
     }
 
     [TestMethod]

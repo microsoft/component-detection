@@ -1,10 +1,10 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class RustDetectionTelemetryRecord : BaseDetectionTelemetryRecord
+internal class RustDetectionTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "RustDetection";
 
-    public string DetectionMode { get; set; }
+    public string? DetectionMode { get; set; }
 
     public int SkippedCargoTomlCount { get; set; }
 
@@ -24,5 +24,5 @@ public class RustDetectionTelemetryRecord : BaseDetectionTelemetryRecord
 
     public bool OwnershipMapAvailable { get; set; }
 
-    public string SkipRatio { get; set; }
+    public string? SkipRatio { get; set; }
 }

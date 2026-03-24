@@ -20,13 +20,19 @@ jobs:
       MINVERBUILDMETADATA: build.${{github.run_number}}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
 
       - name: Restore packages
         run: dotnet restore
@@ -35,9 +41,11 @@ jobs:
         run: dotnet build --no-restore --configuration Debug
 
       - name: Run tests
-        run: dotnet test --no-build --configuration Debug --collect:"Code Coverage;Format=cobertura;CoverageFileName=coverage.cobertura.xml"
+        # The '--' separator forwards options to the Microsoft Testing Platform runner.
+        # After upgrading to .NET 10 SDK, these can be passed directly without '--'.
+        run: dotnet test --no-build --configuration Debug -- --coverage --coverage-output-format cobertura
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -2,7 +2,7 @@ namespace Microsoft.ComponentDetection.Orchestrator;
 
 using CommandLine;
 
-public interface IArgumentHelper
+internal interface IArgumentHelper
 {
     ParserResult<object> ParseArguments(string[] args);
 

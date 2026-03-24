@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 
 using System.Collections.Generic;

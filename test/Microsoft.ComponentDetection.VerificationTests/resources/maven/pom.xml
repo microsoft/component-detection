@@ -11,7 +11,7 @@
   </modules>
   <properties>
     <jenkins-ci.url>https://repo.jenkins-ci.org/releases</jenkins-ci.url>
-    <commons-text.version>1.9</commons-text.version>
+    <commons-text.version>1.12.0</commons-text.version>
     <junit.version>4.13.2</junit.version>
     <version-number.version>1.9</version-number.version>
   </properties>

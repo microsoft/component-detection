@@ -1,18 +1,19 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pip;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Common;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
-public class PipCommandService : IPipCommandService
+internal class PipCommandService : IPipCommandService
 {
     private const string PipReportDisableFastDepsEnvVar = "PipReportDisableFastDeps";
     private const string PipReportIgnoreFileLevelIndexUrlEnvVar = "PipReportIgnoreFileLevelIndexUrl";
@@ -191,11 +192,10 @@ public class PipCommandService : IPipCommandService
 
             if (command.ExitCode == -1 && cancellationToken.IsCancellationRequested)
             {
-                var errorMessage = $"PipReport: Cancelled for file '{formattedPath}' with command '{pipReportCommand.RemoveSensitiveInformation()}'.";
+                var errorMessage = $"PipReport: Cancelled for file '{formattedPath}'.";
                 using var failureRecord = new PipReportFailureTelemetryRecord
                 {
                     ExitCode = command.ExitCode,
-                    StdErr = $"{errorMessage} {command.StdErr}",
                 };
 
                 this.logger.LogWarning("{Error}", errorMessage);
@@ -206,15 +206,30 @@ public class PipCommandService : IPipCommandService
                 using var failureRecord = new PipReportFailureTelemetryRecord
                 {
                     ExitCode = command.ExitCode,
-                    StdErr = command.StdErr,
                 };
 
-                this.logger.LogDebug("PipReport: Pip installation report error: {StdErr}", command.StdErr);
+                this.logger.LogDebug("PipReport: Pip installation report failed with exit code {ExitCode} for {Path}", command.ExitCode, formattedPath);
                 throw new InvalidOperationException($"PipReport: Failed to generate pip installation report for file {path} with exit code {command.ExitCode}");
             }
 
             var reportOutput = await this.fileUtilityService.ReadAllTextAsync(reportFile);
-            return (JsonConvert.DeserializeObject<PipInstallationReport>(reportOutput), reportFile);
+
+            if (string.IsNullOrWhiteSpace(reportOutput))
+            {
+                throw new InvalidOperationException($"PipReport: Empty pip installation report for file {path}.");
+            }
+
+            PipInstallationReport report;
+            try
+            {
+                report = JsonSerializer.Deserialize<PipInstallationReport>(reportOutput);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException($"PipReport: Invalid generated pip installation report JSON for {path}.", ex);
+            }
+
+            return (report, reportFile);
         }
         finally
         {

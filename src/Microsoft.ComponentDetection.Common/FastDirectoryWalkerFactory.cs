@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common;
 
 using System;
@@ -15,7 +16,7 @@ using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.Extensions.Logging;
 
-public class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
+internal class FastDirectoryWalkerFactory : IObservableDirectoryWalkerFactory
 {
     private readonly ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>> pendingScans = new ConcurrentDictionary<DirectoryInfo, Lazy<IObservable<FileSystemInfo>>>();
     private readonly IPathUtilityService pathUtilityService;
