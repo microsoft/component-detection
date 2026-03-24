@@ -159,7 +159,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         this.Logger = logger;
     }
 
-    public override string Id => "MavenWithFallback";
+    public override string Id => MavenConstants.MavenWithFallbackDetectorId;
 
     public override IList<string> SearchPatterns => [MavenManifest];
 
@@ -213,11 +213,61 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private void LogWarning(string message) =>
         this.Logger.LogWarning("{DetectorId}: {Message}", this.Id, message);
 
+    /// <summary>
+    /// Resets all per-scan state to prevent stale data from leaking between scans.
+    /// This is critical because detectors are registered as singletons.
+    /// </summary>
+    private void ResetScanState()
+    {
+        // Clear all concurrent collections
+        this.collectedVariables.Clear();
+        this.mavenParentChildRelationships.Clear();
+        this.processedMavenProjects.Clear();
+        this.parentPomCache.Clear();
+
+        // Drain all concurrent queues
+        while (this.pendingComponents.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        while (this.unresolvedParentRelationships.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        while (this.originalPomFiles.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        while (this.mavenCliErrors.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        while (this.failedEndpoints.TryDequeue(out _))
+        {
+            // Intentionally empty - just draining the queue
+        }
+
+        // Reset telemetry counters and flags
+        this.usedDetectionMethod = MavenDetectionMethod.None;
+        this.fallbackReason = MavenFallbackReason.None;
+        this.mvnCliComponentCount = 0;
+        this.staticParserComponentCount = 0;
+        this.mavenCliAvailable = false;
+    }
+
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(
         IObservable<ProcessRequest> processRequests,
         IDictionary<string, string> detectorArgs,
         CancellationToken cancellationToken = default)
     {
+        // Reset all per-scan state to prevent stale data from previous scans
+        // This is critical because detectors are registered as singletons
+        this.ResetScanState();
+
         // Wrap the entire method in a try-catch with timeout to protect against hangs.
         // OnPrepareDetectionAsync doesn't have the same guardrails as OnFileFoundAsync,
         // so we need to be extra careful in this experimental detector.

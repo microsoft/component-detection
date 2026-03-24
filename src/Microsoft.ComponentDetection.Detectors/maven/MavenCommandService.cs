@@ -50,7 +50,7 @@ internal class MavenCommandService : IMavenCommandService
         this.logger = logger;
     }
 
-    public string BcdeMvnDependencyFileName => "bcde.mvndeps";
+    public string BcdeMvnDependencyFileName => MavenConstants.BcdeMvnDependencyFileName;
 
     public async Task<bool> MavenCLIExistsAsync()
     {

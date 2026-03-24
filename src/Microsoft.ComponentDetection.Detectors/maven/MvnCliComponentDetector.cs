@@ -35,7 +35,7 @@ public class MvnCliComponentDetector : FileComponentDetector
         this.Logger = logger;
     }
 
-    public override string Id => "MvnCli";
+    public override string Id => MavenConstants.MvnCliDetectorId;
 
     public override IList<string> SearchPatterns => [MavenManifest];
 

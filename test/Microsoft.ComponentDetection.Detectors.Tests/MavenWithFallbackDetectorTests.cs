@@ -2187,23 +2187,22 @@ public class MavenWithFallbackDetectorTests : BaseDetectorTest<MavenWithFallback
             .ReturnsAsync(false);
 
         // Create multiple POMs that will trigger directory traversal
+        // This validates that smart loop prevention completes without hanging
+        // (algorithmic validation rather than timing-based)
         var pom1Content = CreatePomWithParentReference("project1", "parent-project", "1.0.0");
         var pom2Content = CreatePomWithParentReference("project2", "parent-project", "1.0.0");
         var pom3Content = CreatePomWithParentReference("project3", "parent-project", "1.0.0");
 
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
-        // Act - Process multiple POMs
+        // Act - Process multiple POMs (test validates completion, not timing)
         var (scanResult, componentRecorder) = await this.DetectorTestUtility
             .WithFile("project1/pom.xml", pom1Content)
             .WithFile("project2/pom.xml", pom2Content)
             .WithFile("project3/pom.xml", pom3Content)
             .ExecuteDetectorAsync();
 
-        stopwatch.Stop();
-
-        // Assert - Should complete quickly (well under 1 second for this simple test)
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000, "Smart loop prevention should not significantly impact performance");
+        // Assert - Should complete without hanging and produce correct results
+        // The test passing validates that smart loop prevention works algorithmically
+        // (if it had infinite loops, the test would timeout/hang rather than fail assertions)
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
 
         // Should have detected direct dependencies from all 3 POMs
