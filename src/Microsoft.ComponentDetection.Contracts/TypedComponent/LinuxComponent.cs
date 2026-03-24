@@ -46,7 +46,7 @@ public class LinuxComponent : TypedComponent
     public override ComponentType Type => ComponentType.Linux;
 
     [JsonPropertyName("packageUrl")]
-    public override PackageURL PackageUrl
+    public override PackageUrl PackageUrl
     {
         get
         {
@@ -63,7 +63,7 @@ public class LinuxComponent : TypedComponent
 
             if (packageType != null)
             {
-                return new PackageURL(packageType, this.Distribution, this.Name, this.Version, null, null);
+                return new PackageUrl(packageType, this.Distribution, this.Name, this.Version, null, null);
             }
 
             return null;

@@ -77,9 +77,7 @@ public class CppSdkComponentTests
         var packageUrl = component.PackageUrl;
 
         packageUrl.Type.Should().Be("generic");
-#pragma warning disable CA1308 // PackageURL normalizes to lowercase
-        packageUrl.Name.Should().Be(name.ToLowerInvariant());
-#pragma warning restore CA1308
+        packageUrl.Name.Should().Be(name);
         packageUrl.Version.Should().Be(version);
         packageUrl.Namespace.Should().BeNull();
         packageUrl.Qualifiers.Should().ContainKey("type");
