@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
@@ -18,12 +19,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDetector>
+public class Spdx22ComponentDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<Spdx22ComponentDetector> detectorTestUtility = new();
+
     public Spdx22ComponentDetectorTests()
     {
         var componentRecorder = new ComponentRecorder(enableManualTrackingOfExplicitReferences: false);
-        this.DetectorTestUtility.WithScanRequest(
+        this.detectorTestUtility.WithScanRequest(
             new ScanRequest(
                 new DirectoryInfo(Path.GetTempPath()),
                 null,
@@ -101,7 +104,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
 }";
 
         var spdxFileName = "manifest.spdx.json";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile(spdxFileName, spdxFile)
             .ExecuteDetectorAsync();
 
@@ -131,7 +134,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
     {
         var spdxFile = "{}";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("manifest.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 
@@ -147,7 +150,7 @@ public class Spdx22ComponentDetectorTests : BaseDetectorTest<Spdx22ComponentDete
     {
         var spdxFile = "invalidspdxfile";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("manifest.spdx.json", spdxFile)
             .ExecuteDetectorAsync();
 

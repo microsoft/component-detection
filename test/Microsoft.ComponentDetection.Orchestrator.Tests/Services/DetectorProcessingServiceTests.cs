@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Orchestrator.Tests.Services;
 
 using System;
@@ -5,9 +6,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
@@ -18,7 +20,7 @@ using Microsoft.ComponentDetection.Orchestrator.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Newtonsoft.Json;
+using Spectre.Console;
 
 [TestClass]
 [TestCategory("Governance/All")]
@@ -41,6 +43,7 @@ public class DetectorProcessingServiceTests
     private readonly DetectorProcessingService serviceUnderTest;
     private readonly Mock<IObservableDirectoryWalkerFactory> directoryWalkerFactory;
     private readonly Mock<IExperimentService> experimentServiceMock;
+    private readonly Mock<IAnsiConsole> consoleMock;
 
     private readonly Mock<FileComponentDetector> firstFileComponentDetectorMock;
     private readonly Mock<FileComponentDetector> secondFileComponentDetectorMock;
@@ -57,8 +60,9 @@ public class DetectorProcessingServiceTests
         this.experimentServiceMock = new Mock<IExperimentService>();
         this.loggerMock = new Mock<ILogger<DetectorProcessingService>>();
         this.directoryWalkerFactory = new Mock<IObservableDirectoryWalkerFactory>();
+        this.consoleMock = new Mock<IAnsiConsole>();
         this.serviceUnderTest =
-            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.experimentServiceMock.Object, this.loggerMock.Object);
+            new DetectorProcessingService(this.directoryWalkerFactory.Object, this.experimentServiceMock.Object, this.loggerMock.Object, this.consoleMock.Object);
 
         this.firstFileComponentDetectorMock = this.SetupFileDetectorMock("firstFileDetectorId");
         this.secondFileComponentDetectorMock = this.SetupFileDetectorMock("secondFileDetectorId");
@@ -198,7 +202,7 @@ public class DetectorProcessingServiceTests
 
         foreach (var record in records)
         {
-            var additionalTelemetryDetails = JsonConvert.DeserializeObject<Dictionary<string, string>>(record.AdditionalTelemetryDetails);
+            var additionalTelemetryDetails = JsonSerializer.Deserialize<Dictionary<string, string>>(record.AdditionalTelemetryDetails);
             additionalTelemetryDetails["detectorId"].Should().Be(record.DetectorId);
         }
     }
@@ -294,7 +298,7 @@ public class DetectorProcessingServiceTests
         experimentalDetectorRecord.DetectedComponentCount.Should().Be(0);
         experimentalDetectorRecord.IsExperimental.Should().BeTrue();
         experimentalDetectorRecord.ReturnCode.Should().Be((int)ProcessingResultCode.InputError);
-        experimentalDetectorRecord.ExperimentalInformation.Contains("Simulated experimental failure");
+        experimentalDetectorRecord.ExperimentalInformation.Should().Contain("Simulated experimental failure");
 
         // We should have all components except the ones that came from our experimental detector
         this.GetDiscoveredComponentsFromDetectorProcessingResult(results).Should().HaveCount(records.Sum(x => x.DetectedComponentCount ?? 0));

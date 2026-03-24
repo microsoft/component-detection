@@ -1,11 +1,13 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using PackageUrl;
 
 public class PodComponent : TypedComponent
 {
-    private PodComponent()
+    public PodComponent()
     {
         /* Reserved for deserialization */
     }
@@ -17,15 +19,20 @@ public class PodComponent : TypedComponent
         this.SpecRepo = specRepo;
     }
 
+    [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonPropertyName("version")]
     public string Version { get; set; }
 
+    [JsonPropertyName("specRepo")]
     public string SpecRepo { get; set; }
 
+    [JsonIgnore]
     public override ComponentType Type => ComponentType.Pod;
 
-    public override PackageURL PackageUrl
+    [JsonPropertyName("packageUrl")]
+    public override PackageUrl PackageUrl
     {
         get
         {
@@ -35,9 +42,9 @@ public class PodComponent : TypedComponent
                 qualifiers.Add("repository_url", this.SpecRepo);
             }
 
-            return new PackageURL("cocoapods", null, this.Name, this.Version, qualifiers, null);
+            return new PackageUrl("cocoapods", null, this.Name, this.Version, qualifiers, null);
         }
     }
 
-    protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Version} - {this.Type}";
 }

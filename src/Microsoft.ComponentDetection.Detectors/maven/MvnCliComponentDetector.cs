@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Maven;
 
 using System;
@@ -75,8 +76,10 @@ public class MvnCliComponentDetector : FileComponentDetector
             {
                 // The file stream is going to be disposed after the iteration is finished
                 // so is necessary to read the content and keep it in memory, for further processing.
+                // File reader registration is now handled in GenerateDependenciesFileAsync
                 using var reader = new StreamReader(componentStream.Stream);
                 var content = reader.ReadToEnd();
+
                 return new ProcessRequest
                 {
                     ComponentStream = new ComponentStream
@@ -94,9 +97,17 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
-        this.mavenCommandService.ParseDependenciesFile(processRequest);
-
-        File.Delete(processRequest.ComponentStream.Location);
+        // File reader already registered at generation step, just process and unregister
+        var depsFilePath = processRequest.ComponentStream.Location;
+        try
+        {
+            this.mavenCommandService.ParseDependenciesFile(processRequest);
+        }
+        finally
+        {
+            // Cleanup coordination with other detectors
+            this.mavenCommandService.UnregisterFileReader(depsFilePath, this.Id);
+        }
 
         await Task.CompletedTask;
     }

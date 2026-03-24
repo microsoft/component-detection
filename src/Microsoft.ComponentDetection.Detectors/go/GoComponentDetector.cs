@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Go;
 
 using System;
@@ -114,7 +115,7 @@ public class GoComponentDetector : FileComponentDetector
             case ".MOD":
             {
                 this.Logger.LogDebug("Found Go.mod: {Location}", file.Location);
-                var wasModParsedSuccessfully = await this.goParserFactory.CreateParser(GoParserType.GoMod, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+                var wasModParsedSuccessfully = await this.goParserFactory.CreateParser(GoParserType.GoMod, this.Logger).ParseAsync(singleFileComponentRecorder, file, record, cancellationToken);
 
                 // Check if go.mod was parsed successfully and Go version is >= 1.17 in go.mod
                 if (wasModParsedSuccessfully &&
@@ -154,7 +155,7 @@ public class GoComponentDetector : FileComponentDetector
                 {
                     if (!wasGoCliDisabled)
                     {
-                        wasGoCliScanSuccessful = await this.goParserFactory.CreateParser(GoParserType.GoCLI, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+                        wasGoCliScanSuccessful = await this.goParserFactory.CreateParser(GoParserType.GoCLI, this.Logger).ParseAsync(singleFileComponentRecorder, file, record, cancellationToken);
                     }
                     else
                     {
@@ -175,7 +176,7 @@ public class GoComponentDetector : FileComponentDetector
                 {
                     record.WasGoFallbackStrategyUsed = true;
                     this.Logger.LogDebug("Go CLI scan when considering {GoSumLocation} was not successful. Falling back to scanning go.sum", file.Location);
-                    await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record);
+                    await this.goParserFactory.CreateParser(GoParserType.GoSum, this.Logger).ParseAsync(singleFileComponentRecorder, file, record, cancellationToken);
                 }
                 else
                 {

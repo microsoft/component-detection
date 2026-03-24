@@ -1,6 +1,9 @@
 namespace Microsoft.ComponentDetection.Contracts;
 
+using System.Text.Json.Serialization;
+
 /// <summary>Code used to communicate the state of a scan after completion.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ProcessingResultCode
 {
     /// <summary>The scan was completely successful.</summary>

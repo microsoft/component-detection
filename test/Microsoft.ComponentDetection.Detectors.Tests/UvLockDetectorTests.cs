@@ -1,9 +1,10 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Uv;
@@ -15,12 +16,14 @@ using Moq;
 [TestClass]
 [TestCategory("Governance/All")]
 [TestCategory("Governance/ComponentDetection")]
-public class UvLockDetectorTests : BaseDetectorTest<UvLockComponentDetector>
+public class UvLockDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<UvLockComponentDetector> detectorTestUtility = new();
+
     [TestMethod]
     public async Task TestUvLockDetectorWithNoFiles_ReturnsSuccessfullyAsync()
     {
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .ExecuteDetectorAsync();
 
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
@@ -31,7 +34,7 @@ public class UvLockDetectorTests : BaseDetectorTest<UvLockComponentDetector>
     public async Task TestUvLockDetectorWithEmptyLockFile_FindsNothingAsync()
     {
         var emptyUvLock = string.Empty; // Empty TOML
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", emptyUvLock)
             .ExecuteDetectorAsync();
 
@@ -43,7 +46,7 @@ public class UvLockDetectorTests : BaseDetectorTest<UvLockComponentDetector>
     public async Task TestUvLockDetectorWithNoPackages_FindsNothingAsync()
     {
         var uvLock = "# uv.lock file\n[metadata]\nversion = '1'\n";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -62,7 +65,7 @@ version = '1.2.3'
 name = 'bar'
 version = '4.5.6'
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -96,7 +99,7 @@ dependencies = [{ name = 'bar' }]
 name = 'bar'
 version = '4.5.6'
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -120,7 +123,7 @@ version = '4.5.6'
     public async Task TestUvLockDetectorWithMissingDependency_LogsWarningAsync()
     {
         var loggerMock = new Mock<ILogger<UvLockComponentDetector>>();
-        this.DetectorTestUtility.AddServiceMock(loggerMock);
+        this.detectorTestUtility.AddServiceMock(loggerMock);
 
         var uvLock = @"
 [[package]]
@@ -131,7 +134,7 @@ dependencies = [{ name = 'baz' }]
 name = 'bar'
 version = '4.5.6'
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .AddServiceMock(loggerMock)
             .ExecuteDetectorAsync();
@@ -158,7 +161,7 @@ name = 'foo'
 [[package]]
 version = '4.5.6'
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -171,10 +174,10 @@ version = '4.5.6'
     public async Task TestUvLockDetectorWithInvalidFile_LogsErrorAsync()
     {
         var loggerMock = new Mock<ILogger<UvLockComponentDetector>>();
-        this.DetectorTestUtility.AddServiceMock(loggerMock);
+        this.detectorTestUtility.AddServiceMock(loggerMock);
 
         var invalidUvLock = "not a valid toml file";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", invalidUvLock)
             .AddServiceMock(loggerMock)
             .ExecuteDetectorAsync();
@@ -210,7 +213,7 @@ requires-dist = [
 name = 'bar'
 version = '2.0.0'
 """;
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 
@@ -249,7 +252,7 @@ version = '3.0.0'
 name = 'devonly'
 version = '4.0.0'
 ";
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("uv.lock", uvLock)
             .ExecuteDetectorAsync();
 

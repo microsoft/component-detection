@@ -1,10 +1,10 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common.Tests;
 
 using System;
 using System.Threading.Tasks;
+using AwesomeAssertions;
 using Docker.DotNet.Models;
-using FluentAssertions;
-using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -30,21 +30,24 @@ public class DockerServiceTests
         canPingDocker.Should().BeTrue();
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanRunLinuxContainersAsync()
     {
         var isLinuxContainerModeEnabled = await this.dockerService.CanRunLinuxContainersAsync();
         isLinuxContainerModeEnabled.Should().BeTrue();
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanPullImageAsync()
     {
         Func<Task> action = async () => await this.dockerService.TryPullImageAsync(TestImage);
         await action.Should().NotThrowAsync();
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanInspectImageAsync()
     {
         await this.dockerService.TryPullImageAsync(TestImage);
@@ -53,7 +56,8 @@ public class DockerServiceTests
         details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/hello-world:latest");
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_PopulatesBaseImageAndLayerDetailsAsync()
     {
         await this.dockerService.TryPullImageAsync(TestImageWithBaseDetails);
@@ -61,19 +65,25 @@ public class DockerServiceTests
 
         details.Should().NotBeNull();
         details.Tags.Should().Contain("governancecontainerregistry.azurecr.io/testcontainers/dockertags_test:testtag");
-        var expectedImageId = "sha256:5edc12e9a797b59b9209354ff99d8550e7a1f90ca924c103fa3358e1a9ce15fe";
         var expectedCreatedAt = DateTime.Parse("2021-09-23T23:47:57.442225064Z").ToUniversalTime();
 
         details.Should().NotBeNull();
         details.Id.Should().BePositive();
-        details.ImageId.Should().BeEquivalentTo(expectedImageId);
+
+        // The image ID depends on the Docker storage backend:
+        // - Legacy graphdriver: returns the config digest
+        // - containerd image store (default since Docker 29): returns the manifest digest
+        var configDigest = "sha256:5edc12e9a797b59b9209354ff99d8550e7a1f90ca924c103fa3358e1a9ce15fe";
+        var manifestDigest = "sha256:144c8d7e446fa9da415418ef7844ab87ad8fd93a0ca48919c29cf82150c81982";
+        details.ImageId.Should().BeOneOf(configDigest, manifestDigest);
         details.CreatedAt.ToUniversalTime().Should().Be(expectedCreatedAt);
         details.BaseImageDigest.Should().Be("sha256:feb5d9fea6a5e9606aa995e879d862b825965ba48de054caab5ef356dc6b3412");
         details.BaseImageRef.Should().Be("docker.io/library/hello-world:latest");
         details.Layers.Should().ContainSingle();
     }
 
-    [SkipTestOnWindows]
+    [TestMethod]
+    [OSCondition(ConditionMode.Exclude, OperatingSystems.Windows)]
     public async Task DockerService_CanCreateAndRunImageAsync()
     {
         var (stdout, stderr) = await this.dockerService.CreateAndRunContainerAsync(TestImage, []);

@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Common;
 
 using System;
@@ -5,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ComponentDetection.Contracts;
 
-public class EnvironmentVariableService : IEnvironmentVariableService
+internal class EnvironmentVariableService : IEnvironmentVariableService
 {
     public bool DoesEnvironmentVariableExist(string name)
     {

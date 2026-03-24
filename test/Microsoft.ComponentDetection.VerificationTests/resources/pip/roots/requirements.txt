@@ -4,15 +4,15 @@
 #
 #    pip-compile --strip-extras
 #
-azure-core==1.30.0
+azure-core==1.38.0
     # via
     #   azure-identity
     #   msrest
 azure-devops==7.1.0b4
     # via -r requirements.in
-azure-identity==1.16.0b1
+azure-identity==1.19.0
     # via -r requirements.in
-certifi==2024.2.2
+certifi==2025.1.31
     # via
     #   msrest
     #   requests
@@ -20,7 +20,7 @@ cffi==1.16.0
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
-cryptography==43.0.1
+cryptography==46.0.5
     # via
     #   azure-identity
     #   msal
@@ -29,7 +29,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.42
     # via -r requirements.in
-idna==3.6
+idna==3.10
     # via requests
 isodate==0.6.1
     # via msrest
@@ -55,7 +55,7 @@ pyjwt==2.8.0
     # via
     #   msal
     #   pyjwt
-requests==2.31.0
+requests==2.32.4
     # via
     #   azure-core
     #   msal
@@ -71,5 +71,5 @@ smmap==5.0.1
     # via gitdb
 typing-extensions==4.9.0
     # via azure-core
-urllib3==2.2.1
+urllib3==2.6.3
     # via requests

@@ -1,8 +1,9 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System.IO;
 using System.Linq;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Detectors.Maven;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

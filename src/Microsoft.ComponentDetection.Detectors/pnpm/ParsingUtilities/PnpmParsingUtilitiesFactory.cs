@@ -1,9 +1,10 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Pnpm;
 
 using System.IO;
 using YamlDotNet.Serialization;
 
-public static class PnpmParsingUtilitiesFactory
+internal static class PnpmParsingUtilitiesFactory
 {
     public static PnpmParsingUtilitiesBase<T> Create<T>()
     where T : PnpmYaml

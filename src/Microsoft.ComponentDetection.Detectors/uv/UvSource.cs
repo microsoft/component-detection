@@ -1,11 +1,8 @@
-#nullable enable
+namespace Microsoft.ComponentDetection.Detectors.Uv;
 
-namespace Microsoft.ComponentDetection.Detectors.Uv
+internal class UvSource
 {
-    public class UvSource
-    {
-        public string? Registry { get; set; }
+    public string? Registry { get; set; }
 
-        public string? Virtual { get; set; }
-    }
+    public string? Virtual { get; set; }
 }

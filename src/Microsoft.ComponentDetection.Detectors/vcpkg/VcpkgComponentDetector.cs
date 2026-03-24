@@ -1,3 +1,4 @@
+#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Vcpkg;
 
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ComponentDetection.Contracts;
@@ -13,7 +15,6 @@ using Microsoft.ComponentDetection.Contracts.Internal;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Vcpkg.Contracts;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 public class VcpkgComponentDetector : FileComponentDetector
 {
@@ -70,7 +71,7 @@ public class VcpkgComponentDetector : FileComponentDetector
     {
         var filteredProcessRequests = new List<ProcessRequest>();
 
-        await processRequests.ForEachAsync(async pr =>
+        await processRequests.ForEachAsync(pr =>
         {
             var fileLocation = pr.ComponentStream.Location;
             var fileName = Path.GetFileName(fileLocation);
@@ -79,18 +80,42 @@ public class VcpkgComponentDetector : FileComponentDetector
             {
                 this.Logger.LogDebug("Discovered VCPKG package manifest file at: {Location}", pr.ComponentStream.Location);
 
-                using (var reader = new StreamReader(pr.ComponentStream.Stream))
-                {
-                    var contents = await reader.ReadToEndAsync().ConfigureAwait(false);
-                    var manifestData = JsonConvert.DeserializeObject<ManifestInfo>(contents);
+                using var reader = new StreamReader(pr.ComponentStream.Stream);
 
-                    if (manifestData == null || string.IsNullOrWhiteSpace(manifestData.ManifestPath))
+                string contents;
+                try
+                {
+                    contents = reader.ReadToEnd();
+                }
+                catch (Exception ex)
+                {
+                    this.Logger.LogDebug(ex, "Failed to read {ManifestInfoFile} at {Path}", ManifestInfoFile, pr.ComponentStream.Location);
+                    return;
+                }
+
+                // System.Text.Json throws on empty strings, unlike Newtonsoft.Json which returned null
+                if (string.IsNullOrWhiteSpace(contents))
+                {
+                    this.Logger.LogDebug("Empty {ManifestInfoFile} file at {Path}", ManifestInfoFile, pr.ComponentStream.Location);
+                }
+                else
+                {
+                    try
                     {
-                        this.Logger.LogDebug("Failed to deserialize manifest-info.json or missing ManifestPath at {Path}", pr.ComponentStream.Location);
+                        var manifestData = JsonSerializer.Deserialize<ManifestInfo>(contents);
+
+                        if (string.IsNullOrWhiteSpace(manifestData?.ManifestPath))
+                        {
+                            this.Logger.LogDebug("Failed to deserialize {ManifestInfoFile} or missing ManifestPath at {Path}", ManifestInfoFile, pr.ComponentStream.Location);
+                        }
+                        else
+                        {
+                            this.manifestMappings.TryAdd(fileLocation, manifestData.ManifestPath);
+                        }
                     }
-                    else
+                    catch (JsonException ex)
                     {
-                        this.manifestMappings.TryAdd(fileLocation, manifestData.ManifestPath);
+                        this.Logger.LogWarning(ex, "Invalid JSON in {ManifestInfoFile} at {Path}", ManifestInfoFile, pr.ComponentStream.Location);
                     }
                 }
             }
@@ -111,7 +136,7 @@ public class VcpkgComponentDetector : FileComponentDetector
         VcpkgSBOM sbom;
         try
         {
-            sbom = JsonConvert.DeserializeObject<VcpkgSBOM>(await reader.ReadToEndAsync());
+            sbom = JsonSerializer.Deserialize<VcpkgSBOM>(await reader.ReadToEndAsync());
         }
         catch (Exception)
         {
@@ -210,7 +235,8 @@ public class VcpkgComponentDetector : FileComponentDetector
             }
 
             this.Logger.LogDebug(
-                "No valid manifest-info.json found at either '{PreferredManifest}' or '{FallbackManifest}' for base location '{VcpkgInstalledDir}'. Returning original recorder.",
+                "No valid {ManifestInfoFile} found at either '{PreferredManifest}' or '{FallbackManifest}' for base location '{VcpkgInstalledDir}'. Returning original recorder.",
+                ManifestInfoFile,
                 preferredManifest,
                 fallbackManifest,
                 vcpkgInstalledDir);

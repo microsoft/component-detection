@@ -2,11 +2,11 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
-    - cron: '27 10 * * 1'
+    - cron: "27 10 * * 1"
 
 permissions:
   contents: read
@@ -21,18 +21,24 @@ jobs:
       security-events: write
 
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
           fetch-depth: 0
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
-      with:
-        languages: 'csharp'
-        debug: true
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@b1bff81932f5cdfc8695c7752dcee935dcd061c8 # v4.33.0
+        with:
+          languages: "csharp"
+          debug: true
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@b1bff81932f5cdfc8695c7752dcee935dcd061c8 # v4.33.0
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@b1bff81932f5cdfc8695c7752dcee935dcd061c8 # v4.33.0

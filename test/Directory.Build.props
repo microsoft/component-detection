@@ -4,13 +4,13 @@
 
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Shows the failed test output inline when using 'dotnet test' with Microsoft Testing Platform. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
   </PropertyGroup>
-  
+
   <ItemGroup Label="Package References">
-    <PackageReference Include="MSTest.TestFramework"/>
-    <PackageReference Include="MSTest.Analyzers "/>
     <PackageReference Include="Moq"/>
-    <PackageReference Include="FluentAssertions"/>
+    <PackageReference Include="AwesomeAssertions"/>
     <PackageReference Include="Faker.net"/>
   </ItemGroup>
 
