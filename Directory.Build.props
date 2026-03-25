@@ -32,6 +32,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="MinVer" PrivateAssets="all"/>
     <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all"/>
+    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
 </Project>

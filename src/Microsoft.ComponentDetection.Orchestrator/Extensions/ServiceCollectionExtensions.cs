@@ -106,6 +106,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IArtifactComponentFactory, NpmComponentFactory>();
         services.AddSingleton<IArtifactComponentFactory, PipComponentFactory>();
         services.AddSingleton<IArtifactComponentFactory, DotnetComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, RubyGemsComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, GoComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, CargoComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, PodComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, CondaComponentFactory>();
+        services.AddSingleton<IArtifactComponentFactory, MavenComponentFactory>();
         services.AddSingleton<IArtifactFilter, Mariner2ArtifactFilter>();
         services.AddSingleton<IComponentDetector, LinuxContainerDetector>();
         services.AddSingleton<IComponentDetector, LinuxApplicationLayerDetector>();
@@ -114,6 +120,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMavenCommandService, MavenCommandService>();
         services.AddSingleton<IMavenStyleDependencyGraphParserService, MavenStyleDependencyGraphParserService>();
         services.AddSingleton<IComponentDetector, MvnCliComponentDetector>();
+        services.AddSingleton<IComponentDetector, MavenWithFallbackDetector>();
 
         // npm
         services.AddSingleton<IComponentDetector, NpmComponentDetector>();

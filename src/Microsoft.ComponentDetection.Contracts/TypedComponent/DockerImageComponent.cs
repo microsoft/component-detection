@@ -29,5 +29,5 @@ public class DockerImageComponent : TypedComponent
     [JsonIgnore]
     public override ComponentType Type => ComponentType.DockerImage;
 
-    protected override string ComputeId() => $"{this.Name} {this.Tag} {this.Digest}";
+    protected override string ComputeBaseId() => $"{this.Name} {this.Tag} {this.Digest}";
 }

@@ -44,5 +44,5 @@ public class DockerReferenceComponent : TypedComponent
         }
     }
 
-    protected override string ComputeId() => $"{this.Repository} {this.Tag} {this.Digest}";
+    protected override string ComputeBaseId() => $"{this.Repository} {this.Tag} {this.Digest}";
 }

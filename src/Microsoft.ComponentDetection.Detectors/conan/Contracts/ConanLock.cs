@@ -3,7 +3,7 @@ namespace Microsoft.ComponentDetection.Detectors.Conan.Contracts;
 
 using System.Text.Json.Serialization;
 
-public class ConanLock
+internal class ConanLock
 {
     [JsonPropertyName("version")]
     public string Version { get; set; }

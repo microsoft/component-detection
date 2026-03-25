@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Enumeration;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -16,30 +17,37 @@ using Microsoft.ComponentDetection.Common.DependencyGraph;
 using Microsoft.ComponentDetection.Common.Telemetry.Records;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.BcdeModels;
+using Microsoft.ComponentDetection.Detectors.Maven;
 using Microsoft.ComponentDetection.Orchestrator.Commands;
 using Microsoft.ComponentDetection.Orchestrator.Experiments;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
 using static System.Environment;
 
-public class DetectorProcessingService : IDetectorProcessingService
+internal class DetectorProcessingService : IDetectorProcessingService
 {
     private const int DefaultMaxDetectionThreads = 5;
     private const int ExperimentalTimeoutSeconds = 240; // 4 minutes
     private const int ProcessTimeoutBufferSeconds = 5;
 
     private readonly IObservableDirectoryWalkerFactory scanner;
+    private readonly IPathUtilityService pathUtilityService;
     private readonly ILogger<DetectorProcessingService> logger;
     private readonly IExperimentService experimentService;
+    private readonly IAnsiConsole console;
 
     public DetectorProcessingService(
         IObservableDirectoryWalkerFactory scanner,
+        IPathUtilityService pathUtilityService,
         IExperimentService experimentService,
-        ILogger<DetectorProcessingService> logger)
+        ILogger<DetectorProcessingService> logger,
+        IAnsiConsole console = null)
     {
         this.scanner = scanner;
+        this.pathUtilityService = pathUtilityService;
         this.experimentService = experimentService;
         this.logger = logger;
+        this.console = console ?? AnsiConsole.Console;
     }
 
     /// <inheritdoc/>
@@ -156,6 +164,13 @@ public class DetectorProcessingService : IDetectorProcessingService
 
         var results = await Task.WhenAll(scanTasks);
         await this.experimentService.FinishAsync();
+
+        // Clean up Maven CLI temporary files after all detectors have finished
+        // Only cleanup if CleanupCreatedFiles is true (default) to respect user settings
+        if (settings.CleanupCreatedFiles ?? true)
+        {
+            this.CleanupMavenFiles(settings.SourceDirectory, detectors);
+        }
 
         var detectorProcessingResult = this.ConvertDetectorResultsIntoResult(results, exitCode);
 
@@ -384,7 +399,7 @@ public class DetectorProcessingService : IDetectorProcessingService
             providerElapsedTime.Sum(x => x.Value.ComponentsFoundCount).ToString(),
             providerElapsedTime.Sum(x => x.Value.ExplicitlyReferencedComponentCount).ToString());
 
-        AnsiConsole.Write(table);
+        this.console.Write(table);
 
         var tsf = new TabularStringFormat(
         [
@@ -417,6 +432,126 @@ public class DetectorProcessingService : IDetectorProcessingService
         foreach (var line in tsf.GenerateString(rows).Split(new[] { NewLine }, StringSplitOptions.None))
         {
             this.logger.LogInformation("{DetectionTimeLine}", line);
+        }
+    }
+
+    /// <summary>
+    /// Cleans up Maven CLI temporary files after all detectors have finished.
+    /// This prevents race conditions between MvnCliComponentDetector and MavenWithFallbackDetector.
+    /// Uses the same symlink-aware traversal pattern as FastDirectoryWalkerFactory to handle
+    /// circular symlinks in large repositories.
+    /// </summary>
+    private void CleanupMavenFiles(DirectoryInfo sourceDirectory, IEnumerable<IComponentDetector> detectors)
+    {
+        // Only clean up if Maven detectors are running - use shared constants to stay in sync
+        var hasMavenDetectors = detectors.Any(d =>
+            d.Id == MavenConstants.MvnCliDetectorId ||
+            d.Id == MavenConstants.MavenWithFallbackDetectorId);
+
+        if (!hasMavenDetectors)
+        {
+            return;
+        }
+
+        using var telemetryRecord = new MavenCliCleanupTelemetryRecord
+        {
+            SourceDirectory = sourceDirectory.FullName,
+        };
+
+        try
+        {
+            this.logger.LogDebug("Starting Maven CLI cleanup in directory: {SourceDirectory}", sourceDirectory.FullName);
+
+            var cleanedCount = 0;
+            var failedCount = 0;
+
+            // Track visited directories by their real (resolved) paths to handle circular symlinks
+            // This follows the same pattern used by FastDirectoryWalkerFactory
+            var visitedDirectories = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+            // Use FileSystemEnumerable with symlink-aware recursion predicate
+            // This matches the pattern in FastDirectoryWalkerFactory for safe directory traversal
+            var fileEnumerable = new FileSystemEnumerable<string>(
+                sourceDirectory.FullName,
+                (ref FileSystemEntry entry) => entry.ToFullPath(),
+                new EnumerationOptions
+                {
+                    RecurseSubdirectories = true,
+                    IgnoreInaccessible = true,
+                })
+            {
+                ShouldIncludePredicate = (ref FileSystemEntry entry) =>
+                    !entry.IsDirectory &&
+                    entry.FileName.Equals(MavenConstants.BcdeMvnDependencyFileName, StringComparison.OrdinalIgnoreCase),
+
+                // Handle symlinks to prevent infinite loops - same pattern as FastDirectoryWalkerFactory
+                ShouldRecursePredicate = (ref FileSystemEntry entry) =>
+                {
+                    if (!entry.IsDirectory)
+                    {
+                        return false;
+                    }
+
+                    try
+                    {
+                        var directoryPath = entry.ToFullPath();
+                        var realPath = directoryPath;
+
+                        // Check if this is a symlink (reparse point) and resolve to real path
+                        if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                        {
+                            realPath = this.pathUtilityService.ResolvePhysicalPath(directoryPath);
+
+                            // If we can't resolve the path, skip this directory
+                            if (string.IsNullOrEmpty(realPath))
+                            {
+                                return false;
+                            }
+                        }
+
+                        // Only recurse if we haven't visited this real path before
+                        return visitedDirectories.TryAdd(realPath, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        // If symlink resolution fails (broken/inaccessible symlink), skip this directory
+                        // and continue cleanup to avoid aborting the entire enumeration
+                        this.logger.LogDebug(ex, "Skipping directory due to symlink resolution failure: {Directory}", entry.ToFullPath());
+                        return false;
+                    }
+                },
+            };
+
+            // Use Parallel.ForEach for concurrent deletion with better throughput
+            Parallel.ForEach(
+                fileEnumerable,
+                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+                filePath =>
+                {
+                    try
+                    {
+                        File.Delete(filePath);
+                        Interlocked.Increment(ref cleanedCount);
+                        this.logger.LogDebug("Cleaned up Maven CLI file: {File}", filePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Interlocked.Increment(ref failedCount);
+                        this.logger.LogDebug(ex, "Failed to clean up Maven CLI file: {File}", filePath);
+                    }
+                });
+
+            telemetryRecord.FilesCleanedCount = cleanedCount;
+            telemetryRecord.FilesFailedCount = failedCount;
+
+            if (cleanedCount > 0 || failedCount > 0)
+            {
+                this.logger.LogDebug("Maven CLI cleanup completed. Removed {CleanedCount} files, failed {FailedCount} files.", cleanedCount, failedCount);
+            }
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogWarning(ex, "Maven CLI cleanup failed for directory: {SourceDirectory}", sourceDirectory.FullName);
         }
     }
 }

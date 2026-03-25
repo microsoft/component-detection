@@ -35,7 +35,7 @@ public class MvnCliComponentDetector : FileComponentDetector
         this.Logger = logger;
     }
 
-    public override string Id => "MvnCli";
+    public override string Id => MavenConstants.MvnCliDetectorId;
 
     public override IList<string> SearchPatterns => [MavenManifest];
 
@@ -45,10 +45,8 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
 
-    private void LogDebugWithId(string message)
-    {
-        this.Logger.LogDebug("{DetectorId} detector: {Message}", this.Id, message);
-    }
+    private void LogDebugWithId(string message) =>
+        this.Logger.LogDebug("{DetectorId}: {Message}", this.Id, message);
 
     protected override async Task<IObservable<ProcessRequest>> OnPrepareDetectionAsync(IObservable<ProcessRequest> processRequests, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
@@ -78,6 +76,7 @@ public class MvnCliComponentDetector : FileComponentDetector
                 // so is necessary to read the content and keep it in memory, for further processing.
                 using var reader = new StreamReader(componentStream.Stream);
                 var content = reader.ReadToEnd();
+
                 return new ProcessRequest
                 {
                     ComponentStream = new ComponentStream
@@ -95,9 +94,13 @@ public class MvnCliComponentDetector : FileComponentDetector
 
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
     {
-        this.mavenCommandService.ParseDependenciesFile(processRequest);
+        var depsFilePath = processRequest.ComponentStream.Location;
+        this.LogDebugWithId($"OnFileFoundAsync: Processing {depsFilePath}");
 
-        File.Delete(processRequest.ComponentStream.Location);
+        var componentsBefore = processRequest.SingleFileComponentRecorder.GetDetectedComponents().Count;
+        this.mavenCommandService.ParseDependenciesFile(processRequest);
+        var componentsAfter = processRequest.SingleFileComponentRecorder.GetDetectedComponents().Count;
+        this.LogDebugWithId($"OnFileFoundAsync: {depsFilePath} contributed {componentsAfter - componentsBefore} components");
 
         await Task.CompletedTask;
     }
@@ -149,7 +152,7 @@ public class MvnCliComponentDetector : FileComponentDetector
 
                         if (last != null && current.FileNames.Contains(MavenManifest))
                         {
-                            this.LogDebugWithId($"Ignoring {MavenManifest} at {item.Location}, as it has a parent {MavenManifest} that will be processed at {current.Name}\\{MavenManifest} .");
+                            this.LogDebugWithId($"Ignoring {MavenManifest} at {item.Location}, as it has a parent {MavenManifest} that will be processed at {current.Name}\\{MavenManifest}.");
                             break;
                         }
 

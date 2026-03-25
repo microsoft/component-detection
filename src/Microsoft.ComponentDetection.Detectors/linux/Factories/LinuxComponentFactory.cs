@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Linux.Factories;
 
 using System.Collections.Generic;
@@ -8,13 +7,16 @@ using Microsoft.ComponentDetection.Detectors.Linux.Contracts;
 /// <summary>
 /// Factory for creating <see cref="LinuxComponent"/> instances from system package artifacts (apk, deb, rpm).
 /// </summary>
-public class LinuxComponentFactory : ArtifactComponentFactoryBase
+internal class LinuxComponentFactory : ArtifactComponentFactoryBase
 {
+    /// <inheritdoc/>
+    public override ComponentType SupportedComponentType => ComponentType.Linux;
+
     /// <inheritdoc/>
     public override IEnumerable<string> SupportedArtifactTypes => ["apk", "deb", "rpm"];
 
     /// <inheritdoc/>
-    public override TypedComponent CreateComponent(ArtifactElement artifact, Distro distro)
+    public override TypedComponent? CreateComponent(ArtifactElement artifact, Distro distro)
     {
         if (artifact == null || distro == null)
         {
@@ -35,6 +37,7 @@ public class LinuxComponentFactory : ArtifactComponentFactoryBase
             name: artifact.Name,
             version: artifact.Version,
             license: license,
-            author: supplier);
+            author: supplier
+        );
     }
 }

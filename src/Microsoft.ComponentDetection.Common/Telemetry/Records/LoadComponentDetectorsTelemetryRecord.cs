@@ -1,6 +1,6 @@
 namespace Microsoft.ComponentDetection.Common.Telemetry.Records;
 
-public class LoadComponentDetectorsTelemetryRecord : BaseDetectionTelemetryRecord
+internal class LoadComponentDetectorsTelemetryRecord : BaseDetectionTelemetryRecord
 {
     public override string RecordName => "LoadComponentDetectors";
 

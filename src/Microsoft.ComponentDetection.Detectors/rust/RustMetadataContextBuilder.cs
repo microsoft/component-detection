@@ -11,7 +11,7 @@ using Microsoft.ComponentDetection.Detectors.Rust.Contracts;
 using Microsoft.Extensions.Logging;
 using static Microsoft.ComponentDetection.Detectors.Rust.IRustMetadataContextBuilder;
 
-public class RustMetadataContextBuilder : IRustMetadataContextBuilder
+internal class RustMetadataContextBuilder : IRustMetadataContextBuilder
 {
     private readonly ILogger<RustMetadataContextBuilder> logger;
     private readonly ICommandLineInvocationService cliService;

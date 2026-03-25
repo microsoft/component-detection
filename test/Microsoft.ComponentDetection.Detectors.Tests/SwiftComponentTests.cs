@@ -30,35 +30,65 @@ public class SwiftComponentTests
     [TestMethod]
     public void Constructor_ShouldThrowException_WhenNameIsNull()
     {
-        Action action = () => new SwiftComponent(null, "5.9.1", "https://github.com/Alamofire/Alamofire", "f455c2975872ccd2d9c81594c658af65716e9b9a");
+        Action action = () =>
+            new SwiftComponent(
+                null,
+                "5.9.1",
+                "https://github.com/Alamofire/Alamofire",
+                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+            );
         action.Should().Throw<ArgumentException>().WithMessage("*name*");
     }
 
     [TestMethod]
     public void Constructor_ShouldThrowException_WhenVersionIsNull()
     {
-        Action action = () => new SwiftComponent("alamofire", null, "https://github.com/Alamofire/Alamofire", "f455c2975872ccd2d9c81594c658af65716e9b9a");
+        Action action = () =>
+            new SwiftComponent(
+                "alamofire",
+                null,
+                "https://github.com/Alamofire/Alamofire",
+                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+            );
         action.Should().Throw<ArgumentException>().WithMessage("*version*");
     }
 
     [TestMethod]
     public void Constructor_ShouldThrowException_WhenPackageUrlIsNull()
     {
-        Action action = () => new SwiftComponent("alamofire", "5.9.1", null, "f455c2975872ccd2d9c81594c658af65716e9b9a");
+        Action action = () =>
+            new SwiftComponent(
+                "alamofire",
+                "5.9.1",
+                null,
+                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+            );
         action.Should().Throw<ArgumentException>().WithMessage("*packageUrl*");
     }
 
     [TestMethod]
     public void Constructor_ShouldThrowException_WhenHashIsNull()
     {
-        Action action = () => new SwiftComponent("alamofire", "5.9.1", "https://github.com/Alamofire/Alamofire", null);
+        Action action = () =>
+            new SwiftComponent(
+                "alamofire",
+                "5.9.1",
+                "https://github.com/Alamofire/Alamofire",
+                null
+            );
         action.Should().Throw<ArgumentException>().WithMessage("*hash*");
     }
 
     [TestMethod]
     public void Constructor_ShouldThrowException_WhenPackageUrlIsInvalid()
     {
-        Action action = () => new SwiftComponent("alamofire", "5.9.1", "invalid-url", "f455c2975872ccd2d9c81594c658af65716e9b9a");
+        Action action = () =>
+            new SwiftComponent(
+                "alamofire",
+                "5.9.1",
+                "invalid-url",
+                "f455c2975872ccd2d9c81594c658af65716e9b9a"
+            );
         action.Should().Throw<UriFormatException>();
     }
 
@@ -72,18 +102,16 @@ public class SwiftComponentTests
 
         var component = new SwiftComponent(name, version, packageUrl, hash);
 
-        var expectedPackageURL = new PackageURL(
+        var expectedPackageURL = new PackageUrl(
             type: "swift",
             @namespace: "github.com/Alamofire",
             name: name,
             version: version,
-            qualifiers: new SortedDictionary<string, string>
-            {
-                { "repository_url", packageUrl },
-            },
-            subpath: null);
+            qualifiers: new SortedDictionary<string, string> { { "repository_url", packageUrl } },
+            subpath: null
+        );
 
-        component.PackageURL.Should().BeEquivalentTo(expectedPackageURL);
+        component.PackageUrl.Should().BeEquivalentTo(expectedPackageURL);
     }
 
     [TestMethod]
@@ -96,7 +124,7 @@ public class SwiftComponentTests
 
         var component = new SwiftComponent(name, version, packageUrl, hash);
 
-        var expectedPackageURL = new PackageURL(
+        var expectedPackageURL = new PackageUrl(
             type: "swift",
             @namespace: "github.com/Alamofire",
             name: name,
@@ -105,9 +133,10 @@ public class SwiftComponentTests
             {
                 { "repository_url", "https://github.com/Alamofire/Alamofire" },
             },
-            subpath: null);
+            subpath: null
+        );
 
-        component.PackageURL.Should().BeEquivalentTo(expectedPackageURL);
+        component.PackageUrl.Should().BeEquivalentTo(expectedPackageURL);
     }
 
     [TestMethod]
@@ -120,17 +149,15 @@ public class SwiftComponentTests
 
         var component = new SwiftComponent(name, version, packageUrl, hash);
 
-        var expectedPackageURL = new PackageURL(
+        var expectedPackageURL = new PackageUrl(
             type: "swift",
             @namespace: "otherhostname.com",
             name: name,
             version: version,
-            qualifiers: new SortedDictionary<string, string>
-            {
-                { "repository_url", packageUrl },
-            },
-            subpath: null);
+            qualifiers: new SortedDictionary<string, string> { { "repository_url", packageUrl } },
+            subpath: null
+        );
 
-        component.PackageURL.Should().BeEquivalentTo(expectedPackageURL);
+        component.PackageUrl.Should().BeEquivalentTo(expectedPackageURL);
     }
 }

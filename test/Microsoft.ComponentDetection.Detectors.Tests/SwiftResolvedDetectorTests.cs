@@ -12,8 +12,10 @@ using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
-public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponentDetector>
+public class SwiftResolvedDetectorTests
 {
+    private readonly DetectorTestUtilityBuilder<SwiftResolvedComponentDetector> detectorTestUtility = new();
+
     [TestMethod]
     public async Task Test_GivenDetectorWithValidFile_WhenScan_ThenScanIsSuccessfulAndComponentsAreRegistered()
     {
@@ -33,7 +35,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
     "version" : 2
 }
 """;
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             validResolvedPackageFile)
             .ExecuteDetectorAsync();
@@ -67,7 +69,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
     {
         var validLongResolvedPackageFile = this.validLongResolvedPackageFile;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             validLongResolvedPackageFile)
             .ExecuteDetectorAsync();
@@ -131,7 +133,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             duplicatePackages)
             .ExecuteDetectorAsync();
@@ -168,7 +170,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
  INVALID JSON
 }
 """;
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             invalidJSONResolvedPackageFile)
             .ExecuteDetectorAsync();
@@ -181,7 +183,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
     public async Task Test_GivenEmptyFile_WhenScan_ThenNoComponentRegisteredAndScanIsSuccessful()
     {
         var emptyResolvedPackageFile = string.Empty;
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             emptyResolvedPackageFile)
             .ExecuteDetectorAsync();
@@ -201,7 +203,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             resolvedPackageWithoutPins)
             .ExecuteDetectorAsync();
@@ -238,7 +240,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             validResolvedPackageFile)
             .ExecuteDetectorAsync();
@@ -266,7 +268,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             resolvedPackageWithoutKind)
             .ExecuteDetectorAsync();
@@ -294,7 +296,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             resolvedPackageWithoutLocation)
             .ExecuteDetectorAsync();
@@ -319,7 +321,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             resolvedPackageWithoutState)
             .ExecuteDetectorAsync();
@@ -345,7 +347,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             resolvedPackageWithEmptyState)
             .ExecuteDetectorAsync();
@@ -373,7 +375,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             resolvedPackageWithoutRevision)
             .ExecuteDetectorAsync();
@@ -401,7 +403,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
 }
 """;
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility.WithFile(
+        var (scanResult, componentRecorder) = await this.detectorTestUtility.WithFile(
             "Package.resolved",
             resolvedPackageWithoutVersion)
             .ExecuteDetectorAsync();
@@ -473,7 +475,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
     [TestMethod]
     public async Task TestEmptyPackageResolvedAsync()
     {
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Package.resolved", string.Empty)
             .ExecuteDetectorAsync();
 
@@ -486,7 +488,7 @@ public class SwiftResolvedDetectorTests : BaseDetectorTest<SwiftResolvedComponen
     {
         var invalidJson = "{ invalid json content }";
 
-        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+        var (scanResult, componentRecorder) = await this.detectorTestUtility
             .WithFile("Package.resolved", invalidJson)
             .ExecuteDetectorAsync();
 

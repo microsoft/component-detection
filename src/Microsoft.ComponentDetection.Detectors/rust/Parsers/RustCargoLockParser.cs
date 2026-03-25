@@ -18,7 +18,7 @@ using Tomlyn;
 /// <summary>
 /// Detector for Cargo.lock files.
 /// </summary>
-public class RustCargoLockParser : IRustCargoLockParser
+internal class RustCargoLockParser : IRustCargoLockParser
 {
     ////  PkgName[ Version][ (Source)]
     private static readonly Regex DependencyFormatRegex = new Regex(

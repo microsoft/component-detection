@@ -1,4 +1,3 @@
-#nullable disable
 namespace Microsoft.ComponentDetection.Detectors.Tests;
 
 using System;
@@ -297,7 +296,9 @@ public class LinuxScannerTests
             .Components;
 
         result.Should().ContainSingle();
+        result.First().Should().BeOfType<LinuxComponent>();
         var package = result.First() as LinuxComponent;
+        package.Should().NotBeNull();
         package.Name.Should().Be("test");
         package.Version.Should().Be("1.0.0");
         package.Release.Should().Be("1.0.0");
@@ -345,7 +346,9 @@ public class LinuxScannerTests
             .Components;
 
         result.Should().ContainSingle();
+        result.First().Should().BeOfType<LinuxComponent>();
         var package = result.First() as LinuxComponent;
+        package.Should().NotBeNull();
         package.Name.Should().Be("test");
         package.Version.Should().Be("1.0.0");
         package.Release.Should().Be("1.0.0");
@@ -395,7 +398,9 @@ public class LinuxScannerTests
             .Components;
 
         result.Should().ContainSingle();
+        result.First().Should().BeOfType<LinuxComponent>();
         var package = result.First() as LinuxComponent;
+        package.Should().NotBeNull();
         package.Name.Should().Be("busybox");
         package.Version.Should().Be("1.35.0-13.cm2");
         package.Release.Should().Be("2.0");

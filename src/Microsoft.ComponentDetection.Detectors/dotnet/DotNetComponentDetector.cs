@@ -10,6 +10,7 @@ using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using global::NuGet.Frameworks;
 using global::NuGet.ProjectModel;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.Internal;
@@ -201,9 +202,11 @@ public class DotNetComponentDetector : FileComponentDetector
         var componentReporter = this.ComponentRecorder.CreateSingleFileComponentRecorder(projectPath);
         foreach (var target in lockFile.Targets ?? [])
         {
-            var targetFramework = target.TargetFramework?.GetShortFolderName();
+            var targetFramework = target.TargetFramework;
+            var isSelfContained = this.IsSelfContained(lockFile.PackageSpec, targetFramework, target);
+            var targetTypeWithSelfContained = this.GetTargetTypeWithSelfContained(targetType, isSelfContained);
 
-            componentReporter.RegisterUsage(new DetectedComponent(new DotNetComponent(sdkVersion, targetFramework, targetType)));
+            componentReporter.RegisterUsage(new DetectedComponent(new DotNetComponent(sdkVersion, targetFramework?.GetShortFolderName(), targetTypeWithSelfContained)));
         }
     }
 
@@ -245,6 +248,59 @@ public class DotNetComponentDetector : FileComponentDetector
 
         // despite the name `IsExe` this is actually based of the CoffHeader Characteristics
         return peReader.PEHeaders.IsExe;
+    }
+
+    private bool IsSelfContained(PackageSpec packageSpec, NuGetFramework? targetFramework, LockFileTarget target)
+    {
+        // PublishAot projects reference Microsoft.DotNet.ILCompiler, which implies
+        // native AOT compilation and therefore a self-contained deployment.
+        if (target?.Libraries != null &&
+            target.Libraries.Any(lib => "Microsoft.DotNet.ILCompiler".Equals(lib.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        if (packageSpec?.TargetFrameworks == null || targetFramework == null)
+        {
+            return false;
+        }
+
+        var targetFrameworkInfo = packageSpec.TargetFrameworks.FirstOrDefault(tf => tf.FrameworkName == targetFramework);
+        if (targetFrameworkInfo == null)
+        {
+            return false;
+        }
+
+        var frameworkReferences = targetFrameworkInfo.FrameworkReferences;
+        var packageDownloads = targetFrameworkInfo.DownloadDependencies;
+
+        if (frameworkReferences == null || frameworkReferences.Count == 0 || packageDownloads.IsDefaultOrEmpty)
+        {
+            return false;
+        }
+
+        foreach (var frameworkRef in frameworkReferences)
+        {
+            var frameworkName = frameworkRef.Name;
+            var hasRuntimeDownload = packageDownloads.Any(pd => pd.Name.StartsWith($"{frameworkName}.Runtime", StringComparison.OrdinalIgnoreCase));
+
+            if (hasRuntimeDownload)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private string? GetTargetTypeWithSelfContained(string? targetType, bool isSelfContained)
+    {
+        if (string.IsNullOrWhiteSpace(targetType))
+        {
+            return targetType;
+        }
+
+        return isSelfContained ? $"{targetType}-selfcontained" : targetType;
     }
 
     /// <summary>

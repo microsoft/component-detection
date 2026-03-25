@@ -42,5 +42,5 @@ public class SpdxComponent : TypedComponent
     [JsonPropertyName("path")]
     public string Path { get; set; }
 
-    protected override string ComputeId() => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
+    protected override string ComputeBaseId() => $"{this.Name}-{this.SpdxVersion}-{this.Checksum}";
 }
