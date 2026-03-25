@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   smoke-test:
+    if: github.repository == 'microsoft/component-detection'
     runs-on: ["self-hosted", "1ES.Pool=1ES-OSE-GH-Pool"]
     strategy:
       matrix:
