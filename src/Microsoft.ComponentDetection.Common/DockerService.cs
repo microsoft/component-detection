@@ -234,31 +234,39 @@ internal class DockerService : IDockerService
             Image = image,
         };
 
-        var readTask = stream.ReadOutputToEndAsync(CancellationToken.None);
-        var delayTask = Task.Delay(Timeout.Infinite, cancellationToken);
-
-        var completedTask = await Task.WhenAny(readTask, delayTask);
-
-        if (completedTask == delayTask)
+        try
         {
-            record.WasCancelled = true;
+            var readTask = stream.ReadOutputToEndAsync(CancellationToken.None);
+            var delayTask = Task.Delay(Timeout.Infinite, cancellationToken);
 
-            // Dispose the stream to unblock any pending read operation
-            stream.Dispose();
+            var completedTask = await Task.WhenAny(readTask, delayTask);
 
-            // Observe the readTask to prevent unobserved task exceptions.
-            // Running any continuation automatically marks the exception as observed.
-            _ = readTask.ContinueWith(
-                static _ => { },
-                CancellationToken.None,
-                TaskContinuationOptions.OnlyOnFaulted,
-                TaskScheduler.Default);
+            if (completedTask == delayTask)
+            {
+                record.WasCancelled = true;
 
-            // Caller is responsible for container cleanup via finally block
-            cancellationToken.ThrowIfCancellationRequested();
+                // Dispose the stream to unblock any pending read operation
+                stream.Dispose();
+
+                // Observe the readTask to prevent unobserved task exceptions.
+                // Running any continuation automatically marks the exception as observed.
+                _ = readTask.ContinueWith(
+                    static _ => { },
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted,
+                    TaskScheduler.Default);
+
+                // Caller is responsible for container cleanup via finally block
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            return await readTask;
         }
-
-        return await readTask;
+        catch (Exception ex)
+        {
+            record.ExceptionMessage = ex.Message;
+            throw;
+        }
     }
 
     private static async Task<CreateContainerResponse> CreateContainerAsync(
