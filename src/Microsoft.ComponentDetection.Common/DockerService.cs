@@ -219,7 +219,7 @@ internal class DockerService : IDockerService
     /// <summary>
     /// Reads container output with proper cancellation support.
     /// ReadOutputToEndAsync doesn't properly honor cancellation when blocked on socket read,
-    /// so we race it against a cancellation-aware delay and kill the container if cancelled.
+    /// so we race it against a cancellation-aware delay and dispose the stream if cancelled.
     /// </summary>
     private static async Task<(string Stdout, string Stderr)> ReadContainerOutputAsync(
         MultiplexedStream stream,
