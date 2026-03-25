@@ -22,6 +22,19 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
     private static readonly Regex DependencyLineRegex = new(@"^\s{6}(\S+)\s+\(([^)]+)\)", RegexOptions.Compiled);
 
     /// <summary>
+    /// Well-known Paket group names that indicate development-time dependencies.
+    /// Exact matches (case-insensitive): test, tests, docs, documentation, build, analyzers, fake,
+    /// benchmark, benchmarks, samples, designtime.
+    /// Suffix matches (case-insensitive): groups ending with "test" or "tests" to cover names like
+    /// "unittest", "unittests", "integrationtest", "integrationtests", etc.
+    /// </summary>
+    private static readonly HashSet<string> ExactDevGroupNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "test", "tests", "docs", "documentation", "build", "analyzers", "fake",
+        "benchmark", "benchmarks", "samples", "designtime",
+    };
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="PaketComponentDetector"/> class.
     /// </summary>
     /// <param name="componentStreamEnumerableFactory">The factory for handing back component streams to File detectors.</param>
@@ -51,7 +64,35 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.NuGet];
 
     /// <inheritdoc />
-    public override int Version => 1;
+    public override int Version => 2;
+
+    /// <summary>
+    /// Determines whether a Paket group name represents a development-time dependency group.
+    /// The unnamed/default group and "Main" are considered production groups.
+    /// </summary>
+    /// <param name="groupName">The group name from the paket.lock file, or empty string for the default group.</param>
+    /// <returns><c>true</c> if the group is a well-known development group; <c>false</c> otherwise.</returns>
+    internal static bool IsDevelopmentDependencyGroup(string groupName)
+    {
+        if (string.IsNullOrEmpty(groupName) || groupName.Equals("Main", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (ExactDevGroupNames.Contains(groupName))
+        {
+            return true;
+        }
+
+        // Suffix matches: *test, *tests (e.g., UnitTest, IntegrationTests)
+        if (groupName.EndsWith("test", StringComparison.OrdinalIgnoreCase) ||
+            groupName.EndsWith("tests", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
+    }
 
     /// <inheritdoc />
     protected override async Task OnFileFoundAsync(ProcessRequest processRequest, IDictionary<string, string> detectorArgs, CancellationToken cancellationToken = default)
@@ -61,19 +102,30 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
             var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
             using var reader = new StreamReader(processRequest.ComponentStream.Stream);
 
-            // First pass: collect all resolved packages and their dependency relationships.
+            // First pass: collect all resolved packages and their dependency relationships, keyed by group.
             // In paket.lock, 4-space indented lines are resolved packages with pinned versions.
             // 6-space indented lines are dependency specifications (version constraints) of the parent
             // package; they are NOT resolved versions. The actual resolved version for each dependency
             // will appear as its own 4-space entry elsewhere in the file.
-            // Limitation: without cross-referencing paket.dependencies, we cannot perfectly distinguish
-            // between direct and transitive dependencies. We initially register all 4-space resolved packages,
-            // then use the dependency graph to approximate: packages that appear as dependencies of other
+            //
+            // Packages are tracked per group because the same package may appear in multiple groups
+            // (e.g., FSharp.Core in both "Build" and "Server") potentially with different versions.
+            // Group names are also used to classify packages as development dependencies: well-known
+            // group names like "Test", "Build", "Docs", etc. indicate development-time dependencies.
+            //
+            // Limitation: without cross-referencing paket.dependencies or paket.references, we cannot
+            // perfectly distinguish between direct and transitive dependencies. We use the dependency
+            // graph within each group to approximate: packages that appear as dependencies of other
             // packages are marked as transitive, and the rest are treated as explicit.
-            var resolvedPackages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            var dependencyRelationships = new List<(string ParentName, string DependencyName)>();
+
+            // Key: (groupName, packageName) -> version
+            var resolvedPackages = new Dictionary<(string Group, string Name), string>(GroupAndNameComparer.Instance);
+
+            // (groupName, parentName, dependencyName)
+            var dependencyRelationships = new List<(string Group, string ParentName, string DependencyName)>();
 
             var currentSection = string.Empty;
+            var currentGroupName = string.Empty; // empty string = default/unnamed group
             string? currentPackageName = null;
 
             while (await reader.ReadLineAsync(cancellationToken) is { } line)
@@ -83,11 +135,26 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
                     continue;
                 }
 
-                // Check if this is a section header (e.g., NUGET, GITHUB, HTTP, GROUP)
+                // Check if this is a section header (e.g., NUGET, GITHUB, HTTP, GROUP, RESTRICTION, STORAGE)
                 if (!line.StartsWith(' ') && line.Trim().Length > 0)
                 {
-                    currentSection = line.Trim();
-                    currentPackageName = null;
+                    var trimmed = line.Trim();
+
+                    // GROUP lines set the current group context; they are not a "section" like NUGET.
+                    // The format is "GROUP <name>" and subsequent sections (NUGET, GITHUB, etc.)
+                    // belong to this group until the next GROUP line.
+                    if (trimmed.StartsWith("GROUP ", StringComparison.OrdinalIgnoreCase) && trimmed.Length > 6)
+                    {
+                        currentGroupName = trimmed[6..].Trim();
+                        currentSection = string.Empty;
+                        currentPackageName = null;
+                    }
+                    else
+                    {
+                        currentSection = trimmed;
+                        currentPackageName = null;
+                    }
+
                     continue;
                 }
 
@@ -110,17 +177,17 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
                     currentPackageName = packageMatch.Groups[1].Value;
                     var currentPackageVersion = packageMatch.Groups[2].Value;
 
-                    // TryAdd keeps the first occurrence. If the same package appears in multiple GROUPs
-                    // with different versions, only the first is registered. This is a known simplification;
-                    // full GROUP-aware tracking could be added in a future iteration.
-                    if (!resolvedPackages.TryAdd(currentPackageName, currentPackageVersion))
+                    var key = (currentGroupName, currentPackageName);
+                    if (!resolvedPackages.TryAdd(key, currentPackageVersion))
                     {
                         this.Logger.LogDebug(
-                            "Duplicate package {PackageName} found with version {Version}; keeping previously resolved version {ExistingVersion}",
+                            "Duplicate package {PackageName} found in group '{GroupName}' with version {Version}; keeping previously resolved version {ExistingVersion}",
                             currentPackageName,
+                            currentGroupName,
                             currentPackageVersion,
-                            resolvedPackages[currentPackageName]);
+                            resolvedPackages[key]);
                     }
+
                     continue;
                 }
 
@@ -129,50 +196,80 @@ public sealed class PaketComponentDetector : FileComponentDetector, IDefaultOffC
                 if (dependencyMatch.Success && currentPackageName != null)
                 {
                     var dependencyName = dependencyMatch.Groups[1].Value;
-                    dependencyRelationships.Add((currentPackageName, dependencyName));
+                    dependencyRelationships.Add((currentGroupName, currentPackageName, dependencyName));
                 }
             }
 
-            // Build a set of package names that appear as dependencies of other packages
-            var transitiveDependencyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (_, dependencyName) in dependencyRelationships)
+            // Build a set of package names (per group) that appear as dependencies of other packages
+            var transitiveDependencyNames = new HashSet<(string Group, string Name)>(GroupAndNameComparer.Instance);
+            foreach (var (group, _, dependencyName) in dependencyRelationships)
             {
-                transitiveDependencyNames.Add(dependencyName);
+                transitiveDependencyNames.Add((group, dependencyName));
             }
 
-            // Register all resolved packages
-            foreach (var (name, version) in resolvedPackages)
+            // Register all resolved packages with group-aware isDevelopmentDependency.
+            // If a package appears in multiple groups, it will be registered multiple times with
+            // potentially different isDevelopmentDependency values. The framework's AND-merge
+            // semantics ensure that if ANY registration says false (production), the final result
+            // is false -- preventing accidental hiding of production dependencies.
+            foreach (var ((group, name), version) in resolvedPackages)
             {
+                var isDev = IsDevelopmentDependencyGroup(group);
                 var component = new DetectedComponent(new NuGetComponent(name, version));
                 singleFileComponentRecorder.RegisterUsage(
                     component,
-                    isExplicitReferencedDependency: !transitiveDependencyNames.Contains(name));
+                    isExplicitReferencedDependency: !transitiveDependencyNames.Contains((group, name)),
+                    isDevelopmentDependency: isDev);
             }
 
             // Register parent-child relationships using the dependency specifications
-            foreach (var (parentName, dependencyName) in dependencyRelationships)
+            foreach (var (group, parentName, dependencyName) in dependencyRelationships)
             {
-                if (resolvedPackages.ContainsKey(dependencyName) && resolvedPackages.ContainsKey(parentName))
+                var parentKey = (group, parentName);
+                var depKey = (group, dependencyName);
+
+                if (resolvedPackages.ContainsKey(depKey) && resolvedPackages.ContainsKey(parentKey))
                 {
-                    var parentVersion = resolvedPackages[parentName];
+                    var isDev = IsDevelopmentDependencyGroup(group);
+                    var parentVersion = resolvedPackages[parentKey];
                     var parentComponentId = new NuGetComponent(parentName, parentVersion).Id;
 
-                    var depVersion = resolvedPackages[dependencyName];
+                    var depVersion = resolvedPackages[depKey];
                     var depComponent = new DetectedComponent(new NuGetComponent(dependencyName, depVersion));
 
                     singleFileComponentRecorder.RegisterUsage(
                         depComponent,
                         isExplicitReferencedDependency: false,
-                        parentComponentId: parentComponentId);
+                        parentComponentId: parentComponentId,
+                        isDevelopmentDependency: isDev);
                 }
             }
         }
         catch (Exception e) when (e is IOException or InvalidOperationException)
         {
-            var singleFileComponentRecorder = processRequest.SingleFileComponentRecorder;
-            singleFileComponentRecorder.RegisterPackageParseFailure(processRequest.ComponentStream.Location);
-            this.Logger.LogWarning(e, "Failed to read paket.lock file {File}", processRequest.ComponentStream.Location);
             processRequest.SingleFileComponentRecorder.RegisterPackageParseFailure(processRequest.ComponentStream.Location);
+            this.Logger.LogWarning(e, "Failed to read paket.lock file {File}", processRequest.ComponentStream.Location);
+        }
+    }
+
+    /// <summary>
+    /// Case-insensitive equality comparer for (Group, Name) tuples used as dictionary keys.
+    /// </summary>
+    private sealed class GroupAndNameComparer : IEqualityComparer<(string Group, string Name)>
+    {
+        public static readonly GroupAndNameComparer Instance = new();
+
+        public bool Equals((string Group, string Name) x, (string Group, string Name) y)
+        {
+            return StringComparer.OrdinalIgnoreCase.Equals(x.Group, y.Group) &&
+                   StringComparer.OrdinalIgnoreCase.Equals(x.Name, y.Name);
+        }
+
+        public int GetHashCode((string Group, string Name) obj)
+        {
+            return HashCode.Combine(
+                StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Group),
+                StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Name));
         }
     }
 }

@@ -6,6 +6,7 @@ using AwesomeAssertions;
 using Microsoft.ComponentDetection.Contracts;
 using Microsoft.ComponentDetection.Contracts.TypedComponent;
 using Microsoft.ComponentDetection.Detectors.Paket;
+using Microsoft.ComponentDetection.Detectors.Tests.Utilities;
 using Microsoft.ComponentDetection.TestsUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -380,11 +381,19 @@ NUGET
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // FSharp.Core appears in both groups; TryAdd keeps the first occurrence (9.0.300)
-        detectedComponents.Should().HaveCount(3);
-        detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Core"));
+        // FSharp.Core appears in both groups with different versions; both are registered.
+        // Build group has 9.0.300, Server group has 9.0.303.
+        detectedComponents.Should().HaveCount(4);
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Core 9.0.300"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Core 9.0.303"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Newtonsoft.Json 13.0.3"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Azure.Core 1.46.1"));
+
+        // Build is a well-known dev group; Server is not
+        componentRecorder.GetEffectiveDevDependencyValue("FSharp.Core 9.0.300 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("Newtonsoft.Json 13.0.3 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("Azure.Core 1.46.1 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("FSharp.Core 9.0.303 - NuGet").Should().BeFalse();
     }
 
     [TestMethod]
@@ -489,6 +498,7 @@ NUGET
       FSharp.Core (>= 6.0.1) - restriction: >= netstandard2.0
       FSharp.Data.Csv.Core (>= 6.6) - restriction: >= netstandard2.0
     FSharp.Data.Csv.Core (6.6)
+    FSharp.Core (9.0.303)
     Microsoft.AspNetCore.Http.Connections (1.2)
     Microsoft.AspNetCore.SignalR (1.2)
       Microsoft.AspNetCore.Http.Connections (>= 1.2) - restriction: >= netstandard2.0
@@ -512,12 +522,16 @@ NUGET
         scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
         var detectedComponents = componentRecorder.GetDetectedComponents();
 
-        // Should detect all resolved packages from all groups
+        // Should detect all resolved packages from all groups.
+        // FSharp.Core appears in Build (9.0.300) and Server (9.0.303) with different versions.
+        detectedComponents.Should().HaveCount(14);
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Fake.Core.Target 6.1.3"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Fake.Core.CommandLineParsing 6.1.3"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Fake.Core.Context 6.1.3"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Core 9.0.300"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Data 6.6"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Data.Csv.Core 6.6"));
+        detectedComponents.Should().Contain(c => c.Component.Id.Contains("FSharp.Core 9.0.303"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Microsoft.AspNetCore.SignalR 1.2"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Microsoft.AspNetCore.Http.Connections 1.2"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("Serilog 4.2"));
@@ -525,6 +539,26 @@ NUGET
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("NUnit 4.3.2"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("NUnit3TestAdapter 5.0"));
         detectedComponents.Should().Contain(c => c.Component.Id.Contains("System.Memory 4.6"));
+
+        // Build group is a well-known dev group
+        componentRecorder.GetEffectiveDevDependencyValue("Fake.Core.Target 6.1.3 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("Fake.Core.CommandLineParsing 6.1.3 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("Fake.Core.Context 6.1.3 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("FSharp.Core 9.0.300 - NuGet").Should().BeTrue();
+
+        // Server group is NOT a well-known dev group
+        componentRecorder.GetEffectiveDevDependencyValue("FSharp.Data 6.6 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("FSharp.Data.Csv.Core 6.6 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("FSharp.Core 9.0.303 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("Microsoft.AspNetCore.SignalR 1.2 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("Microsoft.AspNetCore.Http.Connections 1.2 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("Serilog 4.2 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("System.Diagnostics.DiagnosticSource 8.0.1 - NuGet").Should().BeFalse();
+
+        // Test group is a well-known dev group
+        componentRecorder.GetEffectiveDevDependencyValue("NUnit 4.3.2 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("NUnit3TestAdapter 5.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("System.Memory 4.6 - NuGet").Should().BeTrue();
     }
 
     [TestMethod]
@@ -548,5 +582,308 @@ NUGET
         // Only the resolved package should be detected, not the unresolved dependency
         detectedComponents.Should().ContainSingle(c => c.Component.Id.Contains("PackageA 1.0.0"));
         detectedComponents.Should().NotContain(c => ((NuGetComponent)c.Component).Name == "NonExistentPackage");
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_DefaultGroupIsNotDevDependency()
+    {
+        var paketLock = @"NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Newtonsoft.Json (13.0.3)
+    FSharp.Core (8.0.200)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        detectedComponents.Should().HaveCount(2);
+
+        // Default (unnamed) group packages are production dependencies
+        componentRecorder.GetEffectiveDevDependencyValue("Newtonsoft.Json 13.0.3 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("FSharp.Core 8.0.200 - NuGet").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_MainGroupIsNotDevDependency()
+    {
+        var paketLock = @"GROUP Main
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Newtonsoft.Json (13.0.3)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        componentRecorder.GetEffectiveDevDependencyValue("Newtonsoft.Json 13.0.3 - NuGet").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_TestGroupIsDevDependency()
+    {
+        var paketLock = @"GROUP Test
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    NUnit (4.3.2)
+    Moq (4.20.0)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        componentRecorder.GetEffectiveDevDependencyValue("NUnit 4.3.2 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("Moq 4.20.0 - NuGet").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_SuffixTestGroupIsDevDependency()
+    {
+        // Groups ending with "test" or "tests" should be dev dependencies (e.g., UnitTest, IntegrationTests)
+        var paketLock = @"GROUP UnitTest
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    xunit (2.9.0)
+
+GROUP IntegrationTests
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    FluentAssertions (6.12.0)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        componentRecorder.GetEffectiveDevDependencyValue("xunit 2.9.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("FluentAssertions 6.12.0 - NuGet").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_AllWellKnownDevGroupNames()
+    {
+        // Verify all well-known group names are recognized as dev dependencies
+        var paketLock = @"GROUP Tests
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgTests (1.0.0)
+
+GROUP Docs
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgDocs (1.0.0)
+
+GROUP Documentation
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgDocumentation (1.0.0)
+
+GROUP Build
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgBuild (1.0.0)
+
+GROUP Analyzers
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgAnalyzers (1.0.0)
+
+GROUP Fake
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgFake (1.0.0)
+
+GROUP Benchmark
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgBenchmark (1.0.0)
+
+GROUP Benchmarks
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgBenchmarks (1.0.0)
+
+GROUP Samples
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgSamples (1.0.0)
+
+GROUP DesignTime
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    PkgDesignTime (1.0.0)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+
+        detectedComponents.Should().HaveCount(10);
+
+        // All well-known dev group packages should be dev dependencies
+        componentRecorder.GetEffectiveDevDependencyValue("PkgTests 1.0.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("PkgDocs 1.0.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("PkgDocumentation 1.0.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("PkgBuild 1.0.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("PkgAnalyzers 1.0.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("PkgFake 1.0.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("PkgBenchmark 1.0.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("PkgBenchmarks 1.0.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("PkgSamples 1.0.0 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("PkgDesignTime 1.0.0 - NuGet").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_UnknownGroupIsNotDevDependency()
+    {
+        // Non-well-known group names should not be treated as dev dependencies
+        var paketLock = @"GROUP Server
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Giraffe (6.0.0)
+
+GROUP Client
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Fable.Core (4.0.0)
+
+GROUP Shared
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Thoth.Json (7.0.0)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        componentRecorder.GetEffectiveDevDependencyValue("Giraffe 6.0.0 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("Fable.Core 4.0.0 - NuGet").Should().BeFalse();
+        componentRecorder.GetEffectiveDevDependencyValue("Thoth.Json 7.0.0 - NuGet").Should().BeFalse();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_SamePackageSameVersionInDevAndProdGroups()
+    {
+        // When the same package with the same version appears in both a dev group and a prod group,
+        // the framework's AND-merge ensures the final result is false (production wins).
+        var paketLock = @"GROUP Main
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    FSharp.Core (9.0.300)
+
+GROUP Test
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    FSharp.Core (9.0.300)
+    NUnit (4.3.2)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        // FSharp.Core appears in both Main (prod) and Test (dev) with the same version.
+        // The AND-merge means it's NOT a dev dependency (production usage wins).
+        componentRecorder.GetEffectiveDevDependencyValue("FSharp.Core 9.0.300 - NuGet").Should().BeFalse();
+
+        // NUnit only appears in Test, so it remains a dev dependency
+        componentRecorder.GetEffectiveDevDependencyValue("NUnit 4.3.2 - NuGet").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task TestPaketDetector_DevGroupNameMatchingIsCaseInsensitive()
+    {
+        var paketLock = @"GROUP TEST
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    NUnit (4.3.2)
+
+GROUP build
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Fake.Core.Target (6.1.3)
+
+GROUP INTEGRATIONTESTS
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    FluentAssertions (6.12.0)
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("paket.lock", paketLock)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        componentRecorder.GetEffectiveDevDependencyValue("NUnit 4.3.2 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("Fake.Core.Target 6.1.3 - NuGet").Should().BeTrue();
+        componentRecorder.GetEffectiveDevDependencyValue("FluentAssertions 6.12.0 - NuGet").Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void TestIsDevelopmentDependencyGroup_WellKnownNames()
+    {
+        // Exact matches
+        PaketComponentDetector.IsDevelopmentDependencyGroup("test").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Test").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("TEST").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("tests").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Tests").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("docs").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Docs").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("documentation").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Documentation").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("build").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Build").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("analyzers").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Analyzers").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("fake").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Fake").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("benchmark").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("benchmarks").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("samples").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("designtime").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("DesignTime").Should().BeTrue();
+
+        // Suffix matches
+        PaketComponentDetector.IsDevelopmentDependencyGroup("UnitTest").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("unittest").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("IntegrationTest").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("UnitTests").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("IntegrationTests").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("AcceptanceTests").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("E2ETest").Should().BeTrue();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("SmokeTests").Should().BeTrue();
+
+        // Non-dev groups
+        PaketComponentDetector.IsDevelopmentDependencyGroup(string.Empty).Should().BeFalse();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Main").Should().BeFalse();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("main").Should().BeFalse();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Server").Should().BeFalse();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Client").Should().BeFalse();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Shared").Should().BeFalse();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Web").Should().BeFalse();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Api").Should().BeFalse();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Core").Should().BeFalse();
+        PaketComponentDetector.IsDevelopmentDependencyGroup("Infrastructure").Should().BeFalse();
     }
 }
