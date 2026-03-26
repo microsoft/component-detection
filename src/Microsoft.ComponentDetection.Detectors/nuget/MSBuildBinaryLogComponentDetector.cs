@@ -308,6 +308,10 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IDefault
                     projectInfos.Count);
             }
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             this.Logger.LogWarning(ex, "Failed to process binlog file: {BinlogPath}", binlogPath);
@@ -467,6 +471,10 @@ public class MSBuildBinaryLogComponentDetector : FileComponentDetector, IDefault
                     assetsFilePath);
                 await this.ProcessLockFileFallbackAsync(lockFile, assetsFilePath, cancellationToken);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
