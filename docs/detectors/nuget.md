@@ -36,6 +36,48 @@ The `NuGetPackagesConfig` detector raises NuGet components referenced by project
 
 [7]: https://learn.microsoft.com/en-us/nuget/reference/packages-config
 
+## MSBuildBinaryLog
+
+The `MSBuildBinaryLog` detector is a **DefaultOff** detector intended to eventually replace both the `NuGetProjectCentric` and `DotNet` detectors. It combines MSBuild binary log (binlog) information with `project.assets.json` to provide enhanced component detection with project-level classifications.
+
+It looks for `project.assets.json` files and separately discovers `*.binlog` files. The binlog provides build-time context that isn't available from `project.assets.json` alone.
+
+### MSBuild Properties
+
+The detector extracts the following MSBuild properties from binlog data:
+
+| Property | Usage |
+| --- | --- |
+| `NETCoreSdkVersion` | Registered as the SDK version for the DotNet component. More accurate than `dotnet --version`, which can differ due to `global.json` rollforward. |
+| `OutputType` | Classifies projects as "application" (`Exe`, `WinExe`, `AppContainerExe`) or "library" (`Library`, `Module`). The `DotNet` detector uses PE header inspection, which requires compiled output. |
+| `ProjectAssetsFile` | Maps binlog project info to the corresponding `project.assets.json` on disk. |
+| `TargetFramework` / `TargetFrameworks` | Identifies inner builds for multi-targeted projects and determines per-TFM properties. |
+| `IsTestProject` | When `true`, all dependencies of the project are marked as development dependencies. |
+| `IsShipping` | When `false`, all dependencies are marked as development dependencies. |
+| `IsDevelopment` | When `true`, all dependencies are marked as development dependencies. |
+| `IsPackable` | Indicates whether the project produces a NuGet package. |
+| `SelfContained` | Detects self-contained deployment. Combined with lock file heuristics. |
+| `PublishAot` | When `true`, project is treated as self-contained. Typically only set during publish pass. |
+
+### PackageReference and PackageDownload Metadata
+
+The detector reads `IsDevelopmentDependency` metadata from `PackageReference` and `PackageDownload` items in the binlog:
+
+- **PackageReference**: When `IsDevelopmentDependency` is `true`, the package and all of its transitive dependencies are marked as development dependencies.
+- **PackageDownload**: Packages are registered as development dependencies by default unless explicitly overridden via `IsDevelopmentDependency` metadata.
+
+### Multi-Targeting and Multi-Pass Merging
+
+For multi-targeted projects, the detector understands the MSBuild outer/inner build structure. Properties from inner builds (per-TFM) are tracked separately, and when a project appears in multiple binlogs (e.g., a build pass and a publish pass), their properties are merged so that values like `PublishAot` (typically only set during publish) are available when processing the shared `project.assets.json`.
+
+### Fallback Mode
+
+When no binlog is available for a project, the detector falls back to standard NuGet detection behavior (equivalent to the `NuGetProjectCentric` detector).
+
+### Enabling the Detector
+
+Pass `--DetectorArgs MSBuildBinaryLog=EnableIfDefaultOff` and ensure a `*.binlog` file is present in the scan directory (e.g., by building with `dotnet build -bl`).
+
 ## Known Limitations
 
 - Any components that are only found in `*.nuspec` or `*.nupkg` files will not be detected with the latest NuGet Detector approach, because the NuGet detector that scans `*.nuspec` or `*.nupkg` files overreports. This is due to of NuGet's [restore behaviour][8] which downloads all possible dependencies before [resolving the final dependency graph][9].
