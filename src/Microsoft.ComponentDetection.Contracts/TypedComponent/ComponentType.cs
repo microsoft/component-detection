@@ -67,4 +67,7 @@ public enum ComponentType : byte
 
     [EnumMember]
     CppSdk = 20,
+
+    [EnumMember]
+    Rpm = 21,
 }
