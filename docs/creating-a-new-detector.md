@@ -104,7 +104,7 @@ public class YourEcosystemComponent : TypedComponent
     public string Version { get; set; }
 
     public override ComponentType Type => ComponentType.YourType;
-    public override PackageUrl PackageUrl => new PackageUrl("your-type", null, this.Name, this.Version, null, null);
+    public override PackageURL PackageUrl => new PackageURL("your-type", null, this.Name, this.Version, null, null);
     protected override string ComputeId() => $"{this.Name} {this.Version} - {this.Type}";
 }
 ```

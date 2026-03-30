@@ -40,12 +40,12 @@ public class SwiftComponent : TypedComponent
     [JsonIgnore]
     public override ComponentType Type => ComponentType.Swift;
 
-    // Example PackageUrl -> pkg:swift/github.com/apple/swift-asn1
+    // Example PackageURL -> pkg:swift/github.com/apple/swift-asn1
     // type: swift
     // namespace: github.com/apple
     // name: swift-asn1
     [JsonPropertyName("packageUrl")]
-    public override PackageUrl PackageUrl => new PackageUrl(
+    public override PackageURL PackageUrl => new PackageURL(
         type: "swift",
         @namespace: this.GetNamespaceFromPackageUrl(),
         name: this.Name,
