@@ -151,6 +151,59 @@ public class VcpkgComponentDetectorTests
     }
 
     [TestMethod]
+    public async Task TestResourceWithSlashInNameProducesValidPackageUrlAsync()
+    {
+        var spdxFile = """
+            {
+                "SPDXID": "SPDXRef-DOCUMENT",
+                "documentNamespace": "https://spdx.org/spdxdocs/brotli-x64-windows",
+                "name": "brotli:x64-windows@1.0.9",
+                "packages": [
+                    {
+                        "name": "brotli",
+                        "SPDXID": "SPDXRef-port",
+                        "versionInfo": "1.0.9#0",
+                        "downloadLocation": "git+https://github.com/Microsoft/vcpkg#ports/brotli",
+                        "licenseConcluded": "NOASSERTION",
+                        "licenseDeclared": "NOASSERTION",
+                        "copyrightText": "NOASSERTION"
+                    },
+                    {
+                        "SPDXID": "SPDXRef-resource-1",
+                        "name": "google/brotli",
+                        "downloadLocation": "git+https://github.com/google/brotli@1.0.9",
+                        "licenseConcluded": "NOASSERTION",
+                        "licenseDeclared": "NOASSERTION",
+                        "copyrightText": "NOASSERTION"
+                    }
+                ]
+            }
+            """;
+        var (scanResult, componentRecorder) = await this
+            .detectorTestUtility.WithFile("vcpkg.spdx.json", spdxFile)
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+
+        var detectedComponents = componentRecorder.GetDetectedComponents();
+        var components = detectedComponents.ToList();
+
+        components.Should().HaveCount(2);
+
+        var resourceComponent = (VcpkgComponent)components
+                .First(c => ((VcpkgComponent)c.Component).SPDXID == "SPDXRef-resource-1")
+                .Component;
+        resourceComponent.Name.Should().Be("google/brotli");
+        resourceComponent.Version.Should().Be("1.0.9");
+
+        // This was the bug: names with slashes caused MalformedPackageUrlException
+        var purl = resourceComponent.PackageUrl;
+        purl.Should().NotBeNull();
+        purl.ToString().Should().Contain("vcpkg");
+        purl.ToString().Should().Contain("brotli");
+    }
+
+    [TestMethod]
     public async Task TestBlankJsonAsync()
     {
         var spdxFile = "{}";
