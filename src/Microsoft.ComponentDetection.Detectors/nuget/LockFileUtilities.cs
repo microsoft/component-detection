@@ -19,7 +19,7 @@ using Microsoft.Extensions.Logging;
 /// Shared utility methods for processing NuGet lock files (project.assets.json).
 /// Used by both NuGetProjectModelProjectCentricComponentDetector and MSBuildBinaryLogComponentDetector.
 /// </summary>
-public static class LockFileUtilities
+internal static class LockFileUtilities
 {
     /// <summary>
     /// Dependency type constant for project references in project.assets.json.
@@ -139,30 +139,23 @@ public static class LockFileUtilities
     /// <param name="versionRange">The version range to match (mutually exclusive with version).</param>
     /// <param name="logger">Optional logger for debug messages.</param>
     /// <returns>The matching library, or null if not found.</returns>
-    public static LockFileLibrary? GetLibraryComponentWithDependencyLookup(
-        IList<LockFileLibrary>? libraries,
+    public static LockFileLibrary GetLibraryComponentWithDependencyLookup(
+        IList<LockFileLibrary> libraries,
         string dependencyId,
         Version? version,
         VersionRange? versionRange,
         ILogger? logger = null)
     {
-        if (libraries == null)
-        {
-            return null;
-        }
-
         if ((version == null && versionRange == null) || (version != null && versionRange != null))
         {
-            logger?.LogDebug("Either version or versionRange must be specified, but not both for {DependencyId}.", dependencyId);
-            return null;
+            throw new ArgumentException($"Either {nameof(version)} or {nameof(versionRange)} must be specified, but not both.");
         }
 
         var matchingLibraryNames = libraries.Where(x => string.Equals(x.Name, dependencyId, StringComparison.OrdinalIgnoreCase)).ToList();
 
         if (matchingLibraryNames.Count == 0)
         {
-            logger?.LogDebug("No library found matching: {DependencyId}", dependencyId);
-            return null;
+            throw new InvalidOperationException("Project.assets.json is malformed, no library could be found matching: " + dependencyId);
         }
 
         LockFileLibrary? matchingLibrary;
@@ -308,17 +301,7 @@ public static class LockFileUtilities
         var libraries = new List<LockFileLibrary>();
         foreach (var lib in GetTopLevelLibraries(lockFile))
         {
-            var resolved = GetLibraryComponentWithDependencyLookup(lockFile.Libraries, lib.Name, lib.Version, lib.VersionRange, logger);
-            if (resolved != null)
-            {
-                libraries.Add(resolved);
-            }
-            else
-            {
-                logger?.LogWarning(
-                    "Could not resolve top-level dependency {DependencyName}. The project.assets.json may be malformed.",
-                    lib.Name);
-            }
+            libraries.Add(GetLibraryComponentWithDependencyLookup(lockFile.Libraries, lib.Name, lib.Version, lib.VersionRange, logger));
         }
 
         var componentIds = libraries

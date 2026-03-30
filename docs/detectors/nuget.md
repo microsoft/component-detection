@@ -63,7 +63,8 @@ The detector extracts the following MSBuild properties from binlog data:
 
 The detector reads `IsDevelopmentDependency` metadata from `PackageReference` and `PackageDownload` items in the binlog:
 
-- **PackageReference**: When `IsDevelopmentDependency` is `true`, the package and all of its transitive dependencies are marked as development dependencies.
+- **PackageReference**: When `IsDevelopmentDependency` is `true`, the package and **all of its transitive dependencies** are marked as development dependencies. This allows annotating a single top-level dependency to classify its entire closure as dev-only. If a transitive dependency should remain non-dev, reference it directly (or transitively via a non-overridden dependency) so that it is also registered through a non-dev path.
+- **PackageReference**: When `IsDevelopmentDependency` is `false`, the package and all of its transitive dependencies are classified using the explicit override rather than the default heuristics.
 - **PackageDownload**: Packages are registered as development dependencies by default unless explicitly overridden via `IsDevelopmentDependency` metadata.
 
 ### Multi-Targeting and Multi-Pass Merging

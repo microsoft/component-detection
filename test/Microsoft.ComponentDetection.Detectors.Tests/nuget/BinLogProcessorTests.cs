@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.ComponentDetection.Detectors.NuGet;
@@ -1721,6 +1722,43 @@ public class BinLogProcessorTests
             throw new InvalidOperationException(
                 $"Process exited with code {process.ExitCode}.\nCommand: {fileName} {arguments}\nStdout:\n{stdout}\nStderr:\n{stderr}");
         }
+    }
+
+    [TestMethod]
+    public async Task BinLogReader_Replay_PropagatesCancellationFromProgress()
+    {
+        // This test verifies the external behavior we depend on: BinLogReader.Replay
+        // propagates OperationCanceledException thrown from the Progress callback.
+        // If this behavior changes upstream, we need to find an alternative cancellation
+        // strategy in BinLogProcessor.
+        var projectDir = Path.Combine(this.testDir, "CancelProgress");
+        Directory.CreateDirectory(projectDir);
+
+        var content = """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+              </PropertyGroup>
+            </Project>
+            """;
+        WriteFile(projectDir, "CancelProgress.csproj", content);
+
+        var binlogPath = await BuildProjectAsync(projectDir, "CancelProgress.csproj");
+
+        var reader = new Microsoft.Build.Logging.StructuredLogger.BinLogReader();
+        Microsoft.Build.Logging.StructuredLogger.Strings.Initialize();
+
+        using var cts = new CancellationTokenSource();
+        var progress = new Microsoft.Build.Logging.StructuredLogger.Progress();
+        progress.Updated += _ =>
+        {
+            // Cancel after the first progress update to ensure Replay is mid-flight.
+            cts.Cancel();
+            cts.Token.ThrowIfCancellationRequested();
+        };
+
+        var act = () => reader.Replay(binlogPath, progress);
+        act.Should().Throw<OperationCanceledException>();
     }
 
     /// <summary>

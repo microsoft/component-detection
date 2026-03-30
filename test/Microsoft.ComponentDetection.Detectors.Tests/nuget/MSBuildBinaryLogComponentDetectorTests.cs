@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,9 +31,14 @@ using Moq;
 [TestClass]
 public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBinaryLogComponentDetector>
 {
-    private const string ProjectPath = @"C:\test\TestProject.csproj";
-    private const string AssetsFilePath = @"C:\test\obj\project.assets.json";
-    private const string BinlogFilePath = @"C:\test\build.binlog";
+    private static readonly string RootDir = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:" : "/";
+    private static readonly string ProjectPath = Path.Combine(RootDir, "test", "TestProject.csproj");
+    private static readonly string AssetsFilePath = Path.Combine(RootDir, "test", "obj", "project.assets.json");
+    private static readonly string BinlogFilePath = Path.Combine(RootDir, "test", "build.binlog");
+    private static readonly string PublishBinlogFilePath = Path.Combine(RootDir, "test", "publish.binlog");
+    private static readonly string TestBinlogFilePath = Path.Combine(RootDir, "test", "test.binlog");
+    private static readonly string PackagesFolder = Path.Combine(RootDir, "Users", "test", ".nuget", "packages") + Path.DirectorySeparatorChar;
+    private static readonly string ProjectOutputPath = Path.Combine(RootDir, "test", "obj");
 
     private readonly Mock<ICommandLineInvocationService> commandLineInvocationServiceMock;
     private readonly Mock<IFileUtilityService> fileUtilityServiceMock;
@@ -455,8 +461,8 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     {
         // Binlog contains info for a DIFFERENT project; assets file project path doesn't match.
         var otherInfo = CreateProjectInfo(
-            projectPath: @"C:\other\OtherProject.csproj",
-            assetsFilePath: @"C:\other\obj\project.assets.json");
+            projectPath: Path.Combine(RootDir, "other", "OtherProject.csproj"),
+            assetsFilePath: Path.Combine(RootDir, "other", "obj", "project.assets.json"));
         otherInfo.IsTestProject = true;
 
         var assetsJson = SimpleAssetsJson("Newtonsoft.Json", "13.0.1");
@@ -496,8 +502,8 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
 
         var binlogs = new Dictionary<string, IReadOnlyList<MSBuildProjectInfo>>
         {
-            [@"C:\test\build.binlog"] = [buildInfo],
-            [@"C:\test\publish.binlog"] = [publishInfo],
+            [BinlogFilePath] = [buildInfo],
+            [PublishBinlogFilePath] = [publishInfo],
         };
 
         var (result, recorder) = await ExecuteWithMultipleBinlogsAsync(binlogs, assetsJson);
@@ -528,8 +534,8 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
 
         var binlogs = new Dictionary<string, IReadOnlyList<MSBuildProjectInfo>>
         {
-            [@"C:\test\build.binlog"] = [buildInfo],
-            [@"C:\test\publish.binlog"] = [publishInfo],
+            [BinlogFilePath] = [buildInfo],
+            [PublishBinlogFilePath] = [publishInfo],
         };
 
         var (result, recorder) = await ExecuteWithMultipleBinlogsAsync(binlogs, assetsJson);
@@ -561,8 +567,8 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
 
         var binlogs = new Dictionary<string, IReadOnlyList<MSBuildProjectInfo>>
         {
-            [@"C:\test\build.binlog"] = [buildInfo],
-            [@"C:\test\publish.binlog"] = [publishInfo],
+            [BinlogFilePath] = [buildInfo],
+            [PublishBinlogFilePath] = [publishInfo],
         };
 
         var (result, recorder) = await ExecuteWithMultipleBinlogsAsync(binlogs, assetsJson);
@@ -590,8 +596,8 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
 
         var binlogs = new Dictionary<string, IReadOnlyList<MSBuildProjectInfo>>
         {
-            [@"C:\test\build.binlog"] = [buildInfo],
-            [@"C:\test\test.binlog"] = [testInfo],
+            [BinlogFilePath] = [buildInfo],
+            [TestBinlogFilePath] = [testInfo],
         };
 
         var (result, recorder) = await ExecuteWithMultipleBinlogsAsync(binlogs, assetsJson);
@@ -621,14 +627,14 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     // Helpers – project info construction
     // ================================================================
     private static MSBuildProjectInfo CreateProjectInfo(
-        string projectPath = ProjectPath,
-        string assetsFilePath = AssetsFilePath,
+        string? projectPath = null,
+        string? assetsFilePath = null,
         string? targetFramework = "net8.0")
     {
         return new MSBuildProjectInfo
         {
-            ProjectPath = projectPath,
-            ProjectAssetsFile = assetsFilePath,
+            ProjectPath = projectPath ?? ProjectPath,
+            ProjectAssetsFile = assetsFilePath ?? AssetsFilePath,
             TargetFramework = targetFramework,
         };
     }
@@ -660,9 +666,11 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     private static async Task<(IndividualDetectorScanResult Result, IComponentRecorder Recorder)> ExecuteWithBinlogAsync(
         IReadOnlyList<MSBuildProjectInfo> projectInfos,
         string assetsJson,
-        string binlogPath = BinlogFilePath,
-        string assetsLocation = AssetsFilePath)
+        string? binlogPath = null,
+        string? assetsLocation = null)
     {
+        binlogPath ??= BinlogFilePath;
+        assetsLocation ??= AssetsFilePath;
         var binLogProcessorMock = new Mock<IBinLogProcessor>();
         binLogProcessorMock
             .Setup(x => x.ExtractProjectInfo(binlogPath, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
@@ -732,8 +740,9 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     private static async Task<(IndividualDetectorScanResult Result, IComponentRecorder Recorder)> ExecuteWithMultipleBinlogsAsync(
         Dictionary<string, IReadOnlyList<MSBuildProjectInfo>> binlogProjectInfos,
         string assetsJson,
-        string assetsLocation = AssetsFilePath)
+        string? assetsLocation = null)
     {
+        assetsLocation ??= AssetsFilePath;
         var binLogProcessorMock = new Mock<IBinLogProcessor>();
         foreach (var (binlogPath, projectInfos) in binlogProjectInfos)
         {
@@ -822,6 +831,8 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
         return mock.Object;
     }
 
+    private static string JsonEscape(string path) => path.Replace(@"\", @"\\");
+
     /// <summary>
     /// Creates a minimal valid project.assets.json with a single package.
     /// </summary>
@@ -848,13 +859,13 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             "projectFileDependencyGroups": {
                 "net8.0": [ "{{packageName}} >= {{version}}" ]
             },
-            "packageFolders": { "C:\\Users\\test\\.nuget\\packages\\": {} },
+            "packageFolders": { "{{JsonEscape(PackagesFolder)}}": {} },
             "project": {
                 "version": "1.0.0",
                 "restore": {
                     "projectName": "TestProject",
-                    "projectPath": "C:\\test\\TestProject.csproj",
-                    "outputPath": "C:\\test\\obj"
+                    "projectPath": "{{JsonEscape(ProjectPath)}}",
+                    "outputPath": "{{JsonEscape(ProjectOutputPath)}}"
                 },
                 "frameworks": {
                     "net8.0": {
@@ -872,7 +883,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     /// Assets JSON with a top-level package that has a transitive dependency.
     /// Microsoft.Extensions.Logging → Microsoft.Extensions.Logging.Abstractions.
     /// </summary>
-    private static string TransitiveAssetsJson() => """
+    private static string TransitiveAssetsJson() => $$"""
         {
             "version": 3,
             "targets": {
@@ -905,13 +916,13 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             "projectFileDependencyGroups": {
                 "net8.0": [ "Microsoft.Extensions.Logging >= 8.0.0" ]
             },
-            "packageFolders": { "C:\\Users\\test\\.nuget\\packages\\": {} },
+            "packageFolders": { "{{JsonEscape(PackagesFolder)}}": {} },
             "project": {
                 "version": "1.0.0",
                 "restore": {
                     "projectName": "TestProject",
-                    "projectPath": "C:\\test\\TestProject.csproj",
-                    "outputPath": "C:\\test\\obj"
+                    "projectPath": "{{JsonEscape(ProjectPath)}}",
+                    "outputPath": "{{JsonEscape(ProjectOutputPath)}}"
                 },
                 "frameworks": {
                     "net8.0": {
@@ -928,7 +939,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     /// <summary>
     /// Assets JSON with a NuGet package and a project reference.
     /// </summary>
-    private static string ProjectReferenceAssetsJson() => """
+    private static string ProjectReferenceAssetsJson() => $$"""
         {
             "version": 3,
             "targets": {
@@ -956,13 +967,13 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
             "projectFileDependencyGroups": {
                 "net8.0": [ "Newtonsoft.Json >= 13.0.1" ]
             },
-            "packageFolders": { "C:\\Users\\test\\.nuget\\packages\\": {} },
+            "packageFolders": { "{{JsonEscape(PackagesFolder)}}": {} },
             "project": {
                 "version": "1.0.0",
                 "restore": {
                     "projectName": "TestProject",
-                    "projectPath": "C:\\test\\TestProject.csproj",
-                    "outputPath": "C:\\test\\obj"
+                    "projectPath": "{{JsonEscape(ProjectPath)}}",
+                    "outputPath": "{{JsonEscape(ProjectOutputPath)}}"
                 },
                 "frameworks": {
                     "net8.0": {
@@ -979,19 +990,19 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     /// <summary>
     /// Assets JSON with a PackageDownload dependency.
     /// </summary>
-    private static string PackageDownloadAssetsJson() => """
+    private static string PackageDownloadAssetsJson() => $$"""
         {
             "version": 3,
             "targets": { "net8.0": {} },
             "libraries": {},
             "projectFileDependencyGroups": { "net8.0": [] },
-            "packageFolders": { "C:\\Users\\test\\.nuget\\packages\\": {} },
+            "packageFolders": { "{{JsonEscape(PackagesFolder)}}": {} },
             "project": {
                 "version": "1.0.0",
                 "restore": {
                     "projectName": "TestProject",
-                    "projectPath": "C:\\test\\TestProject.csproj",
-                    "outputPath": "C:\\test\\obj"
+                    "projectPath": "{{JsonEscape(ProjectPath)}}",
+                    "outputPath": "{{JsonEscape(ProjectOutputPath)}}"
                 },
                 "frameworks": {
                     "net8.0": {
@@ -1009,7 +1020,7 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
     /// <summary>
     /// Assets JSON with two target frameworks (net8.0 and net6.0), each containing the same package.
     /// </summary>
-    private static string MultiTargetAssetsJson() => """
+    private static string MultiTargetAssetsJson() => $$"""
         {
             "version": 3,
             "targets": {
@@ -1039,13 +1050,13 @@ public class MSBuildBinaryLogComponentDetectorTests : BaseDetectorTest<MSBuildBi
                 "net8.0": [ "Newtonsoft.Json >= 13.0.1" ],
                 "net6.0": [ "Newtonsoft.Json >= 13.0.1" ]
             },
-            "packageFolders": { "C:\\Users\\test\\.nuget\\packages\\": {} },
+            "packageFolders": { "{{JsonEscape(PackagesFolder)}}": {} },
             "project": {
                 "version": "1.0.0",
                 "restore": {
                     "projectName": "TestProject",
-                    "projectPath": "C:\\test\\TestProject.csproj",
-                    "outputPath": "C:\\test\\obj"
+                    "projectPath": "{{JsonEscape(ProjectPath)}}",
+                    "outputPath": "{{JsonEscape(ProjectOutputPath)}}"
                 },
                 "frameworks": {
                     "net8.0": {

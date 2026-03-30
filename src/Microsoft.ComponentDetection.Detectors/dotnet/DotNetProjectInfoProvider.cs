@@ -53,9 +53,11 @@ internal class DotNetProjectInfoProvider
 
     /// <summary>
     /// Initializes source directory paths for path rebasing. Call once per scan.
+    /// Clears any cached state from a previous scan.
     /// </summary>
     public void Initialize(string? sourceDirectory, string? sourceFileRootDirectory)
     {
+        this.sdkVersionCache.Clear();
         this.sourceDirectory = this.NormalizeDirectory(sourceDirectory);
         this.sourceFileRootDirectory = this.NormalizeDirectory(sourceFileRootDirectory);
     }
