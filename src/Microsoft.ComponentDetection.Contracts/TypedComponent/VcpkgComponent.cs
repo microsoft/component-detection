@@ -1,6 +1,7 @@
 #nullable disable
 namespace Microsoft.ComponentDetection.Contracts.TypedComponent;
 
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using PackageUrl;
 
@@ -53,18 +54,11 @@ public class VcpkgComponent : TypedComponent
     {
         get
         {
-            if (this.PortVersion > 0)
-            {
-                return new PackageUrl($"pkg:vcpkg/{this.Name}@{this.Version}?port_version={this.PortVersion}");
-            }
-            else if (this.Version != null)
-            {
-                return new PackageUrl($"pkg:vcpkg/{this.Name}@{this.Version}");
-            }
-            else
-            {
-                return new PackageUrl($"pkg:vcpkg/{this.Name}");
-            }
+            var qualifiers = this.PortVersion > 0
+                ? new SortedDictionary<string, string> { { "port_version", this.PortVersion.ToString() } }
+                : null;
+
+            return new PackageUrl("vcpkg", null, this.Name, this.Version, qualifiers, null);
         }
     }
 
