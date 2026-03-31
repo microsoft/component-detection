@@ -162,12 +162,12 @@ public class TypedComponentSerializationTests
     [TestMethod]
     public void TypedComponent_Serialization_Go()
     {
-        TypedComponent tc = new GoComponent("github.com/example/SomeGoPackage", "1.2.3", "SomeHash");
+        TypedComponent tc = new GoComponent("SomeGoPackage", "1.2.3", "SomeHash");
         var result = JsonSerializer.Serialize(tc);
         var deserializedTC = JsonSerializer.Deserialize<TypedComponent>(result);
         deserializedTC.Should().BeOfType(typeof(GoComponent));
         var goComponent = (GoComponent)deserializedTC;
-        goComponent.Name.Should().Be("github.com/example/SomeGoPackage");
+        goComponent.Name.Should().Be("SomeGoPackage");
         goComponent.Version.Should().Be("1.2.3");
         goComponent.Hash.Should().Be("SomeHash");
     }
@@ -305,7 +305,7 @@ public class TypedComponentSerializationTests
             new NuGetComponent("test", "1.0.0"),
             new MavenComponent("group", "artifact", "1.0.0"),
             new PipComponent("test", "1.0.0"),
-            new GoComponent("github.com/example/test", "1.0.0"),
+            new GoComponent("test", "1.0.0"),
             new CargoComponent("test", "1.0.0"),
             new RubyGemsComponent("test", "1.0.0"),
             new GitComponent(new Uri("https://github.com/test/test"), "abc123"),
