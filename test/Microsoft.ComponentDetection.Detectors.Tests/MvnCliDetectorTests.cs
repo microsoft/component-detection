@@ -1056,7 +1056,8 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         // Credentials (userinfo), path, and query string must NOT appear in telemetry.
         detectorResult.AdditionalTelemetryDetails.Should().ContainKey("FailedEndpoints");
         var failedEndpoints = detectorResult.AdditionalTelemetryDetails["FailedEndpoints"];
-        failedEndpoints.Should().Be("https://private-maven-repo.example.com",
+        failedEndpoints.Should().Be(
+            "https://private-maven-repo.example.com",
             "credentials, path, and query string must be stripped before reaching telemetry");
         failedEndpoints.Should().NotContain("user", "userinfo must be stripped");
         failedEndpoints.Should().NotContain("s3cr3t", "credentials must be stripped");
