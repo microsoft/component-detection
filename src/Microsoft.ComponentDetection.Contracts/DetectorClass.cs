@@ -45,6 +45,15 @@ public enum DetectorClass
     /// <summary>Indicates a detector applies to Docker references.</summary>
     DockerReference,
 
+    /// <summary>Indicates a detector applies to Docker Compose image references.</summary>
+    DockerCompose,
+
     /// <summary> Indicates a detector applies to Swift packages.</summary>
     Swift,
+
+    /// <summary>Indicates a detector applies to Helm chart image references.</summary>
+    Helm,
+
+    /// <summary>Indicates a detector applies to Kubernetes manifest image references.</summary>
+    Kubernetes,
 }
