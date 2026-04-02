@@ -94,7 +94,9 @@ public class MvnCliComponentDetector : FileComponentDetector
         "Access denied",
     ];
 
-    // Pattern to extract failed endpoint URL from Maven error messages
+    // Pattern to initially extract URLs from Maven error messages.
+    // Matched values are subsequently normalized (scheme+host+port only) before
+    // being stored in logs or telemetry to avoid leaking credentials or tokens.
     private static readonly Regex EndpointRegex = new(
         @"https?://[^\s\]\)>]+",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -204,6 +206,33 @@ public class MvnCliComponentDetector : FileComponentDetector
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Normalizes a raw URL string to scheme+host+port only, stripping any
+    /// userinfo (credentials), path, query string, and fragment that may
+    /// appear in Maven error messages and could contain sensitive tokens.
+    /// Returns <see langword="null"/> when the input is not a well-formed
+    /// absolute URI with an http/https scheme.
+    /// </summary>
+    private static string NormalizeEndpointUrl(string rawUrl)
+    {
+        if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        // Only accept http/https — the regex already enforces this but be explicit.
+        if (uri.Scheme is not "http" and not "https")
+        {
+            return null;
+        }
+
+        // Reconstruct scheme://host[:port] explicitly, omitting UserInfo (credentials),
+        // path, query, and fragment. Uri.GetLeftPart(UriPartial.Authority) preserves
+        // UserInfo, so we cannot use it here.
+        var port = uri.IsDefaultPort ? string.Empty : $":{uri.Port}";
+        return $"{uri.Scheme}://{uri.Host}{port}";
     }
 
     private void LogDebugWithId(string message) =>
@@ -1016,7 +1045,8 @@ public class MvnCliComponentDetector : FileComponentDetector
         }
 
         return EndpointRegex.Matches(errorMessage)
-            .Select(m => m.Value)
+            .Select(m => NormalizeEndpointUrl(m.Value))
+            .Where(u => u is not null)
             .Distinct();
     }
 
