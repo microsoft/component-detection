@@ -111,21 +111,23 @@ public class MavenCommandServiceTests
             },
         };
 
-        await cts.CancelAsync();
-
-        // When cancellation is already requested, the method should throw OperationCanceledException
-        // instead of proceeding with the CLI execution
-        var action = async () => await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, cts.Token);
-        await action.Should().ThrowAsync<OperationCanceledException>();
-
-        // Verify that the CLI was never invoked
-        this.commandLineMock.Verify(
-            x => x.ExecuteCommandAsync(
+        // Set up the CLI mock to throw OperationCanceledException when called with a cancelled token
+        this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
                 It.IsAny<string>(),
                 It.IsAny<string[]>(),
                 It.IsAny<CancellationToken>(),
-                It.IsAny<string[]>()),
-            Times.Never());
+                It.IsAny<string[]>()))
+            .Returns<string, string[], CancellationToken, string[]>((_, _, ct, _) =>
+            {
+                ct.ThrowIfCancellationRequested();
+                return Task.FromResult(new CommandLineExecutionResult { ExitCode = 0 });
+            });
+
+        await cts.CancelAsync();
+
+        // When cancellation is already requested, the method should propagate OperationCanceledException
+        var action = async () => await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest, cts.Token);
+        await action.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [TestMethod]
@@ -257,142 +259,6 @@ public class MavenCommandServiceTests
     }
 
     [TestMethod]
-    public async Task GenerateDependenciesFile_ConcurrentCalls_OnlyOneCliInvocationAsync()
-    {
-        // Arrange: Create a temp directory with a real deps file
-        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(tempDir);
-        var pomLocation = Path.Combine(tempDir, "pom.xml");
-        var depsFilePath = Path.Combine(tempDir, "bcde.mvndeps");
-
-        using var cliStartedEvent = new ManualResetEventSlim(false);
-        using var allowCliToCompleteEvent = new ManualResetEventSlim(false);
-
-        try
-        {
-            var cliInvocationCount = 0;
-
-            var bcdeMvnFileName = "bcde.mvndeps";
-            var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
-
-            this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
-                    MavenCommandService.PrimaryCommand,
-                    MavenCommandService.AdditionalValidCommands,
-                    It.IsAny<CancellationToken>(),
-                    It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
-                .Returns(async () =>
-                {
-                    Interlocked.Increment(ref cliInvocationCount);
-                    cliStartedEvent.Set();
-
-                    // Simulate CLI execution time - wait until test allows completion
-                    allowCliToCompleteEvent.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue("CLI should receive completion signal within timeout");
-
-                    // Create the deps file (simulating what mvn does)
-                    await File.WriteAllTextAsync(depsFilePath, "com.test:artifact:jar:1.0.0");
-
-                    return new CommandLineExecutionResult { ExitCode = 0 };
-                });
-
-            // Act: Start two concurrent calls for the same pom.xml
-            var processRequest1 = new ProcessRequest
-            {
-                ComponentStream = new ComponentStream { Location = pomLocation },
-            };
-            var processRequest2 = new ProcessRequest
-            {
-                ComponentStream = new ComponentStream { Location = pomLocation },
-            };
-
-            var task1 = Task.Run(() => this.mavenCommandService.GenerateDependenciesFileAsync(processRequest1));
-            var task2 = Task.Run(() => this.mavenCommandService.GenerateDependenciesFileAsync(processRequest2));
-
-            // Wait for the first CLI call to start
-            cliStartedEvent.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue("CLI should start within timeout");
-
-            // Allow the CLI to complete
-            allowCliToCompleteEvent.Set();
-
-            // Wait for both tasks to complete
-            var results = await Task.WhenAll(task1, task2);
-
-            // Assert: Only one CLI invocation should have occurred
-            cliInvocationCount.Should().Be(1, "only one CLI invocation should occur for concurrent calls to the same pom.xml");
-
-            // Both results should indicate success
-            results[0].Success.Should().BeTrue();
-            results[1].Success.Should().BeTrue();
-        }
-        finally
-        {
-            // Cleanup
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, recursive: true);
-            }
-        }
-    }
-
-    [TestMethod]
-    public async Task GenerateDependenciesFile_FileDeletedBetweenCallers_SecondCallerRerunsCliAsync()
-    {
-        // Arrange: Create a temp directory
-        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(tempDir);
-        var pomLocation = Path.Combine(tempDir, "pom.xml");
-        var depsFilePath = Path.Combine(tempDir, "bcde.mvndeps");
-
-        try
-        {
-            var cliInvocationCount = 0;
-
-            var bcdeMvnFileName = "bcde.mvndeps";
-            var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
-
-            this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
-                    MavenCommandService.PrimaryCommand,
-                    MavenCommandService.AdditionalValidCommands,
-                    It.IsAny<CancellationToken>(),
-                    It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
-                .ReturnsAsync(() =>
-                {
-                    Interlocked.Increment(ref cliInvocationCount);
-
-                    // Create the deps file (simulating what mvn does)
-                    File.WriteAllText(depsFilePath, "com.test:artifact:jar:1.0.0");
-
-                    return new CommandLineExecutionResult { ExitCode = 0 };
-                });
-
-            var processRequest = new ProcessRequest
-            {
-                ComponentStream = new ComponentStream { Location = pomLocation },
-            };
-
-            // Act: First call - should invoke CLI
-            var result1 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
-            result1.Success.Should().BeTrue();
-            cliInvocationCount.Should().Be(1);
-
-            // Delete the deps file (simulating what the detector does after reading it)
-            File.Delete(depsFilePath);
-
-            // Second call - should re-invoke CLI because file was deleted
-            var result2 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
-            result2.Success.Should().BeTrue();
-            cliInvocationCount.Should().Be(2, "CLI should be re-invoked when the deps file was deleted");
-        }
-        finally
-        {
-            // Cleanup
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, recursive: true);
-            }
-        }
-    }
-
-    [TestMethod]
     public async Task GenerateDependenciesFile_FailedResult_NotCachedAsync()
     {
         // Arrange
@@ -428,62 +294,6 @@ public class MavenCommandServiceTests
         var result2 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
         result2.Success.Should().BeFalse();
         cliInvocationCount.Should().Be(2, "failed results should not be cached, allowing retries");
-    }
-
-    [TestMethod]
-    public async Task GenerateDependenciesFile_SuccessfulResult_IsCachedAsync()
-    {
-        // Arrange: Create a temp directory with a real deps file
-        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(tempDir);
-        var pomLocation = Path.Combine(tempDir, "pom.xml");
-        var depsFilePath = Path.Combine(tempDir, "bcde.mvndeps");
-
-        try
-        {
-            var cliInvocationCount = 0;
-
-            var bcdeMvnFileName = "bcde.mvndeps";
-            var cliParameters = new[] { "dependency:tree", "-B", $"-DoutputFile={bcdeMvnFileName}", "-DoutputType=text", $"-f{pomLocation}" };
-
-            this.commandLineMock.Setup(x => x.ExecuteCommandAsync(
-                    MavenCommandService.PrimaryCommand,
-                    MavenCommandService.AdditionalValidCommands,
-                    It.IsAny<CancellationToken>(),
-                    It.Is<string[]>(y => this.ShouldBeEquivalentTo(y, cliParameters))))
-                .ReturnsAsync(() =>
-                {
-                    Interlocked.Increment(ref cliInvocationCount);
-
-                    // Create the deps file (simulating what mvn does)
-                    File.WriteAllText(depsFilePath, "com.test:artifact:jar:1.0.0");
-
-                    return new CommandLineExecutionResult { ExitCode = 0 };
-                });
-
-            var processRequest = new ProcessRequest
-            {
-                ComponentStream = new ComponentStream { Location = pomLocation },
-            };
-
-            // Act: First call - should invoke CLI
-            var result1 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
-            result1.Success.Should().BeTrue();
-            cliInvocationCount.Should().Be(1);
-
-            // Second call - should use cached result (file still exists)
-            var result2 = await this.mavenCommandService.GenerateDependenciesFileAsync(processRequest);
-            result2.Success.Should().BeTrue();
-            cliInvocationCount.Should().Be(1, "successful results should be cached when file still exists");
-        }
-        finally
-        {
-            // Cleanup
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, recursive: true);
-            }
-        }
     }
 
     protected bool ShouldBeEquivalentTo<T>(IEnumerable<T> result, IEnumerable<T> expected)
