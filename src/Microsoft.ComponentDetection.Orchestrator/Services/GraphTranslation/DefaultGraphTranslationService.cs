@@ -71,6 +71,16 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         return left;
     }
 
+    /// <summary>
+    /// Checks whether the graph contains the component by its full Id, or by its BaseId
+    /// when the component is a rich entry (Id != BaseId) whose bare counterpart was registered in the graph.
+    /// </summary>
+    private static bool GraphContainsComponent(IDependencyGraph graph, TypedComponent component)
+    {
+        return graph.Contains(component.Id) ||
+               (component.Id != component.BaseId && graph.Contains(component.BaseId));
+    }
+
     private void LogComponentScopeTelemetry(List<DetectedComponent> components)
     {
         using var record = new DetectedComponentScopeRecord();
@@ -126,25 +136,30 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
                     }
 
                     // Information about each component is relative to all of the graphs it is present in, so we take all graphs containing a given component and apply the graph data.
-                    foreach (var graphKvp in dependencyGraphsByLocation.Where(x => x.Value.Contains(component.Component.Id)))
+                    foreach (var graphKvp in dependencyGraphsByLocation.Where(x => GraphContainsComponent(x.Value, component.Component)))
                     {
                         var location = graphKvp.Key;
                         var dependencyGraph = graphKvp.Value;
 
+                        // Determine the Id stored in this graph — may be the rich Id or the bare BaseId.
+                        var graphComponentId = dependencyGraph.Contains(component.Component.Id)
+                            ? component.Component.Id
+                            : component.Component.BaseId;
+
                         // Calculate roots of the component
                         var rootStartTime = DateTime.UtcNow;
-                        this.AddRootsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        this.AddRootsToDetectedComponent(component, graphComponentId, dependencyGraph, componentRecorder);
                         var rootEndTime = DateTime.UtcNow;
                         totalTimeToAddRoots += rootEndTime - rootStartTime;
 
                         // Calculate Ancestors of the component
                         var ancestorStartTime = DateTime.UtcNow;
-                        this.AddAncestorsToDetectedComponent(component, dependencyGraph, componentRecorder);
+                        this.AddAncestorsToDetectedComponent(component, graphComponentId, dependencyGraph, componentRecorder);
                         var ancestorEndTime = DateTime.UtcNow;
                         totalTimeToAddAncestors += ancestorEndTime - ancestorStartTime;
 
-                        component.DevelopmentDependency = this.MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(component.Component.Id));
-                        component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(component.Component.Id));
+                        component.DevelopmentDependency = this.MergeDevDependency(component.DevelopmentDependency, dependencyGraph.IsDevelopmentDependency(graphComponentId));
+                        component.DependencyScope = DependencyScopeComparer.GetMergedDependencyScope(component.DependencyScope, dependencyGraph.GetDependencyScope(graphComponentId));
                         component.DetectedBy = detector;
 
                         // Experiments uses this service to build the dependency graph for analysis. In this case, we do not want to update the locations of the component.
@@ -269,7 +284,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
         return firstComponent;
     }
 
-    private void AddRootsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
+    private void AddRootsToDetectedComponent(DetectedComponent detectedComponent, string graphComponentId, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
     {
         detectedComponent.DependencyRoots ??= new HashSet<TypedComponent>(new ComponentComparer());
         if (dependencyGraph == null)
@@ -277,10 +292,10 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
             return;
         }
 
-        detectedComponent.DependencyRoots.UnionWith(dependencyGraph.GetRootsAsTypedComponents(detectedComponent.Component.Id, componentRecorder.GetComponent));
+        detectedComponent.DependencyRoots.UnionWith(dependencyGraph.GetRootsAsTypedComponents(graphComponentId, componentRecorder.GetComponent));
     }
 
-    private void AddAncestorsToDetectedComponent(DetectedComponent detectedComponent, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
+    private void AddAncestorsToDetectedComponent(DetectedComponent detectedComponent, string graphComponentId, IDependencyGraph dependencyGraph, IComponentRecorder componentRecorder)
     {
         detectedComponent.AncestralDependencyRoots ??= new HashSet<TypedComponent>(new ComponentComparer());
         if (dependencyGraph == null)
@@ -288,7 +303,7 @@ internal class DefaultGraphTranslationService : IGraphTranslationService
             return;
         }
 
-        detectedComponent.AncestralDependencyRoots.UnionWith(dependencyGraph.GetAncestorsAsTypedComponents(detectedComponent.Component.Id, componentRecorder.GetComponent));
+        detectedComponent.AncestralDependencyRoots.UnionWith(dependencyGraph.GetAncestorsAsTypedComponents(graphComponentId, componentRecorder.GetComponent));
     }
 
     private HashSet<string> MakeFilePathsRelative(ILogger logger, DirectoryInfo rootDirectory, HashSet<string> filePaths)
