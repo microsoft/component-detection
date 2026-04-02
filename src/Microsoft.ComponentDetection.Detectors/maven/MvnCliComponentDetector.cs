@@ -228,9 +228,11 @@ public class MvnCliComponentDetector : FileComponentDetector
             return null;
         }
 
-        // GetLeftPart(UriPartial.Authority) returns "scheme://host" or
-        // "scheme://host:port", with no userinfo, path, query, or fragment.
-        return uri.GetLeftPart(UriPartial.Authority);
+        // Reconstruct scheme://host[:port] explicitly, omitting UserInfo (credentials),
+        // path, query, and fragment. Uri.GetLeftPart(UriPartial.Authority) preserves
+        // UserInfo, so we cannot use it here.
+        var port = uri.IsDefaultPort ? string.Empty : $":{uri.Port}";
+        return $"{uri.Scheme}://{uri.Host}{port}";
     }
 
     private void LogDebugWithId(string message) =>
