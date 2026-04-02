@@ -1244,4 +1244,50 @@ public class LinuxContainerDetectorTests
             System.IO.File.Delete(dockerArchive);
         }
     }
+
+    [TestMethod]
+    public async Task TestLinuxContainerDetector_ImageParseFailure_ContinuesScanningOtherImagesAsync()
+    {
+        var componentRecorder = new ComponentRecorder();
+
+        // "oci-dir:" with no path will cause ImageReference.Parse to throw
+        var scanRequest = new ScanRequest(
+            new DirectoryInfo(Path.GetTempPath()),
+            (_, __) => false,
+            this.mockLogger.Object,
+            null,
+            ["oci-dir:", NodeLatestImage],
+            componentRecorder
+        );
+
+        var linuxContainerDetector = new LinuxContainerDetector(
+            this.mockSyftLinuxScanner.Object,
+            this.mockDockerService.Object,
+            this.mockLinuxContainerDetectorLogger.Object
+        );
+
+        var scanResult = await linuxContainerDetector.ExecuteDetectorAsync(scanRequest);
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        scanResult.ContainerDetails.Should().ContainSingle();
+
+        var detectedComponents = componentRecorder.GetDetectedComponents().ToList();
+        detectedComponents.Should().ContainSingle();
+        detectedComponents.First().Component.Id.Should().Be(BashPackageId);
+
+        // Verify the warning was logged for the failed parse with the correct message
+        this.mockLinuxContainerDetectorLogger.Verify(
+            logger =>
+                logger.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>(
+                        (v, t) => v.ToString()!.Contains("Failed to parse image reference 'oci-dir:'")
+                    ),
+                    It.IsAny<Exception>(),
+                    (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()
+                ),
+            Times.Once
+        );
+    }
 }

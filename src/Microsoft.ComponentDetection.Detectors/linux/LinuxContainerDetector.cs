@@ -72,12 +72,23 @@ public class LinuxContainerDetector(
         CancellationToken cancellationToken = default
     )
     {
-        var allImages = request
-            .ImagesToScan?.Where(image => !string.IsNullOrWhiteSpace(image))
-            .Select(ImageReference.Parse)
+        var imagesToParse = (request.ImagesToScan ?? []).Where(image => !string.IsNullOrWhiteSpace(image))
             .ToList();
 
-        if (allImages == null || allImages.Count == 0)
+        var allImages = new List<ImageReference>();
+        foreach (var image in imagesToParse)
+        {
+            try
+            {
+                allImages.Add(ImageReference.Parse(image));
+            }
+            catch (Exception e)
+            {
+                this.logger.LogWarning(e, "Failed to parse image reference '{Image}', skipping", image);
+            }
+        }
+
+        if (allImages.Count == 0)
         {
             this.logger.LogInformation("No instructions received to scan container images.");
             return EmptySuccessfulScan();
