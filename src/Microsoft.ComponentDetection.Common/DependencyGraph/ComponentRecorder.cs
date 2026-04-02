@@ -34,56 +34,142 @@ public class ComponentRecorder : IComponentRecorder
 
     public IEnumerable<DetectedComponent> GetDetectedComponents()
     {
-        IEnumerable<DetectedComponent> detectedComponents;
         if (this.singleFileRecorders == null)
         {
             return [];
         }
 
-        detectedComponents = this.singleFileRecorders.Values
-            .SelectMany(singleFileRecorder => singleFileRecorder.GetDetectedComponents().Values)
-            .GroupBy(x => x.Component.Id)
-            .Select(grouping =>
+        var allComponents = this.singleFileRecorders.Values
+            .SelectMany(singleFileRecorder => singleFileRecorder.GetDetectedComponents().Values);
+
+        // When both rich and bare entries exist for the same BaseId, rich entries are used as merge targets for bare entries.
+        var reconciledComponents = new List<DetectedComponent>();
+
+        foreach (var baseIdGroup in allComponents.GroupBy(x => x.Component.BaseId))
+        {
+            var richEntries = new List<DetectedComponent>();
+            var bareEntries = new List<DetectedComponent>();
+
+            // Sub-group by full Id first: merge duplicates of the same Id (existing behavior).
+            foreach (var idGroup in baseIdGroup.GroupBy(x => x.Component.Id))
             {
-                // We pick a winner here -- any stateful props could get lost at this point.
-                var winningDetectedComponent = grouping.First();
+                var merged = MergeDetectedComponentGroup(idGroup);
 
-                HashSet<string> mergedLicenses = null;
-                HashSet<ActorInfo> mergedSuppliers = null;
-
-                foreach (var component in grouping.Skip(1))
+                if (merged.Component.Id == merged.Component.BaseId)
                 {
-                    winningDetectedComponent.ContainerDetailIds.UnionWith(component.ContainerDetailIds);
+                    bareEntries.Add(merged);
+                }
+                else
+                {
+                    richEntries.Add(merged);
+                }
+            }
 
-                    // Defensive: merge in case different file recorders set different values for the same component.
-                    if (component.LicensesConcluded != null)
+            if (richEntries.Count > 0 && bareEntries.Count > 0)
+            {
+                // Merge each bare entry's metadata into every rich entry, then drop the bare.
+                foreach (var bare in bareEntries)
+                {
+                    foreach (var rich in richEntries)
                     {
-                        mergedLicenses ??= new HashSet<string>(winningDetectedComponent.LicensesConcluded ?? [], StringComparer.OrdinalIgnoreCase);
-                        mergedLicenses.UnionWith(component.LicensesConcluded);
-                    }
-
-                    if (component.Suppliers != null)
-                    {
-                        mergedSuppliers ??= new HashSet<ActorInfo>(winningDetectedComponent.Suppliers ?? []);
-                        mergedSuppliers.UnionWith(component.Suppliers);
+                        MergeComponentMetadata(source: bare, target: rich);
                     }
                 }
 
-                if (mergedLicenses != null)
-                {
-                    winningDetectedComponent.LicensesConcluded = mergedLicenses.Where(x => x != null).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
-                }
+                reconciledComponents.AddRange(richEntries);
+            }
+            else
+            {
+                // No conflict: either all rich (different Ids kept separate) or all bare.
+                reconciledComponents.AddRange(richEntries);
+                reconciledComponents.AddRange(bareEntries);
+            }
+        }
 
-                if (mergedSuppliers != null)
-                {
-                    winningDetectedComponent.Suppliers = mergedSuppliers.Where(s => s != null).OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
-                }
+        return reconciledComponents.ToArray();
+    }
 
-                return winningDetectedComponent;
-            })
-            .ToArray();
+    /// <summary>
+    /// Merges component-level metadata from <paramref name="source"/> into <paramref name="target"/>.
+    /// </summary>
+    private static void MergeComponentMetadata(DetectedComponent source, DetectedComponent target)
+    {
+        target.ContainerDetailIds.UnionWith(source.ContainerDetailIds);
 
-        return detectedComponents;
+        foreach (var kvp in source.ContainerLayerIds)
+        {
+            if (target.ContainerLayerIds.TryGetValue(kvp.Key, out var existingLayers))
+            {
+                target.ContainerLayerIds[kvp.Key] = existingLayers.Union(kvp.Value).Distinct().ToList();
+            }
+            else
+            {
+                target.ContainerLayerIds[kvp.Key] = kvp.Value.ToList();
+            }
+        }
+
+        target.LicensesConcluded = MergeAndNormalizeLicenses(target.LicensesConcluded, source.LicensesConcluded);
+        target.Suppliers = MergeAndNormalizeSuppliers(target.Suppliers, source.Suppliers);
+    }
+
+    private static IList<string> MergeAndNormalizeLicenses(IList<string> target, IList<string> source)
+    {
+        if (target == null && source == null)
+        {
+            return null;
+        }
+
+        var merged = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (target != null)
+        {
+            merged.UnionWith(target.Where(x => x != null));
+        }
+
+        if (source != null)
+        {
+            merged.UnionWith(source.Where(x => x != null));
+        }
+
+        return merged.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static IList<ActorInfo> MergeAndNormalizeSuppliers(IList<ActorInfo> target, IList<ActorInfo> source)
+    {
+        if (target == null && source == null)
+        {
+            return null;
+        }
+
+        var merged = new HashSet<ActorInfo>();
+
+        if (target != null)
+        {
+            merged.UnionWith(target.Where(s => s != null));
+        }
+
+        if (source != null)
+        {
+            merged.UnionWith(source.Where(s => s != null));
+        }
+
+        return merged.OrderBy(s => s.Name).ThenBy(s => s.Type).ToList();
+    }
+
+    /// <summary>
+    /// Merges a group of <see cref="DetectedComponent"/>s that share the same <see cref="TypedComponent.Id"/>
+    /// into a single entry.
+    /// </summary>
+    private static DetectedComponent MergeDetectedComponentGroup(IEnumerable<DetectedComponent> grouping)
+    {
+        var winner = grouping.First();
+
+        foreach (var component in grouping.Skip(1))
+        {
+            MergeComponentMetadata(source: component, target: winner);
+        }
+
+        return winner;
     }
 
     public IEnumerable<string> GetSkippedComponents()
