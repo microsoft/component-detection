@@ -59,11 +59,11 @@ internal enum MavenFallbackReason
 }
 
 /// <summary>
-/// Experimental Maven detector that combines MvnCli detection with static pom.xml parsing fallback.
-/// Runs MvnCli detection first (like standard MvnCliComponentDetector), then checks if detection
-/// produced any results. If MvnCli fails for any pom.xml, falls back to static parsing for failed files.
+/// Maven detector that combines MvnCli detection with static pom.xml parsing fallback.
+/// Runs MvnCli detection first, then checks if detection produced any results.
+/// If MvnCli fails for any pom.xml, falls back to static parsing for failed files.
 /// </summary>
-public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDetector
+public class MvnCliComponentDetector : FileComponentDetector
 {
     /// <summary>
     /// Environment variable to disable MvnCli and use only static pom.xml parsing.
@@ -94,14 +94,16 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         "Access denied",
     ];
 
-    // Pattern to extract failed endpoint URL from Maven error messages
+    // Pattern to initially extract URLs from Maven error messages.
+    // Matched values are subsequently normalized (scheme+host+port only) before
+    // being stored in logs or telemetry to avoid leaking credentials or tokens.
     private static readonly Regex EndpointRegex = new(
         @"https?://[^\s\]\)>]+",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     /// <summary>
     /// Maximum time allowed for the OnPrepareDetectionAsync phase.
-    /// This is a safety guardrail to prevent hangs in the experimental detector.
+    /// This is a safety guardrail to prevent hangs.
     /// Most repos should complete the full Maven CLI scan within this window.
     /// </summary>
     private static readonly TimeSpan PrepareDetectionTimeout = TimeSpan.FromMinutes(5);
@@ -145,13 +147,13 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
     private int pendingComponentCountBeforeResolution;
     private bool mavenCliAvailable;
 
-    public MavenWithFallbackDetector(
+    public MvnCliComponentDetector(
         IComponentStreamEnumerableFactory componentStreamEnumerableFactory,
         IObservableDirectoryWalkerFactory walkerFactory,
         IMavenCommandService mavenCommandService,
         IEnvironmentVariableService envVarService,
         IFileUtilityService fileUtilityService,
-        ILogger<MavenWithFallbackDetector> logger)
+        ILogger<MvnCliComponentDetector> logger)
     {
         this.ComponentStreamEnumerableFactory = componentStreamEnumerableFactory;
         this.Scanner = walkerFactory;
@@ -161,13 +163,13 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         this.Logger = logger;
     }
 
-    public override string Id => MavenConstants.MavenWithFallbackDetectorId;
+    public override string Id => MavenConstants.MvnCliDetectorId;
 
     public override IList<string> SearchPatterns => [MavenManifest];
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.Maven];
 
-    public override int Version => 2;
+    public override int Version => 5;
 
     public override IEnumerable<string> Categories => [Enum.GetName(typeof(DetectorClass), DetectorClass.Maven)];
 
@@ -204,6 +206,33 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Normalizes a raw URL string to scheme+host+port only, stripping any
+    /// userinfo (credentials), path, query string, and fragment that may
+    /// appear in Maven error messages and could contain sensitive tokens.
+    /// Returns <see langword="null"/> when the input is not a well-formed
+    /// absolute URI with an http/https scheme.
+    /// </summary>
+    private static string NormalizeEndpointUrl(string rawUrl)
+    {
+        if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        // Only accept http/https — the regex already enforces this but be explicit.
+        if (uri.Scheme is not "http" and not "https")
+        {
+            return null;
+        }
+
+        // Reconstruct scheme://host[:port] explicitly, omitting UserInfo (credentials),
+        // path, query, and fragment. Uri.GetLeftPart(UriPartial.Authority) preserves
+        // UserInfo, so we cannot use it here.
+        var port = uri.IsDefaultPort ? string.Empty : $":{uri.Port}";
+        return $"{uri.Scheme}://{uri.Host}{port}";
     }
 
     private void LogDebugWithId(string message) =>
@@ -271,7 +300,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
 
         // Wrap the entire method in a try-catch with timeout to protect against hangs.
         // OnPrepareDetectionAsync doesn't have the same guardrails as OnFileFoundAsync,
-        // so we need to be extra careful in this experimental detector.
+        // so we need to be extra careful here.
         try
         {
             using var timeoutCts = new CancellationTokenSource(PrepareDetectionTimeout);
@@ -384,8 +413,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         var cliSuccessCount = 0;
         var cliFailureCount = 0;
 
-        // Process pom.xml files sequentially to match MvnCliComponentDetector behavior.
-        // Sequential execution avoids Maven local repository lock contention and
+        // Process pom.xml files sequentially to avoid Maven local repository lock contention and
         // reduces memory pressure from concurrent Maven JVM processes.
         var processPomFile = new ActionBlock<ProcessRequest>(
             async processRequest =>
@@ -402,8 +430,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             var depsFilePath = Path.Combine(pomDir, depsFileName);
 
             // Generate dependency file using Maven CLI.
-            // Note: If both MvnCliComponentDetector and this detector are enabled,
-            // they may run Maven CLI on the same pom.xml independently.
             var result = await this.mavenCommandService.GenerateDependenciesFileAsync(
                 processRequest,
                 cancellationToken);
@@ -414,7 +440,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 // Use existence check to avoid redundant I/O (file will be read during directory scan)
                 if (this.fileUtilityService.Exists(depsFilePath))
                 {
-                    // File reader registration is now handled in GenerateDependenciesFileAsync
                     Interlocked.Increment(ref cliSuccessCount);
                 }
                 else
@@ -488,7 +513,6 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             .Select(componentStream =>
             {
                 // Read and store content to avoid stream disposal issues
-                // Note: Cleanup coordination is handled in OnFileFoundAsync to avoid duplicate work
                 using var reader = new StreamReader(componentStream.Stream);
                 var content = reader.ReadToEnd();
                 return new ProcessRequest
@@ -539,6 +563,21 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         {
             // Process MvnCli result
             this.ProcessMvnCliResult(processRequest);
+
+            // Delete the deps file now that its content has been consumed (was read into MemoryStream during prepare phase)
+            if (this.CurrentScanRequest?.CleanupCreatedFiles == true)
+            {
+                var filePath = processRequest.ComponentStream.Location;
+                try
+                {
+                    this.fileUtilityService.Delete(filePath);
+                    this.Logger.LogDebug("Cleaned up Maven deps file {File}", filePath);
+                }
+                catch (Exception e)
+                {
+                    this.Logger.LogDebug(e, "Failed to delete Maven deps file {File}", filePath);
+                }
+            }
         }
         else
         {
@@ -660,7 +699,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     this.collectedVariables.AddOrUpdate(key, variableValue, (_, _) => variableValue);
                 }
 
-                this.Logger.LogDebug("MavenWithFallback: Collected {Count} variables from {File}", localVariables.Count, Path.GetFileName(filePath));
+                this.Logger.LogDebug("{DetectorId}: Collected {Count} variables from {File}", this.Id, localVariables.Count, Path.GetFileName(filePath));
             }
 
             // First pass: collect dependencies (may have unresolved variables)
@@ -759,7 +798,7 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             {
                 if (propertiesNodes.Count > 1)
                 {
-                    this.Logger.LogDebug("MavenWithFallback: Found {Count} properties sections in {File}", propertiesNodes.Count, Path.GetFileName(filePath));
+                    this.Logger.LogDebug("{DetectorId}: Found {Count} properties sections in {File}", this.Id, propertiesNodes.Count, Path.GetFileName(filePath));
                 }
 
                 foreach (XmlNode propertiesNode in propertiesNodes)
@@ -828,7 +867,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     {
                         this.mavenParentChildRelationships[currentFilePath] = parentPath;
                         this.Logger.LogDebug(
-                            "MavenWithFallback: Parsed parent relationship: {Child} → {Parent}",
+                            "{DetectorId}: Parsed parent relationship: {Child} → {Parent}",
+                            this.Id,
                             Path.GetFileName(currentFilePath),
                             Path.GetFileName(parentPath));
                     }
@@ -837,7 +877,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                         // Parent not found yet - queue for second pass resolution after all files are processed
                         this.unresolvedParentRelationships.Enqueue((currentFilePath, parentGroupId, parentArtifactId));
                         this.Logger.LogDebug(
-                            "MavenWithFallback: Queued unresolved parent relationship for {Child} → {ParentArtifactId}",
+                            "{DetectorId}: Queued unresolved parent relationship for {Child} → {ParentArtifactId}",
+                            this.Id,
                             Path.GetFileName(currentFilePath),
                             parentArtifactId);
                     }
@@ -875,7 +916,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     if (this.processedMavenProjects.TryGetValue(coordinateKey, out var coordinateBasedPath))
                     {
                         this.Logger.LogDebug(
-                            "MavenWithFallback: Found parent {ParentCoordinate} at {Path} for {Child}",
+                            "{DetectorId}: Found parent {ParentCoordinate} at {Path} for {Child}",
+                            this.Id,
                             coordinateKey,
                             Path.GetFileName(coordinateBasedPath),
                             Path.GetFileName(filePath));
@@ -896,7 +938,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                     if (!visitedDirectories.Add(parentDir))
                     {
                         this.Logger.LogDebug(
-                            "MavenWithFallback: Circular directory reference detected while searching for parent POM, breaking at {Directory}",
+                            "{DetectorId}: Circular directory reference detected while searching for parent POM, breaking at {Directory}",
+                            this.Id,
                             parentDir);
                         break;
                     }
@@ -955,7 +998,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 }
 
                 this.Logger.LogDebug(
-                    "MavenWithFallback: Tracked project {GroupId}:{ArtifactId} at {Path}",
+                    "{DetectorId}: Tracked project {GroupId}:{ArtifactId} at {Path}",
+                    this.Id,
                     groupId ?? "(inherited)",
                     artifactId,
                     Path.GetFileName(filePath));
@@ -1001,7 +1045,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
         }
 
         return EndpointRegex.Matches(errorMessage)
-            .Select(m => m.Value)
+            .Select(m => NormalizeEndpointUrl(m.Value))
+            .Where(u => u is not null)
             .Distinct();
     }
 
@@ -1055,7 +1100,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
                 this.mavenParentChildRelationships[filePath] = parentPath;
                 resolvedCount++;
                 this.Logger.LogDebug(
-                    "MavenWithFallback: Resolved deferred parent relationship: {Child} → {Parent}",
+                    "{DetectorId}: Resolved deferred parent relationship: {Child} → {Parent}",
+                    this.Id,
                     Path.GetFileName(filePath),
                     Path.GetFileName(parentPath));
             }
@@ -1063,7 +1109,8 @@ public class MavenWithFallbackDetector : FileComponentDetector, IExperimentalDet
             {
                 unresolvedCount++;
                 this.Logger.LogDebug(
-                    "MavenWithFallback: Could not resolve parent {ParentGroupId}:{ParentArtifactId} for {Child}",
+                    "{DetectorId}: Could not resolve parent {ParentGroupId}:{ParentArtifactId} for {Child}",
+                    this.Id,
                     parentGroupId ?? "(null)",
                     parentArtifactId,
                     Path.GetFileName(filePath));
