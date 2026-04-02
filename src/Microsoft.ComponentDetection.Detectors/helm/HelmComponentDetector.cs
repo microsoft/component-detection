@@ -27,7 +27,12 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
 
     public override string Id => "Helm";
 
-    public override IList<string> SearchPatterns { get; } = ["Chart.yaml", "values.yaml"];
+    public override IList<string> SearchPatterns { get; } =
+    [
+        "Chart.yaml", "Chart.yml",
+        "chart.yaml", "chart.yml",
+        "*values*.yaml", "*values*.yml",
+    ];
 
     public override IEnumerable<ComponentType> SupportedComponentTypes => [ComponentType.DockerReference];
 
@@ -60,7 +65,8 @@ public class HelmComponentDetector : FileComponentDetector, IDefaultOffComponent
 
             var fileName = Path.GetFileName(file.Location);
 
-            if (string.Equals(fileName, "values.yaml", StringComparison.OrdinalIgnoreCase))
+            if (fileName.Contains("values", StringComparison.OrdinalIgnoreCase) &&
+                (fileName.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || fileName.EndsWith(".yml", StringComparison.OrdinalIgnoreCase)))
             {
                 this.ExtractImageReferencesFromValues(yaml, singleFileComponentRecorder, file.Location);
             }

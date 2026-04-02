@@ -192,4 +192,83 @@ sidecars:
         var components = componentRecorder.GetDetectedComponents();
         components.Should().HaveCount(2);
     }
+
+    [TestMethod]
+    public async Task TestHelm_ValuesYmlExtensionAsync()
+    {
+        var valuesYaml = @"
+image: nginx:1.21
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("values.yml", valuesYaml, ["*values*.yml"])
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestHelm_ValuesOverrideFileAsync()
+    {
+        var valuesYaml = @"
+image: redis:7-alpine
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("values.production.yaml", valuesYaml, ["*values*.yaml"])
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestHelm_CustomValuesFilenameAsync()
+    {
+        var valuesYaml = @"
+image: postgres:15
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("myapp-values-dev.yml", valuesYaml, ["*values*.yml"])
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().ContainSingle();
+    }
+
+    [TestMethod]
+    public async Task TestHelm_LowercaseChartYamlAsync()
+    {
+        var chartYaml = @"
+apiVersion: v2
+name: my-chart
+version: 0.1.0
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("chart.yaml", chartYaml, ["chart.yaml"])
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public async Task TestHelm_ChartYmlExtensionAsync()
+    {
+        var chartYaml = @"
+apiVersion: v2
+name: my-chart
+version: 0.1.0
+";
+
+        var (scanResult, componentRecorder) = await this.DetectorTestUtility
+            .WithFile("Chart.yml", chartYaml, ["Chart.yml"])
+            .ExecuteDetectorAsync();
+
+        scanResult.ResultCode.Should().Be(ProcessingResultCode.Success);
+        componentRecorder.GetDetectedComponents().Should().BeEmpty();
+    }
 }
