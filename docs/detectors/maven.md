@@ -4,22 +4,185 @@
 
 Maven detection depends on the following to successfully run:
 
-- Maven CLI as part of your PATH. mvn should be runnable from a given command line.
-- Maven Dependency Plugin (installed with Maven).
 - One or more `pom.xml` files.
+- Maven CLI (`mvn`) available in PATH **and** the Maven Dependency Plugin installed — required for full graph detection. If unavailable, the detector automatically falls back to static `pom.xml` parsing (see [Detection Strategy](#detection-strategy) below).
 
 ## Detection strategy
 
-Maven detection is performed by running `mvn dependency:tree -f {pom.xml}` for each pom file and parsing down the results.
+The detector (`MvnCliComponentDetector`, ID: `MvnCli`) uses a **two-path strategy**: Maven CLI for full dependency graph resolution, with automatic fallback to static `pom.xml` parsing when CLI is unavailable or fails. Both paths are handled in the same detector class.
 
-Components tagged as a test dependency are marked as development dependencies.
+### High-level lifecycle
 
-Full dependency graph generation is supported.
+```
+OnPrepareDetectionAsync  (Phase 1 — runs once before any file is processed)
+  │
+  ├─ [CLI disabled or unavailable] → return pom.xml stream as-is → OnFileFoundAsync (static path)
+  │
+  └─ [CLI available]
+       │
+       ├─ Collect all pom.xml ProcessRequests via observable
+       ├─ Sort by directory depth (shallowest first) → filter to root-level pom.xml only
+       ├─ For each root pom.xml (sequentially):
+       │    ├─ Run `mvn dependency:tree` → writes bcde.mvndeps next to pom.xml
+       │    ├─ [success] record directory as succeeded
+       │    └─ [failure] record directory as failed, capture error output
+       ├─ Scan entire source tree for all bcde.mvndeps files
+       │    └─ Read each into MemoryStream (file handle released immediately)
+       │    └─ Emit as ProcessRequests → OnFileFoundAsync (CLI path)
+       └─ For each failed directory → re-emit original pom.xml ProcessRequests
+            └─ → OnFileFoundAsync (static path)
+
+OnFileFoundAsync  (Phase 2 — called once per file emitted from Phase 1)
+  │
+  ├─ [bcde.mvndeps] → ParseDependenciesFile → register full graph with scopes
+  │    └─ [CleanupCreatedFiles=true] → delete bcde.mvndeps from disk
+  │
+  └─ [pom.xml] → static XML parsing (3-pass approach, see below)
+
+OnDetectionFinishedAsync  (Phase 3 — runs once after all files are processed)
+  ├─ Pass 2: resolve deferred Maven parent relationships
+  └─ Pass 3: resolve pending components with hierarchy-aware variable substitution
+```
+
+---
+
+### Phase 1 — Prepare: CLI detection
+
+#### Step 1.1 — Skip check
+
+If the environment variable `CD_MAVEN_DISABLE_CLI=true` is set, Maven CLI is skipped entirely. All `pom.xml` files are passed through unchanged to Phase 2 for static parsing. `FallbackReason` is recorded as `MvnCliDisabledByUser`.
+
+#### Step 1.2 — CLI availability check
+
+`mvn --version` is executed (also tries `mvn.cmd` on Windows). If it fails to locate, all `pom.xml` files fall through to static parsing. `FallbackReason` is recorded as `MavenCliNotAvailable`.
+
+#### Step 1.3 — Root pom.xml identification
+
+All discovered `pom.xml` ProcessRequests are buffered and sorted by directory path length (shallowest first). The detector then walks each file's ancestors: if any ancestor directory already contains a `pom.xml`, the current file is **nested** and excluded from direct CLI invocation. This ensures Maven CLI is only run on the outermost project root in any given directory tree, which is how Maven itself works (parent POMs aggregate submodules).
+
+For each root pom.xml and all its nested children, a mapping is recorded in `parentPomDictionary` (keyed by root directory). This mapping is used for fallback: if CLI fails for a root, all its nested children are re-emitted for static parsing.
+
+> **Why `.ToList()` instead of streaming?** The nesting check requires knowledge of all discovered paths before any can be classified as root or nested. A streaming approach would risk emitting a file as a root before its true parent has been seen. Sorting by depth first guarantees correctness. The `ProcessRequest` objects at this stage hold a `LazyComponentStream` that does not open the file until `.Stream` is first accessed, so no file handles are held during the buffer.
+
+#### Step 1.4 — Sequential Maven CLI invocation
+
+For each root `pom.xml`, Maven CLI is invoked **sequentially** (not in parallel) to avoid Maven local repository lock contention and reduce JVM memory pressure:
+
+```
+mvn dependency:tree -B -DoutputFile=bcde.mvndeps -DoutputType=text -f{pom.xml}
+```
+
+- **`-B`** — batch mode (no interactive prompts).
+- **`-DoutputFile=bcde.mvndeps`** — writes the dependency tree next to the `pom.xml`.
+- **`-DoutputType=text`** — text format parseable by `MavenStyleDependencyGraphParser`.
+
+If the `MvnCLIFileLevelTimeoutSeconds` environment variable is set, a per-file cancellation timeout is applied via a linked `CancellationTokenSource`.
+
+On success, the existence of `bcde.mvndeps` is verified (CLI can exit 0 but skip the file in edge cases). On failure, error output is captured for later authentication error analysis.
+
+#### Step 1.5 — Dependency file discovery
+
+After all CLI invocations complete, the entire source directory is re-scanned for `bcde.mvndeps` files (this catches submodule output files generated by the parent POM run). Each file is:
+1. Read fully into a `MemoryStream` — releasing the underlying file handle immediately.
+2. Wrapped in a new `ProcessRequest` with a `SingleFileComponentRecorder` keyed to the corresponding `pom.xml` path in the same directory.
+
+#### Step 1.6 — Failure analysis and fallback assembly
+
+If any CLI invocations failed, error output is scanned for authentication patterns (`401`, `403`, `Unauthorized`, `Access denied`). If found, `FallbackReason` is set to `AuthenticationFailure` and any matching repository URLs are extracted and logged as guidance. Otherwise, `FallbackReason` is set to `OtherMvnCliFailure`.
+
+For each failed root directory, all `pom.xml` ProcessRequests from `parentPomDictionary` (the root itself plus all nested children) are emitted in depth-first order (parent before child) for static parsing.
+
+The final observable returned to the framework is the concatenation of:
+- All `bcde.mvndeps` ProcessRequests (CLI successes)
+- All `pom.xml` ProcessRequests from failed directories (static fallback)
+
+---
+
+### Phase 2 — File processing: `OnFileFoundAsync`
+
+Each `ProcessRequest` emitted in Phase 1 is dispatched here. The file type is distinguished by its `Pattern` field.
+
+#### CLI path: `bcde.mvndeps`
+
+The file is passed to `MavenStyleDependencyGraphParser` via `MavenCommandService.ParseDependenciesFile`. The parser reads the text-format dependency tree line-by-line:
+
+1. **First non-blank line** — the root artifact (`groupId:artifactId:packaging:version`). Registered as a direct dependency.
+2. **Subsequent lines** — each is a tree node prefixed with `+-` (direct child) or `\-` (last child) at an indented position. The indentation depth (character offset of the splitter) is used to maintain a parse stack, from which parent-child edges are derived and registered.
+
+Component string format:
+```
+groupId:artifactId:packaging:version:scope
+```
+Scope is mapped to `DependencyScope` (`MavenCompile`, `MavenTest`, `MavenProvided`, `MavenRuntime`, `MavenSystem`). `test`-scoped dependencies are also marked as `isDevelopmentDependency=true`.
+
+If `CleanupCreatedFiles` is set on the scan request, `bcde.mvndeps` is deleted from disk after parsing (wrapped in a try/catch so failures are non-fatal).
+
+#### Static fallback path: `pom.xml`
+
+Static parsing operates in **three passes** spread across Phase 2 and Phase 3, designed to handle Maven's property inheritance correctly.
+
+**Pass 1 (during `OnFileFoundAsync`):**
+
+The `pom.xml` XML document is parsed once. For each file, the detector:
+
+1. **Tracks project coordinates** — queries `groupId`, `artifactId`, and (from `<parent>` if own `groupId` is absent) stores the project in `processedMavenProjects` under both `artifactId` and `groupId:artifactId` keys. This enables coordinate-based parent lookup.
+
+2. **Parses Maven parent relationship** — reads `<parent><groupId>` and `<parent><artifactId>`. If the parent pom.xml has already been processed, the `child → parent` relationship is stored immediately in `mavenParentChildRelationships`. Otherwise, the relationship is queued in `unresolvedParentRelationships` for Pass 2.
+
+3. **Collects variables** — all `<properties>` sections are read (supports multiple `<properties>` blocks for malformed XML). `project.version`, `project.groupId`, `project.artifactId`, `version`, `groupId`, `artifactId` are also collected. Variables are stored in `collectedVariables` keyed as `filePath::variableName` to scope them to their source file for hierarchy-aware resolution.
+
+4. **Registers dependencies:**
+   - **Literal version** (e.g., `1.2.3`) → registered immediately.
+   - **Variable version resolved locally** (e.g., `${revision}` defined in this same file's `<properties>`) → resolved and registered immediately.
+   - **Variable version unresolvable locally** (e.g., `${revision}` from a parent POM) → added to `pendingComponents` queue with the raw template for Pass 3.
+   - **Range version** (contains `,`) or **missing version** → skipped with a debug log.
+
+---
+
+### Phase 3 — Finish: `OnDetectionFinishedAsync`
+
+#### Pass 2 — Deferred parent relationship resolution
+
+The `unresolvedParentRelationships` queue is drained. For each entry, the cache entry is cleared and `processedMavenProjects` is queried again (now fully populated). Lookup tries `groupId:artifactId` first, then `artifactId` alone. Resolved relationships are written to `mavenParentChildRelationships`.
+
+#### Pass 3 — Hierarchy-aware variable resolution
+
+All entries in `pendingComponents` are drained. For each component with an unresolved version template (e.g., `${myVersion}`):
+
+1. Starting from the component's own `pom.xml`, the detector walks up `mavenParentChildRelationships` (child → parent → grandparent).
+2. At each level, `collectedVariables[filePath::variableName]` is checked.
+3. The **first match wins** — this implements Maven's child-overrides-parent property precedence.
+4. Circular parent references are detected via a `visitedFiles` HashSet and broken safely.
+5. If the variable is still unresolved after exhausting the hierarchy (e.g., defined in an external parent POM not on disk), the component is skipped and `UnresolvedVariableCount` is incremented in telemetry.
+
+---
+
+### Detection method tracking
+
+At completion, the `DetectionMethod` telemetry field records one of:
+
+| Value | Meaning |
+|---|---|
+| `MvnCliOnly` | All root pom.xml files were processed by Maven CLI successfully |
+| `StaticParserOnly` | CLI was disabled or unavailable; all components from static parsing |
+| `Mixed` | CLI succeeded for some roots, static parsing used for failures |
+| `None` | No pom.xml files were found |
+
+`FallbackReason` records why static parsing was triggered: `None`, `MvnCliDisabledByUser`, `MavenCliNotAvailable`, `AuthenticationFailure`, or `OtherMvnCliFailure`.
+
+---
 
 ## Known limitations
 
-Maven detection will not run if `mvn` is unavailable.
+- Static fallback parsing does **not** resolve variables defined in external parent POMs that are not present on disk (e.g., published to a remote Maven repository). Affected components are skipped.
+- Static parsing does **not** produce a dependency graph (no parent-child edges between components) — it produces a flat component list only. Full graph with transitive dependencies requires Maven CLI.
+- Version ranges (e.g., `[1.0,2.0)`) are not supported by static parsing and are skipped.
+- Maven CLI invocations run sequentially. On repositories with many independent root `pom.xml` files, this can be slow. Set `MvnCLIFileLevelTimeoutSeconds` to bound per-file execution time.
+- If Maven CLI exits successfully but the `bcde.mvndeps` file is not created (edge case with certain POM configurations), the file falls back to static parsing.
 
-## Environment Variables
+## Environment variables
 
-The environment variable `MvnCLIFileLevelTimeoutSeconds` is used to control the max execution time Mvn CLI is allowed to take per each `pom.xml` file. Default value, unbounded. This will restrict any spikes in scanning time caused by Mvn CLI during package restore. We suggest to restore the Maven packages beforehand, so that no network calls happen when executing "mvn dependency:tree" and the graph is captured quickly.
+| Variable | Default | Description |
+|---|---|---|
+| `MvnCLIFileLevelTimeoutSeconds` | Unbounded | Maximum seconds Maven CLI may spend on a single `pom.xml`. Pre-restoring packages eliminates network calls and makes this limit more predictable. |
+| `CD_MAVEN_DISABLE_CLI` | `false` | Set to `true` to skip Maven CLI entirely and use only static `pom.xml` parsing. |
