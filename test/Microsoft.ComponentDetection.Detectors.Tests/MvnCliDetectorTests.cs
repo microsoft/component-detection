@@ -1007,10 +1007,11 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
             .ReturnsAsync(true);
 
         // Simulate Maven CLI failure with authentication error message containing endpoint URL
+        // The URL intentionally contains userinfo (credentials) and a path so we can verify they are stripped.
         var authErrorMessage = "[ERROR] Failed to execute goal on project my-app: Could not resolve dependencies for project com.test:my-app:jar:1.0.0: " +
             "Failed to collect dependencies at com.private:private-lib:jar:2.0.0: " +
             "Failed to read artifact descriptor for com.private:private-lib:jar:2.0.0: " +
-            "Could not transfer artifact com.private:private-lib:pom:2.0.0 from/to private-repo (https://private-maven-repo.example.com/repository/maven-releases/): " +
+            "Could not transfer artifact com.private:private-lib:pom:2.0.0 from/to private-repo (https://user:s3cr3t@private-maven-repo.example.com/repository/maven-releases/?token=abc): " +
             "status code: 401, reason phrase: Unauthorized";
 
         this.mavenCommandServiceMock.Setup(x => x.GenerateDependenciesFileAsync(It.IsAny<ProcessRequest>(), It.IsAny<CancellationToken>()))
@@ -1051,9 +1052,16 @@ public class MvnCliDetectorTests : BaseDetectorTest<MvnCliComponentDetector>
         detectorResult.AdditionalTelemetryDetails.Should().ContainKey("FallbackReason");
         detectorResult.AdditionalTelemetryDetails["FallbackReason"].Should().Be("AuthenticationFailure");
 
-        // Verify telemetry contains the failed endpoint
+        // Verify telemetry contains the failed endpoint normalized to scheme+host only.
+        // Credentials (userinfo), path, and query string must NOT appear in telemetry.
         detectorResult.AdditionalTelemetryDetails.Should().ContainKey("FailedEndpoints");
-        detectorResult.AdditionalTelemetryDetails["FailedEndpoints"].Should().Contain("https://private-maven-repo.example.com");
+        var failedEndpoints = detectorResult.AdditionalTelemetryDetails["FailedEndpoints"];
+        failedEndpoints.Should().Be("https://private-maven-repo.example.com",
+            "credentials, path, and query string must be stripped before reaching telemetry");
+        failedEndpoints.Should().NotContain("user", "userinfo must be stripped");
+        failedEndpoints.Should().NotContain("s3cr3t", "credentials must be stripped");
+        failedEndpoints.Should().NotContain("token", "query string must be stripped");
+        failedEndpoints.Should().NotContain("/repository", "path must be stripped");
     }
 
     [TestMethod]
