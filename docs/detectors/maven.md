@@ -165,7 +165,7 @@ At completion, the `DetectionMethod` telemetry field records one of:
 |---|---|
 | `MvnCliOnly` | All root pom.xml files were processed by Maven CLI successfully |
 | `StaticParserOnly` | CLI was disabled or unavailable; all components from static parsing |
-| `Mixed` | CLI succeeded for some roots, static parsing used for failures |
+| `Mixed` | Maven CLI was attempted; at least one root fell back to static parsing (possibly all) |
 | `None` | No pom.xml files were found |
 
 `FallbackReason` records why static parsing was triggered: `None`, `MvnCliDisabledByUser`, `MavenCliNotAvailable`, `AuthenticationFailure`, or `OtherMvnCliFailure`.
